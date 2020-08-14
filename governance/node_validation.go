@@ -1,12 +1,10 @@
 package governance
 
 import (
-	"context"
-	"encoding/hex"
+	"fmt"
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -24,56 +22,66 @@ var (
 )
 
 const (
-	minValidationPeriod = 600       // ten minutes
+	minValidationPeriod = 1         // 1 sec
 	maxValidationPeriod = 48 * 3600 // 2 days
 	nodeApproval        = 1         // float for percentage
 )
 
 const (
-	notValidatedProposal uint32 = iota
-	validatedProposal
-	voteSentProposal
+	pendingValidationProposal uint32 = iota
+	okProposal
+	rejectedProposal
 )
 
 type NodeValidation struct {
-	log *logging.Logger
-	// used for nodes proposals
-	top           ValidatorTopology
-	nodeProposals map[string]*nodeProposal
-	assets        Assets
-	cmd           Commander
-
+	log              *logging.Logger
+	assets           Assets
 	currentTimestamp time.Time
-	isValidator      bool
+	nodeProposals    map[string]*nodeProposal
+	erc              ExtResChecker
 }
 
 type nodeProposal struct {
 	*types.Proposal
-	votes     map[string]struct{}
-	validTime time.Time
-	// use for the node internal validation
-	validState uint32
-	cancel     func()
+	state   uint32
+	checker func() error
+}
+
+func (n *nodeProposal) GetID() string {
+	return fmt.Sprintf("proposal-node-validation-%v", n.ID)
+}
+
+func (n *nodeProposal) Check() error {
+	return n.checker()
 }
 
 func NewNodeValidation(
 	log *logging.Logger,
-	top ValidatorTopology,
-	cmd Commander,
 	assets Assets,
 	now time.Time,
-	isValidator bool,
+	erc ExtResChecker,
 ) (*NodeValidation, error) {
-
 	return &NodeValidation{
 		log:              log,
-		top:              top,
 		nodeProposals:    map[string]*nodeProposal{},
 		assets:           assets,
-		cmd:              cmd,
 		currentTimestamp: now,
-		isValidator:      isValidator,
+		erc:              erc,
 	}, nil
+}
+
+func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
+	np, ok := i.(*nodeProposal)
+	if !ok {
+		n.log.Error("not an node proposal received from ext check")
+		return
+	}
+
+	var newState = rejectedProposal
+	if valid {
+		newState = okProposal
+	}
+	atomic.StoreUint32(&np.state, newState)
 }
 
 // returns validated proposal by all nodes
@@ -84,75 +92,21 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 	for k, prop := range n.nodeProposals {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
 		// time expired, or all vote agregated, and own vote sent
-		state := atomic.LoadUint32(&prop.validState)
-		if prop.validTime.Before(t) || (len(prop.votes) == n.top.Len() && state == voteSentProposal) {
-			// if not all nodes have approved, just remove
-			if len(prop.votes) < n.top.Len() {
-				n.log.Warn("proposal was not accepted by all nodes",
-					logging.String("proposal", prop.Proposal.String()),
-					logging.Int("vote-count", len(prop.votes)),
-					logging.Int("node-count", n.top.Len()),
-				)
-				rejected = append(rejected, prop.Proposal)
-			} else {
-				// proposal was accepted by all nodes, returns it to the governance engine
-				accepted = append(accepted, prop.Proposal)
-			}
-
-			// either proposal wasn't accepted, or it's been passed on to governance
-			delete(n.nodeProposals, k)
-			// cancelling this but it should already be exited if th proposal
-			// was valid
-			prop.cancel()
+		state := atomic.LoadUint32(&prop.state)
+		if state == pendingValidationProposal {
+			continue
 		}
 
-		// or check if the proposal if valid,
-		// if it is, we will send our own message through the network.
-		if state == validatedProposal {
-			// if not a validator no need to send the vote
-			if n.isValidator {
-				nv := &types.NodeVote{
-					PubKey:    n.top.SelfVegaPubKey(),
-					Reference: prop.Reference,
-				}
-				if err := n.cmd.Command(blockchain.NodeVoteCommand, nv); err != nil {
-					n.log.Error("unable to send command", logging.Error(err))
-					// @TODO keep in memory, retry later?
-					continue
-				}
-			}
-			// set new state so we do not try to validate again
-			atomic.StoreUint32(&prop.validState, voteSentProposal)
+		switch state {
+		case okProposal:
+			accepted = append(accepted, prop.Proposal)
+		case rejectedProposal:
+			rejected = append(rejected, prop.Proposal)
 		}
+		delete(n.nodeProposals, k)
 	}
 
 	return accepted, rejected
-}
-
-// AddNodeVote registers a vote from a validator node for a given proposal
-func (n *NodeValidation) AddNodeVote(nv *types.NodeVote) error {
-	// get the node proposal first
-	np, ok := n.nodeProposals[nv.Reference]
-	if !ok {
-		return ErrInvalidProposalReferenceForNodeVote
-	}
-
-	// ensure the node is a validator
-	if !n.top.Exists(nv.PubKey) {
-		n.log.Error("non-validator node tried to register node vote",
-			logging.String("pubkey", hex.EncodeToString(nv.PubKey)))
-		return ErrNodeIsNotAValidator
-	}
-
-	_, ok = np.votes[string(nv.PubKey)]
-	if ok {
-		return ErrDuplicateVoteFromNode
-	}
-
-	// add the vote
-	np.votes[string(nv.PubKey)] = struct{}{}
-
-	return nil
 }
 
 // IsNodeValidationRequired returns true if the given proposal require validation from a node.
@@ -168,11 +122,11 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 // Start the node validation of a proposal
 func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
-		n.log.Error("no node validation required", logging.String("ref", p.Reference))
+		n.log.Error("no node validation required", logging.String("ref", p.ID))
 		return ErrNoNodeValidationRequired
 	}
 
-	_, ok := n.nodeProposals[p.Reference]
+	_, ok := n.nodeProposals[p.ID]
 	if ok {
 		return ErrProposalReferenceDuplicate
 	}
@@ -181,105 +135,64 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	np := &nodeProposal{
-		Proposal:   p,
-		votes:      map[string]struct{}{},
-		validTime:  time.Unix(p.Terms.ValidationTimestamp, 0),
-		validState: notValidatedProposal,
-		cancel:     cancel,
+	checker, err := n.getChecker(p)
+	if err != nil {
+		return err
 	}
-	n.nodeProposals[p.Reference] = np
+	np := &nodeProposal{
+		Proposal: p,
+		state:    pendingValidationProposal,
+		checker:  checker,
+	}
+	n.nodeProposals[p.ID] = np
 
-	return n.start(ctx, np)
+	return n.erc.StartCheck(np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
 
-// start proposal specific validation and instanciation
-func (n *NodeValidation) start(ctx context.Context, np *nodeProposal) error {
-	// first initialize and underlying resources if needed
-	// this can make error that we'll want to return for straaight away
-	// next step will happen in goroutine.
-	switch change := np.Terms.Change.(type) {
+func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
+	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewAsset:
-		assetID, err := n.assets.NewAsset(np.ID,
+		assetID, err := n.assets.NewAsset(p.ID,
 			change.NewAsset.GetChanges())
 		if err != nil {
 			n.log.Error("unable to instanciate asset",
 				logging.String("asset-id", assetID),
 				logging.Error(err))
-			return err
+			return nil, err
 		}
-
-	default:
-		// this should have been check earlier but in case of.
-		return ErrNoNodeValidationRequired
+		return func() error {
+			return n.checkAsset(p.ID)
+		}, nil
+	default: // this should have been check earlier but in case of.
+		return nil, ErrNoNodeValidationRequired
 	}
-
-	// then start validations of the proposal specficis
-
-	// if we are not a validator lets just assume it's valid
-	if !n.isValidator {
-		atomic.StoreUint32(&np.validState, validatedProposal)
-	} else {
-		// we are a validator so we need to make sure the proposal is valid
-		switch np.Terms.Change.(type) {
-		case *types.ProposalTerms_NewAsset:
-			// start asset validation
-			go n.validateAsset(ctx, np, np.Proposal)
-		default:
-			// this should have been check earlier but in case of.
-			return ErrNoNodeValidationRequired
-		}
-	}
-	return nil
 }
 
-func (n *NodeValidation) validateAsset(ctx context.Context, np *nodeProposal, prop *types.Proposal) {
-
+func (n *NodeValidation) checkAsset(assetID string) error {
 	// get the asset to validate from the assets pool
-	asset, err := n.assets.Get(prop.ID)
+	asset, err := n.assets.Get(assetID)
 	// if we get an error here, we'll never change the state of the proposal,
 	// so it will be dismissed later on by all the whole network
 	if err != nil || asset == nil {
 		n.log.Error("Validating asset, unable to get the asset",
-			logging.String("ref", prop.GetTerms().String()),
+			logging.String("id", assetID),
 			logging.Error(err),
 		)
-		return
+		return errors.New("invalid asset ID")
 	}
 
-	// wait time between call to validation
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		// first try to validate the asset
-		n.log.Debug("Validating asset",
-			logging.String("asset-source", prop.GetTerms().String()),
-		)
-
-		// call validation
-		err = asset.Validate()
-		if err != nil {
-			// we just log the error, but these are not criticals, as it may be
-			// things unrelated to the current node, and would recover later on.
-			// it's just informative
-			n.log.Warn("error validating asset", logging.Error(err))
-		} else {
-			if asset.IsValid() {
-				atomic.StoreUint32(&np.validState, validatedProposal)
-				return
-			}
-		}
-
-		// wait or break if the time's up
-		select {
-		case <-ctx.Done():
-			n.log.Error("asset validation context done",
-				logging.Error(ctx.Err()))
-			return
-		case _ = <-ticker.C:
-		}
+	err = asset.Validate()
+	if err != nil {
+		// we just log the error, but these are not criticals, as it may be
+		// things unrelated to the current node, and would recover later on.
+		// it's just informative
+		n.log.Warn("error validating asset", logging.Error(err))
+		return err
 	}
+	if asset.IsValid() {
+		return nil
+	}
+	return nil
 }
 
 func (n *NodeValidation) checkProposal(prop *types.Proposal) error {

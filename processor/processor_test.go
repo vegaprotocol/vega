@@ -26,7 +26,7 @@ type procTest struct {
 	eng    *mocks.MockExecutionEngine
 	ts     *mocks.MockTimeService
 	stat   *mocks.MockStats
-	tickCB func(time.Time)
+	tickCB func(context.Context, time.Time)
 	ctrl   *gomock.Controller
 	cmd    *mocks.MockCommander
 	wallet *mocks.MockWallet
@@ -36,6 +36,8 @@ type procTest struct {
 	notary *mocks.MockNotary
 	evtfwd *mocks.MockEvtForwarder
 	col    *mocks.MockCollateral
+	erc    *mocks.MockExtResChecker
+	bank   *mocks.MockBanking
 }
 
 type stubWallet struct {
@@ -59,16 +61,19 @@ func getTestProcessor(t *testing.T) *procTest {
 	notary := mocks.NewMockNotary(ctrl)
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
 	col := mocks.NewMockCollateral(ctrl)
+	erc := mocks.NewMockExtResChecker(ctrl)
+	bank := mocks.NewMockBanking(ctrl)
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
-	var cb func(time.Time)
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(time.Time)) {
+	var cb func(context.Context, time.Time)
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(context.Context, time.Time)) {
 		cb = c
 	})
 	wal := getTestStubWallet()
 	wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	top.EXPECT().IsValidator().AnyTimes().Return(true)
 
-	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, evtfwd, col, true)
+	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, evtfwd, col, erc, bank)
 	assert.NoError(t, err)
 	return &procTest{
 		Processor: proc,
@@ -85,6 +90,8 @@ func getTestProcessor(t *testing.T) *procTest {
 		notary:    notary,
 		evtfwd:    evtfwd,
 		col:       col,
+		erc:       erc,
+		bank:      bank,
 	}
 }
 
@@ -123,7 +130,7 @@ func testOnTickEmpty(t *testing.T) {
 	defer proc.ctrl.Finish()
 	// this is to simulate what happens on timer tick when there aren't any proposals
 	proc.gov.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).Times(1).Return([]*governance.ToEnact{})
-	proc.tickCB(time.Now())
+	proc.tickCB(context.Background(), time.Now())
 }
 
 func testBeginCommitSuccess(t *testing.T) {
@@ -347,9 +354,9 @@ func testProcessCommandSuccess(t *testing.T) {
 		blockchain.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		blockchain.AmendOrderCommand: &types.OrderAmendment{
-			PartyID: party,
-		},
+		// blockchain.AmendOrderCommand: &types.OrderAmendment{
+		// 	PartyID: party,
+		// },
 		blockchain.ProposeCommand: &types.Proposal{
 			PartyID: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
@@ -357,16 +364,13 @@ func testProcessCommandSuccess(t *testing.T) {
 		blockchain.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		blockchain.WithdrawCommand: &types.Withdraw{
-			PartyID: party,
-		},
-		blockchain.NotifyTraderAccountCommand: &types.NotifyTraderAccount{
-			TraderID: party,
-		},
+		// blockchain.WithdrawCommand: &types.Withdraw{
+		// 	PartyID: party,
+		// },
 	}
 	zero := uint64(0)
 	proc := getTestProcessor(t)
-	proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
+	// proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
 	// creating an order, should be no trades
@@ -375,13 +379,11 @@ func testProcessCommandSuccess(t *testing.T) {
 	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
-	proc.eng.EXPECT().Withdraw(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderCancellationConfirmation{}, nil)
-	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.eng.EXPECT().NotifyTraderAccount(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	defer proc.ctrl.Finish()
 	for cmd, msg := range data {
 		payload, err := proto.Marshal(msg)
@@ -392,6 +394,14 @@ func testProcessCommandSuccess(t *testing.T) {
 
 func (s stubWallet) Chain() string {
 	return s.chain
+}
+
+func (s stubWallet) Algo() string {
+	return "vega/ed25519"
+}
+
+func (s stubWallet) Version() uint64 {
+	return 1
 }
 
 func (s stubWallet) PubKeyOrAddress() []byte {

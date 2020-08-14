@@ -48,7 +48,6 @@ func getTestCommander(t *testing.T) *testCommander {
 
 func TestCommand(t *testing.T) {
 	t.Run("Signed command - success", testSignedCommandSuccess)
-	t.Run("Signed command - signature not required", testSignedUnsignedSuccess)
 	t.Run("SetChain - dummy test for completeness", testSetChain)
 }
 
@@ -68,17 +67,6 @@ func testSignedCommandSuccess(t *testing.T) {
 	assert.NoError(t, commander.Command(cmd, payload))
 }
 
-func testSignedUnsignedSuccess(t *testing.T) {
-	commander := getTestCommander(t)
-	defer commander.Finish()
-
-	// this command doesn't require a signature, let's sign it anyway
-	cmd := blockchain.NotifyTraderAccountCommand
-	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
-	payload := &types.NotifyTraderAccount{}
-	assert.NoError(t, commander.Command(cmd, payload))
-}
-
 func (t *testCommander) Finish() {
 	t.cfunc()
 	t.ctrl.Finish()
@@ -86,6 +74,14 @@ func (t *testCommander) Finish() {
 
 func (s stubWallet) Chain() string {
 	return s.chain
+}
+
+func (s stubWallet) Algo() string {
+	return "vega/ed25519"
+}
+
+func (s stubWallet) Version() uint64 {
+	return 1
 }
 
 func (s stubWallet) PubKeyOrAddress() []byte {

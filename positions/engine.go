@@ -178,8 +178,6 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	// there's only 1 position
 	var pos *MarketPosition
 	size := int64(trade.Size)
-	// there will only be 1 event
-	ret := make([]events.MarketPosition, 0, 1)
 	if trade.Buyer != "network" {
 		if b, ok := e.positions[trade.Buyer]; !ok {
 			pos = &MarketPosition{
@@ -208,9 +206,7 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 		size = -size
 	}
 	pos.size += size
-	// updated pos should be appended to event slice
-	ret = append(ret, *pos)
-	return ret
+	return []events.MarketPosition{*pos}
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
@@ -292,6 +288,16 @@ func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
 		pos.price = markPrice
 	}
 	return e.positionsCpy
+}
+
+func (e *Engine) GetOpenInterest() uint64 {
+	var openInterest uint64
+	for _, pos := range e.positions {
+		if pos.size > 0 {
+			openInterest += uint64(pos.size)
+		}
+	}
+	return openInterest
 }
 
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push

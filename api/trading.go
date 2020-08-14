@@ -2,19 +2,27 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	ErrInvalidSignature = errors.New("invalid signature")
 )
 
 // TradeOrderService ...
@@ -29,8 +37,7 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) (bool, error)
-	Withdraw(context.Context, *types.Withdraw) (bool, error)
+	PrepareWithdraw(context.Context, *types.Withdraw) error
 }
 
 // GovernanceService ...
@@ -43,7 +50,7 @@ type GovernanceService interface {
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
 type EvtForwarder interface {
-	Forward(e *types.ChainEvent) error
+	Forward(e *types.ChainEvent, pk string) error
 }
 
 type tradingService struct {
@@ -100,20 +107,21 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
-	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	raw, err := proto.Marshal(req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	return &protoapi.PrepareAmendOrderResponse{
-		Blob: raw,
-	}, nil
+	return nil, apiError(codes.Unimplemented, errors.New("not implemented"))
+	// err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
+	// if err != nil {
+	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	// }
+	// raw, err := proto.Marshal(req.Amendment)
+	// if err != nil {
+	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	// }
+	// if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
+	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	// }
+	// return &protoapi.PrepareAmendOrderResponse{
+	// 	Blob: raw,
+	// }, nil
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
@@ -131,50 +139,24 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}, nil
 }
 
-func (s *tradingService) NotifyTraderAccount(
-	ctx context.Context, req *protoapi.NotifyTraderAccountRequest,
-) (*protoapi.NotifyTraderAccountResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("NotifyTraderAccount", startTime)
-	if req == nil || req.Notif == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-	}
-	if len(req.Notif.TraderID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
-	}
-
-	submitted, err := s.accountService.NotifyTraderAccount(ctx, req.Notif)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	return &protoapi.NotifyTraderAccountResponse{
-		Submitted: submitted,
-	}, nil
-}
-
-func (s *tradingService) Withdraw(
-	ctx context.Context, req *protoapi.WithdrawRequest,
-) (*protoapi.WithdrawResponse, error) {
+func (s *tradingService) PrepareWithdraw(
+	ctx context.Context, req *protoapi.PrepareWithdrawRequest,
+) (*protoapi.PrepareWithdrawResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("Withdraw", startTime)
-	if len(req.Withdraw.PartyID) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingTraderID)
-	}
-	if len(req.Withdraw.Asset) <= 0 {
-		return nil, apiError(codes.InvalidArgument, ErrMissingAsset)
-	}
-	if req.Withdraw.Amount == 0 {
-		return nil, apiError(codes.InvalidArgument, ErrInvalidWithdrawAmount)
-	}
-
-	ok, err := s.accountService.Withdraw(ctx, req.Withdraw)
+	err := s.accountService.PrepareWithdraw(ctx, req.Withdraw)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
-
-	return &protoapi.WithdrawResponse{
-		Success: ok,
+	raw, err := proto.Marshal(req.Withdraw)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
+	}
+	if raw, err = txEncode(raw, blockchain.WithdrawCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
+	}
+	return &protoapi.PrepareWithdrawResponse{
+		Blob: raw,
 	}, nil
 }
 
@@ -237,12 +219,32 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	if req.Evt == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
-	err := s.evtForwarder.Forward(req.Evt)
+
+	msg, err := proto.Marshal(req.Evt)
 	if err != nil {
-		return nil, apiError(codes.AlreadyExists, err)
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
+
+	// verify the signature then
+	err = verifySignature(s.log, msg, req.Signature, req.PubKey)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	var ok = true
+	err = s.evtForwarder.Forward(req.Evt, req.PubKey)
+	if err != nil {
+		s.log.Error("unable to forward chain event",
+			logging.String("pubkey", req.PubKey),
+			logging.Error(err))
+		if err != evtforward.ErrEvtAlreadyExist {
+			return nil, apiError(codes.AlreadyExists, err)
+		}
+		ok = false
+	}
+
 	return &protoapi.PropagateChainEventResponse{
-		Success: true,
+		Success: ok,
 	}, nil
 }
 
@@ -251,4 +253,41 @@ func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
 	prefixBytes := []byte(prefix)
 	commandInput := append([]byte{byte(cmd)}, input...)
 	return append(prefixBytes, commandInput...), nil
+}
+
+func verifySignature(
+	log *logging.Logger,
+	message []byte,
+	sig []byte,
+	pubKey string,
+) error {
+	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to instanciate new algorithm", logging.Error(err))
+		}
+		return err
+	}
+
+	pubKeyBytes, err := hex.DecodeString(pubKey)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to decode hexencoded ubkey", logging.Error(err))
+		}
+		return err
+	}
+	ok, err := validator.Verify(pubKeyBytes, message, sig)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to verify bundle", logging.Error(err))
+		}
+		return err
+	}
+	if !ok {
+		if log != nil {
+			log.Error("invalid tx signature", logging.String("pubkey", pubKey))
+		}
+		return ErrInvalidSignature
+	}
+	return nil
 }

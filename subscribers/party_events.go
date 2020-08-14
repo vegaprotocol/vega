@@ -50,15 +50,17 @@ func (a *PartySub) loop(ctx context.Context) {
 	}
 }
 
-func (p *PartySub) Push(e events.Event) {
-	switch et := e.(type) {
-	case PE:
-		party := et.Party()
-		p.mu.Lock()
-		p.buf = append(p.buf, party)
-		p.mu.Unlock()
-	case TimeEvent:
-		p.flush()
+func (p *PartySub) Push(evts ...events.Event) {
+	for _, e := range evts {
+		switch et := e.(type) {
+		case PE:
+			party := et.Party()
+			p.mu.Lock()
+			p.buf = append(p.buf, party)
+			p.mu.Unlock()
+		case TimeEvent:
+			p.flush()
+		}
 	}
 }
 

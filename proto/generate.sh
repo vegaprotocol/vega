@@ -24,9 +24,6 @@ done
 
 # Generate proto/doc/
 
-# Comment things before generating docs (#726, #1674)
-patch -p0 <proto/comment_undocumented.patch >/dev/null
-
 mkdir -p proto/doc
 protofiles="$(find ./proto/ -name '*.proto' -print | sort)"
 echo -e 'html html\nmarkdown md' | while read -r fileformat fileextension
@@ -62,10 +59,6 @@ do
 		--swagger_out="logtostderr=true,$grpc_api_configuration:." \
 		"$protofile"
 done
-
-# Uncomment things after generating docs
-patch --reverse -p0 <proto/comment_undocumented.patch >/dev/null
-find proto -name '*.proto.orig' -exec rm '{}' ';'
 
 # Generate *.validator.pb.go, *.pb.gw.go
 find proto/api -maxdepth 1 -name '*.proto' | sort | while read -r protofile

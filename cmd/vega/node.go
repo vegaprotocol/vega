@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
@@ -145,6 +146,8 @@ type NodeCommand struct {
 	topology *validators.Topology
 	notary   *notary.Notary
 	evtfwd   *evtforward.EvtForwarder
+	erc      *validators.ExtResChecker
+	banking  *banking.Engine
 
 	// plugins
 	settlePlugin *plugins.Positions

@@ -16,12 +16,7 @@ message Asset {
   // The number of decimal / precision handled by this asset
   uint64 decimals = 5;
   // The definition of the external source for this asset
-  oneof source {
-    // A vega builtin asset (for testing purpose)
-    BuiltinAsset builtinAsset = 101;
-    // An ERC20 token based asset
-    ERC20 erc20 = 102;
-  }
+  AssetSource source = 7;
 }
 
 message AssetSource {
@@ -41,6 +36,8 @@ message BuiltinAsset {
   string totalSupply = 3;
   // The number of decimal / precision handled by this asset
   uint64 decimals = 4;
+  // This is the maximum amount that can be requested by a party through the builtin asset faucet at a time
+  string maxFaucetAmountMint = 5;
 }
 
 // An ERC20 token based asset, living on the ethereum network

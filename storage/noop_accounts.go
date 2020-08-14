@@ -52,6 +52,10 @@ func (a *NoopAccount) GetMarketAccounts(marketID, asset string) ([]*types.Accoun
 	return []*types.Account{}, nil
 }
 
+func (a *NoopAccount) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error) {
+	return []*types.Account{}, nil
+}
+
 func (a *NoopAccount) SaveBatch(accs []*types.Account) error {
 	return nil
 }

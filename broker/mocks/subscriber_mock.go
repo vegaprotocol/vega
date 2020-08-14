@@ -90,15 +90,19 @@ func (mr *MockSubscriberMockRecorder) ID() *gomock.Call {
 }
 
 // Push mocks base method
-func (m *MockSubscriber) Push(arg0 events.Event) {
+func (m *MockSubscriber) Push(arg0 ...events.Event) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Push", arg0)
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Push", varargs...)
 }
 
 // Push indicates an expected call of Push
-func (mr *MockSubscriberMockRecorder) Push(arg0 interface{}) *gomock.Call {
+func (mr *MockSubscriberMockRecorder) Push(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockSubscriber)(nil).Push), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockSubscriber)(nil).Push), arg0...)
 }
 
 // SetID mocks base method

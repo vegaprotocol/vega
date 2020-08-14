@@ -5,16 +5,27 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
+// auction durations defined using one or more params:
+
+// AuctionDuration can be used to configure 3 auction periods:
+// 1) duration > 0, volume == 0: The auction will last for at least N seconds
+// 2) Duration == 0, volume > 0: Auction period will end once we can close with given traded volume
+// 3) Duration > 0 & volume > 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume
+message AuctionDuration {
+  int64 duration = 1;
+  uint64 volume = 2;
+}
+
 // here begin trading modes
 
 message ContinuousTrading {
-  uint64 tickSize = 1;
+  string tickSize = 1;
 }
 
 message DiscreteTrading {
   // Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
   int64 durationNs = 1 [(validator.field) = {int_gt: 0, int_lt: 2592000000000000}];
-  uint64 tickSize = 2;
+  string tickSize = 2;
 }
 
 // here end trading modes
@@ -107,6 +118,16 @@ message TradableInstrument {
   }
 }
 
+message FeeFactors {
+  string makerFee = 1;
+  string infrastructureFee = 2;
+  string liquidityFee = 3;
+}
+
+message Fees {
+  FeeFactors factors = 1;
+}
+
 message Market {
   string id = 1;
 
@@ -115,8 +136,15 @@ message Market {
   // the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`
   uint64 decimalPlaces = 3;
 
+  // fees configuration
+  Fees fees = 4;
+
+  // Specifies how long the opening auction will run (min duration + optionally minimum traded volume)
+  AuctionDuration openingAuction = 5;
+
   oneof tradingMode {
     ContinuousTrading continuous = 100;
     DiscreteTrading discrete = 101;
   }
+
 }

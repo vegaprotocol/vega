@@ -15,12 +15,6 @@ type PartyStore interface {
 	GetAll() ([]*types.Party, error)
 }
 
-// Blockchain ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
-type Blockchain interface {
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) (success bool, err error)
-}
-
 // Svc represents the party service
 type Svc struct {
 	Config

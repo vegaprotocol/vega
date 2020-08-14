@@ -35,10 +35,10 @@ func (m *MockAssets) EXPECT() *MockAssetsMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockAssets) Get(arg0 string) (assets.Asset, error) {
+func (m *MockAssets) Get(arg0 string) (*assets.Asset, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
-	ret0, _ := ret[0].(assets.Asset)
+	ret0, _ := ret[0].(*assets.Asset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -47,6 +47,20 @@ func (m *MockAssets) Get(arg0 string) (assets.Asset, error) {
 func (mr *MockAssetsMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockAssets)(nil).Get), arg0)
+}
+
+// IsEnabled mocks base method
+func (m *MockAssets) IsEnabled(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEnabled", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsEnabled indicates an expected call of IsEnabled
+func (mr *MockAssetsMockRecorder) IsEnabled(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEnabled", reflect.TypeOf((*MockAssets)(nil).IsEnabled), arg0)
 }
 
 // NewAsset mocks base method

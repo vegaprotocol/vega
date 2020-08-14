@@ -9,6 +9,7 @@ import (
 
 	// cmocks "code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
@@ -46,6 +47,15 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	release, _ := strconv.ParseFloat(row.Cells[8].Value, 64)
 	initial, _ := strconv.ParseFloat(row.Cells[9].Value, 64)
 	search, _ := strconv.ParseFloat(row.Cells[10].Value, 64)
+	openAuctionDuration, _ := strconv.ParseInt(row.Cells[11].Value, 10, 64)
+	if row.Cells[12].Value != "continuous" {
+		batchDuration, _ := strconv.ParseInt(row.Cells[12].Value, 10, 64)
+		mkt.TradingMode = &proto.Market_Discrete{
+			Discrete: &proto.DiscreteTrading{
+				DurationNs: batchDuration,
+			},
+		}
+	}
 
 	// set scaling factors
 	mkt.TradableInstrument.MarginCalculator.ScalingFactors = &proto.ScalingFactors{
@@ -70,6 +80,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	mu, _ := strconv.ParseFloat(row.Cells[5].Value, 64)
 	r, _ := strconv.ParseFloat(row.Cells[6].Value, 64)
 	sigma, _ := strconv.ParseFloat(row.Cells[7].Value, 64)
+	mkt.OpeningAuction.Duration = openAuctionDuration
 	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_LogNormalRiskModel{
 		LogNormalRiskModel: &proto.LogNormalRiskModel{
 			RiskAversionParameter: lambdShort,
@@ -86,6 +97,13 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 func theMarket(mSetup *gherkin.DataTable) error {
 	// generic market config, ready to be populated with specs from scenario
 	mkt := &proto.Market{
+		Fees: &proto.Fees{
+			Factors: &proto.FeeFactors{
+				LiquidityFee:      "0",
+				InfrastructureFee: "0",
+				MakerFee:          "0",
+			},
+		},
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Metadata: &proto.InstrumentMetadata{
@@ -108,6 +126,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 			},
 			MarginCalculator: &proto.MarginCalculator{},
 		},
+		OpeningAuction: &proto.AuctionDuration{},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
@@ -124,15 +143,14 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	mktsetup = getMarketTestSetup(mkt)
 	// create the party engine, and add to the test setup
 	// so we can register parties and their account balances
-	mktsetup.party = execution.NewParty(log, mktsetup.colE, []proto.Market{*mkt}, mktsetup.broker)
 	m, err := execution.NewMarket(
 		log,
 		risk.NewDefaultConfig(),
 		positions.NewDefaultConfig(),
 		settlement.NewDefaultConfig(),
 		matching.NewDefaultConfig(),
+		fee.NewDefaultConfig(),
 		mktsetup.colE,
-		mktsetup.party, // party-engine here!
 		mkt,
 		time.Now(),
 		mktsetup.broker,
@@ -156,7 +174,7 @@ func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 		Symbol: asset,
 	})
 	_, _, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
-	if len(mktsetup.broker.GetAccounts()) != current+2 {
+	if len(mktsetup.broker.GetAccounts()) != current+5 {
 		reporter.err = fmt.Errorf("error creating system accounts")
 	}
 	return reporter.err
@@ -208,12 +226,9 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 				Balance: generalBal,
 			},
 		}
-		notif := &proto.NotifyTraderAccount{
-			TraderID: row.Cells[0].Value,
-			Amount:   uint64(generalBal),
-		}
+		trader := row.Cells[0].Value
 		// we should be able to safely ignore the error, if this fails, the tests will
-		_ = mktsetup.party.NotifyTraderAccountWithTopUpAmount(context.Background(), notif, generalBal)
+		_ = mktsetup.colE.Deposit(context.Background(), trader, asset, generalBal)
 	}
 	return nil
 }

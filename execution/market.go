@@ -12,6 +12,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -51,6 +52,8 @@ var (
 	ErrInvalidOrderType = errors.New("invalid order type")
 	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
+	// ErrInvalidMarketType is returned if the order is not valid for the current market type (auction/continuous)
+	ErrInvalidMarketType = errors.New("invalid market type")
 
 	networkPartyID = "network"
 )
@@ -76,13 +79,15 @@ type Market struct {
 	risk               *risk.Engine
 	position           *positions.Engine
 	settlement         *settlement.Engine
+	fee                *fee.Engine
 
 	// deps engines
-	collateral  *collateral.Engine
-	partyEngine *Party
+	collateral *collateral.Engine
 
 	broker Broker
 	closed bool
+
+	parties map[string]struct{}
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -116,8 +121,8 @@ func NewMarket(
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
+	feeConfig fee.Config,
 	collateralEngine *collateral.Engine,
-	partyEngine *Party,
 	mkt *types.Market,
 	now time.Time,
 	broker Broker,
@@ -165,6 +170,11 @@ func NewMarket(
 	)
 	positionEngine := positions.New(log, positionConfig)
 
+	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to instanciate fee engine")
+	}
+
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -178,8 +188,9 @@ func NewMarket(
 		position:           positionEngine,
 		settlement:         settleEngine,
 		collateral:         collateralEngine,
-		partyEngine:        partyEngine,
 		broker:             broker,
+		fee:                feeEngine,
+		parties:            map[string]struct{}{},
 	}
 	return market, nil
 }
@@ -196,6 +207,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MidPrice:        (bestBidPrice + bestOfferPrice) / 2,
 		MarkPrice:       m.markPrice,
 		Timestamp:       m.currentTime.UnixNano(),
+		OpenInterest:    m.position.GetOpenInterest(),
 	}
 }
 
@@ -204,16 +216,16 @@ func (m *Market) GetMarketData() types.MarketData {
 func (m *Market) ReloadConf(
 	matchingConfig matching.Config,
 	riskConfig risk.Config,
-	collateralConfig collateral.Config,
 	positionConfig positions.Config,
 	settlementConfig settlement.Config,
+	feeConfig fee.Config,
 ) {
 	m.log.Info("reloading configuration")
 	m.matching.ReloadConf(matchingConfig)
 	m.risk.ReloadConf(riskConfig)
 	m.position.ReloadConf(positionConfig)
 	m.settlement.ReloadConf(settlementConfig)
-	m.collateral.ReloadConf(collateralConfig)
+	m.fee.ReloadConf(feeConfig)
 }
 
 // GetID returns the id of the given market
@@ -250,72 +262,112 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 			logging.String("market-id", m.mkt.Id))
 	}
 
-	if closed {
-		// call settlement and stuff
-		positions, err := m.settlement.Settle(t, m.markPrice)
+	timer.EngineTimeCounterAdd()
+
+	if !closed {
+		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
+		return
+	}
+	// market is closed, final settlement
+	// call settlement and stuff
+	positions, err := m.settlement.Settle(t, m.markPrice)
+	if err != nil {
+		m.log.Error(
+			"Failed to get settle positions on market close",
+			logging.Error(err),
+		)
+	} else {
+		transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
 		if err != nil {
 			m.log.Error(
-				"Failed to get settle positions on market close",
+				"Failed to get ledger movements after settling closed market",
+				logging.String("market-id", m.GetID()),
 				logging.Error(err),
 			)
 		} else {
-			transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
+			// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
+			// this will be next block
+			evt := events.NewTransferResponse(ctx, transfers)
+			m.broker.Send(evt)
+			if m.log.GetLevel() == logging.DebugLevel {
+				// use transfers, unused var thingy
+				for _, v := range transfers {
+					if m.log.GetLevel() == logging.DebugLevel {
+						m.log.Debug(
+							"Got transfers on market close",
+							logging.String("transfer", fmt.Sprintf("%v", *v)),
+							logging.String("market-id", m.GetID()))
+					}
+				}
+			}
+
+			asset, _ := m.mkt.GetAsset()
+			parties := make([]string, 0, len(m.parties))
+			for k, _ := range m.parties {
+				parties = append(parties, k)
+			}
+
+			clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 			if err != nil {
-				m.log.Error(
-					"Failed to get ledger movements after settling closed market",
+				m.log.Error("Clear market error",
 					logging.String("market-id", m.GetID()),
-					logging.Error(err),
-				)
+					logging.Error(err))
 			} else {
-				// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
-				// this will be next block
-				evt := events.NewTransferResponse(ctx, transfers)
+				evt := events.NewTransferResponse(ctx, clearMarketTransfers)
 				m.broker.Send(evt)
 				if m.log.GetLevel() == logging.DebugLevel {
 					// use transfers, unused var thingy
-					for _, v := range transfers {
+					for _, v := range clearMarketTransfers {
 						if m.log.GetLevel() == logging.DebugLevel {
 							m.log.Debug(
-								"Got transfers on market close",
+								"Market cleared with success",
 								logging.String("transfer", fmt.Sprintf("%v", *v)),
 								logging.String("market-id", m.GetID()))
-						}
-					}
-				}
-
-				asset, _ := m.mkt.GetAsset()
-				// FIXME(JEREMY): once deposit and withdrawal
-				// are implemented with the new method, the partyEngine
-				// will be removed, this call will need to be changed to
-				// use a slice of parties stored in the current market
-				// until we refactor collateral engine to work per market maybe
-				parties := m.partyEngine.GetByMarket(m.GetID())
-				clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
-				if err != nil {
-					m.log.Error("Clear market error",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				} else {
-					evt := events.NewTransferResponse(ctx, clearMarketTransfers)
-					m.broker.Send(evt)
-					if m.log.GetLevel() == logging.DebugLevel {
-						// use transfers, unused var thingy
-						for _, v := range clearMarketTransfers {
-							if m.log.GetLevel() == logging.DebugLevel {
-								m.log.Debug(
-									"Market cleared with success",
-									logging.String("transfer", fmt.Sprintf("%v", *v)),
-									logging.String("market-id", m.GetID()))
-							}
 						}
 					}
 				}
 			}
 		}
 	}
-
-	timer.EngineTimeCounterAdd()
 	return
+}
+
+func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
+	_, perr := m.position.UnregisterOrder(order)
+	if perr != nil {
+		m.log.Error("Unable to unregister potential trader positions",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+	}
+	order.Status = types.Order_STATUS_REJECTED
+	if oerr, ok := types.IsOrderError(err); ok {
+		order.Reason = oerr
+	} else {
+		// should not happend but still...
+		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
+	}
+	m.broker.Send(events.NewOrderEvent(ctx, order))
+	if m.log.GetLevel() == logging.DebugLevel {
+		m.log.Debug("Failure after submitting order to matching engine",
+			logging.Order(*order),
+			logging.Error(err))
+	}
+	return err
+}
+
+// EnterAuction : Prepare the order book to be run as an auction
+func (m *Market) EnterAuction(ctx context.Context) {
+	// Change market type to auction
+
+	// Check the orderbook for any non auction friendly orders
+	// and move them into a parking area
+}
+
+// LeaveAuction : Return the orderbook and market to continuous trading
+func (m *Market) LeaveAuction(ctx context.Context) {
+	// Change market type to continuous trading
+
+	// Move any parked orders back into the orderbook
 }
 
 // SubmitOrder submits the given order
@@ -331,6 +383,15 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	m.idgen.SetID(order)
 	order.Version = InitialOrderVersion
 	order.Status = types.Order_STATUS_ACTIVE
+
+	// Check we are allowed to handle this order type with the current market status
+	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
+		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA) {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return nil, ErrInvalidMarketType
+	}
 
 	// Check the expiry time is valid
 	if order.ExpiresAt > 0 && order.ExpiresAt < order.CreatedAt {
@@ -379,8 +440,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// this party and the market Asset
 	// Verify and add new parties
 	// party, _ := m.parties.GetByID(order.PartyID)
-	party, _ := m.partyEngine.GetByMarketAndID(m.GetID(), order.PartyID)
-	if party == nil {
+	asset, _ := m.mkt.GetAsset()
+	if !m.collateral.HasGeneralAccount(order.PartyID, asset) {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INVALID_PARTY_ID
@@ -391,7 +452,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// ensure party have a general account, and margin account is / can be created
-	asset, _ := m.mkt.GetAsset()
 	_, err := m.collateral.CreatePartyMarginAccount(ctx, order.PartyID, order.MarketID, asset)
 	if err != nil {
 		m.log.Error("Margin account verification failed",
@@ -405,6 +465,10 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrMissingGeneralAccountForParty
 	}
+
+	// from this point we know the party have a margin account
+	// we had it to the list of parties.
+	m.addParty(order.PartyID)
 
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
@@ -423,7 +487,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(ctx, pos, order); err != nil {
+	newOrderMarginRiskRollback, err := m.checkMarginForOrder(ctx, pos, order)
+	if err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -440,6 +505,18 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
+	}
+
+	// first we call the order book to get the list of trades
+	trades, err := m.matching.GetTrades(order)
+	if err != nil {
+		return nil, m.unregisterAndReject(ctx, order, err)
+	}
+
+	// try to apply fees on the trade
+	err = m.applyFees(ctx, order, trades)
+	if err != nil {
+		return nil, err
 	}
 
 	// Send the aggressive order into matching engine
@@ -480,15 +557,133 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
 		}
+
+		// if the specific case we are in and FOK or IOC
+		// we moved some margin, which may never be released
+		// as we never create a position in the settlement engine.
+		// to be fair the monies would be released later on if the
+		// party place an order which stay in the book / trade.
+		// but in the case the party is actually neve used again
+		// the funds woulds be locked on the margin account until
+		// the market is being closed.
+		// we also check the margin risk update was not nil, as it's not
+		// guaranteed the trader had to pay any margin
+		if order.Remaining == order.Size && newOrderMarginRiskRollback != nil {
+			transfers, err := m.collateral.RollbackMarginUpdateOnOrder(
+				ctx, m.GetID(), asset, newOrderMarginRiskRollback)
+			if err != nil {
+				m.log.Error("Unable to rollback risk updates",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			evt := events.NewTransferResponse(
+				ctx, []*types.TransferResponse{transfers})
+			m.broker.Send(evt)
+		}
+
 	}
 
 	// Insert aggressive remaining order
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
+	// we replace the trades in the confirmation with the one we got initially
+	// the contains the fees informations
+	confirmation.Trades = trades
+
 	m.handleConfirmation(ctx, order, confirmation)
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
+}
+
+func (m *Market) addParty(party string) {
+	if _, ok := m.parties[party]; !ok {
+		m.parties[party] = struct{}{}
+	}
+}
+
+func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
+	// if we have some trades, let's try to get the fees
+	// FIXME(): change the following code with this check:
+	// we de not take any fees if the market was on a open auction
+	// if len(trades) <= 0 || m.IsInMarketOpenAuctionMode {
+	if len(trades) <= 0 {
+		return nil
+	}
+
+	// first we get the fees for these trades
+	var (
+		fees events.FeesTransfer
+		err  error
+	)
+
+	switch m.mkt.TradingMode.(type) {
+	case *types.Market_Continuous:
+		// change this by the following check:
+		// if m.NotInMonitoringAuctionMode {
+		if true {
+			fees, err = m.fee.CalculateForContinuousMode(trades)
+		}
+		// FIXME(): uncomment this once we have implemented
+		// monitoring auction mode
+		//  Use this once we implemented Opening auction
+		// } else {
+		// 	fees, err = m.fee.CalculateForAuctionMode(trades)
+		// }
+
+		// FIXME(): uncomment this once we have implemented
+		// FrequentBatchesAuctions
+		// case *types.Market_FrequentBatchesAuctions:
+		// 	fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
+	}
+
+	if err != nil {
+		return m.unregisterAndReject(ctx, order, err)
+	}
+	_ = fees
+
+	var (
+		transfers []*types.TransferResponse
+		asset, _  = m.mkt.GetAsset()
+	)
+	switch m.mkt.TradingMode.(type) {
+	case *types.Market_Continuous:
+		// change this by the following check:
+		// if m.NotInMonitoringAuctionMode {
+		if true {
+			transfers, err = m.collateral.TransferFeesContinuousTrading(
+				ctx, m.GetID(), asset, fees)
+		}
+		// FIXME():
+		//  Use this once we implemented Opening auction
+		// } else {
+		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
+		// 		ctx, m.GetID(), asset, fees)
+		// }
+
+		// FIXME(): uncomment once Frequent batches auctions is implemented
+		// case *types.Market_FrequentBatchesAuctions:
+		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
+		// 		ctx, m.GetID(), asset, fees)
+		// }
+	}
+
+	if err != nil {
+		m.log.Error("unable to transfer fees for trades",
+			logging.String("order-id", order.Id),
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+		return m.unregisterAndReject(ctx,
+			order, types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES)
+	}
+
+	// send transfers through the broker
+	if err == nil && len(transfers) > 0 {
+		evt := events.NewTransferResponse(ctx, transfers)
+		m.broker.Send(evt)
+	}
+
+	return nil
 }
 
 func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, confirmation *types.OrderConfirmation) {
@@ -728,6 +923,27 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		}
 	}
 
+	asset, _ := m.mkt.GetAsset()
+
+	// pay the fees now
+	fees, err := m.fee.CalculateFeeForPositionResolution(
+		confirmation.Trades, closedMPs)
+	if err != nil {
+		m.log.Error("unable to calculate fees for positions resolutions",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return err
+	}
+	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+	if err != nil {
+		m.log.Error("unable to transfer fees for positions resolutions",
+			logging.Error(err),
+			logging.String("market-id", m.GetID()))
+		return err
+	}
+	// send transfer to buffer
+	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+
 	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
@@ -751,6 +967,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(trade)
+			m.settlement.AddTrade(trade)
 		}
 		m.broker.SendBatch(tradeEvts)
 	}
@@ -766,7 +983,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// insurance pool, which needs to happen before we settle the non-distressed traders
 	m.settlement.RemoveDistressed(ctx, closed)
 	closedMPs = m.position.RemoveDistressed(closedMPs)
-	asset, _ := m.mkt.GetAsset()
 	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
 	if err != nil {
 		m.log.Error(
@@ -905,18 +1121,23 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 
+	// this is a rollback transfer to be used in case the order do not
+	// trade and do not stay in the book to prevent for margin being
+	// locked in the margin account forever
+	var riskRollback *types.Transfer
+
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
-		return errors.Wrap(err, "unable to get risk updates")
+		return nil, errors.Wrap(err, "unable to get risk updates")
 	}
 
 	e, err := m.collateral.GetPartyMargin(pos, asset, m.GetID())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
@@ -928,7 +1149,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 				logging.Error(err),
 			)
 		}
-		return ErrMarginCheckInsufficient
+		return nil, ErrMarginCheckInsufficient
 	} else if riskUpdate == nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("No risk updates",
@@ -939,7 +1160,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		// if it does fail, we need to return an error straight away
 		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
 		if err != nil {
-			return errors.Wrap(err, "unable to get risk updates")
+			return nil, errors.Wrap(err, "unable to get risk updates")
 		}
 		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{transfer})
 		m.broker.Send(evt)
@@ -954,7 +1175,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 					logging.String("market-id", m.GetID()))
 			}
 
-			return ErrMarginCheckInsufficient
+			return nil, ErrMarginCheckInsufficient
 		}
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -967,8 +1188,21 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 				)
 			}
 		}
+
+		if len(transfer.Transfers) > 0 {
+			// we create the rollback transfer here, so it can be used in case of.
+			riskRollback = &types.Transfer{
+				Owner: riskUpdate.Party(),
+				Amount: &types.FinancialAmount{
+					Amount: int64(transfer.Transfers[0].Amount),
+					Asset:  riskUpdate.Asset(),
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+				MinAmount: int64(transfer.Transfers[0].Amount),
+			}
+		}
 	}
-	return nil
+	return riskRollback, nil
 }
 
 // this function handles moving money after settle MTM + risk margin updates
@@ -1288,7 +1522,11 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// Perform check and allocate margin
-	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+	// ignore rollback return here, as if we amend it means the order
+	// is already on the book, not rollback will be needed, the margin
+	// will be updated later on for sure.
+
+	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 		// Undo the position registering
 		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 		if err1 != nil {
@@ -1308,7 +1546,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
-		confirmation, err := m.orderCancelReplace(existingOrder, amendedOrder)
+		confirmation, err := m.orderCancelReplace(ctx, existingOrder, amendedOrder)
 		if err == nil {
 			m.handleConfirmation(ctx, amendedOrder, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
@@ -1421,7 +1659,7 @@ func (m *Market) applyOrderAmendment(
 	return
 }
 
-func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
+func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderCancelReplace")
 
 	if m.log.GetLevel() == logging.DebugLevel {
@@ -1441,7 +1679,22 @@ func (m *Market) orderCancelReplace(existingOrder, newOrder *types.Order) (conf 
 			err = fmt.Errorf("order cancellation failed (no error given)")
 		}
 	} else {
+		// calculates the fees
+		trades, err := m.matching.GetTrades(newOrder)
+		if err != nil {
+			return nil, m.unregisterAndReject(ctx, newOrder, err)
+		}
+
+		// try to apply fees on the trade
+		err = m.applyFees(ctx, newOrder, trades)
+		if err != nil {
+			return nil, err
+		}
+
 		conf, err = m.matching.SubmitOrder(newOrder)
+		// replace the trades in the confirmation to have
+		// the ones with the fees embbeded
+		conf.Trades = trades
 	}
 
 	timer.EngineTimeCounterAdd()

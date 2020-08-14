@@ -102,15 +102,20 @@ type Mutation {
     "The signed transaction"
     data: String!
     "The signature"
-    sig: String!
-    "address is one of 2 possible auth values, currently only pubkey is used"
-    address: String
-    "pubkey is used to verify the signature, currently the only supported one"
-    pubkey: String
+    sig: SignatureInput!
   ): TransactionSubmitted!
 
 }
 
+"A signature to be bundled with a transaction"
+input SignatureInput {
+  "The signature, base64 encoded"
+  sig: String!
+  "The algorithm used to produice the signature"
+  algo: String!
+  "The version of the signature"
+  version: Int!
+}
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
 type Subscription {
@@ -196,7 +201,7 @@ type MarginLevels {
   "market in which the margin is required for this trader"
   market: Market!
   "asset for the current margins"
-  asset: String!
+  asset: Asset!
   "id of the trader for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned int actually)"
@@ -234,6 +239,12 @@ type MarketData {
   midPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
+  "the sum of the size of all positions greater than 0."
+  openInterest: String!
+  "time in seconds until the end of the current auction, 0 if not in auction mode"
+  auctionEnd: Int
+  "time in seconds until the start of the next auction (0 if no new auction scheduled)"
+  auctionStart: Int
 }
 
 type PreparedSubmitOrder {
@@ -307,7 +318,7 @@ type Query {
     last: Int): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReferenceID(
+  orderByReference(
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
@@ -386,6 +397,9 @@ type Asset {
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
+
+  "The infrastructure fee account for this asset"
+  infrastructureFeeAccount: Account!
 }
 
 "One of the possible asset sources"
@@ -526,7 +540,7 @@ type Statistics {
 "A mode where Vega try to execute order as soon as they are received"
 type ContinuousTrading {
   "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  tickSize: String!
 }
 
 "Frequent batch auctions trading mode"
@@ -534,7 +548,7 @@ type DiscreteTrading {
   "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
   "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  tickSize: String!
 }
 
 union TradingMode = ContinuousTrading | DiscreteTrading
@@ -580,7 +594,7 @@ union RiskModel = LogNormalRiskModel | SimpleRiskModel
 type InstrumentMetadata {
 
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
-  tags: [String]!
+  tags: [String!]
 }
 
 "An Ethereum oracle"
@@ -602,7 +616,7 @@ type Future {
   maturity: String!
 
   "The name of the asset (string)"
-  asset: String!
+  asset: Asset!
 
   "The oracle used for this product (Oracle union)"
   oracle: Oracle!
@@ -663,14 +677,33 @@ type TradableInstrument {
   marginCalculator: MarginCalculator
 }
 
+"The factors applied to calculate the fees"
+type FeeFactors {
+  "The factor applied to calculate MakerFees, a non-negative float"
+  makerFee: String!
+  "The factor applied to calculate InfrastructureFees, a non-negative float"
+  infrastructureFee: String!
+  "The factor applied to calculate LiquidityFees, a non-negative float"
+  liquidityFee: String!
+}
+
+"The fees applicable to a market"
+type Fees {
+  "The factors used to calculate the different fees"
+  factors: FeeFactors!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
   "Market ID"
   id: String!
 
-	# Market full name
+  "Market full name"
   name: String!
+
+  "Fees related data"
+  fees: Fees!
 
   "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
@@ -698,8 +731,6 @@ type Market {
 
   "Orders on a market"
   orders (
-    "Filter open orders only"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -735,12 +766,6 @@ type Market {
     "Interval of the candles"
     interval: Interval!
   ): [Candle]
-
-  "Query an order by reference for the given market"
-  orderByReference (
-    "reference of the order"
-    reference: String!
-  ): Order!
 
   "marketData for the given market"
   data: MarketData!
@@ -816,8 +841,6 @@ type Party {
 
   "Orders relating to a party"
   orders(
-    "Is the order still open or not"
-    open: Boolean
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -890,7 +913,7 @@ type Position {
   margins: [MarginLevels!]
 }
 
-"An order in Vega, if active it will be on the OrderBoook for the market"
+"An order in Vega, if active it will be on the OrderBook for the market"
 type Order {
 
   "Hash of the order data"
@@ -936,7 +959,7 @@ type Order {
   type: OrderType
 
   "Reason for the order to be rejected"
-  rejectionReason: RejectionReason
+  rejectionReason: OrderRejectionReason
 
   "Version of this order, counts the number of amends"
   version: String!
@@ -980,7 +1003,32 @@ type Trade {
 
   "The type of trade"
   type: TradeType!
+
+  "The fee paid by the buyer side of the trade"
+  buyerFee: TradeFee!
+
+  "The fee paid by the seller side of the trade"
+  sellerFee: TradeFee!
+
+  "The batch in witch the buyer order was submitted (applies only for Auctions modes)"
+  buyerAuctionBatch: Int
+
+  "The batch in witch the seller order was submitted (applies only for Auctions modes)"
+  sellerAuctionBatch: Int
 }
+
+"The fee paid by the party when a trade occurs"
+type TradeFee {
+  "The maker fee, aggressive party to the other party (the one who had an order in the book)"
+  makerFee: String!
+
+  "The infrastructure fee, a fee paid to the node runner to maintain the vega network"
+  infrastructureFee: String!
+
+  "The fee paid to the market makers to provide liquidity in the market"
+  liquidityFee: String!
+}
+
 
 "Valid trade types"
 enum TradeType {
@@ -1000,7 +1048,7 @@ type Account {
   "Balance as string - current account balance (approx. as balances can be updated several times per second)"
   balance: String!
   "Asset, the 'currency'"
-  asset: String!
+  asset: Asset!
   "Account type (General, Margin, etc)"
   type: AccountType!
   "Market (only relevant to margin accounts)"
@@ -1024,6 +1072,12 @@ enum OrderTimeInForce {
     NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
     """
     GTT
+
+    "This order is only accepted during an auction period"
+    GFA
+
+    "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
+    GFN
 }
 
 "Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."
@@ -1054,8 +1108,44 @@ enum OrderStatus {
   PartiallyFilled
 }
 
+"Reason for the proposal beeing rejected by the core node"
+enum ProposalRejectionReason {
+  "The specified close time is too early based on network parameters"
+  CloseTimeTooSoon
+  "The specified close time is too late based on network parameters"
+  CloseTimeTooLate
+  "The specified enactment time is too early based on network parameters"
+  EnactTimeTooSoon
+  "The specified enactment time is too late based on network parameters"
+  EnactTimeTooLate
+  "The proposer for this proposal as insufficient token"
+  InsufficientTokens
+  "The instrument quote name and base name were the same"
+  InvalidInstrumentSecurity
+  "The proposal has no product specified"
+  NoProduct
+  "The specified product is not supported"
+  UnuspportedProduct
+  "Invalid future maturity timestamp (expect RFC3339)"
+  InvalidFutureMaturityTimestamp
+  "The product maturity is already in the past"
+  ProductMaturityIsPassed
+  "The proposal has no trading mode"
+  NoTradingMode
+  "The proposal has an unsupported trading mode"
+  UnsupportedTradingMode
+  "The proposal failed node validation"
+  NodeValidationFailed
+  "A builtin asset configuration is missing"
+  MissingBuiltinAssetField
+  "The ERC20 contract address is missing from an ERC20 asset proposal"
+  MissingERC20ContractAddress
+  "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
+  IncompatibleTimestamps
+}
+
 "Reason for the order beeing rejected by the core node"
-enum RejectionReason {
+enum OrderRejectionReason {
 
   "Market id is invalid"
   InvalidMarketId
@@ -1113,6 +1203,12 @@ enum RejectionReason {
 
   "Invalid type"
   InvalidType
+
+  "Self trading"
+  SelfTrading
+
+  "Insufficient funds to pay fees"
+  InsufficientFundsToPayFees
 }
 
 enum OrderType {
@@ -1127,6 +1223,15 @@ enum OrderType {
   similar to MARKET order, only no party is attached to the order.
   """
   NETWORK
+}
+
+"What market state are we in"
+enum MarketState {
+  "Continuous trading where orders are processed and potentially matched on arrival"
+  CONTINUOUS
+
+  "Auction trading where orders are uncrossed at the end of the auction period"
+  AUCTION
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -1169,6 +1274,10 @@ enum AccountType {
   Margin
   "General account - the account containing 'unused' collateral for traders"
   General
+  "Infrastructure fee account - the account where all infrastructure fees are collected"
+  FeeInfrastructure
+  "Liquidity fee account - the account where all infrastructure fees are collected"
+  FeeLiquidity
 }
 
 input SimpleRiskModelParamsInput {
@@ -1215,7 +1324,7 @@ type FutureProduct {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
-  asset: String!
+  asset: Asset!
 }
 
 input InstrumentConfigurationInput {
@@ -1246,16 +1355,16 @@ type InstrumentConfiguration {
 
 "A mode where Vega try to execute order as soon as they are received"
 input ContinuousTradingInput {
-  "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  "Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored"
+  tickSize: String
 }
 
 "Frequent batch auctions trading mode"
 input DiscreteTradingInput {
   "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
   duration: Int!
-  "Size of an increment in price in terms of the quote currency"
-  tickSize: Int!
+  "Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored"
+  tickSize: String
 }
 
 """
@@ -1269,7 +1378,9 @@ input NewMarketInput {
   "New market risk configuration"
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
+  "The proposed duration for the opening auction for this market in seconds"
+  openingAuctionDurationSecs: Int
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -1285,7 +1396,7 @@ type NewMarket {
   "New market risk configuration"
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
-  metadata: [String]!
+  metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
 }
@@ -1301,6 +1412,11 @@ input UpdateMarketInput {
   marketId: String!
 }
 
+"A new asset proposal change"
+type NewAsset {
+  "the source of the new Asset"
+  source: AssetSource!
+}
 
 "Allows submitting a proposal for changing governance network parameters"
 type UpdateNetwork {
@@ -1401,7 +1517,7 @@ input UpdateNetworkInput {
 }
 
 
-union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -1454,6 +1570,40 @@ input ProposalTermsInput {
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
   updateNetwork: UpdateNetworkInput
+
+  "a new Asset proposal, this will create a new asset to be used in the vega network"
+  newAsset: NewAssetInput
+
+}
+
+"A new asset to be added into vega"
+input NewAssetInput {
+  "A new builtin assed to be created"
+  builtinAsset: BuiltinAssetInput
+
+  "A new ERC20 asset to be created"
+  erc20: ERC20Input
+}
+
+"An asset originated from an Ethereum ERC20 Token"
+input ERC20Input {
+  "The address of the erc20 contract"
+  contractAddress: String!
+}
+
+"A vega builtin asset, mostly for testing purpose"
+input BuiltinAssetInput {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
 }
 
 """
@@ -1476,6 +1626,8 @@ enum ProposalState {
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
+  "Proposal is waiting for the node to run validation"
+  WaitingForNodeVote
 }
 
 type Proposal {
@@ -1496,6 +1648,9 @@ type Proposal {
   yesVotes: [Vote]
   "No votes cast for this proposal"
   noVotes: [Vote]
+
+  "Reason for the proposal to be rejected by the core"
+  rejectionReason: ProposalRejectionReason
 }
 
 type PreparedProposal {

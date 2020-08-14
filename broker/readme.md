@@ -31,7 +31,7 @@ Subscribers implement a fairly simple interface:
 ```go
 type Subscriber interface {
     Ack() bool
-	Push(val events.Event)
+	Push(val ...events.Event)
 	Skip() <-chan struct{}
 	Closed() <-chan struct{}
 	C() chan<- events.Event
@@ -43,7 +43,7 @@ type Subscriber interface {
 
 * `Ack()`: Indicates whether or not this subscriber "Ack's" the events it receives. In this case: the event has to be passed to the `Push` function.
 * `Types`: The broker uses this call to determine what events this subscriber wants to receive.
-* `Push`: A required subscriber will receive all its events from the broker through a normal function call. This ensures the event is indeed received
+* `Push`: A required subscriber will receive all its events from the broker through a normal function call. This ensures the event is indeed received. This function accepts one or more events. If `SendBatch()` was called on the broker, ack'ing subscribers will receive the entire batch of events in a single call.
 * `C`: This is used for non-required subscribers. This returns a write channel where the prober attempts to push an event onto. If this fails (because the buffer is full), the event is dropped for that subscriber
 * `Closed`: A subscriber can be halted (if it's no longer needed). This function will return a closed channel indicating that this subscriber is redundant, and should be removed
 * `Skip`: If a subscriber only periodically needs to get data, we kan keep it registered, but put it in a _"pauzed"_ state. A paused subscriber will return a closed channel for as long as we're not interested in receiving data.

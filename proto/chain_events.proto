@@ -3,8 +3,6 @@ syntax = "proto3";
 package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
-import "proto/assets.proto";
-
 // A deposit for an vega builtin asset
 message BuiltinAssetDeposit {
   // A vega network internal asset ID
@@ -166,6 +164,9 @@ message ChainEvent {
   // The ID of the transaction in which the things happened
   // usually a hash
   string txID = 1;
+
+  // Arbitrary one-time integer used to prevent replay attacks
+  uint64 nonce = 2;
 
   oneof event {
     BuiltinAssetEvent builtin = 1001;

@@ -15,7 +15,76 @@
     "application/json"
   ],
   "paths": {
-    "/governance/proposals": {
+    "/assets": {
+      "get": {
+        "summary": "Get the list of all assets in vega",
+        "operationId": "Assets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAssetsResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/assets/{ID}": {
+      "get": {
+        "summary": "Get an asset by its ID",
+        "operationId": "AssetByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiAssetByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "description": "ID of the asset to get",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/assets/{asset}/infrastructureFeeAccount": {
+      "get": {
+        "summary": "Get the list of infrastructure fees accounts filter eventually by assets",
+        "operationId": "FeeInfrastructureAccounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiFeeInfrastructureAccountsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "asset",
+            "description": "an empty string to return all accounts\nan asset ID to return a single infrastructure fee\nfee account for a given asset",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/governance/prepare/proposal": {
       "post": {
         "summary": "Prepare proposal that can be sent out to the chain (via SubmitTransaction)",
         "operationId": "PrepareProposal",
@@ -278,13 +347,6 @@
             "required": false,
             "type": "boolean",
             "format": "boolean"
-          },
-          {
-            "name": "open",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
           }
         ],
         "tags": [
@@ -394,7 +456,51 @@
         ]
       }
     },
-    "/orders/prepare": {
+    "/orders/prepare/amend": {
+      "post": {
+        "summary": "Amend an Order",
+        "operationId": "PrepareAmendOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareAmendOrderResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiAmendOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/cancel": {
+      "post": {
+        "summary": "Cancel an Order",
+        "operationId": "PrepareCancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareCancelOrderResponse"
+            }
+          }
+        },
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/orders/prepare/submit": {
       "post": {
         "summary": "Prepare a submit order request",
         "operationId": "PrepareSubmitOrder",
@@ -414,77 +520,6 @@
             "schema": {
               "$ref": "#/definitions/apiSubmitOrderRequest"
             }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/prepare/{amendment.orderID}": {
-      "put": {
-        "summary": "Amend an Order",
-        "operationId": "PrepareAmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareAmendOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "amendment.orderID",
-            "description": "required to find the order, not being updated",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiAmendOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/orders/prepare/{cancellation.orderID}": {
-      "delete": {
-        "summary": "Cancel an Order",
-        "operationId": "PrepareCancelOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareCancelOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "cancellation.orderID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.marketID",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "cancellation.partyID",
-            "in": "query",
-            "required": false,
-            "type": "string"
           }
         ],
         "tags": [
@@ -657,6 +692,7 @@
           },
           {
             "name": "type",
+            "description": " - ACCOUNT_TYPE_UNSPECIFIED: the default variant for this enum\n - ACCOUNT_TYPE_INSURANCE: This account is created to hold the insurance pool funds of a market.\n - ACCOUNT_TYPE_SETTLEMENT: This account is created to hold fund while settlement or mtm occur.\n - ACCOUNT_TYPE_MARGIN: A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change\n - ACCOUNT_TYPE_GENERAL: A party will have multiple general accounts, one for each assets they want\nto trade with. This is the account where the funds are initially deposited\nor withdrawn from. It's also the account where funds are taken to fullfill\nmargin requirement or fees\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: This account is created to hold fees earned for providing infrastructure\n - ACCOUNT_TYPE_FEES_LIQUIDITY: This account is created to hold fees earned for providing liquidity\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned for placing orders that sit on the book",
             "in": "query",
             "required": false,
             "type": "string",
@@ -665,7 +701,10 @@
               "ACCOUNT_TYPE_INSURANCE",
               "ACCOUNT_TYPE_SETTLEMENT",
               "ACCOUNT_TYPE_MARGIN",
-              "ACCOUNT_TYPE_GENERAL"
+              "ACCOUNT_TYPE_GENERAL",
+              "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
+              "ACCOUNT_TYPE_FEES_LIQUIDITY",
+              "ACCOUNT_TYPE_FEES_MAKER"
             ],
             "default": "ACCOUNT_TYPE_UNSPECIFIED"
           },
@@ -751,13 +790,6 @@
             "required": false,
             "type": "boolean",
             "format": "boolean"
-          },
-          {
-            "name": "open",
-            "in": "query",
-            "required": false,
-            "type": "boolean",
-            "format": "boolean"
           }
         ],
         "tags": [
@@ -789,6 +821,49 @@
             "in": "query",
             "required": false,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/proposals": {
+      "get": {
+        "summary": "Get governance data (proposals and votes) for proposals by party authoring them",
+        "operationId": "GetProposalsByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetProposalsByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "selectInState.value",
+            "description": " - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_WAITING_FOR_NODE_VOTE: waiting for validators validation of the proposal",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "STATE_FAILED",
+              "STATE_OPEN",
+              "STATE_PASSED",
+              "STATE_REJECTED",
+              "STATE_DECLINED",
+              "STATE_ENACTED",
+              "STATE_WAITING_FOR_NODE_VOTE"
+            ],
+            "default": "STATE_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -934,10 +1009,12 @@
         "TIF_GTC",
         "TIF_GTT",
         "TIF_IOC",
-        "TIF_FOK"
+        "TIF_FOK",
+        "TIF_GFA",
+        "TIF_GFN"
       ],
       "default": "TIF_UNSPECIFIED",
-      "description": "See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.\n\n - TIF_UNSPECIFIED: Default value, can be valid for an amend\n - TIF_GTC: good til cancelled\n - TIF_GTT: good til time\n - TIF_IOC: immediate or cancel\n - TIF_FOK: fill or kill",
+      "description": "See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.\n\n - TIF_UNSPECIFIED: Default value, can be valid for an amend\n - TIF_GTC: good til cancelled\n - TIF_GTT: good til time\n - TIF_IOC: immediate or cancel\n - TIF_FOK: fill or kill\n - TIF_GFA: good for auction\n - TIF_GFN: good for normal",
       "title": "Order Time in Force"
     },
     "ProposalState": {
@@ -1006,6 +1083,19 @@
           }
         }
       }
+    },
+    "apiFeeInfrastructureAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          },
+          "title": "A list of infrastructure fee accounts for all\nor a specific asset"
+        }
+      },
+      "title": "Response for the infrastructure fees accounts"
     },
     "apiGetNetworkParametersProposalsResponse": {
       "type": "object",
@@ -1399,6 +1489,15 @@
         }
       }
     },
+    "apiPrepareWithdrawResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "apiPropagateChainEventResponse": {
       "type": "object",
       "properties": {
@@ -1558,9 +1657,13 @@
         "ACCOUNT_TYPE_INSURANCE",
         "ACCOUNT_TYPE_SETTLEMENT",
         "ACCOUNT_TYPE_MARGIN",
-        "ACCOUNT_TYPE_GENERAL"
+        "ACCOUNT_TYPE_GENERAL",
+        "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
+        "ACCOUNT_TYPE_FEES_LIQUIDITY",
+        "ACCOUNT_TYPE_FEES_MAKER"
       ],
-      "default": "ACCOUNT_TYPE_UNSPECIFIED"
+      "default": "ACCOUNT_TYPE_UNSPECIFIED",
+      "title": "- ACCOUNT_TYPE_UNSPECIFIED: the default variant for this enum\n - ACCOUNT_TYPE_INSURANCE: This account is created to hold the insurance pool funds of a market.\n - ACCOUNT_TYPE_SETTLEMENT: This account is created to hold fund while settlement or mtm occur.\n - ACCOUNT_TYPE_MARGIN: A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change\n - ACCOUNT_TYPE_GENERAL: A party will have multiple general accounts, one for each assets they want\nto trade with. This is the account where the funds are initially deposited\nor withdrawn from. It's also the account where funds are taken to fullfill\nmargin requirement or fees\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: This account is created to hold fees earned for providing infrastructure\n - ACCOUNT_TYPE_FEES_LIQUIDITY: This account is created to hold fees earned for providing liquidity\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned for placing orders that sit on the book"
     },
     "vegaAddValidator": {
       "type": "object",
@@ -1596,13 +1699,9 @@
           "format": "uint64",
           "title": "The number of decimal / precision handled by this asset"
         },
-        "builtinAsset": {
-          "$ref": "#/definitions/vegaBuiltinAsset",
-          "title": "A vega builtin asset (for testing purpose)"
-        },
-        "erc20": {
-          "$ref": "#/definitions/vegaERC20",
-          "title": "An ERC20 token based asset"
+        "source": {
+          "$ref": "#/definitions/vegaAssetSource",
+          "title": "The definition of the external source for this asset"
         }
       },
       "title": "The vega representation of an external asset"
@@ -1617,6 +1716,20 @@
           "$ref": "#/definitions/vegaERC20"
         }
       }
+    },
+    "vegaAuctionDuration": {
+      "type": "object",
+      "properties": {
+        "duration": {
+          "type": "string",
+          "format": "int64"
+        },
+        "volume": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "AuctionDuration can be used to configure 3 auction periods:\n1) duration \u003e 0, volume == 0: The auction will last for at least N seconds\n2) Duration == 0, volume \u003e 0: Auction period will end once we can close with given traded volume\n3) Duration \u003e 0 \u0026 volume \u003e 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume"
     },
     "vegaBTCDeposit": {
       "type": "object",
@@ -1709,6 +1822,10 @@
           "type": "string",
           "format": "uint64",
           "title": "The number of decimal / precision handled by this asset"
+        },
+        "maxFaucetAmountMint": {
+          "type": "string",
+          "title": "This is the maximum amount that can be requested by a party through the builtin asset faucet at a time"
         }
       },
       "title": "A vega internal asset"
@@ -1807,6 +1924,11 @@
           "type": "string",
           "title": "The ID of the transaction in which the things happened\nusually a hash"
         },
+        "nonce": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Arbitrary one-time integer used to prevent replay attacks"
+        },
         "builtin": {
           "$ref": "#/definitions/vegaBuiltinAssetEvent"
         },
@@ -1836,8 +1958,7 @@
       "type": "object",
       "properties": {
         "tickSize": {
-          "type": "string",
-          "format": "uint64"
+          "type": "string"
         }
       }
     },
@@ -1850,8 +1971,7 @@
           "title": "Duration in nanoseconds, maximum 1 month (2592000000000000 ns)"
         },
         "tickSize": {
-          "type": "string",
-          "format": "uint64"
+          "type": "string"
         }
       }
     },
@@ -1992,6 +2112,67 @@
           "additionalProperties": {
             "type": "string"
           }
+        }
+      }
+    },
+    "vegaFee": {
+      "type": "object",
+      "properties": {
+        "makerFee": {
+          "type": "string",
+          "format": "uint64",
+          "title": "A fee being paid to the non-aggressor party of the trade"
+        },
+        "infrastructureFee": {
+          "type": "string",
+          "format": "uint64",
+          "title": "A fee being paid to maintaining the vega infrastructure"
+        },
+        "liquidityFee": {
+          "type": "string",
+          "format": "uint64",
+          "title": "A fee being paid to the market makers"
+        }
+      },
+      "title": "The fees being paid by a party, resulting from a trade"
+    },
+    "vegaFeeFactors": {
+      "type": "object",
+      "properties": {
+        "makerFee": {
+          "type": "string"
+        },
+        "infrastructureFee": {
+          "type": "string"
+        },
+        "liquidityFee": {
+          "type": "string"
+        }
+      }
+    },
+    "vegaFeeFactorsConfiguration": {
+      "type": "object",
+      "properties": {
+        "infrastructureFee": {
+          "type": "string",
+          "title": "the infrastructure fee, needs to be a valid float"
+        },
+        "makerFee": {
+          "type": "string",
+          "title": "the maker fee, needs to be a valid float"
+        },
+        "liquidityFee": {
+          "type": "string",
+          "title": "this is the liquidity fee, it needs to be a valid float"
+        }
+      },
+      "title": "FeeFactors set at the network level"
+    },
+    "vegaFees": {
+      "type": "object",
+      "properties": {
+        "factors": {
+          "$ref": "#/definitions/vegaFeeFactors"
         }
       }
     },
@@ -2265,6 +2446,14 @@
           "format": "uint64",
           "title": "the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces`"
         },
+        "fees": {
+          "$ref": "#/definitions/vegaFees",
+          "title": "fees configuration"
+        },
+        "openingAuction": {
+          "$ref": "#/definitions/vegaAuctionDuration",
+          "title": "Specifies how long the opening auction will run (min duration + optionally minimum traded volume)"
+        },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
         },
@@ -2278,34 +2467,57 @@
       "properties": {
         "markPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "the mark price (actually an unsgined int)"
         },
         "bestBidPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the highest price level on an order book for buy orders."
         },
         "bestBidVolume": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the aggregated volume being bid at the best bid price."
         },
         "bestOfferPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the lowest price level on an order book for offer orders."
         },
         "bestOfferVolume": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the aggregated volume being offered at the best offer price."
         },
         "midPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "the arithmetic average of the best bid price and best offer price."
         },
         "market": {
-          "type": "string"
+          "type": "string",
+          "title": "market id of the associated mark price"
         },
         "timestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "time at which this mark price was relevant"
+        },
+        "openInterest": {
+          "type": "string",
+          "format": "uint64",
+          "description": "the sum of the size of all positions greater than 0."
+        },
+        "auctionEnd": {
+          "type": "string",
+          "format": "int64",
+          "title": "time in seconds until the end of the auction (0 if currently not in auction period)"
+        },
+        "auctionStart": {
+          "type": "string",
+          "format": "int64",
+          "title": "time until next auction (used in FBA's) - currently always 0"
         }
       }
     },
@@ -2375,6 +2587,10 @@
         "marginConfiguration": {
           "$ref": "#/definitions/vegaScalingFactors",
           "description": "Scaling factors for all markets created via governance."
+        },
+        "feeFactorsConfiguration": {
+          "$ref": "#/definitions/vegaFeeFactorsConfiguration",
+          "title": "FeeFactors which are not set via proposal"
         }
       }
     },
@@ -2402,14 +2618,6 @@
           "$ref": "#/definitions/vegaInstrumentConfiguration",
           "title": "New market instrument configuration"
         },
-        "simple": {
-          "$ref": "#/definitions/vegaSimpleModelParams",
-          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
-        },
-        "logNormal": {
-          "$ref": "#/definitions/vegaLogNormalRiskModel",
-          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
-        },
         "decimalPlaces": {
           "type": "string",
           "format": "uint64",
@@ -2421,6 +2629,19 @@
             "type": "string"
           },
           "title": "Optional new market meta data, tags"
+        },
+        "openingAuctionDuration": {
+          "type": "string",
+          "format": "int64",
+          "title": "for now, just specify a time for the opening auction to last"
+        },
+        "simple": {
+          "$ref": "#/definitions/vegaSimpleModelParams",
+          "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"
+        },
+        "logNormal": {
+          "$ref": "#/definitions/vegaLogNormalRiskModel",
+          "title": "Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected"
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading"
@@ -2520,6 +2741,11 @@
           "type": "string",
           "format": "uint64",
           "title": "Versioning support for amends, orders start at version 1 and increment\nafter each successful amend"
+        },
+        "batchID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "used internally, for orders submitted during auctions\nto keep track which auction batch this order falls under (required for fees calculation)"
         }
       }
     },
@@ -2588,9 +2814,14 @@
         "ORDER_ERROR_INTERNAL_ERROR",
         "ORDER_ERROR_INVALID_SIZE",
         "ORDER_ERROR_INVALID_PERSISTENCE",
-        "ORDER_ERROR_INVALID_TYPE"
+        "ORDER_ERROR_INVALID_TYPE",
+        "ORDER_ERROR_SELF_TRADING",
+        "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES",
+        "ORDER_ERROR_INCORRECT_MARKET_TYPE"
       ],
-      "default": "ORDER_ERROR_NONE"
+      "default": "ORDER_ERROR_NONE",
+      "description": "- ORDER_ERROR_NONE: Empty default error\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid ID\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size)\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order id)\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order\n - ORDER_ERROR_NOT_FOUND: Order not found in the order book or in order store\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party ID\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0)\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order for the same party\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order",
+      "title": "Set when an order has an issue"
     },
     "vegaOrderSubmission": {
       "type": "object",
@@ -2734,8 +2965,38 @@
         "terms": {
           "$ref": "#/definitions/vegaProposalTerms",
           "description": "Proposal configuration and the actual change that is meant to be executed when proposal is enacted."
+        },
+        "reason": {
+          "$ref": "#/definitions/vegaProposalError",
+          "title": "A reason for the current state of the proposal\nthis may be set in case of REJECTED and FAILED status"
         }
       }
+    },
+    "vegaProposalError": {
+      "type": "string",
+      "enum": [
+        "PROPOSAL_ERROR_UNSPECIFIED",
+        "PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON",
+        "PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE",
+        "PROPOSAL_ERROR_ENACT_TIME_TOO_SOON",
+        "PROPOSAL_ERROR_ENACT_TIME_TOO_LATE",
+        "PROPOSAL_ERROR_INSUFFICIENT_TOKENS",
+        "PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY",
+        "PROPOSAL_ERROR_NO_PRODUCT",
+        "PROPOSAL_ERROR_UNSUPPORTED_PRODUCT",
+        "PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP",
+        "PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED",
+        "PROPOSAL_ERROR_NO_TRADING_MODE",
+        "PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE",
+        "PROPOSAL_ERROR_NODE_VALIDATION_FAILED",
+        "PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD",
+        "PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS",
+        "PROPOSAL_ERROR_INVALID_ASSET",
+        "PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS"
+      ],
+      "default": "PROPOSAL_ERROR_UNSPECIFIED",
+      "description": "- PROPOSAL_ERROR_UNSPECIFIED: default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: the specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: the specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: the specified enact time is too early base on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: the specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: the proposer for this proposal as insufficient token\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: the instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: the proposal has not product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: the specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: the product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: the proposal has not trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: the proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: the proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: a field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: the contract address is missing in the ERC20 asset source\n - PROPOSAL_ERROR_INVALID_ASSET: the asset id refer to no assets in vega\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment)",
+      "title": "A list of possible error which could have happenned\nand the cause for an proposal being rejected of failed"
     },
     "vegaProposalTerms": {
       "type": "object",
@@ -2809,26 +3070,40 @@
       "default": "SIDE_UNSPECIFIED",
       "title": "- SIDE_UNSPECIFIED: Default value, always invalid\n - SIDE_BUY: Buy\n - SIDE_SELL: Sell"
     },
+    "vegaSignature": {
+      "type": "object",
+      "properties": {
+        "sig": {
+          "type": "string",
+          "format": "byte",
+          "title": "The bytes of the signature"
+        },
+        "algo": {
+          "type": "string",
+          "title": "The algorithm used to create the signature"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The version of the signature used to create the signature"
+        }
+      },
+      "title": "A signature to be authenticate a transaction\nand to be verified by the vega network"
+    },
     "vegaSignedBundle": {
       "type": "object",
       "properties": {
-        "data": {
+        "tx": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "title": "the transaction, proto marshalled"
         },
         "sig": {
-          "type": "string",
-          "format": "byte"
-        },
-        "address": {
-          "type": "string",
-          "format": "byte"
-        },
-        "pubKey": {
-          "type": "string",
-          "format": "byte"
+          "$ref": "#/definitions/vegaSignature",
+          "title": "the signature authenticating the transaction"
         }
-      }
+      },
+      "title": "A bundle of a transaction, proto marshalled and it's signature"
     },
     "vegaSimpleModelParams": {
       "type": "object",
@@ -3045,6 +3320,20 @@
         },
         "type": {
           "$ref": "#/definitions/vegaTradeType"
+        },
+        "buyerFee": {
+          "$ref": "#/definitions/vegaFee"
+        },
+        "sellerFee": {
+          "$ref": "#/definitions/vegaFee"
+        },
+        "buyerAuctionBatch": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "sellerAuctionBatch": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
@@ -3134,6 +3423,21 @@
           "type": "string",
           "format": "int64",
           "description": "Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network."
+        }
+      }
+    },
+    "vegaWithdraw": {
+      "type": "object",
+      "properties": {
+        "partyID": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "asset": {
+          "type": "string"
         }
       }
     }

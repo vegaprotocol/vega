@@ -42,13 +42,14 @@ var (
 	ErrChainEventFromNonValidator                   = errors.New("chain event emitted from a non-validator node")
 	ErrUnsupportedChainEvent                        = errors.New("unsupprted chain event")
 	ErrNotAnAssetListChainEvent                     = errors.New("not an asset list chain event")
+	ErrNodeSignatureFromNonValidator                = errors.New("node signature not sent by validator")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	GetTimeLastBatch() (time.Time, error)
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -56,8 +57,6 @@ type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	NotifyTraderAccount(ctx context.Context, notif *types.NotifyTraderAccount) error
-	Withdraw(ctx context.Context, withdraw *types.Withdraw) error
 	Generate() error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
@@ -66,7 +65,6 @@ type ExecutionEngine interface {
 type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.Proposal) error
 	AddVote(context.Context, types.Vote) error
-	AddNodeVote(*types.NodeVote) error
 	OnChainTimeUpdate(context.Context, time.Time) []*governance.ToEnact
 }
 
@@ -100,7 +98,8 @@ type Wallet interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
 type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
-	Get(assetID string) (assets.Asset, error)
+	Get(assetID string) (*assets.Asset, error)
+	IsEnabled(string) bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
@@ -116,6 +115,7 @@ type ValidatorTopology interface {
 	Exists(key []byte) bool
 	Len() int
 	AllPubKeys() [][]byte
+	IsValidator() bool
 }
 
 // Broker - the event bus
@@ -129,6 +129,13 @@ type Broker interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
 	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
+	IsSigned(string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
+}
+
+// ExtResChecker ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc_mock.go -package mocks code.vegaprotocol.io/vega/processor ExtResChecker
+type ExtResChecker interface {
+	AddNodeCheck(ctx context.Context, nv *types.NodeVote) error
 }
 
 // EvtForwarder ...
@@ -145,11 +152,20 @@ type Collateral interface {
 	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
+// Banking ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
+type Banking interface {
+	EnableBuiltinAsset(context.Context, string) error
+	DepositBuiltinAsset(*types.BuiltinAssetDeposit, uint64) error
+	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
+	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
+	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
+}
+
 // Processor handle processing of all transaction sent through the node
 type Processor struct {
 	log *logging.Logger
 	Config
-	isValidator       bool
 	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
@@ -167,10 +183,12 @@ type Processor struct {
 	notary            Notary
 	evtfwd            EvtForwarder
 	col               Collateral
+	erc               ExtResChecker
+	banking           Banking
 }
 
 // NewProcessor instantiates a new transactions processor
-func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, isValidator bool) (*Processor, error) {
+func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeService, stat Stats, cmd Commander, wallet Wallet, assets Assets, top ValidatorTopology, gov GovernanceEngine, broker Broker, notary Notary, evtfwd EvtForwarder, col Collateral, erc ExtResChecker, banking Banking) (*Processor, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -181,23 +199,24 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 	}
 
 	p := &Processor{
-		log:         log,
-		stat:        stat,
-		Config:      config,
-		exec:        exec,
-		time:        ts,
-		wallet:      wallet,
-		assets:      assets,
-		cmd:         cmd,
-		top:         top,
-		isValidator: isValidator,
-		vegaWallet:  vegaWallet,
-		gov:         gov,
-		broker:      broker,
-		idgen:       NewIDGen(),
-		notary:      notary,
-		evtfwd:      evtfwd,
-		col:         col,
+		log:        log,
+		stat:       stat,
+		Config:     config,
+		exec:       exec,
+		time:       ts,
+		wallet:     wallet,
+		assets:     assets,
+		cmd:        cmd,
+		top:        top,
+		vegaWallet: vegaWallet,
+		gov:        gov,
+		broker:     broker,
+		idgen:      NewIDGen(),
+		notary:     notary,
+		evtfwd:     evtfwd,
+		col:        col,
+		erc:        erc,
+		banking:    banking,
 	}
 	ts.NotifyOnTick(p.onTick)
 	return p, nil
@@ -217,7 +236,7 @@ func (p *Processor) Begin() error {
 	if p.previousTimestamp, err = p.time.GetTimeLastBatch(); err != nil {
 		return err
 	}
-	if !p.hasRegistered && p.isValidator && !p.top.Ready() {
+	if !p.hasRegistered && p.top.IsValidator() && !p.top.Ready() {
 		// get our tendermint pubkey
 		chainPubKey := p.top.SelfChainPubKey()
 		if chainPubKey != nil {
@@ -306,14 +325,6 @@ func (p *Processor) ReloadConf(cfg Config) {
 	p.Config = cfg
 }
 
-func (p *Processor) getOrder(payload []byte) (*types.Order, error) {
-	order := &types.Order{}
-	if err := proto.Unmarshal(payload, order); err != nil {
-		return nil, err
-	}
-	return order, nil
-}
-
 func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
 	orderSubmission := &types.OrderSubmission{}
 	err := proto.Unmarshal(payload, orderSubmission)
@@ -356,15 +367,6 @@ func (p *Processor) getOrderAmendment(payload []byte) (*types.OrderAmendment, er
 		return nil, errors.Wrap(err, "error decoding order to proto")
 	}
 	return amendment, nil
-}
-
-func (p *Processor) getNotifyTraderAccount(payload []byte) (*types.NotifyTraderAccount, error) {
-	notif := &types.NotifyTraderAccount{}
-	err := proto.Unmarshal(payload, notif)
-	if err != nil {
-		return nil, errors.Wrap(err, "error decoding order to proto")
-	}
-	return notif, nil
 }
 
 func (p *Processor) getWithdraw(payload []byte) (*types.Withdraw, error) {
@@ -483,6 +485,16 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 			return ErrVoteSubmissionPartyAndPubKeyDoesNotMatch
 		}
 		return nil
+	case blockchain.NodeVoteCommand:
+		_, err := p.getNodeVote(data)
+		if err != nil {
+			return err
+		}
+		// partyID is hex encoded pubkey
+		// if vote.PartyID != hex.EncodeToString(key) {
+		// return ErrNodeVote
+		// }
+		return nil
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
@@ -506,11 +518,19 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 		if err != nil {
 			return err
 		}
+		// reject if the node signature is not coming from a validator
+		if !p.top.Exists(key) {
+			return ErrNodeSignatureFromNonValidator
+		}
 		return nil
 	case blockchain.ChainEventCommand:
 		_, err := p.getChainEvent(data)
 		if err != nil {
 			return err
+		}
+		// reject if the chain event is not coming from a validator
+		if !p.top.Exists(key) {
+			return ErrChainEventFromNonValidator
 		}
 		return nil
 	}
@@ -539,13 +559,15 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		return p.amendOrder(ctx, order)
+		_ = order
+		return errors.New("not implemented")
+		// return p.amendOrder(ctx, order)
 	case blockchain.WithdrawCommand:
 		withdraw, err := p.getWithdraw(data)
 		if err != nil {
 			return err
 		}
-		return p.exec.Withdraw(ctx, withdraw)
+		return p.processWithdraw(ctx, withdraw)
 	case blockchain.ProposeCommand:
 		proposal, err := p.getProposalSubmission(data)
 		if err != nil {
@@ -573,7 +595,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		if err != nil {
 			return err
 		}
-		return p.gov.AddNodeVote(vote)
+		return p.erc.AddNodeCheck(ctx, vote)
 	case blockchain.NodeSignatureCommand:
 		ns, err := p.getNodeSignature(data)
 		if err != nil {
@@ -587,12 +609,6 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 			return err
 		}
 		return p.processChainEvent(ctx, ce, pubkey)
-	case blockchain.NotifyTraderAccountCommand:
-		notify, err := p.getNotifyTraderAccount(data)
-		if err != nil {
-			return err
-		}
-		return p.exec.NotifyTraderAccount(ctx, notify)
 	default:
 		p.log.Warn("Unknown command received", logging.String("command", cmd.String()))
 		return fmt.Errorf("unknown command received: %s", cmd)
@@ -680,22 +696,6 @@ func (p *Processor) amendOrder(ctx context.Context, order *types.OrderAmendment)
 	return nil
 }
 
-func (p *Processor) checkAssetProposal(prop *types.Proposal) error {
-	asset := prop.Terms.GetNewAsset()
-	// only validate timestamps for new asset proposal
-	if asset == nil {
-		return nil
-	}
-	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
-		return ErrProposalValidationTimestampInvalid
-	}
-	minValid, maxValid := p.currentTimestamp.Add(minValidationPeriod*time.Second), p.currentTimestamp.Add(maxValidationPeriod*time.Second)
-	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
-		return ErrProposalValidationTimestampInvalid
-	}
-	return nil
-}
-
 // SubmitProposal generates and assigns new id for given proposal and sends it to governance engine
 func (p *Processor) SubmitProposal(ctx context.Context, proposal *types.Proposal) error {
 	if p.log.GetLevel() == logging.DebugLevel {
@@ -723,58 +723,94 @@ func (p *Processor) VoteOnProposal(ctx context.Context, vote *types.Vote) error 
 	return p.gov.AddVote(ctx, *vote)
 }
 
+func (p *Processor) enactMarket(ctx context.Context, prop *types.Proposal, mkt *types.Market) {
+	prop.State = types.Proposal_STATE_ENACTED
+	if err := p.exec.SubmitMarket(ctx, mkt); err != nil {
+		prop.State = types.Proposal_STATE_FAILED
+		p.log.Error("failed to submit new market",
+			logging.String("market-id", mkt.Id),
+			logging.Error(err))
+	}
+}
+
+func (p *Processor) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
+	prop.State = types.Proposal_STATE_ENACTED
+	// first check if this asset is real
+	asset, err := p.assets.Get(prop.ID)
+	if err != nil {
+		// this should not happen
+		p.log.Error("invalid asset is getting enacted",
+			logging.String("asset-id", prop.ID),
+			logging.Error(err))
+		prop.State = types.Proposal_STATE_FAILED
+		return
+	}
+
+	// if this is a builtin asset nothing needs to be done, just start the asset
+	// straigh away
+	if asset.IsBuiltinAsset() {
+		err = p.banking.EnableBuiltinAsset(ctx, asset.ProtoAsset().ID)
+		if err != nil {
+			// this should not happen
+			p.log.Error("unable to get builtin asset enabled",
+				logging.String("asset-id", prop.ID),
+				logging.Error(err))
+			prop.State = types.Proposal_STATE_FAILED
+		}
+		return
+	}
+
+	// then instruct the notary to start getting signature from validators
+	if err := p.notary.StartAggregate(prop.ID, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+		prop.State = types.Proposal_STATE_FAILED
+		p.log.Error("unable to enact proposal",
+			logging.String("proposal-id", prop.ID),
+			logging.Error(err))
+		return
+	}
+
+	// if we are not a validator the job is done here
+	if !p.top.IsValidator() {
+		// nothing to do
+		return
+	}
+
+	var sig []byte
+	switch {
+	case asset.IsERC20():
+		asset, _ := asset.ERC20()
+		_, sig, err = asset.SignBridgeWhitelisting()
+	}
+	if err != nil {
+		p.log.Error("unable to sign whitelisting transaction",
+			logging.String("asset-id", prop.ID),
+			logging.Error(err))
+		prop.State = types.Proposal_STATE_FAILED
+		return
+	}
+	payload := &types.NodeSignature{
+		ID:   prop.ID,
+		Sig:  sig,
+		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+	}
+	if err := p.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
+		// do nothing for now, we'll need a retry mechanism for this and all command soon
+		p.log.Error("unable to send command for notary",
+			logging.Error(err))
+	}
+}
+
 // check the asset proposals on tick
-func (p *Processor) onTick(t time.Time) {
-	ctx := context.TODO()
+func (p *Processor) onTick(ctx context.Context, t time.Time) {
 	p.idgen.NewBatch()
 	acceptedProposals := p.gov.OnChainTimeUpdate(ctx, t)
 	for _, toEnact := range acceptedProposals {
 		prop := toEnact.Proposal()
 		switch {
 		case toEnact.IsNewMarket():
-			mkt := toEnact.NewMarket()
-			prop.State = types.Proposal_STATE_ENACTED
-			if err := p.exec.SubmitMarket(ctx, mkt); err != nil {
-				prop.State = types.Proposal_STATE_FAILED
-				p.log.Error("failed to submit new market",
-					logging.String("market-id", mkt.Id),
-					logging.Error(err))
-			}
+			p.enactMarket(ctx, prop, toEnact.NewMarket())
 		case toEnact.IsNewAsset():
-			if err := p.notary.StartAggregate(prop.ID, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
-				prop.State = types.Proposal_STATE_FAILED
-				p.log.Error("unable to enact proposal",
-					logging.String("proposal-id", prop.ID),
-					logging.Error(err))
-			} else if p.isValidator {
-				asset, err := p.assets.Get(prop.ID)
-				if err != nil {
-					// this should not happen
-					p.log.Error("invalid asset is getting enacted",
-						logging.String("asset-id", prop.ID),
-						logging.Error(err))
-					prop.State = types.Proposal_STATE_FAILED
-				} else {
-					_, sig, err := asset.SignBridgeWhitelisting()
-					if err != nil {
-						p.log.Error("unable to sign whitelisting transaction",
-							logging.String("asset-id", prop.ID),
-							logging.Error(err))
-						prop.State = types.Proposal_STATE_FAILED
-					} else {
-						payload := &types.NodeSignature{
-							ID:   prop.ID,
-							Sig:  sig,
-							Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
-						}
-						if err := p.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
-							// do nothing for now, we'll need a retry mechanism for this and all command soon
-							p.log.Error("unable to send command",
-								logging.Error(err))
-						}
-					}
-				}
-			}
+			p.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateMarket():
 			p.log.Error("update market enactment is not implemented")
 		case toEnact.IsUpdateNetwork():

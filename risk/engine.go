@@ -240,7 +240,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			if curMargin < margins.MaintenanceMargin {
-				minAmount = int64(margins.SearchLevel - curMargin)
+				minAmount = int64(margins.MaintenanceMargin - curMargin)
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,

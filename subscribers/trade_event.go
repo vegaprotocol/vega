@@ -50,27 +50,26 @@ func (t *TradeSub) loop(ctx context.Context) {
 	}
 }
 
-func (t *TradeSub) Push(e events.Event) {
-	switch te := e.(type) {
-	case TE:
-		t.write(te)
-	case TimeEvent:
-		t.flush()
+func (t *TradeSub) Push(evts ...events.Event) {
+	if len(evts) == 0 {
+		return
 	}
-}
-
-// this function will be replaced - this is where the events will be normalised for a market event plugin to use
-func (t *TradeSub) write(e TE) {
+	// acquire lock here, so a time event doesn't result in a partial flush
 	t.mu.Lock()
-	t.buf = append(t.buf, e.Trade())
+	for _, e := range evts {
+		switch te := e.(type) {
+		case TE:
+			t.buf = append(t.buf, te.Trade())
+		case TimeEvent:
+			t.flush()
+		}
+	}
 	t.mu.Unlock()
 }
 
 func (t *TradeSub) flush() {
-	t.mu.Lock()
 	b := t.buf
 	t.buf = make([]types.Trade, 0, cap(b))
-	t.mu.Unlock()
 	_ = t.store.SaveBatch(b)
 }
 

@@ -61,19 +61,26 @@ func NewPositions(ctx context.Context) *Positions {
 	}
 }
 
-func (p *Positions) Push(e events.Event) {
-	switch te := e.(type) {
-	case SPE:
-		p.updatePosition(te)
-	case SDE:
-		p.updateSettleDestressed(te)
-	case LSE:
-		p.applyLossSocialization(te)
+func (p *Positions) Push(evts ...events.Event) {
+	if len(evts) == 0 {
+		return
 	}
+	// lock here, because some of these events are sent in batch (if not all of them)
+	p.mu.Lock()
+	for _, e := range evts {
+		switch te := e.(type) {
+		case SPE:
+			p.updatePosition(te)
+		case SDE:
+			p.updateSettleDestressed(te)
+		case LSE:
+			p.applyLossSocialization(te)
+		}
+	}
+	p.mu.Unlock()
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
-	p.mu.Lock()
 	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), e.AmountLost()
 	pos, ok := p.data[marketID][partyID]
 	if !ok {
@@ -87,11 +94,9 @@ func (p *Positions) applyLossSocialization(e LSE) {
 	pos.RealisedPNLFP += float64(amountLoss)
 	pos.RealisedPNL += amountLoss
 	p.data[marketID][partyID] = pos
-	p.mu.Unlock()
 }
 
 func (p *Positions) updatePosition(e SPE) {
-	p.mu.Lock()
 	mID, tID := e.MarketID(), e.PartyID()
 	if _, ok := p.data[mID]; !ok {
 		p.data[mID] = map[string]Position{}
@@ -102,11 +107,9 @@ func (p *Positions) updatePosition(e SPE) {
 	}
 	updateSettlePosition(&calc, e)
 	p.data[mID][tID] = calc
-	p.mu.Unlock()
 }
 
 func (p *Positions) updateSettleDestressed(e SDE) {
-	p.mu.Lock()
 	mID, tID := e.MarketID(), e.PartyID()
 	if _, ok := p.data[mID]; !ok {
 		p.data[mID] = map[string]Position{}
@@ -129,37 +132,35 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	calc.UnrealisedPNLFP = 0
 	calc.AverageEntryPriceFP = 0
 	p.data[mID][tID] = calc
-	p.mu.Unlock()
 }
 
 // GetPositionsByMarketAndParty get the position of a single trader in a given market
 func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
 	mp, ok := p.data[market]
+	p.mu.RUnlock()
 	if !ok {
-		p.mu.RUnlock()
 		return nil, nil
 	}
 	pos, ok := mp[party]
 	if !ok {
-		p.mu.RUnlock()
 		return nil, nil
 	}
-	p.mu.RUnlock()
 	return &pos.Position, nil
 }
 
 // GetPositionsByParty get all positions for a given trader
 func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
+	data := p.data
+	p.mu.RUnlock()
 	// at most, trader is active in all markets
-	positions := make([]*types.Position, 0, len(p.data))
-	for _, traders := range p.data {
+	positions := make([]*types.Position, 0, len(data))
+	for _, traders := range data {
 		if pos, ok := traders[party]; ok {
 			positions = append(positions, &pos.Position)
 		}
 	}
-	p.mu.RUnlock()
 	if len(positions) == 0 {
 		return nil, nil
 		// return nil, ErrPartyNotFound
@@ -171,15 +172,14 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
 	mp, ok := p.data[market]
+	p.mu.RUnlock()
 	if !ok {
-		p.mu.RUnlock()
 		return nil, ErrMarketNotFound
 	}
 	s := make([]*types.Position, 0, len(mp))
 	for _, tp := range mp {
 		s = append(s, &tp.Position)
 	}
-	p.mu.RUnlock()
 	return s, nil
 }
 

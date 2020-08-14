@@ -2,16 +2,17 @@ package processor
 
 import (
 	"context"
+	"errors"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"github.com/pkg/errors"
 )
 
 var (
-	ErrNotAnERC20Event        = errors.New("not an erc20 event")
-	ErrNotABuiltinAssetEvent  = errors.New("not an builtin asset event")
-	ErrUnsupportedEventAction = errors.New("unsupported event action")
+	ErrNotAnERC20Event                                = errors.New("not an erc20 event")
+	ErrNotABuiltinAssetEvent                          = errors.New("not an builtin asset event")
+	ErrUnsupportedEventAction                         = errors.New("unsupported event action")
+	ErrChainEventAssetListERC20WithoutEnoughSignature = errors.New("chain event for erc20 asset list received with missing node signatures")
 )
 
 func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
@@ -54,12 +55,12 @@ func (p *Processor) processChainEventBuiltinAsset(ctx context.Context, ce *types
 		if err := p.checkVegaAssetID(act.Deposit, "BuiltinAsset.Deposit"); err != nil {
 			return err
 		}
-		return p.col.Deposit(ctx, act.Deposit.PartyID, act.Deposit.VegaAssetID, act.Deposit.Amount)
+		return p.banking.DepositBuiltinAsset(act.Deposit, ce.Nonce)
 	case *types.BuiltinAssetEvent_Withdrawal:
 		if err := p.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
 			return err
 		}
-		return p.col.Deposit(ctx, act.Withdrawal.PartyID, act.Withdrawal.VegaAssetID, act.Withdrawal.Amount)
+		return p.col.Withdraw(ctx, act.Withdrawal.PartyID, act.Withdrawal.VegaAssetID, act.Withdrawal.Amount)
 	default:
 		return ErrUnsupportedEventAction
 	}
@@ -76,13 +77,21 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 		if err := p.checkVegaAssetID(act.AssetList, "ERC20.AssetList"); err != nil {
 			return err
 		}
-		asset, _ := p.assets.Get(act.AssetList.VegaAssetID)
-		adata := asset.Data()
-		return p.col.EnableAsset(ctx, *adata)
+		// now check that the notary is GO for this asset
+		_, ok := p.notary.IsSigned(
+			act.AssetList.VegaAssetID,
+			types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
+		if !ok {
+			return ErrChainEventAssetListERC20WithoutEnoughSignature
+		}
+		return p.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index)
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
-		return errors.New("ERC20.Deposit not implemented")
+		if err := p.checkVegaAssetID(act.Deposit, "ERC20.AssetList"); err != nil {
+			return err
+		}
+		return p.banking.DepositERC20(act.Deposit, evt.Block, evt.Index)
 	case *types.ERC20Event_Withdrawal:
 		return errors.New("ERC20.Withdrawal not implemented")
 	default:

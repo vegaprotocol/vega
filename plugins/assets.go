@@ -36,12 +36,12 @@ func NewAsset(ctx context.Context) (a *Asset) {
 	}
 }
 
-func (a *Asset) Push(e events.Event) {
-	ae, ok := e.(AssetEvent)
-	if !ok {
-		return
+func (a *Asset) Push(evts ...events.Event) {
+	for _, e := range evts {
+		if ae, ok := e.(AssetEvent); ok {
+			a.ch <- ae.Asset()
+		}
 	}
-	a.ch <- ae.Asset()
 }
 
 func (a *Asset) consume() {

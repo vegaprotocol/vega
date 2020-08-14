@@ -129,6 +129,8 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		"ETH/USD18": nil,
 	}
 
+	root.tradingDataClient.EXPECT().AssetByID(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&protoapi.AssetByIDResponse{Asset: &types.Asset{}}, nil)
+
 	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
 		m, ok := markets[req.MarketID]
 		assert.True(t, ok)
@@ -197,7 +199,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
 
-	orders, err := marketResolver.Orders(ctx, market, nil, nil, nil, nil)
+	orders, err := marketResolver.Orders(ctx, market, nil, nil, nil)
 	assert.NotNil(t, orders)
 	assert.Nil(t, err)
 	assert.Len(t, orders, 2)

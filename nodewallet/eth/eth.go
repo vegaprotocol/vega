@@ -71,6 +71,14 @@ func (w *Wallet) Sign(data []byte) ([]byte, error) {
 	return w.ks.SignHash(w.acc, accounts.TextHash(data))
 }
 
+func (w *Wallet) Algo() string {
+	return "eth"
+}
+
+func (w *Wallet) Version() uint64 {
+	return 0
+}
+
 func (w *Wallet) PubKeyOrAddress() []byte {
 	return w.acc.Address.Bytes()
 }

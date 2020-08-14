@@ -21,6 +21,11 @@ const (
 type Config struct {
 	Level               encoding.LogLevel
 	DevAssetSourcesPath string
+	ERC20               ERC20Config
+}
+
+type ERC20Config struct {
+	BridgeAddress string
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -30,6 +35,9 @@ func NewDefaultConfig(defaultRootPath string) Config {
 	return Config{
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		DevAssetSourcesPath: filepath.Join(defaultRootPath, devAssetPath),
+		ERC20: ERC20Config{
+			BridgeAddress: "0xf6C9d3e937fb2dA4995272C1aC3f3D466B7c23fC",
+		},
 	}
 }
 
@@ -38,41 +46,55 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VegaToken",
-					Symbol:      "VGT",
-					TotalSupply: "10000000",
-					Decimals:    5,
+					Name:                "Ether",
+					Symbol:              "ETH",
+					TotalSupply:         "110436690",
+					Decimals:            5,
+					MaxFaucetAmountMint: "10000000", // 100ETH
 				},
 			},
 		},
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "Ether",
-					Symbol:      "ETH",
-					TotalSupply: "110436690",
-					Decimals:    5,
+					Name:                "Bitcoin",
+					Symbol:              "BTC",
+					TotalSupply:         "21000000",
+					Decimals:            5,
+					MaxFaucetAmountMint: "1000000", // 10BTC
 				},
 			},
 		},
 		&types.AssetSource{
 			Source: &types.AssetSource_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "Bitcoin",
-					Symbol:      "BTC",
-					TotalSupply: "21000000",
-					Decimals:    5,
+					Name:                "VUSD",
+					Symbol:              "VUSD",
+					TotalSupply:         "21000000",
+					Decimals:            5,
+					MaxFaucetAmountMint: "500000000", // 1000VUSD
+
 				},
 			},
 		},
+		// FIXME(): enable these assets again when we can supportt higher number
+		// of decimals and we have properly tester erc20 token support.
+		// this is the VUSD5
+		// &types.AssetSource{
+		// 	Source: &types.AssetSource_Erc20{
+		// 		Erc20: &types.ERC20{
+		// 			ContractAddress: "0x308C71DE1FdA14db838555188211Fc87ef349272",
+		// 		},
+		// 	},
+		// },
 		// this is the VUSD
-		&types.AssetSource{
-			Source: &types.AssetSource_Erc20{
-				Erc20: &types.ERC20{
-					ContractAddress: "0x955C6789A7fbee203B4bE0F01428E769308813f2",
-				},
-			},
-		},
+		// &types.AssetSource{
+		// 	Source: &types.AssetSource_Erc20{
+		// 		Erc20: &types.ERC20{
+		// 			ContractAddress: "0x955C6789A7fbee203B4bE0F01428E769308813f2",
+		// 		},
+		// 	},
+		// },
 	}}
 
 	m := jsonpb.Marshaler{

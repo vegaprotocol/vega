@@ -29,7 +29,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
@@ -44,7 +44,6 @@ type Engine struct {
 	log *logging.Logger
 
 	markets    map[string]*Market
-	party      *Party
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
@@ -76,7 +75,6 @@ func NewEngine(
 		markets:    map[string]*Market{},
 		time:       time,
 		collateral: collateral,
-		party:      NewParty(log, collateral, pmkts, broker),
 		idgen:      NewIDGen(),
 		broker:     broker,
 	}
@@ -115,32 +113,18 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 	for _, mkt := range e.markets {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
-			e.Config.Collateral, e.Config.Position, e.Config.Settlement)
+			e.Config.Position, e.Config.Settlement, e.Config.Fee)
 	}
 }
 
-// NotifyTraderAccount notify the engine to create a new account for a party
-func (e *Engine) NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) error {
-	return e.party.NotifyTraderAccount(ctx, notify)
-}
-
-// CreateGeneralAccounts creates new general accounts for a party
-func (e *Engine) CreateGeneralAccounts(partyID string) error {
-	ctx := context.TODO() // not sure if this call is used at all
-	_, err := e.party.MakeGeneralAccounts(ctx, partyID)
-	return err
-}
-
-func (e *Engine) Withdraw(ctx context.Context, w *types.Withdraw) error {
-	err := e.collateral.Withdraw(ctx, w.PartyID, w.Asset, w.Amount)
-	if err != nil {
-		e.log.Error("An error occurred during withdrawal",
-			logging.String("party-id", w.PartyID),
-			logging.Uint64("amount", w.Amount),
-			logging.Error(err),
-		)
+func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
+	var tickSize string = "0."
+	for decimalPlaces > 1 {
+		tickSize += "0"
+		decimalPlaces--
 	}
-	return err
+	tickSize += "1"
+	return tickSize
 }
 
 // SubmitMarket will submit a new market configuration to the network
@@ -165,14 +149,22 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 			logging.String("asset-id", asset))
 	}
 
+	// set a fake tick size to the continuous trading if it's continuous
+	switch tmod := marketConfig.TradingMode.(type) {
+	case *types.Market_Continuous:
+		tmod.Continuous.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
+	case *types.Market_Discrete:
+		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
+	}
+
 	mkt, err := NewMarket(
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
 		e.Config.Settlement,
 		e.Config.Matching,
+		e.Config.Fee,
 		e.collateral,
-		e.party,
 		marketConfig,
 		now,
 		e.broker,
@@ -190,9 +182,6 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
-
-	// wire up party engine to new market
-	e.party.addMarket(*mkt.mkt)
 
 	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
 	return nil
@@ -302,7 +291,7 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 	return conf, nil
 }
 
-func (e *Engine) onChainTimeUpdate(t time.Time) {
+func (e *Engine) onChainTimeUpdate(_ context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
 	// update block time on id generator

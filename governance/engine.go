@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/validators"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -35,6 +34,7 @@ var (
 	ErrProposalMinRequiredMajorityStakeInvalid = errors.New("proposal minimum required majority stake is out of bounds [0.5..1]")
 	ErrProposalPassed                          = errors.New("proposal has passed and can no longer be voted on")
 	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
+	ErrIncompatibleTimestamps                  = errors.New("incompatible timestamps")
 )
 
 // Broker - event bus
@@ -50,29 +50,23 @@ type Accounts interface {
 	GetTotalTokens() uint64
 }
 
-// ValidatorTopology...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/governance ValidatorTopology
-type ValidatorTopology interface {
-	SelfVegaPubKey() []byte
-	Exists([]byte) bool
-	Len() int
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/governance Commander
-type Commander interface {
-	Command(cmd blockchain.Command, payload proto.Message) error
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
-	Get(assetID string) (assets.Asset, error)
+	Get(assetID string) (*assets.Asset, error)
+	IsEnabled(string) bool
 }
 
 // TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/governance TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
+}
+
+// ExtResChecker ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ext_res_checker_mock.go -package mocks code.vegaprotocol.io/vega/governance ExtResChecker
+type ExtResChecker interface {
+	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
 // Engine is the governance engine that handles proposal and vote lifecycle.
@@ -84,9 +78,9 @@ type Engine struct {
 	currentTime            time.Time
 	activeProposals        map[string]*proposalData
 	networkParams          NetworkParameters
-	isValidator            bool
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
+	assets                 Assets
 }
 
 type proposalData struct {
@@ -95,10 +89,10 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, top ValidatorTopology, cmd Commander, assets Assets, now time.Time, isValidator bool) (*Engine, error) {
+func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
 	log = log.Named(namedLogger)
 	// ensure params are set
-	nodeValidation, err := NewNodeValidation(log, top, cmd, assets, now, isValidator)
+	nodeValidation, err := NewNodeValidation(log, assets, now, erc)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +106,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		networkParams:          *params,
 		nodeProposalValidation: nodeValidation,
 		broker:                 broker,
+		assets:                 assets,
 	}, nil
 }
 
@@ -131,22 +126,29 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.mu.Unlock()
 }
 
-func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, err error) {
+func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.ProposalError, err error) {
 	te = &ToEnact{
 		p: p,
 	}
 	defer func() {
 		if err != nil {
 			p.State = types.Proposal_STATE_FAILED
+			p.Reason = perr
 		}
 	}()
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		mkt, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime)
+		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime, e.assets)
 		if err != nil {
-			return nil, err
+			return nil, perr, err
 		}
 		te.m = mkt
+	case *types.ProposalTerms_NewAsset:
+		asset, err := e.assets.Get(p.GetID())
+		if err != nil {
+			return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		}
+		te.a = asset.ProtoAsset()
 	}
 	return
 }
@@ -169,7 +171,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
 				delete(e.activeProposals, id)
 			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
-				enact, err := e.preEnactProposal(proposal.Proposal)
+				enact, _, err := e.preEnactProposal(proposal.Proposal)
 				if err != nil {
 					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 					e.log.Error("proposal enactment has failed",
@@ -196,6 +198,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 		e.log.Info("proposal has not been validated by nodes",
 			logging.String("proposal-id", p.ID))
 		p.State = types.Proposal_STATE_REJECTED
+		p.Reason = types.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
 
@@ -210,9 +213,10 @@ func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal) error {
 		return ErrProposalIsDuplicate // state is not allowed to change externally
 	}
 	if p.State == types.Proposal_STATE_OPEN {
-		err := e.validateOpenProposal(p)
+		perr, err := e.validateOpenProposal(p)
 		if err != nil {
 			p.State = types.Proposal_STATE_REJECTED
+			p.Reason = perr
 			if e.log.GetLevel() == logging.DebugLevel {
 				e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID))
 			}
@@ -248,52 +252,90 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 }
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
-	if terms.GetNewMarket() != nil {
-		return &e.networkParams.NewMarkets, nil
-	}
-	return nil, ErrNoNetworkParams
+	// FIXME(): we should not have networkf params per proposal type..
+	return &e.networkParams.NewMarkets, nil
 }
 
 // validates proposals read from the chain
-func (e *Engine) validateOpenProposal(proposal types.Proposal) error {
+func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalError, error) {
 	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
-		return err
+		// FIXME(): not checking the error here
+		// we return unspecified here because not getting proposal
+		// params is not possible, the check done before needs to be removed
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(params.MinClose).Unix() {
-		return ErrProposalCloseTimeTooSoon
+		e.log.Debug("proposal close time is too soon",
+			logging.Int64("expected-min", e.currentTime.Add(params.MinClose).Unix()),
+			logging.Int64("provided", proposal.Terms.ClosingTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON, ErrProposalCloseTimeTooSoon
 	}
 	if proposal.Terms.ClosingTimestamp > e.currentTime.Add(params.MaxClose).Unix() {
-		return ErrProposalCloseTimeTooLate
+		e.log.Debug("proposal close time is too late",
+			logging.Int64("expected-max", e.currentTime.Add(params.MaxClose).Unix()),
+			logging.Int64("provided", proposal.Terms.ClosingTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE, ErrProposalCloseTimeTooLate
 	}
 	if proposal.Terms.EnactmentTimestamp < e.currentTime.Add(params.MinEnact).Unix() {
-		return ErrProposalEnactTimeTooSoon
+		e.log.Debug("proposal enact time is too soon",
+			logging.Int64("expected-min", e.currentTime.Add(params.MinEnact).Unix()),
+			logging.Int64("provided", proposal.Terms.EnactmentTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON, ErrProposalEnactTimeTooSoon
 	}
 	if proposal.Terms.EnactmentTimestamp > e.currentTime.Add(params.MaxEnact).Unix() {
-		return ErrProposalEnactTimeTooLate
+		e.log.Debug("proposal enact time is too late",
+			logging.Int64("expected-max", e.currentTime.Add(params.MaxEnact).Unix()),
+			logging.Int64("provided", proposal.Terms.EnactmentTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, ErrProposalEnactTimeTooLate
+	}
+
+	if proposal.Terms.ClosingTimestamp < proposal.Terms.ValidationTimestamp {
+		e.log.Debug("proposal closing time can't be smaller than validation time",
+			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
+			logging.Int64("validation-time", proposal.Terms.ValidationTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
+	}
+	if proposal.Terms.EnactmentTimestamp < proposal.Terms.ClosingTimestamp {
+		e.log.Debug("proposal enactment time can't be smaller than closing time",
+			logging.Int64("enactment-time", proposal.Terms.EnactmentTimestamp),
+			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
 	}
 	proposerTokens, err := getGovernanceTokens(e.accs, proposal.PartyID)
 	if err != nil {
-		return err
+		e.log.Debug("proposer have no governance token",
+			logging.String("party-id", proposal.PartyID),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
 	totalTokens := e.accs.GetTotalTokens()
 	if float32(proposerTokens) < float32(totalTokens)*params.MinProposerBalance {
-		return ErrProposalInsufficientTokens
+		e.log.Debug("proposer have insufficient governance token",
+			logging.Float32("expect-balance", float32(totalTokens)*params.MinProposerBalance),
+			logging.Uint64("proposer-balance", proposerTokens),
+			logging.String("party-id", proposal.PartyID),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, ErrProposalInsufficientTokens
 	}
 	return e.validateChange(proposal.Terms)
 }
 
 // validates proposed change
-func (e *Engine) validateChange(terms *types.ProposalTerms) error {
+func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch change := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		return validateNewMarket(e.currentTime, change.NewMarket.Changes)
+		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets)
+	case *types.ProposalTerms_NewAsset:
+		return validateNewAsset(change.NewAsset.Changes)
 	}
-	return nil
-}
-
-func (e *Engine) AddNodeVote(v *types.NodeVote) error {
-	return e.nodeProposalValidation.AddNodeVote(v)
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted

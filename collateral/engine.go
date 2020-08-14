@@ -24,9 +24,26 @@ const (
 )
 
 var (
+	TokenAssetSource = &types.AssetSource{
+		Source: &types.AssetSource_BuiltinAsset{
+			BuiltinAsset: &types.BuiltinAsset{
+				Name:                "VOTE",
+				Symbol:              "VOTE",
+				TotalSupply:         "0",
+				Decimals:            5,
+				MaxFaucetAmountMint: "1000",
+			},
+		},
+	}
+)
+
+var (
 	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
 	// collateral engine have not been initialised properly
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
+	// ErrFeeAccountsMissing signals that a fee account is missing, which may means that the
+	// collateral engine have not been initialised properly
+	ErrFeeAccountsMissing = errors.New("fee accounts missing for collateral engine to work")
 	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
@@ -39,6 +56,10 @@ var (
 	ErrAssetAlreadyEnabled = errors.New("asset already enabled")
 	// ErrInvalidAssetID signals that an asset id does not exists
 	ErrInvalidAssetID = errors.New("invalid asset ID")
+	// ErrInsufficientFundsToPayFees the party do not have enough funds to pay the feeds
+	ErrInsufficientFundsToPayFees = errors.New("insufficient funds to pay fees")
+	// ErrInvalidTransferTypeForFeeRequest an invalid transfer type was send to build a fee transfer request
+	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
 )
 
 // Broker send events
@@ -62,10 +83,7 @@ type Engine struct {
 
 	idbuf []byte
 
-	// TODO(): this is asset symbol -> asset as of now
-	// so it stay compatible with the current implemenetation which uses
-	// only the symbol to define an asset (e.g: VUSD, BTC, ETH)
-	// a separate issue will need to change that to id -> asset
+	// asset ID to asset
 	enabledAssets map[string]types.Asset
 }
 
@@ -112,11 +130,29 @@ func (e *Engine) ReloadConf(cfg Config) {
 // parties to deposit funds
 // FIXME(): use the ID later on
 func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
-	if e.AssetExists(asset.Symbol) {
+	if e.AssetExists(asset.ID) {
 		return ErrAssetAlreadyEnabled
 	}
-	e.enabledAssets[asset.Symbol] = asset
+	e.enabledAssets[asset.ID] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// then creat a new infrastructure fee account for the asset
+	// these are fee related account only
+	infraFeeID := e.accountID("", "", asset.ID, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	_, ok := e.accs[infraFeeID]
+	if !ok {
+		infraFeeAcc := &types.Account{
+			Id:       infraFeeID,
+			Asset:    asset.ID,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: noMarket,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
+		}
+		e.accs[infraFeeID] = infraFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *infraFeeAcc))
+	}
+	e.log.Info("new asset added successfully",
+		logging.String("asset-id", asset.ID))
 	return nil
 }
 
@@ -155,6 +191,127 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 			)
 		}
 		err = ErrSystemAccountsMissing
+	}
+
+	return
+}
+
+func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
+func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	if len(ft.Transfers()) <= 0 {
+		return nil, nil
+	}
+	// check quickly that all traders have enough monies in their accoutns
+	// this may be done only in case of continuous trading
+	for party, amount := range ft.TotalFeesAmountPerParty() {
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, party, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "general"),
+				logging.String("party-id", party),
+				logging.String("asset", assetID))
+			return nil, ErrAccountDoesNotExist
+		}
+
+		marginAcc, err := e.GetAccountByID(e.accountID(marketID, party, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "margin"),
+				logging.String("party-id", party),
+				logging.String("asset", assetID),
+				logging.String("market-id", marketID))
+			return nil, ErrAccountDoesNotExist
+		}
+
+		if (marginAcc.Balance + generalAcc.Balance) < amount {
+			return nil, ErrInsufficientFundsToPayFees
+		}
+	}
+
+	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
+func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
+	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(
+		marketID, assetID)
+	if err != nil {
+		return nil, err
+	}
+
+	transfers := ft.Transfers()
+	responses := make([]*types.TransferResponse, 0, len(transfers))
+
+	for _, transfer := range transfers {
+		req, err := e.getFeeTransferRequest(
+			transfer, makerFee, infraFee, liquiFee, marketID, assetID)
+		if err != nil {
+			e.log.Error("Failed to build transfer request for event",
+				logging.Error(err))
+			return nil, err
+		}
+
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Error("Failed to transfer funds", logging.Error(err))
+			return nil, err
+		}
+		for _, bal := range res.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.Id),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		responses = append(responses, res)
+	}
+
+	return responses, nil
+}
+
+// this func uses named returns because it makes body of the func look clearer
+func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *types.Account, err error) {
+	makerID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_MAKER)
+	infraID := e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	liquiID := e.accountID(marketID, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+
+	if maker, err = e.GetAccountByID(makerID); err != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing fee account",
+				logging.String("asset", asset),
+				logging.String("id", makerID),
+				logging.String("market", marketID),
+				logging.Error(err),
+			)
+		}
+		err = ErrFeeAccountsMissing
+		return
+	}
+
+	if infra, err = e.GetAccountByID(infraID); err != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing fee account",
+				logging.String("asset", asset),
+				logging.String("id", infraID),
+				logging.Error(err),
+			)
+		}
+		err = ErrFeeAccountsMissing
+	}
+
+	if liqui, err = e.GetAccountByID(liquiID); err != nil {
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("missing system account",
+				logging.String("asset", asset),
+				logging.String("id", liquiID),
+				logging.String("market", marketID),
+				logging.Error(err),
+			)
+		}
+		err = ErrFeeAccountsMissing
 	}
 
 	return
@@ -584,6 +741,62 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 }
 
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
+func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error) {
+	margin, err := e.GetAccountByID(e.accountID(marketID, transfer.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin trader account",
+			logging.String("owner-id", transfer.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	general, err := e.GetAccountByID(e.accountID(noMarket, transfer.Owner, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general trader account",
+			logging.String("owner-id", transfer.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	req := &types.TransferRequest{
+		FromAccount: []*types.Account{
+			margin,
+		},
+		ToAccount: []*types.Account{
+			general,
+		},
+		Amount:    uint64(transfer.Amount.Amount),
+		MinAmount: uint64(transfer.MinAmount),
+		Asset:     assetID,
+		Reference: transfer.Type.String(),
+	}
+
+	res, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range res.GetTransfers() {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("account-id", v.ToAccount),
+				logging.Uint64("amount", v.Amount),
+				logging.Error(err),
+			)
+		}
+	}
+
+	return res, nil
+}
+
+// MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error) {
 	// create "fake" settle account for market ID
 	settle := &types.Account{
@@ -628,6 +841,67 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	}
 
 	return res, nil, nil
+}
+
+func (e *Engine) getFeeTransferRequest(
+	t *types.Transfer,
+	makerFee, infraFee, liquiFee *types.Account,
+	marketID, assetID string,
+) (*types.TransferRequest, error) {
+	var (
+		err             error
+		margin, general *types.Account
+	)
+
+	// the accounts for the trader we need
+	margin, err = e.GetAccountByID(e.accountID(marketID, t.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+	general, err = e.GetAccountByID(e.accountID(noMarket, t.Owner, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	treq := &types.TransferRequest{
+		Amount:    uint64(t.Amount.Amount),
+		MinAmount: uint64(t.Amount.Amount),
+		Asset:     assetID,
+		Reference: t.Type.String(),
+	}
+
+	switch t.Type {
+	case types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY:
+		treq.FromAccount = []*types.Account{general, margin}
+		treq.ToAccount = []*types.Account{infraFee}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY:
+		treq.FromAccount = []*types.Account{general, margin}
+		treq.ToAccount = []*types.Account{liquiFee}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY:
+		treq.FromAccount = []*types.Account{general, margin}
+		treq.ToAccount = []*types.Account{makerFee}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE:
+		treq.FromAccount = []*types.Account{makerFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	default:
+		return nil, ErrInvalidTransferTypeForFeeRequest
+	}
 }
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
@@ -947,6 +1221,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
+		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
@@ -1049,7 +1324,43 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
 	}
 
+	// these are fee related account only
+	liquidityFeeID := e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+	_, ok = e.accs[liquidityFeeID]
+	if !ok {
+		liquidityFeeAcc := &types.Account{
+			Id:       liquidityFeeID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: marketID,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
+		}
+		e.accs[liquidityFeeID] = liquidityFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *liquidityFeeAcc))
+	}
+	makerFeeID := e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_FEES_MAKER)
+	_, ok = e.accs[makerFeeID]
+	if !ok {
+		makerFeeAcc := &types.Account{
+			Id:       makerFeeID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  0,
+			MarketID: marketID,
+			Type:     types.AccountType_ACCOUNT_TYPE_FEES_MAKER,
+		}
+		e.accs[makerFeeID] = makerFeeAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
+	}
+
 	return
+}
+
+func (e *Engine) HasGeneralAccount(party, asset string) bool {
+	_, err := e.GetAccountByID(
+		e.accountID("", party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	return err == nil
 }
 
 // Withdraw will remove the specified amount from the trader
@@ -1102,10 +1413,20 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 	if acc.Asset == TokenAsset {
 		e.totalTokens -= uint64(acc.Balance)
 		e.totalTokens += uint64(balance)
+		e.updateVoteToken(ctx)
 	}
 	acc.Balance = balance
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
+}
+
+func (e *Engine) updateVoteToken(ctx context.Context) {
+	tokAsset := e.enabledAssets[TokenAsset]
+	totalSupplyStr := fmt.Sprintf("%v", e.totalTokens)
+	tokAsset.TotalSupply = totalSupplyStr
+	tokAsset.GetSource().GetBuiltinAsset().TotalSupply = totalSupplyStr
+	e.enabledAssets[TokenAsset] = tokAsset
+	e.broker.Send(events.NewAssetEvent(ctx, tokAsset))
 }
 
 // IncrementBalance will increment the balance of a given account
@@ -1118,6 +1439,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 	acc.Balance += inc
 	if acc.Asset == TokenAsset {
 		e.totalTokens += inc
+		e.updateVoteToken(ctx)
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
@@ -1133,6 +1455,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 	acc.Balance -= dec
 	if acc.Asset == TokenAsset {
 		e.totalTokens -= dec
+		e.updateVoteToken(ctx)
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil

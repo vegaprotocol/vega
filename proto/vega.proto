@@ -56,10 +56,6 @@ message Timestamp {
   int64 value = 1;
 }
 
-message Amount {
-  string value = 1;
-}
-
 message Party {
   string id = 1 [(validator.field) = {msg_exists : true}];
 }
@@ -81,6 +77,20 @@ message RiskResult {
   map<string, RiskFactor> predictedNextRiskFactors = 4;
 }
 
+// Market Status
+// What mode is the market currently running in
+enum MarketState {
+  // Default value, this is invalid
+  MARKET_STATE_UNSPECIFIED = 0;
+
+  // Normal trading
+  MARKET_STATE_CONTINUOUS = 1;
+
+  // Auction trading
+  MARKET_STATE_AUCTION = 2;
+}
+
+
 message Order {
 
   // Order Time in Force
@@ -101,6 +111,12 @@ message Order {
 
     // fill or kill
     TIF_FOK = 4;
+
+    // good for auction
+    TIF_GFA = 5;
+
+    // good for normal
+    TIF_GFN = 6;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -183,6 +199,10 @@ message Order {
   // Versioning support for amends, orders start at version 1 and increment
   // after each successful amend
   uint64 version = 16;
+
+  // used internally, for orders submitted during auctions
+  // to keep track which auction batch this order falls under (required for fees calculation)
+  uint64 batchID = 17;
 }
 
 message OrderCancellationConfirmation {
@@ -195,27 +215,89 @@ message OrderConfirmation {
     repeated Order passiveOrdersAffected = 3;
 }
 
+// Whenever a change to the book occurs during an auction, this message will be used
+// to emit an event with the indicative price/volume per market
+message AuctionIndicativeState {
+  // The market this state is related to
+  string marketID = 1;
+  // The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now.
+  uint64 indicativePrice = 2;
+  // The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now.
+  uint64 indicativeVolume = 3;
+  // The timestamp at which the auction started
+  int64 auctionStart = 4;
+  // The timestamp at which the auction is meant to stop.
+  int64 auctionEnd = 5;
+}
+
+// Set when an order has an issue
 enum OrderError {
+  // Empty default error
   ORDER_ERROR_NONE = 0;
+
+  // Order was submitted for a market that does not exist
   ORDER_ERROR_INVALID_MARKET_ID = 1;
+
+  // Order was submitted with an invalid ID
   ORDER_ERROR_INVALID_ORDER_ID = 2;
+
+  // Order was amended with a sequence number that was not previous version + 1
   ORDER_ERROR_OUT_OF_SEQUENCE = 3;
+
+  // Order was amended with an invalid remaining size (e.g. remaining greater than total size)
   ORDER_ERROR_INVALID_REMAINING_SIZE = 4;
+
+  // Node was unable to get Vega (blockchain) time
   ORDER_ERROR_TIME_FAILURE = 5;
+
+  // Failed to remove an order from the book
   ORDER_ERROR_REMOVAL_FAILURE = 6;
+
+  // GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid
   ORDER_ERROR_INVALID_EXPIRATION_DATETIME = 7;
+
+  // Order was submitted or amended with an invalid reference field
   ORDER_ERROR_INVALID_ORDER_REFERENCE = 8;
+
+  // Order amend was submitted for an order field that cannot not be amended (e.g. order id)
   ORDER_ERROR_EDIT_NOT_ALLOWED = 9;
+
+  // Amend failure because amend details do not match original order
   ORDER_ERROR_AMEND_FAILURE = 10;
+
+  // Order not found in the order book or in order store
   ORDER_ERROR_NOT_FOUND = 11;
+
+  // Order was submitted with an invalid or missing party ID
   ORDER_ERROR_INVALID_PARTY_ID = 12;
+
+  // Order was submitted for a market that has closed
   ORDER_ERROR_MARKET_CLOSED = 13;
+
+  // Order was submitted, but the party did not have enough collateral to cover the order
   ORDER_ERROR_MARGIN_CHECK_FAILED = 14;
+
+  // Order was submitted, but the party did not have an account for this asset
   ORDER_ERROR_MISSING_GENERAL_ACCOUNT = 15;
+
+  // Unspecified internal error
   ORDER_ERROR_INTERNAL_ERROR = 16;
+
+  // Order was submitted with an invalid or missing size (e.g. 0)
   ORDER_ERROR_INVALID_SIZE = 17;
+
+  // Order was submitted with an invalid persistence for its type
   ORDER_ERROR_INVALID_PERSISTENCE = 18;
+
+  // Order was submitted with an invalid type field
   ORDER_ERROR_INVALID_TYPE = 19;
+
+  // Order was stopped as it would have traded with another order for the same party
+  ORDER_ERROR_SELF_TRADING = 20;
+
+  // Order was submitted, but the party did not have enough collateral to cover the fees for the order
+  ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
+  ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -251,6 +333,21 @@ message Trade {
   // nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 timestamp = 10;
   Type type = 11;
+
+  Fee buyerFee = 12;
+  Fee sellerFee = 13;
+  uint64 buyerAuctionBatch = 14;
+  uint64 sellerAuctionBatch = 15;
+}
+
+// The fees being paid by a party, resulting from a trade
+message Fee {
+  // A fee being paid to the non-aggressor party of the trade
+  uint64 makerFee = 1;
+  // A fee being paid to maintaining the vega infrastructure
+  uint64 infrastructureFee = 2;
+  // A fee being paid to the market makers
+  uint64 liquidityFee = 3;
 }
 
 message TradeSet {
@@ -356,11 +453,6 @@ enum ChainStatus {
   // Note: ChainStatus does not exist in GraphQL.
 }
 
-message NotifyTraderAccount {
-  string traderID = 1;
-  uint64 amount = 2;
-}
-
 message Withdraw {
   string partyID = 1;
   uint64 amount = 2;
@@ -410,11 +502,25 @@ message NodeVote {
 }
 
 enum AccountType {
+  // the default variant for this enum
   ACCOUNT_TYPE_UNSPECIFIED = 0;
+  // This account is created to hold the insurance pool funds of a market.
   ACCOUNT_TYPE_INSURANCE = 1;
+  // This account is created to hold fund while settlement or mtm occur.
   ACCOUNT_TYPE_SETTLEMENT = 2;
+  // A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change
   ACCOUNT_TYPE_MARGIN = 3;
+  // A party will have multiple general accounts, one for each assets they want
+  // to trade with. This is the account where the funds are initially deposited
+  // or withdrawn from. It's also the account where funds are taken to fullfill
+  // margin requirement or fees
   ACCOUNT_TYPE_GENERAL = 4;
+  //This account is created to hold fees earned for providing infrastructure
+  ACCOUNT_TYPE_FEES_INFRASTRUCTURE = 5;
+  // This account is created to hold fees earned for providing liquidity
+  ACCOUNT_TYPE_FEES_LIQUIDITY = 6;
+  // This account is created to hold fees earned for placing orders that sit on the book
+  ACCOUNT_TYPE_FEES_MAKER = 7;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
@@ -445,6 +551,10 @@ enum TransferType {
   TRANSFER_TYPE_MARGIN_LOW = 6;
   TRANSFER_TYPE_MARGIN_HIGH = 7;
   TRANSFER_TYPE_MARGIN_CONFISCATED = 8;
+  TRANSFER_TYPE_MAKER_FEE_PAY = 9;
+  TRANSFER_TYPE_MAKER_FEE_RECEIVE = 10;
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
+  TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
 }
 
 message Transfer {
@@ -494,14 +604,28 @@ message MarginLevels {
 }
 
 message MarketData {
+  // the mark price (actually an unsgined int)
   uint64 markPrice = 1;
+  // the highest price level on an order book for buy orders.
   uint64 bestBidPrice = 2;
+  // the aggregated volume being bid at the best bid price.
   uint64 bestBidVolume = 3;
+  // the lowest price level on an order book for offer orders.
   uint64 bestOfferPrice = 4;
+  // the aggregated volume being offered at the best offer price.
   uint64 bestOfferVolume = 5;
+  // the arithmetic average of the best bid price and best offer price.
   uint64 midPrice = 6;
+  // market id of the associated mark price
   string market = 7;
+  // time at which this mark price was relevant
   int64 timestamp = 8;
+  // the sum of the size of all positions greater than 0.
+  uint64 openInterest = 9;
+  // time in seconds until the end of the auction (0 if currently not in auction period)
+  int64 auctionEnd = 10;
+  // time until next auction (used in FBA's) - currently always 0
+  int64 auctionStart = 11;
 }
 
 message ErrorDetail {
@@ -513,14 +637,43 @@ message ErrorDetail {
   string inner = 3;
 }
 
-message SignedBundle {
-  bytes data = 1;
-  bytes sig = 2;
-  oneof auth {
-    bytes address = 101;
-    bytes pubKey = 102;
+// A transaction to be sent to vega
+message Transaction {
+  // one of all the possible command, proto marshalled
+  bytes inputData = 1;
+  // a random number used to provided uniqueness and prevents
+  // against replay attack
+  uint64 nonce = 2;
+  // the sender of the transction
+  // any of the following would be valid
+  oneof from {
+    // the address of the sender
+    bytes address = 1001;
+    // the public key of the sender
+    bytes pubKey = 1002;
   }
 }
+
+// A signature to be authenticate a transaction
+// and to be verified by the vega network
+message Signature {
+  // The bytes of the signature
+  bytes sig = 1;
+  // The algorithm used to create the signature
+  string algo = 2;
+  // The version of the signature used to create the signature
+  uint64 version = 3;
+}
+
+
+// A bundle of a transaction, proto marshalled and it's signature
+message SignedBundle {
+  // the transaction, proto marshalled
+  bytes tx = 1;
+  // the signature authenticating the transaction
+  Signature sig = 2;
+}
+
 
 // The kind of the signature created by a node
 // eg: for a new asset whitelisting, withdrawal

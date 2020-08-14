@@ -39,27 +39,15 @@ var (
 	ErrStreamInternal = errors.New("internal stream failure")
 	// ErrNotMapped is when an error cannot be found in the current error map/lookup table
 	ErrNotMapped = errors.New("error not found in error lookup table")
-	// ErrAuthDisabled signals to the caller that the authentication is disabled
-	ErrAuthDisabled = errors.New("auth disabled")
-	// ErrInvalidCredentials signals that the credentials specified by the client are invalid
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	// ErrMissingToken signals that a token was required but is missing with this request
-	ErrMissingToken = errors.New("missing token")
-	// ErrInvalidToken signals that a token was not valid for this request
-	ErrInvalidToken = errors.New("invalid token")
 	// ErrInvalidMarketID signals that the market ID does not exists
 	ErrInvalidMarketID = errors.New("invalid market ID")
 	// ErrMissingOrder signals that the actual payload is expected to contains an order
 	ErrMissingOrder = errors.New("missing order in request payload")
-	// ErrMissingTraderID signals that the payload is expected to contain a trader id
-	ErrMissingTraderID = errors.New("missing trader id")
 	// ErrMissingPartyID signals that the payload is expected to contain a party id
 	ErrMissingPartyID = errors.New("missing party id")
 	// ErrMalformedRequest signals that the request was malformed
 	ErrMalformedRequest = errors.New("malformed request")
 	// ErrInvalidWithdrawAmount signals that the amount of money to withdraw is invalid
-	// usually the party specified an amount of 0
-	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
 	// ErrMissingAsset signals that an asset was required but not specified
 	ErrMissingAsset = errors.New("missing asset")
 	// ErrSubmitOrder is returned when submitting an order fails for some reason.
@@ -89,7 +77,9 @@ var (
 	ErrMarketServiceGetMarketData = errors.New("failed to get market data")
 	// AccountService...
 	ErrAccountServiceGetMarketAccounts = errors.New("failed to get market accounts")
-	ErrAccountServiceGetPartyAccounts  = errors.New("failed to get party accounts")
+	// AccountService...
+	ErrAccountServiceGetFeeInfrastructureAccounts = errors.New("failed to get fee infrastructure accounts")
+	ErrAccountServiceGetPartyAccounts             = errors.New("failed to get party accounts")
 	// RiskService...
 	ErrRiskServiceGetMarginLevelsByID = errors.New("failed to get margin levels")
 	// CandleService...
@@ -104,7 +94,8 @@ var (
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
 	ErrBlockchainChainID       = errors.New("failed to get chain ID from blockchain")
-	// Governance...
+	// ErrPrepareWithdraw is return when a withdraw request was invalid
+	ErrPrepareWithdraw = errors.New("failed to prepare withdrawal")
 	// ErrPrepareProposal is returned when preparation of a governance proposal fails for some reason.
 	ErrPrepareProposal = errors.New("failed to prepare a proposal")
 	ErrPrepareVote     = errors.New("failed to prepare vote")
@@ -130,18 +121,12 @@ var errorMap = map[error]int32{
 	ErrStreamInternal:             10010,
 	ErrInvalidMarketID:            10011,
 	ErrMissingOrder:               10012,
-	ErrMissingTraderID:            10013,
 	ErrMissingPartyID:             10014,
 	ErrMalformedRequest:           10015,
-	ErrInvalidWithdrawAmount:      10016,
 	ErrMissingAsset:               10017,
 	ErrSubmitOrder:                10018,
 	ErrAmendOrder:                 10019,
 	ErrCancelOrder:                10020,
-	ErrAuthDisabled:               10021,
-	ErrInvalidCredentials:         10022,
-	ErrMissingToken:               10023,
-	ErrInvalidToken:               10024,
 	// Orders
 	ErrOrderServiceGetByMarket:      20001,
 	ErrOrderServiceGetByMarketAndID: 20002,

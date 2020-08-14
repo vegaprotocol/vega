@@ -23,8 +23,7 @@ type tstEngine struct {
 	ctrl            *gomock.Controller
 	accs            *mocks.MockAccounts
 	broker          *mocks.MockBroker
-	top             *mocks.MockValidatorTopology
-	cmd             *mocks.MockCommander
+	erc             *mocks.MockExtResChecker
 	assets          *mocks.MockAssets
 	proposalCounter uint // to streamline proposal generation
 }
@@ -35,6 +34,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Validate duplicate proposal", testProposalDuplicate)
 	t.Run("Validate closing time", testClosingTime)
 	t.Run("Validate enactment time", testEnactmentTime)
+	t.Run("Validate timestamps", testValidateTimestamps)
 	t.Run("Validate proposer stake", testProposerStake)
 }
 
@@ -46,6 +46,8 @@ func testSubmitValidProposal(t *testing.T) {
 	party := eng.makeValidParty("a-valid-party", balance)
 
 	// to check min required level
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(1).Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(balance)
 	// once proposal is validated, it is added to the buffer
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -65,6 +67,9 @@ func testProposalState(t *testing.T) {
 
 	var tokens uint64 = 1000
 	party := eng.makeValidParty("valid-party", tokens)
+
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(1).Return(true)
 
 	unspecified := eng.newOpenProposal(party.Id, time.Now())
 	unspecified.State = types.Proposal_STATE_UNSPECIFIED
@@ -118,6 +123,9 @@ func testProposalDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(1).Return(true)
+
 	var balance uint64 = 1000
 	party := eng.makeValidParty("valid-party", balance)
 	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(balance)
@@ -151,6 +159,8 @@ func testProposerStake(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	noAccountPartyID := "party"
 
 	notFoundError := errors.New("account not found")
@@ -198,6 +208,8 @@ func testClosingTime(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	party := eng.makeValidParty("a-valid-party", 1)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
@@ -240,6 +252,8 @@ func testEnactmentTime(t *testing.T) {
 
 	party := eng.makeValidParty("a-valid-party", 1)
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
 		pe, ok := e.(*events.Proposal)
 		assert.True(t, ok)
@@ -275,6 +289,25 @@ func testEnactmentTime(t *testing.T) {
 	err = eng.SubmitProposal(context.Background(), atClosingTime)
 }
 
+func testValidateTimestamps(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	party := eng.makeValidParty("a-valid-party", 1)
+	// for some unknown reason this previous utilities expect a mock assertion while doing
+	// nothing. basically this test utilities contaminates the other tests
+	// this will need to be refactored
+	eng.accs.GetPartyTokenAccount(party.Id)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	now := time.Now()
+	prop := eng.newOpenProposal(party.Id, now)
+	prop.Terms.ValidationTimestamp = prop.Terms.ClosingTimestamp + 10
+	err := eng.SubmitProposal(context.Background(), prop)
+	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
+}
+
 func TestVoteValidation(t *testing.T) {
 	t.Run("Test proposal id on a vote", testVoteProposalID)
 	t.Run("Test voter stake validation", testVoterStake)
@@ -289,6 +322,8 @@ func testVoteProposalID(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	voter := eng.makeValidParty("voter", 1)
 
 	err := eng.AddVote(context.Background(), types.Vote{
@@ -352,6 +387,8 @@ func testVoterStake(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(3).Return(uint64(2))
 
 	proposer := eng.makeValidParty("proposer", 1)
@@ -408,6 +445,8 @@ func testVotingDeclinedProposal(t *testing.T) {
 
 	eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(2))
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	proposer := eng.makeValidParty("proposer", 1)
 	declined := eng.newOpenProposal(proposer.Id, time.Now())
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -448,6 +487,8 @@ func testVotingPassedProposal(t *testing.T) {
 
 	eng.accs.EXPECT().GetTotalTokens().Times(4).Return(uint64(9))
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	proposer := eng.makeValidParty("proposer", 1)
 	passed := eng.newOpenProposal(proposer.Id, time.Now())
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -517,6 +558,8 @@ func testProposalDeclined(t *testing.T) {
 
 	now := time.Now()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(4).Return(uint64(200))
 	proposer := eng.makeValidParty("proposer", 100)
 	voter := eng.makeValidPartyTimes("voter", 100, 3)
@@ -575,6 +618,8 @@ func testProposalPassed(t *testing.T) {
 
 	now := time.Now()
 
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 	eng.accs.EXPECT().GetTotalTokens().Times(4).Return(uint64(100))
 	proposerVoter := eng.makeValidPartyTimes("proposer-and-voter", 100, 3)
 
@@ -630,6 +675,9 @@ func testProposalPassed(t *testing.T) {
 func testMultipleProposalsLifecycle(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
+
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 
 	partyA := "party-A"
 	eng.accs.EXPECT().GetTotalTokens().AnyTimes().Return(uint64(300))
@@ -758,13 +806,12 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	cfg := governance.NewDefaultConfig()
 	accs := mocks.NewMockAccounts(ctrl)
-	top := mocks.NewMockValidatorTopology(ctrl)
-	cmd := mocks.NewMockCommander(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	erc := mocks.NewMockExtResChecker(ctrl)
 
 	log := logging.NewTestLogger()
-	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, top, cmd, assets, time.Now(), true) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, assets, erc, time.Now()) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
@@ -772,9 +819,8 @@ func getTestEngine(t *testing.T) *tstEngine {
 		ctrl:   ctrl,
 		accs:   accs,
 		broker: broker,
-		cmd:    cmd,
 		assets: assets,
-		top:    top,
+		erc:    erc,
 	}
 }
 
@@ -823,7 +869,7 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 				DecimalPlaces: 5,
 				TradingMode: &types.NewMarketConfiguration_Continuous{
 					Continuous: &types.ContinuousTrading{
-						TickSize: 10,
+						TickSize: "0.1",
 					},
 				},
 			},
@@ -859,9 +905,10 @@ func (e *tstEngine) newOpenProposal(partyID string, now time.Time) types.Proposa
 		PartyID:   partyID,
 		State:     types.Proposal_STATE_OPEN,
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp:   now.Add(48 * time.Hour).Unix(),
-			EnactmentTimestamp: now.Add(2 * 48 * time.Hour).Unix(),
-			Change:             newValidMarketTerms(), //TODO: add more variaty here (when available)
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newValidMarketTerms(), //TODO: add more variaty here (when available)
 		},
 	}
 }

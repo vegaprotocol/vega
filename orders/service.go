@@ -60,8 +60,8 @@ type TimeService interface {
 type OrderStore interface {
 	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
 	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) ([]*types.Order, error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*types.Order, error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool) ([]*types.Order, error)
 	GetByReference(ctx context.Context, ref string) (*types.Order, error)
 	GetByOrderID(ctx context.Context, id string, version *uint64) (*types.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, skip, limit uint64, descending bool) ([]*types.Order, error)
@@ -152,7 +152,9 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNoType
 	}
 
-	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
+	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED ||
+		sub.TimeInForce == types.Order_TIF_GFA ||
+		sub.TimeInForce == types.Order_TIF_GFN {
 		return ErrNoTimeInForce
 	}
 
@@ -243,13 +245,13 @@ func (s *Svc) GetByReference(ctx context.Context, ref string) (*types.Order, err
 }
 
 // GetByMarket returns a list of order for a given market
-func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
-	return s.orderStore.GetByMarket(ctx, market, skip, limit, descending, open)
+func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (orders []*types.Order, err error) {
+	return s.orderStore.GetByMarket(ctx, market, skip, limit, descending)
 }
 
 // GetByParty returns a list of order for a given party
-func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, open bool) (orders []*types.Order, err error) {
-	return s.orderStore.GetByParty(ctx, party, skip, limit, descending, open)
+func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool) (orders []*types.Order, err error) {
+	return s.orderStore.GetByParty(ctx, party, skip, limit, descending)
 }
 
 // GetByMarketAndID find a order using a marketID and an order id

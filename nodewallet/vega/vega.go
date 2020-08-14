@@ -79,6 +79,14 @@ func (w *Wallet) Sign(data []byte) ([]byte, error) {
 	return wallet.Sign(alg, w.kp, data)
 }
 
+func (w *Wallet) Algo() string {
+	return w.kp.Algorithm.Name()
+}
+
+func (w *Wallet) Version() uint64 {
+	return w.kp.Algorithm.Version()
+}
+
 func (w *Wallet) PubKeyOrAddress() []byte {
 	return w.pubKey
 }

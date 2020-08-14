@@ -163,10 +163,8 @@ func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types
 		}()
 		ret := retries
 		for {
+			// wait for actual changes
 			data := sub.GetGovernanceData()
-			if len(data) == 0 {
-				continue
-			}
 			select {
 			case <-ctx.Done():
 				return
@@ -198,9 +196,6 @@ func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID st
 		ret := retries
 		for {
 			data := sub.GetGovernanceData()
-			if len(data) == 0 {
-				continue
-			}
 			select {
 			case <-ctx.Done():
 				return
@@ -413,7 +408,7 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	}
 
 	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
-	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
+	if terms.EnactmentTimestamp < terms.ClosingTimestamp || (terms.ValidationTimestamp > 0 && terms.ValidationTimestamp > terms.ClosingTimestamp) {
 		return ErrInvalidProposalTerms
 	}
 

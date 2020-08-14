@@ -126,35 +126,19 @@ print_check: ## Check for fmt.Print functions in Go code
 
 .PHONY: docker
 docker: SHELL:=/usr/bin/env bash
-docker: ## Make docker container image from scratch
-	@source ./script/build.sh && \
-	if ! test -f "$(HOME)/.ssh/id_rsa" ; then \
-		exit 1 ; \
-	fi ; \
-	docker build \
-		--build-arg SSH_KEY="$$(cat ~/.ssh/id_rsa)" \
-		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$$version" \
-		.
-
-.PHONY: docker_quick
-docker_quick: SHELL:=/bin/bash
-docker_quick: build ## Make docker container image using pre-existing binaries
-	@source ./script/build.sh && \
+docker: ## Make docker container image using pre-existing binaries
+	@source ./script/build.sh && set_version && \
+	mkdir -p docker/bin && \
 	for app in "$${apps[@]}" ; do \
 		f="cmd/$$app/$$app" ; \
 		if ! test -f "$$f" ; then \
 			echo "Failed to find: $$f" ; \
 			exit 1 ; \
 		fi ; \
-		cp -a "$$f" . || exit 1 ; \
+		cp -a "$$f" docker/bin/ || exit 1 ; \
 	done && \
-	docker build \
-		-t "docker.pkg.github.com/vegaprotocol/vega/vega:$$version" \
-		-f Dockerfile.quick \
-		. && \
-	for app in "$${apps[@]}" ; do \
-		rm -rf "./$$app" ; \
-	done
+	docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$version" docker && \
+	rm -rf docker/bin
 
 .PHONY: gettools_build
 gettools_build:

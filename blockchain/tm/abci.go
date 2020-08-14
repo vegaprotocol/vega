@@ -1,9 +1,12 @@
 package tm
 
 import (
+	"context"
 	"encoding/binary"
+	"encoding/hex"
 	"sync"
 
+	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 
@@ -110,7 +113,6 @@ func (a *AbciApplication) ReloadConf(cfg Config) {
 
 // BeginBlock is called by the chain once the new block is starting
 func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
-
 	a.blockHeightCounter.Inc()
 	// We can log more gossiped time info (switchable in config)
 	a.cfgMu.Lock()
@@ -125,7 +127,10 @@ func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.R
 
 	// Set time provided by ABCI block header (consensus will have been reached on block time)
 	epochNow := beginBlock.Header.Time
-	a.time.SetTimeNow(epochNow)
+	// use the hash block as the traceID in the context
+	hexBlockHash := hex.EncodeToString(beginBlock.Hash)
+	ctx := contextutil.WithTraceID(context.Background(), hexBlockHash)
+	a.time.SetTimeNow(ctx, epochNow)
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has begun
 	if err := a.service.Begin(); err != nil {

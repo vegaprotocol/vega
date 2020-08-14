@@ -23,9 +23,6 @@ func (this *Price) Validate() error {
 func (this *Timestamp) Validate() error {
 	return nil
 }
-func (this *Amount) Validate() error {
-	return nil
-}
 func (this *Party) Validate() error {
 	return nil
 }
@@ -70,7 +67,23 @@ func (this *OrderConfirmation) Validate() error {
 	}
 	return nil
 }
+func (this *AuctionIndicativeState) Validate() error {
+	return nil
+}
 func (this *Trade) Validate() error {
+	if this.BuyerFee != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.BuyerFee); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("BuyerFee", err)
+		}
+	}
+	if this.SellerFee != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.SellerFee); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("SellerFee", err)
+		}
+	}
+	return nil
+}
+func (this *Fee) Validate() error {
 	return nil
 }
 func (this *TradeSet) Validate() error {
@@ -113,9 +126,6 @@ func (this *PositionTrade) Validate() error {
 	return nil
 }
 func (this *Statistics) Validate() error {
-	return nil
-}
-func (this *NotifyTraderAccount) Validate() error {
 	return nil
 }
 func (this *Withdraw) Validate() error {
@@ -250,7 +260,18 @@ func (this *MarketData) Validate() error {
 func (this *ErrorDetail) Validate() error {
 	return nil
 }
+func (this *Transaction) Validate() error {
+	return nil
+}
+func (this *Signature) Validate() error {
+	return nil
+}
 func (this *SignedBundle) Validate() error {
+	if this.Sig != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Sig); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Sig", err)
+		}
+	}
 	return nil
 }
 func (this *NodeSignature) Validate() error {

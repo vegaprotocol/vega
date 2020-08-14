@@ -36,50 +36,6 @@ func (m *MockBlockchainClient) EXPECT() *MockBlockchainClientMockRecorder {
 	return m.recorder
 }
 
-// AmendOrder mocks base method
-func (m *MockBlockchainClient) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AmendOrder indicates an expected call of AmendOrder
-func (mr *MockBlockchainClientMockRecorder) AmendOrder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockBlockchainClient)(nil).AmendOrder), arg0, arg1)
-}
-
-// CancelOrder mocks base method
-func (m *MockBlockchainClient) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CancelOrder indicates an expected call of CancelOrder
-func (mr *MockBlockchainClientMockRecorder) CancelOrder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockBlockchainClient)(nil).CancelOrder), arg0, arg1)
-}
-
-// CreateOrder mocks base method
-func (m *MockBlockchainClient) CreateOrder(arg0 context.Context, arg1 *proto.Order) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateOrder", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateOrder indicates an expected call of CreateOrder
-func (mr *MockBlockchainClientMockRecorder) CreateOrder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockBlockchainClient)(nil).CreateOrder), arg0, arg1)
-}
-
 // GetChainID mocks base method
 func (m *MockBlockchainClient) GetChainID(arg0 context.Context) (string, error) {
 	m.ctrl.T.Helper()
@@ -170,21 +126,6 @@ func (mr *MockBlockchainClientMockRecorder) Health() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Health", reflect.TypeOf((*MockBlockchainClient)(nil).Health))
 }
 
-// NotifyTraderAccount mocks base method
-func (m *MockBlockchainClient) NotifyTraderAccount(arg0 context.Context, arg1 *proto.NotifyTraderAccount) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NotifyTraderAccount", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NotifyTraderAccount indicates an expected call of NotifyTraderAccount
-func (mr *MockBlockchainClientMockRecorder) NotifyTraderAccount(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyTraderAccount", reflect.TypeOf((*MockBlockchainClient)(nil).NotifyTraderAccount), arg0, arg1)
-}
-
 // SubmitTransaction mocks base method
 func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle) (bool, error) {
 	m.ctrl.T.Helper()
@@ -198,19 +139,4 @@ func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *pro
 func (mr *MockBlockchainClientMockRecorder) SubmitTransaction(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchainClient)(nil).SubmitTransaction), arg0, arg1)
-}
-
-// Withdraw mocks base method
-func (m *MockBlockchainClient) Withdraw(arg0 context.Context, arg1 *proto.Withdraw) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Withdraw indicates an expected call of Withdraw
-func (mr *MockBlockchainClientMockRecorder) Withdraw(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockBlockchainClient)(nil).Withdraw), arg0, arg1)
 }

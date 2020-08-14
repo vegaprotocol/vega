@@ -1,6 +1,7 @@
 package evtforward
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -13,17 +14,19 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
-	ErrEvtAlreadyExist   = errors.New("event already exist")
-	ErrMissingVegaWallet = errors.New("missing vega wallet")
+	ErrEvtAlreadyExist      = errors.New("event already exist")
+	ErrMissingVegaWallet    = errors.New("missing vega wallet")
+	ErrPubKeyNotWhitelisted = errors.New("pubkey not whitelisted")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/evtforward TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
@@ -42,16 +45,17 @@ type ValidatorTopology interface {
 // and will try to send them to the vega chain.
 // this will select a node in the network to forward the event
 type EvtForwarder struct {
-	log         *logging.Logger
-	cfg         Config
-	cmd         Commander
-	nodes       []nodeHash
-	self        string
-	mu          sync.RWMutex
-	ackedEvts   map[string]*types.ChainEvent
-	evts        map[string]tsEvt
-	currentTime time.Time
-	top         ValidatorTopology
+	log              *logging.Logger
+	cfg              Config
+	cmd              Commander
+	nodes            []nodeHash
+	self             string
+	mu               sync.RWMutex
+	ackedEvts        map[string]*types.ChainEvent
+	evts             map[string]tsEvt
+	currentTime      time.Time
+	top              ValidatorTopology
+	bcQueueWhitelist map[string]struct{}
 }
 
 type tsEvt struct {
@@ -70,16 +74,22 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		return nil, err
 	}
 
+	whitelist := make(map[string]struct{}, len(cfg.BlockchainQueueWhitelist))
+	for _, v := range cfg.BlockchainQueueWhitelist {
+		whitelist[v] = struct{}{}
+	}
+
 	evtf := &EvtForwarder{
-		cfg:         cfg,
-		log:         log,
-		cmd:         cmd,
-		nodes:       []nodeHash{},
-		self:        string(top.SelfVegaPubKey()),
-		currentTime: now,
-		ackedEvts:   map[string]*types.ChainEvent{},
-		evts:        map[string]tsEvt{},
-		top:         top,
+		cfg:              cfg,
+		log:              log,
+		cmd:              cmd,
+		nodes:            []nodeHash{},
+		self:             string(top.SelfVegaPubKey()),
+		currentTime:      now,
+		ackedEvts:        map[string]*types.ChainEvent{},
+		evts:             map[string]tsEvt{},
+		top:              top,
+		bcQueueWhitelist: whitelist,
 	}
 	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
@@ -89,7 +99,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 // Ack will return true if the event is newly acknowledge
 // if the event already exist and was already acknowledge this will return false
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
-	key := string(e.hash([]byte(evt.String())))
+	key := string(hashKey([]byte(evt.String())))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
 		// this was already acknowledged, nothing to be done, return false
@@ -106,8 +116,15 @@ func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 	return true
 }
 
-func (e *EvtForwarder) Forward(evt *types.ChainEvent) error {
-	key := string(e.hash([]byte(evt.String())))
+// Forward will forward an ChainEvent to the tendermint network
+// we expect the pubkey to be an ed25519 pubkey hex encoded
+func (e *EvtForwarder) Forward(evt *types.ChainEvent, pubkey string) error {
+	// check if the sender of the event is whitelisted
+	if _, ok := e.bcQueueWhitelist[pubkey]; !ok {
+		return ErrPubKeyNotWhitelisted
+	}
+
+	key := string(hashKey([]byte(evt.String())))
 	_, ok, _ := e.getEvt(key)
 	if ok {
 		return ErrEvtAlreadyExist
@@ -125,6 +142,7 @@ func (e *EvtForwarder) updateValidatorsList() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
+	e.self = string(e.top.SelfVegaPubKey())
 	// reset slice
 	// preemptive alloc, we can expect to have most likely
 	// as much validator
@@ -157,12 +175,16 @@ func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
 	s := fmt.Sprintf("%v%v", evt.String(), e.currentTime.Unix())
 	h := e.hash([]byte(s))
 	e.mu.RLock()
+	if len(e.nodes) <= 0 {
+		e.mu.RUnlock()
+		return false
+	}
 	node := e.nodes[h%uint64(len(e.nodes))]
 	e.mu.RUnlock()
 	return node.node == e.self
 }
 
-func (e *EvtForwarder) onTick(t time.Time) {
+func (e *EvtForwarder) onTick(_ context.Context, t time.Time) {
 	e.currentTime = t
 
 	// get an updated list of validators from the topology
@@ -186,6 +208,12 @@ func (e *EvtForwarder) onTick(t time.Time) {
 			}
 		}
 	}
+}
+
+func hashKey(key []byte) []byte {
+	hasher := sha3.New256()
+	hasher.Write([]byte(key))
+	return hasher.Sum(nil)
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {

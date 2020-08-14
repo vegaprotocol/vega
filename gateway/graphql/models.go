@@ -49,6 +49,8 @@ type Asset struct {
 	Decimals int `json:"decimals"`
 	// The origin source of the asset (e.g: an erc20 asset)
 	Source AssetSource `json:"source"`
+	// The infrastructure fee account for this asset
+	InfrastructureFeeAccount *proto.Account `json:"infrastructureFeeAccount"`
 }
 
 // A vega builtin asset, mostly for testing purpose
@@ -67,18 +69,30 @@ type BuiltinAsset struct {
 
 func (BuiltinAsset) IsAssetSource() {}
 
+// A vega builtin asset, mostly for testing purpose
+type BuiltinAssetInput struct {
+	// The full name of the asset (e.g: Great British Pound)
+	Name string `json:"name"`
+	// The symbol of the asset (e.g: GBP)
+	Symbol string `json:"symbol"`
+	// The total supply of the market
+	TotalSupply string `json:"totalSupply"`
+	// The precision of the asset
+	Decimals int `json:"decimals"`
+}
+
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	TickSize string `json:"tickSize"`
 }
 
 func (ContinuousTrading) IsTradingMode() {}
 
 // A mode where Vega try to execute order as soon as they are received
 type ContinuousTradingInput struct {
-	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	// Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored
+	TickSize *string `json:"tickSize"`
 }
 
 // Frequent batch auctions trading mode
@@ -86,7 +100,7 @@ type DiscreteTrading struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
 	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	TickSize string `json:"tickSize"`
 }
 
 func (DiscreteTrading) IsTradingMode() {}
@@ -95,8 +109,8 @@ func (DiscreteTrading) IsTradingMode() {}
 type DiscreteTradingInput struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
-	// Size of an increment in price in terms of the quote currency
-	TickSize int `json:"tickSize"`
+	// Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored
+	TickSize *string `json:"tickSize"`
 }
 
 // An asset originated from an Ethereum ERC20 Token
@@ -106,6 +120,12 @@ type Erc20 struct {
 }
 
 func (Erc20) IsAssetSource() {}
+
+// An asset originated from an Ethereum ERC20 Token
+type ERC20Input struct {
+	// The address of the erc20 contract
+	ContractAddress string `json:"contractAddress"`
+}
 
 // An Ethereum oracle
 type EthereumEvent struct {
@@ -117,12 +137,28 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
+// The factors applied to calculate the fees
+type FeeFactors struct {
+	// The factor applied to calculate MakerFees, a non-negative float
+	MakerFee string `json:"makerFee"`
+	// The factor applied to calculate InfrastructureFees, a non-negative float
+	InfrastructureFee string `json:"infrastructureFee"`
+	// The factor applied to calculate LiquidityFees, a non-negative float
+	LiquidityFee string `json:"liquidityFee"`
+}
+
+// The fees applicable to a market
+type Fees struct {
+	// The factors used to calculate the different fees
+	Factors *FeeFactors `json:"factors"`
+}
+
 // A Future product
 type Future struct {
 	// The maturity date of the product (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// The name of the asset (string)
-	Asset string `json:"asset"`
+	Asset *Asset `json:"asset"`
 	// The oracle used for this product (Oracle union)
 	Oracle Oracle `json:"oracle"`
 }
@@ -133,7 +169,7 @@ type FutureProduct struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
-	Asset string `json:"asset"`
+	Asset *Asset `json:"asset"`
 }
 
 // Future product configuration
@@ -191,7 +227,7 @@ type InstrumentConfigurationInput struct {
 // A set of metadata to associate to an instruments
 type InstrumentMetadata struct {
 	// An arbitrary list of tags to associated to associate to the Instrument (string list)
-	Tags []*string `json:"tags"`
+	Tags []string `json:"tags"`
 }
 
 // Parameters for the log normal risk model
@@ -242,8 +278,11 @@ type MarginCalculator struct {
 // Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
 type Market struct {
 	// Market ID
-	ID   string `json:"id"`
+	ID string `json:"id"`
+	// Market full name
 	Name string `json:"name"`
+	// Fees related data
+	Fees *Fees `json:"fees"`
 	// An instance of or reference to a tradable instrument.
 	TradableInstrument *TradableInstrument `json:"tradableInstrument"`
 	// Definitions and required configuration for the trading mode
@@ -273,10 +312,24 @@ type Market struct {
 	Depth *proto.MarketDepth `json:"depth"`
 	// Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
 	Candles []*proto.Candle `json:"candles"`
-	// Query an order by reference for the given market
-	OrderByReference *proto.Order `json:"orderByReference"`
 	// marketData for the given market
 	Data *proto.MarketData `json:"data"`
+}
+
+// A new asset proposal change
+type NewAsset struct {
+	// the source of the new Asset
+	Source AssetSource `json:"source"`
+}
+
+func (NewAsset) IsProposalChange() {}
+
+// A new asset to be added into vega
+type NewAssetInput struct {
+	// A new builtin assed to be created
+	BuiltinAsset *BuiltinAssetInput `json:"builtinAsset"`
+	// A new ERC20 asset to be created
+	Erc20 *ERC20Input `json:"erc20"`
 }
 
 type NewMarket struct {
@@ -287,7 +340,7 @@ type NewMarket struct {
 	// New market risk configuration
 	RiskParameters RiskModel `json:"riskParameters"`
 	// Metadata for this instrument, tags
-	Metadata []*string `json:"metadata"`
+	Metadata []string `json:"metadata"`
 	// Trading mode
 	TradingMode TradingMode `json:"tradingMode"`
 }
@@ -303,7 +356,9 @@ type NewMarketInput struct {
 	// New market risk configuration
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
-	Metadata []*string `json:"metadata"`
+	Metadata []string `json:"metadata"`
+	// The proposed duration for the opening auction for this market in seconds
+	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -370,6 +425,8 @@ type ProposalTermsInput struct {
 	// It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
 	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
 	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
+	// a new Asset proposal, this will create a new asset to be used in the vega network
+	NewAsset *NewAssetInput `json:"newAsset"`
 }
 
 type ProposalVote struct {
@@ -393,6 +450,16 @@ type ScalingFactors struct {
 	InitialMargin float64 `json:"initialMargin"`
 	// The scaling factor that determines the overflow margin level
 	CollateralRelease float64 `json:"collateralRelease"`
+}
+
+// A signature to be bundled with a transaction
+type SignatureInput struct {
+	// The signature, base64 encoded
+	Sig string `json:"sig"`
+	// The algorithm used to produice the signature
+	Algo string `json:"algo"`
+	// The version of the signature
+	Version int `json:"version"`
 }
 
 // A type of simple/dummy risk model where we can specify the risk factor long and short in params
@@ -426,6 +493,16 @@ type TradableInstrument struct {
 	RiskModel RiskModel `json:"riskModel"`
 	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
 	MarginCalculator *MarginCalculator `json:"marginCalculator"`
+}
+
+// The fee paid by the party when a trade occurs
+type TradeFee struct {
+	// The maker fee, aggressive party to the other party (the one who had an order in the book)
+	MakerFee string `json:"makerFee"`
+	// The infrastructure fee, a fee paid to the node runner to maintain the vega network
+	InfrastructureFee string `json:"infrastructureFee"`
+	// The fee paid to the market makers to provide liquidity in the market
+	LiquidityFee string `json:"liquidityFee"`
 }
 
 type TransactionSubmitted struct {
@@ -527,6 +604,10 @@ const (
 	AccountTypeMargin AccountType = "Margin"
 	// General account - the account containing 'unused' collateral for traders
 	AccountTypeGeneral AccountType = "General"
+	// Infrastructure fee account - the account where all infrastructure fees are collected
+	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
+	// Liquidity fee account - the account where all infrastructure fees are collected
+	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
 )
 
 var AllAccountType = []AccountType{
@@ -534,11 +615,13 @@ var AllAccountType = []AccountType{
 	AccountTypeSettlement,
 	AccountTypeMargin,
 	AccountTypeGeneral,
+	AccountTypeFeeInfrastructure,
+	AccountTypeFeeLiquidity,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity:
 		return true
 	}
 	return false
@@ -621,6 +704,50 @@ func (e Interval) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// What market state are we in
+type MarketState string
+
+const (
+	// Continuous trading where orders are processed and potentially matched on arrival
+	MarketStateContinuous MarketState = "CONTINUOUS"
+	// Auction trading where orders are uncrossed at the end of the auction period
+	MarketStateAuction MarketState = "AUCTION"
+)
+
+var AllMarketState = []MarketState{
+	MarketStateContinuous,
+	MarketStateAuction,
+}
+
+func (e MarketState) IsValid() bool {
+	switch e {
+	case MarketStateContinuous, MarketStateAuction:
+		return true
+	}
+	return false
+}
+
+func (e MarketState) String() string {
+	return string(e)
+}
+
+func (e *MarketState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketState", str)
+	}
+	return nil
+}
+
+func (e MarketState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Represents the type signature provided by a node
 type NodeSignatureKind string
 
@@ -662,6 +789,107 @@ func (e *NodeSignatureKind) UnmarshalGQL(v interface{}) error {
 }
 
 func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Reason for the order beeing rejected by the core node
+type OrderRejectionReason string
+
+const (
+	// Market id is invalid
+	OrderRejectionReasonInvalidMarketID OrderRejectionReason = "InvalidMarketId"
+	// Order id is invalid
+	OrderRejectionReasonInvalidOrderID OrderRejectionReason = "InvalidOrderId"
+	// Order is out of sequence
+	OrderRejectionReasonOrderOutOfSequence OrderRejectionReason = "OrderOutOfSequence"
+	// Remaining size in the order is invalid
+	OrderRejectionReasonInvalidRemainingSize OrderRejectionReason = "InvalidRemainingSize"
+	// Time has failed us
+	OrderRejectionReasonTimeFailure OrderRejectionReason = "TimeFailure"
+	// Unable to remove the order
+	OrderRejectionReasonOrderRemovalFailure OrderRejectionReason = "OrderRemovalFailure"
+	// Expiration time is invalid
+	OrderRejectionReasonInvalidExpirationTime OrderRejectionReason = "InvalidExpirationTime"
+	// Order reference is invalid
+	OrderRejectionReasonInvalidOrderReference OrderRejectionReason = "InvalidOrderReference"
+	// Edit is not allowed
+	OrderRejectionReasonEditNotAllowed OrderRejectionReason = "EditNotAllowed"
+	// Order amend fail
+	OrderRejectionReasonOrderAmendFailure OrderRejectionReason = "OrderAmendFailure"
+	// Order does not exist
+	OrderRejectionReasonOrderNotFound OrderRejectionReason = "OrderNotFound"
+	// Party id is invalid
+	OrderRejectionReasonInvalidPartyID OrderRejectionReason = "InvalidPartyId"
+	// Market is closed
+	OrderRejectionReasonMarketClosed OrderRejectionReason = "MarketClosed"
+	// Margin check failed
+	OrderRejectionReasonMarginCheckFailed OrderRejectionReason = "MarginCheckFailed"
+	// Order missing general account
+	OrderRejectionReasonMissingGeneralAccount OrderRejectionReason = "MissingGeneralAccount"
+	// An internal error happend
+	OrderRejectionReasonInternalError OrderRejectionReason = "InternalError"
+	// Invalid size
+	OrderRejectionReasonInvalidSize OrderRejectionReason = "InvalidSize"
+	// Invalid persistence
+	OrderRejectionReasonInvalidPersistence OrderRejectionReason = "InvalidPersistence"
+	// Invalid type
+	OrderRejectionReasonInvalidType OrderRejectionReason = "InvalidType"
+	// Self trading
+	OrderRejectionReasonSelfTrading OrderRejectionReason = "SelfTrading"
+	// Insufficient funds to pay fees
+	OrderRejectionReasonInsufficientFundsToPayFees OrderRejectionReason = "InsufficientFundsToPayFees"
+)
+
+var AllOrderRejectionReason = []OrderRejectionReason{
+	OrderRejectionReasonInvalidMarketID,
+	OrderRejectionReasonInvalidOrderID,
+	OrderRejectionReasonOrderOutOfSequence,
+	OrderRejectionReasonInvalidRemainingSize,
+	OrderRejectionReasonTimeFailure,
+	OrderRejectionReasonOrderRemovalFailure,
+	OrderRejectionReasonInvalidExpirationTime,
+	OrderRejectionReasonInvalidOrderReference,
+	OrderRejectionReasonEditNotAllowed,
+	OrderRejectionReasonOrderAmendFailure,
+	OrderRejectionReasonOrderNotFound,
+	OrderRejectionReasonInvalidPartyID,
+	OrderRejectionReasonMarketClosed,
+	OrderRejectionReasonMarginCheckFailed,
+	OrderRejectionReasonMissingGeneralAccount,
+	OrderRejectionReasonInternalError,
+	OrderRejectionReasonInvalidSize,
+	OrderRejectionReasonInvalidPersistence,
+	OrderRejectionReasonInvalidType,
+	OrderRejectionReasonSelfTrading,
+	OrderRejectionReasonInsufficientFundsToPayFees,
+}
+
+func (e OrderRejectionReason) IsValid() bool {
+	switch e {
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees:
+		return true
+	}
+	return false
+}
+
+func (e OrderRejectionReason) String() string {
+	return string(e)
+}
+
+func (e *OrderRejectionReason) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderRejectionReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderRejectionReason", str)
+	}
+	return nil
+}
+
+func (e OrderRejectionReason) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -738,6 +966,10 @@ const (
 	// This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
 	// NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
 	OrderTimeInForceGtt OrderTimeInForce = "GTT"
+	// This order is only accepted during an auction period
+	OrderTimeInForceGfa OrderTimeInForce = "GFA"
+	// This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)
+	OrderTimeInForceGfn OrderTimeInForce = "GFN"
 )
 
 var AllOrderTimeInForce = []OrderTimeInForce{
@@ -745,11 +977,13 @@ var AllOrderTimeInForce = []OrderTimeInForce{
 	OrderTimeInForceIoc,
 	OrderTimeInForceGtc,
 	OrderTimeInForceGtt,
+	OrderTimeInForceGfa,
+	OrderTimeInForceGfn,
 }
 
 func (e OrderTimeInForce) IsValid() bool {
 	switch e {
-	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt:
+	case OrderTimeInForceFok, OrderTimeInForceIoc, OrderTimeInForceGtc, OrderTimeInForceGtt, OrderTimeInForceGfa, OrderTimeInForceGfn:
 		return true
 	}
 	return false
@@ -823,6 +1057,92 @@ func (e OrderType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Reason for the proposal beeing rejected by the core node
+type ProposalRejectionReason string
+
+const (
+	// The specified close time is too early based on network parameters
+	ProposalRejectionReasonCloseTimeTooSoon ProposalRejectionReason = "CloseTimeTooSoon"
+	// The specified close time is too late based on network parameters
+	ProposalRejectionReasonCloseTimeTooLate ProposalRejectionReason = "CloseTimeTooLate"
+	// The specified enactment time is too early based on network parameters
+	ProposalRejectionReasonEnactTimeTooSoon ProposalRejectionReason = "EnactTimeTooSoon"
+	// The specified enactment time is too late based on network parameters
+	ProposalRejectionReasonEnactTimeTooLate ProposalRejectionReason = "EnactTimeTooLate"
+	// The proposer for this proposal as insufficient token
+	ProposalRejectionReasonInsufficientTokens ProposalRejectionReason = "InsufficientTokens"
+	// The instrument quote name and base name were the same
+	ProposalRejectionReasonInvalidInstrumentSecurity ProposalRejectionReason = "InvalidInstrumentSecurity"
+	// The proposal has no product specified
+	ProposalRejectionReasonNoProduct ProposalRejectionReason = "NoProduct"
+	// The specified product is not supported
+	ProposalRejectionReasonUnuspportedProduct ProposalRejectionReason = "UnuspportedProduct"
+	// Invalid future maturity timestamp (expect RFC3339)
+	ProposalRejectionReasonInvalidFutureMaturityTimestamp ProposalRejectionReason = "InvalidFutureMaturityTimestamp"
+	// The product maturity is already in the past
+	ProposalRejectionReasonProductMaturityIsPassed ProposalRejectionReason = "ProductMaturityIsPassed"
+	// The proposal has no trading mode
+	ProposalRejectionReasonNoTradingMode ProposalRejectionReason = "NoTradingMode"
+	// The proposal has an unsupported trading mode
+	ProposalRejectionReasonUnsupportedTradingMode ProposalRejectionReason = "UnsupportedTradingMode"
+	// The proposal failed node validation
+	ProposalRejectionReasonNodeValidationFailed ProposalRejectionReason = "NodeValidationFailed"
+	// A builtin asset configuration is missing
+	ProposalRejectionReasonMissingBuiltinAssetField ProposalRejectionReason = "MissingBuiltinAssetField"
+	// The ERC20 contract address is missing from an ERC20 asset proposal
+	ProposalRejectionReasonMissingERC20ContractAddress ProposalRejectionReason = "MissingERC20ContractAddress"
+	// proposal terms timestamps are not compatible (Validation < Closing < Enactment)
+	ProposalRejectionReasonIncompatibleTimestamps ProposalRejectionReason = "IncompatibleTimestamps"
+)
+
+var AllProposalRejectionReason = []ProposalRejectionReason{
+	ProposalRejectionReasonCloseTimeTooSoon,
+	ProposalRejectionReasonCloseTimeTooLate,
+	ProposalRejectionReasonEnactTimeTooSoon,
+	ProposalRejectionReasonEnactTimeTooLate,
+	ProposalRejectionReasonInsufficientTokens,
+	ProposalRejectionReasonInvalidInstrumentSecurity,
+	ProposalRejectionReasonNoProduct,
+	ProposalRejectionReasonUnuspportedProduct,
+	ProposalRejectionReasonInvalidFutureMaturityTimestamp,
+	ProposalRejectionReasonProductMaturityIsPassed,
+	ProposalRejectionReasonNoTradingMode,
+	ProposalRejectionReasonUnsupportedTradingMode,
+	ProposalRejectionReasonNodeValidationFailed,
+	ProposalRejectionReasonMissingBuiltinAssetField,
+	ProposalRejectionReasonMissingERC20ContractAddress,
+	ProposalRejectionReasonIncompatibleTimestamps,
+}
+
+func (e ProposalRejectionReason) IsValid() bool {
+	switch e {
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonIncompatibleTimestamps:
+		return true
+	}
+	return false
+}
+
+func (e ProposalRejectionReason) String() string {
+	return string(e)
+}
+
+func (e *ProposalRejectionReason) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ProposalRejectionReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ProposalRejectionReason", str)
+	}
+	return nil
+}
+
+func (e ProposalRejectionReason) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Varoius states a proposal can transition through:
 //   Open ->
 //       - Passed -> Enacted.
@@ -843,6 +1163,8 @@ const (
 	ProposalStateRejected ProposalState = "Rejected"
 	// Proposal has been executed and the changes under this proposal have now been applied
 	ProposalStateEnacted ProposalState = "Enacted"
+	// Proposal is waiting for the node to run validation
+	ProposalStateWaitingForNodeVote ProposalState = "WaitingForNodeVote"
 )
 
 var AllProposalState = []ProposalState{
@@ -852,11 +1174,12 @@ var AllProposalState = []ProposalState{
 	ProposalStateDeclined,
 	ProposalStateRejected,
 	ProposalStateEnacted,
+	ProposalStateWaitingForNodeVote,
 }
 
 func (e ProposalState) IsValid() bool {
 	switch e {
-	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted:
+	case ProposalStateFailed, ProposalStateOpen, ProposalStatePassed, ProposalStateDeclined, ProposalStateRejected, ProposalStateEnacted, ProposalStateWaitingForNodeVote:
 		return true
 	}
 	return false
@@ -880,101 +1203,6 @@ func (e *ProposalState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ProposalState) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-// Reason for the order beeing rejected by the core node
-type RejectionReason string
-
-const (
-	// Market id is invalid
-	RejectionReasonInvalidMarketID RejectionReason = "InvalidMarketId"
-	// Order id is invalid
-	RejectionReasonInvalidOrderID RejectionReason = "InvalidOrderId"
-	// Order is out of sequence
-	RejectionReasonOrderOutOfSequence RejectionReason = "OrderOutOfSequence"
-	// Remaining size in the order is invalid
-	RejectionReasonInvalidRemainingSize RejectionReason = "InvalidRemainingSize"
-	// Time has failed us
-	RejectionReasonTimeFailure RejectionReason = "TimeFailure"
-	// Unable to remove the order
-	RejectionReasonOrderRemovalFailure RejectionReason = "OrderRemovalFailure"
-	// Expiration time is invalid
-	RejectionReasonInvalidExpirationTime RejectionReason = "InvalidExpirationTime"
-	// Order reference is invalid
-	RejectionReasonInvalidOrderReference RejectionReason = "InvalidOrderReference"
-	// Edit is not allowed
-	RejectionReasonEditNotAllowed RejectionReason = "EditNotAllowed"
-	// Order amend fail
-	RejectionReasonOrderAmendFailure RejectionReason = "OrderAmendFailure"
-	// Order does not exist
-	RejectionReasonOrderNotFound RejectionReason = "OrderNotFound"
-	// Party id is invalid
-	RejectionReasonInvalidPartyID RejectionReason = "InvalidPartyId"
-	// Market is closed
-	RejectionReasonMarketClosed RejectionReason = "MarketClosed"
-	// Margin check failed
-	RejectionReasonMarginCheckFailed RejectionReason = "MarginCheckFailed"
-	// Order missing general account
-	RejectionReasonMissingGeneralAccount RejectionReason = "MissingGeneralAccount"
-	// An internal error happend
-	RejectionReasonInternalError RejectionReason = "InternalError"
-	// Invalid size
-	RejectionReasonInvalidSize RejectionReason = "InvalidSize"
-	// Invalid persistence
-	RejectionReasonInvalidPersistence RejectionReason = "InvalidPersistence"
-	// Invalid type
-	RejectionReasonInvalidType RejectionReason = "InvalidType"
-)
-
-var AllRejectionReason = []RejectionReason{
-	RejectionReasonInvalidMarketID,
-	RejectionReasonInvalidOrderID,
-	RejectionReasonOrderOutOfSequence,
-	RejectionReasonInvalidRemainingSize,
-	RejectionReasonTimeFailure,
-	RejectionReasonOrderRemovalFailure,
-	RejectionReasonInvalidExpirationTime,
-	RejectionReasonInvalidOrderReference,
-	RejectionReasonEditNotAllowed,
-	RejectionReasonOrderAmendFailure,
-	RejectionReasonOrderNotFound,
-	RejectionReasonInvalidPartyID,
-	RejectionReasonMarketClosed,
-	RejectionReasonMarginCheckFailed,
-	RejectionReasonMissingGeneralAccount,
-	RejectionReasonInternalError,
-	RejectionReasonInvalidSize,
-	RejectionReasonInvalidPersistence,
-	RejectionReasonInvalidType,
-}
-
-func (e RejectionReason) IsValid() bool {
-	switch e {
-	case RejectionReasonInvalidMarketID, RejectionReasonInvalidOrderID, RejectionReasonOrderOutOfSequence, RejectionReasonInvalidRemainingSize, RejectionReasonTimeFailure, RejectionReasonOrderRemovalFailure, RejectionReasonInvalidExpirationTime, RejectionReasonInvalidOrderReference, RejectionReasonEditNotAllowed, RejectionReasonOrderAmendFailure, RejectionReasonOrderNotFound, RejectionReasonInvalidPartyID, RejectionReasonMarketClosed, RejectionReasonMarginCheckFailed, RejectionReasonMissingGeneralAccount, RejectionReasonInternalError, RejectionReasonInvalidSize, RejectionReasonInvalidPersistence, RejectionReasonInvalidType:
-		return true
-	}
-	return false
-}
-
-func (e RejectionReason) String() string {
-	return string(e)
-}
-
-func (e *RejectionReason) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = RejectionReason(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RejectionReason", str)
-	}
-	return nil
-}
-
-func (e RejectionReason) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

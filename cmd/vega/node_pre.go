@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
@@ -37,15 +39,15 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/cenkalti/backoff"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
-	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/sha3"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func envConfigPath() string {
@@ -97,7 +99,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	// for the user to type his password
 	var nodeWalletPassphrase string
 	if len(l.nodeWalletPassphrase) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase()
+		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
 	} else {
 		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
 	}
@@ -204,8 +206,8 @@ func (l *NodeCommand) loadMarketsConfig() error {
 
 func (l *NodeCommand) setupSubscibers() {
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
-	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.Log, false)
-	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.Log, l.orderStore, true)
+	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
+	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
 	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
 	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
 	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
@@ -285,43 +287,73 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return err
 	}
 
+	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
+	if err != nil {
+		return err
+	}
+
+	h := func(key []byte) []byte {
+		hasher := sha3.New256()
+		hasher.Write([]byte(key))
+		return hasher.Sum(nil)
+	}
+
 	for _, v := range assetSrcs {
 		v := v
-		aid, err := l.assets.NewAsset(uuid.NewV4().String(), v)
+		id := hex.EncodeToString(h([]byte(v.String())))
+		err := l.loadAsset(id, v)
 		if err != nil {
-			return fmt.Errorf("error instanciating asset %v\n", err)
+			return err
 		}
+	}
 
-		asset, err := l.assets.Get(aid)
-		if err != nil {
-			return fmt.Errorf("unable to get asset %v\n", err)
-		}
+	return nil
+}
 
-		// just a simple backoff here
-		err = backoff.Retry(
-			func() error {
-				err := asset.Validate()
-				if !asset.IsValid() {
-					return err
-				}
-				return nil
-			},
-			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
-		)
-		if err != nil {
-			return fmt.Errorf("unable to instanciate new asset %v", err)
-		}
-		if err := l.assets.Enable(aid); err != nil {
-			return fmt.Errorf("unable to enable asset: %v", err)
-		}
+func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
+	aid, err := l.assets.NewAsset(id, v)
+	if err != nil {
+		return fmt.Errorf("error instanciating asset %v\n", err)
+	}
 
-		assetD := asset.Data()
-		if err := col.EnableAsset(context.Background(), *assetD); err != nil {
-			return fmt.Errorf("unable to enable asset in colateral: %v", err)
-		}
+	asset, err := l.assets.Get(aid)
+	if err != nil {
+		return fmt.Errorf("unable to get asset %v\n", err)
+	}
 
-		l.Log.Info("new asset added successfully",
-			logging.String("asset", asset.String()))
+	// just a simple backoff here
+	err = backoff.Retry(
+		func() error {
+			err := asset.Validate()
+			if !asset.IsValid() {
+				return err
+			}
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to instanciate new asset %v", err)
+	}
+	if err := l.assets.Enable(aid); err != nil {
+		return fmt.Errorf("unable to enable asset: %v", err)
+	}
+
+	assetD := asset.ProtoAsset()
+	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
+		return fmt.Errorf("unable to enable asset in colateral: %v", err)
+	}
+
+	l.Log.Info("new asset added successfully",
+		logging.String("asset", asset.String()))
+
+	// FIXME: this will be remove once we stop loading market from config
+	// here we replace the mkts assets symbols with ids
+	for _, v := range l.mktscfg {
+		sym := v.TradableInstrument.Instrument.GetFuture().Asset
+		if sym == assetD.Symbol {
+			v.TradableInstrument.Instrument.GetFuture().Asset = assetD.ID
+		}
 	}
 
 	return nil
@@ -372,10 +404,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, nil)
+	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
+
+	l.erc = validators.NewExtResChecker(l.Log, l.topology, commander, l.timeService)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.topology, commander, l.assets, now, !l.noStores)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
@@ -389,9 +423,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
+	l.banking = banking.New(l.Log, l.collateral, l.erc, l.timeService, l.assets)
+
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, !l.noStores)
+	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, l.erc, l.banking)
 	if err != nil {
 		return err
 	}
@@ -440,7 +476,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
-	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts, l.blockchainClient)
+	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
@@ -451,8 +487,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	return
 }
 
-func getTerminalPassphrase() (string, error) {
-	fmt.Printf("please enter nodewallet passphrase:")
+func getTerminalPassphrase(what string) (string, error) {
+	fmt.Printf("please enter %v passphrase:", what)
 	password, err := terminal.ReadPassword(0)
 	if err != nil {
 		return "", err

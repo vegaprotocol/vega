@@ -41,7 +41,7 @@ func (this *SubmitTransactionRequest) Validate() error {
 func (this *SubmitTransactionResponse) Validate() error {
 	return nil
 }
-func (this *WithdrawRequest) Validate() error {
+func (this *PrepareWithdrawRequest) Validate() error {
 	if this.Withdraw != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Withdraw); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Withdraw", err)
@@ -49,18 +49,7 @@ func (this *WithdrawRequest) Validate() error {
 	}
 	return nil
 }
-func (this *WithdrawResponse) Validate() error {
-	return nil
-}
-func (this *NotifyTraderAccountRequest) Validate() error {
-	if this.Notif != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Notif); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Notif", err)
-		}
-	}
-	return nil
-}
-func (this *NotifyTraderAccountResponse) Validate() error {
+func (this *PrepareWithdrawResponse) Validate() error {
 	return nil
 }
 func (this *PrepareSubmitOrderResponse) Validate() error {
@@ -687,6 +676,19 @@ func (this *MarketAccountsResponse) Validate() error {
 	}
 	return nil
 }
+func (this *FeeInfrastructureAccountsRequest) Validate() error {
+	return nil
+}
+func (this *FeeInfrastructureAccountsResponse) Validate() error {
+	for _, item := range this.Accounts {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Accounts", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *PrepareProposalRequest) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
@@ -729,9 +731,6 @@ func (this *PrepareVoteResponse) Validate() error {
 	return nil
 }
 func (this *OrderByIDRequest) Validate() error {
-	return nil
-}
-func (this *OrderByReferenceIDRequest) Validate() error {
 	return nil
 }
 func (this *OrderVersionsByIDRequest) Validate() error {
