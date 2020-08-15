@@ -513,6 +513,16 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiCancelOrderRequest"
+            }
+          }
+        ],
         "tags": [
           "trading"
         ]
@@ -1114,6 +1124,16 @@
         }
       },
       "description": "Response for a list of all assets enabled on Vega."
+    },
+    "apiCancelOrderRequest": {
+      "type": "object",
+      "properties": {
+        "cancellation": {
+          "$ref": "#/definitions/vegaOrderCancellation",
+          "description": "An order cancellation."
+        }
+      },
+      "description": "Request to cancel an existing order."
     },
     "apiCandlesResponse": {
       "type": "object",
