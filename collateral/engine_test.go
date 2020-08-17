@@ -85,6 +85,7 @@ func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
 	t.Run("fees transfer continuous - OK with enough in general", testFeeTransferContinuousOKWithEnoughInGenral)
 	t.Run("fees transfer continuous - OK with enough in margin + general", testFeeTransferContinuousOKWithEnoughInGeneralAndMargin)
 	t.Run("fees transfer continuous - transfer with 0 amount", testFeeTransferContinuousOKWith0Amount)
+	t.Run("fees transfer check account events", testFeeTransferContinuousOKCheckAccountEvents)
 }
 
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
@@ -274,7 +275,71 @@ func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
 	assert.NotNil(t, transfers)
 	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
 	assert.Len(t, transfers, 1)
+}
 
+func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	_, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	margin, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), margin, 10000)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 1000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 1000,
+			},
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 3000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
+				MinAmount: 3000,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	var (
+		seenLiqui bool
+		seenInfra bool
+	)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(evt events.Event) {
+		if evt.Type() != events.AccountEvent {
+			t.FailNow()
+		}
+		accRaw := evt.(*events.Acc)
+		acc := accRaw.Account()
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
+			assert.Equal(t, 1000, int(acc.Balance))
+			seenInfra = true
+		}
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
+			assert.Equal(t, 3000, int(acc.Balance))
+			seenLiqui = true
+		}
+	})
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 2)
+	assert.True(t, seenInfra)
+	assert.True(t, seenLiqui)
 }
 
 func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
