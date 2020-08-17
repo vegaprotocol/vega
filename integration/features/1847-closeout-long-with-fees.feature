@@ -4,7 +4,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r  | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee |
-      | ETH/DEC19 | ETH      | BTC       | BTC   | 100       | simple     | 0.1       | 0.1       | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 0           | continuous   | 0        | 0                 | 0            |
+      | ETH/DEC19 | ETH      | BTC       | BTC   | 100       | simple     | 0.1       | 0.1       | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 0           | continuous   | 0.00025  | 0.0005            | 0.001        |
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
@@ -47,13 +47,16 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     # then we make sure the insurance pool collected the funds
     And the insurance pool balance is "0" for the market "ETH/DEC19"
 
-    #Then dump orders
-
     #check positions
+    #   Note that the realisedPNL for tt_15 is -102 as additional 2 was made
+    #   on top of initial deposit by earning maker fee on passive orders.
+    #   That same income was used to pay up a higer portion of the 200 owed in MTM
+    #   settlement by tt_15, hence lower realisedPNL loss for tt_11 compared to
+    #   the no fees case. The benefit for tt_6 is not visible due to rounding.
     Then position API produce the following:
       | trader | volume | unrealisedPNL | realisedPNL |
       | tt_4   | 4      | -200          | 0           |
-      | tt_5   | 0      | 0             | -100        |
+      | tt_5   | 0      | 0             | -102        |
       | tt_6   | -4     | 200           | -30         |
       | tt_10  | 30     | 0             | 0           |
-      | tt_11  | -30    | 200           | -70         |
+      | tt_11  | -30    | 200           | -68         |
