@@ -1,6 +1,48 @@
 # Changelog
 
+## 0.23.0
+
+*2020-08-10*
+
+This release contains a lot of groundwork for Fees and Auction mode.
+
+**Fees** are incurred on every trade on Vega. Those fees are divided between up to three recipient types, but traders will only see one collective fee charged. The fees reward liquidity providers, infrastructure providers and market makers.
+
+* The liquidity portion of the fee is paid to market makers for providing liquidity, and is transferred to the market-maker fee pool for the market.
+* The infrastructure portion of the fee, which is paid to validators as a reward for running the infrastructure of the network, is transferred to the infrastructure fee pool for that asset. It is then periodically distributed to the validators.
+* The maker portion of the fee is transferred to the non-aggressive, or passive party in the trade (the maker, as opposed to the taker).
+
+**Auction mode** is not enabled in this release, but the work is nearly complete for Opening Auctions on new markets.
+
+💥 Please note, **this release disables order amends**. The team uncovered an issue in the Market Depth API output that is caused by order amends, so rather than give incorrect output, we've temporarily disabled the amendment of orders. They will return when the Market Depth API is fixed. For now, *amends will return an error*.
+
+### New
+
+- [#2092](https://github.com/vegaprotocol/vega/issues/2092) 💥 Disable order amends
+- [#2027](https://github.com/vegaprotocol/vega/pull/2027) Add built in asset faucet endpoint
+- [#2075](https://github.com/vegaprotocol/vega/pull/2075), [#2086](https://github.com/vegaprotocol/vega/pull/2086), [#2083](https://github.com/vegaprotocol/vega/pull/2083), [#2078](https://github.com/vegaprotocol/vega/pull/2078) Add time & size limits to faucet requests
+- [#2068](https://github.com/vegaprotocol/vega/pull/2068) Add REST endpoint to fetch governance proposals by Party
+- [#2058](https://github.com/vegaprotocol/vega/pull/2058) Add REST endpoints for fees
+- [#2047](https://github.com/vegaprotocol/vega/pull/2047) Add `prepareWithdraw` endpoint
+
+### Improvements
+
+- [#2061](https://github.com/vegaprotocol/vega/pull/2061) Fix Network orders being left as active
+- [#2034](https://github.com/vegaprotocol/vega/pull/2034) Send `KeepAlive` messages on GraphQL subscriptions
+- [#2031](https://github.com/vegaprotocol/vega/pull/2031) Add proto fields required for auctions
+- [#2025](https://github.com/vegaprotocol/vega/pull/2025) Add auction mode (currently never triggered)
+- [#2013](https://github.com/vegaprotocol/vega/pull/2013) Add Opening Auctions support to market framework
+- [#2010](https://github.com/vegaprotocol/vega/pull/2010) Add documentation for Order Errors to proto source files
+- [#2003](https://github.com/vegaprotocol/vega/pull/2003) Add fees support
+- [#2004](https://github.com/vegaprotocol/vega/pull/2004) Remove @deprecated field from GraphQL input types (as it’s invalid)
+- [#2000](https://github.com/vegaprotocol/vega/pull/2000) Fix `rejectionReason` for trades stopped for self trading
+- [#1990](https://github.com/vegaprotocol/vega/pull/1990) Remove specified `tickSize` from market
+- [#2066](https://github.com/vegaprotocol/vega/pull/2066) Fix validation of proposal timestamps to ensure that datestamps specify events in the correct order
+- [#2043](https://github.com/vegaprotocol/vega/pull/2043) Track Event Queue events to avoid processing events from other chains twice
 ## 0.22.0
+
+### Bugfixes
+- [#2096](https://github.com/vegaprotocol/vega/pull/2096) Fix concurrent map access in event forward
 
 *2020-07-20*
 
