@@ -1,12 +1,17 @@
 package wallet
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"math/big"
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/wallet/crypto"
+
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -226,16 +231,33 @@ func (h *Handler) SignTx(token, tx, pubkey string) (SignedBundle, error) {
 		return SignedBundle{}, ErrPubKeyIsTainted
 	}
 
+	// we build the transaction payload
+	txTy := &types.Transaction{
+		InputData: rawtx,
+		Nonce:     makeNonce(),
+		From: &types.Transaction_PubKey{
+			PubKey: kp.pubBytes,
+		},
+	}
+
+	rawTxTy, err := proto.Marshal(txTy)
+	if err != nil {
+		return SignedBundle{}, err
+	}
+
 	// then lets sign the stuff and return it
-	sig, err := kp.Algorithm.Sign(kp.privBytes, rawtx)
+	sig, err := kp.Algorithm.Sign(kp.privBytes, rawTxTy)
 	if err != nil {
 		return SignedBundle{}, err
 	}
 
 	return SignedBundle{
-		Data:   rawtx,
-		Sig:    sig,
-		PubKey: kp.pubBytes,
+		Tx: rawTxTy,
+		Sig: Signature{
+			Sig:     sig,
+			Algo:    kp.Algorithm.Name(),
+			Version: kp.Algorithm.Version(),
+		},
 	}, nil
 }
 
@@ -331,4 +353,12 @@ func (h *Handler) UpdateMeta(token, pubkey, passphrase string, meta []Meta) erro
 
 	h.store[wname] = w
 	return nil
+}
+
+func makeNonce() uint64 {
+	max := &big.Int{}
+	// set it to the max value of the uint64
+	max.SetUint64(^uint64(0))
+	nonce, _ := rand.Int(rand.Reader, max)
+	return nonce.Uint64()
 }

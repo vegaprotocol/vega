@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
@@ -21,16 +22,13 @@ import (
 )
 
 type testMarket struct {
-	market *execution.Market
-	log    *logging.Logger
-	ctrl   *gomock.Controller
-
+	market          *execution.Market
+	log             *logging.Logger
+	ctrl            *gomock.Controller
 	collateraEngine *collateral.Engine
-	partyEngine     *execution.Party
-
-	broker *mocks.MockBroker
-
-	now time.Time
+	broker          *mocks.MockBroker
+	now             time.Time
+	asset           string
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket {
@@ -40,6 +38,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	positionConfig := positions.NewDefaultConfig()
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
+	feeConfig := fee.NewDefaultConfig()
 
 	broker := mocks.NewMockBroker(ctrl)
 
@@ -54,12 +53,21 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		ID:     "ETH",
 	})
 
-	mkts := getMarkets(closingAt)
-	partyEngine := execution.NewParty(log, collateralEngine, mkts, broker)
+	// add the token asset
+	tokAsset := types.Asset{
+		ID:          collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Name:        collateral.TokenAssetSource.GetBuiltinAsset().Name,
+		Symbol:      collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
+		Decimals:    collateral.TokenAssetSource.GetBuiltinAsset().Decimals,
+		TotalSupply: collateral.TokenAssetSource.GetBuiltinAsset().TotalSupply,
+		Source:      collateral.TokenAssetSource,
+	}
+	collateralEngine.EnableAsset(context.Background(), tokAsset)
 
+	mkts := getMarkets(closingAt)
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		collateralEngine, partyEngine, &mkts[0], now, broker, execution.NewIDGen())
+		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -74,14 +82,21 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		log:             log,
 		ctrl:            ctrl,
 		collateraEngine: collateralEngine,
-		partyEngine:     partyEngine,
 		broker:          broker,
 		now:             now,
+		asset:           asset,
 	}
 }
 
 func getMarkets(closingAt time.Time) []types.Market {
 	mkt := types.Market{
+		Fees: &types.Fees{
+			Factors: &types.FeeFactors{
+				LiquidityFee:      "0.001",
+				InfrastructureFee: "0.0005",
+				MakerFee:          "0.00025",
+			},
+		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
@@ -125,6 +140,7 @@ func getMarkets(closingAt time.Time) []types.Market {
 				},
 			},
 		},
+		OpeningAuction: &types.AuctionDuration{},
 		TradingMode: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
@@ -135,9 +151,12 @@ func getMarkets(closingAt time.Time) []types.Market {
 }
 
 func addAccount(market *testMarket, party string) {
-	market.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party})
+	market.collateraEngine.Deposit(context.Background(), party, market.asset, 1000000000)
 	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// market.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+}
+func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
+	market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
+	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
 
 func TestMarketClosing(t *testing.T) {
@@ -147,13 +166,8 @@ func TestMarketClosing(t *testing.T) {
 	closingAt := time.Unix(20, 0)
 	tm := getTestMarket(t, now, closingAt)
 	defer tm.ctrl.Finish()
-	// add 2 traders to the party engine
-	// this will create 2 traders, credit their account
-	// and move some monies to the market
-	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party1})
-	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party2})
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+	addAccount(tm, party1)
+	addAccount(tm, party2)
 
 	// check account gets updated
 	closed := tm.market.OnChainTimeUpdate(closingAt.Add(1 * time.Second))
@@ -171,8 +185,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
 	// this will also output the close accounts
-	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party1})
-	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party2})
+	addAccount(tm, party1)
+	addAccount(tm, party2)
 
 	// submit orders
 	// party1 buys
@@ -239,7 +253,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.partyEngine.NotifyTraderAccount(context.Background(), &types.NotifyTraderAccount{TraderID: party1})
+	addAccount(tm, party1)
 
 	// submit orders
 	// party1 buys
@@ -280,7 +294,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
-	tm.partyEngine.NotifyTraderAccountWithTopUpAmount(context.Background(), &types.NotifyTraderAccount{TraderID: party1}, 0)
+	addAccountWithAmount(tm, party1, 0)
 
 	// submit orders
 	// party1 buys

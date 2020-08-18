@@ -2,6 +2,8 @@ package nodewallet
 
 import (
 	"context"
+	"crypto/rand"
+	"math/big"
 
 	"code.vegaprotocol.io/vega/blockchain"
 	types "code.vegaprotocol.io/vega/proto"
@@ -14,7 +16,6 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
 type Chain interface {
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
-	SubmitNodeRegistration(ctx context.Context, reg *types.NodeRegistration) (bool, error)
 }
 
 type Commander struct {
@@ -56,19 +57,35 @@ func (c *Commander) Command(cmd blockchain.Command, payload proto.Message) error
 	if err != nil {
 		return err
 	}
-	tx, err := txEncode(raw, cmd)
+	encodedCmd, err := txEncode(raw, cmd)
 	if err != nil {
 		return err
 	}
-	sig, err := c.wal.Sign(tx)
-	if err != nil {
-		return err
-	}
-	wrapped := &types.SignedBundle{
-		Data: tx,
-		Sig:  sig,
-		Auth: &types.SignedBundle_PubKey{
+
+	tx := &types.Transaction{
+		InputData: encodedCmd,
+		Nonce:     makeNonce(),
+		From: &types.Transaction_PubKey{
 			PubKey: c.wal.PubKeyOrAddress(),
+		},
+	}
+
+	rawTx, err := proto.Marshal(tx)
+	if err != nil {
+		return err
+	}
+
+	sig, err := c.wal.Sign(rawTx)
+	if err != nil {
+		return err
+	}
+
+	wrapped := &types.SignedBundle{
+		Tx: rawTx,
+		Sig: &types.Signature{
+			Sig:     sig,
+			Algo:    c.wal.Algo(),
+			Version: c.wal.Version(),
 		},
 	}
 	_, err = c.bc.SubmitTransaction(c.ctx, wrapped)
@@ -80,4 +97,12 @@ func txEncode(input []byte, cmd blockchain.Command) ([]byte, error) {
 	prefixBytes := []byte(prefix)
 	commandInput := append([]byte{byte(cmd)}, input...)
 	return append(prefixBytes, commandInput...), nil
+}
+
+func makeNonce() uint64 {
+	max := &big.Int{}
+	// set it to the max value of the uint64
+	max.SetUint64(^uint64(0))
+	nonce, _ := rand.Int(rand.Reader, max)
+	return nonce.Uint64()
 }

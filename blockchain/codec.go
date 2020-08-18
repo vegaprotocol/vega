@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/contextutil"
@@ -17,6 +18,8 @@ var (
 	ErrCommandKindUnknown = errors.New("unknown command kind when validating payload")
 )
 
+// Processor ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/processor_mock.go -package mocks code.vegaprotocol.io/vega/blockchain Processor
 type Processor interface {
 	Process(ctx context.Context, payload []byte, pubkey []byte, cmd Command) error
 	ValidateSigned(key, payload []byte, cmd Command) error
@@ -61,14 +64,7 @@ func (c *codec) Validate(payload []byte) error {
 		return errors.Wrap(err, "error during hasSeen (validate)")
 	}
 
-	// is that a signed or unsigned command?
-	switch CommandKind(payload[0]) {
-	case CommandKindSigned:
-		return c.validateSigned(payload[1:])
-	case CommandKindUnsigned:
-		return c.validateUnsigned(payload[1:])
-	}
-	return ErrCommandKindUnknown
+	return c.validateSigned(payload)
 }
 
 func (c *codec) Process(payload []byte) error {
@@ -84,53 +80,34 @@ func (c *codec) Process(payload []byte) error {
 	}
 	c.seenPayloads[*payloadHash] = struct{}{}
 
+	hexPayloadHash := hex.EncodeToString([]byte(*payloadHash))
 	// get the block context, add transaction hash as trace ID
-	ctx := contextutil.WithTraceID(context.Background(), string(*payloadHash))
-	var (
-		data   []byte
-		pubkey []byte
-		cmd    Command
-	)
-	// first is that a signed or unsigned command?
-	switch CommandKind(payload[0]) {
-	case CommandKindSigned:
-		// first unmarshal the bundle
-		bundle := &types.SignedBundle{}
-		if err := proto.Unmarshal(payload[1:], bundle); err != nil {
-			c.log.Error("unable to unmarshal signed bundle", logging.Error(err))
-			return err
-		}
-		pubkey = bundle.GetPubKey()
-		data, cmd, err = txDecode(bundle.Data)
-	case CommandKindUnsigned:
-		data, cmd, err = txDecode(payload[1:])
-	default:
-		return errors.New("unknown command when validating payload")
+	ctx := contextutil.WithTraceID(context.Background(), hexPayloadHash)
+
+	// first unmarshal the bundle
+	bundle := &types.SignedBundle{}
+	if err := proto.Unmarshal(payload, bundle); err != nil {
+		c.log.Error("unable to unmarshal signed bundle", logging.Error(err))
+		return err
 	}
 
+	tx := &types.Transaction{}
+	err = proto.Unmarshal(bundle.Tx, tx)
 	if err != nil {
-		c.log.Error("Could not process transaction, error decoding",
+		c.log.Error("unable to unmarshal Transaction", logging.Error(err))
+		return err
+	}
+
+	cmdData, cmd, err := txDecode(tx.InputData)
+	if err != nil {
+		c.log.Error("could not process transaction, error decoding",
 			logging.Error(err))
 		return err
 	}
+
+	// FIXME(): signature needs to be forwarded as well
 	// Actually process the transaction
-	if err := c.p.Process(ctx, data, pubkey, cmd); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *codec) validateUnsigned(payload []byte) error {
-	// Attempt to decode transaction payload
-	_, cmd, err := txDecode(payload)
-	if err != nil {
-		return errors.Wrap(err, "error decoding payload")
-	}
-
-	if _, ok := commandName[cmd]; !ok {
-		return errors.New("unknown command when validating payload")
-	}
-	return nil
+	return c.p.Process(ctx, cmdData, tx.GetPubKey(), cmd)
 }
 
 func (c *codec) validateSigned(payload []byte) error {
@@ -142,21 +119,34 @@ func (c *codec) validateSigned(payload []byte) error {
 		return err
 	}
 
-	// verify the signature
-	if err := verifyBundle(c.log, bundle); err != nil {
-		c.log.Error("error verifying bundle", logging.Error(err))
+	tx := &types.Transaction{}
+	err = proto.Unmarshal(bundle.Tx, tx)
+	if err != nil {
+		c.log.Error("unable to unmarshal transaction from signed bundle",
+			logging.Error(err))
 		return err
 	}
 
-	data, cmd, err := txDecode(bundle.Data)
+	cmdData, cmd, err := txDecode(tx.InputData)
 	if err != nil {
 		return errors.Wrap(err, "error decoding payload")
+	}
+
+	// FIXME(): for now we just not verify 2 command which are
+	// not require to be signed. This will need to be removed once we have
+	// only signed commadn
+	if cmd != WithdrawCommand {
+		// verify the signature
+		if err := verifyBundle(c.log, tx, bundle); err != nil {
+			c.log.Error("error verifying bundle", logging.Error(err))
+			return err
+		}
 	}
 
 	if _, ok := commandName[cmd]; !ok {
 		return errors.New("unknown command when validating payload")
 	}
-	return c.p.ValidateSigned(bundle.GetPubKey(), data, cmd)
+	return c.p.ValidateSigned(tx.GetPubKey(), cmdData, cmd)
 }
 
 // hasSeen helper performs duplicate checking on an incoming transaction payload.

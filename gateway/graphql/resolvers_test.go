@@ -129,6 +129,8 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		"ETH/USD18": nil,
 	}
 
+	root.tradingDataClient.EXPECT().AssetByID(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&protoapi.AssetByIDResponse{Asset: &types.Asset{}}, nil)
+
 	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
 		m, ok := markets[req.MarketID]
 		assert.True(t, ok)

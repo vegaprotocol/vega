@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -24,7 +25,7 @@ var (
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/assets TimeService
 type TimeService interface {
-	NotifyOnTick(f func(time.Time))
+	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 type NodeWallet interface {
@@ -71,7 +72,7 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 	return s, nil
 }
 
-func (a *Service) onTick(t time.Time) {
+func (a *Service) onTick(_ context.Context, t time.Time) {
 	// update block time on id generator
 	a.idgen.NewBatch()
 }
@@ -90,12 +91,17 @@ func (a *Service) Enable(assetID string) error {
 	return ErrAssetInvalid
 }
 
+func (a *Service) IsEnabled(assetID string) bool {
+	_, ok := a.assets[assetID]
+	return ok
+}
+
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
-func (s *Service) NewAsset(ref string, assetSrc *types.AssetSource) (string, error) {
+func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
 	// make a new asset id
-	assetID := s.idgen.NewID()
+	// assetID := s.idgen.NewID()
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:
@@ -114,7 +120,7 @@ func (s *Service) NewAsset(ref string, assetSrc *types.AssetSource) (string, err
 		return "", ErrUnknowAssetSource
 	}
 	// setup the ref lookup table
-	s.refs[ref] = assetID
+	s.refs[assetID] = assetID
 
 	return assetID, nil
 }

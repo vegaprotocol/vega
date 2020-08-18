@@ -49,6 +49,20 @@ func (mr *MockAssetsMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockAssets)(nil).Get), arg0)
 }
 
+// IsEnabled mocks base method
+func (m *MockAssets) IsEnabled(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEnabled", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsEnabled indicates an expected call of IsEnabled
+func (mr *MockAssetsMockRecorder) IsEnabled(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEnabled", reflect.TypeOf((*MockAssets)(nil).IsEnabled), arg0)
+}
+
 // NewAsset mocks base method
 func (m *MockAssets) NewAsset(arg0 string, arg1 *proto.AssetSource) (string, error) {
 	m.ctrl.T.Helper()

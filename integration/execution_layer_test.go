@@ -64,21 +64,17 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		// row.0 = traderID, row.1 = amount to topup
-		notif := proto.NotifyTraderAccount{
-			TraderID: val(row, 0),
-			Amount:   u64val(row, 1),
-		}
-
-		err := execsetup.engine.NotifyTraderAccount(context.Background(), &notif)
-		if err != nil {
-			return err
-		}
+		partyID := val(row, 0)
+		amount := u64val(row, 1)
 
 		// expected general accounts for the trader
 		// added expected market margin accounts
 		for _, mkt := range execsetup.mkts {
 			asset, err := mkt.GetAsset()
+			if err != nil {
+				return err
+			}
+			err = execsetup.collateral.Deposit(context.Background(), partyID, asset, amount)
 			if err != nil {
 				return err
 			}
@@ -175,12 +171,9 @@ func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
-	notif := proto.NotifyTraderAccount{
-		TraderID: trader,
-		Amount:   amount,
-	}
 
-	err := execsetup.engine.NotifyTraderAccount(context.Background(), &notif)
+	err := execsetup.collateral.Deposit(
+		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
 	}
@@ -205,13 +198,9 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
-	notif := proto.Withdraw{
-		PartyID: trader,
-		Amount:  amount,
-		Asset:   asset,
-	}
 
-	err := execsetup.engine.Withdraw(context.Background(), &notif)
+	err := execsetup.collateral.Withdraw(
+		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
 	}
@@ -330,7 +319,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 		}
 		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err != nil {
-			return err
+			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, order.PartyID, order.Reference)
 		}
 		if int64(len(result.Trades)) != i64val(row, 5) {
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
@@ -900,6 +889,13 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 	mkt := proto.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
+		Fees: &proto.Fees{
+			Factors: &proto.FeeFactors{
+				LiquidityFee:      val(row, 17),
+				InfrastructureFee: val(row, 18),
+				MakerFee:          val(row, 19),
+			},
+		},
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
 				Id:        fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),

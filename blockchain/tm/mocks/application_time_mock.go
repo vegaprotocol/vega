@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
@@ -34,13 +35,13 @@ func (m *MockApplicationTime) EXPECT() *MockApplicationTimeMockRecorder {
 }
 
 // SetTimeNow mocks base method
-func (m *MockApplicationTime) SetTimeNow(arg0 time.Time) {
+func (m *MockApplicationTime) SetTimeNow(arg0 context.Context, arg1 time.Time) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTimeNow", arg0)
+	m.ctrl.Call(m, "SetTimeNow", arg0, arg1)
 }
 
 // SetTimeNow indicates an expected call of SetTimeNow
-func (mr *MockApplicationTimeMockRecorder) SetTimeNow(arg0 interface{}) *gomock.Call {
+func (mr *MockApplicationTimeMockRecorder) SetTimeNow(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimeNow", reflect.TypeOf((*MockApplicationTime)(nil).SetTimeNow), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTimeNow", reflect.TypeOf((*MockApplicationTime)(nil).SetTimeNow), arg0, arg1)
 }

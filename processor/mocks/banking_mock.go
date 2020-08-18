@@ -35,17 +35,17 @@ func (m *MockBanking) EXPECT() *MockBankingMockRecorder {
 }
 
 // DepositBuiltinAsset mocks base method
-func (m *MockBanking) DepositBuiltinAsset(arg0 *proto.BuiltinAssetDeposit) error {
+func (m *MockBanking) DepositBuiltinAsset(arg0 *proto.BuiltinAssetDeposit, arg1 uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DepositBuiltinAsset", arg0)
+	ret := m.ctrl.Call(m, "DepositBuiltinAsset", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DepositBuiltinAsset indicates an expected call of DepositBuiltinAsset
-func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).DepositBuiltinAsset), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).DepositBuiltinAsset), arg0, arg1)
 }
 
 // DepositERC20 mocks base method
@@ -88,4 +88,18 @@ func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *proto.ERC20AssetLi
 func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3)
+}
+
+// WithdrawalBuiltinAsset mocks base method
+func (m *MockBanking) WithdrawalBuiltinAsset(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithdrawalBuiltinAsset", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WithdrawalBuiltinAsset indicates an expected call of WithdrawalBuiltinAsset
+func (mr *MockBankingMockRecorder) WithdrawalBuiltinAsset(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawalBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).WithdrawalBuiltinAsset), arg0, arg1, arg2, arg3)
 }

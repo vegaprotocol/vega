@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -16,7 +17,7 @@ var (
 )
 
 type TimeService interface {
-	SetTimeNow(time.Time)
+	SetTimeNow(context.Context, time.Time)
 	GetTimeNow() (time.Time, error)
 	GetTimeLastBatch() (time.Time, error)
 }

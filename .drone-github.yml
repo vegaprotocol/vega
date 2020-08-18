@@ -203,10 +203,10 @@ steps:
         from_secret: DEVNET_DEPLOY_HOSTS
       DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
-      DEVNET_TOPUP_AMOUNT:
-        from_secret: DEVNET_TOPUP_AMOUNT
-      DEVNET_TOPUP_NODE:
-        from_secret: DEVNET_TOPUP_NODE
+      DEVNET_FAUCET_SERVER:
+        from_secret: DEVNET_FAUCET_SERVER
+      DEVNET_VEGA_GRPCNODE:
+        from_secret: DEVNET_VEGA_GRPCNODE
       DEVNET_WALLET_PASSPHRASE:
         from_secret: DEVNET_WALLET_PASSPHRASE
       DEVNET_WALLET_SERVER:
@@ -227,11 +227,11 @@ steps:
       - /usr/local/bin/deploy-trading-core.sh devnet vega
       # Set up wallets, keypairs and free money.
       - /usr/local/bin/init-wallets-tokenbalances.py
+            --faucetserver "$$DEVNET_FAUCET_SERVER"
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
             --walletserver "$$DEVNET_WALLET_SERVER"
             --passphrase "$$DEVNET_WALLET_PASSPHRASE"
-            --veganode "$$DEVNET_TOPUP_NODE"
-            --amount "$$DEVNET_TOPUP_AMOUNT"
+            --veganode "$$DEVNET_VEGA_GRPCNODE"
     depends_on:
       - build-branch
     when:
@@ -241,7 +241,7 @@ steps:
         - push
 
   - name: build_docker_image
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:stable
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:18.09.9
     volumes:
       - name: dockersock
         path: /run/docker.sock
@@ -250,19 +250,24 @@ steps:
       DOCKER_CONFIG_JSON:
         from_secret: dockerconfig
     commands:
-      - apps="$$(find cmd -maxdepth 1 -and -not -name cmd | awk -F/ '{print $$2}')"
-      - 'for app in $$apps ; do
-          f="cmd/$$app/$$app-linux-amd64" ;
-          if ! test -f "$$f" ; then echo "Failed to find: $$f" ; exit 1 ; fi ;
-          cp -a "$$f" "./$$app" || exit 1 ;
-        done'
-      - imgtag="$${DRONE_BRANCH}"
-      - if test -z "$$imgtag" ; then imgtag="$${DRONE_TAG}" ; fi
-      - if test -z "$$imgtag" ; then exit 1 ; fi
-      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag" -f Dockerfile.quick .
+      - mkdir -p docker/bin
+      - find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+          cp -a "cmd/$$app/$$app-linux-amd64" "docker/bin/$$app" || exit 1 ;
+        done
+      - tmptag="$$(openssl rand -hex 10)"
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" docker/
+      - rm -rf docker/bin
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
-      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$imgtag"
-      - for app in $$apps ; do rm -f "./$$app"; done
+      - if test -n "$$DRONE_TAG" ; then
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
+        fi
+      - if test -n "$$DRONE_BRANCH" ; then
+          sanitised_branch="$$(echo -n "$$DRONE_BRANCH" | tr -c 'A-Za-z0-9._' '-')" ;
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+        fi
+      - docker rmi "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag"
     depends_on:
       - build-branch
     when:
@@ -295,7 +300,7 @@ steps:
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - ./script/build.sh -a build -T
     depends_on:
-      - build-branch
+      - build_docker_image
     when:
       event: tag
 

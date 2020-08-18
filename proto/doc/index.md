@@ -14,6 +14,8 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
+    - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
     - [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse)
     - [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest)
@@ -85,6 +87,8 @@
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
     - [PrepareVoteRequest](#api.PrepareVoteRequest)
     - [PrepareVoteResponse](#api.PrepareVoteResponse)
+    - [PrepareWithdrawRequest](#api.PrepareWithdrawRequest)
+    - [PrepareWithdrawResponse](#api.PrepareWithdrawResponse)
     - [PropagateChainEventRequest](#api.PropagateChainEventRequest)
     - [PropagateChainEventResponse](#api.PropagateChainEventResponse)
     - [SubmitOrderRequest](#api.SubmitOrderRequest)
@@ -131,6 +135,7 @@
     - [ValidatorEvent](#vega.ValidatorEvent)
 
 - [proto/governance.proto](#proto/governance.proto)
+    - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
@@ -147,14 +152,18 @@
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
+    - [ProposalError](#vega.ProposalError)
     - [Vote.Value](#vega.Vote.Value)
 
 - [proto/markets.proto](#proto/markets.proto)
+    - [AuctionDuration](#vega.AuctionDuration)
     - [ContinuousTrading](#vega.ContinuousTrading)
     - [DiscreteTrading](#vega.DiscreteTrading)
     - [EthereumEvent](#vega.EthereumEvent)
     - [ExternalRiskModel](#vega.ExternalRiskModel)
     - [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry)
+    - [FeeFactors](#vega.FeeFactors)
+    - [Fees](#vega.Fees)
     - [Future](#vega.Future)
     - [Instrument](#vega.Instrument)
     - [InstrumentMetadata](#vega.InstrumentMetadata)
@@ -169,9 +178,10 @@
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
-    - [Amount](#vega.Amount)
+    - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
     - [ErrorDetail](#vega.ErrorDetail)
+    - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
     - [MarginLevels](#vega.MarginLevels)
@@ -195,19 +205,23 @@
     - [RiskResult](#vega.RiskResult)
     - [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry)
     - [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry)
+    - [Signature](#vega.Signature)
     - [SignedBundle](#vega.SignedBundle)
     - [Statistics](#vega.Statistics)
     - [Timestamp](#vega.Timestamp)
     - [Trade](#vega.Trade)
     - [TradeSet](#vega.TradeSet)
+    - [Transaction](#vega.Transaction)
     - [Transfer](#vega.Transfer)
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
+    - [Withdraw](#vega.Withdraw)
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
     - [Interval](#vega.Interval)
+    - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
@@ -373,6 +387,36 @@ The response containing the list of all assets enabled in vega
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  |  |
 | interval | [vega.Interval](#vega.Interval) |  |  |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsRequest"></a>
+
+### FeeInfrastructureAccountsRequest
+Request for the infrastructure fees accounts
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| asset | [string](#string) |  | an empty string to return all accounts an asset ID to return a single infrastructure fee fee account for a given asset |
+
+
+
+
+
+
+<a name="api.FeeInfrastructureAccountsResponse"></a>
+
+### FeeInfrastructureAccountsResponse
+Response for the infrastructure fees accounts
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| accounts | [vega.Account](#vega.Account) | repeated | A list of infrastructure fee accounts for all or a specific asset |
 
 
 
@@ -1471,6 +1515,36 @@ The response of the GetNodeSIgnatureAggregate rpc
 
 
 
+<a name="api.PrepareWithdrawRequest"></a>
+
+### PrepareWithdrawRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdraw | [vega.Withdraw](#vega.Withdraw) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareWithdrawResponse"></a>
+
+### PrepareWithdrawResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="api.PropagateChainEventRequest"></a>
 
 ### PropagateChainEventRequest
@@ -1480,6 +1554,8 @@ The request for a new event sent by the blockchain queue to be propagated into v
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | evt | [vega.ChainEvent](#vega.ChainEvent) |  | The event |
+| pubKey | [string](#string) |  |  |
+| signature | [bytes](#bytes) |  |  |
 
 
 
@@ -1701,6 +1777,7 @@ The response for a new event sent to vega
 | PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
 | PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Cancel an Order |
 | PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Amend an Order |
+| PrepareWithdraw | [PrepareWithdrawRequest](#api.PrepareWithdrawRequest) | [PrepareWithdrawResponse](#api.PrepareWithdrawResponse) | Request withdrawal |
 | SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare proposal that can be sent out to the chain (via SubmitTransaction) |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a vote to be put on the chain (via SubmitTransaction) |
@@ -1716,6 +1793,7 @@ The response for a new event sent to vega
 | ----------- | ------------ | ------------- | ------------|
 | MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get a list of Accounts by Market |
 | PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get a list of Accounts by Party |
+| FeeInfrastructureAccounts | [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest) | [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse) | Get the list of infrastructure fees accounts filter eventually by assets |
 | Candles | [CandlesRequest](#api.CandlesRequest) | [CandlesResponse](#api.CandlesResponse) | Get a list of Candles by Market |
 | MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by MarketID |
 | MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |
@@ -1789,8 +1867,7 @@ The vega representation of an external asset
 | symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
 | totalSupply | [string](#string) |  | The total circulating supply for the asset |
 | decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
-| builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  | A vega builtin asset (for testing purpose) |
-| erc20 | [ERC20](#vega.ERC20) |  | An ERC20 token based asset |
+| source | [AssetSource](#vega.AssetSource) |  | The definition of the external source for this asset |
 
 
 
@@ -1825,6 +1902,7 @@ A vega internal asset
 | symbol | [string](#string) |  | The symbol of the asset (e.g: GBP) |
 | totalSupply | [string](#string) |  | The total circulating supply for the asset |
 | decimals | [uint64](#uint64) |  | The number of decimal / precision handled by this asset |
+| maxFaucetAmountMint | [string](#string) |  | This is the maximum amount that can be requested by a party through the builtin asset faucet at a time |
 
 
 
@@ -2020,6 +2098,7 @@ providing information on things happening on other networks
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txID | [string](#string) |  | The ID of the transaction in which the things happened usually a hash |
+| nonce | [uint64](#uint64) |  | Arbitrary one-time integer used to prevent replay attacks |
 | builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  |  |
 | erc20 | [ERC20Event](#vega.ERC20Event) |  |  |
 | btc | [BTCEvent](#vega.BTCEvent) |  |  |
@@ -2194,6 +2273,23 @@ An event related to validator management with foreign networks
 
 
 
+<a name="vega.FeeFactorsConfiguration"></a>
+
+### FeeFactorsConfiguration
+FeeFactors set at the network level
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| infrastructureFee | [string](#string) |  | the infrastructure fee, needs to be a valid float |
+| makerFee | [string](#string) |  | the maker fee, needs to be a valid float |
+| liquidityFee | [string](#string) |  | this is the liquidity fee, it needs to be a valid float |
+
+
+
+
+
+
 <a name="vega.FutureProduct"></a>
 
 ### FutureProduct
@@ -2297,6 +2393,7 @@ Future product configuration
 | minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
 | minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
 | marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
+| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal |
 
 
 
@@ -2342,10 +2439,11 @@ To be implemented
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration |
-| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
-| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags |
+| openingAuctionDuration | [int64](#int64) |  | for now, just specify a time for the opening auction to last |
+| simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
+| logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -2368,6 +2466,7 @@ To be implemented
 | state | [Proposal.State](#vega.Proposal.State) |  | Proposal state (see Proposal.State definition) |
 | timestamp | [int64](#int64) |  | Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network. |
 | terms | [ProposalTerms](#vega.ProposalTerms) |  | Proposal configuration and the actual change that is meant to be executed when proposal is enacted. |
+| reason | [ProposalError](#vega.ProposalError) |  | A reason for the current state of the proposal this may be set in case of REJECTED and FAILED status |
 
 
 
@@ -2464,6 +2563,35 @@ Proposal can enter Failed state from any other state.
 
 
 
+<a name="vega.ProposalError"></a>
+
+### ProposalError
+A list of possible error which could have happenned
+and the cause for an proposal being rejected of failed
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PROPOSAL_ERROR_UNSPECIFIED | 0 | default value |
+| PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON | 1 | the specified close time is too early base on network parameters |
+| PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE | 2 | the specified close time is too late based on network parameters |
+| PROPOSAL_ERROR_ENACT_TIME_TOO_SOON | 3 | the specified enact time is too early base on network parameters |
+| PROPOSAL_ERROR_ENACT_TIME_TOO_LATE | 4 | the specified enact time is too late based on network parameters |
+| PROPOSAL_ERROR_INSUFFICIENT_TOKENS | 5 | the proposer for this proposal as insufficient token |
+| PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY | 6 | the instrument quote name and base name were the same |
+| PROPOSAL_ERROR_NO_PRODUCT | 7 | the proposal has not product |
+| PROPOSAL_ERROR_UNSUPPORTED_PRODUCT | 8 | the specified product is not supported |
+| PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP | 9 | invalid future maturity timestamp (expect RFC3339) |
+| PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED | 10 | the product maturity is past |
+| PROPOSAL_ERROR_NO_TRADING_MODE | 11 | the proposal has not trading mode |
+| PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE | 12 | the proposal has an unsupported trading mode |
+| PROPOSAL_ERROR_NODE_VALIDATION_FAILED | 13 | the proposal failed node validation |
+| PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD | 14 | a field is missing in a builtin asset source |
+| PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | the contract address is missing in the ERC20 asset source |
+| PROPOSAL_ERROR_INVALID_ASSET | 16 | the asset id refer to no assets in vega |
+| PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment) |
+
+
+
 <a name="vega.Vote.Value"></a>
 
 ### Vote.Value
@@ -2491,6 +2619,25 @@ Proposal can enter Failed state from any other state.
 
 
 
+<a name="vega.AuctionDuration"></a>
+
+### AuctionDuration
+AuctionDuration can be used to configure 3 auction periods:
+1) duration &gt; 0, volume == 0: The auction will last for at least N seconds
+2) Duration == 0, volume &gt; 0: Auction period will end once we can close with given traded volume
+3) Duration &gt; 0 &amp; volume &gt; 0: Auction period will take at least N seconds, but can end sooner if we can trade a certain volume
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| duration | [int64](#int64) |  |  |
+| volume | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="vega.ContinuousTrading"></a>
 
 ### ContinuousTrading
@@ -2499,7 +2646,7 @@ Proposal can enter Failed state from any other state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| tickSize | [uint64](#uint64) |  |  |
+| tickSize | [string](#string) |  |  |
 
 
 
@@ -2515,7 +2662,7 @@ Proposal can enter Failed state from any other state.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | durationNs | [int64](#int64) |  | Duration in nanoseconds, maximum 1 month (2592000000000000 ns) |
-| tickSize | [uint64](#uint64) |  |  |
+| tickSize | [string](#string) |  |  |
 
 
 
@@ -2566,6 +2713,38 @@ Proposal can enter Failed state from any other state.
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.FeeFactors"></a>
+
+### FeeFactors
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| makerFee | [string](#string) |  |  |
+| infrastructureFee | [string](#string) |  |  |
+| liquidityFee | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.Fees"></a>
+
+### Fees
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| factors | [FeeFactors](#vega.FeeFactors) |  |  |
 
 
 
@@ -2686,6 +2865,8 @@ Proposal can enter Failed state from any other state.
 | id | [string](#string) |  |  |
 | tradableInstrument | [TradableInstrument](#vega.TradableInstrument) |  |  |
 | decimalPlaces | [uint64](#uint64) |  | the number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the Market. ie `realPrice = price / 10^decimalPlaces` |
+| fees | [Fees](#vega.Fees) |  | fees configuration |
+| openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Specifies how long the opening auction will run (min duration &#43; optionally minimum traded volume) |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  |  |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  |  |
 
@@ -2797,15 +2978,20 @@ Proposal can enter Failed state from any other state.
 
 
 
-<a name="vega.Amount"></a>
+<a name="vega.AuctionIndicativeState"></a>
 
-### Amount
-
+### AuctionIndicativeState
+Whenever a change to the book occurs during an auction, this message will be used
+to emit an event with the indicative price/volume per market
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [string](#string) |  |  |
+| marketID | [string](#string) |  | The market this state is related to |
+| indicativePrice | [uint64](#uint64) |  | The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now. |
+| indicativeVolume | [uint64](#uint64) |  | The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now. |
+| auctionStart | [int64](#int64) |  | The timestamp at which the auction started |
+| auctionEnd | [int64](#int64) |  | The timestamp at which the auction is meant to stop. |
 
 
 
@@ -2845,6 +3031,23 @@ Proposal can enter Failed state from any other state.
 | code | [int32](#int32) |  | a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 |
 | message | [string](#string) |  | a message that describes the error in more detail, should describe the problem encountered. |
 | inner | [string](#string) |  | any inner error information that could add more context, or be helpful for error reporting. |
+
+
+
+
+
+
+<a name="vega.Fee"></a>
+
+### Fee
+The fees being paid by a party, resulting from a trade
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| makerFee | [uint64](#uint64) |  | A fee being paid to the non-aggressor party of the trade |
+| infrastructureFee | [uint64](#uint64) |  | A fee being paid to maintaining the vega infrastructure |
+| liquidityFee | [uint64](#uint64) |  | A fee being paid to the market makers |
 
 
 
@@ -2926,6 +3129,8 @@ Proposal can enter Failed state from any other state.
 | market | [string](#string) |  | market id of the associated mark price |
 | timestamp | [int64](#int64) |  | time at which this mark price was relevant |
 | openInterest | [uint64](#uint64) |  | the sum of the size of all positions greater than 0. |
+| auctionEnd | [int64](#int64) |  | time in seconds until the end of the auction (0 if currently not in auction period) |
+| auctionStart | [int64](#int64) |  | time until next auction (used in FBA&#39;s) - currently always 0 |
 
 
 
@@ -3024,6 +3229,7 @@ a decision taken by the vega network.
 | reason | [OrderError](#vega.OrderError) |  |  |
 | updatedAt | [int64](#int64) |  |  |
 | version | [uint64](#uint64) |  | Versioning support for amends, orders start at version 1 and increment after each successful amend |
+| batchID | [uint64](#uint64) |  | used internally, for orders submitted during auctions to keep track which auction batch this order falls under (required for fees calculation) |
 
 
 
@@ -3275,18 +3481,34 @@ a decision taken by the vega network.
 
 
 
-<a name="vega.SignedBundle"></a>
+<a name="vega.Signature"></a>
 
-### SignedBundle
-
+### Signature
+A signature to be authenticate a transaction
+and to be verified by the vega network
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [bytes](#bytes) |  |  |
-| sig | [bytes](#bytes) |  |  |
-| address | [bytes](#bytes) |  |  |
-| pubKey | [bytes](#bytes) |  |  |
+| sig | [bytes](#bytes) |  | The bytes of the signature |
+| algo | [string](#string) |  | The algorithm used to create the signature |
+| version | [uint64](#uint64) |  | The version of the signature used to create the signature |
+
+
+
+
+
+
+<a name="vega.SignedBundle"></a>
+
+### SignedBundle
+A bundle of a transaction, proto marshalled and it&#39;s signature
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tx | [bytes](#bytes) |  | the transaction, proto marshalled |
+| sig | [Signature](#vega.Signature) |  | the signature authenticating the transaction |
 
 
 
@@ -3372,6 +3594,10 @@ a decision taken by the vega network.
 | sellOrder | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | type | [Trade.Type](#vega.Trade.Type) |  |  |
+| buyerFee | [Fee](#vega.Fee) |  |  |
+| sellerFee | [Fee](#vega.Fee) |  |  |
+| buyerAuctionBatch | [uint64](#uint64) |  |  |
+| sellerAuctionBatch | [uint64](#uint64) |  |  |
 
 
 
@@ -3387,6 +3613,24 @@ a decision taken by the vega network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | trades | [Trade](#vega.Trade) | repeated |  |
+
+
+
+
+
+
+<a name="vega.Transaction"></a>
+
+### Transaction
+A transaction to be sent to vega
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| inputData | [bytes](#bytes) |  | one of all the possible command, proto marshalled |
+| nonce | [uint64](#uint64) |  | a random number used to provided uniqueness and prevents against replay attack |
+| address | [bytes](#bytes) |  | the address of the sender |
+| pubKey | [bytes](#bytes) |  | the public key of the sender |
 
 
 
@@ -3463,6 +3707,23 @@ a decision taken by the vega network.
 
 
 
+<a name="vega.Withdraw"></a>
+
+### Withdraw
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  |  |
+| amount | [uint64](#uint64) |  |  |
+| asset | [string](#string) |  |  |
+
+
+
+
+
+
 
 
 <a name="vega.AccountType"></a>
@@ -3472,11 +3733,14 @@ a decision taken by the vega network.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ACCOUNT_TYPE_UNSPECIFIED | 0 |  |
-| ACCOUNT_TYPE_INSURANCE | 1 |  |
-| ACCOUNT_TYPE_SETTLEMENT | 2 |  |
-| ACCOUNT_TYPE_MARGIN | 3 |  |
-| ACCOUNT_TYPE_GENERAL | 4 |  |
+| ACCOUNT_TYPE_UNSPECIFIED | 0 | the default variant for this enum |
+| ACCOUNT_TYPE_INSURANCE | 1 | This account is created to hold the insurance pool funds of a market. |
+| ACCOUNT_TYPE_SETTLEMENT | 2 | This account is created to hold fund while settlement or mtm occur. |
+| ACCOUNT_TYPE_MARGIN | 3 | A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change |
+| ACCOUNT_TYPE_GENERAL | 4 | A party will have multiple general accounts, one for each assets they want to trade with. This is the account where the funds are initially deposited or withdrawn from. It&#39;s also the account where funds are taken to fullfill margin requirement or fees |
+| ACCOUNT_TYPE_FEES_INFRASTRUCTURE | 5 | This account is created to hold fees earned for providing infrastructure |
+| ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | This account is created to hold fees earned for providing liquidity |
+| ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned for placing orders that sit on the book |
 
 
 
@@ -3508,6 +3772,20 @@ a decision taken by the vega network.
 | INTERVAL_I1H | 3600 | 1 hour |
 | INTERVAL_I6H | 21600 | 6 hours |
 | INTERVAL_I1D | 86400 | 1 day |
+
+
+
+<a name="vega.MarketState"></a>
+
+### MarketState
+Market Status
+What mode is the market currently running in
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
+| MARKET_STATE_CONTINUOUS | 1 | Normal trading |
+| MARKET_STATE_AUCTION | 2 | Auction trading |
 
 
 
@@ -3559,6 +3837,8 @@ See [What order types are available to trade on Vega?](https://docs.vega.xyz/doc
 | TIF_GTT | 2 | good til time |
 | TIF_IOC | 3 | immediate or cancel |
 | TIF_FOK | 4 | fill or kill |
+| TIF_GFA | 5 | good for auction |
+| TIF_GFN | 6 | good for normal |
 
 
 
@@ -3579,30 +3859,33 @@ Order Type
 <a name="vega.OrderError"></a>
 
 ### OrderError
-
+Set when an order has an issue
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ORDER_ERROR_NONE | 0 |  |
-| ORDER_ERROR_INVALID_MARKET_ID | 1 |  |
-| ORDER_ERROR_INVALID_ORDER_ID | 2 |  |
-| ORDER_ERROR_OUT_OF_SEQUENCE | 3 |  |
-| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 |  |
-| ORDER_ERROR_TIME_FAILURE | 5 |  |
-| ORDER_ERROR_REMOVAL_FAILURE | 6 |  |
-| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 |  |
-| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 |  |
-| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 |  |
-| ORDER_ERROR_AMEND_FAILURE | 10 |  |
-| ORDER_ERROR_NOT_FOUND | 11 |  |
-| ORDER_ERROR_INVALID_PARTY_ID | 12 |  |
-| ORDER_ERROR_MARKET_CLOSED | 13 |  |
-| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 |  |
-| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 |  |
-| ORDER_ERROR_INTERNAL_ERROR | 16 |  |
-| ORDER_ERROR_INVALID_SIZE | 17 |  |
-| ORDER_ERROR_INVALID_PERSISTENCE | 18 |  |
-| ORDER_ERROR_INVALID_TYPE | 19 |  |
+| ORDER_ERROR_NONE | 0 | Empty default error |
+| ORDER_ERROR_INVALID_MARKET_ID | 1 | Order was submitted for a market that does not exist |
+| ORDER_ERROR_INVALID_ORDER_ID | 2 | Order was submitted with an invalid ID |
+| ORDER_ERROR_OUT_OF_SEQUENCE | 3 | Order was amended with a sequence number that was not previous version &#43; 1 |
+| ORDER_ERROR_INVALID_REMAINING_SIZE | 4 | Order was amended with an invalid remaining size (e.g. remaining greater than total size) |
+| ORDER_ERROR_TIME_FAILURE | 5 | Node was unable to get Vega (blockchain) time |
+| ORDER_ERROR_REMOVAL_FAILURE | 6 | Failed to remove an order from the book |
+| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 | GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid |
+| ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 | Order was submitted or amended with an invalid reference field |
+| ORDER_ERROR_EDIT_NOT_ALLOWED | 9 | Order amend was submitted for an order field that cannot not be amended (e.g. order id) |
+| ORDER_ERROR_AMEND_FAILURE | 10 | Amend failure because amend details do not match original order |
+| ORDER_ERROR_NOT_FOUND | 11 | Order not found in the order book or in order store |
+| ORDER_ERROR_INVALID_PARTY_ID | 12 | Order was submitted with an invalid or missing party ID |
+| ORDER_ERROR_MARKET_CLOSED | 13 | Order was submitted for a market that has closed |
+| ORDER_ERROR_MARGIN_CHECK_FAILED | 14 | Order was submitted, but the party did not have enough collateral to cover the order |
+| ORDER_ERROR_MISSING_GENERAL_ACCOUNT | 15 | Order was submitted, but the party did not have an account for this asset |
+| ORDER_ERROR_INTERNAL_ERROR | 16 | Unspecified internal error |
+| ORDER_ERROR_INVALID_SIZE | 17 | Order was submitted with an invalid or missing size (e.g. 0) |
+| ORDER_ERROR_INVALID_PERSISTENCE | 18 | Order was submitted with an invalid persistence for its type |
+| ORDER_ERROR_INVALID_TYPE | 19 | Order was submitted with an invalid type field |
+| ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order for the same party |
+| ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order |
+| ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 |  |
 
 
 
@@ -3649,6 +3932,10 @@ Order Type
 | TRANSFER_TYPE_MARGIN_LOW | 6 |  |
 | TRANSFER_TYPE_MARGIN_HIGH | 7 |  |
 | TRANSFER_TYPE_MARGIN_CONFISCATED | 8 |  |
+| TRANSFER_TYPE_MAKER_FEE_PAY | 9 |  |
+| TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 |  |
+| TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 |  |
+| TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 |  |
 
 
 

@@ -10,21 +10,21 @@ import (
 )
 
 func TestGetPriceLevel(t *testing.T) {
-	side := &OrderBookSide{}
+	side := &OrderBookSide{side: types.Side_SIDE_SELL}
 	assert.Equal(t, 0, len(side.levels))
-	side.getPriceLevel(100, types.Side_SIDE_SELL)
+	side.getPriceLevel(100)
 	assert.Equal(t, 1, len(side.levels))
 
-	side.getPriceLevel(110, types.Side_SIDE_SELL)
+	side.getPriceLevel(110)
 	assert.Equal(t, 2, len(side.levels))
 
-	side.getPriceLevel(100, types.Side_SIDE_SELL)
+	side.getPriceLevel(100)
 	assert.Equal(t, 2, len(side.levels))
 }
 
 func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
-	side := &OrderBookSide{}
-	l := side.getPriceLevel(100, types.Side_SIDE_SELL)
+	side := &OrderBookSide{side: types.Side_SIDE_SELL}
+	l := side.getPriceLevel(100)
 	order := &types.Order{
 		MarketID:    "testOrderBook",
 		PartyID:     "A",
@@ -54,8 +54,8 @@ func TestUncross(t *testing.T) {
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
-	side := &OrderBookSide{}
-	l := side.getPriceLevel(100, types.Side_SIDE_SELL)
+	side := &OrderBookSide{side: types.Side_SIDE_SELL}
+	l := side.getPriceLevel(100)
 	passiveOrder := &types.Order{
 		MarketID:    "testOrderBook",
 		PartyID:     "A",

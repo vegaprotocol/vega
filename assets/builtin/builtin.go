@@ -19,8 +19,10 @@ func New(id string, asset *types.BuiltinAsset) *Builtin {
 			Symbol:      asset.Symbol,
 			TotalSupply: asset.TotalSupply,
 			Decimals:    asset.Decimals,
-			Source: &types.Asset_BuiltinAsset{
-				BuiltinAsset: asset,
+			Source: &types.AssetSource{
+				Source: &types.AssetSource_BuiltinAsset{
+					BuiltinAsset: asset,
+				},
 			},
 		},
 	}

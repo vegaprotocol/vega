@@ -24,15 +24,11 @@ service trading {
   // Amend an Order
   rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
 
-  // Request balance increase
-  rpc NotifyTraderAccount(NotifyTraderAccountRequest) returns (NotifyTraderAccountResponse);
-
   // Request withdrawal
-  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
+  rpc PrepareWithdraw(PrepareWithdrawRequest) returns (PrepareWithdrawResponse);
 
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
-
 
   // Governance
 
@@ -50,6 +46,8 @@ service trading {
 message PropagateChainEventRequest {
   // The event
   vega.ChainEvent evt = 1;
+  string pubKey = 2;
+  bytes signature = 3;
 }
 
 // The response for a new event sent to vega
@@ -66,20 +64,12 @@ message SubmitTransactionResponse {
   bool success = 1;
 }
 
-message WithdrawRequest {
+message PrepareWithdrawRequest {
   vega.Withdraw withdraw = 1;
 }
 
-message WithdrawResponse {
-  bool success = 1;
-}
-
-message NotifyTraderAccountRequest {
-  vega.NotifyTraderAccount notif = 1;
-}
-
-message NotifyTraderAccountResponse {
-  bool submitted = 1;
+message PrepareWithdrawResponse {
+  bytes blob = 1;
 }
 
 message PrepareSubmitOrderResponse {
@@ -118,6 +108,9 @@ service trading_data {
 
   // Get a list of Accounts by Party
   rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
+
+  // Get the list of infrastructure fees accounts filter eventually by assets
+ rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
 
   // Candles
 
@@ -644,6 +637,21 @@ message MarketAccountsRequest {
 }
 
 message MarketAccountsResponse {
+  repeated vega.Account accounts = 1;
+}
+
+// Request for the infrastructure fees accounts
+message FeeInfrastructureAccountsRequest {
+  // an empty string to return all accounts
+  // an asset ID to return a single infrastructure fee
+  // fee account for a given asset
+  string asset = 1;
+}
+
+// Response for the infrastructure fees accounts
+message FeeInfrastructureAccountsResponse {
+  // A list of infrastructure fee accounts for all
+  // or a specific asset
   repeated vega.Account accounts = 1;
 }
 

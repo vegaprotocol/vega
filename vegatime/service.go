@@ -1,6 +1,7 @@
 package vegatime
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -13,7 +14,7 @@ type Svc struct {
 	previousTimestamp time.Time
 	currentTimestamp  time.Time
 
-	listeners []func(time.Time)
+	listeners []func(context.Context, time.Time)
 	mu        sync.Mutex
 }
 
@@ -28,7 +29,7 @@ func (s *Svc) ReloadConf(conf Config) {
 }
 
 // SetTimeNow update the current time
-func (s *Svc) SetTimeNow(t time.Time) {
+func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 	// ensure the t is using UTC
 	t = t.UTC()
 
@@ -44,7 +45,7 @@ func (s *Svc) SetTimeNow(t time.Time) {
 		s.previousTimestamp = s.currentTimestamp
 	}
 
-	s.notify(t)
+	s.notify(ctx, t)
 }
 
 // GetTimeNow returns the current time in vega
@@ -54,7 +55,7 @@ func (s *Svc) GetTimeNow() (time.Time, error) {
 
 // NotifyOnTick allows other services to register a callback function
 // which will be called once the vega time is updated (SetTimeNow is called)
-func (s *Svc) NotifyOnTick(f func(time.Time)) {
+func (s *Svc) NotifyOnTick(f func(context.Context, time.Time)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.listeners = append(s.listeners, f)
@@ -65,10 +66,10 @@ func (s *Svc) GetTimeLastBatch() (time.Time, error) {
 	return s.previousTimestamp, nil
 }
 
-func (s *Svc) notify(t time.Time) {
+func (s *Svc) notify(ctx context.Context, t time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, f := range s.listeners {
-		f(t)
+		f(ctx, t)
 	}
 }

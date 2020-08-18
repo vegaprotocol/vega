@@ -90,17 +90,12 @@ type PartyService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
 	SubmitTransaction(ctx context.Context, tx *types.SignedBundle) (bool, error)
-	AmendOrder(ctx context.Context, amendment *types.OrderAmendment) (success bool, err error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (success bool, err error)
-	CreateOrder(ctx context.Context, order *types.Order) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	Health() (*tmctypes.ResultHealth, error)
-	NotifyTraderAccount(ctx context.Context, notify *types.NotifyTraderAccount) (success bool, err error)
-	Withdraw(context.Context, *types.Withdraw) (success bool, err error)
 }
 
 // AccountsService ...
@@ -108,8 +103,10 @@ type BlockchainClient interface {
 type AccountsService interface {
 	GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error)
 	GetMarketAccounts(marketID, asset string) ([]*types.Account, error)
+	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
+	PrepareWithdraw(context.Context, *types.Withdraw) error
 }
 
 // TransferResponseService ...
@@ -1288,6 +1285,19 @@ func (t *tradingDataService) MarketAccounts(_ context.Context,
 		return nil, apiError(codes.Internal, ErrAccountServiceGetMarketAccounts, err)
 	}
 	return &protoapi.MarketAccountsResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (t *tradingDataService) FeeInfrastructureAccounts(_ context.Context,
+	req *protoapi.FeeInfrastructureAccountsRequest) (*protoapi.FeeInfrastructureAccountsResponse, error) {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("FeeInfrastructureAccounts", startTime)
+	accs, err := t.AccountsService.GetFeeInfrastructureAccounts(req.Asset)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetFeeInfrastructureAccounts, err)
+	}
+	return &protoapi.FeeInfrastructureAccountsResponse{
 		Accounts: accs,
 	}, nil
 }

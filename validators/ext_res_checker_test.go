@@ -83,7 +83,7 @@ func testStartErrorCheckFailed(t *testing.T) {
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
-	checkUntil := erc.startTime.Add(1 * time.Second)
+	checkUntil := erc.startTime.Add(72 * time.Hour)
 	cb := func(interface{}, bool) {}
 
 	err := erc.StartCheck(res, cb, checkUntil)
@@ -217,7 +217,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 	// first on chain time update, we send our own vote
 	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	newNow := erc.startTime.Add(1 * time.Second)
-	erc.OnTick(newNow)
+	erc.OnTick(context.Background(), newNow)
 
 	// then we propagate our own vote
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
@@ -231,7 +231,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	// call onTick again to get the callback called
 	newNow = newNow.Add(1 * time.Second)
-	erc.OnTick(newNow)
+	erc.OnTick(context.Background(), newNow)
 
 	// block to wait for the result
 	<-ch

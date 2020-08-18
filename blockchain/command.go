@@ -1,13 +1,5 @@
 package blockchain
 
-// CommandKind
-type CommandKind byte
-
-const (
-	CommandKindSigned   CommandKind = 0x10
-	CommandKindUnsigned CommandKind = 0x11
-)
-
 // Command ...
 type Command byte
 
@@ -19,8 +11,6 @@ const (
 	CancelOrderCommand Command = 0x41
 	// AmendOrderCommand ...
 	AmendOrderCommand Command = 0x42
-	// NotifyTraderAccountCommand ...
-	NotifyTraderAccountCommand Command = 0x43
 	// WithdrawCommand ...
 	WithdrawCommand Command = 0x44
 	// ProposeCommand ...
@@ -38,35 +28,21 @@ const (
 )
 
 var commandName = map[Command]string{
-	SubmitOrderCommand:         "Submit Order",
-	CancelOrderCommand:         "Cancel Order",
-	AmendOrderCommand:          "Amend Order",
-	NotifyTraderAccountCommand: "Notify Trader Account",
-	WithdrawCommand:            "Withdraw",
-	ProposeCommand:             "Proposal",
-	VoteCommand:                "Vote on Proposal",
-	RegisterNodeCommand:        "Register new Node",
-	NodeVoteCommand:            "Node Vote",
-	NodeSignatureCommand:       "Node Signature",
-	ChainEventCommand:          "Chain Event",
-}
-
-var commandKindName = map[CommandKind]string{
-	CommandKindSigned:   "SignedTx",
-	CommandKindUnsigned: "UnsignedTx",
+	SubmitOrderCommand:   "Submit Order",
+	CancelOrderCommand:   "Cancel Order",
+	AmendOrderCommand:    "Amend Order",
+	WithdrawCommand:      "Withdraw",
+	ProposeCommand:       "Proposal",
+	VoteCommand:          "Vote on Proposal",
+	RegisterNodeCommand:  "Register new Node",
+	NodeVoteCommand:      "Node Vote",
+	NodeSignatureCommand: "Node Signature",
+	ChainEventCommand:    "Chain Event",
 }
 
 // String return the
 func (cmd Command) String() string {
 	s, ok := commandName[cmd]
-	if ok {
-		return s
-	}
-	return ""
-}
-
-func (cmd CommandKind) String() string {
-	s, ok := commandKindName[cmd]
 	if ok {
 		return s
 	}

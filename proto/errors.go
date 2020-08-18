@@ -1,21 +1,22 @@
 package proto
 
 var (
-	ErrInvalidMarketID           = OrderError_ORDER_ERROR_INVALID_MARKET_ID
-	ErrInvalidOrderID            = OrderError_ORDER_ERROR_INVALID_ORDER_ID
-	ErrOrderOutOfSequence        = OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
-	ErrInvalidRemainingSize      = OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
-	ErrVegaTimeFailure           = OrderError_ORDER_ERROR_TIME_FAILURE
-	ErrOrderRemovalFailure       = OrderError_ORDER_ERROR_REMOVAL_FAILURE
-	ErrInvalidExpirationDatetime = OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
-	ErrInvalidOrderReference     = OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE
-	ErrEditNotAllowed            = OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
-	ErrOrderAmendFailure         = OrderError_ORDER_ERROR_AMEND_FAILURE
-	ErrOrderNotFound             = OrderError_ORDER_ERROR_NOT_FOUND
-	ErrInvalidPartyID            = OrderError_ORDER_ERROR_INVALID_PARTY_ID
-	ErrInvalidSize               = OrderError_ORDER_ERROR_INVALID_SIZE
-	ErrInvalidPersistence        = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
-	ErrInvalidType               = OrderError_ORDER_ERROR_INVALID_TYPE
+	ErrInvalidMarketID            = OrderError_ORDER_ERROR_INVALID_MARKET_ID
+	ErrInvalidOrderID             = OrderError_ORDER_ERROR_INVALID_ORDER_ID
+	ErrOrderOutOfSequence         = OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
+	ErrInvalidRemainingSize       = OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
+	ErrVegaTimeFailure            = OrderError_ORDER_ERROR_TIME_FAILURE
+	ErrOrderRemovalFailure        = OrderError_ORDER_ERROR_REMOVAL_FAILURE
+	ErrInvalidExpirationDatetime  = OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
+	ErrInvalidOrderReference      = OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE
+	ErrEditNotAllowed             = OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
+	ErrOrderAmendFailure          = OrderError_ORDER_ERROR_AMEND_FAILURE
+	ErrOrderNotFound              = OrderError_ORDER_ERROR_NOT_FOUND
+	ErrInvalidPartyID             = OrderError_ORDER_ERROR_INVALID_PARTY_ID
+	ErrInvalidSize                = OrderError_ORDER_ERROR_INVALID_SIZE
+	ErrInvalidPersistence         = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
+	ErrInvalidType                = OrderError_ORDER_ERROR_INVALID_TYPE
+	ErrInsufficientFundsToPayFees = OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -63,6 +64,10 @@ func (err OrderError) Error() string {
 		return "OrderError: Invalid Size"
 	case OrderError_ORDER_ERROR_INVALID_PERSISTENCE:
 		return "OrderError: Invalid Persistence"
+	case OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES:
+		return "OrderError: Insufficient funds to pay fees"
+	case OrderError_ORDER_ERROR_SELF_TRADING:
+		return "OrderError: Self trading"
 	case OrderError_ORDER_ERROR_INVALID_TYPE:
 		return "OrderError: Invalid Type"
 	default:

@@ -3,7 +3,6 @@ package gql
 import (
 	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"strconv"
@@ -112,6 +111,7 @@ type TradingDataClient interface {
 	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
 	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
+	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -224,6 +224,35 @@ func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
 	return (*myNodeSignatureResolver)(r)
 }
 
+// Asset ...
+func (r *VegaResolverRoot) Asset() AssetResolver {
+	return (*myAssetResolver)(r)
+}
+
+// asset resolver
+
+type myAssetResolver VegaResolverRoot
+
+func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error) {
+	if len(obj.ID) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+	req := &protoapi.FeeInfrastructureAccountsRequest{
+		Asset: obj.ID,
+	}
+	res, err := r.tradingDataClient.FeeInfrastructureAccounts(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var acc *types.Account
+	if len(res.Accounts) > 0 {
+		acc = res.Accounts[0]
+	}
+
+	return acc, nil
+}
+
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
@@ -300,6 +329,18 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, e
 		// add the market name explicitly here as it does not
 		// come anymore from the market framework
 		market.Name = market.TradableInstrument.Instrument.Name
+		// set Asset here too as well
+		switch p := market.TradableInstrument.Instrument.Product.(type) {
+		case *Future:
+			req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+			res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+			if err != nil {
+				r.log.Error("tradingData client", logging.Error(err))
+				return nil, customErrorFromStatus(err)
+			}
+			p.Asset, err = AssetFromProto(res.Asset)
+		}
+
 		m = append(m, market)
 	}
 
@@ -321,6 +362,18 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	// add the market name explicitly here as it does not
 	// come anymore from the market framework
 	market.Name = market.TradableInstrument.Instrument.Name
+	// set Asset here too
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+
 	return market, nil
 }
 
@@ -874,6 +927,22 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 
 type myProposalResolver VegaResolverRoot
 
+func (r *myProposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*ProposalRejectionReason, error) {
+	if data == nil || data.Proposal == nil {
+		return nil, ErrInvalidProposal
+	}
+	p := data.Proposal
+	if p.Reason == types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED {
+		return nil, nil
+	}
+
+	reason, err := convertProposalRejectionReasonFromProto(p.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &reason, nil
+}
+
 func (r *myProposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
@@ -981,6 +1050,18 @@ func (r *myMarginLevelsResolver) Market(ctx context.Context, m *types.MarginLeve
 		r.log.Error("unable to convert market from proto", logging.Error(err))
 		return nil, err
 	}
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+
 	return market, nil
 }
 
@@ -1000,8 +1081,14 @@ func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevel
 	return res.Party, nil
 }
 
-func (r *myMarginLevelsResolver) Asset(_ context.Context, m *types.MarginLevels) (string, error) {
-	return m.Asset, nil
+func (r *myMarginLevelsResolver) Asset(ctx context.Context, m *types.MarginLevels) (*Asset, error) {
+	req := protoapi.AssetByIDRequest{ID: m.Asset}
+	res, err := r.tradingDataClient.AssetByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return AssetFromProto(res.Asset)
 }
 
 func (r *myMarginLevelsResolver) CollateralReleaseLevel(_ context.Context, m *types.MarginLevels) (string, error) {
@@ -1075,6 +1162,18 @@ func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) 
 		r.log.Error("unable to convert market from proto", logging.Error(err))
 		return nil, err
 	}
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+
 	return market, nil
 }
 
@@ -1125,7 +1224,19 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	return MarketFromProto(res.Market)
+	market, err := MarketFromProto(res.Market)
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+	return market, err
 }
 
 // END: Market Depth Resolver
@@ -1134,11 +1245,11 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 
 type myOrderResolver VegaResolverRoot
 
-func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*RejectionReason, error) {
+func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*OrderRejectionReason, error) {
 	if o.Reason == types.OrderError_ORDER_ERROR_NONE {
 		return nil, nil
 	}
-	reason, err := convertRejectionReasonFromProto(o.Reason)
+	reason, err := convertOrderRejectionReasonFromProto(o.Reason)
 	if err != nil {
 		return nil, err
 	}
@@ -1174,7 +1285,19 @@ func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*Market
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	return MarketFromProto(res.Market)
+	market, err := MarketFromProto(res.Market)
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+	return market, err
 }
 func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
@@ -1209,6 +1332,7 @@ func (r *myOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*str
 	expiresAt := vegatime.Format(vegatime.UnixNano(obj.ExpiresAt))
 	return &expiresAt, nil
 }
+
 func (r *myOrderResolver) Trades(ctx context.Context, ord *types.Order) ([]*types.Trade, error) {
 	if ord == nil {
 		return nil, errors.New("nil order")
@@ -1253,7 +1377,20 @@ func (r *myTradeResolver) Market(ctx context.Context, obj *types.Trade) (*Market
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	return MarketFromProto(res.Market)
+	market, err := MarketFromProto(res.Market)
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+	return market, err
+
 }
 func (r *myTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side, error) {
 	return Side(obj.Aggressor.String()), nil
@@ -1300,6 +1437,44 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 
 func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType, error) {
 	return convertTradeTypeFromProto(obj.Type)
+}
+
+func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+	i := int(obj.BuyerAuctionBatch)
+	return &i, nil
+}
+
+func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+	fee := TradeFee{
+		MakerFee:          "0",
+		InfrastructureFee: "0",
+		LiquidityFee:      "0",
+	}
+	if obj.BuyerFee != nil {
+		fee.MakerFee = strconv.FormatUint(obj.BuyerFee.MakerFee, 10)
+		fee.InfrastructureFee = strconv.FormatUint(obj.BuyerFee.InfrastructureFee, 10)
+		fee.LiquidityFee = strconv.FormatUint(obj.BuyerFee.LiquidityFee, 10)
+	}
+	return &fee, nil
+}
+
+func (r *myTradeResolver) SellerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+	i := int(obj.SellerAuctionBatch)
+	return &i, nil
+}
+
+func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+	fee := TradeFee{
+		MakerFee:          "0",
+		InfrastructureFee: "0",
+		LiquidityFee:      "0",
+	}
+	if obj.SellerFee != nil {
+		fee.MakerFee = strconv.FormatUint(obj.SellerFee.MakerFee, 10)
+		fee.InfrastructureFee = strconv.FormatUint(obj.SellerFee.InfrastructureFee, 10)
+		fee.LiquidityFee = strconv.FormatUint(obj.SellerFee.LiquidityFee, 10)
+	}
+	return &fee, nil
 }
 
 // END: Trade Resolver
@@ -1420,41 +1595,24 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 
 type myMutationResolver VegaResolverRoot
 
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data, sig string, address, pubkey *string) (*TransactionSubmitted, error) {
-	if address == nil && pubkey == nil {
-		return nil, errors.New("auth missing: either address or pubkey needs to be set")
-	}
+func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error) {
 	decodedData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, err
 	}
-	decodedSig, err := base64.StdEncoding.DecodeString(sig)
+	decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
 	if err != nil {
 		return nil, err
 	}
 	req := &protoapi.SubmitTransactionRequest{
 		Tx: &types.SignedBundle{
-			Data: decodedData,
-			Sig:  decodedSig,
+			Tx: decodedData,
+			Sig: &types.Signature{
+				Sig:     decodedSig,
+				Version: uint64(sig.Version),
+				Algo:    sig.Algo,
+			},
 		},
-	}
-	if pubkey != nil {
-		pk, err := hex.DecodeString(*pubkey)
-		if err != nil {
-			return nil, err
-		}
-		req.Tx.Auth = &types.SignedBundle_PubKey{
-			PubKey: pk,
-		}
-	} else {
-		addr, err := hex.DecodeString(*address)
-		if err != nil {
-			return nil, err
-		}
-		// address is guaranteed to be set here...
-		req.Tx.Auth = &types.SignedBundle_Address{
-			Address: addr,
-		}
 	}
 	res, err := r.tradingClient.SubmitTransaction(ctx, req)
 	if err != nil {
@@ -2166,6 +2324,16 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Ma
 
 func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (AccountType, error) {
 	return convertAccountTypeFromProto(obj.Type)
+}
+
+func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*Asset, error) {
+	req := protoapi.AssetByIDRequest{ID: obj.Asset}
+	res, err := r.tradingDataClient.AssetByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	return AssetFromProto(res.Asset)
 }
 
 // END: Account Resolver

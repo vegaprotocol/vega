@@ -17,6 +17,9 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+func (this *AuctionDuration) Validate() error {
+	return nil
+}
 func (this *ContinuousTrading) Validate() error {
 	return nil
 }
@@ -131,10 +134,31 @@ func (this *TradableInstrument) Validate() error {
 	}
 	return nil
 }
+func (this *FeeFactors) Validate() error {
+	return nil
+}
+func (this *Fees) Validate() error {
+	if this.Factors != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Factors); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Factors", err)
+		}
+	}
+	return nil
+}
 func (this *Market) Validate() error {
 	if this.TradableInstrument != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TradableInstrument); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("TradableInstrument", err)
+		}
+	}
+	if this.Fees != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Fees); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Fees", err)
+		}
+	}
+	if this.OpeningAuction != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OpeningAuction); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("OpeningAuction", err)
 		}
 	}
 	if oneOfNester, ok := this.GetTradingMode().(*Market_Continuous); ok {

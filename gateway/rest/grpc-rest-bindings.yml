@@ -30,6 +30,15 @@ http:
     - selector: api.trading_data.MarketAccounts
       get: '/markets/{marketID}/accounts'
 
+    # assets
+    - selector: api.trading_data.Assets
+      get: '/assets'
+    - selector: api.trading_data.AssetByID
+      get: '/assets/{ID}'
+    - selector: api.trading_data.FeeInfrastructureAccounts
+      get: '/assets/{asset}/infrastructureFeeAccount'
+
+
     # MarketData
     - selector: api.trading_data.MarketsData
       get: '/markets-data'
@@ -73,19 +82,20 @@ http:
       get: '/parties/{partyID}/accounts'
     - selector: api.trading_data.MarginLevels
       get: '/parties/{partyID}/markets/{marketID}/margin'
+
     - selector: api.trading.Withdraw
-      post: '/parties/{withdraw.partyID}/withdrawals'
+      post: '/parties/prepare/withdraw'
       body: '*'
+    - selector: api.trading_data.GetProposalsByParty
+      get: '/parties/{partyID}/proposals'
+
 
     # Governance
     - selector: api.trading.PrepareProposal
-      post: '/governance/proposals/prepare'
+      post: '/governance/prepare/proposal'
       body: "*"
 
     # Miscellaneous
-    - selector: api.trading.NotifyTraderAccount
-      post: '/fountain'
-      body: "*"
     - selector: api.trading_data.Statistics
       get: '/statistics'
     - selector: api.trading_data.GetVegaTime

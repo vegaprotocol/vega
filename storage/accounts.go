@@ -93,6 +93,35 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for market: %s", marketID))
 	}
 
+	keyPrefix, validFor = a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY, marketID, false)
+	accsLiqui, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading general accounts for market: %s", marketID))
+	}
+
+	accs = append(accs, accsLiqui...)
+	if len(asset) <= 0 {
+		return accs, nil
+	}
+
+	out := []*types.Account{}
+	for _, v := range accs {
+		if asset == v.Asset {
+			out = append(out, v)
+			break
+		}
+	}
+
+	return out, nil
+}
+
+func (a *Account) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error) {
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, "!", false)
+	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading fee infrastructure for asset: %s", asset))
+	}
+
 	if len(asset) <= 0 {
 		return accs, nil
 	}
@@ -319,6 +348,14 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
 			insuranceIDKey := a.badger.accountInsuranceIDKey(acc.MarketID, acc.Asset)
 			batch[string(insuranceIDKey)] = buf
+		}
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
+			liquidityIDKey := a.badger.accountFeeLiquidityIDKey(acc.MarketID, acc.Asset)
+			batch[string(liquidityIDKey)] = buf
+		}
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
+			infrastructureIDKey := a.badger.accountFeeInfrastructureIDKey(acc.Asset)
+			batch[string(infrastructureIDKey)] = buf
 		}
 		// Check the type of account and write only the data required for GENERAL accounts.
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {

@@ -61,22 +61,35 @@ func TestParseOrderTimeInForce(t *testing.T) {
 	orderType, err := convertOrderTimeInForceToProto(fok)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_FOK, orderType)
+
 	ioc := OrderTimeInForceIoc
 	orderType, err = convertOrderTimeInForceToProto(ioc)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_IOC, orderType)
+
 	gtt := OrderTimeInForceGtt
 	orderType, err = convertOrderTimeInForceToProto(gtt)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_GTT, orderType)
+
 	gtc := OrderTimeInForceGtc
 	orderType, err = convertOrderTimeInForceToProto(gtc)
 	assert.Nil(t, err)
 	assert.Equal(t, types.Order_TIF_GTC, orderType)
+
+	gfa := OrderTimeInForceGfa
+	orderType, err = convertOrderTimeInForceToProto(gfa)
+	assert.Nil(t, err)
+	assert.Equal(t, types.Order_TIF_GFA, orderType)
+
+	gfn := OrderTimeInForceGfn
+	orderType, err = convertOrderTimeInForceToProto(gfn)
+	assert.Nil(t, err)
+	assert.Equal(t, types.Order_TIF_GFN, orderType)
+
 	unknown := OrderTimeInForce("好到时候")
 	_, err = convertOrderTimeInForceToProto(unknown)
 	assert.Error(t, err)
-
 }
 
 func TestParseSide(t *testing.T) {
