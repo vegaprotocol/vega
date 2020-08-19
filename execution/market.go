@@ -69,7 +69,10 @@ type Market struct {
 	mkt         *types.Market
 	closingAt   time.Time
 	currentTime time.Time
-	mu          sync.Mutex
+
+	// If we are in a time based auction, set the finish time here
+	auctionEnd time.Time
+	mu         sync.Mutex
 
 	markPrice uint64
 
@@ -175,6 +178,11 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instanciate fee engine")
 	}
 
+	var auctionClose time.Time
+	if mkt.OpeningAuction != nil && mkt.OpeningAuction.Duration > 0 {
+		auctionClose = time.Now().Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
+	}
+
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -191,7 +199,11 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
+		auctionEnd:         auctionClose,
 	}
+
+	// All markets start with an opening auction
+	market.EnterAuction(context.TODO())
 	return market, nil
 }
 
@@ -247,6 +259,15 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	closed = t.After(m.closingAt)
 	m.closed = closed
 	m.currentTime = t
+
+	// Look to see if we are in an auction that needs to finish
+	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
+		// Have we completed the auction time
+		if !m.auctionEnd.IsZero() && m.auctionEnd.Before(t) {
+			m.LeaveAuction(ctx)
+			m.auctionEnd = time.Time{}
+		}
+	}
 
 	// TODO(): handle market start time
 
@@ -357,15 +378,42 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
+	m.log.Debug("Entering an auction", logging.String("Market", m.mkt.Id))
+
 	// Change market type to auction
+	m.matching.EnterAuction()
 
 	// Check the orderbook for any non auction friendly orders
 	// and move them into a parking area
+
+	// Send an event bus update
+	m.broker.Send(events.NewAuctionEvent(ctx, false))
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context) {
+	m.log.Debug("Leaving an auction", logging.String("Market", m.mkt.Id))
+
 	// Change market type to continuous trading
+	orders, trades, err := m.matching.LeaveAuction()
+	if err != nil {
+		m.log.Error("Error leaving auction: ", logging.Error(err))
+	}
+
+	m.log.Debug("Orders:", logging.Int("Orders", len(orders)))
+	m.log.Debug("Trades:", logging.Int("Trades", len(trades)))
+
+	// Apply fee calculations to each trade
+	for _, order := range orders {
+		err := m.applyFees(ctx, order, trades)
+		if err == nil {
+			// Update positions for each order
+			m.position.RegisterOrder(order)
+
+			// Send an event bus update
+			m.broker.Send(events.NewAuctionEvent(ctx, true))
+		}
+	}
 
 	// Move any parked orders back into the orderbook
 }

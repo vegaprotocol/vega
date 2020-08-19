@@ -205,6 +205,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		settlementValue       uint64
 		sigma                 float64
 		riskAversionParameter float64
+		openingAuctionTime    int64
 	}{
 		{
 			id:                    "VHSRA2G5MDFKREFJ5TOAGHZBBDGCYS67",
@@ -217,6 +218,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementValue:       1500000,
 			riskAversionParameter: 0.001,
 			sigma:                 1.5,
+			openingAuctionTime:    10,
 		},
 		{
 			id:                    "LBXRA65PN4FN5HBWRI2YBCOYDG2PBGYU",
@@ -229,6 +231,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementValue:       126000,
 			riskAversionParameter: 0.01,
 			sigma:                 0.09,
+			openingAuctionTime:    20,
 		},
 		{
 			id:                    "RTJVFCMFZZQQLLYVSXTWEN62P6AH6OCN",
@@ -241,6 +244,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			settlementValue:       98123,
 			riskAversionParameter: 0.001,
 			sigma:                 2.0,
+			openingAuctionTime:    30,
 		},
 	}
 
@@ -309,6 +313,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			},
 			TradingMode: &proto.Market_Continuous{
 				Continuous: &proto.ContinuousTrading{},
+			},
+			OpeningAuction: &proto.AuctionDuration{
+				Duration: skel.openingAuctionTime,
+				Volume:   0,
 			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)

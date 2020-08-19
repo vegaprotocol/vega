@@ -81,7 +81,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 
 		// For now we set market state to continuous because that is what
 		// we are used to. Before we go live this will be auction
-		marketState: types.MarketState_MARKET_STATE_CONTINUOUS,
+		marketState: types.MarketState_MARKET_STATE_AUCTION,
 		batchID:     0,
 	}
 }
@@ -187,18 +187,14 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 
 // LeaveAuction Moves the order book back into continuous trading state
 func (b *OrderBook) LeaveAuction() ([]*types.Order, []*types.Trade, error) {
+	// Update batchID
+	b.batchID++
+
 	// Uncross the book
 	trades, orders, err := b.uncrossBook()
 	if err != nil {
 		return nil, nil, err
 	}
-
-	// Unpark all parked orders
-	//b.buy.unparkOrders(types.Side_SIDE_BUY)
-	//b.sell.unparkOrders(types.Side_SIDE_SELL)
-
-	// Update batchID
-	b.batchID++
 
 	// Flip back to continuous
 	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
