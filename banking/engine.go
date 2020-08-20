@@ -19,12 +19,21 @@ import (
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
+	ErrWrongAssetUsedForERC20Withdraw             = errors.New("non erc20 asset used for lock withdraw")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
 type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 	Enable(assetID string) error
+}
+
+// Notary ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
+type Notary interface {
+	StartAggregate(resID string, kind types.NodeSignatureKind) error
+	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
+	IsSigned(string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
 // Collateral engine
@@ -63,14 +72,15 @@ type Engine struct {
 	log       *logging.Logger
 	col       Collateral
 	erc       ExtResChecker
+	notary    Notary
 	assets    Assets
 	assetActs map[string]*assetAction
 	tsvc      TimeService
-
+	// top       Topology
 	seen map[txRef]struct{}
 }
 
-func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets) (e *Engine) {
+func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets, notary Notary) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
 	return &Engine{
 		log:       log,
@@ -80,6 +90,7 @@ func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeServic
 		tsvc:      tsvc,
 		assets:    assets,
 		seen:      map[txRef]struct{}{},
+		notary:    notary,
 	}
 }
 
@@ -180,6 +191,30 @@ func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+}
+
+func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string, amount uint64) error {
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", assetID),
+			logging.Error(err))
+		return err
+	}
+	if !asset.IsERC20() {
+		return ErrWrongAssetUsedForERC20Withdraw
+	}
+
+	// try to lock the funds
+	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
+		e.log.Error("cannot withdraw asset for party",
+			logging.String("party-id", party),
+			logging.String("asset-id", assetID),
+			logging.Uint64("amount", amount),
+			logging.Error(err))
+		return err
+	}
+	return nil
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {

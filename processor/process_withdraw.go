@@ -24,7 +24,7 @@ func (p *Processor) processWithdraw(ctx context.Context, w *types.Withdraw) erro
 	case asset.IsBuiltinAsset():
 		return p.banking.WithdrawalBuiltinAsset(ctx, w.PartyID, w.Asset, w.Amount)
 	case asset.IsERC20():
-		return errors.New("unimplemented withdrawal for ERC20")
+		return p.banking.LockWithdrawalERC20(ctx, w.PartyID, w.Asset, w.Amount)
 	default:
 		return errors.New("unimplemented withdrawal")
 	}

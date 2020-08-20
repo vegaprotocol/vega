@@ -161,6 +161,7 @@ type Banking interface {
 	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
 	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
+	LockWithdrawalERC20(context.Context, string, string, uint64) error
 }
 
 // Processor handle processing of all transaction sent through the node
