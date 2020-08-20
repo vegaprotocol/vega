@@ -608,6 +608,8 @@ const (
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
 	// Liquidity fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
+	// LockWithdraw - and account use for party in the process of withdrawing funds
+	AccountTypeLockWithdraw AccountType = "LockWithdraw"
 )
 
 var AllAccountType = []AccountType{
@@ -617,11 +619,12 @@ var AllAccountType = []AccountType{
 	AccountTypeGeneral,
 	AccountTypeFeeInfrastructure,
 	AccountTypeFeeLiquidity,
+	AccountTypeLockWithdraw,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw:
 		return true
 	}
 	return false
