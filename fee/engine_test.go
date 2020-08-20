@@ -45,6 +45,7 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("update fee factors with valid input", testUpdateFeeFactors)
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
 	t.Run("calcualte continuous trading fee", testCalcContinuousTrading)
+	t.Run("calcualte continuous trading fee + check amounts", testCalcContinuousTradingAndCheckAmounts)
 
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
 	t.Run("calcualte continuous trading fee", testCalcContinuousTrading)
@@ -109,6 +110,57 @@ func testCalcContinuousTradingErrorEmptyTrade(t *testing.T) {
 	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
 }
 
+func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
+	eng := getTestFee(t)
+	eng.UpdateFeeFactors(types.Fees{
+		Factors: &types.FeeFactors{
+			MakerFee:          "0.000250",
+			InfrastructureFee: "0.0005",
+			LiquidityFee:      "0.001",
+		},
+	})
+	trades := []*types.Trade{
+		{
+			Aggressor: types.Side_SIDE_SELL,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      5,
+			Price:     100000,
+		},
+	}
+
+	ft, err := eng.CalculateForContinuousMode(trades)
+	assert.NotNil(t, ft)
+	assert.Nil(t, err)
+	transfers := ft.Transfers()
+	var (
+		pay, recv, infra, liquidity int
+	)
+	for _, v := range transfers {
+		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+			liquidity += 1
+			assert.Equal(t, 500, int(v.Amount.Amount))
+		}
+		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+			infra += 1
+			assert.Equal(t, 250, int(v.Amount.Amount))
+		}
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+			recv += 1
+			assert.Equal(t, 125, int(v.Amount.Amount))
+		}
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+			pay += 1
+			assert.Equal(t, 125, int(v.Amount.Amount))
+		}
+	}
+
+	assert.Equal(t, liquidity, 1)
+	assert.Equal(t, infra, 1)
+	assert.Equal(t, recv, len(trades))
+	assert.Equal(t, pay, len(trades))
+
+}
 func testCalcContinuousTrading(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
