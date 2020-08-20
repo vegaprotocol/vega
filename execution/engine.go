@@ -23,6 +23,9 @@ var (
 
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
 	ErrNoMarketID = errors.New("no valid market id was supplied")
+
+	// ErrInvalidOrderCancellation is returned when an incomplete order cancellation request is used
+	ErrInvalidOrderCancellation = errors.New("invalid order cancellation")
 )
 
 // TimeService ...
@@ -253,23 +256,76 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
-	mkt, ok := e.markets[order.MarketID]
+
+	if len(order.PartyID) > 0 {
+		if len(order.MarketID) > 0 {
+			if len(order.OrderID) > 0 {
+				return e.cancelOrder(ctx, order.PartyID, order.MarketID, order.OrderID)
+			}
+			return e.cancelOrderByMarket(ctx, order.PartyID, order.MarketID)
+		}
+		return e.cancelAllPartyOrders(ctx, order.PartyID)
+	}
+
+	return nil, ErrInvalidOrderCancellation
+}
+
+func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string) ([]*types.OrderCancellationConfirmation, error) {
+	mkt, ok := e.markets[market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
-
-	conf, err := mkt.CancelOrder(ctx, order)
+	conf, err := mkt.CancelOrder(ctx, party, orderID)
 	if err != nil {
 		return nil, err
 	}
 	if conf.Order.Status == types.Order_STATUS_CANCELLED {
-		metrics.OrderGaugeAdd(-1, order.MarketID)
+		metrics.OrderGaugeAdd(-1, market)
 	}
-	return conf, nil
+	return []*types.OrderCancellationConfirmation{conf}, nil
+}
+
+func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) ([]*types.OrderCancellationConfirmation, error) {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
+	confs, err := mkt.CancelAllOrders(ctx, party)
+	if err != nil {
+		return nil, err
+	}
+	var confirmed int
+	for _, conf := range confs {
+		if conf.Order.Status == types.Order_STATUS_CANCELLED {
+			confirmed += 1
+		}
+	}
+	metrics.OrderGaugeAdd(-confirmed, market)
+	return confs, nil
+}
+
+func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*types.OrderCancellationConfirmation, error) {
+	confirmations := []*types.OrderCancellationConfirmation{}
+
+	for _, mkt := range e.markets {
+		confs, err := mkt.CancelAllOrders(ctx, party)
+		if err != nil {
+			return nil, err
+		}
+		confirmations = append(confirmations, confs...)
+		var confirmed int
+		for _, conf := range confs {
+			if conf.Order.Status == types.Order_STATUS_CANCELLED {
+				confirmed += 1
+			}
+		}
+		metrics.OrderGaugeAdd(-confirmed, mkt.GetID())
+	}
+	return confirmations, nil
 }
 
 // CancelOrderByID attempts to locate order by its Id and cancel it if exists.

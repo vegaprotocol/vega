@@ -1281,8 +1281,35 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 	return riskUpdates
 }
 
+func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.OrderCancellationConfirmation, error) {
+	cancellations, err := m.matching.CancelAllOrders(partyID)
+	if cancellations == nil || err != nil {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after cancelling all orders from matching engine",
+				logging.String("party-id", partyID),
+				logging.String("market", m.mkt.Id),
+				logging.Error(err))
+		}
+		return nil, err
+	}
+
+	for _, cancellation := range cancellations {
+		// Update the order in our stores (will be marked as cancelled)
+		cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
+		m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
+		_, err = m.position.UnregisterOrder(cancellation.Order)
+		if err != nil {
+			m.log.Error("Failure unregistering order in positions engine (cancel)",
+				logging.Order(*cancellation.Order),
+				logging.Error(err))
+		}
+	}
+
+	return cancellations, nil
+}
+
 // CancelOrder cancels the given order
-func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1290,28 +1317,17 @@ func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (
 		return nil, ErrMarketClosed
 	}
 
-	// Validate Market
-	if oc.MarketID != m.mkt.Id {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Market ID mismatch",
-				logging.String("party-id", oc.PartyID),
-				logging.String("order-id", oc.OrderID),
-				logging.String("market", m.mkt.Id))
-		}
-		return nil, types.ErrInvalidMarketID
-	}
-
-	order, err := m.matching.GetOrderByID(oc.OrderID)
+	order, err := m.matching.GetOrderByID(orderID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Only allow the original order creator to cancel their order
-	if order.PartyID != oc.PartyID {
+	if order.PartyID != partyID {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Party ID mismatch",
-				logging.String("party-id", oc.PartyID),
-				logging.String("order-id", oc.OrderID),
+				logging.String("party-id", partyID),
+				logging.String("order-id", orderID),
 				logging.String("market", m.mkt.Id))
 		}
 		return nil, types.ErrInvalidPartyID
@@ -1321,8 +1337,8 @@ func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (
 	if cancellation == nil || err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Failure after cancel order from matching engine",
-				logging.String("party-id", oc.PartyID),
-				logging.String("order-id", oc.OrderID),
+				logging.String("party-id", partyID),
+				logging.String("order-id", orderID),
 				logging.String("market", m.mkt.Id),
 				logging.Error(err))
 		}
@@ -1350,12 +1366,7 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 	if err != nil {
 		return nil, err
 	}
-	cancellation := types.OrderCancellation{
-		OrderID:  order.Id,
-		PartyID:  order.PartyID,
-		MarketID: order.MarketID,
-	}
-	return m.CancelOrder(ctx, &cancellation)
+	return m.CancelOrder(ctx, order.PartyID, order.Id)
 }
 
 // AmendOrder amend an existing order from the order book
@@ -1414,13 +1425,8 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// if remaining is reduces <= 0, then order is cancelled
 	if amendedOrder.Remaining <= 0 {
-		orderCancel := types.OrderCancellation{
-			OrderID:  existingOrder.Id,
-			PartyID:  existingOrder.PartyID,
-			MarketID: existingOrder.MarketID,
-		}
-
-		confirm, err := m.CancelOrder(ctx, &orderCancel)
+		confirm, err := m.CancelOrder(
+			ctx, existingOrder.PartyID, existingOrder.Id)
 		if err != nil {
 			return nil, err
 		}
