@@ -32,6 +32,7 @@ type Assets interface {
 type Collateral interface {
 	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
 	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
+	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
 	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
