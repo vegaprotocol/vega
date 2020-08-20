@@ -1261,7 +1261,7 @@ func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyI
 			MarketID: noMarket,
 			Balance:  0,
 			Owner:    partyID,
-			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
+			Type:     types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
 		}
 		e.accs[id] = acc
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
@@ -1408,15 +1408,12 @@ func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string
 	if err != nil {
 		return ErrAccountDoesNotExist
 	}
-
 	if err := e.IncrementBalance(ctx, lockacc.Id, amount); err != nil {
 		return err
 	}
-	e.broker.Send(events.NewAccountEvent(ctx, *lockacc))
 	if err := e.DecrementBalance(ctx, genacc.Id, amount); err != nil {
 		return err
 	}
-	e.broker.Send(events.NewAccountEvent(ctx, *genacc))
 
 	return nil
 }
