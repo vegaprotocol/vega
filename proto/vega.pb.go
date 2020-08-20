@@ -21,14 +21,15 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// A side relates to the direction of an order, to Buy, or Sell.
 type Side int32
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	Side_SIDE_UNSPECIFIED Side = 0
-	// Buy
+	// Buy order.
 	Side_SIDE_BUY Side = 1
-	// Sell
+	// Sell order.
 	Side_SIDE_SELL Side = 2
 )
 
@@ -52,22 +53,23 @@ func (Side) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{0}
 }
 
+// Represents a set of time intervals that are used when querying for candle-stick data.
 type Interval int32
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	Interval_INTERVAL_UNSPECIFIED Interval = 0
-	// 1 minute
+	// 1 minute.
 	Interval_INTERVAL_I1M Interval = 60
-	// 5 minutes
+	// 5 minutes.
 	Interval_INTERVAL_I5M Interval = 300
-	// 15 minutes
+	// 15 minutes.
 	Interval_INTERVAL_I15M Interval = 900
-	// 1 hour
+	// 1 hour.
 	Interval_INTERVAL_I1H Interval = 3600
-	// 6 hours
+	// 6 hours.
 	Interval_INTERVAL_I6H Interval = 21600
-	// 1 day
+	// 1 day.
 	Interval_INTERVAL_I1D Interval = 86400
 )
 
@@ -99,8 +101,7 @@ func (Interval) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{1}
 }
 
-// Market Status
-// What mode is the market currently running in
+// What mode is the market currently running, also known as market state.
 type MarketState int32
 
 const (
@@ -132,55 +133,58 @@ func (MarketState) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{2}
 }
 
-// Set when an order has an issue
+// OrderError codes are returned in the `[Order](#vega.Order).reason` field.
+// If there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.
 type OrderError int32
 
 const (
-	// Empty default error
+	// Default value, no error reported.
 	OrderError_ORDER_ERROR_NONE OrderError = 0
-	// Order was submitted for a market that does not exist
+	// Order was submitted for a market that does not exist.
 	OrderError_ORDER_ERROR_INVALID_MARKET_ID OrderError = 1
-	// Order was submitted with an invalid ID
+	// Order was submitted with an invalid identifier.
 	OrderError_ORDER_ERROR_INVALID_ORDER_ID OrderError = 2
-	// Order was amended with a sequence number that was not previous version + 1
+	// Order was amended with a sequence number that was not previous version + 1.
 	OrderError_ORDER_ERROR_OUT_OF_SEQUENCE OrderError = 3
-	// Order was amended with an invalid remaining size (e.g. remaining greater than total size)
+	// Order was amended with an invalid remaining size (e.g. remaining greater than total size).
 	OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE OrderError = 4
-	// Node was unable to get Vega (blockchain) time
+	// Node was unable to get Vega (blockchain) time.
 	OrderError_ORDER_ERROR_TIME_FAILURE OrderError = 5
-	// Failed to remove an order from the book
+	// Failed to remove an order from the book.
 	OrderError_ORDER_ERROR_REMOVAL_FAILURE OrderError = 6
-	// GTT Order submitted or amended with an expiration that was badly formatted or otherwise invalid
+	// An order with `TimeInForce.TIF_GTT` was submitted or amended
+	// with an expiration that was badly formatted or otherwise invalid.
 	OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME OrderError = 7
-	// Order was submitted or amended with an invalid reference field
+	// Order was submitted or amended with an invalid reference field.
 	OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE OrderError = 8
-	// Order amend was submitted for an order field that cannot not be amended (e.g. order id)
+	// Order amend was submitted for an order field that cannot not be amended (e.g. order identifier).
 	OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED OrderError = 9
-	// Amend failure because amend details do not match original order
+	// Amend failure because amend details do not match original order.
 	OrderError_ORDER_ERROR_AMEND_FAILURE OrderError = 10
-	// Order not found in the order book or in order store
+	// Order not found in an order book or store.
 	OrderError_ORDER_ERROR_NOT_FOUND OrderError = 11
-	// Order was submitted with an invalid or missing party ID
+	// Order was submitted with an invalid or missing party identifier.
 	OrderError_ORDER_ERROR_INVALID_PARTY_ID OrderError = 12
-	// Order was submitted for a market that has closed
+	// Order was submitted for a market that has closed.
 	OrderError_ORDER_ERROR_MARKET_CLOSED OrderError = 13
-	// Order was submitted, but the party did not have enough collateral to cover the order
+	// Order was submitted, but the party did not have enough collateral to cover the order.
 	OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED OrderError = 14
-	// Order was submitted, but the party did not have an account for this asset
+	// Order was submitted, but the party did not have an account for this asset.
 	OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT OrderError = 15
-	// Unspecified internal error
+	// Unspecified internal error.
 	OrderError_ORDER_ERROR_INTERNAL_ERROR OrderError = 16
-	// Order was submitted with an invalid or missing size (e.g. 0)
+	// Order was submitted with an invalid or missing size (e.g. 0).
 	OrderError_ORDER_ERROR_INVALID_SIZE OrderError = 17
-	// Order was submitted with an invalid persistence for its type
+	// Order was submitted with an invalid persistence for its type.
 	OrderError_ORDER_ERROR_INVALID_PERSISTENCE OrderError = 18
-	// Order was submitted with an invalid type field
+	// Order was submitted with an invalid type field.
 	OrderError_ORDER_ERROR_INVALID_TYPE OrderError = 19
-	// Order was stopped as it would have traded with another order for the same party
+	// Order was stopped as it would have traded with another order submitted from the same party.
 	OrderError_ORDER_ERROR_SELF_TRADING OrderError = 20
-	// Order was submitted, but the party did not have enough collateral to cover the fees for the order
+	// Order was submitted, but the party did not have enough collateral to cover the fees for the order.
 	OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES OrderError = 21
-	OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE          OrderError = 22
+	// Order was submitted with an incorrect or invalid market type.
+	OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE OrderError = 22
 )
 
 var OrderError_name = map[int32]string{
@@ -243,13 +247,18 @@ func (OrderError) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{3}
 }
 
+// The Vega blockchain status as reported by the node the caller is connected to.
 type ChainStatus int32
 
 const (
-	ChainStatus_CHAIN_STATUS_UNSPECIFIED  ChainStatus = 0
+	// Default value, always invalid.
+	ChainStatus_CHAIN_STATUS_UNSPECIFIED ChainStatus = 0
+	// Blockchain is disconnected.
 	ChainStatus_CHAIN_STATUS_DISCONNECTED ChainStatus = 1
-	ChainStatus_CHAIN_STATUS_REPLAYING    ChainStatus = 2
-	ChainStatus_CHAIN_STATUS_CONNECTED    ChainStatus = 3
+	// Blockchain is replaying historic transactions.
+	ChainStatus_CHAIN_STATUS_REPLAYING ChainStatus = 2
+	// Blockchain is connected and receiving transactions.
+	ChainStatus_CHAIN_STATUS_CONNECTED ChainStatus = 3
 )
 
 var ChainStatus_name = map[int32]string{
@@ -274,27 +283,35 @@ func (ChainStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{4}
 }
 
+// Various collateral/account types as used by Vega.
 type AccountType int32
 
 const (
-	// the default variant for this enum
+	// Default value.
 	AccountType_ACCOUNT_TYPE_UNSPECIFIED AccountType = 0
-	// This account is created to hold the insurance pool funds of a market.
+	// Insurance pool accounts contain insurance pool funds for a market.
 	AccountType_ACCOUNT_TYPE_INSURANCE AccountType = 1
-	// This account is created to hold fund while settlement or mtm occur.
+	// Settlement accounts exist only during settlement or mark-to-market.
 	AccountType_ACCOUNT_TYPE_SETTLEMENT AccountType = 2
-	// A party will have multiple margin accounts, one for each market they have traded in. The balance will shift as margin requirements on positions change
+	// Margin accounts contain margin funds for a party and each party will
+	// have multiple margin accounts, one for each market they have traded in.
+	//
+	// Margin account funds will alter as margin requirements on positions change.
 	AccountType_ACCOUNT_TYPE_MARGIN AccountType = 3
-	// A party will have multiple general accounts, one for each assets they want
-	// to trade with. This is the account where the funds are initially deposited
-	// or withdrawn from. It's also the account where funds are taken to fullfill
-	// margin requirement or fees
+	// General accounts contains general funds for a party. A party will
+	// have multiple general accounts, one for each asset they want
+	// to trade with.
+	//
+	// General accounts are where funds are initially deposited or withdrawn from.
+	// It is also the account where funds are taken to fulfil fees and initial margin requirements.
 	AccountType_ACCOUNT_TYPE_GENERAL AccountType = 4
-	//This account is created to hold fees earned for providing infrastructure
+	// Infrastructure accounts contain fees earned by providing infrastructure on Vega.
 	AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE AccountType = 5
-	// This account is created to hold fees earned for providing liquidity
+	// Liquidity accounts contain fees earned by providing liquidity on Vega markets.
 	AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY AccountType = 6
-	// This account is created to hold fees earned for placing orders that sit on the book
+	// This account is created to hold fees earned by placing orders that sit on the book
+	// and are then matched with an incoming order to create a trade.
+	// These fees reward traders who provide the best priced liquidity that actually allows trading to take place.
 	AccountType_ACCOUNT_TYPE_FEES_MAKER AccountType = 7
 )
 
@@ -328,22 +345,36 @@ func (AccountType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{5}
 }
 
+// Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place.
 type TransferType int32
 
 const (
-	TransferType_TRANSFER_TYPE_UNSPECIFIED            TransferType = 0
-	TransferType_TRANSFER_TYPE_LOSS                   TransferType = 1
-	TransferType_TRANSFER_TYPE_WIN                    TransferType = 2
-	TransferType_TRANSFER_TYPE_CLOSE                  TransferType = 3
-	TransferType_TRANSFER_TYPE_MTM_LOSS               TransferType = 4
-	TransferType_TRANSFER_TYPE_MTM_WIN                TransferType = 5
-	TransferType_TRANSFER_TYPE_MARGIN_LOW             TransferType = 6
-	TransferType_TRANSFER_TYPE_MARGIN_HIGH            TransferType = 7
-	TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED     TransferType = 8
-	TransferType_TRANSFER_TYPE_MAKER_FEE_PAY          TransferType = 9
-	TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE      TransferType = 10
+	// Default value, always invalid.
+	TransferType_TRANSFER_TYPE_UNSPECIFIED TransferType = 0
+	// Loss.
+	TransferType_TRANSFER_TYPE_LOSS TransferType = 1
+	// Win.
+	TransferType_TRANSFER_TYPE_WIN TransferType = 2
+	// Close.
+	TransferType_TRANSFER_TYPE_CLOSE TransferType = 3
+	// Mark to market loss.
+	TransferType_TRANSFER_TYPE_MTM_LOSS TransferType = 4
+	// Mark to market win.
+	TransferType_TRANSFER_TYPE_MTM_WIN TransferType = 5
+	// Margin too low.
+	TransferType_TRANSFER_TYPE_MARGIN_LOW TransferType = 6
+	// Margin too high.
+	TransferType_TRANSFER_TYPE_MARGIN_HIGH TransferType = 7
+	// Margin was confiscated.
+	TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED TransferType = 8
+	// Pay maker fee.
+	TransferType_TRANSFER_TYPE_MAKER_FEE_PAY TransferType = 9
+	// Receive maker fee.
+	TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE TransferType = 10
+	// Pay infrastructure fee.
 	TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY TransferType = 11
-	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY      TransferType = 12
+	// Pay liquidity fee.
+	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY TransferType = 12
 )
 
 var TransferType_name = map[int32]string{
@@ -386,8 +417,7 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{6}
 }
 
-// The kind of the signature created by a node
-// eg: for a new asset whitelisting, withdrawal
+// The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.
 type NodeSignatureKind int32
 
 const (
@@ -419,21 +449,20 @@ func (NodeSignatureKind) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{7}
 }
 
-// Order Time in Force
-//
-// See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
+// Time in Force for an order.
+// See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
 type Order_TimeInForce int32
 
 const (
-	// Default value, can be valid for an amend
+	// Default value for TimeInForce, can be valid for an amend.
 	Order_TIF_UNSPECIFIED Order_TimeInForce = 0
-	// good til cancelled
+	// Good until cancelled.
 	Order_TIF_GTC Order_TimeInForce = 1
-	// good til time
+	// Good until specified time.
 	Order_TIF_GTT Order_TimeInForce = 2
-	// immediate or cancel
+	// Immediate or cancel.
 	Order_TIF_IOC Order_TimeInForce = 3
-	// fill or kill
+	// Fill or kill.
 	Order_TIF_FOK Order_TimeInForce = 4
 	// good for auction
 	Order_TIF_GFA Order_TimeInForce = 5
@@ -469,17 +498,17 @@ func (Order_TimeInForce) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{5, 0}
 }
 
-// Order Type
+// Type values for an order.
 type Order_Type int32
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	Order_TYPE_UNSPECIFIED Order_Type = 0
-	// used for Limit orders
+	// Used for Limit orders.
 	Order_TYPE_LIMIT Order_Type = 1
-	// used for Market orders
+	// Used for Market orders.
 	Order_TYPE_MARKET Order_Type = 2
-	// used for orders where the initiating party is the network (used for distressed traders)
+	// Used for orders where the initiating party is the network (with distressed traders).
 	Order_TYPE_NETWORK Order_Type = 3
 )
 
@@ -505,27 +534,26 @@ func (Order_Type) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{5, 1}
 }
 
-// Order Status
-//
-// See [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/50-trading-questions/#what-order-types-are-available-to-trade-on-vega) for details.
+// Status values for an order.
+// See resulting status in [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
 type Order_Status int32
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	Order_STATUS_INVALID Order_Status = 0
-	// used for active unfilled or partially filled orders
+	// Used for active unfilled or partially filled orders.
 	Order_STATUS_ACTIVE Order_Status = 1
-	// used for expired GTT orders
+	// Used for expired GTT orders.
 	Order_STATUS_EXPIRED Order_Status = 2
-	// used for orders cancelled by the party that created the order
+	// Used for orders cancelled by the party that created the order.
 	Order_STATUS_CANCELLED Order_Status = 3
-	// used for unfilled FOK or IOC orders, and for orders that were stopped by the network
+	// Used for unfilled FOK or IOC orders, and for orders that were stopped by the network.
 	Order_STATUS_STOPPED Order_Status = 4
-	// used for closed fully filled orders
+	// Used for closed fully filled orders.
 	Order_STATUS_FILLED Order_Status = 5
-	// used for orders when not enough collateral was available to fill the margin requirements
+	// Used for orders when not enough collateral was available to fill the margin requirements.
 	Order_STATUS_REJECTED Order_Status = 6
-	// used for closed partially filled IOC orders
+	// Used for closed partially filled IOC orders.
 	Order_STATUS_PARTIALLY_FILLED Order_Status = 7
 )
 
@@ -559,14 +587,21 @@ func (Order_Status) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{5, 2}
 }
 
+// Type values for a trade.
+//
 type Trade_Type int32
 
 const (
-	// Default value, always invalid
-	Trade_TYPE_UNSPECIFIED            Trade_Type = 0
-	Trade_TYPE_DEFAULT                Trade_Type = 1
+	// Default value, always invalid.
+	Trade_TYPE_UNSPECIFIED Trade_Type = 0
+	// Normal trading between two parties.
+	Trade_TYPE_DEFAULT Trade_Type = 1
+	// Trading initiated by the network with another party on the book,
+	// which helps to zero-out the positions of one or more distressed parties.
 	Trade_TYPE_NETWORK_CLOSE_OUT_GOOD Trade_Type = 2
-	Trade_TYPE_NETWORK_CLOSE_OUT_BAD  Trade_Type = 3
+	// Trading initiated by the network with another party off the book,
+	// with a distressed party in order to zero-out the position of the party.
+	Trade_TYPE_NETWORK_CLOSE_OUT_BAD Trade_Type = 3
 )
 
 var Trade_Type_name = map[int32]string{
@@ -592,6 +627,8 @@ func (Trade_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 type Price struct {
+	// Price value, given as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	Value                uint64   `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -630,7 +667,10 @@ func (m *Price) GetValue() uint64 {
 	return 0
 }
 
+// A timestamp in nanoseconds since epoch.
+// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 type Timestamp struct {
+	// Timestamp value.
 	Value                int64    `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -669,7 +709,9 @@ func (m *Timestamp) GetValue() int64 {
 	return 0
 }
 
+// A party represents an entity who wishes to trade on or query a Vega network.
 type Party struct {
+	// A unique identifier for the party, typically represented by a public key.
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -708,9 +750,13 @@ func (m *Party) GetId() string {
 	return ""
 }
 
+// Risk factors are used to calculate the current risk associated with orders trading on a given market.
 type RiskFactor struct {
-	Market               string   `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
-	Short                float64  `protobuf:"fixed64,2,opt,name=short,proto3" json:"short,omitempty"`
+	// Market ID that relates to this risk factor.
+	Market string `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
+	// Short Risk factor value.
+	Short float64 `protobuf:"fixed64,2,opt,name=short,proto3" json:"short,omitempty"`
+	// Long Risk factor value.
 	Long                 float64  `protobuf:"fixed64,3,opt,name=long,proto3" json:"long,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -763,14 +809,15 @@ func (m *RiskFactor) GetLong() float64 {
 	return 0
 }
 
+// Risk results are calculated internally by Vega to attempt to maintain safe trading.
 type RiskResult struct {
-	// timestamp when these risk factors were generated
+	// Timestamp for when risk factors were generated.
 	UpdatedTimestamp int64 `protobuf:"varint,1,opt,name=updatedTimestamp,proto3" json:"updatedTimestamp,omitempty"`
-	// risk factors (long and short) for each marginable asset/currency (usually == settlement assets) in the market
+	// Risk factors (long and short) for each margin-able asset/currency (usually == settlement assets) in the market.
 	RiskFactors map[string]*RiskFactor `protobuf:"bytes,2,rep,name=riskFactors,proto3" json:"riskFactors,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// time when risk factors are expected to change (or empty if risk factors are continually updated)
+	// Timestamp for when risk factors are expected to change (or empty if risk factors are continually updated).
 	NextUpdateTimestamp int64 `protobuf:"varint,3,opt,name=nextUpdateTimestamp,proto3" json:"nextUpdateTimestamp,omitempty"`
-	// predicted risk factors at next change (what they'd be if the change occurred now)
+	// Predicted risk factors at next change (what they would be if the change occurred now).
 	PredictedNextRiskFactors map[string]*RiskFactor `protobuf:"bytes,4,rep,name=predictedNextRiskFactors,proto3" json:"predictedNextRiskFactors,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral     struct{}               `json:"-"`
 	XXX_unrecognized         []byte                 `json:"-"`
@@ -830,29 +877,50 @@ func (m *RiskResult) GetPredictedNextRiskFactors() map[string]*RiskFactor {
 	return nil
 }
 
+// An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties.
 type Order struct {
-	Id          string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	MarketID    string            `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID     string            `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Side        Side              `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
-	Price       uint64            `protobuf:"varint,5,opt,name=price,proto3" json:"price,omitempty"`
-	Size        uint64            `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
-	Remaining   uint64            `protobuf:"varint,7,opt,name=remaining,proto3" json:"remaining,omitempty"`
+	// Unique identifier for the order (set by the system after consensus).
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Market identifier for the order.
+	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier for the order.
+	PartyID string `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Side for the order, e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side).
+	Side Side `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
+	// Price for the order, the price is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
+	Price uint64 `protobuf:"varint,5,opt,name=price,proto3" json:"price,omitempty"`
+	// Size for the order, for example, in a futures market the size equals the number of contracts.
+	Size uint64 `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
+	// Size remaining, when this reaches 0 then the order is fully filled and status becomes STATUS_FILLED.
+	Remaining uint64 `protobuf:"varint,7,opt,name=remaining,proto3" json:"remaining,omitempty"`
+	// Time in force indicates how long an order will remain active before it is executed or expires.
+	// See [`Order.TimeInForce`](#vega.Order.TimeInForce).
 	TimeInForce Order_TimeInForce `protobuf:"varint,8,opt,name=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"timeInForce,omitempty"`
-	Type        Order_Type        `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
-	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	// Type for the order. See [`Order.Type`](#vega.Order.Type).
+	Type Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
+	// Timestamp for when the order was created at, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 	CreatedAt int64 `protobuf:"varint,10,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	// If `status` is `STATUS_REJECTED`, check `reason`.
-	Status    Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
-	ExpiresAt int64        `protobuf:"varint,12,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
-	Reference string       `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
-	Reason    OrderError   `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError" json:"reason,omitempty"`
-	UpdatedAt int64        `protobuf:"varint,15,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	// Versioning support for amends, orders start at version 1 and increment
-	// after each successful amend
+	// The current status for the order. See [`Order.Status`](#vega.Order.Status).
+	// For detail on `STATUS_REJECTED` please check the [`OrderError`](#vega.OrderError) value given in the `reason` field.
+	Status Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
+	// Timestamp for when the order will expire, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`.
+	ExpiresAt int64 `protobuf:"varint,12,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	// Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
+	// set internally by the node to return a unique reference identifier for the order submission.
+	Reference string `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
+	// If the Order `status` is `STATUS_REJECTED` then an [`OrderError`](#vega.OrderError) reason will be specified.
+	// The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors.
+	Reason OrderError `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError" json:"reason,omitempty"`
+	// Timestamp for when the Order was last updated, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	UpdatedAt int64 `protobuf:"varint,15,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
+	// The version for the order, initial value is version 1 and is incremented after each successful amend
 	Version uint64 `protobuf:"varint,16,opt,name=version,proto3" json:"version,omitempty"`
-	// used internally, for orders submitted during auctions
-	// to keep track which auction batch this order falls under (required for fees calculation)
+	// Batch identifier for the order, used internally for orders submitted during auctions
+	// to keep track of the auction batch this order falls under (required for fees calculation).
 	BatchID              uint64   `protobuf:"varint,17,opt,name=batchID,proto3" json:"batchID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1003,7 +1071,9 @@ func (m *Order) GetBatchID() uint64 {
 	return 0
 }
 
+// Used when cancelling an Order.
 type OrderCancellationConfirmation struct {
+	// The order that was cancelled.
 	Order                *Order   `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1042,9 +1112,13 @@ func (m *OrderCancellationConfirmation) GetOrder() *Order {
 	return nil
 }
 
+// Used when confirming an Order.
 type OrderConfirmation struct {
-	Order                 *Order   `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
-	Trades                []*Trade `protobuf:"bytes,2,rep,name=trades,proto3" json:"trades,omitempty"`
+	// The order that was confirmed.
+	Order *Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	// 0 or more trades that were emitted.
+	Trades []*Trade `protobuf:"bytes,2,rep,name=trades,proto3" json:"trades,omitempty"`
+	// 0 or more passive orders that were affected.
 	PassiveOrdersAffected []*Order `protobuf:"bytes,3,rep,name=passiveOrdersAffected,proto3" json:"passiveOrdersAffected,omitempty"`
 	XXX_NoUnkeyedLiteral  struct{} `json:"-"`
 	XXX_unrecognized      []byte   `json:"-"`
@@ -1097,16 +1171,15 @@ func (m *OrderConfirmation) GetPassiveOrdersAffected() []*Order {
 	return nil
 }
 
-// Whenever a change to the book occurs during an auction, this message will be used
-// to emit an event with the indicative price/volume per market
+// AuctionIndicativeState is used to emit an event with the indicative price/volume per market during an auction.
 type AuctionIndicativeState struct {
-	// The market this state is related to
+	// The market identifier for which this state relates to.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	// The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now.
 	IndicativePrice uint64 `protobuf:"varint,2,opt,name=indicativePrice,proto3" json:"indicativePrice,omitempty"`
 	// The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now.
 	IndicativeVolume uint64 `protobuf:"varint,3,opt,name=indicativeVolume,proto3" json:"indicativeVolume,omitempty"`
-	// The timestamp at which the auction started
+	// The timestamp at which the auction started.
 	AuctionStart int64 `protobuf:"varint,4,opt,name=auctionStart,proto3" json:"auctionStart,omitempty"`
 	// The timestamp at which the auction is meant to stop.
 	AuctionEnd           int64    `protobuf:"varint,5,opt,name=auctionEnd,proto3" json:"auctionEnd,omitempty"`
@@ -1175,26 +1248,43 @@ func (m *AuctionIndicativeState) GetAuctionEnd() int64 {
 	return 0
 }
 
+// A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega.
 type Trade struct {
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	MarketID  string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	Price     uint64 `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
-	Size      uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	Buyer     string `protobuf:"bytes,5,opt,name=buyer,proto3" json:"buyer,omitempty"`
-	Seller    string `protobuf:"bytes,6,opt,name=seller,proto3" json:"seller,omitempty"`
-	Aggressor Side   `protobuf:"varint,7,opt,name=aggressor,proto3,enum=vega.Side" json:"aggressor,omitempty"`
-	BuyOrder  string `protobuf:"bytes,8,opt,name=buyOrder,proto3" json:"buyOrder,omitempty"`
+	// Unique identifier for the trade (generated by Vega).
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Market identifier (the market that the trade occurred on).
+	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Price for the trade, the price is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
+	Price uint64 `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
+	// Size filled for the trade.
+	Size uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	// Unique party identifier for the buyer.
+	Buyer string `protobuf:"bytes,5,opt,name=buyer,proto3" json:"buyer,omitempty"`
+	// Unique party identifier for the seller.
+	Seller string `protobuf:"bytes,6,opt,name=seller,proto3" json:"seller,omitempty"`
+	// Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side).
+	Aggressor Side `protobuf:"varint,7,opt,name=aggressor,proto3,enum=vega.Side" json:"aggressor,omitempty"`
+	// Identifier of the order from the buy side.
+	BuyOrder string `protobuf:"bytes,8,opt,name=buyOrder,proto3" json:"buyOrder,omitempty"`
+	// Identifier of the order from the sell side.
 	SellOrder string `protobuf:"bytes,9,opt,name=sellOrder,proto3" json:"sellOrder,omitempty"`
-	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-	Timestamp            int64      `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Type                 Trade_Type `protobuf:"varint,11,opt,name=type,proto3,enum=vega.Trade_Type" json:"type,omitempty"`
-	BuyerFee             *Fee       `protobuf:"bytes,12,opt,name=buyerFee,proto3" json:"buyerFee,omitempty"`
-	SellerFee            *Fee       `protobuf:"bytes,13,opt,name=sellerFee,proto3" json:"sellerFee,omitempty"`
-	BuyerAuctionBatch    uint64     `protobuf:"varint,14,opt,name=buyerAuctionBatch,proto3" json:"buyerAuctionBatch,omitempty"`
-	SellerAuctionBatch   uint64     `protobuf:"varint,15,opt,name=sellerAuctionBatch,proto3" json:"sellerAuctionBatch,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	// Timestamp for when the trade occurred, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	Timestamp int64 `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// Type for the trade. See [`Trade.Type`](#vega.Trade.Type).
+	Type Trade_Type `protobuf:"varint,11,opt,name=type,proto3,enum=vega.Trade_Type" json:"type,omitempty"`
+	// Fee amount charged to the buyer party for the trade.
+	BuyerFee *Fee `protobuf:"bytes,12,opt,name=buyerFee,proto3" json:"buyerFee,omitempty"`
+	// Fee amount charged to the seller party for the trade.
+	SellerFee *Fee `protobuf:"bytes,13,opt,name=sellerFee,proto3" json:"sellerFee,omitempty"`
+	// Auction batch number that the buy side order was placed in.
+	BuyerAuctionBatch uint64 `protobuf:"varint,14,opt,name=buyerAuctionBatch,proto3" json:"buyerAuctionBatch,omitempty"`
+	// Auction batch number that the sell side order was placed in.
+	SellerAuctionBatch   uint64   `protobuf:"varint,15,opt,name=sellerAuctionBatch,proto3" json:"sellerAuctionBatch,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Trade) Reset()         { *m = Trade{} }
@@ -1327,13 +1417,13 @@ func (m *Trade) GetSellerAuctionBatch() uint64 {
 	return 0
 }
 
-// The fees being paid by a party, resulting from a trade
+// Represents any fees paid by a party, resulting from a trade.
 type Fee struct {
-	// A fee being paid to the non-aggressor party of the trade
+	// Fee amount paid to the non-aggressive party of the trade.
 	MakerFee uint64 `protobuf:"varint,1,opt,name=makerFee,proto3" json:"makerFee,omitempty"`
-	// A fee being paid to maintaining the vega infrastructure
+	// Fee amount paid for maintaining the Vega infrastructure.
 	InfrastructureFee uint64 `protobuf:"varint,2,opt,name=infrastructureFee,proto3" json:"infrastructureFee,omitempty"`
-	// A fee being paid to the market makers
+	// Fee amount paid to market makers.
 	LiquidityFee         uint64   `protobuf:"varint,3,opt,name=liquidityFee,proto3" json:"liquidityFee,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1387,6 +1477,7 @@ func (m *Fee) GetLiquidityFee() uint64 {
 }
 
 type TradeSet struct {
+	// A set of one or more trades.
 	Trades               []*Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1425,16 +1516,25 @@ func (m *TradeSet) GetTrades() []*Trade {
 	return nil
 }
 
+// Represents the high, low, open, and closing prices for an interval of trading,
+// referred to commonly as a candlestick or candle.
 type Candle struct {
-	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// ISO 8601 datetime
-	Datetime             string   `protobuf:"bytes,2,opt,name=datetime,proto3" json:"datetime,omitempty"`
-	High                 uint64   `protobuf:"varint,3,opt,name=high,proto3" json:"high,omitempty"`
-	Low                  uint64   `protobuf:"varint,4,opt,name=low,proto3" json:"low,omitempty"`
-	Open                 uint64   `protobuf:"varint,5,opt,name=open,proto3" json:"open,omitempty"`
-	Close                uint64   `protobuf:"varint,6,opt,name=close,proto3" json:"close,omitempty"`
-	Volume               uint64   `protobuf:"varint,7,opt,name=volume,proto3" json:"volume,omitempty"`
+	// An ISO-8601 datetime with nanosecond precision for when the candle was last updated.
+	Datetime string `protobuf:"bytes,2,opt,name=datetime,proto3" json:"datetime,omitempty"`
+	// Highest price for trading during the candle interval.
+	High uint64 `protobuf:"varint,3,opt,name=high,proto3" json:"high,omitempty"`
+	// Lowest price for trading during the candle interval.
+	Low uint64 `protobuf:"varint,4,opt,name=low,proto3" json:"low,omitempty"`
+	// Open trade price.
+	Open uint64 `protobuf:"varint,5,opt,name=open,proto3" json:"open,omitempty"`
+	// Closing trade price.
+	Close uint64 `protobuf:"varint,6,opt,name=close,proto3" json:"close,omitempty"`
+	// Total trading volume during the candle interval.
+	Volume uint64 `protobuf:"varint,7,opt,name=volume,proto3" json:"volume,omitempty"`
+	// Time interval for the candle. See [`Interval`](#vega.Interval).
 	Interval             Interval `protobuf:"varint,8,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1522,10 +1622,16 @@ func (m *Candle) GetInterval() Interval {
 	return Interval_INTERVAL_UNSPECIFIED
 }
 
+// Represents a price level from market depth or order book data.
 type PriceLevel struct {
-	Price                uint64   `protobuf:"varint,1,opt,name=price,proto3" json:"price,omitempty"`
-	NumberOfOrders       uint64   `protobuf:"varint,2,opt,name=numberOfOrders,proto3" json:"numberOfOrders,omitempty"`
-	Volume               uint64   `protobuf:"varint,3,opt,name=volume,proto3" json:"volume,omitempty"`
+	// Price for the price level, the price is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
+	Price uint64 `protobuf:"varint,1,opt,name=price,proto3" json:"price,omitempty"`
+	// Number of orders at the price level.
+	NumberOfOrders uint64 `protobuf:"varint,2,opt,name=numberOfOrders,proto3" json:"numberOfOrders,omitempty"`
+	// Volume at the price level.
+	Volume uint64 `protobuf:"varint,3,opt,name=volume,proto3" json:"volume,omitempty"`
+	// Cumulative volume at the price level.
 	CumulativeVolume     uint64   `protobuf:"varint,4,opt,name=cumulativeVolume,proto3" json:"cumulativeVolume,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1585,9 +1691,13 @@ func (m *PriceLevel) GetCumulativeVolume() uint64 {
 	return 0
 }
 
+// Represents market depth or order book data for the specified market on Vega.
 type MarketDepth struct {
-	MarketID             string        `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	Buy                  []*PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Collection of price levels for the buy side of the book.
+	Buy []*PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
+	// Collection of price levels for the sell side of the book.
 	Sell                 []*PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -1640,12 +1750,20 @@ func (m *MarketDepth) GetSell() []*PriceLevel {
 	return nil
 }
 
+// Represents position data for a party on the specified market on Vega.
 type Position struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	OpenVolume           int64    `protobuf:"varint,3,opt,name=openVolume,proto3" json:"openVolume,omitempty"`
-	RealisedPNL          int64    `protobuf:"varint,4,opt,name=realisedPNL,proto3" json:"realisedPNL,omitempty"`
-	UnrealisedPNL        int64    `protobuf:"varint,5,opt,name=unrealisedPNL,proto3" json:"unrealisedPNL,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier.
+	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Open volume for the position. Value is signed +ve for long and -ve for short.
+	OpenVolume int64 `protobuf:"varint,3,opt,name=openVolume,proto3" json:"openVolume,omitempty"`
+	// Realised profit and loss for the position. Value is signed +ve for long and -ve for short.
+	RealisedPNL int64 `protobuf:"varint,4,opt,name=realisedPNL,proto3" json:"realisedPNL,omitempty"`
+	// Unrealised profit and loss for the position. Value is signed +ve for long and -ve for short.
+	UnrealisedPNL int64 `protobuf:"varint,5,opt,name=unrealisedPNL,proto3" json:"unrealisedPNL,omitempty"`
+	// Average entry price for the position, the price is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	AverageEntryPrice    uint64   `protobuf:"varint,6,opt,name=averageEntryPrice,proto3" json:"averageEntryPrice,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1720,7 +1838,10 @@ func (m *Position) GetAverageEntryPrice() uint64 {
 }
 
 type PositionTrade struct {
-	Volume               int64    `protobuf:"varint,1,opt,name=volume,proto3" json:"volume,omitempty"`
+	// Volume for the position trade. Value is signed +ve for long and -ve for short.
+	Volume int64 `protobuf:"varint,1,opt,name=volume,proto3" json:"volume,omitempty"`
+	// Price for the position trade, the price is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	Price                uint64   `protobuf:"varint,2,opt,name=price,proto3" json:"price,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1766,43 +1887,70 @@ func (m *PositionTrade) GetPrice() uint64 {
 	return 0
 }
 
+// Vega domain specific statistics as reported by the node the caller is connected to.
 type Statistics struct {
-	BlockHeight   uint64 `protobuf:"varint,1,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
+	// Current block height as reported by the Vega blockchain.
+	BlockHeight uint64 `protobuf:"varint,1,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
+	// Current backlog length (number of transactions) that are waiting to be included in a block.
 	BacklogLength uint64 `protobuf:"varint,2,opt,name=backlogLength,proto3" json:"backlogLength,omitempty"`
-	TotalPeers    uint64 `protobuf:"varint,3,opt,name=totalPeers,proto3" json:"totalPeers,omitempty"`
-	// ISO 8601 datetime, nanosecond precision
+	// Total number of connected peers to this node.
+	TotalPeers uint64 `protobuf:"varint,3,opt,name=totalPeers,proto3" json:"totalPeers,omitempty"`
+	// Genesis block date and time formatted in ISO-8601 datetime format with nanosecond precision.
 	GenesisTime string `protobuf:"bytes,4,opt,name=genesisTime,proto3" json:"genesisTime,omitempty"`
-	// ISO 8601 datetime, nanosecond precision
+	// Current system date and time formatted in ISO-8601 datetime format with nanosecond precision.
 	CurrentTime string `protobuf:"bytes,5,opt,name=currentTime,proto3" json:"currentTime,omitempty"`
-	// ISO 8601 datetime, nanosecond precision
-	VegaTime                 string      `protobuf:"bytes,6,opt,name=vegaTime,proto3" json:"vegaTime,omitempty"`
-	Status                   ChainStatus `protobuf:"varint,7,opt,name=status,proto3,enum=vega.ChainStatus" json:"status,omitempty"`
-	TxPerBlock               uint64      `protobuf:"varint,8,opt,name=txPerBlock,proto3" json:"txPerBlock,omitempty"`
-	AverageTxBytes           uint64      `protobuf:"varint,9,opt,name=averageTxBytes,proto3" json:"averageTxBytes,omitempty"`
-	AverageOrdersPerBlock    uint64      `protobuf:"varint,10,opt,name=averageOrdersPerBlock,proto3" json:"averageOrdersPerBlock,omitempty"`
-	TradesPerSecond          uint64      `protobuf:"varint,11,opt,name=tradesPerSecond,proto3" json:"tradesPerSecond,omitempty"`
-	OrdersPerSecond          uint64      `protobuf:"varint,12,opt,name=ordersPerSecond,proto3" json:"ordersPerSecond,omitempty"`
-	TotalMarkets             uint64      `protobuf:"varint,13,opt,name=totalMarkets,proto3" json:"totalMarkets,omitempty"`
-	TotalAmendOrder          uint64      `protobuf:"varint,16,opt,name=totalAmendOrder,proto3" json:"totalAmendOrder,omitempty"`
-	TotalCancelOrder         uint64      `protobuf:"varint,17,opt,name=totalCancelOrder,proto3" json:"totalCancelOrder,omitempty"`
-	TotalCreateOrder         uint64      `protobuf:"varint,18,opt,name=totalCreateOrder,proto3" json:"totalCreateOrder,omitempty"`
-	TotalOrders              uint64      `protobuf:"varint,19,opt,name=totalOrders,proto3" json:"totalOrders,omitempty"`
-	TotalTrades              uint64      `protobuf:"varint,20,opt,name=totalTrades,proto3" json:"totalTrades,omitempty"`
-	OrderSubscriptions       uint32      `protobuf:"varint,21,opt,name=orderSubscriptions,proto3" json:"orderSubscriptions,omitempty"`
-	TradeSubscriptions       uint32      `protobuf:"varint,22,opt,name=tradeSubscriptions,proto3" json:"tradeSubscriptions,omitempty"`
-	CandleSubscriptions      uint32      `protobuf:"varint,23,opt,name=candleSubscriptions,proto3" json:"candleSubscriptions,omitempty"`
-	MarketDepthSubscriptions uint32      `protobuf:"varint,24,opt,name=marketDepthSubscriptions,proto3" json:"marketDepthSubscriptions,omitempty"`
-	PositionsSubscriptions   uint32      `protobuf:"varint,25,opt,name=positionsSubscriptions,proto3" json:"positionsSubscriptions,omitempty"`
-	AccountSubscriptions     uint32      `protobuf:"varint,26,opt,name=accountSubscriptions,proto3" json:"accountSubscriptions,omitempty"`
-	MarketDataSubscriptions  uint32      `protobuf:"varint,27,opt,name=marketDataSubscriptions,proto3" json:"marketDataSubscriptions,omitempty"`
-	AppVersionHash           string      `protobuf:"bytes,28,opt,name=appVersionHash,proto3" json:"appVersionHash,omitempty"`
-	AppVersion               string      `protobuf:"bytes,29,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
-	ChainVersion             string      `protobuf:"bytes,30,opt,name=chainVersion,proto3" json:"chainVersion,omitempty"`
-	// nanoseconds
+	// Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision.
+	VegaTime string `protobuf:"bytes,6,opt,name=vegaTime,proto3" json:"vegaTime,omitempty"`
+	// Status of the connection to the Vega blockchain.
+	// See [`ChainStatus`](#vega.ChainStatus).
+	Status ChainStatus `protobuf:"varint,7,opt,name=status,proto3,enum=vega.ChainStatus" json:"status,omitempty"`
+	// Transactions per block.
+	TxPerBlock uint64 `protobuf:"varint,8,opt,name=txPerBlock,proto3" json:"txPerBlock,omitempty"`
+	// Average transaction size in bytes.
+	AverageTxBytes uint64 `protobuf:"varint,9,opt,name=averageTxBytes,proto3" json:"averageTxBytes,omitempty"`
+	// Average orders per block.
+	AverageOrdersPerBlock uint64 `protobuf:"varint,10,opt,name=averageOrdersPerBlock,proto3" json:"averageOrdersPerBlock,omitempty"`
+	// Trades emitted per second.
+	TradesPerSecond uint64 `protobuf:"varint,11,opt,name=tradesPerSecond,proto3" json:"tradesPerSecond,omitempty"`
+	// Orders affected per second.
+	OrdersPerSecond uint64 `protobuf:"varint,12,opt,name=ordersPerSecond,proto3" json:"ordersPerSecond,omitempty"`
+	// Total markets on this Vega network.
+	TotalMarkets uint64 `protobuf:"varint,13,opt,name=totalMarkets,proto3" json:"totalMarkets,omitempty"`
+	// Total number of order amendments since genesis (on all markets).
+	TotalAmendOrder uint64 `protobuf:"varint,16,opt,name=totalAmendOrder,proto3" json:"totalAmendOrder,omitempty"`
+	// Total number of order cancellations since genesis (on all markets).
+	TotalCancelOrder uint64 `protobuf:"varint,17,opt,name=totalCancelOrder,proto3" json:"totalCancelOrder,omitempty"`
+	// Total number of order submissions since genesis (on all markets).
+	TotalCreateOrder uint64 `protobuf:"varint,18,opt,name=totalCreateOrder,proto3" json:"totalCreateOrder,omitempty"`
+	// Total number of orders affected since genesis (on all markets).
+	TotalOrders uint64 `protobuf:"varint,19,opt,name=totalOrders,proto3" json:"totalOrders,omitempty"`
+	// Total number of trades emitted since genesis (on all markets).
+	TotalTrades uint64 `protobuf:"varint,20,opt,name=totalTrades,proto3" json:"totalTrades,omitempty"`
+	// Current number of stream subscribers to order data.
+	OrderSubscriptions uint32 `protobuf:"varint,21,opt,name=orderSubscriptions,proto3" json:"orderSubscriptions,omitempty"`
+	// Current number of stream subscribers to trade data.
+	TradeSubscriptions uint32 `protobuf:"varint,22,opt,name=tradeSubscriptions,proto3" json:"tradeSubscriptions,omitempty"`
+	// Current number of stream subscribers to candle-stick data.
+	CandleSubscriptions uint32 `protobuf:"varint,23,opt,name=candleSubscriptions,proto3" json:"candleSubscriptions,omitempty"`
+	// Current number of stream subscribers to market depth data.
+	MarketDepthSubscriptions uint32 `protobuf:"varint,24,opt,name=marketDepthSubscriptions,proto3" json:"marketDepthSubscriptions,omitempty"`
+	// Current number of stream subscribers to positions data.
+	PositionsSubscriptions uint32 `protobuf:"varint,25,opt,name=positionsSubscriptions,proto3" json:"positionsSubscriptions,omitempty"`
+	// Current number of stream subscribers to account data.
+	AccountSubscriptions uint32 `protobuf:"varint,26,opt,name=accountSubscriptions,proto3" json:"accountSubscriptions,omitempty"`
+	// Current number of stream subscribers to market data.
+	MarketDataSubscriptions uint32 `protobuf:"varint,27,opt,name=marketDataSubscriptions,proto3" json:"marketDataSubscriptions,omitempty"`
+	// The version hash of the Vega node software.
+	AppVersionHash string `protobuf:"bytes,28,opt,name=appVersionHash,proto3" json:"appVersionHash,omitempty"`
+	// The version of the Vega node software.
+	AppVersion string `protobuf:"bytes,29,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
+	// The version of the underlying Vega blockchain.
+	ChainVersion string `protobuf:"bytes,30,opt,name=chainVersion,proto3" json:"chainVersion,omitempty"`
+	// Current block duration, in nanoseconds.
 	BlockDuration uint64 `protobuf:"varint,31,opt,name=blockDuration,proto3" json:"blockDuration,omitempty"`
-	// ISO 8601 datetime, nanosecond precision
+	// Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision.
 	Uptime string `protobuf:"bytes,32,opt,name=uptime,proto3" json:"uptime,omitempty"`
-	// Unique ID of the blockchain
+	// Unique identifier for the underlying Vega blockchain.
 	ChainID              string   `protobuf:"bytes,33,opt,name=chainID,proto3" json:"chainID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2051,9 +2199,13 @@ func (m *Statistics) GetChainID() string {
 	return ""
 }
 
+// Represents a withdrawal of an asset by a party on Vega.
 type Withdraw struct {
-	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Amount               uint64   `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	// Unique party identifier affecting the withdrawal.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Total amount to withdraw.
+	Amount uint64 `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	// Asset identifier.
 	Asset                string   `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2106,15 +2258,26 @@ func (m *Withdraw) GetAsset() string {
 	return ""
 }
 
+// An order amendment is a request to amend or update an existing order on Vega.
 type OrderAmendment struct {
-	// required to find the order, not being updated
-	OrderID  string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
-	PartyID  string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Order identifier, this is required to find the order and will not be updated. Required field.
+	OrderID string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
+	// Party identifier, this is required to find the order and will not be updated. Required field.
+	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier, this is required to find the order and will not be updated.
 	MarketID string `protobuf:"bytes,3,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// these can be amended
-	Price                *Price            `protobuf:"bytes,4,opt,name=price,proto3" json:"price,omitempty"`
-	SizeDelta            int64             `protobuf:"varint,5,opt,name=sizeDelta,proto3" json:"sizeDelta,omitempty"`
-	ExpiresAt            *Timestamp        `protobuf:"bytes,6,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	// Amend the price for the order, if the Price value is set, otherwise price will remain unchanged. See [`Price`](#vega.Price).
+	Price *Price `protobuf:"bytes,4,opt,name=price,proto3" json:"price,omitempty"`
+	// Amend the size for the order by the delta specified.
+	// To reduce the size from the current value set a negative integer value.
+	// To increase the size from the current value, set a positive integer value.
+	// To leave the size unchanged set a value of zero.
+	SizeDelta int64 `protobuf:"varint,5,opt,name=sizeDelta,proto3" json:"sizeDelta,omitempty"`
+	// Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	ExpiresAt *Timestamp `protobuf:"bytes,6,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	// Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
+	// See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`.
 	TimeInForce          Order_TimeInForce `protobuf:"varint,7,opt,name=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"timeInForce,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -2195,20 +2358,37 @@ func (m *OrderAmendment) GetTimeInForce() Order_TimeInForce {
 	return Order_TIF_UNSPECIFIED
 }
 
+// An order submission is a request to submit or create a new order on Vega.
 type OrderSubmission struct {
-	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	MarketID             string            `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string            `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Price                uint64            `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
-	Size                 uint64            `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
-	Side                 Side              `protobuf:"varint,6,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
-	TimeInForce          Order_TimeInForce `protobuf:"varint,7,opt,name=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"timeInForce,omitempty"`
-	ExpiresAt            int64             `protobuf:"varint,8,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
-	Type                 Order_Type        `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
-	Reference            string            `protobuf:"bytes,10,opt,name=reference,proto3" json:"reference,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
+	// Unique identifier for the order (set by the system after consensus).
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Market identifier for the order. Required field.
+	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier for the order. Required field.
+	PartyID string `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Price for the order, the price is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
+	// Required field for Limit orders, however it is not required for market orders.
+	Price uint64 `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
+	// Size for the order, for example, in a futures market the size equals the number of contracts. Cannot be negative.
+	Size uint64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	// Side for the order, e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side). Required field.
+	Side Side `protobuf:"varint,6,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
+	// Time in force indicates how long an order will remain active before it is executed or expires.
+	// See [`Order.TimeInForce`](#vega.Order.TimeInForce). Required field.
+	TimeInForce Order_TimeInForce `protobuf:"varint,7,opt,name=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"timeInForce,omitempty"`
+	// Timestamp for when the order will expire, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	// Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`.
+	ExpiresAt int64 `protobuf:"varint,8,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	// Type for the order. See [`Order.Type`](#vega.Order.Type). Required field.
+	Type Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
+	// Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
+	// set internally by the node to return a unique reference identifier for the order submission.
+	Reference            string   `protobuf:"bytes,10,opt,name=reference,proto3" json:"reference,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *OrderSubmission) Reset()         { *m = OrderSubmission{} }
@@ -2306,9 +2486,13 @@ func (m *OrderSubmission) GetReference() string {
 	return ""
 }
 
+// An order cancellation is a request to cancel an existing order on Vega.
 type OrderCancellation struct {
-	OrderID              string   `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
-	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Unique identifier for the order (set by the system after consensus). Required field.
+	OrderID string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
+	// Market identifier for the order. Required field.
+	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier for the order. Required field.
 	PartyID              string   `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2361,8 +2545,11 @@ func (m *OrderCancellation) GetPartyID() string {
 	return ""
 }
 
+// Used to Register a node as a validator during network start-up.
 type NodeRegistration struct {
-	PubKey               []byte   `protobuf:"bytes,1,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
+	// Public key, required field.
+	PubKey []byte `protobuf:"bytes,1,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
+	// Public key for the blockchain, required field.
 	ChainPubKey          []byte   `protobuf:"bytes,2,opt,name=chainPubKey,proto3" json:"chainPubKey,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2408,8 +2595,12 @@ func (m *NodeRegistration) GetChainPubKey() []byte {
 	return nil
 }
 
+// Used when a node votes for validating a given resource exists or is valid.
+// For example, an ERC20 deposit is valid and exists on ethereum.
 type NodeVote struct {
-	PubKey               []byte   `protobuf:"bytes,1,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
+	// Public key, required field.
+	PubKey []byte `protobuf:"bytes,1,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
+	// Reference, required field.
 	Reference            string   `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2455,12 +2646,21 @@ func (m *NodeVote) GetReference() string {
 	return ""
 }
 
+// Represents an account for an asset on Vega for a particular owner or party.
 type Account struct {
-	Id                   string      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Owner                string      `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
-	Balance              uint64      `protobuf:"varint,3,opt,name=balance,proto3" json:"balance,omitempty"`
-	Asset                string      `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	MarketID             string      `protobuf:"bytes,5,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Unique account identifier (used internally by Vega).
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The party that the account belongs to. Special values include `network`, which represents the Vega network and is
+	// most commonly seen during liquidation of distressed trading positions.
+	Owner string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Balance of the asset, the balance is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places. Balances cannot be negative.
+	Balance uint64 `protobuf:"varint,3,opt,name=balance,proto3" json:"balance,omitempty"`
+	// Asset identifier for the account.
+	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Market identifier for the account. If [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty.
+	MarketID string `protobuf:"bytes,5,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// The account type related to this account.
 	Type                 AccountType `protobuf:"varint,6,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -2534,8 +2734,11 @@ func (m *Account) GetType() AccountType {
 	return AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
+// Asset value information used within a transfer.
 type FinancialAmount struct {
-	Amount               int64    `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	// A signed integer amount of asset.
+	Amount int64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	// Asset identifier.
 	Asset                string   `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2581,14 +2784,19 @@ func (m *FinancialAmount) GetAsset() string {
 	return ""
 }
 
+// Represents a financial transfer within Vega.
 type Transfer struct {
-	Owner                string           `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Amount               *FinancialAmount `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	Type                 TransferType     `protobuf:"varint,3,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
-	MinAmount            int64            `protobuf:"varint,4,opt,name=minAmount,proto3" json:"minAmount,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// Party identifier for the owner of the transfer.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// A financial amount (of an asset) to transfer.
+	Amount *FinancialAmount `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	// The type of transfer, gives the reason for the transfer.
+	Type TransferType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
+	// A minimum amount.
+	MinAmount            int64    `protobuf:"varint,4,opt,name=minAmount,proto3" json:"minAmount,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Transfer) Reset()         { *m = Transfer{} }
@@ -2644,16 +2852,23 @@ func (m *Transfer) GetMinAmount() int64 {
 	return 0
 }
 
+// Represents a request to transfer from one set of accounts to another.
 type TransferRequest struct {
-	FromAccount          []*Account `protobuf:"bytes,1,rep,name=fromAccount,proto3" json:"fromAccount,omitempty"`
-	ToAccount            []*Account `protobuf:"bytes,2,rep,name=toAccount,proto3" json:"toAccount,omitempty"`
-	Amount               uint64     `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	MinAmount            uint64     `protobuf:"varint,4,opt,name=minAmount,proto3" json:"minAmount,omitempty"`
-	Asset                string     `protobuf:"bytes,5,opt,name=asset,proto3" json:"asset,omitempty"`
-	Reference            string     `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	// One or more accounts to transfer from.
+	FromAccount []*Account `protobuf:"bytes,1,rep,name=fromAccount,proto3" json:"fromAccount,omitempty"`
+	// One or more accounts to transfer to.
+	ToAccount []*Account `protobuf:"bytes,2,rep,name=toAccount,proto3" json:"toAccount,omitempty"`
+	// An amount to transfer for the asset.
+	Amount uint64 `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	// A minimum amount.
+	MinAmount uint64 `protobuf:"varint,4,opt,name=minAmount,proto3" json:"minAmount,omitempty"`
+	// Asset identifier.
+	Asset string `protobuf:"bytes,5,opt,name=asset,proto3" json:"asset,omitempty"`
+	// A reference for auditing purposes.
+	Reference            string   `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *TransferRequest) Reset()         { *m = TransferRequest{} }
@@ -2723,12 +2938,20 @@ func (m *TransferRequest) GetReference() string {
 	return ""
 }
 
+// Represents a ledger entry on Vega.
 type LedgerEntry struct {
-	FromAccount          string   `protobuf:"bytes,1,opt,name=fromAccount,proto3" json:"fromAccount,omitempty"`
-	ToAccount            string   `protobuf:"bytes,2,opt,name=toAccount,proto3" json:"toAccount,omitempty"`
-	Amount               uint64   `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	Reference            string   `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
-	Type                 string   `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	// One or more accounts to transfer from.
+	FromAccount string `protobuf:"bytes,1,opt,name=fromAccount,proto3" json:"fromAccount,omitempty"`
+	// One or more accounts to transfer to.
+	ToAccount string `protobuf:"bytes,2,opt,name=toAccount,proto3" json:"toAccount,omitempty"`
+	// An amount to transfer.
+	Amount uint64 `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	// A reference for auditing purposes.
+	Reference string `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Type of ledger entry.
+	Type string `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	// Timestamp for the time the ledger entry was created, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 	Timestamp            int64    `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2802,8 +3025,11 @@ func (m *LedgerEntry) GetTimestamp() int64 {
 	return 0
 }
 
+// Represents the balance for an account during a transfer.
 type TransferBalance struct {
-	Account              *Account `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	// The account relating to the transfer
+	Account *Account `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	// The balance relating to the transfer
 	Balance              uint64   `protobuf:"varint,2,opt,name=balance,proto3" json:"balance,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2849,8 +3075,11 @@ func (m *TransferBalance) GetBalance() uint64 {
 	return 0
 }
 
+// Represents the response from a transfer.
 type TransferResponse struct {
-	Transfers            []*LedgerEntry     `protobuf:"bytes,1,rep,name=transfers,proto3" json:"transfers,omitempty"`
+	// One or more ledger entries representing the transfers.
+	Transfers []*LedgerEntry `protobuf:"bytes,1,rep,name=transfers,proto3" json:"transfers,omitempty"`
+	// One or more account balances.
 	Balances             []*TransferBalance `protobuf:"bytes,2,rep,name=balances,proto3" json:"balances,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -2896,18 +3125,28 @@ func (m *TransferResponse) GetBalances() []*TransferBalance {
 	return nil
 }
 
+// Represents the margin levels for a party on a market at a given time.
 type MarginLevels struct {
-	MaintenanceMargin      uint64   `protobuf:"varint,1,opt,name=maintenanceMargin,proto3" json:"maintenanceMargin,omitempty"`
-	SearchLevel            uint64   `protobuf:"varint,2,opt,name=searchLevel,proto3" json:"searchLevel,omitempty"`
-	InitialMargin          uint64   `protobuf:"varint,3,opt,name=initialMargin,proto3" json:"initialMargin,omitempty"`
-	CollateralReleaseLevel uint64   `protobuf:"varint,4,opt,name=collateralReleaseLevel,proto3" json:"collateralReleaseLevel,omitempty"`
-	PartyID                string   `protobuf:"bytes,5,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	MarketID               string   `protobuf:"bytes,6,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	Asset                  string   `protobuf:"bytes,7,opt,name=asset,proto3" json:"asset,omitempty"`
-	Timestamp              int64    `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
-	XXX_unrecognized       []byte   `json:"-"`
-	XXX_sizecache          int32    `json:"-"`
+	// Maintenance margin value.
+	MaintenanceMargin uint64 `protobuf:"varint,1,opt,name=maintenanceMargin,proto3" json:"maintenanceMargin,omitempty"`
+	// Search level value.
+	SearchLevel uint64 `protobuf:"varint,2,opt,name=searchLevel,proto3" json:"searchLevel,omitempty"`
+	// Initial margin value.
+	InitialMargin uint64 `protobuf:"varint,3,opt,name=initialMargin,proto3" json:"initialMargin,omitempty"`
+	// Collateral release level value.
+	CollateralReleaseLevel uint64 `protobuf:"varint,4,opt,name=collateralReleaseLevel,proto3" json:"collateralReleaseLevel,omitempty"`
+	// Party identifier.
+	PartyID string `protobuf:"bytes,5,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,6,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Asset identifier.
+	Asset string `protobuf:"bytes,7,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Timestamp for the time the ledger entry was created, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
+	Timestamp            int64    `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *MarginLevels) Reset()         { *m = MarginLevels{} }
@@ -2991,28 +3230,34 @@ func (m *MarginLevels) GetTimestamp() int64 {
 	return 0
 }
 
+// Represents data generated by a market when open.
 type MarketData struct {
-	// the mark price (actually an unsgined int)
+	// Mark price, as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	MarkPrice uint64 `protobuf:"varint,1,opt,name=markPrice,proto3" json:"markPrice,omitempty"`
-	// the highest price level on an order book for buy orders.
+	// Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	BestBidPrice uint64 `protobuf:"varint,2,opt,name=bestBidPrice,proto3" json:"bestBidPrice,omitempty"`
-	// the aggregated volume being bid at the best bid price.
+	// Aggregated volume being bid at the best bid price.
 	BestBidVolume uint64 `protobuf:"varint,3,opt,name=bestBidVolume,proto3" json:"bestBidVolume,omitempty"`
-	// the lowest price level on an order book for offer orders.
+	// Lowest price level on an order book for offer orders.
 	BestOfferPrice uint64 `protobuf:"varint,4,opt,name=bestOfferPrice,proto3" json:"bestOfferPrice,omitempty"`
-	// the aggregated volume being offered at the best offer price.
+	// Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
+	//  // formatted price of `1.23456` assuming market configured to 5 decimal places.
 	BestOfferVolume uint64 `protobuf:"varint,5,opt,name=bestOfferVolume,proto3" json:"bestOfferVolume,omitempty"`
-	// the arithmetic average of the best bid price and best offer price.
+	// Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
+	//  // formatted price of `1.23456` assuming market configured to 5 decimal places.
 	MidPrice uint64 `protobuf:"varint,6,opt,name=midPrice,proto3" json:"midPrice,omitempty"`
-	// market id of the associated mark price
+	// Market identifier for the data.
 	Market string `protobuf:"bytes,7,opt,name=market,proto3" json:"market,omitempty"`
-	// time at which this mark price was relevant
+	// Timestamp at which this mark price was relevant, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// the sum of the size of all positions greater than 0.
+	// The sum of the size of all positions greater than 0 on the market.
 	OpenInterest uint64 `protobuf:"varint,9,opt,name=openInterest,proto3" json:"openInterest,omitempty"`
-	// time in seconds until the end of the auction (0 if currently not in auction period)
+	// Time in seconds until the end of the auction (0 if currently not in auction period).
 	AuctionEnd int64 `protobuf:"varint,10,opt,name=auctionEnd,proto3" json:"auctionEnd,omitempty"`
-	// time until next auction (used in FBA's) - currently always 0
+	// Time until next auction (used in FBA's) - currently always 0.
 	AuctionStart         int64    `protobuf:"varint,11,opt,name=auctionStart,proto3" json:"auctionStart,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3121,12 +3366,13 @@ func (m *MarketData) GetAuctionStart() int64 {
 	return 0
 }
 
+// Represents Vega domain specific error information over gRPC/Protobuf.
 type ErrorDetail struct {
-	// a Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
+	// A Vega API domain specific unique error code, useful for client side mappings. e.g. 10004
 	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	// a message that describes the error in more detail, should describe the problem encountered.
+	// A message that describes the error in more detail, should describe the problem encountered.
 	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	// any inner error information that could add more context, or be helpful for error reporting.
+	// Any inner error information that could add more context, or be helpful for error reporting.
 	Inner                string   `protobuf:"bytes,3,opt,name=inner,proto3" json:"inner,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3179,15 +3425,15 @@ func (m *ErrorDetail) GetInner() string {
 	return ""
 }
 
-// A transaction to be sent to vega
+// Represents a transaction to be sent to Vega.
 type Transaction struct {
-	// one of all the possible command, proto marshalled
+	// One of the set of Vega commands (proto marshalled).
 	InputData []byte `protobuf:"bytes,1,opt,name=inputData,proto3" json:"inputData,omitempty"`
-	// a random number used to provided uniqueness and prevents
-	// against replay attack
+	// A random number used to provided uniqueness and prevents
+	// against replay attack.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// the sender of the transction
-	// any of the following would be valid
+	// The sender of the transaction.
+	// Any of the following would be valid:
 	//
 	// Types that are valid to be assigned to From:
 	//	*Transaction_Address
@@ -3342,11 +3588,11 @@ func (m *Signature) GetVersion() uint64 {
 	return 0
 }
 
-// A bundle of a transaction, proto marshalled and it's signature
+// A bundle of a transaction and it's signature.
 type SignedBundle struct {
-	// the transaction, proto marshalled
+	// Transaction payload (proto marshalled).
 	Tx []byte `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
-	// the signature authenticating the transaction
+	// The signature authenticating the transaction.
 	Sig                  *Signature `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
@@ -3392,15 +3638,13 @@ func (m *SignedBundle) GetSig() *Signature {
 	return nil
 }
 
-// A message reprensenting a signature from a validator
-// meant to be used by foreign chain in order to recognise
-// a decision taken by the vega network.
+// Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network.
 type NodeSignature struct {
-	// The ID of the resource being signed
+	// The identifier of the resource being signed.
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	// The signature
+	// The signature.
 	Sig []byte `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
-	// The kind of resource being signed
+	// The kind of resource being signed.
 	Kind                 NodeSignatureKind `protobuf:"varint,3,opt,name=kind,proto3,enum=vega.NodeSignatureKind" json:"kind,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`

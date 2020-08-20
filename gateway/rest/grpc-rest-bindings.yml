@@ -57,6 +57,7 @@ http:
       body: "*"
     - selector: api.trading.PrepareCancelOrder
       post: '/orders/prepare/cancel'
+      body: "*"
     - selector: api.trading.PrepareAmendOrder
       post: '/orders/prepare/amend'
       body: "*"

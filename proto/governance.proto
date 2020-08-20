@@ -8,17 +8,17 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "proto/markets.proto";
 import "proto/assets.proto";
 
+// Network configuration options.
 message NetworkConfiguration {
+
   // Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
   int64 minCloseInSeconds = 1;
   // Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal.
   int64 maxCloseInSeconds = 2;
-
   // Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
   int64 minEnactInSeconds = 3;
   // Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal.
   int64 maxEnactInSeconds = 4;
-
   // Participation level required for any proposal to pass. Value from `0` to `1`.
   float requiredParticipation = 5;
   // Majority level required for any proposal to pass. Value from `0.5` to `1`.
@@ -27,64 +27,61 @@ message NetworkConfiguration {
   float minProposerBalance = 7;
   // Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`.
   float minVoterBalance = 8;
-
   // Scaling factors for all markets created via governance.
   ScalingFactors marginConfiguration = 9;
-
-  // FeeFactors which are not set via proposal
+  // FeeFactors which are not set via proposal.
   FeeFactorsConfiguration feeFactorsConfiguration = 10;
 }
 
-// FeeFactors set at the network level
+// FeeFactors set at the network level.
 message FeeFactorsConfiguration {
-  // the infrastructure fee, needs to be a valid float
+
+  // Infrastructure fee, needs to be a valid float.
   string infrastructureFee = 1;
-  // the maker fee, needs to be a valid float
+  // Maker fee, needs to be a valid float.
   string makerFee = 2;
-  // this is the liquidity fee, it needs to be a valid float
+  // Liquidity fee, it needs to be a valid float.
   string liquidityFee = 3;
 }
 
-message UpdateMarket {
-  //TODO
-}
-
-// Future product configuration
+// Future product configuration.
 message FutureProduct {
-  // Future product maturity (ISO8601/RFC3339 timestamp)
-  string maturity = 1  [(validator.field) = {string_not_empty : true}];
-  // Product asset name
+
+  // Future product maturity (ISO8601/RFC3339 timestamp).
+  string maturity = 1 [(validator.field) = {string_not_empty : true}];
+  // Product asset name.
   string asset = 2  [(validator.field) = {string_not_empty : true}];
 }
 
+// Instrument configuration.
 message InstrumentConfiguration {
-  // Instrument name
-  string name = 1 [(validator.field) = {string_not_empty : true}];
-  // Instrument code
-  string code = 2 [(validator.field) = {string_not_empty : true}];
-  // Base security used as the reference
-  string baseName = 3 [(validator.field) = {string_not_empty : true}];
-  // Quote (secondary) security
-  string quoteName = 4 [(validator.field) = {string_not_empty : true}];
-  // Product specification
-  oneof product {
-    FutureProduct future = 100;
 
-    //@TODO: more products
+  // Instrument name.
+  string name = 1 [(validator.field) = {string_not_empty : true}];
+  // Instrument code.
+  string code = 2 [(validator.field) = {string_not_empty : true}];
+  // Base security used as the reference.
+  string baseName = 3 [(validator.field) = {string_not_empty : true}];
+  // Quote (secondary) security.
+  string quoteName = 4 [(validator.field) = {string_not_empty : true}];
+  // Product specification.
+  oneof product {
+    // Futures.
+    FutureProduct future = 100;
   }
 }
 
+// Configuration for a new market on Vega.
 message NewMarketConfiguration {
-  // New market instrument configuration
+
+  // New market instrument configuration.
   InstrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
-  // Decimal places used for the new market
+  // Decimal places used for the new market.
   uint64 decimalPlaces = 2 [(validator.field) = {int_lt: 150}];
-  // Optional new market meta data, tags
+  // Optional new market meta data, tags.
   repeated string metadata = 3;
-
-  // for now, just specify a time for the opening auction to last
+  // Time duration for the opening auction to last.
   int64 openingAuctionDuration = 4;
-
   // New market risk model parameters
   oneof riskParameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
@@ -92,64 +89,78 @@ message NewMarketConfiguration {
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
     LogNormalRiskModel logNormal = 101;
   }
-  // Trading mode
+  // Trading mode for the new market.
   oneof tradingMode {
+    // Continuous trading.
     ContinuousTrading continuous = 200;
+    // Discrete trading.
     DiscreteTrading discrete = 201;
   }
 }
 
+// New market on Vega.
 message NewMarket {
+  // Configuration.
   NewMarketConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
 }
+
+// Update an existing market on Vega.
+message UpdateMarket { }
+
+// Update network configuration on Vega.
 message UpdateNetwork {
+  // Configuration.
   NetworkConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
-// To be implemented
+// New asset on Vega.
 message NewAsset {
+  // Asset configuration.
   AssetSource changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
+// Terms for a governance proposal on Vega.
 message ProposalTerms {
+
   // Timestamp (Unix time in seconds) when voting closes for this proposal.
   // Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters.
-  int64 closingTimestamp      = 1 [(validator.field) = {int_gt: 0}];
+  int64 closingTimestamp = 1 [(validator.field) = {int_gt: 0}];
   // Timestamp (Unix time in seconds) when proposal gets enacted (if passed).
   // Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters.
-  int64 enactmentTimestamp    = 2 [(validator.field) = {int_gt: 0}];
-
-  int64 validationTimestamp = 3; //TODO: this should be moved into `NewAsset` definition.
-
-  // Actual changes being proposed
+  int64 enactmentTimestamp = 2 [(validator.field) = {int_gt: 0}];
+  // Validation timestamp (Unix time in seconds).
+  int64 validationTimestamp = 3;
+  // Changes being proposed.
   oneof change {
     // Proposal change for modifying an existing market on Vega.
-    UpdateMarket  updateMarket  = 101;
+    UpdateMarket updateMarket = 101;
     // Proposal change for creating new market on Vega.
-    NewMarket     newMarket     = 102;
+    NewMarket newMarket = 102;
     // Proposal change for updating Vega network parameters.
     UpdateNetwork updateNetwork = 103;
     // Proposal change for creating new assets on Vega.
-    NewAsset      newAsset      = 104;
+    NewAsset newAsset = 104;
   };
 }
 
+// Governance data.
 message GovernanceData {
-  // Proposal
+
+  // Proposal.
   Proposal proposal = 1;
   // All "yes" votes in favour of the proposal above.
   repeated Vote yes = 2;
   // All "no" votes against the proposal above.
   repeated Vote no = 3;
-
-  // All latest YES votes by party (guaranteed to be unique)
+  // All latest YES votes by party (guaranteed to be unique).
   map<string, Vote> yesParty = 4;
-
-  // All latest NO votes by party (unique)
+  // All latest NO votes by party (unique).
   map<string, Vote> noParty = 5;
 }
 
+// Governance proposal.
 message Proposal {
+
   // Proposal state transition:
   // Open ->
   //   - Passed -> Enacted.
@@ -160,25 +171,19 @@ message Proposal {
   enum State {
     // Default value, always invalid.
     STATE_UNSPECIFIED = 0;
-
-    // Proposal enactment has failed - even though proposal has passed, its execusion could not be performed.
+    // Proposal enactment has failed - even though proposal has passed, its execution could not be performed.
     STATE_FAILED = 1;
-
     // Proposal is open for voting.
     STATE_OPEN = 2;
-
     // Proposal has gained enough support to be executed.
     STATE_PASSED = 3;
-
     // Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).
     STATE_REJECTED = 4;
-
     // Proposal didn't get enough votes (either failing to gain required participation or majority level).
     STATE_DECLINED = 5;
-
+    // Proposal enacted.
     STATE_ENACTED = 6;
-
-    // waiting for validators validation of the proposal
+    // Waiting for node validation of the proposal
     STATE_WAITING_FOR_NODE_VOTE = 7;
 
     // Note: If adding an enum value, add a matching entry in:
@@ -186,74 +191,73 @@ message Proposal {
     //       - gateway/graphql/schema.graphql (enum ProposalState)
   }
 
-  // Proposal unique identifier.
-  string        ID        = 1;
+  // Unique proposal identifier.
+  string ID = 1;
   // Proposal reference.
-  string        reference = 2;
-  // Proposal author, identifier of the party submitting the proposal.
-  string        partyID   = 3 [(validator.field) = {string_not_empty : true}];
-  // Proposal state (see Proposal.State definition)
-  State         state     = 4 [(validator.field) = {is_in_enum: true}];
+  string reference = 2;
+  // Party identifier of the author (the party submitting the proposal).
+  string partyID = 3 [(validator.field) = {string_not_empty : true}];
+  // Proposal state (see (Proposal.State)[#vega.Proposal.State] definition).
+  State state = 4 [(validator.field) = {is_in_enum: true}];
   // Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network.
-  int64         timestamp = 5;
+  int64 timestamp = 5;
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
-  ProposalTerms terms     = 6 [(validator.field) = {msg_exists: true}];
-
-  // A reason for the current state of the proposal
-  // this may be set in case of REJECTED and FAILED status
+  ProposalTerms terms = 6 [(validator.field) = {msg_exists: true}];
+  // A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
   ProposalError reason = 7;
 }
 
-// A list of possible error which could have happenned
-// and the cause for an proposal being rejected of failed
+// A list of possible errors that can cause a proposal to be in state rejected or failed.
 enum ProposalError {
-  // default value
+
+  // Default value.
   PROPOSAL_ERROR_UNSPECIFIED = 0;
-  // the specified close time is too early base on network parameters
+  // The specified close time is too early base on network parameters.
   PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON = 1;
-  // the specified close time is too late based on network parameters
+  // The specified close time is too late based on network parameters.
   PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE = 2;
-  // the specified enact time is too early base on network parameters
+  // The specified enact time is too early based on network parameters.
   PROPOSAL_ERROR_ENACT_TIME_TOO_SOON = 3;
-  // the specified enact time is too late based on network parameters
+  // The specified enact time is too late based on network parameters.
   PROPOSAL_ERROR_ENACT_TIME_TOO_LATE = 4;
-  // the proposer for this proposal as insufficient token
+  // The proposer for this proposal as insufficient tokens.
   PROPOSAL_ERROR_INSUFFICIENT_TOKENS = 5;
-  // the instrument quote name and base name were the same
+  // The instrument quote name and base name were the same.
   PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY = 6;
-  // the proposal has not product
+  // The proposal has no product.
   PROPOSAL_ERROR_NO_PRODUCT = 7;
-  // the specified product is not supported
+  // The specified product is not supported.
   PROPOSAL_ERROR_UNSUPPORTED_PRODUCT = 8;
-  // invalid future maturity timestamp (expect RFC3339)
+  // Invalid future maturity timestamp (expect RFC3339).
   PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP = 9;
-  // the product maturity is past
+  // The product maturity is past.
   PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED = 10;
-  // the proposal has not trading mode
+  // The proposal has no trading mode.
   PROPOSAL_ERROR_NO_TRADING_MODE = 11;
-  // the proposal has an unsupported trading mode
+  // The proposal has an unsupported trading mode.
   PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE = 12;
-  // the proposal failed node validation
+  // The proposal failed node validation.
   PROPOSAL_ERROR_NODE_VALIDATION_FAILED = 13;
-  // a field is missing in a builtin asset source
+  // A field is missing in a builtin asset source.
   PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD = 14;
-  // the contract address is missing in the ERC20 asset source
+  // The contract address is missing in the ERC20 asset source.
   PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS = 15;
-  // the asset id refer to no assets in vega
+  // The asset id refer to no assets in vega.
   PROPOSAL_ERROR_INVALID_ASSET = 16;
-  // proposal terms timestamps are not compatible (Validation < Closing < Enactment)
+  // Proposal terms timestamps are not compatible (Validation < Closing < Enactment).
   PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS = 17;
 }
 
+// Governance vote.
 message Vote {
 
+  // Vote value.
   enum Value {
+
     // Default value, always invalid.
     VALUE_UNSPECIFIED = 0;
-
     // A vote against the proposal.
     VALUE_NO  = 1;
-
     // A vote in favour of the proposal.
     VALUE_YES = 2;
 
@@ -263,11 +267,11 @@ message Vote {
   }
 
   // Voter's party identifier.
-  string partyID    = 1 [(validator.field) = {string_not_empty : true}];
+  string partyID = 1 [(validator.field) = {string_not_empty : true}];
   // Actual vote.
-  Value  value      = 2 [(validator.field) = {is_in_enum : true}];
+  Value value = 2 [(validator.field) = {is_in_enum : true}];
   // Identifier of the proposal being voted on.
   string proposalID = 3 [(validator.field) = {string_not_empty : true}];
   // Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network.
-  int64  timestamp  = 4;
+  int64 timestamp  = 4;
 }

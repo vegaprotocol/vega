@@ -99,6 +99,9 @@ func (this *AssetsResponse) Validate() error {
 	return nil
 }
 func (this *AssetByIDRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
 	return nil
 }
 func (this *AssetByIDResponse) Validate() error {
@@ -110,6 +113,9 @@ func (this *AssetByIDResponse) Validate() error {
 	return nil
 }
 func (this *GetNodeSignaturesAggregateRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
 	return nil
 }
 func (this *GetNodeSignaturesAggregateResponse) Validate() error {
