@@ -68,6 +68,11 @@ http:
     - selector: api.trading_data.TradesByOrder
       get: '/orders/{orderID}/trades'
 
+    # Fee
+    - selector: api.trading_data.FeeEstimate
+      post: '/orders/fee/estimate'
+      body: "*"
+
     # Parties
     - selector: api.trading_data.Parties
       get: '/parties'
@@ -95,6 +100,7 @@ http:
     - selector: api.trading.PrepareProposal
       post: '/governance/prepare/proposal'
       body: "*"
+
 
     # Miscellaneous
     - selector: api.trading_data.Statistics

@@ -365,6 +365,14 @@ type NewMarketInput struct {
 	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
 }
 
+// An estimate of the fee to be paid by the order
+type OrderFeeEstimate struct {
+	// The estimated fee if the order was to trade
+	Fee *TradeFee `json:"fee"`
+	// The total estimated amount of fee if the order was to trade
+	TotalFeeAmount string `json:"totalFeeAmount"`
+}
+
 type PreparedAmendOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`

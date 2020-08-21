@@ -111,6 +111,7 @@ type TradingDataClient interface {
 	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
 	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
+	EstimateFee(ctx context.Context, in *protoapi.EstimateFeeRequest, opts ...grpc.CallOption) (*protoapi.EstimateFeeResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -255,6 +256,86 @@ func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Ass
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party string, price *string, size string, side Side,
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderFeeEstimate, error) {
+	order := &types.Order{}
+
+	var (
+		p   uint64
+		err error
+	)
+
+	// We need to convert strings to uint64 (JS doesn't yet support uint64)
+	if price != nil {
+		p, err = safeStringUint64(*price)
+		if err != nil {
+			return nil, err
+		}
+	}
+	order.Price = p
+	s, err := safeStringUint64(size)
+	if err != nil {
+		return nil, err
+	}
+	order.Size = s
+	if len(market) <= 0 {
+		return nil, errors.New("market missing or empty")
+	}
+	order.MarketID = market
+	if len(party) <= 0 {
+		return nil, errors.New("party missing or empty")
+	}
+
+	order.PartyID = party
+	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
+		return nil, err
+	}
+	if order.Side, err = convertSideToProto(side); err != nil {
+		return nil, err
+	}
+	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
+		return nil, err
+	}
+
+	// GTT must have an expiration value
+	if order.TimeInForce == types.Order_TIF_GTT && expiration != nil {
+		var expiresAt time.Time
+		expiresAt, err = vegatime.Parse(*expiration)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
+		}
+
+		// move to pure timestamps or convert an RFC format shortly
+		order.ExpiresAt = expiresAt.UnixNano()
+	}
+
+	req := protoapi.EstimateFeeRequest{
+		Order: order,
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	resp, err := r.tradingDataClient.EstimateFee(ctx, &req)
+	if err != nil {
+		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	// calclate the fee total amount
+	ttf := resp.Fee.MakerFee + resp.Fee.InfrastructureFee + resp.Fee.LiquidityFee
+
+	fee := TradeFee{
+		MakerFee:          fmt.Sprintf("%d", resp.Fee.MakerFee),
+		InfrastructureFee: fmt.Sprintf("%d", resp.Fee.InfrastructureFee),
+		LiquidityFee:      fmt.Sprintf("%d", resp.Fee.LiquidityFee),
+	}
+
+	return &OrderFeeEstimate{
+		Fee:            &fee,
+		TotalFeeAmount: fmt.Sprintf("%d", ttf),
+	}, nil
+
+}
 
 func (r *myQueryResolver) Asset(ctx context.Context, id string) (*Asset, error) {
 	if len(id) <= 0 {

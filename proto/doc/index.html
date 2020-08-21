@@ -219,6 +219,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.EstimateFeeRequest"><span class="badge">M</span>EstimateFeeRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.EstimateFeeResponse"><span class="badge">M</span>EstimateFeeResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.FeeInfrastructureAccountsRequest"><span class="badge">M</span>FeeInfrastructureAccountsRequest</a>
                 </li>
 
@@ -1452,6 +1460,54 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.EstimateFeeRequest">EstimateFeeRequest</h3>
+        <p>Request to fetch the estimated fee if an order were to trade immediately</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>order</td>
+                  <td><a href="#vega.Order">vega.Order</a></td>
+                  <td></td>
+                  <td><p>Order to estimate fees for </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.EstimateFeeResponse">EstimateFeeResponse</h3>
+        <p>Response to a EstimateFeeRequest, containing the estimated fees for a given order</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>fee</td>
+                  <td><a href="#vega.Fee">vega.Fee</a></td>
+                  <td></td>
+                  <td><p>Summary of the estimated fees for this order if it were to trade now </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -4983,6 +5039,13 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                 <td><a href="#api.AssetsRequest">AssetsRequest</a></td>
                 <td><a href="#api.AssetsResponse">AssetsResponse</a></td>
                 <td><p>Get a list of all assets on Vega.</p></td>
+              </tr>
+
+              <tr>
+                <td>EstimateFee</td>
+                <td><a href="#api.EstimateFeeRequest">EstimateFeeRequest</a></td>
+                <td><a href="#api.EstimateFeeResponse">EstimateFeeResponse</a></td>
+                <td><p>Get an estimate for the fee to be paid for a given order</p></td>
               </tr>
 
           </tbody>

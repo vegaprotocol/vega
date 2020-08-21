@@ -757,3 +757,19 @@ func (this *OrderVersionsResponse) Validate() error {
 	}
 	return nil
 }
+func (this *EstimateFeeRequest) Validate() error {
+	if this.Order != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
+		}
+	}
+	return nil
+}
+func (this *EstimateFeeResponse) Validate() error {
+	if this.Fee != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Fee); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Fee", err)
+		}
+	}
+	return nil
+}
