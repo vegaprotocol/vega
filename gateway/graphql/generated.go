@@ -79,11 +79,12 @@ type ComplexityRoot struct {
 	}
 
 	BuiltinAsset struct {
-		Decimals    func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Symbol      func(childComplexity int) int
-		TotalSupply func(childComplexity int) int
+		Decimals            func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		MaxFaucetAmountMint func(childComplexity int) int
+		Name                func(childComplexity int) int
+		Symbol              func(childComplexity int) int
+		TotalSupply         func(childComplexity int) int
 	}
 
 	Candle struct {
@@ -776,6 +777,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BuiltinAsset.ID(childComplexity), true
+
+	case "BuiltinAsset.maxFaucetAmountMint":
+		if e.complexity.BuiltinAsset.MaxFaucetAmountMint == nil {
+			break
+		}
+
+		return e.complexity.BuiltinAsset.MaxFaucetAmountMint(childComplexity), true
 
 	case "BuiltinAsset.name":
 		if e.complexity.BuiltinAsset.Name == nil {
@@ -3268,6 +3276,9 @@ type BuiltinAsset {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 "Represents a signature for the approval of a resource from a validator"
@@ -4454,6 +4465,9 @@ input BuiltinAssetInput {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 """
@@ -6151,6 +6165,40 @@ func (ec *executionContext) _BuiltinAsset_decimals(ctx context.Context, field gr
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BuiltinAsset_maxFaucetAmountMint(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BuiltinAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxFaucetAmountMint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Candle) (ret graphql.Marshaler) {
@@ -15931,6 +15979,12 @@ func (ec *executionContext) unmarshalInputBuiltinAssetInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "maxFaucetAmountMint":
+			var err error
+			it.MaxFaucetAmountMint, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -16725,6 +16779,11 @@ func (ec *executionContext) _BuiltinAsset(ctx context.Context, sel ast.Selection
 			}
 		case "decimals":
 			out.Values[i] = ec._BuiltinAsset_decimals(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maxFaucetAmountMint":
+			out.Values[i] = ec._BuiltinAsset_maxFaucetAmountMint(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
