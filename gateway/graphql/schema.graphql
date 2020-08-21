@@ -1311,6 +1311,8 @@ enum AccountType {
   FeeInfrastructure
   "Liquidity fee account - the account where all infrastructure fees are collected"
   FeeLiquidity
+  "LockWithdraw - and account use for party in the process of withdrawing funds"
+  LockWithdraw
 }
 
 input SimpleRiskModelParamsInput {
