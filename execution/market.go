@@ -119,6 +119,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
+	ctx context.Context,
 	log *logging.Logger,
 	riskConfig risk.Config,
 	positionConfig positions.Config,
@@ -203,7 +204,7 @@ func NewMarket(
 	}
 
 	// All markets start with an opening auction
-	market.EnterAuction(context.TODO())
+	market.EnterAuction(ctx)
 	return market, nil
 }
 
@@ -394,6 +395,11 @@ func (m *Market) EnterAuction(ctx context.Context) {
 func (m *Market) LeaveAuction(ctx context.Context) {
 	m.log.Debug("Leaving an auction", logging.String("Market", m.mkt.Id))
 
+	// If we were an opening auction, clear it
+	if m.mkt.OpeningAuction != nil {
+		m.mkt.OpeningAuction = nil
+	}
+
 	// Change market type to continuous trading
 	orders, trades, err := m.matching.LeaveAuction()
 	if err != nil {
@@ -418,27 +424,14 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	// Move any parked orders back into the orderbook
 }
 
-// SubmitOrder submits the given order
-func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
-	orderValidity := "invalid"
-	defer func() {
-		timer.EngineTimeCounterAdd()
-		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
-	}()
-
-	// set those at the begining as even rejected order get through the buffers
-	m.idgen.SetID(order)
-	order.Version = InitialOrderVersion
-	order.Status = types.Order_STATUS_ACTIVE
-
+func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
 	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
 		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA) {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return nil, ErrInvalidMarketType
+		return ErrInvalidMarketType
 	}
 
 	// Check the expiry time is valid
@@ -446,7 +439,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return nil, ErrInvalidExpiresAtTime
+		return ErrInvalidExpiresAtTime
 	}
 
 	if m.closed {
@@ -454,7 +447,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return nil, ErrMarketClosed
+		return ErrMarketClosed
 	}
 
 	if order.Type == types.Order_TYPE_NETWORK {
@@ -462,7 +455,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INVALID_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return nil, ErrInvalidOrderType
+		return ErrInvalidOrderType
 	}
 
 	// Validate market
@@ -477,17 +470,12 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				logging.Order(*order),
 				logging.String("market", m.mkt.Id))
 		}
-
-		return nil, types.ErrInvalidMarketID
+		return types.ErrInvalidMarketID
 	}
+	return nil
+}
 
-	// TODO(): jeremy
-	// when new withdrawals and deposits are used only
-	// we will need to use the collateral engine
-	// and add a check in there to get the General account for
-	// this party and the market Asset
-	// Verify and add new parties
-	// party, _ := m.parties.GetByID(order.PartyID)
+func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error {
 	asset, _ := m.mkt.GetAsset()
 	if !m.collateral.HasGeneralAccount(order.PartyID, asset) {
 		// adding order to the buffer first
@@ -496,7 +484,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		// trader should be created before even trying to post order
-		return nil, ErrTraderDoNotExists
+		return ErrTraderDoNotExists
 	}
 
 	// ensure party have a general account, and margin account is / can be created
@@ -511,12 +499,46 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return nil, ErrMissingGeneralAccountForParty
+		return ErrMissingGeneralAccountForParty
 	}
 
 	// from this point we know the party have a margin account
 	// we had it to the list of parties.
 	m.addParty(order.PartyID)
+	return nil
+}
+
+// SubmitOrder submits the given order
+func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
+	orderValidity := "invalid"
+	defer func() {
+		timer.EngineTimeCounterAdd()
+		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
+	}()
+
+	// set those at the begining as even rejected order get through the buffers
+	m.idgen.SetID(order)
+	order.Version = InitialOrderVersion
+	order.Status = types.Order_STATUS_ACTIVE
+
+	err := m.validateOrder(ctx, order)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(): jeremy
+	// when new withdrawals and deposits are used only
+	// we will need to use the collateral engine
+	// and add a check in there to get the General account for
+	// this party and the market Asset
+	// Verify and add new parties
+	// party, _ := m.parties.GetByID(order.PartyID)
+
+	err = m.validateAccounts(ctx, order)
+	if err != nil {
+		return nil, err
+	}
 
 	// Register order as potential positions
 	pos, err := m.position.RegisterOrder(order)
@@ -555,18 +577,22 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, ErrMarginCheckFailed
 	}
 
-	// first we call the order book to get the list of trades
-	trades, err := m.matching.GetTrades(order)
-	if err != nil {
-		return nil, m.unregisterAndReject(ctx, order, err)
-	}
+	// If we are not in an opening auction, apply fees
+	var trades []*types.Trade
+	if m.mkt.OpeningAuction == nil &&
+		m.matching.GetMarketState() != types.MarketState_MARKET_STATE_AUCTION {
+		// first we call the order book to get the list of trades
+		trades, err = m.matching.GetTrades(order)
+		if err != nil {
+			return nil, m.unregisterAndReject(ctx, order, err)
+		}
 
-	// try to apply fees on the trade
-	err = m.applyFees(ctx, order, trades)
-	if err != nil {
-		return nil, err
+		// try to apply fees on the trade
+		err = m.applyFees(ctx, order, trades)
+		if err != nil {
+			return nil, err
+		}
 	}
-
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
@@ -589,7 +615,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				logging.Order(*order),
 				logging.Error(err))
 		}
-
 		return nil, err
 	}
 
@@ -616,6 +641,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		// the market is being closed.
 		// we also check the margin risk update was not nil, as it's not
 		// guaranteed the trader had to pay any margin
+		asset, _ := m.mkt.GetAsset()
 		if order.Remaining == order.Size && newOrderMarginRiskRollback != nil {
 			transfers, err := m.collateral.RollbackMarginUpdateOnOrder(
 				ctx, m.GetID(), asset, newOrderMarginRiskRollback)

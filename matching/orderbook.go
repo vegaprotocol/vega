@@ -514,11 +514,10 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		if lastTradedPrice != 0 {
 			b.lastTradedPrice = lastTradedPrice
 		}
-	}
-
-	// if state of the book changed show state
-	if b.LogPriceLevelsDebug && len(trades) != 0 {
-		b.PrintState("After uncross state:")
+		// if state of the book changed show state
+		if b.LogPriceLevelsDebug && len(trades) != 0 {
+			b.PrintState("After uncross state:")
+		}
 	}
 
 	// if order is persistent type add to order book to the correct side

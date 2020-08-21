@@ -158,6 +158,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	mkt, err := NewMarket(
+		ctx,
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
