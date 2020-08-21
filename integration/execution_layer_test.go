@@ -199,7 +199,12 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
 
-	err := execsetup.collateral.Withdraw(
+	err := execsetup.collateral.LockFundsForWithdraw(
+		context.Background(), trader, asset, amount)
+	if err != nil {
+		return err
+	}
+	err = execsetup.collateral.Withdraw(
 		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
