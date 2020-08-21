@@ -448,6 +448,9 @@ type BuiltinAsset {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 "Represents a signature for the approval of a resource from a validator"
@@ -1634,6 +1637,9 @@ input BuiltinAssetInput {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 """

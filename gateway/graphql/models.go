@@ -65,6 +65,8 @@ type BuiltinAsset struct {
 	TotalSupply string `json:"totalSupply"`
 	// The precision of the asset
 	Decimals int `json:"decimals"`
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
+	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
 }
 
 func (BuiltinAsset) IsAssetSource() {}
@@ -79,6 +81,8 @@ type BuiltinAssetInput struct {
 	TotalSupply string `json:"totalSupply"`
 	// The precision of the asset
 	Decimals int `json:"decimals"`
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
+	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
 }
 
 // A mode where Vega try to execute order as soon as they are received
