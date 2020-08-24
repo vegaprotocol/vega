@@ -18,7 +18,7 @@ The following OS packages are required:
 
 ## Installing Golang
 
-14.4**Required version: 1.14.4**
+**Required version: 1.14.4**
 
 Get Golang via OS package manager, or directly from from https://golang.org/dl/.
 See also the [Golang installation guide](https://golang.org/doc/install).
@@ -30,12 +30,11 @@ export GOROOT="/path/to/your/go1.14.4"
 export PATH="$PATH:$GOROOT/bin"
 ```
 
-Ensure you have `go`, `godoc` and `gofmt`:
+Ensure you have `go` and `gofmt`:
 
 ```bash
-$ which go godoc gofmt
+$ which go gofmt
 /path/to/your/go1.14.4/bin/go
-/path/to/your/go1.14.4/bin/godoc
 /path/to/your/go1.14.4/bin/gofmt
 
 $ go version
@@ -61,9 +60,9 @@ For advanced Golang users who are happy to support the system themselves:
 All Vega Golang repositories have been set up to use Go Modules (check for files
 `go.mod` and `go.sum` in the top-level directory).
 
-## GitLab Authentication
+## GitHub Authentication
 
-Either use your existing GitLab account, or create a Vega-specific one.
+Either use your existing GitHub account, or create a Vega-specific one.
 
 If not already present (in `$HOME/.ssh`), create an RSA keypair:
 
@@ -71,7 +70,7 @@ If not already present (in `$HOME/.ssh`), create an RSA keypair:
 ssh-keygen -t rsa -b 4096
 ```
 
-Add the public key (found in `$HOME/.ssh/id_rsa.pub`) to GitLab:
+Add the public key (found in `$HOME/.ssh/id_rsa.pub`) to GitHub:
 https://github.com/settings/keys
 
 ## Get vega
