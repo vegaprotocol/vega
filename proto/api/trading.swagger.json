@@ -2518,6 +2518,20 @@
           "type": "string",
           "format": "int64",
           "title": "time until next auction (used in FBA's) - currently always 0"
+        },
+        "indicativePrice": {
+          "type": "string",
+          "format": "uint64",
+          "title": "indicative price (zero if not in auction)"
+        },
+        "indicativeVolume": {
+          "type": "string",
+          "format": "uint64",
+          "title": "indicative volume (zero if not in auction)"
+        },
+        "marketState": {
+          "$ref": "#/definitions/vegaMarketState",
+          "title": "the current state of the market"
         }
       }
     },
@@ -2540,6 +2554,17 @@
           }
         }
       }
+    },
+    "vegaMarketState": {
+      "type": "string",
+      "enum": [
+        "MARKET_STATE_UNSPECIFIED",
+        "MARKET_STATE_CONTINUOUS",
+        "MARKET_STATE_AUCTION"
+      ],
+      "default": "MARKET_STATE_UNSPECIFIED",
+      "description": "- MARKET_STATE_UNSPECIFIED: Default value, this is invalid\n - MARKET_STATE_CONTINUOUS: Normal trading\n - MARKET_STATE_AUCTION: Auction trading",
+      "title": "Market Status\nWhat mode is the market currently running in"
     },
     "vegaNetworkConfiguration": {
       "type": "object",

@@ -626,6 +626,12 @@ message MarketData {
   int64 auctionEnd = 10;
   // time until next auction (used in FBA's) - currently always 0
   int64 auctionStart = 11;
+  // indicative price (zero if not in auction)
+  uint64 indicativePrice = 12;
+  // indicative volume (zero if not in auction)
+  uint64 indicativeVolume = 13;
+  // the current state of the market
+  MarketState marketState = 14;
 }
 
 message ErrorDetail {

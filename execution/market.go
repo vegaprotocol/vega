@@ -70,9 +70,10 @@ type Market struct {
 	closingAt   time.Time
 	currentTime time.Time
 
-	// If we are in a time based auction, set the finish time here
-	auctionEnd time.Time
-	mu         sync.Mutex
+	// If we are in a time based auction, set the start and finish time here
+	auctionStart time.Time
+	auctionEnd   time.Time
+	mu           sync.Mutex
 
 	markPrice uint64
 
@@ -200,6 +201,7 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
+		auctionStart:       time.Now(),
 		auctionEnd:         auctionClose,
 	}
 
@@ -211,16 +213,31 @@ func NewMarket(
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume := m.matching.BestOfferPriceAndVolume()
+
+	// Auction related values
+	var indicativePrice, indicativeVolume uint64
+	var auctionStart, auctionEnd int64
+	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
+		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
+		auctionStart = m.auctionStart.Unix()
+		auctionEnd = m.auctionEnd.Unix()
+	}
+
 	return types.MarketData{
-		Market:          m.GetID(),
-		BestBidPrice:    bestBidPrice,
-		BestBidVolume:   bestBidVolume,
-		BestOfferPrice:  bestOfferPrice,
-		BestOfferVolume: bestOfferVolume,
-		MidPrice:        (bestBidPrice + bestOfferPrice) / 2,
-		MarkPrice:       m.markPrice,
-		Timestamp:       m.currentTime.UnixNano(),
-		OpenInterest:    m.position.GetOpenInterest(),
+		Market:           m.GetID(),
+		BestBidPrice:     bestBidPrice,
+		BestBidVolume:    bestBidVolume,
+		BestOfferPrice:   bestOfferPrice,
+		BestOfferVolume:  bestOfferVolume,
+		MidPrice:         (bestBidPrice + bestOfferPrice) / 2,
+		MarkPrice:        m.markPrice,
+		Timestamp:        m.currentTime.UnixNano(),
+		OpenInterest:     m.position.GetOpenInterest(),
+		IndicativePrice:  indicativePrice,
+		IndicativeVolume: indicativeVolume,
+		AuctionStart:     auctionStart,
+		AuctionEnd:       auctionEnd,
+		MarketState:      m.matching.GetMarketState(),
 	}
 }
 

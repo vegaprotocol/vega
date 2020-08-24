@@ -3114,6 +3114,9 @@ The fees being paid by a party, resulting from a trade
 | openInterest | [uint64](#uint64) |  | the sum of the size of all positions greater than 0. |
 | auctionEnd | [int64](#int64) |  | time in seconds until the end of the auction (0 if currently not in auction period) |
 | auctionStart | [int64](#int64) |  | time until next auction (used in FBA&#39;s) - currently always 0 |
+| indicativePrice | [uint64](#uint64) |  | indicative price (zero if not in auction) |
+| indicativeVolume | [uint64](#uint64) |  | indicative volume (zero if not in auction) |
+| marketState | [MarketState](#vega.MarketState) |  | the current state of the market |
 
 
 
