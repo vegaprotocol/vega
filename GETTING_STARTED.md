@@ -174,6 +174,7 @@ In order to develop trading core, more tools are needed. Install them with:
 
 ```bash
 # get the dev tools
+make gettools_develop
 make gqlgen_check # warning: This may take a minute, with no output.
 make proto_check
 ```
