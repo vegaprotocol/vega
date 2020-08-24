@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
@@ -23,6 +24,7 @@ var (
 	ErrWrongAssetUsedForERC20Withdraw             = errors.New("non erc20 asset used for lock withdraw")
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
+	ErrWithdrawalNotReady                         = errors.New("withdrawal not ready")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
@@ -61,6 +63,12 @@ type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
+// Broker - the event bus
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/banking Broker
+type Broker interface {
+	Send(e events.Event)
+}
+
 const (
 	pendingState uint32 = iota
 	okState
@@ -74,6 +82,7 @@ var (
 type Engine struct {
 	cfg       Config
 	log       *logging.Logger
+	broker    Broker
 	col       Collateral
 	erc       ExtResChecker
 	notary    Notary
@@ -91,12 +100,13 @@ type withdrawalRef struct {
 	ref *big.Int
 }
 
-func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets, notary Notary) (e *Engine) {
+func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets, notary Notary, broker Broker) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
 	return &Engine{
 
 		cfg:         cfg,
 		log:         log,
+		broker:      broker,
 		col:         col,
 		erc:         erc,
 		assetActs:   map[string]*assetAction{},
@@ -138,6 +148,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 	}
 
 	w, ref := e.newWithdrawal(party, assetID, amount)
+	defer e.broker.Send(events.NewWithdrawalEvent(ctx, w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
@@ -223,6 +234,21 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 			logging.Error(err))
 		return err
 	}
+
+	// checkec straight away if the withdrawal is signed
+	nonce := &big.Int{}
+	nonce.SetString(w.ReferenceNonce, 10)
+	withd, err := e.getWithdrawalFromRef(nonce)
+	if err != nil {
+		return err
+	}
+	if withd.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
+		return ErrInvalidWithdrawalState
+	}
+	if _, ok := e.notary.IsSigned(withd.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
+		return ErrWithdrawalNotReady
+	}
+
 	aa := &assetAction{
 		id:          id(w, uint64(now.UnixNano())),
 		state:       pendingState,
@@ -248,6 +274,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 	}
 
 	w, ref := e.newWithdrawal(party, assetID, amount)
+	defer e.broker.Send(events.NewWithdrawalEvent(ctx, w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	// try to lock the funds
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
@@ -366,6 +393,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
+		defer e.broker.Send(events.NewWithdrawalEvent(ctx, w))
 		if err != nil {
 			return err
 		}

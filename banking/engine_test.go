@@ -40,9 +40,10 @@ func getTestEngine(t *testing.T) *testEngine {
 	assets := mocks.NewMockAssets(ctrl)
 	tsvc := mocks.NewMockTimeService(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker)
 
 	return &testEngine{
 		Engine: eng,
