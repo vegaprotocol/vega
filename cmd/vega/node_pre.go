@@ -424,7 +424,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
 
-	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker)
+	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
 
 	l.evtfwd, err = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
@@ -432,7 +432,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
-	l.banking = banking.New(l.Log, l.collateral, l.erc, l.timeService, l.assets, l.notary)
+	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary)
 
 	// TODO(jeremy): for now we assume a node started without the stores support
 	// is a validator, this will need to be changed later on.

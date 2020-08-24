@@ -93,7 +93,10 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 		}
 		return p.banking.DepositERC20(act.Deposit, evt.Block, evt.Index)
 	case *types.ERC20Event_Withdrawal:
-		return errors.New("ERC20.Withdrawal not implemented")
+		if err := p.checkVegaAssetID(act.Withdrawal, "ERC20.AssetList"); err != nil {
+			return err
+		}
+		return p.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index)
 	default:
 		return ErrUnsupportedEventAction
 	}

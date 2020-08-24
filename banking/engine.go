@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync/atomic"
 	"time"
 
@@ -20,6 +21,8 @@ import (
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
 	ErrWrongAssetUsedForERC20Withdraw             = errors.New("non erc20 asset used for lock withdraw")
+	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
+	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
@@ -29,11 +32,11 @@ type Assets interface {
 }
 
 // Notary ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/banking Notary
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
-	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
-	IsSigned(string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	SendSignature(id string, sig []byte, kind types.NodeSignatureKind) error
+	IsSigned(id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
 // Collateral engine
@@ -69,6 +72,7 @@ var (
 )
 
 type Engine struct {
+	cfg       Config
 	log       *logging.Logger
 	col       Collateral
 	erc       ExtResChecker
@@ -77,20 +81,30 @@ type Engine struct {
 	assetActs map[string]*assetAction
 	tsvc      TimeService
 	// top       Topology
-	seen map[txRef]struct{}
+	seen        map[txRef]struct{}
+	idgen       IDgenerator
+	withdrawals map[string]withdrawalRef
 }
 
-func New(log *logging.Logger, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets, notary Notary) (e *Engine) {
+type withdrawalRef struct {
+	w   *types.Withdrawal
+	ref *big.Int
+}
+
+func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets, notary Notary) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
 	return &Engine{
-		log:       log,
-		col:       col,
-		erc:       erc,
-		assetActs: map[string]*assetAction{},
-		tsvc:      tsvc,
-		assets:    assets,
-		seen:      map[txRef]struct{}{},
-		notary:    notary,
+
+		cfg:         cfg,
+		log:         log,
+		col:         col,
+		erc:         erc,
+		assetActs:   map[string]*assetAction{},
+		tsvc:        tsvc,
+		assets:      assets,
+		seen:        map[txRef]struct{}{},
+		notary:      notary,
+		withdrawals: map[string]withdrawalRef{},
 	}
 }
 
@@ -122,7 +136,12 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 	if !asset.IsBuiltinAsset() {
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
+
+	w, ref := e.newWithdrawal(party, assetID, amount)
+	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
+		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Error("cannot withdraw asset for party",
 			logging.String("party-id", party),
 			logging.String("asset-id", assetID),
@@ -130,6 +149,8 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 			logging.Error(err))
 		return err
 	}
+	w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 
 	return e.finalizeWithdrawal(ctx, party, assetID, amount)
 }
@@ -193,7 +214,28 @@ func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string, amount uint64) error {
+func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) error {
+	now, _ := e.tsvc.GetTimeNow()
+	asset, err := e.assets.Get(w.VegaAssetID)
+	if err != nil {
+		e.log.Error("unable to get asset by id",
+			logging.String("asset-id", w.VegaAssetID),
+			logging.Error(err))
+		return err
+	}
+	aa := &assetAction{
+		id:          id(w, uint64(now.UnixNano())),
+		state:       pendingState,
+		erc20W:      w,
+		asset:       asset,
+		blockNumber: blockNumber,
+		txIndex:     txIndex,
+	}
+	e.assetActs[aa.id] = aa
+	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+}
+
+func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string, amount uint64, ext *types.Erc20WithdrawExt) error {
 	asset, err := e.assets.Get(assetID)
 	if err != nil {
 		e.log.Error("unable to get asset by id",
@@ -205,8 +247,12 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 		return ErrWrongAssetUsedForERC20Withdraw
 	}
 
+	w, ref := e.newWithdrawal(party, assetID, amount)
+	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	// try to lock the funds
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
+		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Error("cannot withdraw asset for party",
 			logging.String("party-id", party),
 			logging.String("asset-id", assetID),
@@ -214,10 +260,59 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 			logging.Error(err))
 		return err
 	}
+
+	// we were able to lock the funds, then we can send the vote through the network
+	if err := e.notary.StartAggregate(w.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); err != nil {
+		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		e.withdrawals[w.Id] = withdrawalRef{w, ref}
+		e.log.Error("unable to start aggregating signature for the withdrawal",
+			logging.String("withdrawal-id", w.Id),
+			logging.String("party-id", party),
+			logging.String("asset-id", assetID),
+			logging.Uint64("amount", amount),
+			logging.Error(err))
+		return err
+	}
+
+	now, _ := e.tsvc.GetTimeNow()
+	expiry := now.Add(e.cfg.WithdrawalExpiry.Duration)
+
+	// then get the signature for the withdrawal and send it
+	erc20asset, _ := asset.ERC20() // no check error as we checked earlier we had an erc20 asset.
+	_, sig, err := erc20asset.SignWithdrawal(amount, expiry.Unix(), ext.GetReceiverAddress(), ref)
+	if err != nil {
+		// we don't cancel it here
+		// we may not be able to sign for some reason, but other may be able
+		// and we would aggregate enough signature
+		e.log.Error("unable to sign withdrawal",
+			logging.String("withdrawal-id", w.Id),
+			logging.String("party-id", party),
+			logging.String("asset-id", assetID),
+			logging.Uint64("amount", amount),
+			logging.Error(err))
+		return err
+	}
+
+	err = e.notary.SendSignature(
+		w.Id, sig, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
+	if err != nil {
+		// we don't cancel it here
+		// we may not be able to sign for some reason, but other may be able
+		// and we would aggregate enough signature
+		e.log.Error("unable to send node signature",
+			logging.String("withdrawal-id", w.Id),
+			logging.String("party-id", party),
+			logging.String("asset-id", assetID),
+			logging.Uint64("amount", amount),
+			logging.Error(err))
+		return err
+	}
+
 	return nil
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
+	e.idgen.NewBatch()
 	for k, v := range e.assetActs {
 		state := atomic.LoadUint32(&v.state)
 		if state == pendingState {
@@ -269,9 +364,30 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		return e.finalizeDeposit(ctx, aa.deposit)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
+	case aa.IsERC20Withdrawal():
+		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
+		if err != nil {
+			return err
+		}
+		if w.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
+			return ErrInvalidWithdrawalState
+		}
+		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+		e.withdrawals[w.Id] = withdrawalRef{w, aa.withdrawal.nonce}
+		return e.finalizeWithdrawal(ctx, w.PartyID, w.Asset, w.Amount)
 	default:
 		return ErrUnknownAssetAction
 	}
+}
+
+func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
+	for _, v := range e.withdrawals {
+		if v.ref.Cmp(ref) == 0 {
+			return v.w, nil
+		}
+	}
+
+	return nil, ErrNotMatchingWithdrawalForReference
 }
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit) error {
@@ -299,6 +415,16 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 	passet := asset.ProtoAsset()
 	return e.col.EnableAsset(ctx, *passet)
 
+}
+
+func (e *Engine) newWithdrawal(partyID, asset string, amount uint64) (w *types.Withdrawal, ref *big.Int) {
+	w = &types.Withdrawal{
+		Status:  types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
+		PartyID: partyID,
+		Asset:   asset,
+		Amount:  amount,
+	}
+	return w, e.idgen.SetID(w)
 }
 
 type HasVegaAssetID interface {

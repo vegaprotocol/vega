@@ -87,14 +87,14 @@ func GenDevAssetSourcesPath(defaultRootPath string) error {
 		// 		},
 		// 	},
 		// },
-		// this is the VUSD
-		// &types.AssetSource{
-		// 	Source: &types.AssetSource_Erc20{
-		// 		Erc20: &types.ERC20{
-		// 			ContractAddress: "0x955C6789A7fbee203B4bE0F01428E769308813f2",
-		// 		},
-		// 	},
-		// },
+		//this is the VUSD
+		&types.AssetSource{
+			Source: &types.AssetSource_Erc20{
+				Erc20: &types.ERC20{
+					ContractAddress: "0x955C6789A7fbee203B4bE0F01428E769308813f2",
+				},
+			},
+		},
 	}}
 
 	m := jsonpb.Marshaler{

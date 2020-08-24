@@ -197,6 +197,7 @@
     - [Account](#vega.Account)
     - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
+    - [Erc20WithdrawExt](#vega.Erc20WithdrawExt)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
@@ -233,7 +234,8 @@
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
-    - [Withdraw](#vega.Withdraw)
+    - [WithdrawSubmission](#vega.WithdrawSubmission)
+    - [Withdrawal](#vega.Withdrawal)
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
@@ -247,6 +249,7 @@
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
+    - [Withdrawal.Status](#vega.Withdrawal.Status)
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -1597,7 +1600,7 @@ Request for preparing a withdrawal.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| withdraw | [vega.Withdraw](#vega.Withdraw) |  | An asset withdrawal. |
+| withdraw | [vega.WithdrawSubmission](#vega.WithdrawSubmission) |  | An asset withdrawal. |
 
 
 
@@ -3348,6 +3351,21 @@ referred to commonly as a candlestick or candle.
 
 
 
+<a name="vega.Erc20WithdrawExt"></a>
+
+### Erc20WithdrawExt
+An extension of data required for the withdraw submissions
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| receiverAddress | [string](#string) |  | The address into which the bridge will release the funds |
+
+
+
+
+
+
 <a name="vega.ErrorDetail"></a>
 
 ### ErrorDetail
@@ -4039,17 +4057,37 @@ Represents the response from a transfer.
 
 
 
-<a name="vega.Withdraw"></a>
+<a name="vega.WithdrawSubmission"></a>
 
-### Withdraw
-Represents a withdrawal of an asset by a party on Vega.
+### WithdrawSubmission
+A request for withdrawing funds from a trader
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | Unique party identifier affecting the withdrawal. |
-| amount | [uint64](#uint64) |  | Total amount to withdraw. |
-| asset | [string](#string) |  | Asset identifier. |
+| partyID | [string](#string) |  | The party which wants to withdraw funds |
+| amount | [uint64](#uint64) |  | The amount to be withdrawn |
+| asset | [string](#string) |  | The asset we want to withdraw |
+| erc20 | [Erc20WithdrawExt](#vega.Erc20WithdrawExt) |  |  |
+
+
+
+
+
+
+<a name="vega.Withdrawal"></a>
+
+### Withdrawal
+The representation of a withdrawal in the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | The id of the withdrawal |
+| partyID | [string](#string) |  | The party initiating the withdrawal |
+| amount | [uint64](#uint64) |  | The amount to be withdrawn |
+| asset | [string](#string) |  | The asset we want to withdraw funds from |
+| status | [Withdrawal.Status](#vega.Withdrawal.Status) |  | The status of this withdrawal |
 
 
 
@@ -4270,6 +4308,20 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 | TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 | Receive maker fee. |
 | TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 | Pay infrastructure fee. |
 | TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
+
+
+
+<a name="vega.Withdrawal.Status"></a>
+
+### Withdrawal.Status
+The status of the withdrawal
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| WITHDRAWAL_STATUS_UNSPECIFIED | 0 | The default value |
+| WITHDRAWAL_STATUS_OPEN | 1 | The withdrawal is open and being processed by the network |
+| WITHDRAWAL_STATUS_CANCELLED | 2 | The withdrawal have been cancelled |
+| WITHDRAWAL_STATUS_FINALIZED | 3 | The withdrawal went through and is fully finalized (funds remove from the vega network, and unlocked from the foreign chain bridge) |
 
 
 

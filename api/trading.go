@@ -37,7 +37,7 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	PrepareWithdraw(context.Context, *types.Withdraw) error
+	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
 }
 
 // GovernanceService ...

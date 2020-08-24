@@ -108,7 +108,7 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *types.Withdraw) error
+	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
 }
 
 // TransferResponseService ...

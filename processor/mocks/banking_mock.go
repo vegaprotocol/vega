@@ -90,6 +90,20 @@ func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3)
 }
 
+// LockWithdrawalERC20 mocks base method
+func (m *MockBanking) LockWithdrawalERC20(arg0 context.Context, arg1, arg2 string, arg3 uint64, arg4 *proto.Erc20WithdrawExt) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LockWithdrawalERC20", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LockWithdrawalERC20 indicates an expected call of LockWithdrawalERC20
+func (mr *MockBankingMockRecorder) LockWithdrawalERC20(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockWithdrawalERC20", reflect.TypeOf((*MockBanking)(nil).LockWithdrawalERC20), arg0, arg1, arg2, arg3, arg4)
+}
+
 // WithdrawalBuiltinAsset mocks base method
 func (m *MockBanking) WithdrawalBuiltinAsset(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
 	m.ctrl.T.Helper()
@@ -102,4 +116,18 @@ func (m *MockBanking) WithdrawalBuiltinAsset(arg0 context.Context, arg1, arg2 st
 func (mr *MockBankingMockRecorder) WithdrawalBuiltinAsset(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawalBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).WithdrawalBuiltinAsset), arg0, arg1, arg2, arg3)
+}
+
+// WithdrawalERC20 mocks base method
+func (m *MockBanking) WithdrawalERC20(arg0 *proto.ERC20Withdrawal, arg1, arg2 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithdrawalERC20", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WithdrawalERC20 indicates an expected call of WithdrawalERC20
+func (mr *MockBankingMockRecorder) WithdrawalERC20(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawalERC20", reflect.TypeOf((*MockBanking)(nil).WithdrawalERC20), arg0, arg1, arg2)
 }
