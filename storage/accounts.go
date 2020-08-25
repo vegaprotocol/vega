@@ -104,6 +104,9 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 		return accs, nil
 	}
 
+	// for the market account as we were looking only for the insurance pool account,
+	// although we added the Liquidity fee account, which also need to be returned,
+	// if we were breaking after we find the first account with matching asset.
 	out := []*types.Account{}
 	for _, v := range accs {
 		if asset == v.Asset {
@@ -125,6 +128,9 @@ func (a *Account) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, 
 		return accs, nil
 	}
 
+	// in the case of the infrastructure fee account we will get one infrastructure fee account per asset only,
+	// the early exit makes sense there as as soon as we find the account for the required asset,
+	// we know it's the only one
 	out := []*types.Account{}
 	for _, v := range accs {
 		if asset == v.Asset {
