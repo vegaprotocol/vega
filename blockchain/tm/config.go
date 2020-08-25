@@ -1,6 +1,7 @@
 package tm
 
 import (
+	"code.vegaprotocol.io/vega/blockchain/ratelimit"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -14,6 +15,7 @@ type Config struct {
 	ClientEndpoint string
 	ServerPort     int
 	ServerAddr     string
+	RateLimit      ratelimit.Config
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -26,5 +28,6 @@ func NewDefaultConfig() Config {
 		ClientAddr:     "tcp://0.0.0.0:26657",
 		ClientEndpoint: "/websocket",
 		LogTimeDebug:   true,
+		RateLimit:      ratelimit.NewDefaultConfig(),
 	}
 }
