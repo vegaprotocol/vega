@@ -1,10 +1,12 @@
-package ratelimit
+package ratelimit_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/blockchain/ratelimit"
 )
 
 // runN executes the given `fn` func, `n` times.
@@ -20,7 +22,7 @@ func runN(n int, fn func()) {
 
 func TestRateLimits(t *testing.T) {
 	t.Run("Single Block", func(t *testing.T) {
-		r := New(10, 10) // 10 requests in the last 10 blocks
+		r := ratelimit.New(10, 10) // 10 requests in the last 10 blocks
 
 		// make 9 requests, all should be allowed
 		runN(9, func() {
@@ -34,7 +36,7 @@ func TestRateLimits(t *testing.T) {
 	})
 
 	t.Run("Even Blocks", func(t *testing.T) {
-		r := New(10, 10) // 10 requests in the last 10 blocks
+		r := ratelimit.New(10, 10) // 10 requests in the last 10 blocks
 
 		// this will make 1 request and move to the next block.
 		runN(9, func() {
@@ -48,7 +50,7 @@ func TestRateLimits(t *testing.T) {
 	})
 
 	t.Run("Uneven Blocks", func(t *testing.T) {
-		r := New(10, 3) // 10 request in the last 3 blocks
+		r := ratelimit.New(10, 3) // 10 request in the last 3 blocks
 
 		// let's fill the rate limiter
 		runN(100, func() {
@@ -67,7 +69,7 @@ func TestRateLimits(t *testing.T) {
 	})
 
 	t.Run("NextBlockDoesNotPanic", func(t *testing.T) {
-		r := New(10, 10)
+		r := ratelimit.New(10, 10)
 		runN(999, func() {
 			r.NextBlock()
 		})
