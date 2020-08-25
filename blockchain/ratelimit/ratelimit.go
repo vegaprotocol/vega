@@ -22,7 +22,7 @@ func New(requests, perNBlocks int) *Rates {
 		block:      0,
 		requests:   requests,
 		perNBlocks: perNBlocks,
-		entries:    make(map[string][]int),
+		entries:    map[string][]int{},
 	}
 }
 
