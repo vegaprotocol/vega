@@ -26,13 +26,8 @@ func addMarginLevels(ml *types.MarginLevels, maintenance float64, scalingFactors
 }
 
 func (r *Engine) calculateAuctionMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *types.MarginLevels {
-	var ml *types.MarginLevels
-	if markPrice != 0 {
-		// calculate margins without order positions
-		ml = r.calculateMargins(e, markPrice, rf, false)
-	} else {
-		ml = &types.MarginLevels{}
-	}
+	// calculate margins without order positions
+	ml := r.calculateMargins(e, markPrice, rf, false)
 	// now add the margin levels for orders
 	long, short := e.Buy(), e.Sell()
 	var (
@@ -44,6 +39,7 @@ func (r *Engine) calculateAuctionMargins(e events.Margin, markPrice int64, rf ty
 	if short > 0 {
 		sMargin = float64(short) * (rf.Short * float64(e.VWSell()))
 	}
+	// add buy/sell order margins to the margin requirements
 	if lMargin > sMargin {
 		addMarginLevels(ml, lMargin, r.marginCalculator.ScalingFactors)
 	} else {
