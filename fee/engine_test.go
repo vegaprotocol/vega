@@ -436,10 +436,10 @@ func testCalcPositionResolution(t *testing.T) {
 	}
 
 	positions := []events.MarketPosition{
-		fakeMktPos{"bad-party1", -10},
-		fakeMktPos{"bad-party2", 7},
-		fakeMktPos{"bad-party3", -2},
-		fakeMktPos{"bad-party4", 10},
+		fakeMktPos{party: "bad-party1", size: -10},
+		fakeMktPos{party: "bad-party2", size: 7},
+		fakeMktPos{party: "bad-party3", size: -2},
+		fakeMktPos{party: "bad-party4", size: 10},
 	}
 
 	ft, err := eng.CalculateFeeForPositionResolution(trades, positions)
@@ -488,8 +488,9 @@ func testCalcPositionResolution(t *testing.T) {
 }
 
 type fakeMktPos struct {
-	party string
-	size  int64
+	party         string
+	size          int64
+	vwBuy, vwSell uint64
 }
 
 func (f fakeMktPos) Party() string { return f.party }
@@ -497,3 +498,11 @@ func (f fakeMktPos) Size() int64   { return f.size }
 func (f fakeMktPos) Buy() int64    { return 0 }
 func (f fakeMktPos) Sell() int64   { return 0 }
 func (f fakeMktPos) Price() uint64 { return 0 }
+
+func (f fakeMktPos) VWBuy() uint64 {
+	return f.vwBuy
+}
+
+func (f fakeMktPos) VWSell() uint64 {
+	return f.vwSell
+}
