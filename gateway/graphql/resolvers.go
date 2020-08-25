@@ -1619,7 +1619,27 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	return MarketFromProto(res.Market)
+	market, err := MarketFromProto(res.Market)
+	if err != nil {
+		r.log.Error("unable to convert market from proto", logging.Error(err))
+		return nil, err
+	}
+	// add the market name explicitly here as it does not
+	// come anymore from the market framework
+	market.Name = market.TradableInstrument.Instrument.Name
+	// set Asset here too
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+
+	return market, nil
 }
 
 func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
@@ -2386,7 +2406,26 @@ func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*Ma
 			r.log.Error("tradingData client", logging.Error(err))
 			return nil, customErrorFromStatus(err)
 		}
-		return MarketFromProto(res.Market)
+		market, err := MarketFromProto(res.Market)
+		if err != nil {
+			r.log.Error("unable to convert market from proto", logging.Error(err))
+			return nil, err
+		}
+		// add the market name explicitly here as it does not
+		// come anymore from the market framework
+		market.Name = market.TradableInstrument.Instrument.Name
+		// set Asset here too
+		switch p := market.TradableInstrument.Instrument.Product.(type) {
+		case *Future:
+			req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+			res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+			if err != nil {
+				r.log.Error("tradingData client", logging.Error(err))
+				return nil, customErrorFromStatus(err)
+			}
+			p.Asset, err = AssetFromProto(res.Asset)
+		}
+		return market, nil
 	}
 
 	return nil, nil
