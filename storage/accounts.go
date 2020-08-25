@@ -108,7 +108,6 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 	for _, v := range accs {
 		if asset == v.Asset {
 			out = append(out, v)
-			break
 		}
 	}
 
