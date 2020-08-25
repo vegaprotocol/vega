@@ -1152,7 +1152,14 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		return nil, err
 	}
 
-	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, m.markPrice, pos)
+	// @TODO replace markPrice with intidicative uncross price in auction mode if available
+	price := m.markPrice
+	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION {
+		if ip, _, _ := m.matching.GetIndicativePriceAndVolume(); ip != 0 {
+			price = ip
+		}
+	}
+	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, price, pos)
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("unable to top up margin on new order",
@@ -1225,15 +1232,7 @@ func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin,
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	var (
-		riskUpdate events.Risk
-		err        error
-	)
-	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION {
-		riskUpdate, err = m.risk.UpdateMarginOnNewOrder(ctx, e, price)
-	} else {
-		riskUpdate, err = m.risk.UpdateMarginOnNewOrder(ctx, e, price)
-	}
+	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(ctx, e, price)
 	if err != nil {
 		return nil, err
 	}

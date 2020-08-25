@@ -1942,6 +1942,7 @@ type marketPositionFake struct {
 	party           string
 	size, buy, sell int64
 	price           uint64
+	vwBuy, vwSell   uint64
 }
 
 func (m marketPositionFake) Party() string    { return m.party }
@@ -1949,6 +1950,8 @@ func (m marketPositionFake) Size() int64      { return m.size }
 func (m marketPositionFake) Buy() int64       { return m.buy }
 func (m marketPositionFake) Sell() int64      { return m.sell }
 func (m marketPositionFake) Price() uint64    { return m.price }
+func (m marketPositionFake) VWBuy() uint64    { return m.vwBuy }
+func (m marketPositionFake) VWSell() uint64   { return m.vwSell }
 func (m marketPositionFake) ClearPotentials() {}
 
 type mtmFake struct {
@@ -1959,6 +1962,8 @@ type mtmFake struct {
 func (m mtmFake) Party() string             { return m.party }
 func (m mtmFake) Size() int64               { return 0 }
 func (m mtmFake) Price() uint64             { return 0 }
+func (m mtmFake) VWBuy() uint64             { return 0 }
+func (m mtmFake) VWSell() uint64            { return 0 }
 func (m mtmFake) Buy() int64                { return 0 }
 func (m mtmFake) Sell() int64               { return 0 }
 func (m mtmFake) ClearPotentials()          {}
@@ -1979,6 +1984,7 @@ type riskFake struct {
 	party           string
 	size, buy, sell int64
 	price           uint64
+	vwBuy, vwSell   uint64
 	margins         *types.MarginLevels
 	amount          int64
 	transfer        *types.Transfer
@@ -1990,6 +1996,8 @@ func (m riskFake) Size() int64                       { return m.size }
 func (m riskFake) Buy() int64                        { return m.buy }
 func (m riskFake) Sell() int64                       { return m.sell }
 func (m riskFake) Price() uint64                     { return m.price }
+func (m riskFake) VWBuy() uint64                     { return m.vwBuy }
+func (m riskFake) VWSell() uint64                    { return m.vwSell }
 func (m riskFake) ClearPotentials()                  {}
 func (m riskFake) Transfer() *types.Transfer         { return m.transfer }
 func (m riskFake) Amount() int64                     { return m.amount }
