@@ -168,7 +168,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	// there's not enought monies in the accounts of the party,
 	// we break from here. The minimum requires is MAINTENANCE, not INITIAL here!
-	if curBalance+evt.GeneralBalance() < margins.MaintenanceMargin {
+	if curBalance+evt.GeneralBalance() < margins.InitialMargin {
 		return nil, ErrInsufficientFundsForInitialMargin
 	}
 
@@ -179,7 +179,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if curBalance >= margins.InitialMargin {
 		return nil, nil
 	}
-	minAmount := max(int64(margins.MaintenanceMargin)-int64(curBalance), 0)
+	amount := max(int64(margins.InitialMargin)-int64(curBalance), 0)
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
 	trnsfr := &types.Transfer{
@@ -187,9 +187,9 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: int64(margins.InitialMargin - curBalance),
+			Amount: amount,
 		},
-		MinAmount: minAmount, // minimal amount == maintenance
+		MinAmount: amount, // minimal amount == initial
 	}
 
 	return &marginChange{
