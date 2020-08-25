@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/blockchain/ratelimit"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/evtforward"
@@ -44,7 +43,6 @@ type Config struct {
 	API         api.Config
 	Accounts    accounts.Config
 	Blockchain  blockchain.Config
-	RateLimit   ratelimit.Config
 	Candles     candles.Config
 	Collateral  collateral.Config
 	Execution   execution.Config
@@ -84,7 +82,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
 		Trades:         trades.NewDefaultConfig(),
 		Blockchain:     blockchain.NewDefaultConfig(),
-		RateLimit:      ratelimit.NewDefaultConfig(),
 		Execution:      execution.NewDefaultConfig(defaultStoreDirPath),
 		Processor:      processor.NewDefaultConfig(),
 		API:            api.NewDefaultConfig(),
