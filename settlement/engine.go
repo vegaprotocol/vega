@@ -20,6 +20,8 @@ type MarketPosition interface {
 	Buy() int64
 	Sell() int64
 	Price() uint64
+	VWBuy() uint64
+	VWSell() uint64
 	ClearPotentials()
 }
 
