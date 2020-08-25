@@ -72,6 +72,7 @@ type Market struct {
 	mu          sync.Mutex
 
 	markPrice uint64
+	tradeMode types.MarketState
 
 	// own engines
 	matching           *matching.OrderBook
@@ -174,6 +175,10 @@ func NewMarket(
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instanciate fee engine")
 	}
+	mode := types.MarketState_MARKET_STATE_CONTINUOUS
+	if fba := mkt.GetDiscrete(); fba != nil {
+		mode = types.MarketState_MARKET_STATE_AUCTION
+	}
 
 	market := &Market{
 		log:                log,
@@ -191,6 +196,7 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
+		tradeMode:          mode,
 	}
 	return market, nil
 }
@@ -357,6 +363,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
+	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	// Change market type to auction
 
 	// Check the orderbook for any non auction friendly orders
@@ -365,6 +372,11 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context) {
+	// @TODO this ought to come from m.mkt
+	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
+	if fba := m.mkt.GetDiscrete(); fba != nil {
+		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
+	}
 	// Change market type to continuous trading
 
 	// Move any parked orders back into the orderbook
@@ -385,8 +397,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	order.Status = types.Order_STATUS_ACTIVE
 
 	// Check we are allowed to handle this order type with the current market status
-	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
-		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA) {
+	if (m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
+		(m.tradeMode == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA) {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -1140,7 +1152,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		return nil, err
 	}
 
-	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
+	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, m.markPrice, pos)
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("unable to top up margin on new order",
@@ -1207,13 +1219,21 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) (events.Risk, error) {
+func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin, price uint64, pos *positions.MarketPosition) (events.Risk, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(e, price)
+	var (
+		riskUpdate events.Risk
+		err        error
+	)
+	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION {
+		riskUpdate, err = m.risk.UpdateMarginOnNewOrder(ctx, e, price)
+	} else {
+		riskUpdate, err = m.risk.UpdateMarginOnNewOrder(ctx, e, price)
+	}
 	if err != nil {
 		return nil, err
 	}

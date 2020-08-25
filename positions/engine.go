@@ -20,6 +20,9 @@ type MarketPosition struct {
 
 	partyID string
 	price   uint64
+
+	// volume weighted buy/sell prices
+	vwBuyPrice, vwSellPrice uint64
 }
 
 // Errors
@@ -57,6 +60,16 @@ func (m MarketPosition) Party() string {
 // Price returns the current price for this position
 func (m MarketPosition) Price() uint64 {
 	return m.price
+}
+
+// VWBuy - get volume weighted buy price for unmatched buy orders
+func (m MarketPosition) VWBuy() uint64 {
+	return m.vwBuyPrice
+}
+
+// VWSell - get volume weighted sell price for unmatched sell orders
+func (m MarketPosition) VWSell() uint64 {
+	return m.vwSellPrice
 }
 
 // Engine represents the positions engine
@@ -121,8 +134,12 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	if order.Side == types.Side_SIDE_BUY {
+		// calculate vwBuyPrice: total worth of orders divided by total size
+		pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + order.Price*order.Remaining) / (uint64(pos.buy) + order.Remaining)
 		pos.buy += int64(order.Remaining)
 	} else {
+		// calculate vwSellPrice: total worth of orders divided by total size
+		pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + order.Price*order.Remaining) / (uint64(pos.sell) + order.Remaining)
 		pos.sell += int64(order.Remaining)
 	}
 	timer.EngineTimeCounterAdd()
@@ -138,9 +155,22 @@ func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err e
 		err = ErrPositionNotFound
 	} else {
 		if order.Side == types.Side_SIDE_BUY {
+			// recalculate vwap
+			vwap := pos.vwBuyPrice*uint64(pos.buy) - order.Price*order.Remaining
 			pos.buy -= int64(order.Remaining)
+			if pos.buy != 0 {
+				pos.vwBuyPrice = vwap / uint64(pos.buy)
+			} else {
+				pos.vwBuyPrice = 0
+			}
 		} else {
+			vwap := pos.vwSellPrice*uint64(pos.sell) - order.Price*order.Remaining
 			pos.sell -= int64(order.Remaining)
+			if pos.sell != 0 {
+				pos.vwSellPrice = vwap / uint64(pos.sell)
+			} else {
+				pos.vwSellPrice = 0
+			}
 		}
 	}
 	timer.EngineTimeCounterAdd()
@@ -159,10 +189,24 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		return
 	}
 	if originalOrder.Side == types.Side_SIDE_BUY {
+		vwap := pos.vwBuyPrice*uint64(pos.buy) - originalOrder.Price*originalOrder.Remaining
 		pos.buy -= int64(originalOrder.Remaining)
+		if pos.buy != 0 {
+			pos.vwBuyPrice = vwap / uint64(pos.buy)
+		} else {
+			pos.vwBuyPrice = 0
+		}
+		pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + newOrder.Price*newOrder.Remaining) / (uint64(pos.buy) + newOrder.Remaining)
 		pos.buy += int64(newOrder.Remaining)
 	} else {
+		vwap := pos.vwSellPrice*uint64(pos.sell) - originalOrder.Price*originalOrder.Remaining
 		pos.sell -= int64(originalOrder.Remaining)
+		if pos.sell != 0 {
+			pos.vwSellPrice = vwap / uint64(pos.sell)
+		} else {
+			pos.vwSellPrice = 0
+		}
+		pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + newOrder.Price*newOrder.Remaining) / (uint64(pos.sell) + newOrder.Remaining)
 		pos.sell += int64(newOrder.Remaining)
 	}
 
@@ -303,6 +347,18 @@ func (e *Engine) GetOpenInterest() uint64 {
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []events.MarketPosition {
 	return e.positionsCpy
+}
+
+// GetPositionByPartyID - return current position for a given party, it's used in margin checks during auctions
+// we're not specifying an interface of the return type, and we return a pointer to a copy for the nil
+func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
+	pos, ok := e.positions[partyID]
+	if !ok {
+		return nil, false
+	}
+	cpy := *pos
+	// return a copy
+	return &cpy, true
 }
 
 // Parties returns a list of all the parties in the position engine

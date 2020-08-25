@@ -112,6 +112,10 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price uint64
 		err   error
 	)
+	if b.marketState == types.MarketState_MARKET_STATE_AUCTION {
+		p, _, _ := b.GetIndicativePriceAndVolume()
+		return p, nil
+	}
 
 	if volume == 0 {
 		return 0, ErrInvalidVolume

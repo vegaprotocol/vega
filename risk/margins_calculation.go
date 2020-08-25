@@ -18,6 +18,40 @@ func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) 
 	}
 }
 
+func addMarginLevels(ml *types.MarginLevels, maintenance float64, scalingFactors *types.ScalingFactors) {
+	ml.MaintenanceMargin += uint64(maintenance)
+	ml.SearchLevel += uint64(maintenance * scalingFactors.SearchLevel)
+	ml.InitialMargin += uint64(maintenance * scalingFactors.InitialMargin)
+	ml.CollateralReleaseLevel += uint64(maintenance * scalingFactors.CollateralRelease)
+}
+
+func (r *Engine) calculateAuctionMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *types.MarginLevels {
+	var ml *types.MarginLevels
+	if markPrice != 0 {
+		// calculate margins without order positions
+		ml = r.calculateMargins(e, markPrice, rf, false)
+	} else {
+		ml = &types.MarginLevels{}
+	}
+	// now add the margin levels for orders
+	long, short := e.Buy(), e.Sell()
+	var (
+		lMargin, sMargin float64
+	)
+	if long > 0 {
+		lMargin = float64(long) * (rf.Long * float64(e.VWBuy()))
+	}
+	if short > 0 {
+		sMargin = float64(short) * (rf.Short * float64(e.VWSell()))
+	}
+	if lMargin > sMargin {
+		addMarginLevels(ml, lMargin, r.marginCalculator.ScalingFactors)
+	} else {
+		addMarginLevels(ml, sMargin, r.marginCalculator.ScalingFactors)
+	}
+	return ml
+}
+
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
 func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
