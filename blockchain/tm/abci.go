@@ -74,8 +74,10 @@ func NewApplication(log *logging.Logger,
 		time:            time,
 		onCriticalError: onCriticalError,
 		ghandler:        ghandler,
-		// TODO(gus): this (or the config) needs to be injected.
-		rateLimit: ratelimit.New(50, 10),
+		rateLimit: ratelimit.New(
+			config.RateLimit.Requests,
+			config.RateLimit.PerNBlocks,
+		),
 	}
 	if err := app.setMetrics(); err != nil {
 		app.log.Panic(
