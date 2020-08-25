@@ -394,6 +394,13 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
+func (m *Market) isOpeningAuction() bool {
+	if m.mkt.OpeningAuction != nil {
+		return true
+	}
+	return false
+}
+
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	m.log.Debug("Entering an auction", logging.String("Market", m.mkt.Id))
@@ -405,7 +412,12 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	// and move them into a parking area
 
 	// Send an event bus update
-	m.broker.Send(events.NewAuctionEvent(ctx, false))
+	m.broker.Send(events.NewAuctionEvent(ctx,
+		m.mkt.Id,
+		false,
+		m.auctionStart.Unix(),
+		m.auctionEnd.Unix(),
+		m.isOpeningAuction()))
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading
@@ -432,11 +444,15 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 		if err == nil {
 			// Update positions for each order
 			m.position.RegisterOrder(order)
-
-			// Send an event bus update
-			m.broker.Send(events.NewAuctionEvent(ctx, true))
 		}
 	}
+	// Send an event bus update
+	m.broker.Send(events.NewAuctionEvent(ctx,
+		m.mkt.Id,
+		true,
+		m.auctionStart.Unix(),
+		m.auctionEnd.Unix(),
+		m.isOpeningAuction()))
 
 	// Move any parked orders back into the orderbook
 }
