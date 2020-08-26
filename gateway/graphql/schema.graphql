@@ -376,6 +376,27 @@ type Query {
 
   "The list of all assets in use in the vega network"
   assets: [Asset!]
+
+  "return an estiamation of fee it the order was to trade"
+  estimateFeeForOrder(
+    "ID of the market to place the order"
+    marketId: String!
+    "ID of the party placing the order"
+    partyId: String!
+    "Price of the asset"
+    price: String
+    "Size of the order"
+    size: String!
+    "Side of the order (Buy or Sell)"
+    side: Side!
+    "TimeInForce of the order"
+    timeInForce: OrderTimeInForce!
+    "exiration of the the order"
+    expiration: String
+    "type of the order"
+    type: OrderType!
+  ): OrderFeeEstimate!
+
 }
 
 "Represents an asset in vega"
@@ -427,6 +448,9 @@ type BuiltinAsset {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 "Represents a signature for the approval of a resource from a validator"
@@ -968,6 +992,15 @@ type Order {
   updatedAt: String!
 }
 
+"An estimate of the fee to be paid by the order"
+type OrderFeeEstimate {
+  "The estimated fee if the order was to trade"
+  fee: TradeFee!
+
+  "The total estimated amount of fee if the order was to trade"
+  totalFeeAmount: String!
+}
+
 "A trade on Vega, the result of two orders being 'matched' in the market"
 type Trade {
 
@@ -1278,6 +1311,8 @@ enum AccountType {
   FeeInfrastructure
   "Liquidity fee account - the account where all infrastructure fees are collected"
   FeeLiquidity
+  "LockWithdraw - and account use for party in the process of withdrawing funds"
+  LockWithdraw
 }
 
 input SimpleRiskModelParamsInput {
@@ -1604,6 +1639,9 @@ input BuiltinAssetInput {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 """

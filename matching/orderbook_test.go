@@ -56,6 +56,226 @@ func TestOrderBook_GetClosePNL(t *testing.T) {
 	t.Run("Get Best offer price and volume", testBestOfferPriceAndVolume)
 }
 
+func TestOrderBook_CancelBulk(t *testing.T) {
+	t.Run("Cancel all order for a party", cancelAllOrderForAParty)
+	t.Run("Get all order for a party", getAllOrderForAParty)
+	t.Run("Party with no order cancel nothing", partyWithNoOrderCancelNothing)
+}
+
+func cancelAllOrderForAParty(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_BUY,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	confs, err := book.CancelAllOrders("A")
+	assert.NoError(t, err)
+	assert.Len(t, confs, 3)
+	expectedIDs := map[string]struct{}{
+		"1111111111111111111111": {},
+		"2222222222222222222222": {},
+		"4444444444444444444444": {},
+	}
+	for _, conf := range confs {
+		if _, ok := expectedIDs[conf.Order.Id]; ok {
+			delete(expectedIDs, conf.Order.Id)
+		} else {
+			t.Fatalf("unexpected order has been cancelled %v", conf.Order)
+		}
+	}
+}
+
+func getAllOrderForAParty(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_BUY,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	ordersLs := book.GetOrdersPerParty("A")
+	assert.Len(t, ordersLs, 3)
+	expectedIDs := map[string]struct{}{
+		"1111111111111111111111": {},
+		"2222222222222222222222": {},
+		"4444444444444444444444": {},
+	}
+	for _, o := range ordersLs {
+		if _, ok := expectedIDs[o.Id]; ok {
+			delete(expectedIDs, o.Id)
+		} else {
+			t.Fatalf("unexpected order has been cancelled %v", o)
+		}
+	}
+}
+
+func partyWithNoOrderCancelNothing(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_BUY,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	ordersLs := book.GetOrdersPerParty("X")
+	assert.Len(t, ordersLs, 0)
+}
+
 func testBestBidPriceAndVolume(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)

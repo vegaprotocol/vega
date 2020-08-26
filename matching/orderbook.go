@@ -33,6 +33,7 @@ type OrderBook struct {
 	latestTimestamp int64
 	expiringOrders  *ExpiringOrders
 	ordersByID      map[string]*types.Order
+	ordersPerParty  map[string]map[string]struct{}
 	marketState     types.MarketState
 	batchID         uint64
 }
@@ -85,6 +86,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		ordersByID:      map[string]*types.Order{},
 		marketState:     marketState,
 		batchID:         0,
+		ordersPerParty:  map[string]map[string]struct{}{},
 	}
 }
 
@@ -112,6 +114,10 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price uint64
 		err   error
 	)
+	if b.marketState == types.MarketState_MARKET_STATE_AUCTION {
+		p, _, _ := b.GetIndicativePriceAndVolume()
+		return p, nil
+	}
 
 	if volume == 0 {
 		return 0, ErrInvalidVolume
@@ -360,6 +366,19 @@ func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
 	return allTrades, allOrders, nil
 }
 
+func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
+	orderIDs := b.ordersPerParty[party]
+	if len(orderIDs) <= 0 {
+		return []*types.Order{}
+	}
+
+	orders := make([]*types.Order, 0, len(orderIDs))
+	for oid, _ := range orderIDs {
+		orders = append(orders, b.ordersByID[oid])
+	}
+	return orders
+}
+
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
 func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
 	return b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
@@ -368,6 +387,25 @@ func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
 func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
 	return b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+}
+
+func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationConfirmation, error) {
+	var (
+		orders = b.GetOrdersPerParty(party)
+		confs  = []*types.OrderCancellationConfirmation{}
+		conf   *types.OrderCancellationConfirmation
+		err    error
+	)
+
+	for _, o := range orders {
+		conf, err = b.CancelOrder(o)
+		if err != nil {
+			return nil, err
+		}
+		confs = append(confs, conf)
+	}
+
+	return confs, err
 }
 
 // CancelOrder cancel an order that is active on an order book. Market and Order ID are validated, however the order must match
@@ -577,6 +615,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 			// delete from lookup table
 			delete(b.ordersByID, impactedOrders[idx].Id)
+			delete(b.ordersPerParty[impactedOrders[idx].PartyID], impactedOrders[idx].Id)
 		}
 	}
 
@@ -588,6 +627,13 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	if order.Status == types.Order_STATUS_ACTIVE {
 		b.ordersByID[order.Id] = order
+		if orders, ok := b.ordersPerParty[order.PartyID]; !ok {
+			b.ordersPerParty[order.PartyID] = map[string]struct{}{
+				order.Id: struct{}{},
+			}
+		} else {
+			orders[order.Id] = struct{}{}
+		}
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
@@ -608,6 +654,7 @@ func (b *OrderBook) DeleteOrder(
 		}
 		return nil, types.ErrOrderRemovalFailure
 	}
+	delete(b.ordersByID, order.Id)
 	delete(b.ordersByID, order.Id)
 	return dorder, err
 }

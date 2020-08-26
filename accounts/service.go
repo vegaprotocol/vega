@@ -86,7 +86,7 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 	// There is a ticket to improve and clean this up in the collateral-engine:
 	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
-		if acc.GetType() == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.GetType() == types.AccountType_ACCOUNT_TYPE_GENERAL || acc.GetType() == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
 			if acc.GetMarketID() == "!" {
 				acc.MarketID = ""
 			}

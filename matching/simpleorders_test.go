@@ -645,6 +645,7 @@ type MarketPos struct {
 	size, buy, sell int64
 	party           string
 	price           uint64
+	vwBuy, vwSell   uint64
 }
 
 func (m MarketPos) Party() string {
@@ -665,6 +666,14 @@ func (m MarketPos) Sell() int64 {
 
 func (m MarketPos) Price() uint64 {
 	return m.price
+}
+
+func (m MarketPos) VWBuy() uint64 {
+	return m.vwBuy
+}
+
+func (m MarketPos) VWSell() uint64 {
+	return m.vwSell
 }
 
 func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {

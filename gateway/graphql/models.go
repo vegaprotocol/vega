@@ -65,6 +65,8 @@ type BuiltinAsset struct {
 	TotalSupply string `json:"totalSupply"`
 	// The precision of the asset
 	Decimals int `json:"decimals"`
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
+	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
 }
 
 func (BuiltinAsset) IsAssetSource() {}
@@ -79,6 +81,8 @@ type BuiltinAssetInput struct {
 	TotalSupply string `json:"totalSupply"`
 	// The precision of the asset
 	Decimals int `json:"decimals"`
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
+	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
 }
 
 // A mode where Vega try to execute order as soon as they are received
@@ -365,6 +369,14 @@ type NewMarketInput struct {
 	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
 }
 
+// An estimate of the fee to be paid by the order
+type OrderFeeEstimate struct {
+	// The estimated fee if the order was to trade
+	Fee *TradeFee `json:"fee"`
+	// The total estimated amount of fee if the order was to trade
+	TotalFeeAmount string `json:"totalFeeAmount"`
+}
+
 type PreparedAmendOrder struct {
 	// blob: the raw transaction to sign & submit
 	Blob string `json:"blob"`
@@ -608,6 +620,8 @@ const (
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
 	// Liquidity fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
+	// LockWithdraw - and account use for party in the process of withdrawing funds
+	AccountTypeLockWithdraw AccountType = "LockWithdraw"
 )
 
 var AllAccountType = []AccountType{
@@ -617,11 +631,12 @@ var AllAccountType = []AccountType{
 	AccountTypeGeneral,
 	AccountTypeFeeInfrastructure,
 	AccountTypeFeeLiquidity,
+	AccountTypeLockWithdraw,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw:
 		return true
 	}
 	return false
