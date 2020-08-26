@@ -38,8 +38,7 @@ func (r *RateLimit) NewRequest(pubkey, asset string) error {
 	if ok {
 		// just check in case the time is expired already, and
 		// we had not the cleanup run
-		if time.Now().Before(until) &&
-			!time.Now().Equal(until) {
+		if time.Now().Before(until) {
 			// we already have this asset greylisted,
 			// the trader is trying to get more fuunds while still greylisted
 			// give him a penalty
