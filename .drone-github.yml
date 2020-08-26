@@ -44,8 +44,6 @@ steps:
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       # Build normal executable
       - ./script/build.sh -a build -t linux/amd64
-      # Build executable for sytstem-tests, with custom Governance parameters. 8760h is 24*365 hours.
-      - ./script/build.sh -a build -t linux/amd64 -s "-systemtests"
     depends_on:
       - fetch
     when:
