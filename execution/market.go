@@ -153,7 +153,7 @@ func NewMarket(
 	}
 
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice)
+		tradableInstrument.Instrument.InitialMarkPrice, mkt.OpeningAuction)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,
@@ -205,8 +205,9 @@ func NewMarket(
 		auctionEnd:         auctionClose,
 	}
 
-	// All markets start with an opening auction
-	market.EnterAuction(ctx)
+	if mkt.OpeningAuction != nil {
+		market.EnterAuction(ctx)
+	}
 	return market, nil
 }
 

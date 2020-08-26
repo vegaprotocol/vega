@@ -47,7 +47,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	release, _ := strconv.ParseFloat(row.Cells[8].Value, 64)
 	initial, _ := strconv.ParseFloat(row.Cells[9].Value, 64)
 	search, _ := strconv.ParseFloat(row.Cells[10].Value, 64)
-	openAuctionDuration, _ := strconv.ParseInt(row.Cells[11].Value, 10, 64)
+	//openAuctionDuration, _ := strconv.ParseInt(row.Cells[11].Value, 10, 64)
 	if row.Cells[12].Value != "continuous" {
 		batchDuration, _ := strconv.ParseInt(row.Cells[12].Value, 10, 64)
 		mkt.TradingMode = &proto.Market_Discrete{
@@ -80,7 +80,8 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	mu, _ := strconv.ParseFloat(row.Cells[5].Value, 64)
 	r, _ := strconv.ParseFloat(row.Cells[6].Value, 64)
 	sigma, _ := strconv.ParseFloat(row.Cells[7].Value, 64)
-	mkt.OpeningAuction.Duration = openAuctionDuration
+	// No opening auction for now
+	//mkt.OpeningAuction.Duration = openAuctionDuration
 	mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_LogNormalRiskModel{
 		LogNormalRiskModel: &proto.LogNormalRiskModel{
 			RiskAversionParameter: lambdShort,
@@ -126,7 +127,8 @@ func theMarket(mSetup *gherkin.DataTable) error {
 			},
 			MarginCalculator: &proto.MarginCalculator{},
 		},
-		OpeningAuction: &proto.AuctionDuration{},
+		// For now we won't have an opening auction
+		// OpeningAuction: &proto.AuctionDuration{},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
@@ -144,6 +146,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	// create the party engine, and add to the test setup
 	// so we can register parties and their account balances
 	m, err := execution.NewMarket(
+		context.Background(),
 		log,
 		risk.NewDefaultConfig(),
 		positions.NewDefaultConfig(),
