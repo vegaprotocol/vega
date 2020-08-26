@@ -21,12 +21,21 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/risk Orderbook
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
+	GetMarketState() types.MarketState
 }
 
 // Broker the event bus broker
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(events.Event)
+}
+
+// AuctionPosition is the enriched market position event (well, it's the same type)
+// which is only passed in when the market is in auction mode
+type AuctionPosition interface {
+	events.MarketPosition
+	VWBuy() uint64
+	VWSell() uint64
 }
 
 type marginChange struct {
@@ -126,13 +135,17 @@ func (e *Engine) CalculateFactors(now time.Time) {
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(evt events.Margin, markPrice uint64) (events.Risk, error) {
-	ctx := context.TODO()
+func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice uint64) (events.Risk, error) {
 	if evt == nil {
 		return nil, nil
 	}
 
-	margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
+	var margins *types.MarginLevels
+	if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
+	} else {
+		margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
+	}
 	// no margins updates, nothing to do then
 	if margins == nil {
 		return nil, nil
@@ -204,7 +217,12 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	// this can be the result of an error, or being "finished"
 	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
-		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
+		var margins *types.MarginLevels
+		if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
+		} else {
+			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
+		}
 		// no margins updates, nothing to do then
 		if margins == nil {
 			continue
@@ -288,7 +306,12 @@ func (e *Engine) ExpectMargins(
 	okMargins = make([]events.Margin, 0, len(evts)/2)
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	for _, evt := range evts {
-		margins := e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false)
+		var margins *types.MarginLevels
+		if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false)
+		} else {
+			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
+		}
 		// no margins updates, nothing to do then
 		if margins == nil {
 			okMargins = append(okMargins, evt)

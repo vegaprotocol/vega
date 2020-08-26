@@ -18,6 +18,39 @@ func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) 
 	}
 }
 
+func addMarginLevels(ml *types.MarginLevels, maintenance float64, scalingFactors *types.ScalingFactors) {
+	ml.MaintenanceMargin += uint64(maintenance)
+	ml.SearchLevel += uint64(maintenance * scalingFactors.SearchLevel)
+	ml.InitialMargin += uint64(maintenance * scalingFactors.InitialMargin)
+	ml.CollateralReleaseLevel += uint64(maintenance * scalingFactors.CollateralRelease)
+}
+
+func (r *Engine) calculateAuctionMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *types.MarginLevels {
+	// calculate margins without order positions
+	ml := r.calculateMargins(e, markPrice, rf, false)
+	// now add the margin levels for orders
+	long, short := e.Buy(), e.Sell()
+	var (
+		lMargin, sMargin float64
+	)
+	if long > 0 {
+		lMargin = float64(long) * (rf.Long * float64(e.VWBuy()))
+	}
+	if short > 0 {
+		sMargin = float64(short) * (rf.Short * float64(e.VWSell()))
+	}
+	// add buy/sell order margins to the margin requirements
+	if lMargin > sMargin {
+		addMarginLevels(ml, lMargin, r.marginCalculator.ScalingFactors)
+	} else {
+		addMarginLevels(ml, sMargin, r.marginCalculator.ScalingFactors)
+	}
+	// this is a bit of a hack, perhaps, but it keeps the remaining flow in the core simple:
+	// artificially increase the release level so we never release the margin balance during auction
+	ml.CollateralReleaseLevel += e.MarginBalance()
+	return ml
+}
+
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
 func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
