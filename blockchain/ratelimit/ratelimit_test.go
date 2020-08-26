@@ -68,10 +68,18 @@ func TestRateLimits(t *testing.T) {
 		assert.True(t, r.Allow("test"))
 	})
 
-	t.Run("NextBlockDoesNotPanic", func(t *testing.T) {
+	t.Run("Clean up", func(t *testing.T) {
 		r := ratelimit.New(10, 10)
-		runN(999, func() {
+		runN(10, func() {
+			r.Allow("test")
+		})
+		require.Equal(t, 10, r.Count("test"))
+
+		runN(10, func() {
 			r.NextBlock()
 		})
+		require.Equal(t, -1, r.Count("test"))
+
 	})
+
 }

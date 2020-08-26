@@ -26,6 +26,21 @@ func New(requests, perNBlocks int) *Rates {
 	}
 }
 
+// Count returns the number of requests recorded for a given key
+// It returns -1 if the key has been not recorded or evicted
+func (r *Rates) Count(key string) int {
+	entry, ok := r.entries[key]
+	if !ok {
+		return -1
+	}
+
+	var count int
+	for _, n := range entry {
+		count += n
+	}
+	return count
+}
+
 func (r *Rates) NextBlock() {
 	// compute the next block index
 	r.block = (r.block + 1) % (r.perNBlocks)
@@ -35,23 +50,27 @@ func (r *Rates) NextBlock() {
 		c[r.block] = 0
 	}
 
-	// TODO(gus): Clean up entries (delete from entries map) with 0 requests
+	// We clean up the entries after finishing the block round
+	if r.block != 0 {
+		return
+	}
+
+	for key, _ := range r.entries {
+		if r.Count(key) == 0 {
+			delete(r.entries, key)
+		}
+	}
 }
 
 func (r *Rates) Allow(key string) bool {
-	entries, ok := r.entries[key]
+	entry, ok := r.entries[key]
 	if !ok {
-		entries = make([]int, r.perNBlocks)
-		r.entries[key] = entries
+		entry = make([]int, r.perNBlocks)
+		r.entries[key] = entry
 	}
-	entries[r.block]++
+	entry[r.block]++
 
-	var count int
-	for _, n := range entries {
-		count += n
-	}
-
-	if count >= r.requests {
+	if r.Count(key) >= r.requests {
 		return false
 	}
 
