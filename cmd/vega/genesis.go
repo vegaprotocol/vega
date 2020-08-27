@@ -35,6 +35,7 @@ func (g *genesisCommand) Run(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		fmt.Printf("%v\n", dump)
+		return nil
 	}
 	return genesis.UpdateInPlaceDefault(g.inPlace)
 }
