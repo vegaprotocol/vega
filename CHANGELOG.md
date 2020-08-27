@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.23.1
+
+*2020-08-27*
+
+This release backports a fix from the forthcoming 0.24.0 release that fixes a GraphQL issue with the new `Asset` type. When fetching the Assets from the top level, all the details came through. When fetching them as a nested property, only the ID was filled in. This is now fixed.
+
+## Improvements
+
+- [#2140](https://github.com/vegaprotocol/vega/pull/2140) GraphQL fix for fetching assets as nested properties
+
 ## 0.23.0
 
 *2020-08-10*
