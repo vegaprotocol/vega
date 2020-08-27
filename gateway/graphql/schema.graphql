@@ -245,6 +245,12 @@ type MarketData {
   auctionEnd: Int
   "time in seconds until the start of the next auction (0 if no new auction scheduled)"
   auctionStart: Int
+  "indicative price if the auction ended now, 0 if not in auction mode"
+  indicativePrice: String!
+  "indicative volume if the auction ended now, 0 if not in auction mode"
+  indicativeVolume: String!
+  "what state the market is in (auction, continuous etc)"
+  marketState: MarketState!
 }
 
 type PreparedSubmitOrder {

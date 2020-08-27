@@ -202,17 +202,20 @@ type ComplexityRoot struct {
 	}
 
 	MarketData struct {
-		AuctionEnd      func(childComplexity int) int
-		AuctionStart    func(childComplexity int) int
-		BestBidPrice    func(childComplexity int) int
-		BestBidVolume   func(childComplexity int) int
-		BestOfferPrice  func(childComplexity int) int
-		BestOfferVolume func(childComplexity int) int
-		MarkPrice       func(childComplexity int) int
-		Market          func(childComplexity int) int
-		MidPrice        func(childComplexity int) int
-		OpenInterest    func(childComplexity int) int
-		Timestamp       func(childComplexity int) int
+		AuctionEnd       func(childComplexity int) int
+		AuctionStart     func(childComplexity int) int
+		BestBidPrice     func(childComplexity int) int
+		BestBidVolume    func(childComplexity int) int
+		BestOfferPrice   func(childComplexity int) int
+		BestOfferVolume  func(childComplexity int) int
+		IndicativePrice  func(childComplexity int) int
+		IndicativeVolume func(childComplexity int) int
+		MarkPrice        func(childComplexity int) int
+		Market           func(childComplexity int) int
+		MarketState      func(childComplexity int) int
+		MidPrice         func(childComplexity int) int
+		OpenInterest     func(childComplexity int) int
+		Timestamp        func(childComplexity int) int
 	}
 
 	MarketDepth struct {
@@ -529,6 +532,10 @@ type MarketDataResolver interface {
 	MidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	Timestamp(ctx context.Context, obj *proto.MarketData) (string, error)
 	OpenInterest(ctx context.Context, obj *proto.MarketData) (string, error)
+
+	IndicativePrice(ctx context.Context, obj *proto.MarketData) (string, error)
+	IndicativeVolume(ctx context.Context, obj *proto.MarketData) (string, error)
+	MarketState(ctx context.Context, obj *proto.MarketData) (MarketState, error)
 }
 type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepth) (*Market, error)
@@ -1314,6 +1321,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.BestOfferVolume(childComplexity), true
 
+	case "MarketData.indicativePrice":
+		if e.complexity.MarketData.IndicativePrice == nil {
+			break
+		}
+
+		return e.complexity.MarketData.IndicativePrice(childComplexity), true
+
+	case "MarketData.indicativeVolume":
+		if e.complexity.MarketData.IndicativeVolume == nil {
+			break
+		}
+
+		return e.complexity.MarketData.IndicativeVolume(childComplexity), true
+
 	case "MarketData.markPrice":
 		if e.complexity.MarketData.MarkPrice == nil {
 			break
@@ -1327,6 +1348,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.Market(childComplexity), true
+
+	case "MarketData.marketState":
+		if e.complexity.MarketData.MarketState == nil {
+			break
+		}
+
+		return e.complexity.MarketData.MarketState(childComplexity), true
 
 	case "MarketData.midPrice":
 		if e.complexity.MarketData.MidPrice == nil {
@@ -3073,6 +3101,12 @@ type MarketData {
   auctionEnd: Int
   "time in seconds until the start of the next auction (0 if no new auction scheduled)"
   auctionStart: Int
+  "indicative price if the auction ended now, 0 if not in auction mode"
+  indicativePrice: String!
+  "indicative volume if the auction ended now, 0 if not in auction mode"
+  indicativeVolume: String!
+  "what state the market is in (auction, continuous etc)"
+  marketState: MarketState!
 }
 
 type PreparedSubmitOrder {
@@ -8728,6 +8762,108 @@ func (ec *executionContext) _MarketData_auctionStart(ctx context.Context, field 
 	res := resTmp.(int64)
 	fc.Result = res
 	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_indicativePrice(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().IndicativePrice(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_indicativeVolume(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().IndicativeVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_marketState(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().MarketState(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(MarketState)
+	fc.Result = res
+	return ec.marshalNMarketState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketState(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDepth_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) (ret graphql.Marshaler) {
@@ -17801,6 +17937,48 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._MarketData_auctionEnd(ctx, field, obj)
 		case "auctionStart":
 			out.Values[i] = ec._MarketData_auctionStart(ctx, field, obj)
+		case "indicativePrice":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_indicativePrice(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "indicativeVolume":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_indicativeVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "marketState":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_marketState(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -20596,6 +20774,15 @@ func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	return ec._MarketDepth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMarketState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketState(ctx context.Context, v interface{}) (MarketState, error) {
+	var res MarketState
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNMarketState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketState(ctx context.Context, sel ast.SelectionSet, v MarketState) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNNodeSignature2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v proto.NodeSignature) graphql.Marshaler {

@@ -1187,6 +1187,18 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 
 type myMarketDataResolver VegaResolverRoot
 
+func (r *myMarketDataResolver) MarketState(_ context.Context, m *types.MarketData) (MarketState, error) {
+	return convertMarketStateFromProto(m.MarketState)
+}
+
+func (r *myMarketDataResolver) IndicativePrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.IndicativePrice, 10), nil
+}
+
+func (r *myMarketDataResolver) IndicativeVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.IndicativeVolume, 10), nil
+}
+
 func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidPrice, 10), nil
 }
