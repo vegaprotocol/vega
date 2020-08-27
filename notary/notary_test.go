@@ -18,7 +18,7 @@ type testNotary struct {
 	ctrl   *gomock.Controller
 	top    *mocks.MockValidatorTopology
 	broker *mocks.MockBroker
-	cmd    *mocks.NewCommander
+	cmd    *mocks.MockCommander
 }
 
 func getTestNotary(t *testing.T) *testNotary {

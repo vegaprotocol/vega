@@ -1732,10 +1732,6 @@ func TestWithdrawalOK(t *testing.T) {
 		}
 	})
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.LockFundsForWithdraw(context.Background(), trader, testMarketAsset, 100)
-	assert.NoError(t, err)
-
 	err = eng.Engine.Withdraw(context.Background(), trader, testMarketAsset, 100)
 	assert.Nil(t, err)
 }
