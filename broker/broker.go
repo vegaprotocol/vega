@@ -72,20 +72,20 @@ func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
 	return
 }
 
-func (b *Broker) startSending(t events.Type) chan<- []events.Event {
+func (b *Broker) startSending(t events.Type, evts []events.Event) {
 	b.mu.Lock()
 	ch, ok := b.eChans[t]
-	// channel already exists, we're already sending
-	if ok {
-		b.mu.Unlock()
-		return ch
-	}
-	b.tSubSlice[t] = b.getSubsByType(t)
 	if !ok {
-		ch = make(chan []events.Event, len(b.tSubSlice[t])*10+20) // create a channel with a buffer
-		b.eChans[t] = ch
+		b.tSubSlice[t] = b.getSubsByType(t)
+		ch = make(chan []events.Event, len(b.tSubSlice[t])*10+20) // create a channel with buffer
 	}
+	ch <- evts
 	b.mu.Unlock()
+	if ok {
+		// we already started the routine to consume the channel
+		// we can return here
+		return
+	}
 	go func(ch chan []events.Event, t events.Type) {
 		defer func() {
 			b.mu.Lock()
@@ -129,7 +129,6 @@ func (b *Broker) startSending(t events.Type) chan<- []events.Event {
 			}
 		}
 	}(ch, t)
-	return ch
 }
 
 // SendBatch sends a slice of events to subscribers that can handle the events in the slice
@@ -139,14 +138,12 @@ func (b *Broker) SendBatch(events []events.Event) {
 	if len(events) == 0 {
 		return
 	}
-	ch := b.startSending(events[0].Type())
-	ch <- events
+	b.startSending(events[0].Type(), events)
 }
 
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	ch := b.startSending(event.Type())
-	ch <- []events.Event{event}
+	b.startSending(event.Type(), []events.Event{event})
 }
 
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
