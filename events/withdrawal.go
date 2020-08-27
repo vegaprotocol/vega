@@ -8,16 +8,16 @@ import (
 
 type Withdrawal struct {
 	*Base
-	w *types.Withdrawal
+	w types.Withdrawal
 }
 
-func NewWithdrawalEvent(ctx context.Context, w *types.Withdrawal) *Withdrawal {
+func NewWithdrawalEvent(ctx context.Context, w types.Withdrawal) *Withdrawal {
 	return &Withdrawal{
 		Base: newBase(ctx, WithdrawalEvent),
 		w:    w,
 	}
 }
 
-func (w *Withdrawal) Withdrawal() *types.Withdrawal {
+func (w *Withdrawal) Withdrawal() types.Withdrawal {
 	return w.w
 }

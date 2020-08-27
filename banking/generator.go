@@ -26,6 +26,8 @@ func (i *IDgenerator) NewBatch() {
 // SetProposalID sets proposal ID and incrememts total proposal count
 func (i *IDgenerator) SetID(w *types.Withdrawal) *big.Int {
 	i.withdrawals++
+	ref := big.NewInt(int64(i.withdrawals))
 	w.Id = fmt.Sprintf("W%010d-%010d", i.batches, i.withdrawals)
-	return big.NewInt(int64(i.withdrawals))
+	w.Ref = ref.String()
+	return ref
 }

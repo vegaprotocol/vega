@@ -786,3 +786,33 @@ func (this *ObserveEventsResponse) Validate() error {
 	}
 	return nil
 }
+func (this *WithdrawalsRequest) Validate() error {
+	return nil
+}
+func (this *WithdrawalsResponse) Validate() error {
+	for _, item := range this.Withdrawals {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Withdrawals", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *WithdrawalRequest) Validate() error {
+	return nil
+}
+func (this *WithdrawalResponse) Validate() error {
+	if this.Withdrawal != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Withdrawal); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Withdrawal", err)
+		}
+	}
+	return nil
+}
+func (this *ERC20WithdrawalApprovalRequest) Validate() error {
+	return nil
+}
+func (this *ERC20WithdrawalApprovalResponse) Validate() error {
+	return nil
+}

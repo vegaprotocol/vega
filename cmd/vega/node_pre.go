@@ -375,6 +375,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.settlePlugin = plugins.NewPositions(l.ctx)
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 	l.assetPlugin = plugins.NewAsset(l.ctx)
+	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {

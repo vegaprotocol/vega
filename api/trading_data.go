@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 	"strings"
 	"time"
 
@@ -154,6 +156,13 @@ type NotaryService interface {
 	GetByID(id string) ([]types.NodeSignature, error)
 }
 
+// Withdrawal ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawal_service_mock.go -package mocks code.vegaprotocol.io/vega/api  WithdrawalService
+type WithdrawalService interface {
+	GetByID(id string) (types.Withdrawal, error)
+	GetByParty(party string, openOnly bool) []types.Withdrawal
+}
+
 // AssetService Provides access to assets approved/pending approval in the current network state
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/asset_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AssetService
 type AssetService interface {
@@ -192,6 +201,7 @@ type tradingDataService struct {
 	FeeService              FeeService
 	eventService            EventService
 	statusChecker           *monitoring.Status
+	WithdrawalService       WithdrawalService
 	ctx                     context.Context
 }
 
@@ -207,6 +217,88 @@ func (t *tradingDataService) EstimateFee(ctx context.Context, req *protoapi.Esti
 
 	return &protoapi.EstimateFeeResponse{
 		Fee: fee,
+	}, nil
+}
+
+func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *protoapi.ERC20WithdrawalApprovalRequest) (*protoapi.ERC20WithdrawalApprovalResponse, error) {
+	if len(req.WithdrawalID) <= 0 {
+		return nil, ErrMissingWithdrawalID
+	}
+
+	// first here we gonna get the withdrawal by its ID,
+	withdrawal, err := t.WithdrawalService.GetByID(req.WithdrawalID)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	// then we get the signature and pack them altogether
+	signatures, err := t.NotaryService.GetByID(req.WithdrawalID)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	// now we pack them
+	pack := "0x"
+	for _, v := range signatures {
+		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+	}
+	// now the signature should have the form:
+	// 0x + sig1 + sig2 + ... + sigN in hex encoded form
+
+	// then we'll get the asset source to retrieve the asset erc20 ethereum address
+	assets, err := t.Assets(ctx, &protoapi.AssetsRequest{})
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	var address string
+	for _, v := range assets.Assets {
+		if v.ID == withdrawal.Asset {
+			switch src := v.Source.Source.(type) {
+			case *types.AssetSource_Erc20:
+				address = src.Erc20.ContractAddress
+			default:
+				return nil, fmt.Errorf("invalid asset source")
+			}
+		}
+	}
+	if len(address) <= 0 {
+		return nil, fmt.Errorf("invalid erc20 token contract address")
+	}
+
+	return &protoapi.ERC20WithdrawalApprovalResponse{
+		AssetSource: address,
+		Amount:      fmt.Sprintf("%v", withdrawal.Amount),
+		Expiry:      withdrawal.Expiry,
+		Nonce:       withdrawal.Ref,
+		Signatures:  pack,
+	}, nil
+}
+
+func (t *tradingDataService) Withdrawal(ctx context.Context, req *protoapi.WithdrawalRequest) (*protoapi.WithdrawalResponse, error) {
+	if len(req.ID) <= 0 {
+		return nil, ErrMissingWithdrawalID
+	}
+	withdrawal, err := t.WithdrawalService.GetByID(req.ID)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	return &protoapi.WithdrawalResponse{
+		Withdrawal: &withdrawal,
+	}, nil
+}
+
+func (t *tradingDataService) Withdrawals(ctx context.Context, req *protoapi.WithdrawalsRequest) (*protoapi.WithdrawalsResponse, error) {
+	if len(req.PartyID) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+	withdrawals := t.WithdrawalService.GetByParty(req.PartyID, req.Open)
+	out := make([]*types.Withdrawal, 0, len(withdrawals))
+	for _, v := range withdrawals {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.WithdrawalsResponse{
+		Withdrawals: out,
 	}, nil
 }
 

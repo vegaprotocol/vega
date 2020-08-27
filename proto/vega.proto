@@ -544,6 +544,11 @@ message Withdrawal {
   string asset = 4;
   // The status of this withdrawal
   Status status = 5;
+  // The reference which is used by the foreign chain
+  // to refer to this withdrawal
+  string ref = 6;
+  // The time until when the withdrawal is valid
+  int64 expiry = 7;
 }
 
 // A request for withdrawing funds from a trader

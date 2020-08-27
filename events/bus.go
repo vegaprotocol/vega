@@ -196,7 +196,7 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 	case types.Asset:
 		e := NewAssetEvent(ctx, tv)
 		return e, nil
-	case *types.Withdrawal:
+	case types.Withdrawal:
 		e := NewWithdrawalEvent(ctx, tv)
 		return e, nil
 	}

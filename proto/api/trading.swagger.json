@@ -1134,6 +1134,33 @@
       },
       "description": "Response for a list of candles for a market at an interval."
     },
+    "apiERC20WithdrawalApprovalResponse": {
+      "type": "object",
+      "properties": {
+        "assetSource": {
+          "type": "string",
+          "title": "The address of asset on ethereum"
+        },
+        "amount": {
+          "type": "string",
+          "title": "The amount to be withdrawn"
+        },
+        "expiry": {
+          "type": "string",
+          "format": "int64",
+          "title": "The expiry / until what time the request is valid"
+        },
+        "nonce": {
+          "type": "string",
+          "title": "The nonce, which is actually the internal reference for the withdrawal"
+        },
+        "signatures": {
+          "type": "string",
+          "title": "The signatures bundle as hex encoded data, forward by 0x\ne.g: 0x + sig1 + sig2 + ... + sixN"
+        }
+      },
+      "title": "The response with all information required to bundle the call\nto finalize the withdrawal on the erc20 bridge\nfunction withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)"
+    },
     "apiEstimateFeeResponse": {
       "type": "object",
       "properties": {
@@ -1755,6 +1782,29 @@
         }
       },
       "description": "Response for the current consensus coordinated time on the Vega network, referred to as \"VegaTime\"."
+    },
+    "apiWithdrawalResponse": {
+      "type": "object",
+      "properties": {
+        "withdrawal": {
+          "$ref": "#/definitions/vegaWithdrawal",
+          "title": "The withdrawal matching the ID from the request"
+        }
+      },
+      "title": "A response for a withdrawal"
+    },
+    "apiWithdrawalsResponse": {
+      "type": "object",
+      "properties": {
+        "withdrawals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaWithdrawal"
+          },
+          "title": "The list of withdrawals for the specified party"
+        }
+      },
+      "title": "The response for a list of withdrawals"
     },
     "protobufAny": {
       "type": "object",
@@ -4109,6 +4159,54 @@
         }
       },
       "title": "A request for withdrawing funds from a trader"
+    },
+    "vegaWithdrawal": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The id of the withdrawal"
+        },
+        "partyID": {
+          "type": "string",
+          "title": "The party initiating the withdrawal"
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The amount to be withdrawn"
+        },
+        "asset": {
+          "type": "string",
+          "title": "The asset we want to withdraw funds from"
+        },
+        "status": {
+          "$ref": "#/definitions/vegaWithdrawalStatus",
+          "title": "The status of this withdrawal"
+        },
+        "ref": {
+          "type": "string",
+          "title": "The reference which is used by the foreign chain\nto refer to this withdrawal"
+        },
+        "expiry": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time until when the withdrawal is valid"
+        }
+      },
+      "title": "The representation of a withdrawal in the vega network"
+    },
+    "vegaWithdrawalStatus": {
+      "type": "string",
+      "enum": [
+        "WITHDRAWAL_STATUS_UNSPECIFIED",
+        "WITHDRAWAL_STATUS_OPEN",
+        "WITHDRAWAL_STATUS_CANCELLED",
+        "WITHDRAWAL_STATUS_FINALIZED"
+      ],
+      "default": "WITHDRAWAL_STATUS_UNSPECIFIED",
+      "description": "- WITHDRAWAL_STATUS_UNSPECIFIED: The default value\n - WITHDRAWAL_STATUS_OPEN: The withdrawal is open and being processed by the network\n - WITHDRAWAL_STATUS_CANCELLED: The withdrawal have been cancelled\n - WITHDRAWAL_STATUS_FINALIZED: The withdrawal went through and is fully finalized (funds remove from the\nvega network, and unlocked from the foreign chain bridge)",
+      "title": "The status of the withdrawal"
     }
   },
   "x-stream-definitions": {

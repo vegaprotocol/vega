@@ -148,7 +148,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 	}
 
 	w, ref := e.newWithdrawal(party, assetID, amount)
-	defer e.broker.Send(events.NewWithdrawalEvent(ctx, w))
+	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
@@ -274,7 +274,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 	}
 
 	w, ref := e.newWithdrawal(party, assetID, amount)
-	defer e.broker.Send(events.NewWithdrawalEvent(ctx, w))
+	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	// try to lock the funds
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
@@ -393,7 +393,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
-		defer e.broker.Send(events.NewWithdrawalEvent(ctx, w))
+		defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		if err != nil {
 			return err
 		}
