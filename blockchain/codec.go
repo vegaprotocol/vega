@@ -84,9 +84,17 @@ func (c *codec) Process(payload []byte) error {
 	// get the block context, add transaction hash as trace ID
 	ctx := contextutil.WithTraceID(context.Background(), hexPayloadHash)
 
-	tx, err := types.NewTxFromSignedBundlePayload(payload)
+	// first unmarshal the bundle
+	bundle := &types.SignedBundle{}
+	if err := proto.Unmarshal(payload, bundle); err != nil {
+		c.log.Error("unable to unmarshal signed bundle", logging.Error(err))
+		return err
+	}
+
+	tx := &types.Transaction{}
+	err = proto.Unmarshal(bundle.Tx, tx)
 	if err != nil {
-		c.log.Error(err.Error())
+		c.log.Error("unable to unmarshal Transaction", logging.Error(err))
 		return err
 	}
 
