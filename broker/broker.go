@@ -35,17 +35,21 @@ type Broker struct {
 	// these fields ensure a unique ID for all subscribers, regardless of what event types they subscribe to
 	// once the broker context is cancelled, this map will be used to notify all subscribers, who can then
 	// close their internal channels. We can then cleanly shut down (not having unclosed channels)
-	subs map[int]subscription
-	keys []int
+	subs      map[int]subscription
+	keys      []int
+	eChans    map[events.Type]chan []events.Event
+	tSubSlice map[events.Type]map[int]*subscription
 }
 
 // New creates a new base broker
 func New(ctx context.Context) *Broker {
 	return &Broker{
-		ctx:   ctx,
-		tSubs: map[events.Type]map[int]*subscription{},
-		subs:  map[int]subscription{},
-		keys:  []int{},
+		ctx:       ctx,
+		tSubs:     map[events.Type]map[int]*subscription{},
+		subs:      map[int]subscription{},
+		keys:      []int{},
+		eChans:    map[events.Type]chan []events.Event{},
+		tSubSlice: map[events.Type]map[int]*subscription{},
 	}
 }
 
@@ -68,6 +72,65 @@ func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
 	return
 }
 
+func (b *Broker) startSending(t events.Type, evts []events.Event) {
+	b.mu.Lock()
+	ch, ok := b.eChans[t]
+	if !ok {
+		b.tSubSlice[t] = b.getSubsByType(t)
+		ch = make(chan []events.Event, len(b.tSubSlice[t])*10+20) // create a channel with buffer
+	}
+	ch <- evts
+	b.mu.Unlock()
+	if ok {
+		// we already started the routine to consume the channel
+		// we can return here
+		return
+	}
+	go func(ch chan []events.Event, t events.Type) {
+		defer func() {
+			b.mu.Lock()
+			delete(b.eChans, t)
+			close(ch)
+			b.mu.Unlock()
+		}()
+		for {
+			select {
+			case <-b.ctx.Done():
+				return
+			case events := <-ch:
+				b.mu.Lock()
+				subs := b.tSubSlice[t]
+				b.mu.Unlock()
+				if len(subs) == 0 {
+					continue
+				}
+				unsub := make([]int, 0, len(subs))
+				for k, sub := range subs {
+					select {
+					case <-b.ctx.Done():
+						return
+					case <-sub.Skip():
+						continue
+					case <-sub.Closed():
+						unsub = append(unsub, k)
+					default:
+						if sub.required {
+							sub.Push(events...)
+						} else if rm := b.sendChannel(sub, events); rm {
+							unsub = append(unsub, k)
+						}
+					}
+				}
+				if len(unsub) != 0 {
+					b.mu.Lock()
+					b.rmSubs(unsub...)
+					b.mu.Unlock()
+				}
+			}
+		}
+	}(ch, t)
+}
+
 // SendBatch sends a slice of events to subscribers that can handle the events in the slice
 // the events don't have to be of the same type, and most subscribers will ignore unknown events
 // but this will slow down those subscribers, so avoid doing silly things
@@ -75,82 +138,12 @@ func (b *Broker) SendBatch(events []events.Event) {
 	if len(events) == 0 {
 		return
 	}
-	// We could ensure that the events are all of the same type but when
-	// pushing logging events in batch, this wouldn't work without additional
-	// logic, so we're assuming the caller knows what they're doing
-	// t := events[0].Type()
-	// for i := 1; i < len(events); i++ {
-	// 	if events[i].Type() != t {
-	// 		events = append(events[:i], events[i+1:]...)
-	// 		i--
-	// 	}
-	// }
-	b.mu.Lock()
-	subs := b.getSubsByType(events[0].Type())
-	b.mu.Unlock()
-	if len(subs) == 0 {
-		return
-	}
-	// push the event out in a routine
-	// unlock the mutex once done
-	go func(subs map[int]*subscription) {
-		unsub := make([]int, 0, len(subs))
-		for k, sub := range subs {
-			select {
-			case <-b.ctx.Done():
-				return
-			case <-sub.Skip():
-				continue
-			case <-sub.Closed():
-				unsub = append(unsub, k)
-			default:
-				if sub.required {
-					sub.Push(events...)
-				} else if rm := b.sendChannel(sub, events); rm {
-					unsub = append(unsub, k)
-				}
-			}
-		}
-	}(subs)
+	b.startSending(events[0].Type(), events)
 }
 
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	b.mu.Lock()
-	subs := b.getSubsByType(event.Type())
-	b.mu.Unlock()
-	if len(subs) == 0 {
-		return
-	}
-	// push the event out in a routine
-	// unlock the mutex once done
-	go func(subs map[int]*subscription) {
-		unsub := make([]int, 0, len(subs))
-		defer func() {
-			if len(unsub) > 0 {
-				b.mu.Lock()
-				b.rmSubs(unsub...)
-				b.mu.Unlock()
-			}
-		}()
-		for k, sub := range subs {
-			select {
-			case <-b.ctx.Done():
-				// broker context cancelled, we're done
-				return
-			case <-sub.Skip():
-				continue
-			case <-sub.Closed():
-				unsub = append(unsub, k)
-			default:
-				if sub.required {
-					sub.Push(event)
-				} else if rm := b.sendChannel(sub, []events.Event{event}); rm {
-					unsub = append(unsub, k)
-				}
-			}
-		}
-	}(subs)
+	b.startSending(event.Type(), []events.Event{event})
 }
 
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
@@ -194,14 +187,35 @@ func (b *Broker) subscribe(s Subscriber) int {
 	}
 	b.subs[k] = sub
 	types := sub.Types()
+	isAll := false
 	if len(types) == 0 {
+		isAll = true
 		types = []events.Type{events.All}
 	}
 	for _, t := range types {
 		if _, ok := b.tSubs[t]; !ok {
 			b.tSubs[t] = map[int]*subscription{}
+			if !isAll {
+				// not the ALL event, so can be added to the map, and as the "all" subscribers should be
+				b.tSubSlice[t] = map[int]*subscription{}
+				for ak, as := range b.tSubs[events.All] {
+					b.tSubs[t][ak] = as
+					b.tSubSlice[t][ak] = as
+				}
+			}
 		}
 		b.tSubs[t][k] = &sub
+		if !isAll {
+			b.tSubSlice[t][k] = &sub
+		}
+	}
+	if isAll {
+		for t := range b.tSubs {
+			if t != events.All {
+				b.tSubs[t][k] = &sub
+				b.tSubSlice[t][k] = &sub
+			}
+		}
 	}
 	return k
 }
@@ -255,9 +269,14 @@ func (b *Broker) rmSubs(keys ...int) {
 		types := s.Types()
 		if len(types) == 0 {
 			types = []events.Type{events.All}
+			// remove from ready-made slice here
+			for t := range b.tSubSlice {
+				delete(b.tSubSlice[t], k)
+			}
 		}
 		for _, t := range types {
 			delete(b.tSubs[t], k) // remove key from typed subs map
+			delete(b.tSubSlice[t], k)
 		}
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
