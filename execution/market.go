@@ -187,7 +187,7 @@ func NewMarket(
 
 	var auctionClose time.Time
 	if mkt.OpeningAuction != nil && mkt.OpeningAuction.Duration > 0 {
-		auctionClose = time.Now().Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
+		auctionClose = now.Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
 	}
 
 	market := &Market{
@@ -206,7 +206,7 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
-		auctionStart:       time.Now(),
+		auctionStart:       now,
 		auctionEnd:         auctionClose,
 		tradeMode:          mode,
 	}
