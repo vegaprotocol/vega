@@ -44,6 +44,8 @@ func main() {
 		log: log,
 	})
 
+	cli.AddCommand(base, &watchCommand{})
+
 	if err := cli.Run(); err != nil {
 		// deal with ExitError, which should be recognized as error, and should
 		// not exit with status 0.
