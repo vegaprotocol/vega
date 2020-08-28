@@ -573,14 +573,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, err
 	}
 
-	// TODO(): jeremy
-	// when new withdrawals and deposits are used only
-	// we will need to use the collateral engine
-	// and add a check in there to get the General account for
-	// this party and the market Asset
-	// Verify and add new parties
-	// party, _ := m.parties.GetByID(order.PartyID)
-
 	err = m.validateAccounts(ctx, order)
 	if err != nil {
 		return nil, err
