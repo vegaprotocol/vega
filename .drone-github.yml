@@ -112,7 +112,7 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       # https://github.com/vegaprotocol/system-tests/blob/master/ci.sh
-      /usr/local/bin/ci.sh
+      - /usr/local/bin/ci.sh
     depends_on:
       - test-PR
     when:
