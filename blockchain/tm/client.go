@@ -133,33 +133,40 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 	return validators, nil
 }
 
-type SubscribeHandler func(v tmctypes.ResultEvent) error
+type SubscribeHandler func(tmctypes.ResultEvent) error
 
 // Subscribe subscribes to any event matching query (https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants).
 // Subscribe will call fn each time it receives an event from the node.
 // The function returns nil when the context is canceled or when fn returns an error.
-func (c *Client) Subscribe(ctx context.Context, query string, fn SubscribeHandler) error {
+func (c *Client) Subscribe(ctx context.Context, fn SubscribeHandler, queries ...string) error {
 	if err := c.tmclt.Start(); err != nil {
 		return err
 	}
 	defer c.tmclt.Stop()
 
-	q, err := tmquery.New(query)
-	if err != nil {
-		return err
-	}
+	errCh := make(chan error)
 
-	out, err := c.tmclt.Subscribe(ctx, "vega", q.String())
-	if err != nil {
-		return err
-	}
-	defer c.tmclt.Unsubscribe(context.Background(), "vega", q.String())
-
-	for res := range out {
-		if err := fn(res); err != nil {
+	for _, query := range queries {
+		q, err := tmquery.New(query)
+		if err != nil {
 			return err
 		}
-	}
 
-	return nil
+		out, err := c.tmclt.Subscribe(ctx, "vega", q.String())
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			for res := range out {
+				if err := fn(res); err != nil {
+					errCh <- err
+					return
+				}
+			}
+		}()
+	}
+	defer c.tmclt.UnsubscribeAll(context.Background(), "vega")
+
+	return <-errCh
 }
