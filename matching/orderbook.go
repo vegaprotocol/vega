@@ -38,6 +38,14 @@ type OrderBook struct {
 	batchID         uint64
 }
 
+// UncrossedOrder contains the details relating to a single order that
+// has been uncrossed at the end of an auction
+type UncrossedOrder struct {
+	Order          *types.Order
+	AffectedOrders []*types.Order
+	Trades         []*types.Trade
+}
+
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
 type CumulativeVolumeLevel struct {
 	price               uint64
@@ -194,20 +202,20 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
-func (b *OrderBook) LeaveAuction() ([]*types.Order, []*types.Trade, error) {
+func (b *OrderBook) LeaveAuction() ([]*UncrossedOrder, error) {
 	// Update batchID
 	b.batchID++
 
 	// Uncross the book
-	trades, orders, err := b.uncrossBook()
+	uncrossedOrders, err := b.uncrossBook()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Flip back to continuous
 	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
 
-	return orders, trades, nil
+	return uncrossedOrders, nil
 }
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
@@ -307,63 +315,66 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 }
 
 // Uncrosses the book to generate the maximum volume set of trades
-func (b *OrderBook) uncrossBook() ([]*types.Trade, []*types.Order, error) {
+func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 	// Get the uncrossing price and which side has the most volume at that price
 	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
 
 	// If we have no uncrossing price, we have nothing to do
 	if price == 0 && volume == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
-	var allTrades []*types.Trade
-	var allOrders []*types.Order
+	//var allTrades []*types.Trade
+	//var allOrders []*types.Order
+	var uncrossedOrder *UncrossedOrder
+	var allOrders []*UncrossedOrder
 
 	// Remove all the orders from that side of the book upto the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
 		uncrossOrders, err := b.buy.ExtractOrders(price, volume)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		// Uncross each one
 		for _, order := range uncrossOrders {
-			trades, orders, _, err := b.sell.uncross(order)
+			trades, affectedOrders, _, err := b.sell.uncross(order)
 
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
-
-			allTrades = append(allTrades, trades...)
-			allOrders = append(allOrders, orders...)
+			// Update all the trades to have the correct uncrossing price
+			for index := 0; index < len(trades); index++ {
+				trades[index].Price = price
+			}
+			uncrossedOrder = &UncrossedOrder{Order: order, AffectedOrders: affectedOrders, Trades: trades}
+			allOrders = append(allOrders, uncrossedOrder)
 		}
 	} else {
 		// Pull out the trades we want to process
 		uncrossOrders, err := b.sell.ExtractOrders(price, volume)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		// Uncross each one
 		for _, order := range uncrossOrders {
-			trades, orders, _, err := b.buy.uncross(order)
+			trades, affectedOrders, _, err := b.buy.uncross(order)
 
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
-
-			allTrades = append(allTrades, trades...)
-			allOrders = append(allOrders, orders...)
+			// Update all the trades to have the correct uncrossing price
+			for index := 0; index < len(trades); index++ {
+				trades[index].Price = price
+			}
+			uncrossedOrder = &UncrossedOrder{Order: order, AffectedOrders: affectedOrders, Trades: trades}
+			allOrders = append(allOrders, uncrossedOrder)
 		}
 	}
 
-	// Update all the trades to have the correct uncrossing price
-	for index := 0; index < len(allTrades); index++ {
-		allTrades[index].Price = price
-	}
-
-	return allTrades, allOrders, nil
+	return allOrders, nil
 }
 
 func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {

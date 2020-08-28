@@ -443,20 +443,17 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	}
 	// Change market type to continuous trading
-	orders, trades, err := m.matching.LeaveAuction()
+	uncrossedOrders, err := m.matching.LeaveAuction()
 	if err != nil {
 		m.log.Error("Error leaving auction: ", logging.Error(err))
 	}
 
-	m.log.Debug("Orders:", logging.Int("Orders", len(orders)))
-	m.log.Debug("Trades:", logging.Int("Trades", len(trades)))
-
 	// Apply fee calculations to each trade
-	for _, order := range orders {
-		err := m.applyFees(ctx, order, trades)
+	for _, uo := range uncrossedOrders {
+		err := m.applyFees(ctx, uo.Order, uo.Trades)
 		if err == nil {
 			// Update positions for each order
-			m.position.RegisterOrder(order)
+			m.position.RegisterOrder(uo.Order)
 		}
 	}
 	// Send an event bus update
