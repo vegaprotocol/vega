@@ -165,7 +165,7 @@ vega node --nodewallet-password="path/to/file"
   tendermint unsafe_reset_all
   tendermint node
   ```
-* At this stage, you should be able to watch the block production (an other Tendermin events) using:
+* At this stage, you should be able to watch the block production (an other Tendermint events) using:
   ```bash
   vega watch "tm.event = 'NewBlock'"
   ```
