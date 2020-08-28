@@ -76,9 +76,10 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 	if !ok {
 		subs := b.getSubsByType(t)
 		ch = make(chan []events.Event, len(subs)*10+20) // create a channel with buffer
+		b.eChans[t] = ch                                // assign the newly created channel
 	}
-	ch <- evts
 	b.mu.Unlock()
+	ch <- evts
 	if ok {
 		// we already started the routine to consume the channel
 		// we can return here
