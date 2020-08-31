@@ -179,10 +179,10 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Set the market state
 	b.marketState = types.MarketState_MARKET_STATE_AUCTION
 
-	// Return all the orders that have been cancelled from the book
-	cancelledOrders := buyCancelledOrders
-	cancelledOrders = append(cancelledOrders, sellCancelledOrders...)
-	return cancelledOrders, nil
+	// Return all the orders that have been removed from the book and need to be cancelled
+	ordersToCancel := buyCancelledOrders
+	ordersToCancel = append(ordersToCancel, sellCancelledOrders...)
+	return ordersToCancel, nil
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
