@@ -8,6 +8,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"code.vegaprotocol.io/vega/blockchain/tm"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 const (
@@ -18,18 +19,22 @@ const (
 // Tendermint is a stats client for tendermint
 type Tendermint struct {
 	// construction params
-	clt *tm.Client
+	clt   *tm.Client
+	stats *Stats
 
 	// state
-	bc       *Blockchain
 	txSizes  []int
 	txTotals []uint64
 }
 
-func NewTendermint(clt *tm.Client) *Tendermint {
+func NewTendermint(clt *tm.Client, stats *Stats) *Tendermint {
+	if stats.Blockchain == nil {
+		stats.Blockchain = NewBlockchain()
+	}
+
 	return &Tendermint{
-		clt: clt,
-		bc:  NewBlockchain(),
+		clt:   clt,
+		stats: stats,
 	}
 }
 
@@ -52,7 +57,7 @@ func (tm *Tendermint) Collect(ctx context.Context) error {
 }
 
 func (tm *Tendermint) handleNewBlock(e tmtypes.EventDataNewBlock) error {
-	tm.bc.IncHeight()
+	tm.stats.Blockchain.IncHeight()
 	tm.setBatchStats()
 
 	return nil
@@ -72,22 +77,20 @@ func (tm *Tendermint) setBatchStats() {
 	if tm.txTotals == nil {
 		tm.txTotals = make([]uint64, 0)
 	}
-	tm.txTotals = append(tm.txTotals, tm.bc.TotalTxLastBatch())
+	tm.txTotals = append(tm.txTotals, tm.stats.Blockchain.TotalTxLastBatch())
 	totalTx := uint64(0)
 	for _, itx := range tm.txTotals {
 		totalTx += itx
 	}
 	averageTxTotal := totalTx / uint64(len(tm.txTotals))
 
-	/*
-		a.log.Debug("Batch stats for height",
-			logging.Uint64("height", a.stats.Height()),
-			logging.Uint64("average-tx-total", averageTxTotal))
-	*/
+	tm.stats.log.Debug("Batch stats for height",
+		logging.Uint64("height", tm.stats.Blockchain.Height()),
+		logging.Uint64("average-tx-total", averageTxTotal))
 
-	tm.bc.SetAverageTxPerBatch(averageTxTotal)
-	tm.bc.SetTotalTxLastBatch(tm.bc.TotalTxCurrentBatch())
-	tm.bc.SetTotalTxCurrentBatch(0)
+	tm.stats.Blockchain.SetAverageTxPerBatch(averageTxTotal)
+	tm.stats.Blockchain.SetTotalTxLastBatch(tm.stats.Blockchain.TotalTxCurrentBatch())
+	tm.stats.Blockchain.SetTotalTxCurrentBatch(0)
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(tm.txTotals) == statsSampleSize {
@@ -96,7 +99,7 @@ func (tm *Tendermint) setBatchStats() {
 }
 
 func (tm *Tendermint) setTxStats(txLength int) {
-	tm.bc.IncTotalTxCurrentBatch()
+	tm.stats.Blockchain.IncTotalTxCurrentBatch()
 	if tm.txSizes == nil {
 		tm.txSizes = make([]int, 0)
 	}
@@ -107,13 +110,11 @@ func (tm *Tendermint) setTxStats(txLength int) {
 	}
 	averageTxBytes := totalTx / len(tm.txSizes)
 
-	/*
-		tm.log.Debug("Transaction stats for height",
-			logging.Uint64("height", tm.stats.Height()),
-			logging.Int("average-tx-bytes", averageTxBytes))
-	*/
+	tm.stats.log.Debug("Transaction stats for height",
+		logging.Uint64("height", tm.stats.Blockchain.Height()),
+		logging.Int("average-tx-bytes", averageTxBytes))
 
-	tm.bc.SetAverageTxSizeBytes(uint64(averageTxBytes))
+	tm.stats.Blockchain.SetAverageTxSizeBytes(uint64(averageTxBytes))
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(tm.txSizes) == statsSampleSize {
