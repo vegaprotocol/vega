@@ -72,6 +72,7 @@ type Market struct {
 	mu          sync.Mutex
 
 	markPrice uint64
+	tradeMode types.MarketState
 
 	// own engines
 	matching           *matching.OrderBook
@@ -177,6 +178,10 @@ func NewMarket(
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instanciate fee engine")
 	}
+	mode := types.MarketState_MARKET_STATE_CONTINUOUS
+	if fba := mkt.GetDiscrete(); fba != nil {
+		mode = types.MarketState_MARKET_STATE_AUCTION
+	}
 
 	auctionTriggers := make([]AuctionTrigger, 0)
 
@@ -196,6 +201,7 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
+		tradeMode:          mode,
 		auctionTriggers:    auctionTriggers,
 	}
 	return market, nil
@@ -410,6 +416,7 @@ func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
+	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	// Change market type to auction
 
 	// Check the orderbook for any non auction friendly orders
@@ -418,6 +425,11 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context) {
+	// @TODO this ought to come from m.mkt
+	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
+	if fba := m.mkt.GetDiscrete(); fba != nil {
+		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
+	}
 	// Change market type to continuous trading
 
 	// Move any parked orders back into the orderbook
@@ -438,8 +450,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	order.Status = types.Order_STATUS_ACTIVE
 
 	// Check we are allowed to handle this order type with the current market status
-	if (m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
-		(m.matching.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA) {
+	if (m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
+		(m.tradeMode == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA) {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -1202,7 +1214,14 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		return nil, err
 	}
 
-	riskUpdate, err := m.collateralAndRiskForOrder(e, m.markPrice)
+	// @TODO replace markPrice with intidicative uncross price in auction mode if available
+	price := m.markPrice
+	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION {
+		if ip, _, _ := m.matching.GetIndicativePriceAndVolume(); ip != 0 {
+			price = ip
+		}
+	}
+	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, price, pos)
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("unable to top up margin on new order",
@@ -1269,13 +1288,13 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(e events.Margin, price uint64) (events.Risk, error) {
+func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin, price uint64, pos *positions.MarketPosition) (events.Risk, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(e, price)
+	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(ctx, e, price)
 	if err != nil {
 		return nil, err
 	}
@@ -1343,8 +1362,35 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 	return riskUpdates
 }
 
+func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.OrderCancellationConfirmation, error) {
+	cancellations, err := m.matching.CancelAllOrders(partyID)
+	if cancellations == nil || err != nil {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure after cancelling all orders from matching engine",
+				logging.String("party-id", partyID),
+				logging.String("market", m.mkt.Id),
+				logging.Error(err))
+		}
+		return nil, err
+	}
+
+	for _, cancellation := range cancellations {
+		// Update the order in our stores (will be marked as cancelled)
+		cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
+		m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
+		_, err = m.position.UnregisterOrder(cancellation.Order)
+		if err != nil {
+			m.log.Error("Failure unregistering order in positions engine (cancel)",
+				logging.Order(*cancellation.Order),
+				logging.Error(err))
+		}
+	}
+
+	return cancellations, nil
+}
+
 // CancelOrder cancels the given order
-func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1352,28 +1398,17 @@ func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (
 		return nil, ErrMarketClosed
 	}
 
-	// Validate Market
-	if oc.MarketID != m.mkt.Id {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Market ID mismatch",
-				logging.String("party-id", oc.PartyID),
-				logging.String("order-id", oc.OrderID),
-				logging.String("market", m.mkt.Id))
-		}
-		return nil, types.ErrInvalidMarketID
-	}
-
-	order, err := m.matching.GetOrderByID(oc.OrderID)
+	order, err := m.matching.GetOrderByID(orderID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Only allow the original order creator to cancel their order
-	if order.PartyID != oc.PartyID {
+	if order.PartyID != partyID {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Party ID mismatch",
-				logging.String("party-id", oc.PartyID),
-				logging.String("order-id", oc.OrderID),
+				logging.String("party-id", partyID),
+				logging.String("order-id", orderID),
 				logging.String("market", m.mkt.Id))
 		}
 		return nil, types.ErrInvalidPartyID
@@ -1383,8 +1418,8 @@ func (m *Market) CancelOrder(ctx context.Context, oc *types.OrderCancellation) (
 	if cancellation == nil || err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Failure after cancel order from matching engine",
-				logging.String("party-id", oc.PartyID),
-				logging.String("order-id", oc.OrderID),
+				logging.String("party-id", partyID),
+				logging.String("order-id", orderID),
 				logging.String("market", m.mkt.Id),
 				logging.Error(err))
 		}
@@ -1412,12 +1447,7 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 	if err != nil {
 		return nil, err
 	}
-	cancellation := types.OrderCancellation{
-		OrderID:  order.Id,
-		PartyID:  order.PartyID,
-		MarketID: order.MarketID,
-	}
-	return m.CancelOrder(ctx, &cancellation)
+	return m.CancelOrder(ctx, order.PartyID, order.Id)
 }
 
 // AmendOrder amend an existing order from the order book
@@ -1476,13 +1506,8 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// if remaining is reduces <= 0, then order is cancelled
 	if amendedOrder.Remaining <= 0 {
-		orderCancel := types.OrderCancellation{
-			OrderID:  existingOrder.Id,
-			PartyID:  existingOrder.PartyID,
-			MarketID: existingOrder.MarketID,
-		}
-
-		confirm, err := m.CancelOrder(ctx, &orderCancel)
+		confirm, err := m.CancelOrder(
+			ctx, existingOrder.PartyID, existingOrder.Id)
 		if err != nil {
 			return nil, err
 		}

@@ -249,17 +249,25 @@ steps:
       DOCKER_HOST: unix:///run/docker.sock
       DOCKER_CONFIG_JSON:
         from_secret: dockerconfig
-    # shell: /bin/bash
     commands:
-      - find cmd -name "*-linux-amd64" -print | while read -r binary ; do cp -a "$$binary" "$${binary//-linux-amd64/}" ; done
-      - make docker
+      - mkdir -p docker/bin
+      - find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+          cp -a "cmd/$$app/$$app-linux-amd64" "docker/bin/$$app" || exit 1 ;
+        done
+      - tmptag="$$(openssl rand -hex 10)"
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" docker/
+      - rm -rf docker/bin
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
-      - tag="$$(bash -c 'source script/build.sh && set_version && echo "$$version"')"
-      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag"
-      - if test -n "$$DRONE_BRANCH" ; then
-          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_BRANCH" ;
-          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_BRANCH" ;
+      - if test -n "$$DRONE_TAG" ; then
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
         fi
+      - if test -n "$$DRONE_BRANCH" ; then
+          sanitised_branch="$$(echo -n "$$DRONE_BRANCH" | tr -c 'A-Za-z0-9._' '-')" ;
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+        fi
+      - docker rmi "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag"
     depends_on:
       - build-branch
     when:
@@ -292,7 +300,7 @@ steps:
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - ./script/build.sh -a build -T
     depends_on:
-      - build-branch
+      - build_docker_image
     when:
       event: tag
 

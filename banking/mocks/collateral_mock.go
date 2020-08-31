@@ -62,6 +62,20 @@ func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAsset", reflect.TypeOf((*MockCollateral)(nil).EnableAsset), arg0, arg1)
 }
 
+// LockFundsForWithdraw mocks base method
+func (m *MockCollateral) LockFundsForWithdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LockFundsForWithdraw", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LockFundsForWithdraw indicates an expected call of LockFundsForWithdraw
+func (mr *MockCollateralMockRecorder) LockFundsForWithdraw(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockFundsForWithdraw", reflect.TypeOf((*MockCollateral)(nil).LockFundsForWithdraw), arg0, arg1, arg2, arg3)
+}
+
 // Withdraw mocks base method
 func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
 	m.ctrl.T.Helper()

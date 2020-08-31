@@ -20,13 +20,13 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// A deposit for an vega builtin asset
+// A deposit for a Vega built-in asset.
 type BuiltinAssetDeposit struct {
-	// A vega network internal asset ID
+	// A Vega network internal asset identifier.
 	VegaAssetID string `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
-	// A vega party ID (pubkey)
+	// A Vega party identifier (pub-key)
 	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// The amount to be deposited
+	// The amount to be deposited.
 	Amount               uint64   `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -79,13 +79,13 @@ func (m *BuiltinAssetDeposit) GetAmount() uint64 {
 	return 0
 }
 
-// A Withdrawal for a vega builtin asset
+// A withdrawal for a Vega built-in asset.
 type BuiltinAssetWithdrawal struct {
-	// A vega network internal asset ID
+	// A Vega network internal asset identifier.
 	VegaAssetID string `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
-	// A vega network party ID (pubkey)
+	// A Vega network party identifier (pub-key)
 	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// The amount to be withdrawan
+	// The amount to be withdrawn.
 	Amount               uint64   `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -138,7 +138,7 @@ func (m *BuiltinAssetWithdrawal) GetAmount() uint64 {
 	return 0
 }
 
-// An event related to a vega builtin asset
+// An event related to a Vega built-in asset.
 type BuiltinAssetEvent struct {
 	// Types that are valid to be assigned to Action:
 	//	*BuiltinAssetEvent_Deposit
@@ -219,9 +219,9 @@ func (*BuiltinAssetEvent) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// An asset whitelisting for a erc20 token
+// An asset white-listing for an ERC20 token.
 type ERC20AssetList struct {
-	// The vega network internally ID of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetID          string   `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -260,9 +260,9 @@ func (m *ERC20AssetList) GetVegaAssetID() string {
 	return ""
 }
 
-// An asset blacklisting for a erc20 token
+// An asset black-listing for an ERC20 token.
 type ERC20AssetDelist struct {
-	// The vega network internally ID of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetID          string   `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -301,13 +301,13 @@ func (m *ERC20AssetDelist) GetVegaAssetID() string {
 	return ""
 }
 
-// An asset deposit for an erc20 token
+// An asset deposit for an ERC20 token.
 type ERC20Deposit struct {
-	// The vega network internally ID of the asset
+	// The vega network internal identifier of the asset.
 	VegaAssetID string `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
-	// The ethereum wallet that initiated the deposit
+	// The Ethereum wallet that initiated the deposit.
 	SourceEthereumAddress string `protobuf:"bytes,2,opt,name=sourceEthereumAddress,proto3" json:"sourceEthereumAddress,omitempty"`
-	// The Vega public key of the target vega user
+	// The Vega party identifier (pub-key) which is the target of the deposit.
 	TargetPartyID        string   `protobuf:"bytes,3,opt,name=targetPartyID,proto3" json:"targetPartyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -360,15 +360,15 @@ func (m *ERC20Deposit) GetTargetPartyID() string {
 	return ""
 }
 
-// An asset withdrawal for an erc20 token
+// An asset withdrawal for an ERC20 token.
 type ERC20Withdrawal struct {
-	// The vega network internally ID of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetID string `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
-	// The party inititing the withdrawal
+	// The party identifier (pub-key) initiating the withdrawal.
 	SourcePartyId string `protobuf:"bytes,2,opt,name=sourcePartyId,proto3" json:"sourcePartyId,omitempty"`
-	// The target Ethereum wallet address
+	// The target Ethereum wallet address.
 	TargetEthereumAddress string `protobuf:"bytes,3,opt,name=targetEthereumAddress,proto3" json:"targetEthereumAddress,omitempty"`
-	// The reference nonce used for the transaction
+	// The reference nonce used for the transaction.
 	ReferenceNonce       string   `protobuf:"bytes,4,opt,name=referenceNonce,proto3" json:"referenceNonce,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -428,12 +428,14 @@ func (m *ERC20Withdrawal) GetReferenceNonce() string {
 	return ""
 }
 
-// An event related to an erc20 token
+// An event related to an ERC20 token.
 type ERC20Event struct {
 	// Index of the transaction
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	// The block in which the transaction was added
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
+	// The action.
+	//
 	// Types that are valid to be assigned to Action:
 	//	*ERC20Event_AssetList
 	//	*ERC20Event_AssetDelist
@@ -557,13 +559,13 @@ func (*ERC20Event) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// A Bitcoin deposit into vega
+// A Bitcoin deposit into Vega.
 type BTCDeposit struct {
-	// The vega network internally ID of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetID string `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
-	// The BTC wallet inititing the Deposit
+	// The BTC wallet initiating the deposit.
 	SourceBTCAddress string `protobuf:"bytes,2,opt,name=sourceBTCAddress,proto3" json:"sourceBTCAddress,omitempty"`
-	// The Vega public key of the target Vega user
+	// The Vega party identifier (pub-key) which is the target of the deposit.
 	TargetPartyId        string   `protobuf:"bytes,3,opt,name=targetPartyId,proto3" json:"targetPartyId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -616,15 +618,15 @@ func (m *BTCDeposit) GetTargetPartyId() string {
 	return ""
 }
 
-// A Bitcoin withdrawl from vega
+// A Bitcoin withdrawal from Vega.
 type BTCWithdrawal struct {
-	// The vega network internally ID of the asset
+	// The vega network internal identifier of the asset.
 	VegaAssetID string `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
-	// The party inititing the withdrawal
+	// The party identifier (pub-key) initiating the withdrawal.
 	SourcePartyId string `protobuf:"bytes,2,opt,name=sourcePartyId,proto3" json:"sourcePartyId,omitempty"`
-	// Target BTC wallet address
+	// Target Bitcoin wallet address.
 	TargetBTCAddress string `protobuf:"bytes,3,opt,name=targetBTCAddress,proto3" json:"targetBTCAddress,omitempty"`
-	// The nonce reference of the transaction
+	// The nonce reference of the transaction.
 	ReferenceNonce       string   `protobuf:"bytes,4,opt,name=referenceNonce,proto3" json:"referenceNonce,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -684,12 +686,14 @@ func (m *BTCWithdrawal) GetReferenceNonce() string {
 	return ""
 }
 
-// An event from Bitcoin
+// An event from the Bitcoin network.
 type BTCEvent struct {
-	// The index of the transaction
+	// The index of the transaction.
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
-	// The block in which the transaction happenned
+	// The block in which the transaction happened.
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
+	// The action.
+	//
 	// Types that are valid to be assigned to Action:
 	//	*BTCEvent_Deposit
 	//	*BTCEvent_Withdrawal
@@ -783,9 +787,9 @@ func (*BTCEvent) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// Wrapper for an Ethereum address (wallet/contract)
+// Used as a wrapper for an Ethereum address (wallet/contract).
 type EthereumAddress struct {
-	// An Ethereum address
+	// An Ethereum address.
 	Address              string   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -824,9 +828,9 @@ func (m *EthereumAddress) GetAddress() string {
 	return ""
 }
 
-// Wrapper for a Bitcoin address (wallet)
+// Used as a wrapper for a Bitcoin address (wallet).
 type BitcoinAddress struct {
-	// A Bitcoin address
+	// A Bitcoin address.
 	Address              string   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -865,8 +869,10 @@ func (m *BitcoinAddress) GetAddress() string {
 	return ""
 }
 
-// A wrapper type on any possible network address supported by vega
+// Used as a wrapper type on any possible network address supported by Vega.
 type Identifier struct {
+	// The identifier.
+	//
 	// Types that are valid to be assigned to Identifier:
 	//	*Identifier_EthereumAddress
 	//	*Identifier_BitcoinAddress
@@ -946,9 +952,9 @@ func (*Identifier) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// A message to notify a new validator being added to the vega network
+// A message to notify when a new validator is being added to the Vega network.
 type AddValidator struct {
-	// The identifier of this validator
+	// The identifier of the validator.
 	Id                   *Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -987,9 +993,9 @@ func (m *AddValidator) GetId() *Identifier {
 	return nil
 }
 
-// A message to notify a new validator being removed to the vega network
+// A message to notify when a validator is being removed from the Vega network.
 type RemoveValidator struct {
-	// The identifier of this validator
+	// The identifier of the validator.
 	Id                   *Identifier `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -1028,10 +1034,12 @@ func (m *RemoveValidator) GetId() *Identifier {
 	return nil
 }
 
-// An event related to validator management with foreign networks
+// An event related to validator management with foreign networks.
 type ValidatorEvent struct {
-	// The source ID of the event
+	// The source identifier of the event.
 	SourceID string `protobuf:"bytes,1,opt,name=sourceID,proto3" json:"sourceID,omitempty"`
+	// The action.
+	//
 	// Types that are valid to be assigned to Action:
 	//	*ValidatorEvent_Add
 	//	*ValidatorEvent_Rm
@@ -1118,14 +1126,14 @@ func (*ValidatorEvent) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// An event being forwarded to the vega network
-// providing information on things happening on other networks
+// An event forwarded to the Vega network to provide information on events happening on other networks.
 type ChainEvent struct {
-	// The ID of the transaction in which the things happened
-	// usually a hash
+	// The identifier of the transaction in which the events happened, usually a hash.
 	TxID string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
-	// Arbitrary one-time integer used to prevent replay attacks
+	// Arbitrary one-time integer used to prevent replay attacks.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// The event.
+	//
 	// Types that are valid to be assigned to Event:
 	//	*ChainEvent_Builtin
 	//	*ChainEvent_Erc20

@@ -285,3 +285,11 @@ func (m mp) Price() uint64 {
 }
 
 func (m mp) ClearPotentials() {}
+
+func (m mp) VWBuy() uint64 {
+	return 0
+}
+
+func (m mp) VWSell() uint64 {
+	return 0
+}

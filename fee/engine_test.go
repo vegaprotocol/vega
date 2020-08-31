@@ -45,6 +45,7 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("update fee factors with valid input", testUpdateFeeFactors)
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
 	t.Run("calcualte continuous trading fee", testCalcContinuousTrading)
+	t.Run("calcualte continuous trading fee + check amounts", testCalcContinuousTradingAndCheckAmounts)
 
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
 	t.Run("calcualte continuous trading fee", testCalcContinuousTrading)
@@ -109,6 +110,57 @@ func testCalcContinuousTradingErrorEmptyTrade(t *testing.T) {
 	assert.EqualError(t, err, fee.ErrEmptyTrades.Error())
 }
 
+func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
+	eng := getTestFee(t)
+	eng.UpdateFeeFactors(types.Fees{
+		Factors: &types.FeeFactors{
+			MakerFee:          "0.000250",
+			InfrastructureFee: "0.0005",
+			LiquidityFee:      "0.001",
+		},
+	})
+	trades := []*types.Trade{
+		{
+			Aggressor: types.Side_SIDE_SELL,
+			Seller:    "party1",
+			Buyer:     "party2",
+			Size:      5,
+			Price:     100000,
+		},
+	}
+
+	ft, err := eng.CalculateForContinuousMode(trades)
+	assert.NotNil(t, ft)
+	assert.Nil(t, err)
+	transfers := ft.Transfers()
+	var (
+		pay, recv, infra, liquidity int
+	)
+	for _, v := range transfers {
+		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+			liquidity += 1
+			assert.Equal(t, 500, int(v.Amount.Amount))
+		}
+		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+			infra += 1
+			assert.Equal(t, 250, int(v.Amount.Amount))
+		}
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+			recv += 1
+			assert.Equal(t, 125, int(v.Amount.Amount))
+		}
+		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+			pay += 1
+			assert.Equal(t, 125, int(v.Amount.Amount))
+		}
+	}
+
+	assert.Equal(t, liquidity, 1)
+	assert.Equal(t, infra, 1)
+	assert.Equal(t, recv, len(trades))
+	assert.Equal(t, pay, len(trades))
+
+}
 func testCalcContinuousTrading(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
@@ -384,10 +436,10 @@ func testCalcPositionResolution(t *testing.T) {
 	}
 
 	positions := []events.MarketPosition{
-		fakeMktPos{"bad-party1", -10},
-		fakeMktPos{"bad-party2", 7},
-		fakeMktPos{"bad-party3", -2},
-		fakeMktPos{"bad-party4", 10},
+		fakeMktPos{party: "bad-party1", size: -10},
+		fakeMktPos{party: "bad-party2", size: 7},
+		fakeMktPos{party: "bad-party3", size: -2},
+		fakeMktPos{party: "bad-party4", size: 10},
 	}
 
 	ft, err := eng.CalculateFeeForPositionResolution(trades, positions)
@@ -436,8 +488,9 @@ func testCalcPositionResolution(t *testing.T) {
 }
 
 type fakeMktPos struct {
-	party string
-	size  int64
+	party         string
+	size          int64
+	vwBuy, vwSell uint64
 }
 
 func (f fakeMktPos) Party() string { return f.party }
@@ -445,3 +498,11 @@ func (f fakeMktPos) Size() int64   { return f.size }
 func (f fakeMktPos) Buy() int64    { return 0 }
 func (f fakeMktPos) Sell() int64   { return 0 }
 func (f fakeMktPos) Price() uint64 { return 0 }
+
+func (f fakeMktPos) VWBuy() uint64 {
+	return f.vwBuy
+}
+
+func (f fakeMktPos) VWSell() uint64 {
+	return f.vwSell
+}

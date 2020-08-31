@@ -27,9 +27,10 @@ type testEngine struct {
 }
 
 type posValue struct {
-	trader string
-	price  uint64 // absolute Mark price
-	size   int64
+	trader        string
+	price         uint64 // absolute Mark price
+	size          int64
+	vwBuy, vwSell uint64
 }
 
 type marginVal struct {
@@ -535,6 +536,7 @@ type testPos struct {
 	party           string
 	size, buy, sell int64
 	price           uint64
+	vwBuy, vwSell   uint64
 }
 
 func (t testPos) Party() string {
@@ -555,6 +557,14 @@ func (t testPos) Sell() int64 {
 
 func (t testPos) Price() uint64 {
 	return t.price
+}
+
+func (t testPos) VWBuy() uint64 {
+	return t.vwBuy
+}
+
+func (t testPos) VWSell() uint64 {
+	return t.vwSell
 }
 
 func (t testPos) ClearPotentials() {}

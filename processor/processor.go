@@ -55,7 +55,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	Generate() error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
@@ -149,6 +149,7 @@ type EvtForwarder interface {
 type Collateral interface {
 	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
 	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
+	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
 	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
@@ -668,7 +669,9 @@ func (p *Processor) cancelOrder(ctx context.Context, order *types.OrderCancellat
 		return err
 	}
 	if p.LogOrderCancelDebug {
-		p.log.Debug("Order cancelled", logging.Order(*msg.Order))
+		for _, v := range msg {
+			p.log.Debug("Order cancelled", logging.Order(*v.Order))
+		}
 	}
 
 	return nil

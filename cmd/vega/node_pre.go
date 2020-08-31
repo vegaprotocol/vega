@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -474,6 +475,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
+	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore)
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) })
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)

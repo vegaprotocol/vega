@@ -157,7 +157,7 @@ func (e *Engine) CalculateForContinuousMode(
 		Owner: aggressor,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
-			Amount: int64(totalInfrastructureFeeAmount),
+			Amount: int64(totalLiquidityFeeAmount),
 		},
 		Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 	})
