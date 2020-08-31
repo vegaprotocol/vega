@@ -44,14 +44,6 @@ steps:
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       # Build normal executable
       - ./script/build.sh -a build -t linux/amd64
-      # Build executable for sytstem-tests, with custom Governance parameters. 8760h is 24*365 hours.
-      - env
-          VEGA_GOVERNANCE_MIN_CLOSE=5s
-          VEGA_GOVERNANCE_MAX_CLOSE=8760h
-          VEGA_GOVERNANCE_MIN_ENACT=5s
-          VEGA_GOVERNANCE_MAX_ENACT=8760h
-          VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=1
-          ./script/build.sh -a build -t linux/amd64 -s "-systemtests"
     depends_on:
       - fetch
     when:

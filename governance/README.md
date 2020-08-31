@@ -36,25 +36,3 @@ The 2 maps `proposals` and `proposalRefs` hold the active proposals by ID (`prop
 * [ProposalData](./engine.go#L83-L87)
 
 This is the governance domain object representing a proposal. In the world of gRPC, a proposal and a vote are distinct messages. As far as governance is concerned, a proposal has a one-to-many relation with votes. We store yes and no votes in corresponding `map[string]*types.Vote`s.
-
-## Modifying governance parameters for testing
-
-In order to allow testing of Governance, the following environment variables can be specified in order to compile a binary with custom parameters.
-
-Specify some/all of the following variables. The values for Close and Enact are standard Golang [time.Duration](https://golang.org/pkg/time/#ParseDuration).
-
-```bash
-env \
-	VEGA_GOVERNANCE_MIN_CLOSE=3s \
-	VEGA_GOVERNANCE_MAX_CLOSE=24h \
-	VEGA_GOVERNANCE_MIN_ENACT=1h \
-	VEGA_GOVERNANCE_MAX_ENACT=8760h \
-	VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=55 \
-	make install
-```
-
-If the log level for the Execution engine (not the Governance engine) is Debug, then this message will appear:
-
-```
-governance/engine.go:68 Governance parameters {"MinClose": "3s", "MaxClose": "24h0m0s", "MinEnact": "1h0m0s", "MaxEnact": "8760h0m0s", "MinParticipationStake": 55}
-```

@@ -40,6 +40,9 @@ func main() {
 	cli.AddCommand(base, &nodeWalletCommand{
 		Log: log,
 	})
+	cli.AddCommand(base, &genesisCommand{
+		log: log,
+	})
 
 	if err := cli.Run(); err != nil {
 		// deal with ExitError, which should be recognized as error, and should
