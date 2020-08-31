@@ -316,7 +316,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				Continuous: &proto.ContinuousTrading{},
 			},
 			OpeningAuction: &proto.AuctionDuration{
-				Duration: (int64)(auctionDuration.Seconds()),
+				Duration: int64(auctionDuration.Seconds()),
 				Volume:   0,
 			},
 		}
