@@ -222,6 +222,7 @@ func (a *AbciApplication) CheckTx(txn types.RequestCheckTx) types.ResponseCheckT
 		a.log.Error("Rate limit exceeded", logging.String("key", key))
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
 	}
+	a.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", a.rateLimit.Count(key)))
 
 	if err := a.processor.Validate(txn.Tx); err != nil {
 		a.log.Error("Error when validating payload in CheckTx", logging.Error(err))
