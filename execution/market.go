@@ -410,8 +410,6 @@ func (m *Market) isOpeningAuction() bool {
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
-	m.log.Debug("Entering an auction", logging.String("Market", m.mkt.Id))
-
 	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	// Change market type to auction
 	m.matching.EnterAuction()
