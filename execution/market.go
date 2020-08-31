@@ -560,8 +560,21 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
-	// Get trades, apply fees and submit
-	confirmation, trades, err := m.processOrder(ctx, order)
+
+	// first we call the order book to get the list of trades
+	trades, err := m.matching.GetTrades(order)
+	if err != nil {
+		return nil, m.unregisterAndReject(ctx, order, err)
+	}
+
+	// try to apply fees on the trade
+	err = m.applyFees(ctx, order, trades)
+	if err != nil {
+		return nil, err
+	}
+
+	// Send the aggressive order into matching engine
+	confirmation, err := m.matching.SubmitOrder(order)
 	if confirmation == nil || err != nil {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
@@ -635,29 +648,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
-}
-
-func (m *Market) processOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Trade, error) {
-	// first we call the order book to get the list of trades
-	trades, err := m.matching.GetTrades(order)
-	if err != nil {
-		return nil, nil, m.unregisterAndReject(ctx, order, err)
-	}
-
-	// TODO (WG 26/08/20): Check triggers, if hit unregister (AND DON'T REJECT), switch to auction
-
-	// try to apply fees on the trade
-	err = m.applyFees(ctx, order, trades)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Send the aggressive order into matching engine
-	confirmation, err := m.matching.SubmitOrder(order)
-	if err != nil {
-		return nil, nil, err
-	}
-	return confirmation, trades, nil
 }
 
 func (m *Market) addParty(party string) {
@@ -1743,11 +1733,19 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			err = fmt.Errorf("order cancellation failed (no error given)")
 		}
 	} else {
-		// Get trades, apply fees and submit
-		conf, trades, err := m.processOrder(ctx, newOrder)
+		// calculates the fees
+		trades, err := m.matching.GetTrades(newOrder)
+		if err != nil {
+			return nil, m.unregisterAndReject(ctx, newOrder, err)
+		}
+
+		// try to apply fees on the trade
+		err = m.applyFees(ctx, newOrder, trades)
 		if err != nil {
 			return nil, err
 		}
+
+		conf, err = m.matching.SubmitOrder(newOrder)
 		// replace the trades in the confirmation to have
 		// the ones with the fees embbeded
 		conf.Trades = trades
