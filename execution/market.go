@@ -131,6 +131,7 @@ func NewMarket(
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
+	auctionTriggers []AuctionTrigger,
 ) (*Market, error) {
 
 	if len(mkt.Id) == 0 {
@@ -183,7 +184,9 @@ func NewMarket(
 		mode = types.MarketState_MARKET_STATE_AUCTION
 	}
 
-	auctionTriggers := make([]AuctionTrigger, 0)
+	if auctionTriggers == nil {
+		auctionTriggers = make([]AuctionTrigger, 0)
+	}
 
 	market := &Market{
 		log:                log,
@@ -373,7 +376,7 @@ func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time)
 	if isMarketCurrentlyInAuction {
 		if m.shouldLeaveAuctionPerTime(t) {
 			indicativeUncrossingPrice, _, _ := m.matching.GetIndicativePriceAndVolume()
-			if !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
+			if !m.shouldEnterAuctionPerTimeAndPrice(t, indicativeUncrossingPrice) {
 				m.LeaveAuction(ctx)
 			}
 
@@ -404,10 +407,10 @@ func (m *Market) shouldLeaveAuctionPerTime(t time.Time) bool {
 	return true
 }
 
-func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
+func (m *Market) shouldEnterAuctionPerTimeAndPrice(t time.Time, price uint64) bool {
 	b := false
 	for _, trigger := range m.auctionTriggers {
-		if trigger.EnterPerPrice(price) {
+		if trigger.EnterPerTimeAndPrice(t, price) {
 			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
 		}
 	}
@@ -663,7 +666,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 func (m *Market) evaluateAuctionTriggersAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil && len(trades) > 0 && m.shouldEnterAuctionPerPrice(trades[len(trades)-1].Price) {
+	if err == nil && len(trades) > 0 && m.shouldEnterAuctionPerTimeAndPrice(m.currentTime, trades[len(trades)-1].Price) {
 		m.EnterAuction(ctx)
 		trades = make([]*types.Trade, 0)
 	}

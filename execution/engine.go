@@ -44,9 +44,8 @@ type Broker interface {
 // AuctionTrigger can be checked with time or price to see if argument should trigger entry to or exit from the auction mode
 type AuctionTrigger interface {
 	EnterPerTime(time time.Time) bool
-	EnterPerPrice(price uint64) bool
+	EnterPerTimeAndPrice(time time.Time, price uint64) bool
 	LeavePerTime(time time.Time) bool
-	LeavePerPrice(price uint64) bool
 }
 
 // Engine is the execution engine
@@ -180,6 +179,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
+		nil,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
