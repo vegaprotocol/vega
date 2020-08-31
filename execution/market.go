@@ -84,6 +84,9 @@ type Market struct {
 	// deps engines
 	collateral *collateral.Engine
 
+	// auction triggers
+	auctionTriggers []AuctionTrigger
+
 	broker Broker
 	closed bool
 
@@ -175,6 +178,8 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instanciate fee engine")
 	}
 
+	auctionTriggers := make([]AuctionTrigger, 0)
+
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -191,6 +196,7 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
+		auctionTriggers:    auctionTriggers,
 	}
 	return market, nil
 }
@@ -248,7 +254,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.closed = closed
 	m.currentTime = t
 
-	// TODO(): handle market start time
+	m.auctionModeTimeBasedSemaphore(ctx, t)
 
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Calculating risk factors (if required)",
@@ -353,6 +359,54 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 			logging.Error(err))
 	}
 	return err
+}
+
+func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time) {
+	isMarketCurrentlyInAuction := m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION
+
+	if isMarketCurrentlyInAuction {
+		if m.shouldLeaveAuctionPerTime(t) {
+			indicativeUncrossingPrice, _, _ := m.matching.GetIndicativePriceAndVolume()
+			if !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
+				m.LeaveAuction(ctx)
+			}
+
+		}
+	} else {
+		if m.shouldEnterAuctionPerTime(t) {
+			m.EnterAuction(ctx)
+		}
+	}
+	return
+}
+
+func (m *Market) shouldEnterAuctionPerTime(t time.Time) bool {
+	b := false
+	for _, trigger := range m.auctionTriggers {
+		if trigger.EnterPerTime(t) {
+			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
+		}
+	}
+	return b
+}
+
+func (m *Market) shouldLeaveAuctionPerTime(t time.Time) bool {
+	for _, trigger := range m.auctionTriggers {
+		if !trigger.LeavePerTime(t) {
+			return false
+		}
+	}
+	return true
+}
+
+func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
+	b := false
+	for _, trigger := range m.auctionTriggers {
+		if trigger.EnterPerPrice(price) {
+			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
+		}
+	}
+	return b
 }
 
 // EnterAuction : Prepare the order book to be run as an auction
