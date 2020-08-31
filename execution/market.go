@@ -377,7 +377,6 @@ func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time)
 			m.EnterAuction(ctx)
 		}
 	}
-	return
 }
 
 func (m *Market) shouldEnterAuctionPerTime(t time.Time) bool {
@@ -561,8 +560,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, ErrMarginCheckFailed
 	}
 
-	// first we call the order book to get the list of trades
-	trades, err := m.matching.GetTrades(order)
+	// first we call the order book to evaluate auction triggers and get the list of trades
+	trades, err := m.evaluateAuctionTriggersAndGetTrades(ctx, order)
 	if err != nil {
 		return nil, m.unregisterAndReject(ctx, order, err)
 	}
@@ -648,6 +647,15 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
+}
+
+func (m *Market) evaluateAuctionTriggersAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
+	trades, err := m.matching.GetTrades(order)
+	if err == nil && len(trades) > 0 && m.shouldEnterAuctionPerPrice(trades[len(trades)-1].Price) {
+		m.EnterAuction(ctx)
+		trades = make([]*types.Trade, 0)
+	}
+	return trades, err
 }
 
 func (m *Market) addParty(party string) {
@@ -1733,8 +1741,8 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			err = fmt.Errorf("order cancellation failed (no error given)")
 		}
 	} else {
-		// calculates the fees
-		trades, err := m.matching.GetTrades(newOrder)
+		// first we call the order book to evaluate auction triggers and get the list of trades
+		trades, err := m.evaluateAuctionTriggersAndGetTrades(ctx, newOrder)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, newOrder, err)
 		}
