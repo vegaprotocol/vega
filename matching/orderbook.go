@@ -821,3 +821,7 @@ func (b *OrderBook) PrintState(types string) {
 	}
 	b.log.Debug("------------------------------------------------------------")
 }
+
+func (b *OrderBook) GetTotalNumberOfOrders() int64 {
+	return b.buy.getOrderCount() + b.sell.getOrderCount()
+}

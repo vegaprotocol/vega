@@ -3940,6 +3940,7 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order submitted from the same party. |
 | ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order. |
 | ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 | Order was submitted with an incorrect or invalid market type. |
+| ORDER_ERROR_INVALID_TIME_IN_FORCE | 23 | Order was submitted with invalid time in force |
 
 
 

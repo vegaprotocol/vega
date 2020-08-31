@@ -547,3 +547,11 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 func (s *OrderBookSide) getLevels() []*PriceLevel {
 	return s.levels
 }
+
+func (s *OrderBookSide) getOrderCount() int64 {
+	var orderCount int64
+	for _, level := range s.levels {
+		orderCount = orderCount + int64(len(level.orders))
+	}
+	return orderCount
+}

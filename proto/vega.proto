@@ -290,6 +290,8 @@ enum OrderError {
   ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
   // Order was submitted with an incorrect or invalid market type.
   ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
+	// Order was submitted with invalid time in force
+	ORDER_ERROR_INVALID_TIME_IN_FORCE = 23;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

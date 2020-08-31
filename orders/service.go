@@ -152,9 +152,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNoType
 	}
 
-	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED ||
-		sub.TimeInForce == types.Order_TIF_GFA ||
-		sub.TimeInForce == types.Order_TIF_GFN {
+	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoTimeInForce
 	}
 

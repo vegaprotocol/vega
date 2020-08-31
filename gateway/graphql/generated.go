@@ -4104,6 +4104,9 @@ enum OrderRejectionReason {
 
   "Insufficient funds to pay fees"
   InsufficientFundsToPayFees
+
+  "Invalid Time In Force"
+  InvalidTimeInForce
 }
 
 enum OrderType {

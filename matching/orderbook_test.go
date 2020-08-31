@@ -2003,6 +2003,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 }
 
 func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
+	order := getOrder(t, orderbook, market, id, side, price, partyid, size)
+	_, err := orderbook.SubmitOrder(order)
+	assert.Equal(t, err, nil)
+}
+
+func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
 	order := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
@@ -2016,13 +2022,88 @@ func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side ty
 		TimeInForce: types.Order_TIF_GTC,
 		CreatedAt:   10,
 	}
-	_, err := orderbook.SubmitOrder(order)
-	assert.Equal(t, err, nil)
+	return order
 }
 
 /*****************************************************************************/
 /*                             AUCTION TESTING                               */
 /*****************************************************************************/
+func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_AUCTION)
+
+	// Try to add an order of type GFN which should be rejected
+	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	order.TimeInForce = types.Order_TIF_GFN
+	orderConf, err := book.SubmitOrder(order)
+	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
+	assert.Nil(t, orderConf)
+}
+
+func TestOrderBook_ContinuousGFAAreRejected(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// We start in continuous mode
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
+
+	// Try to add an order of type GFA which should be rejected
+	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	order.TimeInForce = types.Order_TIF_GFA
+	orderConf, err := book.SubmitOrder(order)
+	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
+	assert.Nil(t, orderConf)
+}
+
+func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// We start in continuous trading mode
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+
+	// Get indicative auction price and volume which should be zero as we are out of auction
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Switch to auction mode
+	book.EnterAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_AUCTION)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+
+	// Get indicative auction price and volume
+	price, volume, side = book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Leave auction and uncross the book
+	uncrossedOrders, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+	assert.Equal(t, len(uncrossedOrders), 0)
+}
+
 func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2033,6 +2114,7 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 
 	// Switch to auction mode
 	book.EnterAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_AUCTION)
 
 	// No trades!
 
@@ -2044,6 +2126,7 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 
 	// Leave auction and uncross the book
 	uncrossedOrders, err := book.LeaveAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
 }
@@ -2074,6 +2157,9 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 	uncrossedOrders, err := book.LeaveAuction()
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
+
+	// All of the orders should remain on the book
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(3))
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
@@ -2102,6 +2188,9 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 	uncrossedOrders, err := book.LeaveAuction()
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
+
+	// All of the orders should remain on the book
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(3))
 }
 
 func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
