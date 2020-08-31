@@ -155,6 +155,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		time.Now(),
 		mktsetup.broker,
 		execution.NewIDGen(),
+		nil,
 	)
 	if err != nil {
 		return err

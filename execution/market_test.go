@@ -67,7 +67,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	mkts := getMarkets(closingAt)
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen())
+		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), nil)
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
