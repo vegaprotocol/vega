@@ -2026,6 +2026,87 @@ func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side typ
 }
 
 /*****************************************************************************/
+/*                             GFN/GFA TESTING                               */
+/*****************************************************************************/
+
+func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Enter a GFN market order with no expiration time
+	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	buyOrder.TimeInForce = types.Order_TIF_GFN
+	buyOrder.Type = types.Order_TYPE_MARKET
+	buyOrder.ExpiresAt = 0
+	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, buyOrderConf)
+
+	// Enter a GFN market order with no expiration time
+	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
+	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.Type = types.Order_TYPE_MARKET
+	sellOrder.ExpiresAt = 0
+	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, sellOrderConf)
+}
+
+func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Enter a GFN market order with an expiration time (which is invalid)
+	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	buyOrder.TimeInForce = types.Order_TIF_GFN
+	buyOrder.Type = types.Order_TYPE_MARKET
+	buyOrder.ExpiresAt = 100
+	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	assert.Error(t, err, types.ErrInvalidExpirationDatetime)
+	assert.Nil(t, buyOrderConf)
+
+	// Enter a GFN market order with an expiration time (which is invalid)
+	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
+	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.Type = types.Order_TYPE_MARKET
+	sellOrder.ExpiresAt = 100
+	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	assert.Error(t, err, types.ErrInvalidExpirationDatetime)
+	assert.Nil(t, sellOrderConf)
+}
+
+func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Normal limit buy order to match against
+	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, buyOrderConf)
+
+	// Enter a GFN market order with an expiration time (which is invalid)
+	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 10)
+	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.Type = types.Order_TYPE_LIMIT
+	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, sellOrderConf)
+}
+
+/*****************************************************************************/
 /*                             AUCTION TESTING                               */
 /*****************************************************************************/
 func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {

@@ -229,6 +229,11 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
+		var expiresAt int64
+		if oty != types.Order_TYPE_MARKET {
+			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
+		}
+
 		order := proto.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
@@ -238,7 +243,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
@@ -270,6 +275,11 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			return err
 		}
 
+		var expiresAt int64
+		if oty != types.Order_TYPE_MARKET {
+			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
+		}
+
 		order := proto.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
@@ -279,7 +289,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
@@ -307,6 +317,11 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			return err
 		}
 
+		var expiresAt int64
+		if oty != types.Order_TYPE_MARKET {
+			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
+		}
+
 		order := proto.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
@@ -316,7 +331,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),

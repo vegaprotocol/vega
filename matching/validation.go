@@ -43,6 +43,8 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	} else if b.marketState == types.MarketState_MARKET_STATE_CONTINUOUS &&
 		orderMessage.TimeInForce == types.Order_TIF_GFA {
 		err = types.ErrInvalidTimeInForce
+	} else if orderMessage.ExpiresAt > 0 && orderMessage.Type == types.Order_TYPE_MARKET {
+		err = types.ErrInvalidExpirationDatetime
 	}
 	timer.EngineTimeCounterAdd()
 	return
