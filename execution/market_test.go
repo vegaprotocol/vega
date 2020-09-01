@@ -29,9 +29,10 @@ type testMarket struct {
 	broker          *mocks.MockBroker
 	now             time.Time
 	asset           string
+	auctionTriggers []execution.AuctionTrigger
 }
 
-func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket {
+func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, numberOfTriggers int) *testMarket {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	riskConfig := risk.NewDefaultConfig()
@@ -65,9 +66,10 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 	collateralEngine.EnableAsset(context.Background(), tokAsset)
 
 	mkts := getMarkets(closingAt)
+	auctionTriggers := getAuctionTriggers(numberOfTriggers, ctrl)
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), nil)
+		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), auctionTriggers)
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -85,6 +87,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time) *testMarket
 		broker:          broker,
 		now:             now,
 		asset:           asset,
+		auctionTriggers: auctionTriggers,
 	}
 }
 
@@ -159,12 +162,20 @@ func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
 	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
 
+func getAuctionTriggers(numberOfTriggers int, ctrl *gomock.Controller) []execution.AuctionTrigger {
+	triggers := make([]execution.AuctionTrigger, numberOfTriggers)
+	for i := 0; i < numberOfTriggers; i++ {
+		triggers = append(triggers, mocks.NewMockAuctionTrigger(ctrl))
+	}
+	return triggers
+}
+
 func TestMarketClosing(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(20, 0)
-	tm := getTestMarket(t, now, closingAt)
+	tm := getTestMarket(t, now, closingAt, 0)
 	defer tm.ctrl.Finish()
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -179,7 +190,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(20, 0)
-	tm := getTestMarket(t, now, closingAt)
+	tm := getTestMarket(t, now, closingAt, 0)
 	defer tm.ctrl.Finish()
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
@@ -248,7 +259,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt)
+	tm := getTestMarket(t, now, closingAt, 0)
 	defer tm.ctrl.Finish()
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
@@ -289,7 +300,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt)
+	tm := getTestMarket(t, now, closingAt, 0)
 	defer tm.ctrl.Finish()
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
@@ -328,7 +339,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(100000, 0)
 	closingAt := time.Unix(1000000, 0)
-	tm := getTestMarket(t, now, closingAt)
+	tm := getTestMarket(t, now, closingAt, 0)
 	defer tm.ctrl.Finish()
 
 	addAccount(tm, party1)
@@ -452,7 +463,7 @@ func TestMarketCancelOrder(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt)
+	tm := getTestMarket(t, now, closingAt, 0)
 
 	addAccount(tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
