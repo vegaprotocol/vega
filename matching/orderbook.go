@@ -63,7 +63,10 @@ func (b *OrderBook) GetMarketState() types.MarketState {
 
 func isPersistent(o *types.Order) bool {
 	return o.GetType() == types.Order_TYPE_LIMIT &&
-		(o.GetTimeInForce() == types.Order_TIF_GTC || o.GetTimeInForce() == types.Order_TIF_GTT)
+		(o.GetTimeInForce() == types.Order_TIF_GTC ||
+			o.GetTimeInForce() == types.Order_TIF_GTT ||
+			o.GetTimeInForce() == types.Order_TIF_GFN ||
+			o.GetTimeInForce() == types.Order_TIF_GFA)
 }
 
 // NewOrderBook create an order book with a given name
@@ -182,12 +185,12 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 // EnterAuction Moves the order book into an auction state
 func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Scan existing orders to see which ones can be kept, cancelled and parked
-	buyCancelledOrders, err := b.buy.parkOrCancelOrders()
+	buyCancelledOrders, err := b.buy.getOrdersToCancel(types.MarketState_MARKET_STATE_AUCTION)
 	if err != nil {
 		return nil, err
 	}
 
-	sellCancelledOrders, err := b.sell.parkOrCancelOrders()
+	sellCancelledOrders, err := b.sell.getOrdersToCancel(types.MarketState_MARKET_STATE_AUCTION)
 	if err != nil {
 		return nil, err
 	}
@@ -202,20 +205,34 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
-func (b *OrderBook) LeaveAuction() ([]*UncrossedOrder, error) {
+func (b *OrderBook) LeaveAuction() ([]*UncrossedOrder, []*types.Order, error) {
 	// Update batchID
 	b.batchID++
 
 	// Uncross the book
 	uncrossedOrders, err := b.uncrossBook()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	// Remove any orders that will not be valid in continuous trading
+	buyOrdersToCancel, err := b.buy.getOrdersToCancel(types.MarketState_MARKET_STATE_CONTINUOUS)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	sellOrdersToCancel, err := b.sell.getOrdersToCancel(types.MarketState_MARKET_STATE_CONTINUOUS)
+	if err != nil {
+		return nil, nil, err
+	}
+	// Return all the orders that have been cancelled from the book
+	ordersToCancel := buyOrdersToCancel
+	ordersToCancel = append(ordersToCancel, sellOrdersToCancel...)
 
 	// Flip back to continuous
 	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
 
-	return uncrossedOrders, nil
+	return uncrossedOrders, ordersToCancel, nil
 }
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
@@ -576,7 +593,10 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if isPersistent(order) && order.Remaining > 0 && err == nil {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
-		if order.TimeInForce == types.Order_TIF_GTT {
+		if order.TimeInForce == types.Order_TIF_GTT ||
+			(order.TimeInForce == types.Order_TIF_GFN ||
+				order.TimeInForce == types.Order_TIF_GFA) &&
+				order.ExpiresAt > 0 {
 			b.insertExpiringOrder(*order)
 		}
 

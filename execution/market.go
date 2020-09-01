@@ -411,11 +411,17 @@ func (m *Market) isOpeningAuction() bool {
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
-	// Change market type to auction
-	m.matching.EnterAuction()
 
-	// Check the orderbook for any non auction friendly orders
-	// and move them into a parking area
+	// Change market type to auction
+	ordersToCancel, err := m.matching.EnterAuction()
+	if err != nil {
+		m.log.Error("Error entering auction: ", logging.Error(err))
+	}
+
+	// Cancel all the orders that were invalid
+	for _, order := range ordersToCancel {
+		m.CancelOrder(ctx, order.PartyID, order.Id)
+	}
 
 	// Send an event bus update
 	m.broker.Send(events.NewAuctionEvent(ctx,
@@ -428,8 +434,6 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context) {
-	m.log.Debug("Leaving an auction", logging.String("Market", m.mkt.Id))
-
 	// If we were an opening auction, clear it
 	if m.mkt.OpeningAuction != nil {
 		m.mkt.OpeningAuction = nil
@@ -441,9 +445,14 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	}
 	// Change market type to continuous trading
-	uncrossedOrders, err := m.matching.LeaveAuction()
+	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction()
 	if err != nil {
 		m.log.Error("Error leaving auction: ", logging.Error(err))
+	}
+
+	// Process each order we have to cancel
+	for _, order := range ordersToCancel {
+		m.CancelOrder(ctx, order.PartyID, order.Id)
 	}
 
 	// Apply fee calculations to each trade

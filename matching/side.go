@@ -32,13 +32,27 @@ func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
 	ordersToCancel := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
-			// Find orders to cancel
-			if order.TimeInForce == types.Order_TIF_GFN {
-				ordersToCancel = append(ordersToCancel, order)
-			}
-
+			// Place holder for when pegged orders are added
 			if order.Id == "PeggedOrder" {
 				s.parkedOrders = append(s.parkedOrders, order)
+			}
+		}
+	}
+	return ordersToCancel, nil
+}
+
+// When we leave an auction we need to remove any orders marked as GFA
+func (s *OrderBookSide) getOrdersToCancel(newState types.MarketState) ([]*types.Order, error) {
+	ordersToCancel := make([]*types.Order, 0)
+	for _, pricelevel := range s.levels {
+		for _, order := range pricelevel.orders {
+			// Find orders to cancel
+			if (order.TimeInForce == types.Order_TIF_GFA &&
+				newState == types.MarketState_MARKET_STATE_CONTINUOUS) ||
+				(order.TimeInForce == types.Order_TIF_GFN &&
+					newState == types.MarketState_MARKET_STATE_AUCTION) {
+				// Save order to send back to client
+				ordersToCancel = append(ordersToCancel, order)
 			}
 		}
 	}
