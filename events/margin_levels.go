@@ -34,3 +34,7 @@ func (m MarginLevels) MarketID() string {
 func (m MarginLevels) Asset() string {
 	return m.l.Asset
 }
+
+func (m MarginLevels) Proto() types.MarginLevels {
+	return m.l
+}

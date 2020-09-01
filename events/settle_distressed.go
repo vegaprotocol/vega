@@ -1,6 +1,10 @@
 package events
 
-import "context"
+import (
+	"context"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
 
 type SettleDistressed struct {
 	*Base
@@ -34,4 +38,13 @@ func (s SettleDistressed) Margin() uint64 {
 
 func (s SettleDistressed) Price() uint64 {
 	return s.price
+}
+
+func (s SettleDistressed) Proto() types.SettleDistressed {
+	return types.SettleDistressed{
+		MarketID: s.marketID,
+		PartyID:  s.partyID,
+		Margin:   s.margin,
+		Price:    s.price,
+	}
 }

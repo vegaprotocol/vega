@@ -151,6 +151,7 @@
     - [LossSocialization](#vega.LossSocialization)
     - [MarketEvent](#vega.MarketEvent)
     - [MarketTick](#vega.MarketTick)
+    - [PositionResolution](#vega.PositionResolution)
     - [SettleDistressed](#vega.SettleDistressed)
     - [SettlePosition](#vega.SettlePosition)
     - [TimeUpdate](#vega.TimeUpdate)
@@ -2364,7 +2365,7 @@ An event related to validator management with foreign networks.
 | type | [BusEvent.Type](#vega.BusEvent.Type) |  |  |
 | timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
 | transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
-| position | [Position](#vega.Position) |  |  |
+| positionResolution | [PositionResolution](#vega.PositionResolution) |  |  |
 | order | [Order](#vega.Order) |  |  |
 | account | [Account](#vega.Account) |  |  |
 | party | [Party](#vega.Party) |  |  |
@@ -2431,6 +2432,24 @@ interface has a method to return a string for logging
 | ----- | ---- | ----- | ----------- |
 | ID | [string](#string) |  |  |
 | time | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.PositionResolution"></a>
+
+### PositionResolution
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| distressed | [int64](#int64) |  |  |
+| closed | [int64](#int64) |  |  |
+| markPrice | [uint64](#uint64) |  |  |
 
 
 

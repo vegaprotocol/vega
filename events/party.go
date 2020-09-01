@@ -21,3 +21,7 @@ func NewPartyEvent(ctx context.Context, p types.Party) *Party {
 func (p *Party) Party() types.Party {
 	return p.p
 }
+
+func (p Party) Proto() types.Party {
+	return p.p
+}

@@ -23,3 +23,9 @@ func NewTransferResponse(ctx context.Context, response []*types.TransferResponse
 func (t *TransferResponse) TransferResponses() []*types.TransferResponse {
 	return t.responses
 }
+
+func (t *TransferResponse) Proto() types.TransferResponses {
+	return types.TransferResponses{
+		Responses: t.responses,
+	}
+}

@@ -21,3 +21,7 @@ func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
 func (o *Order) Order() *types.Order {
 	return o.o
 }
+
+func (o Order) Proto() types.Order {
+	return *o.o
+}

@@ -27,3 +27,14 @@ func (m Market) MarketEvent() string {
 func (m Market) Market() types.Market {
 	return m.m
 }
+
+func (m Market) Proto() types.Market {
+	return m.m
+}
+
+func (m Market) MarketProto() types.MarketEvent {
+	return types.MarketEvent{
+		MarketID: m.m.Id,
+		Payload:  m.MarketEvent(),
+	}
+}

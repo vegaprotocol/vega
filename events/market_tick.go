@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type MarketTick struct {
@@ -30,4 +32,18 @@ func (m MarketTick) Time() time.Time {
 
 func (m MarketTick) MarketEvent() string {
 	return fmt.Sprintf("Market %s on time %s", m.id, m.t.String())
+}
+
+func (m MarketTick) Proto() types.MarketTick {
+	return types.MarketTick{
+		ID:   m.id,
+		Time: m.t.UTC().Unix(),
+	}
+}
+
+func (m MarketTick) MarketProto() types.MarketEvent {
+	return types.MarketEvent{
+		MarketID: m.id,
+		Payload:  m.MarketEvent(),
+	}
 }

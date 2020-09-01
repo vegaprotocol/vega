@@ -21,3 +21,7 @@ func NewAssetEvent(ctx context.Context, a types.Asset) *Asset {
 func (a *Asset) Asset() types.Asset {
 	return a.a
 }
+
+func (a Asset) Proto() types.Asset {
+	return a.a
+}

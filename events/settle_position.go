@@ -1,6 +1,10 @@
 package events
 
-import "context"
+import (
+	"context"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
 
 type SettlePos struct {
 	*Base
@@ -34,4 +38,20 @@ func (s SettlePos) Price() uint64 {
 
 func (s SettlePos) Trades() []TradeSettlement {
 	return s.trades
+}
+
+func (s SettlePos) Proto() types.SettlePosition {
+	ts := make([]*types.TradeSettlement, 0, len(s.trades))
+	for _, t := range s.trades {
+		ts = append(ts, &types.TradeSettlement{
+			Size:  t.Size(),
+			Price: t.Price(),
+		})
+	}
+	return types.SettlePosition{
+		MarketID:         s.marketID,
+		PartyID:          s.partyID,
+		Price:            s.price,
+		TradeSettlements: ts,
+	}
 }

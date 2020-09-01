@@ -21,3 +21,7 @@ func NewMarketDataEvent(ctx context.Context, md types.MarketData) *MarketData {
 func (m MarketData) MarketData() types.MarketData {
 	return m.md
 }
+
+func (m MarketData) Proto() types.MarketData {
+	return m.md
+}

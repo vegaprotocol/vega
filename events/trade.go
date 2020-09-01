@@ -21,3 +21,7 @@ func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
 func (t *Trade) Trade() types.Trade {
 	return t.t
 }
+
+func (t Trade) Proto() types.Trade {
+	return t.t
+}

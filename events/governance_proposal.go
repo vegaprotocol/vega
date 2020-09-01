@@ -31,3 +31,7 @@ func (p *Proposal) ProposalID() string {
 func (p *Proposal) PartyID() string {
 	return p.p.PartyID
 }
+
+func (p Proposal) Proto() types.Proposal {
+	return p.p
+}

@@ -21,3 +21,7 @@ func NewAccountEvent(ctx context.Context, a types.Account) *Acc {
 func (a *Acc) Account() types.Account {
 	return a.a
 }
+
+func (a Acc) Proto() types.Account {
+	return a.a
+}

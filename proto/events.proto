@@ -25,6 +25,13 @@ message TransferResponses {
   repeated TransferResponse responses = 1;
 }
 
+message PositionResolution {
+  string marketID = 1;
+  int64 distressed = 2;
+  int64 closed = 3;
+  uint64 markPrice = 4;
+}
+
 // LossSocialization event
 message LossSocialization {
   string marketID = 1;
@@ -86,7 +93,7 @@ message BusEvent {
   oneof event {
     TimeUpdate timeUpdate = 101;
     TransferResponses transferResponses = 102;
-    Position position = 103;
+    PositionResolution positionResolution = 103;
     Order order = 104;
     Account account = 105;
     Party party = 106;

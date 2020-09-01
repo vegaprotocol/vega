@@ -37,3 +37,7 @@ func (v *Vote) PartyID() string {
 func (v *Vote) Value() types.Vote_Value {
 	return v.v.Value
 }
+
+func (v Vote) Proto() types.Vote {
+	return v.v
+}

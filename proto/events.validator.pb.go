@@ -32,6 +32,9 @@ func (this *TransferResponses) Validate() error {
 	}
 	return nil
 }
+func (this *PositionResolution) Validate() error {
+	return nil
+}
 func (this *LossSocialization) Validate() error {
 	return nil
 }
@@ -69,10 +72,10 @@ func (this *BusEvent) Validate() error {
 			}
 		}
 	}
-	if oneOfNester, ok := this.GetEvent().(*BusEvent_Position); ok {
-		if oneOfNester.Position != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Position); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Position", err)
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_PositionResolution); ok {
+		if oneOfNester.PositionResolution != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.PositionResolution); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("PositionResolution", err)
 			}
 		}
 	}
