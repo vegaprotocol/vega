@@ -2089,7 +2089,7 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 	orders, err := book.EnterAuction()
 	assert.NoError(t, err)
 	assert.Equal(t, len(orders), 1)
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(1))
 }
 
 func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
