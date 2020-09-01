@@ -245,9 +245,11 @@ func (l *NodeCommand) runNode(args []string) error {
 	tm := stats.NewTendermint(l.blockchain.Client(), l.stats)
 	go func() {
 		for {
-			time.Sleep(1 * time.Second)
-			if err := tm.Collect(l.ctx); err != nil {
-				l.Log.Info("Can't start stats Collection", logging.Error(err))
+			select {
+			case <-time.NewTicker(1 * time.Second).C:
+				if err := tm.Collect(l.ctx); err != nil {
+					l.Log.Info("Can't start stats Collection", logging.Error(err))
+				}
 			}
 		}
 	}()
