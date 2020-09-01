@@ -1826,10 +1826,12 @@ func (r *myMutationResolver) PrepareProposal(
 	if reference != nil {
 		ref = *reference
 	}
+
 	terms, err := proposalTerms.IntoProto()
 	if err != nil {
 		return nil, err
 	}
+
 	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
 		PartyID:   partyID,
 		Reference: ref,
