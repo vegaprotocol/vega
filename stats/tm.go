@@ -35,6 +35,9 @@ func NewTendermint(clt *blockchain.Client, stats *Stats) *Tendermint {
 	return &Tendermint{
 		clt:   clt,
 		stats: stats,
+
+		txSizes:  make([]int, 0, statsSampleSize),
+		txTotals: make([]uint64, 0, statsSampleSize),
 	}
 }
 
@@ -74,9 +77,6 @@ func (tm *Tendermint) handleTx(e tmtypes.EventDataTx) error {
 // recorded once per batch, typically called from commit.
 func (tm *Tendermint) setBatchStats() {
 	// Calculate the average total txn per batch, over n blocks
-	if tm.txTotals == nil {
-		tm.txTotals = make([]uint64, 0)
-	}
 	tm.txTotals = append(tm.txTotals, tm.stats.Blockchain.TotalTxLastBatch())
 	totalTx := uint64(0)
 	for _, itx := range tm.txTotals {
@@ -94,15 +94,12 @@ func (tm *Tendermint) setBatchStats() {
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(tm.txTotals) == statsSampleSize {
-		tm.txTotals = nil
+		tm.txTotals = tm.txTotals[:0]
 	}
 }
 
 func (tm *Tendermint) setTxStats(txLength int) {
 	tm.stats.Blockchain.IncTotalTxCurrentBatch()
-	if tm.txSizes == nil {
-		tm.txSizes = make([]int, 0)
-	}
 	tm.txSizes = append(tm.txSizes, txLength)
 	totalTx := 0
 	for _, itx := range tm.txSizes {
@@ -118,6 +115,6 @@ func (tm *Tendermint) setTxStats(txLength int) {
 
 	// MAX sample size for avg calculation is defined as const.
 	if len(tm.txSizes) == statsSampleSize {
-		tm.txSizes = nil
+		tm.txSizes = tm.txSizes[:0]
 	}
 }
