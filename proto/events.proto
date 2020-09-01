@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/vega/proto";
+
+import "proto/markets.proto";
+import "proto/assets.proto";
+import "proto/governance.proto";
+import "proto/vega.proto";
+
+// MarketEvent - the common denominator for all market events
+// interface has a method to return a string for logging
+message MarketEvent {
+  string marketID = 1;
+  string payload = 2;
+}
+
+// TimeUpdate - event containing the latest block time
+message TimeUpdate {
+  int64 timestamp = 1;
+}
+
+// TransferResponses - a slice of transfer response objects
+message TransferResponses {
+  repeated TransferResponse responses = 1;
+}
+
+// LossSocialization event
+message LossSocialization {
+  string marketID = 1;
+  string partyID = 2;
+  int64 amount = 3;
+}
+
+message TradeSettlement {
+  int64 size = 1;
+  uint64 price = 2;
+}
+
+message SettlePosition {
+  string marketID = 1;
+  string partyID = 2;
+  uint64 price = 3;
+  repeated TradeSettlement tradeSettlements = 4;
+}
+
+message SettleDistressed {
+  string marketID = 1;
+  string partyID = 2;
+  uint64 margin = 3;
+  uint64 price = 4;
+}
+
+message MarketTick {
+  string ID = 1;
+  int64 time = 2;
+}
+
+message BusEvent {
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_ALL = 1;
+    TIME_UPDATE = 2;
+    TRANSFER_RESPONSES = 3;
+    POSITION_RESOLUTION = 4;
+    ORDER = 5;
+    ACCOUNT = 6;
+    PARTY = 7;
+    TRADE = 8;
+    MARGIN_LEVELS = 9;
+    PROPOSAL = 10;
+    VOTE = 11;
+    MARKET_DATA = 12;
+    NODE_SIGNATURE = 13;
+    LOSS_SOCIALIZATION = 14;
+    SETTLE_POSITION = 15;
+    SETTLE_DISTRESSED = 16;
+    MARKET_CREATED = 17;
+    ASSET = 18;
+    MARKET_TICK = 19;
+
+    MARKET = 101; // special event for all events implementing a specific interface
+  }
+  string ID = 1;
+  Type type = 2;
+  oneof event {
+    TimeUpdate timeUpdate = 101;
+    TransferResponses transferResponses = 102;
+    Position position = 103;
+    Order order = 104;
+    Account account = 105;
+    Party party = 106;
+    Trade trade = 107;
+    MarginLevels marginLevels = 108;
+    Proposal proposal = 109;
+    Vote vote = 110;
+    MarketData marketData = 111;
+    NodeSignature nodeSignature = 112;
+    LossSocialization lossSocialization = 113;
+    SettlePosition settlePosition = 114;
+    SettleDistressed settleDistressed = 115;
+    Market marketCreated = 116;
+    Asset asset = 117;
+    MarketTick marketTick = 118;
+    MarketEvent market = 201;
+  }
+}
