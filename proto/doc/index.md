@@ -1069,8 +1069,9 @@ Response for a list of markets on Vega.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [vega.EventType](#vega.EventType) |  |  |
+| type | [vega.EventType](#vega.EventType) | repeated |  |
 | marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
 
 
 

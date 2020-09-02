@@ -1794,7 +1794,22 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 	}
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
-	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, nil)
+	types, err := events.ProtoToInternal(in.Type...)
+	if err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+	filters := []subscribers.EventFilter{}
+	if len(in.MarketID) > 0 && len(in.PartyID) > 0 {
+		filters = append(filters, events.GetPartyAndMarketFilter(in.MarketID, in.PartyID))
+	} else {
+		if len(in.MarketID) > 0 {
+			filters = append(filters, events.GetMarketIDFilter(in.MarketID))
+		}
+		if len(in.PartyID) > 0 {
+			filters = append(filters, events.GetPartyIDFilter(in.PartyID))
+		}
+	}
+	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
 	for {
 		select {
 		case data, ok := <-ch:

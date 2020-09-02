@@ -1025,8 +1025,9 @@ message EstimateFeeResponse {
 }
 
 message ObserveEventsRequest {
-  vega.EventType type = 1 [(validator.field) = {msg_exists: true}];
+  repeated vega.EventType type = 1;
   string marketID = 2;
+  string partyID = 3;
 }
 
 message ObserveEventsResponse {
