@@ -592,9 +592,9 @@ message OrderCancellation {
   // The following three fields are used for lookup of the order only:
 
   // Unique identifier for the order (set by the system after consensus). Required field.
-  string orderID = 1 [(validator.field) = {string_not_empty: true}];
+  string orderID = 1;
   // Market identifier for the order. Required field.
-  string marketID = 2 [(validator.field) = {string_not_empty: true}];
+  string marketID = 2;
   // Party identifier for the order. Required field.
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
 }
