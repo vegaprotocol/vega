@@ -7,9 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/blockchain/ratelimit"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tendermint/tendermint/abci/types"
@@ -50,7 +52,8 @@ type AbciApplication struct {
 	// metrics
 	blockHeightCounter prometheus.Counter
 
-	ghandler GenesisHandler
+	ghandler  GenesisHandler
+	rateLimit *ratelimit.Rates
 }
 
 // NewApplication returns a new instance of the Abci application
@@ -71,6 +74,10 @@ func NewApplication(log *logging.Logger,
 		time:            time,
 		onCriticalError: onCriticalError,
 		ghandler:        ghandler,
+		rateLimit: ratelimit.New(
+			config.RateLimit.Requests,
+			config.RateLimit.PerNBlocks,
+		),
 	}
 	if err := app.setMetrics(); err != nil {
 		app.log.Panic(
@@ -144,6 +151,8 @@ func (a *AbciApplication) InitChain(req types.RequestInitChain) types.ResponseIn
 // BeginBlock is called by the chain once the new block is starting
 func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.ResponseBeginBlock {
 	a.blockHeightCounter.Inc()
+	a.rateLimit.NextBlock()
+
 	// We can log more gossiped time info (switchable in config)
 	a.cfgMu.Lock()
 	if a.LogTimeDebug {
@@ -201,8 +210,21 @@ func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.R
 // the rest using CheckTx against the post-Commit mempool state]
 //
 func (a *AbciApplication) CheckTx(txn types.RequestCheckTx) types.ResponseCheckTx {
-	err := a.processor.Validate(txn.Tx)
+	tx, err := proto.NewTxFromSignedBundlePayload(txn.Tx)
 	if err != nil {
+		a.log.Error("Error when decoding payload in CheckTx", logging.Error(err))
+		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
+	}
+
+	// Use the Tx's pubkey to verify its rate allowance
+	key := ratelimit.Key(tx.GetPubKey()).String()
+	if ok := a.rateLimit.Allow(key); !ok {
+		a.log.Error("Rate limit exceeded", logging.String("key", key))
+		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
+	}
+	a.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", a.rateLimit.Count(key)))
+
+	if err := a.processor.Validate(txn.Tx); err != nil {
 		a.log.Error("Error when validating payload in CheckTx", logging.Error(err))
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
 	}
