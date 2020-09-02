@@ -103,45 +103,8 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
-      - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
-      # Run system-tests, using previously built executable with custom Governance parameters.
-      - (
-          /usr/local/bin/systemtests.sh -x "$$PWD/cmd/vega/vega-linux-amd64-systemtests" -v all ;
-          echo "$$?" >"$$codefile"
-        ) 2>&1 | tee "$$logfile"
-      - test "$$(cat "$$codefile")" = 0 && exit 0
-      # system-tests failed
-      - msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)"
-      # Failure is fatal only while attempting to merge to master.
-      - if test "$$DRONE_TARGET_BRANCH" = master ; then
-          exitcode=1 ;
-          msg="$$msgprefix *pipeline failed* :cry:" ;
-        else
-          exitcode=0 ;
-          msg="$$msgprefix (pipeline continues)" ;
-        fi
-      # Notify Slack
-      - msg="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$msg")"
-      - 'curl -s -XPOST
-          -d "{\"channel\": \"#tradingcore-notify\", \"icon_emoji\": \":robot:\", \"text\": $$msg, \"username\": \"nagbot\" }"
-          "$$SLACK_HOOK_URL"'
-      # Make Github PR comment
-      - commentfile="$$(mktemp)"
-      - (
-          echo "system-tests failed." ;
-          echo ;
-          echo "\`\`\`" ;
-          grep --text -A1000 "=== Test summary ===" "$$logfile" || echo "No test summary found" ;
-          echo "\`\`\`"
-        ) >"$$commentfile"
-      - body="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$(cat "$$commentfile")")"
-      - 'curl -s -XPOST
-          -H "Accept: application/vnd.github.v3+json"
-          -H "Authorization: token $$GITHUB_API_TOKEN"
-          -d "{\"body\": $$body}"
-          "https://api.github.com/repos/vegaprotocol/vega/issues/$$DRONE_PULL_REQUEST/comments"'
-      - exit "$$exitcode"
+      # https://github.com/vegaprotocol/system-tests/blob/master/ci.sh
+      - /usr/local/bin/ci.sh
     depends_on:
       - test-PR
     when:
