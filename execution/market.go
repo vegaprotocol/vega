@@ -226,8 +226,8 @@ func (m *Market) GetMarketData() types.MarketData {
 	var auctionStart, auctionEnd int64
 	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
 		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
-		auctionStart = m.auctionStart.Unix()
-		auctionEnd = m.auctionEnd.Unix()
+		auctionStart = m.auctionStart.UnixNano()
+		auctionEnd = m.auctionEnd.UnixNano()
 	}
 
 	return types.MarketData{
@@ -427,8 +427,8 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	m.broker.Send(events.NewAuctionEvent(ctx,
 		m.mkt.Id,
 		false,
-		m.auctionStart.Unix(),
-		m.auctionEnd.Unix(),
+		m.auctionStart.UnixNano(),
+		m.auctionEnd.UnixNano(),
 		m.isOpeningAuction()))
 }
 
@@ -469,8 +469,8 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	m.broker.Send(events.NewAuctionEvent(ctx,
 		m.mkt.Id,
 		true,
-		m.auctionStart.Unix(),
-		m.auctionEnd.Unix(),
+		m.auctionStart.UnixNano(),
+		m.auctionEnd.UnixNano(),
 		m.isOpeningAuction()))
 
 	// Move any parked orders back into the orderbook
