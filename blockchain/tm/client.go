@@ -133,12 +133,10 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 	return validators, nil
 }
 
-type SubscribeHandler func(tmctypes.ResultEvent) error
-
 // Subscribe subscribes to any event matching query (https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants).
 // Subscribe will call fn each time it receives an event from the node.
 // The function returns nil when the context is canceled or when fn returns an error.
-func (c *Client) Subscribe(ctx context.Context, fn SubscribeHandler, queries ...string) error {
+func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {
 	if err := c.tmclt.Start(); err != nil {
 		return err
 	}
@@ -152,7 +150,9 @@ func (c *Client) Subscribe(ctx context.Context, fn SubscribeHandler, queries ...
 			return err
 		}
 
-		out, err := c.tmclt.Subscribe(ctx, "vega", q.String())
+		// For subscription we use "vega" as the client name but it's ignored by the implementation.
+		// 10 is the channel capacity which is absolutely arbitraty.
+		out, err := c.tmclt.Subscribe(ctx, "vega", q.String(), 10)
 		if err != nil {
 			return err
 		}

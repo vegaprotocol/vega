@@ -7,7 +7,7 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"code.vegaprotocol.io/vega/blockchain/tm"
+	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -19,7 +19,7 @@ const (
 // Tendermint is a stats client for tendermint
 type Tendermint struct {
 	// construction params
-	clt   *tm.Client
+	clt   *blockchain.Client
 	stats *Stats
 
 	// state
@@ -27,7 +27,7 @@ type Tendermint struct {
 	txTotals []uint64
 }
 
-func NewTendermint(clt *tm.Client, stats *Stats) *Tendermint {
+func NewTendermint(clt *blockchain.Client, stats *Stats) *Tendermint {
 	if stats.Blockchain == nil {
 		stats.Blockchain = NewBlockchain()
 	}

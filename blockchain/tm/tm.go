@@ -9,18 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Stats interface {
-	IncHeight()
-	TotalTxLastBatch() uint64
-	Height() uint64
-	SetAverageTxPerBatch(uint64)
-	SetTotalTxLastBatch(uint64)
-	TotalTxCurrentBatch() uint64
-	SetTotalTxCurrentBatch(uint64)
-	IncTotalTxCurrentBatch()
-	SetAverageTxSizeBytes(uint64)
-}
-
 type Processor interface {
 	Validate([]byte) error
 	Process(payload []byte) error
@@ -59,7 +47,6 @@ type TMChain struct {
 func New(
 	log *logging.Logger,
 	cfg Config,
-	stats Stats,
 	proc Processor,
 	service ApplicationService,
 	time ApplicationTime,
@@ -67,7 +54,7 @@ func New(
 	ghandler GenesisHandler,
 	top ValidatorTopology,
 ) (*TMChain, error) {
-	app := NewApplication(log, cfg, stats, proc, service, time, cancel, ghandler, top)
+	app := NewApplication(log, cfg, proc, service, time, cancel, ghandler, top)
 	socketServer := NewServer(log, cfg, app)
 	if err := socketServer.Start(); err != nil {
 		return nil, errors.Wrap(err, "ABCI socket server error")
