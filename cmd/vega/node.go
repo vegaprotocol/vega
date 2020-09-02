@@ -122,6 +122,7 @@ type NodeCommand struct {
 	notaryService     *notary.Svc
 	assetService      *assets.Svc
 	feeService        *fee.Svc
+	eventService      *subscribers.Service
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -223,6 +224,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.evtfwd,
 		l.assetService,
 		l.feeService,
+		l.eventService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

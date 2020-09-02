@@ -1406,6 +1406,17 @@
       },
       "description": "Response for a list of markets on Vega."
     },
+    "apiObserveEventsResponse": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaBusEvent"
+          }
+        }
+      }
+    },
     "apiOptionalProposalState": {
       "type": "object",
       "properties": {
@@ -2067,6 +2078,74 @@
       },
       "description": "A withdrawal for a Vega built-in asset."
     },
+    "vegaBusEvent": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaEventType"
+        },
+        "timeUpdate": {
+          "$ref": "#/definitions/vegaTimeUpdate"
+        },
+        "transferResponses": {
+          "$ref": "#/definitions/vegaTransferResponses"
+        },
+        "positionResolution": {
+          "$ref": "#/definitions/vegaPositionResolution"
+        },
+        "order": {
+          "$ref": "#/definitions/vegaOrder"
+        },
+        "account": {
+          "$ref": "#/definitions/vegaAccount"
+        },
+        "party": {
+          "$ref": "#/definitions/vegaParty"
+        },
+        "trade": {
+          "$ref": "#/definitions/vegaTrade"
+        },
+        "marginLevels": {
+          "$ref": "#/definitions/vegaMarginLevels"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "vote": {
+          "$ref": "#/definitions/vegaVote"
+        },
+        "marketData": {
+          "$ref": "#/definitions/vegaMarketData"
+        },
+        "nodeSignature": {
+          "$ref": "#/definitions/vegaNodeSignature"
+        },
+        "lossSocialization": {
+          "$ref": "#/definitions/vegaLossSocialization"
+        },
+        "settlePosition": {
+          "$ref": "#/definitions/vegaSettlePosition"
+        },
+        "settleDistressed": {
+          "$ref": "#/definitions/vegaSettleDistressed"
+        },
+        "marketCreated": {
+          "$ref": "#/definitions/vegaMarket"
+        },
+        "asset": {
+          "$ref": "#/definitions/vegaAsset"
+        },
+        "marketTick": {
+          "$ref": "#/definitions/vegaMarketTick"
+        },
+        "market": {
+          "$ref": "#/definitions/vegaMarketEvent"
+        }
+      }
+    },
     "vegaCandle": {
       "type": "object",
       "properties": {
@@ -2308,6 +2387,33 @@
         }
       },
       "description": "Ethereum event (for oracles)."
+    },
+    "vegaEventType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_ALL",
+        "TIME_UPDATE",
+        "TRANSFER_RESPONSES",
+        "POSITION_RESOLUTION",
+        "ORDER",
+        "ACCOUNT",
+        "PARTY",
+        "TRADE",
+        "MARGIN_LEVELS",
+        "PROPOSAL",
+        "VOTE",
+        "MARKET_DATA",
+        "NODE_SIGNATURE",
+        "LOSS_SOCIALIZATION",
+        "SETTLE_POSITION",
+        "SETTLE_DISTRESSED",
+        "MARKET_CREATED",
+        "ASSET",
+        "MARKET_TICK",
+        "MARKET"
+      ],
+      "default": "TYPE_UNSPECIFIED"
     },
     "vegaExternalRiskModel": {
       "type": "object",
@@ -2646,6 +2752,22 @@
       },
       "description": "Risk model for log normal."
     },
+    "vegaLossSocialization": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "title": "LossSocialization event"
+    },
     "vegaMarginCalculator": {
       "type": "object",
       "properties": {
@@ -2817,6 +2939,30 @@
         }
       },
       "description": "Represents market depth or order book data for the specified market on Vega."
+    },
+    "vegaMarketEvent": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "string"
+        }
+      },
+      "title": "MarketEvent - the common denominator for all market events\ninterface has a method to return a string for logging"
+    },
+    "vegaMarketTick": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
     },
     "vegaNetworkConfiguration": {
       "type": "object",
@@ -3233,6 +3379,26 @@
       },
       "description": "Represents position data for a party on the specified market on Vega."
     },
+    "vegaPositionResolution": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "distressed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "closed": {
+          "type": "string",
+          "format": "int64"
+        },
+        "markPrice": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "vegaPrice": {
       "type": "object",
       "properties": {
@@ -3396,6 +3562,46 @@
         }
       },
       "description": "Scaling Factors (for use in margin calculation)."
+    },
+    "vegaSettleDistressed": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "margin": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "vegaSettlePosition": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "partyID": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "tradeSettlements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTradeSettlement"
+          }
+        }
+      }
     },
     "vegaSide": {
       "type": "string",
@@ -3620,6 +3826,16 @@
       },
       "description": "Vega domain specific statistics as reported by the node the caller is connected to."
     },
+    "vegaTimeUpdate": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "title": "TimeUpdate - event containing the latest block time"
+    },
     "vegaTimestamp": {
       "type": "object",
       "properties": {
@@ -3728,6 +3944,19 @@
       },
       "description": "A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega."
     },
+    "vegaTradeSettlement": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "vegaTradeType": {
       "type": "string",
       "enum": [
@@ -3773,6 +4002,18 @@
         }
       },
       "description": "Represents the response from a transfer."
+    },
+    "vegaTransferResponses": {
+      "type": "object",
+      "properties": {
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTransferResponse"
+          }
+        }
+      },
+      "title": "TransferResponses - a slice of transfer response objects"
     },
     "vegaUpdateMarket": {
       "type": "object",
@@ -3850,6 +4091,18 @@
     }
   },
   "x-stream-definitions": {
+    "apiObserveEventsResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiObserveEventsResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiObserveEventsResponse"
+    },
     "apiOrdersStream": {
       "type": "object",
       "properties": {

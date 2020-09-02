@@ -55,6 +55,8 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [ObserveEventsRequest](#api.ObserveEventsRequest)
+    - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
     - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
     - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
@@ -158,7 +160,7 @@
     - [TradeSettlement](#vega.TradeSettlement)
     - [TransferResponses](#vega.TransferResponses)
 
-    - [BusEvent.Type](#vega.BusEvent.Type)
+    - [EventType](#vega.EventType)
 
 
 
@@ -1059,6 +1061,37 @@ Response for a list of markets on Vega.
 
 
 
+<a name="api.ObserveEventsRequest"></a>
+
+### ObserveEventsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [vega.EventType](#vega.EventType) |  |  |
+| marketID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.ObserveEventsResponse"></a>
+
+### ObserveEventsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| events | [vega.BusEvent](#vega.BusEvent) | repeated |  |
+
+
+
+
+
+
 <a name="api.ObservePartyProposalsRequest"></a>
 
 ### ObservePartyProposalsRequest
@@ -1908,6 +1941,7 @@ Response for the current consensus coordinated time on the Vega network, referre
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
+| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
@@ -2362,7 +2396,7 @@ An event related to validator management with foreign networks.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | ID | [string](#string) |  |  |
-| type | [BusEvent.Type](#vega.BusEvent.Type) |  |  |
+| type | [EventType](#vega.EventType) |  |  |
 | timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
 | transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
 | positionResolution | [PositionResolution](#vega.PositionResolution) |  |  |
@@ -2540,9 +2574,9 @@ TransferResponses - a slice of transfer response objects
 
 
 
-<a name="vega.BusEvent.Type"></a>
+<a name="vega.EventType"></a>
 
-### BusEvent.Type
+### EventType
 
 
 | Name | Number | Description |

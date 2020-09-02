@@ -31,3 +31,14 @@ func (t Time) Proto() types.TimeUpdate {
 		Timestamp: t.blockTime.UTC().Unix(),
 	}
 }
+
+func (t Time) StreamMessage() *types.BusEvent {
+	p := t.Proto()
+	return &types.BusEvent{
+		ID:   t.traceID,
+		Type: t.et.ToProto(),
+		Event: &types.BusEvent_TimeUpdate{
+			TimeUpdate: &p,
+		},
+	}
+}

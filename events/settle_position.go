@@ -55,3 +55,14 @@ func (s SettlePos) Proto() types.SettlePosition {
 		TradeSettlements: ts,
 	}
 }
+
+func (s SettlePos) StreamMessage() *types.BusEvent {
+	p := s.Proto()
+	return &types.BusEvent{
+		ID:   s.traceID,
+		Type: s.et.ToProto(),
+		Event: &types.BusEvent_SettlePosition{
+			SettlePosition: &p,
+		},
+	}
+}

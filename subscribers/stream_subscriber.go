@@ -5,9 +5,15 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type EventFilter func(events.Event) bool
+
+type StreamEvent interface {
+	events.Event
+	StreamMessage() *types.BusEvent
+}
 
 type StreamSub struct {
 	*Base
@@ -84,7 +90,7 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	s.mu.Unlock()
 }
 
-func (s *StreamSub) GetData() []events.Event {
+func (s *StreamSub) GetData() []*types.BusEvent {
 	<-s.updated
 	s.mu.Lock()
 	// create a new update channel + reset update counter
@@ -94,7 +100,13 @@ func (s *StreamSub) GetData() []events.Event {
 	data := s.data
 	s.data = make([]events.Event, 0, cap(data))
 	s.mu.Unlock()
-	return data
+	messages := make([]*types.BusEvent, 0, len(data))
+	for _, d := range data {
+		if se, ok := d.(StreamEvent); ok {
+			messages = append(messages, se.StreamMessage())
+		}
+	}
+	return messages
 }
 
 func (s StreamSub) Types() []events.Type {

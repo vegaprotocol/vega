@@ -11,10 +11,30 @@ import (
 )
 
 var (
-	ErrUnsuportedEvent = errors.New("unknown payload for event")
+	ErrUnsuportedEvent  = errors.New("unknown payload for event")
+	ErrInvalidEventType = errors.New("invalid proto event type")
 )
 
 type Type int
+
+// simple interface for event filtering on market ID
+type marketFilterable interface {
+	Event
+	MarketID() string
+}
+
+// simple interface for event filtering on party ID
+type partyFilterable interface {
+	Event
+	PartyID() string
+}
+
+// simple interface for event filtering by party and market ID
+type marketPartyFilterable interface {
+	Event
+	MarketID() string
+	PartyID() string
+}
 
 // Base common denominator all event-bus events share
 type Base struct {
@@ -60,6 +80,51 @@ var (
 		PositionResolution,
 		MarketCreatedEvent,
 		MarketTickEvent,
+	}
+
+	protoMap = map[types.EventType]Type{
+		types.EventType_TYPE_ALL:            All,
+		types.EventType_TIME_UPDATE:         TimeUpdate,
+		types.EventType_TRANSFER_RESPONSES:  TransferResponses,
+		types.EventType_POSITION_RESOLUTION: PositionResolution,
+		types.EventType_MARKET:              MarketEvent,
+		types.EventType_ORDER:               OrderEvent,
+		types.EventType_ACCOUNT:             AccountEvent,
+		types.EventType_PARTY:               PartyEvent,
+		types.EventType_TRADE:               TradeEvent,
+		types.EventType_MARGIN_LEVELS:       MarginLevelsEvent,
+		types.EventType_PROPOSAL:            ProposalEvent,
+		types.EventType_VOTE:                VoteEvent,
+		types.EventType_MARKET_DATA:         MarketDataEvent,
+		types.EventType_NODE_SIGNATURE:      NodeSignatureEvent,
+		types.EventType_LOSS_SOCIALIZATION:  LossSocializationEvent,
+		types.EventType_SETTLE_POSITION:     SettlePositionEvent,
+		types.EventType_SETTLE_DISTRESSED:   SettleDistressedEvent,
+		types.EventType_MARKET_CREATED:      MarketCreatedEvent,
+		types.EventType_ASSET:               AssetEvent,
+		types.EventType_MARKET_TICK:         MarketTickEvent,
+	}
+
+	toProto = map[Type]types.EventType{
+		TimeUpdate:             types.EventType_TIME_UPDATE,
+		TransferResponses:      types.EventType_TRANSFER_RESPONSES,
+		PositionResolution:     types.EventType_POSITION_RESOLUTION,
+		MarketEvent:            types.EventType_MARKET,
+		OrderEvent:             types.EventType_ORDER,
+		AccountEvent:           types.EventType_ACCOUNT,
+		PartyEvent:             types.EventType_PARTY,
+		TradeEvent:             types.EventType_TRADE,
+		MarginLevelsEvent:      types.EventType_MARGIN_LEVELS,
+		ProposalEvent:          types.EventType_PROPOSAL,
+		VoteEvent:              types.EventType_VOTE,
+		MarketDataEvent:        types.EventType_MARKET_DATA,
+		NodeSignatureEvent:     types.EventType_NODE_SIGNATURE,
+		LossSocializationEvent: types.EventType_LOSS_SOCIALIZATION,
+		SettlePositionEvent:    types.EventType_SETTLE_POSITION,
+		SettleDistressedEvent:  types.EventType_SETTLE_DISTRESSED,
+		MarketCreatedEvent:     types.EventType_MARKET_CREATED,
+		AssetEvent:             types.EventType_ASSET,
+		MarketTickEvent:        types.EventType_MARKET_TICK,
 	}
 
 	eventStrings = map[Type]string{
@@ -173,4 +238,62 @@ func (t Type) String() string {
 		return "UNKNOWN EVENT"
 	}
 	return s
+}
+
+func ProtoToInternal(pTypes ...types.EventType) ([]Type, error) {
+	ret := make([]Type, 0, len(pTypes))
+	for _, t := range pTypes {
+		// all events -> subscriber should return a nil slice
+		if t == types.EventType_TYPE_ALL {
+			return nil, nil
+		}
+		it, ok := protoMap[t]
+		if !ok {
+			return nil, ErrInvalidEventType
+		}
+		if it == MarketEvent {
+			ret = append(ret, marketEvents...)
+		} else {
+			ret = append(ret, it)
+		}
+	}
+	return ret, nil
+}
+
+func GetMarketIDFilter(mID string) func(Event) bool {
+	return func(e Event) bool {
+		me, ok := e.(marketFilterable)
+		if !ok {
+			return false
+		}
+		return (me.MarketID() == mID)
+	}
+}
+
+func GetPartyIDFilter(pID string) func(Event) bool {
+	return func(e Event) bool {
+		pe, ok := e.(partyFilterable)
+		if !ok {
+			return false
+		}
+		return (pe.PartyID() == pID)
+	}
+}
+
+func GetPartyAndMarketFilter(mID, pID string) func(Event) bool {
+	return func(e Event) bool {
+		mpe, ok := e.(marketPartyFilterable)
+		if !ok {
+			return false
+		}
+		return (mpe.MarketID() == mID && mpe.PartyID() == pID)
+	}
+}
+
+func (t Type) ToProto() types.EventType {
+	pt, ok := toProto[t]
+	if !ok {
+		return types.EventType_TYPE_UNSPECIFIED
+	}
+	return pt
 }

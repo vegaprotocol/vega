@@ -773,3 +773,16 @@ func (this *EstimateFeeResponse) Validate() error {
 	}
 	return nil
 }
+func (this *ObserveEventsRequest) Validate() error {
+	return nil
+}
+func (this *ObserveEventsResponse) Validate() error {
+	for _, item := range this.Events {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Events", err)
+			}
+		}
+	}
+	return nil
+}

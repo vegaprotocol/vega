@@ -25,3 +25,13 @@ func (a *Asset) Asset() types.Asset {
 func (a Asset) Proto() types.Asset {
 	return a.a
 }
+
+func (a Asset) StreamMessage() *types.BusEvent {
+	return &types.BusEvent{
+		ID:   a.traceID,
+		Type: a.et.ToProto(),
+		Event: &types.BusEvent_Asset{
+			Asset: &a.a,
+		},
+	}
+}

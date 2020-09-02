@@ -59,7 +59,7 @@ func testUnfilteredNoEvents(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent})
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	var data []events.Event
+	var data []*types.BusEvent
 	go func() {
 		data = sub.GetData()
 		wg.Done()
@@ -91,10 +91,13 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 	sub.Push(last)
 	data = sub.GetData()
 	assert.Equal(t, 1, len(data))
-	assert.Equal(t, events.AccountEvent, data[0].Type())
-	ae, ok := data[0].(accEvt)
-	assert.True(t, ok)
-	assert.Equal(t, last.Account().Id, ae.Account().Id)
+	rt, err := events.ProtoToInternal(data[0].Type)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(rt))
+	assert.Equal(t, events.AccountEvent, rt[0])
+	acc := data[0].GetAccount()
+	assert.NotNil(t, acc)
+	assert.Equal(t, last.Account().Id, acc.Id)
 }
 
 func testFilteredNoValidEvents(t *testing.T) {
@@ -112,7 +115,7 @@ func testFilteredNoValidEvents(t *testing.T) {
 	sub.Push(set...)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	var data []events.Event
+	var data []*types.BusEvent
 	go func() {
 		data = sub.GetData()
 		wg.Done()

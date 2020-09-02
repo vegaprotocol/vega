@@ -29,3 +29,14 @@ func (t *TransferResponse) Proto() types.TransferResponses {
 		Responses: t.responses,
 	}
 }
+
+func (t TransferResponse) StreamMessage() *types.BusEvent {
+	p := t.Proto()
+	return &types.BusEvent{
+		ID:   t.traceID,
+		Type: t.et.ToProto(),
+		Event: &types.BusEvent_TransferResponses{
+			TransferResponses: &p,
+		},
+	}
+}

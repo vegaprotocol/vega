@@ -38,3 +38,14 @@ func (m Market) MarketProto() types.MarketEvent {
 		Payload:  m.MarketEvent(),
 	}
 }
+
+func (m Market) StreamMessage() *types.BusEvent {
+	p := m.MarketProto()
+	return &types.BusEvent{
+		ID:   m.traceID,
+		Type: m.et.ToProto(),
+		Event: &types.BusEvent_Market{
+			Market: &p,
+		},
+	}
+}

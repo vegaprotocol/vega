@@ -35,3 +35,13 @@ func (p *Proposal) PartyID() string {
 func (p Proposal) Proto() types.Proposal {
 	return p.p
 }
+
+func (p Proposal) StreamMessage() *types.BusEvent {
+	return &types.BusEvent{
+		ID:   p.traceID,
+		Type: p.et.ToProto(),
+		Event: &types.BusEvent_Proposal{
+			Proposal: &p.p,
+		},
+	}
+}

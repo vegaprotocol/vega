@@ -25,3 +25,13 @@ func (m MarketData) MarketData() types.MarketData {
 func (m MarketData) Proto() types.MarketData {
 	return m.md
 }
+
+func (m MarketData) StreamMessage() *types.BusEvent {
+	return &types.BusEvent{
+		ID:   m.traceID,
+		Type: m.et.ToProto(),
+		Event: &types.BusEvent_MarketData{
+			MarketData: &m.md,
+		},
+	}
+}

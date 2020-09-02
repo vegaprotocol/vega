@@ -383,6 +383,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.ObserveEventsRequest"><span class="badge">M</span>ObserveEventsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.ObserveEventsResponse"><span class="badge">M</span>ObserveEventsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.ObservePartyProposalsRequest"><span class="badge">M</span>ObservePartyProposalsRequest</a>
                 </li>
 
@@ -753,7 +761,7 @@
 
 
                 <li>
-                  <a href="#vega.BusEvent.Type"><span class="badge">E</span>BusEvent.Type</a>
+                  <a href="#vega.EventType"><span class="badge">E</span>EventType</a>
                 </li>
 
 
@@ -2920,6 +2928,88 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
 
+        <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.EventType">vega.EventType</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>type</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.ObserveEventsResponse">ObserveEventsResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>events</td>
+                  <td><a href="#vega.BusEvent">vega.BusEvent</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</h3>
         <p>Request to subscribe to a stream of governance proposals for a party.</p>
 
@@ -4999,6 +5089,13 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
               </tr>
 
               <tr>
+                <td>ObserveEventBus</td>
+                <td><a href="#api.ObserveEventsRequest">ObserveEventsRequest</a></td>
+                <td><a href="#api.ObserveEventsResponse">ObserveEventsResponse</a> stream</td>
+                <td><p>Subscribe to a stream of events from the core</p></td>
+              </tr>
+
+              <tr>
                 <td>Statistics</td>
                 <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
                 <td><a href="#vega.Statistics">.vega.Statistics</a></td>
@@ -6001,7 +6098,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
                 <tr>
                   <td>type</td>
-                  <td><a href="#vega.BusEvent.Type">BusEvent.Type</a></td>
+                  <td><a href="#vega.EventType">EventType</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -6462,7 +6559,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
 
-        <h3 id="vega.BusEvent.Type">BusEvent.Type</h3>
+        <h3 id="vega.EventType">EventType</h3>
         <p></p>
         <table class="enum-table">
           <thead>

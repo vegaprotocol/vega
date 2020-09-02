@@ -63,8 +63,7 @@ message MarketTick {
   int64 time = 2;
 }
 
-message BusEvent {
-  enum Type {
+enum EventType {
     TYPE_UNSPECIFIED = 0;
     TYPE_ALL = 1;
     TIME_UPDATE = 2;
@@ -87,9 +86,11 @@ message BusEvent {
     MARKET_TICK = 19;
 
     MARKET = 101; // special event for all events implementing a specific interface
-  }
+}
+
+message BusEvent {
   string ID = 1;
-  Type type = 2;
+  EventType type = 2;
   oneof event {
     TimeUpdate timeUpdate = 101;
     TransferResponses transferResponses = 102;

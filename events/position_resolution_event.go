@@ -61,3 +61,14 @@ func (p PosRes) MarketProto() types.MarketEvent {
 		Payload:  p.MarketEvent(),
 	}
 }
+
+func (p PosRes) StreamMessage() *types.BusEvent {
+	pr := p.Proto()
+	return &types.BusEvent{
+		ID:   p.traceID,
+		Type: p.et.ToProto(),
+		Event: &types.BusEvent_PositionResolution{
+			PositionResolution: &pr,
+		},
+	}
+}

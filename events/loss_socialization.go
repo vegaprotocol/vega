@@ -45,3 +45,14 @@ func (l LossSoc) Proto() types.LossSocialization {
 		Amount:   l.amount,
 	}
 }
+
+func (l LossSoc) StreamMessage() *types.BusEvent {
+	p := l.Proto()
+	return &types.BusEvent{
+		ID:   l.traceID,
+		Type: l.et.ToProto(),
+		Event: &types.BusEvent_LossSocialization{
+			LossSocialization: &p,
+		},
+	}
+}
