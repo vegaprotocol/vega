@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -23,6 +24,8 @@ type Watcher struct {
 	cfg  Config
 	path string
 
+	// to be used as an atomic
+	hasChanged         int32
 	cfgUpdateListeners []func(Config)
 	mu                 sync.Mutex
 }
@@ -61,6 +64,20 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 	return w, nil
 }
 
+func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
+	if atomic.LoadInt32(&w.hasChanged) == 0 {
+		// no changes we can return straight away
+		return
+	}
+	// reset the atomic
+	atomic.StoreInt32(&w.hasChanged, 0)
+	// get the config and updates listeners
+	cfg := w.Get()
+	for _, f := range w.cfgUpdateListeners {
+		f(cfg)
+	}
+}
+
 // Get return the last update of the configuration
 func (w *Watcher) Get() Config {
 	w.mu.Lock()
@@ -73,14 +90,6 @@ func (w *Watcher) Get() Config {
 func (w *Watcher) OnConfigUpdate(f func(Config)) {
 	w.mu.Lock()
 	w.cfgUpdateListeners = append(w.cfgUpdateListeners, f)
-	w.mu.Unlock()
-}
-
-func (w *Watcher) notifyCfgUpdate() {
-	w.mu.Lock()
-	for _, f := range w.cfgUpdateListeners {
-		f(w.cfg)
-	}
 	w.mu.Unlock()
 }
 
@@ -119,7 +128,9 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 					w.log.Error("unable to load configuration", logging.Error(err))
 					continue
 				}
-				w.notifyCfgUpdate()
+				// set hasChanged to 1 to trigger configs update
+				// next block
+				atomic.StoreInt32(&w.hasChanged, 1)
 			}
 		case err := <-watcher.Errors:
 			w.log.Error("config watcher received error event", logging.Error(err))
