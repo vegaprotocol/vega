@@ -52,7 +52,7 @@ type AbciApplication struct {
 	// metrics
 	blockHeightCounter prometheus.Counter
 
-	ghandler GenesisHandler
+	ghandler  GenesisHandler
 	rateLimit *ratelimit.Rates
 }
 
