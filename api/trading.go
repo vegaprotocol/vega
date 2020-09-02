@@ -177,6 +177,7 @@ func (s *tradingService) PrepareProposal(
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
+
 	if raw, err = txEncode(raw, blockchain.ProposeCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}

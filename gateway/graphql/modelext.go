@@ -662,6 +662,7 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 		DecimalPlaces:  int(newMarket.DecimalPlaces),
 		RiskParameters: risk,
 		TradingMode:    mode,
+		Metadata:       newMarket.Metadata,
 	}
 	result.Instrument.assignProductFromProto(newMarket.Instrument)
 	return result, nil
