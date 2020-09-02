@@ -29,7 +29,7 @@ type testMarket struct {
 	broker          *mocks.MockBroker
 	now             time.Time
 	asset           string
-	auctionTriggers []execution.AuctionTrigger
+	auctionTriggers []*mocks.MockAuctionTrigger
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, numberOfTriggers int) *testMarket {
@@ -66,10 +66,16 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, numberOfTri
 	collateralEngine.EnableAsset(context.Background(), tokAsset)
 
 	mkts := getMarkets(closingAt)
-	auctionTriggers := getAuctionTriggers(numberOfTriggers, ctrl)
+	mockTriggers := getMockTriggers(numberOfTriggers, ctrl)
+
+	triggers := make([]execution.AuctionTrigger, len(mockTriggers))
+	for i, mt := range mockTriggers {
+		triggers[i] = mt
+	}
+
 	mktEngine, err := execution.NewMarket(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), auctionTriggers)
+		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), triggers)
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -87,7 +93,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, numberOfTri
 		broker:          broker,
 		now:             now,
 		asset:           asset,
-		auctionTriggers: auctionTriggers,
+		auctionTriggers: mockTriggers,
 	}
 }
 
@@ -162,10 +168,10 @@ func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
 	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
 
-func getAuctionTriggers(numberOfTriggers int, ctrl *gomock.Controller) []execution.AuctionTrigger {
-	triggers := make([]execution.AuctionTrigger, numberOfTriggers)
+func getMockTriggers(numberOfTriggers int, ctrl *gomock.Controller) []*mocks.MockAuctionTrigger {
+	triggers := make([]*mocks.MockAuctionTrigger, numberOfTriggers)
 	for i := 0; i < numberOfTriggers; i++ {
-		triggers = append(triggers, mocks.NewMockAuctionTrigger(ctrl))
+		triggers[i] = mocks.NewMockAuctionTrigger(ctrl)
 	}
 	return triggers
 }
@@ -499,4 +505,248 @@ func TestMarketCancelOrder(t *testing.T) {
 	cancelled, err = tm.market.CancelOrderByID("an id that does not exist")
 	assert.Nil(t, cancelled, "cancelling non-exitant order should not work")
 	assert.Error(t, err, "it should be an error to cancel an order that does not exist")
+}
+
+func TestTriggerByTime(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	auctionStartTime := now.Add(1 * time.Second)
+	stillAuction := auctionStartTime.Add(1 * time.Second)
+	auctionEndTime := stillAuction.Add(1 * time.Second)
+	tm := getTestMarket(t, now, closingAt, 1)
+
+	tm.auctionTriggers[0].EXPECT().EnterPerTime(now).Return(false).Times(1)
+
+	closed := tm.market.OnChainTimeUpdate(now)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+
+	tm.auctionTriggers[0].EXPECT().EnterPerTime(auctionStartTime).Return(true).Times(1)
+
+	closed = tm.market.OnChainTimeUpdate(auctionStartTime)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+
+	tm.auctionTriggers[0].EXPECT().LeavePerTime(stillAuction).Return(false).Times(1)
+
+	closed = tm.market.OnChainTimeUpdate(stillAuction)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+
+	tm.auctionTriggers[0].EXPECT().LeavePerTime(auctionEndTime).Return(true).Times(1)
+	tm.auctionTriggers[0].EXPECT().EnterPerPrice(gomock.Any()).Return(false).Times(1)
+
+	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+
+}
+
+func TestTriggerByTimeLeaveAuctionWhenMarketClosed(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	auctionStartTime := now.Add(1 * time.Second)
+	tm := getTestMarket(t, now, closingAt, 1)
+
+	tm.auctionTriggers[0].EXPECT().EnterPerTime(now).Return(false).Times(1)
+
+	closed := tm.market.OnChainTimeUpdate(now)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+
+	tm.auctionTriggers[0].EXPECT().EnterPerTime(auctionStartTime).Return(true).Times(1)
+
+	closed = tm.market.OnChainTimeUpdate(auctionStartTime)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+
+	tm.auctionTriggers[0].EXPECT().LeavePerTime(closingAt).Return(false).Times(1)
+
+	closed = tm.market.OnChainTimeUpdate(closingAt)
+	assert.True(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+}
+
+func TestTriggerByTimeDoNotEnterAuctionWhenMarketClosed(t *testing.T) {
+}
+
+func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	var auctionTriggeringPrice uint64 = 110
+	stillAuction := now.Add(10 * time.Second)
+	auctionEndTime := stillAuction.Add(1 * time.Minute)
+
+	tm := getTestMarket(t, now, closingAt, 1)
+	tm.auctionTriggers[0].EXPECT().EnterPerPrice(auctionTriggeringPrice).Return(true).Times(1)
+	tm.auctionTriggers[0].EXPECT().LeavePerTime(stillAuction).Return(false).Times(1)
+	tm.auctionTriggers[0].EXPECT().LeavePerTime(auctionEndTime).Return(true).Times(1)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       auctionTriggeringPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	orderSell := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_FOK,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       auctionTriggeringPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party2-sell-order",
+	}
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderSell)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	tradingMode := tm.market.GetTradingMode()
+	assert.Equal(t, 0, len(confirmation.Trades))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
+	closed := tm.market.OnChainTimeUpdate(stillAuction)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+
+	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+
+}
+
+func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	var auctionTriggeringPrice uint64 = 110
+	var nonTriggeringUncrossingPrice uint64 = auctionTriggeringPrice - 1
+	stillAuction := now.Add(10 * time.Second)
+	auctionEndTime := stillAuction.Add(1 * time.Minute)
+
+	tm := getTestMarket(t, now, closingAt, 1)
+	tm.auctionTriggers[0].EXPECT().EnterPerPrice(auctionTriggeringPrice).Return(true).Times(1)
+	tm.auctionTriggers[0].EXPECT().LeavePerTime(stillAuction).Return(false).Times(1)
+	tm.auctionTriggers[0].EXPECT().LeavePerTime(auctionEndTime).Return(true).Times(1)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderBuy := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       auctionTriggeringPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	orderSell := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_FOK,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       auctionTriggeringPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party2-sell-order",
+	}
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderSell)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	tradingMode := tm.market.GetTradingMode()
+	assert.Equal(t, 0, len(confirmation.Trades))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
+	closed := tm.market.OnChainTimeUpdate(stillAuction)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+
+	orderBuy2 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid3",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       nonTriggeringUncrossingPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy2)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	orderSell2 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid4",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       nonTriggeringUncrossingPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order",
+	}
+
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderSell2)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
+	assert.False(t, closed)
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+}
+
+func TestTriggerByPriceExitStoppedByOtherTirggerPrice(t *testing.T) {
+}
+
+func TestTriggerByPriceExitStoppedByOtherTirggerTime(t *testing.T) {
 }

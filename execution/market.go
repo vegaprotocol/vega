@@ -371,12 +371,12 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 }
 
 func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time) {
-	isMarketCurrentlyInAuction := m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION
+	isMarketCurrentlyInAuction := m.GetTradingMode() == types.MarketState_MARKET_STATE_AUCTION
 
 	if isMarketCurrentlyInAuction {
 		if m.shouldLeaveAuctionPerTime(t) {
-			indicativeUncrossingPrice, _, _ := m.matching.GetIndicativePriceAndVolume()
-			if !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
+			indicativeUncrossingPrice, indicativeVolume, _ := m.matching.GetIndicativePriceAndVolume()
+			if (indicativeVolume == 0 || !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice)) && !m.shouldEnterAuctionPerTime(t) {
 				m.LeaveAuction(ctx)
 			}
 
@@ -420,6 +420,7 @@ func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
+	m.matching.EnterAuction()
 	// Change market type to auction
 
 	// Check the orderbook for any non auction friendly orders
@@ -431,11 +432,18 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	// @TODO this ought to come from m.mkt
 	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
 	if fba := m.mkt.GetDiscrete(); fba != nil {
+
 		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	}
+	m.matching.LeaveAuction()
 	// Change market type to continuous trading
 
 	// Move any parked orders back into the orderbook
+}
+
+// GetTradingMode : Return trading mode that the market is currently in
+func (m *Market) GetTradingMode() types.MarketState {
+	return m.tradeMode
 }
 
 // SubmitOrder submits the given order
