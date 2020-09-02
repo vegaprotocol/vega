@@ -452,15 +452,17 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
-		m.CancelOrder(ctx, order.PartyID, order.Id)
+		_, err := m.CancelOrder(ctx, order.PartyID, order.Id)
+		if err != nil {
+			m.log.Error("Failed to cancel order: ", logging.String("OrderID", order.Id))
+		}
 	}
 
 	// Apply fee calculations to each trade
 	for _, uo := range uncrossedOrders {
 		err := m.applyFees(ctx, uo.Order, uo.Trades)
-		if err == nil {
-			// Update positions for each order
-			m.position.RegisterOrder(uo.Order)
+		if err != nil {
+			m.log.Error("Unable to apply fees to order: ", logging.String("OrderID", uo.Order.Id))
 		}
 	}
 	// Send an event bus update
