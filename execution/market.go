@@ -722,10 +722,8 @@ func (m *Market) addParty(party string) {
 
 func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
 	// if we have some trades, let's try to get the fees
-	// FIXME(): change the following code with this check:
-	// we de not take any fees if the market was on a open auction
-	// if len(trades) <= 0 || m.IsInMarketOpenAuctionMode {
-	if len(trades) <= 0 {
+
+	if len(trades) <= 0 || m.isOpeningAuction() {
 		return nil
 	}
 
