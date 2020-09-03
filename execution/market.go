@@ -263,6 +263,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.closed = closed
 	m.currentTime = t
 
+	// TODO(): handle market start time
+
 	m.auctionModeTimeBasedSemaphore(ctx, t)
 
 	if m.log.GetLevel() == logging.DebugLevel {
