@@ -40,6 +40,11 @@ type GenesisHandler interface {
 	OnGenesis(genesisTime time.Time, appState []byte, validatorsPubkey [][]byte) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
+type ValidatorTopology interface {
+	Exists(key []byte) bool
+}
+
 type Blockchain struct {
 	log        *logging.Logger
 	clt        *Client
@@ -59,6 +64,7 @@ func New(
 	commander Commander,
 	cancel func(),
 	ghandler GenesisHandler,
+	top ValidatorTopology,
 ) (*Blockchain, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -75,7 +81,7 @@ func New(
 
 	switch strings.ToLower(cfg.ChainProvider) {
 	case "tendermint":
-		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel, ghandler)
+		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel, ghandler, top)
 		if err == nil {
 			clt, err = tm.NewClient(cfg.Tendermint)
 		}
