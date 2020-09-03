@@ -9,15 +9,14 @@ import (
 const (
 	// AbciTxnValidationFailure ...
 	AbciTxnValidationFailure uint32 = 51
-
 	// AbciTxnDecodingFailure code is returned when CheckTx or DeliverTx fail to decode the Txn.
-	AbciTxnDecodingFailure = 60
+	AbciTxnDecodingFailure uint32 = 60
 
 	// AbciTxnInternalError code is returned when CheckTx or DeliverTx fail to process the Txn.
-	AbciTxnInternalError = 70
+	AbciTxnInternalError uint32 = 70
 
 	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command
-	AbciUnknownCommandError = 80
+	AbciUnknownCommandError uint32 = 80
 )
 
 func (app *App) InitChain(req abci.RequestInitChain) (resp abci.ResponseInitChain) {
@@ -62,11 +61,11 @@ func (app *App) CheckTx(req abci.RequestCheckTx) (resp abci.ResponseCheckTx) {
 	// Lookup for check tx, skip if not found
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
-			return NewResponseCheckTx(AbciTxnInternalError)
+			resp.Code = AbciTxnInternalError
 		}
 	}
 
-	return NewResponseCheckTx(abci.CodeTypeOK)
+	return resp
 }
 
 func (app *App) DeliverTx(req abci.RequestDeliverTx) (resp abci.ResponseDeliverTx) {

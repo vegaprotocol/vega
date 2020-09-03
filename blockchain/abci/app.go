@@ -26,7 +26,11 @@ type App struct {
 }
 
 func New(codec Codec) *App {
-	return &App{codec: codec}
+	return &App{
+		codec:      codec,
+		checkTxs:   map[blockchain.Command]CheckTxHandler{},
+		deliverTxs: map[blockchain.Command]DeliverTxHandler{},
+	}
 }
 
 func (app *App) HandleCheckTx(cmd blockchain.Command, fn CheckTxHandler) *App {
