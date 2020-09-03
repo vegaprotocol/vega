@@ -3,7 +3,7 @@ package abci
 import (
 	"context"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 const (
@@ -19,28 +19,28 @@ const (
 	AbciUnknownCommandError uint32 = 80
 )
 
-func (app *App) InitChain(req abci.RequestInitChain) (resp abci.ResponseInitChain) {
+func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
 	if fn := app.OnInitChain; fn != nil {
 		return fn(req)
 	}
 	return
 }
 
-func (app *App) BeginBlock(req abci.RequestBeginBlock) (resp abci.ResponseBeginBlock) {
+func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
 	if fn := app.OnBeginBlock; fn != nil {
 		return fn(req)
 	}
 	return
 }
 
-func (app *App) Commit(req abci.RequestCommit) (resp abci.ResponseCommit) {
+func (app *App) Commit(req types.RequestCommit) (resp types.ResponseCommit) {
 	if fn := app.OnCommit; fn != nil {
 		return fn(req)
 	}
 	return
 }
 
-func (app *App) CheckTx(req abci.RequestCheckTx) (resp abci.ResponseCheckTx) {
+func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	tx, err := app.codec.Decode(req.GetTx())
 	if err != nil {
 		return NewResponseCheckTx(AbciTxnDecodingFailure)
@@ -68,7 +68,7 @@ func (app *App) CheckTx(req abci.RequestCheckTx) (resp abci.ResponseCheckTx) {
 	return resp
 }
 
-func (app *App) DeliverTx(req abci.RequestDeliverTx) (resp abci.ResponseDeliverTx) {
+func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
 	tx, err := app.codec.Decode(req.GetTx())
 	if err != nil {
 		return NewResponseDeliverTx(AbciTxnDecodingFailure)
@@ -93,5 +93,5 @@ func (app *App) DeliverTx(req abci.RequestDeliverTx) (resp abci.ResponseDeliverT
 		return NewResponseDeliverTx(AbciTxnInternalError)
 	}
 
-	return NewResponseDeliverTx(abci.CodeTypeOK)
+	return NewResponseDeliverTx(types.CodeTypeOK)
 }

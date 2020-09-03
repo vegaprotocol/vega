@@ -8,8 +8,7 @@ import (
 )
 
 type Command byte
-type CheckTxHandler func(ctx context.Context, tx Tx) error
-type DeliverTxHandler func(ctx context.Context, tx Tx) error
+type TxHandler func(ctx context.Context, tx Tx) error
 
 type App struct {
 	abci.BaseApplication
@@ -21,24 +20,24 @@ type App struct {
 	OnDeliverTx  OnDeliverTxHandler
 	OnCommit     OnCommitHandler
 
-	checkTxs   map[blockchain.Command]CheckTxHandler
-	deliverTxs map[blockchain.Command]DeliverTxHandler
+	checkTxs   map[blockchain.Command]TxHandler
+	deliverTxs map[blockchain.Command]TxHandler
 }
 
 func New(codec Codec) *App {
 	return &App{
 		codec:      codec,
-		checkTxs:   map[blockchain.Command]CheckTxHandler{},
-		deliverTxs: map[blockchain.Command]DeliverTxHandler{},
+		checkTxs:   map[blockchain.Command]TxHandler{},
+		deliverTxs: map[blockchain.Command]TxHandler{},
 	}
 }
 
-func (app *App) HandleCheckTx(cmd blockchain.Command, fn CheckTxHandler) *App {
+func (app *App) HandleCheckTx(cmd blockchain.Command, fn TxHandler) *App {
 	app.checkTxs[cmd] = fn
 	return app
 }
 
-func (app *App) HandleDeliverTx(cmd blockchain.Command, fn DeliverTxHandler) *App {
+func (app *App) HandleDeliverTx(cmd blockchain.Command, fn TxHandler) *App {
 	app.deliverTxs[cmd] = fn
 	return app
 }
