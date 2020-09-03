@@ -1829,7 +1829,6 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
-	return nil
 }
 
 // func (t *tradingDataService) TransferResponsesSubscribe(
