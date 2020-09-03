@@ -59,6 +59,7 @@ func New(
 	commander Commander,
 	cancel func(),
 	ghandler GenesisHandler,
+	top tm.ValidatorTopology,
 ) (*Blockchain, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -75,7 +76,7 @@ func New(
 
 	switch strings.ToLower(cfg.ChainProvider) {
 	case "tendermint":
-		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel, ghandler)
+		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel, ghandler, top)
 		if err == nil {
 			clt, err = tm.NewClient(cfg.Tendermint)
 		}

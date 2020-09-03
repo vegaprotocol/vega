@@ -2,7 +2,6 @@ package tm
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"sync"
@@ -54,13 +53,15 @@ type AbciApplication struct {
 	blockHeightCounter prometheus.Counter
 
 	ghandler  GenesisHandler
+	top       ValidatorTopology
 	rateLimit *ratelimit.Rates
 }
 
 // NewApplication returns a new instance of the Abci application
 func NewApplication(log *logging.Logger,
 	config Config, stats Stats, proc Processor, svc ApplicationService,
-	time ApplicationTime, onCriticalError func(), ghandler GenesisHandler) *AbciApplication {
+	time ApplicationTime, onCriticalError func(), ghandler GenesisHandler,
+	top ValidatorTopology) *AbciApplication {
 
 	// setup logger
 	log = log.Named(namedLogger)
@@ -75,6 +76,7 @@ func NewApplication(log *logging.Logger,
 		time:            time,
 		onCriticalError: onCriticalError,
 		ghandler:        ghandler,
+		top:             top,
 		rateLimit: ratelimit.New(
 			config.RateLimit.Requests,
 			config.RateLimit.PerNBlocks,
@@ -137,11 +139,6 @@ func (a *AbciApplication) InitChain(req types.RequestInitChain) types.ResponseIn
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
 		vators = append(vators, v.PubKey.Data)
-
-		// Prevent validators for being rate-limited.
-		// This should be updated when each time the validator set is updated.
-		key := base64.StdEncoding.EncodeToString(v.PubKey.Data)
-		a.rateLimit.WhiteList(key)
 	}
 
 	if err := a.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
@@ -222,13 +219,16 @@ func (a *AbciApplication) CheckTx(txn types.RequestCheckTx) types.ResponseCheckT
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
 	}
 
-	// Use the Tx's pubkey to verify its rate allowance
-	key := ratelimit.Key(tx.GetPubKey()).String()
-	if ok := a.rateLimit.Allow(key); !ok {
-		a.log.Error("Rate limit exceeded", logging.String("key", key))
-		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
+	// Verify ratelimit if node is not a validator
+	if !a.top.Exists(tx.GetPubKey()) {
+		// Use the Tx's pubkey to verify its rate allowance
+		key := ratelimit.Key(tx.GetPubKey()).String()
+		if ok := a.rateLimit.Allow(key); !ok {
+			a.log.Error("Rate limit exceeded", logging.String("key", key))
+			return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
+		}
+		a.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", a.rateLimit.Count(key)))
 	}
-	a.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", a.rateLimit.Count(key)))
 
 	if err := a.processor.Validate(txn.Tx); err != nil {
 		a.log.Error("Error when validating payload in CheckTx", logging.Error(err))
