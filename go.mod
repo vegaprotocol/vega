@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vega
 go 1.14
 
 require (
-	code.vegaprotocol.io/quant v0.1.0
+	code.vegaprotocol.io/quant v0.1.1-0.20200811152438-178bb002c267
 	github.com/99designs/gqlgen v0.11.3
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible

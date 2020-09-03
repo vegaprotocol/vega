@@ -2,6 +2,8 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 code.vegaprotocol.io/quant v0.1.0 h1:RlSM9R59ahQ1CgmYmiYkPYGopUrdxd3Ood22kaGWk5Q=
 code.vegaprotocol.io/quant v0.1.0/go.mod h1:fQm5KvyuSwQuFFrzIXyN83Vz6m9tKfx2UCMls/gn1bo=
+code.vegaprotocol.io/quant v0.1.1-0.20200811152438-178bb002c267 h1:YD5B8njt/ThB7TEZuXQ8wcRjmFaejVtyAXdUkV/ZrOw=
+code.vegaprotocol.io/quant v0.1.1-0.20200811152438-178bb002c267/go.mod h1:pX4ABfPF2oXclr/+b+r10yi3u5qBJHR2sjS50m6+4mA=
 github.com/99designs/gqlgen v0.10.2 h1:FfjCqIWejHDJeLpQTI0neoZo5vDO3sdo5oNCucet3A0=
 github.com/99designs/gqlgen v0.10.2/go.mod h1:aDB7oabSAyZ4kUHLEySsLxnWrBy3lA0A2gWKU+qoHwI=
 github.com/99designs/gqlgen v0.11.3 h1:oFSxl1DFS9X///uHV3y6CEfpcXWrDUxVblR4Xib2bs4=
