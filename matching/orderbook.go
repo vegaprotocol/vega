@@ -511,16 +511,21 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 	if order.CreatedAt > b.latestTimestamp {
 		b.latestTimestamp = order.CreatedAt
 	}
-	_, trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
 
-	if err != nil {
-		if err == ErrWashTrade {
-			// we still want to submit this order, but know there will be no trades coming out of it
-			return nil, nil
+	var trades []*types.Trade
+	var err error
+	if b.marketState != types.MarketState_MARKET_STATE_AUCTION {
+		_, trades, err = b.getOppositeSide(order.Side).fakeUncross(order)
+
+		if err != nil {
+			if err == ErrWashTrade {
+				// we still want to submit this order, but know there will be no trades coming out of it
+				return nil, nil
+			}
+			// some random error happened, return both trades and error
+			// this is a case that isn't covered by the current SubmitOrder call
+			return trades, err
 		}
-		// some random error happened, return both trades and error
-		// this is a case that isn't covered by the current SubmitOrder call
-		return trades, err
 	}
 	// no error uncrossing, in all other cases, return trades (could be empty) without an error
 	return trades, nil
