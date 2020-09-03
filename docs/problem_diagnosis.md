@@ -13,6 +13,12 @@ There are a few tools, scripts and commands that we use to start investigating a
 
 ### GRPC
 ### REST
+# Some quick things
+
+## Decoding a public key
+```curl
+echo -n 'DrXug9ukpvwdMVAG1c2jOG+TCYVSvqCshL8dr6z+Kd8=' | base64 -d | hexdump -C | cut -b11-58 | tr -dc '[:alnum:]'
+```
 
 # Some hypothetical situations
 
