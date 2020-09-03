@@ -91,6 +91,7 @@ type proposalData struct {
 
 func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
 	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Level)
 	// ensure params are set
 	nodeValidation, err := NewNodeValidation(log, assets, now, erc)
 	if err != nil {
@@ -151,6 +152,20 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 		te.a = asset.ProtoAsset()
 	}
 	return
+}
+
+// InitState load the genesis configuration into the governance engine
+func (e *Engine) InitState(rawState []byte) error {
+	e.log.Debug("loading genesis configuration")
+	state, err := LoadGenesisState(rawState)
+	if err != nil {
+		e.log.Error("unable to load genesis state",
+			logging.Error(err))
+		return err
+	}
+	params := NetworkParametersFromGenesisState(e.log, *state)
+	e.networkParams = *params
+	return nil
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
@@ -253,7 +268,7 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	// FIXME(): we should not have networkf params per proposal type..
-	return &e.networkParams.NewMarkets, nil
+	return &e.networkParams.Proposals, nil
 }
 
 // validates proposals read from the chain
@@ -294,15 +309,15 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, ErrProposalEnactTimeTooLate
 	}
 
-	if proposal.Terms.ClosingTimestamp < proposal.Terms.ValidationTimestamp {
-		e.log.Debug("proposal closing time can't be smaller than validation time",
+	if proposal.Terms.ClosingTimestamp <= proposal.Terms.ValidationTimestamp {
+		e.log.Debug("proposal closing time can't be smaller or equal than validation time",
 			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
 			logging.Int64("validation-time", proposal.Terms.ValidationTimestamp),
 			logging.String("id", proposal.ID))
 		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
 	}
-	if proposal.Terms.EnactmentTimestamp < proposal.Terms.ClosingTimestamp {
-		e.log.Debug("proposal enactment time can't be smaller than closing time",
+	if proposal.Terms.EnactmentTimestamp <= proposal.Terms.ClosingTimestamp {
+		e.log.Debug("proposal enactment time can't be smaller or equal than closing time",
 			logging.Int64("enactment-time", proposal.Terms.EnactmentTimestamp),
 			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
 			logging.String("id", proposal.ID))

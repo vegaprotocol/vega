@@ -277,7 +277,7 @@ func testEnactmentTime(t *testing.T) {
 	assert.EqualError(t, err, governance.ErrProposalEnactTimeTooLate.Error())
 
 	atClosingTime := eng.newOpenProposal(party.Id, now)
-	atClosingTime.Terms.EnactmentTimestamp = atClosingTime.Terms.ClosingTimestamp
+	atClosingTime.Terms.EnactmentTimestamp = atClosingTime.Terms.ClosingTimestamp + 10
 	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(1))
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		pe, ok := e.(*events.Proposal)
@@ -299,12 +299,21 @@ func testValidateTimestamps(t *testing.T) {
 	// this will need to be refactored
 	eng.accs.GetPartyTokenAccount(party.Id)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 
+	// validate first timestamps in the wrong order
 	now := time.Now()
 	prop := eng.newOpenProposal(party.Id, now)
 	prop.Terms.ValidationTimestamp = prop.Terms.ClosingTimestamp + 10
 	err := eng.SubmitProposal(context.Background(), prop)
+	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
+
+	// then timestamps all the sames
+	now = time.Now()
+	prop = eng.newOpenProposal(party.Id, now)
+	prop.Terms.ValidationTimestamp = prop.Terms.ClosingTimestamp
+	prop.Terms.EnactmentTimestamp = prop.Terms.ClosingTimestamp
+	err = eng.SubmitProposal(context.Background(), prop)
 	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
 }
 

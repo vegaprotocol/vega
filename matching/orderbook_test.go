@@ -1972,11 +1972,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
+	iocOrderId := "1000000000000000000000" //Must be 22 characters
 	iocOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
-		Id:          "100001",
+		Id:          iocOrderId,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		PartyID:     "B",
@@ -1991,13 +1992,13 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, "100001", confirmation.Order.Id)
+	assert.Equal(t, iocOrderId, confirmation.Order.Id)
 	assert.Equal(t, 1, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	// Check to see if the order still exists (it should not)
-	nonorder, err := book.GetOrderByID("100001")
-	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, err)
+	nonorder, err := book.GetOrderByID(iocOrderId)
+	assert.Equal(t, matching.ErrOrderDoesNotExist, err)
 	assert.Equal(t, (*types.Order)(nil), nonorder)
 }
 
@@ -2476,4 +2477,75 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 	assert.Equal(t, 50, int(netorder.Price))
 	assert.Equal(t, 0, int(netorder.Remaining))
 	_ = cnfm
+}
+
+func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	orders, err := book.EnterAuction()
+
+	assert.Equal(t, 0, len(orders))
+	assert.Nil(t, err)
+	order1Id := "1000000000000000000000" //Must be 22 characters
+	order2Id := "1000000000000000000001" //Must be 22 characters
+
+	order1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		MarketID:    market,
+		Id:          order1Id,
+		Side:        types.Side_SIDE_SELL,
+		Price:       100,
+		PartyID:     "A",
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_TIF_GTC,
+		CreatedAt:   10,
+	}
+
+	trades, getErr := book.GetTrades(order1)
+	assert.NoError(t, getErr)
+	confirmation, err := book.SubmitOrder(order1)
+
+	assert.Equal(t, nil, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, order1Id, confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
+	assert.Equal(t, len(trades), len(confirmation.Trades))
+
+	order2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		MarketID:    market,
+		Id:          order2Id,
+		Side:        types.Side_SIDE_BUY,
+		Price:       100,
+		PartyID:     "B",
+		Size:        20,
+		Remaining:   20,
+		TimeInForce: types.Order_TIF_GTC,
+		CreatedAt:   10,
+	}
+	trades, getErr = book.GetTrades(order2)
+	assert.NoError(t, getErr)
+	confirmation, err = book.SubmitOrder(order2)
+
+	assert.Equal(t, nil, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, order2Id, confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
+	assert.Equal(t, len(trades), len(confirmation.Trades))
+
+	// Confirm both orders still on the book
+	order, err := book.GetOrderByID(order1Id)
+	assert.NotNil(t, order)
+	assert.Nil(t, err)
+	order, err = book.GetOrderByID(order2Id)
+	assert.NotNil(t, order)
+	assert.Nil(t, err)
 }
