@@ -2,7 +2,7 @@ There are a few tools, scripts and commands that we use to start investigating a
 
 # Tools worth knowing about.
 ## Vega specific tools
-* [Block explorer](https://explorer.vega.trading/) ([repo](https://github.com/vegaprotocol/explorer)), which contains an API for decoding blocks.
+* [Block explorer](https://explorer.vega.trading/) ([repo](https://github.com/vegaprotocol/explorer)), which contains [an API for decoding blocks](https://github.com/vegaprotocol/explorer#api).
 * [vegastream](https://github.com/vegaprotocol/vega/tree/develop/cmd/vegastream)
 
 ## API Specific tools
