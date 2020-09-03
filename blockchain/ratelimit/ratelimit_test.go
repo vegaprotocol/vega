@@ -82,24 +82,4 @@ func TestRateLimits(t *testing.T) {
 
 	})
 
-	t.Run("Whitelist", func(t *testing.T) {
-		r := ratelimit.New(10, 10).WhiteList("a", "b")
-
-		runN(100, func() {
-			ok := r.Allow("a")
-			assert.True(t, ok, "a should be allowed")
-
-			ok = r.Allow("b")
-			assert.True(t, ok, "b should be allowed")
-		})
-
-		assert.Equal(t, -1, r.Count("a"))
-		assert.Equal(t, -1, r.Count("b"))
-
-		runN(100, func() {
-			r.Allow("c")
-		})
-		assert.False(t, r.Allow("c"), "c should not be allowed")
-	})
-
 }

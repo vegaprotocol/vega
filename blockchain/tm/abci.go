@@ -2,7 +2,6 @@ package tm
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"sync"
@@ -137,11 +136,6 @@ func (a *AbciApplication) InitChain(req types.RequestInitChain) types.ResponseIn
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
 		vators = append(vators, v.PubKey.Data)
-
-		// Prevent validators for being rate-limited.
-		// This should be updated when each time the validator set is updated.
-		key := base64.StdEncoding.EncodeToString(v.PubKey.Data)
-		a.rateLimit.WhiteList(key)
 	}
 
 	if err := a.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
