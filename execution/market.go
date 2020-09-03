@@ -446,7 +446,7 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 
 // GetTradingMode : Return trading mode that the market is currently in
 func (m *Market) GetTradingMode() types.MarketState {
-	return m.tradeMode // TODO (WG 03/09/20): Adding this only to be able the test the triggers for now. Needs to be reconciled with orderbook's marketState - don't need two.
+	return m.tradeMode // TODO (WG 03/09/20): Adding this only to be able the test the triggers for now. Needs to be reconciled with orderbook's marketState - don't need both.
 }
 
 // SubmitOrder submits the given order
