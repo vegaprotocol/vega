@@ -40,7 +40,7 @@ type GenesisHandler interface {
 	OnGenesis(genesisTime time.Time, appState []byte, validatorsPubkey [][]byte) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/blockchain ValidatorTopology
 type ValidatorTopology interface {
 	Exists(key []byte) bool
 }
