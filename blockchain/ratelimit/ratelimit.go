@@ -15,6 +15,7 @@ type Rates struct {
 	requests   int
 	perNBlocks int
 	entries    map[string][]int
+	whiteList  map[string]struct{}
 }
 
 func New(requests, perNBlocks int) *Rates {
@@ -23,6 +24,7 @@ func New(requests, perNBlocks int) *Rates {
 		requests:   requests,
 		perNBlocks: perNBlocks,
 		entries:    map[string][]int{},
+		whiteList:  map[string]struct{}{},
 	}
 }
 
@@ -55,14 +57,25 @@ func (r *Rates) NextBlock() {
 		return
 	}
 
-	for key, _ := range r.entries {
+	for key := range r.entries {
 		if r.Count(key) == 0 {
 			delete(r.entries, key)
 		}
 	}
 }
 
+func (r *Rates) WhiteList(keys ...string) *Rates {
+	for _, key := range keys {
+		r.whiteList[key] = struct{}{}
+	}
+	return r
+}
+
 func (r *Rates) Allow(key string) bool {
+	if _, ok := r.whiteList[key]; ok {
+		return true
+	}
+
 	entry, ok := r.entries[key]
 	if !ok {
 		entry = make([]int, r.perNBlocks)

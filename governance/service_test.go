@@ -136,34 +136,6 @@ func testPrepareProposalNormal(t *testing.T) {
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
 
-func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
-	svc := newTestService(t)
-	defer svc.ctrl.Finish()
-
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{
-			MinCloseInSeconds: 100 * 24 * 60 * 60,
-			MaxCloseInSeconds: 1000 * 24 * 60 * 60,
-		},
-	}
-
-	ts := time.Now().Add(time.Hour * 24 * 2).UTC().Unix()
-
-	terms := types.ProposalTerms{
-		ValidationTimestamp: ts,
-		ClosingTimestamp:    ts,
-		EnactmentTimestamp:  ts,
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
-		},
-	}
-
-	testAuthor := "test-author"
-	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
-
-	assert.EqualError(t, err, governance.ErrInvalidProposalTerms.Error())
-}
-
 func testPrepareProposalEmpty(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
@@ -185,6 +157,5 @@ func testPrepareProposalEmpty(t *testing.T) {
 
 func TestPrepareProposal(t *testing.T) {
 	t.Run("Prepare a normal proposal", testPrepareProposalNormal)
-	t.Run("Prepare a proposal - fail same timestamps", testPrepareProposalWithAllSameTimestamps)
 	t.Run("Prepare an empty proposal", testPrepareProposalEmpty)
 }
