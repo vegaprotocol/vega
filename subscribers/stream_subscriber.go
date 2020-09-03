@@ -26,10 +26,34 @@ type StreamSub struct {
 }
 
 func NewStreamSub(ctx context.Context, types []events.Type, filters ...EventFilter) *StreamSub {
+	trades := false
+	expandedTypes := make([]events.Type, 0, len(types))
+	for _, t := range types {
+		if t == events.MarketEvent {
+			expandedTypes = append(expandedTypes, events.MarketEvents()...)
+		} else {
+			if t == events.TradeEvent {
+				trades = true
+			}
+			expandedTypes = append(expandedTypes, t)
+		}
+	}
+	bufLen := len(expandedTypes) * 10 // each type adds a buffer of 10
+	if bufLen == 0 {
+		// we're subscribing to all events, buffer should be way more than 0, obviously
+		// there's roughly 20 event types, each need a buffer of at least 10
+		// trades are a special case: there's potentially hundreds of trade events per block
+		// wo we want to ensure our buffers are large enough for a normal trade volume
+		trades = true
+		bufLen = 200 // 20 event types, buffer of 10 each
+	}
+	if trades {
+		bufLen += 100 // add buffer for 100 events
+	}
 	s := &StreamSub{
-		Base:    NewBase(ctx, len(types), false),
+		Base:    NewBase(ctx, bufLen, false),
 		mu:      &sync.Mutex{},
-		types:   types,
+		types:   expandedTypes,
 		data:    []events.Event{},
 		filters: filters,
 		updated: make(chan struct{}), // create a blocking channel for these

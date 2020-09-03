@@ -82,49 +82,49 @@ var (
 		MarketTickEvent,
 	}
 
-	protoMap = map[types.EventType]Type{
-		types.EventType_TYPE_ALL:            All,
-		types.EventType_TIME_UPDATE:         TimeUpdate,
-		types.EventType_TRANSFER_RESPONSES:  TransferResponses,
-		types.EventType_POSITION_RESOLUTION: PositionResolution,
-		types.EventType_MARKET:              MarketEvent,
-		types.EventType_ORDER:               OrderEvent,
-		types.EventType_ACCOUNT:             AccountEvent,
-		types.EventType_PARTY:               PartyEvent,
-		types.EventType_TRADE:               TradeEvent,
-		types.EventType_MARGIN_LEVELS:       MarginLevelsEvent,
-		types.EventType_PROPOSAL:            ProposalEvent,
-		types.EventType_VOTE:                VoteEvent,
-		types.EventType_MARKET_DATA:         MarketDataEvent,
-		types.EventType_NODE_SIGNATURE:      NodeSignatureEvent,
-		types.EventType_LOSS_SOCIALIZATION:  LossSocializationEvent,
-		types.EventType_SETTLE_POSITION:     SettlePositionEvent,
-		types.EventType_SETTLE_DISTRESSED:   SettleDistressedEvent,
-		types.EventType_MARKET_CREATED:      MarketCreatedEvent,
-		types.EventType_ASSET:               AssetEvent,
-		types.EventType_MARKET_TICK:         MarketTickEvent,
+	protoMap = map[types.BusEventType]Type{
+		types.BusEventType_BUS_EVENT_TYPE_ALL:                 All,
+		types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:         TimeUpdate,
+		types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:  TransferResponses,
+		types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION: PositionResolution,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET:              MarketEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ORDER:               OrderEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:             AccountEvent,
+		types.BusEventType_BUS_EVENT_TYPE_PARTY:               PartyEvent,
+		types.BusEventType_BUS_EVENT_TYPE_TRADE:               TradeEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:       MarginLevelsEvent,
+		types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:            ProposalEvent,
+		types.BusEventType_BUS_EVENT_TYPE_VOTE:                VoteEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:         MarketDataEvent,
+		types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:      NodeSignatureEvent,
+		types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:  LossSocializationEvent,
+		types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:     SettlePositionEvent,
+		types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:   SettleDistressedEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:      MarketCreatedEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ASSET:               AssetEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
 	}
 
-	toProto = map[Type]types.EventType{
-		TimeUpdate:             types.EventType_TIME_UPDATE,
-		TransferResponses:      types.EventType_TRANSFER_RESPONSES,
-		PositionResolution:     types.EventType_POSITION_RESOLUTION,
-		MarketEvent:            types.EventType_MARKET,
-		OrderEvent:             types.EventType_ORDER,
-		AccountEvent:           types.EventType_ACCOUNT,
-		PartyEvent:             types.EventType_PARTY,
-		TradeEvent:             types.EventType_TRADE,
-		MarginLevelsEvent:      types.EventType_MARGIN_LEVELS,
-		ProposalEvent:          types.EventType_PROPOSAL,
-		VoteEvent:              types.EventType_VOTE,
-		MarketDataEvent:        types.EventType_MARKET_DATA,
-		NodeSignatureEvent:     types.EventType_NODE_SIGNATURE,
-		LossSocializationEvent: types.EventType_LOSS_SOCIALIZATION,
-		SettlePositionEvent:    types.EventType_SETTLE_POSITION,
-		SettleDistressedEvent:  types.EventType_SETTLE_DISTRESSED,
-		MarketCreatedEvent:     types.EventType_MARKET_CREATED,
-		AssetEvent:             types.EventType_ASSET,
-		MarketTickEvent:        types.EventType_MARKET_TICK,
+	toProto = map[Type]types.BusEventType{
+		TimeUpdate:             types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+		TransferResponses:      types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
+		PositionResolution:     types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
+		MarketEvent:            types.BusEventType_BUS_EVENT_TYPE_MARKET,
+		OrderEvent:             types.BusEventType_BUS_EVENT_TYPE_ORDER,
+		AccountEvent:           types.BusEventType_BUS_EVENT_TYPE_ACCOUNT,
+		PartyEvent:             types.BusEventType_BUS_EVENT_TYPE_PARTY,
+		TradeEvent:             types.BusEventType_BUS_EVENT_TYPE_TRADE,
+		MarginLevelsEvent:      types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS,
+		ProposalEvent:          types.BusEventType_BUS_EVENT_TYPE_PROPOSAL,
+		VoteEvent:              types.BusEventType_BUS_EVENT_TYPE_VOTE,
+		MarketDataEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA,
+		NodeSignatureEvent:     types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE,
+		LossSocializationEvent: types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION,
+		SettlePositionEvent:    types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION,
+		SettleDistressedEvent:  types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED,
+		MarketCreatedEvent:     types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED,
+		AssetEvent:             types.BusEventType_BUS_EVENT_TYPE_ASSET,
+		MarketTickEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
 	}
 
 	eventStrings = map[Type]string{
@@ -240,11 +240,14 @@ func (t Type) String() string {
 	return s
 }
 
-func ProtoToInternal(pTypes ...types.EventType) ([]Type, error) {
+// ProtoToInternal converts the proto message enum to our internal constants
+// we're not using a map to de-duplicate the event types here, so we can exploit
+// duplicating the same event to control the internal subscriber channel buffer
+func ProtoToInternal(pTypes ...types.BusEventType) ([]Type, error) {
 	ret := make([]Type, 0, len(pTypes))
 	for _, t := range pTypes {
 		// all events -> subscriber should return a nil slice
-		if t == types.EventType_TYPE_ALL {
+		if t == types.BusEventType_BUS_EVENT_TYPE_ALL {
 			return nil, nil
 		}
 		it, ok := protoMap[t]
@@ -290,10 +293,10 @@ func GetPartyAndMarketFilter(mID, pID string) func(Event) bool {
 	}
 }
 
-func (t Type) ToProto() types.EventType {
+func (t Type) ToProto() types.BusEventType {
 	pt, ok := toProto[t]
 	if !ok {
-		return types.EventType_TYPE_UNSPECIFIED
+		return types.BusEventType_BUS_EVENT_TYPE_UNSPECIFIED
 	}
 	return pt
 }

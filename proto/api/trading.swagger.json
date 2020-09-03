@@ -2085,7 +2085,7 @@
           "type": "string"
         },
         "type": {
-          "$ref": "#/definitions/vegaEventType"
+          "$ref": "#/definitions/vegaBusEventType"
         },
         "timeUpdate": {
           "$ref": "#/definitions/vegaTimeUpdate"
@@ -2145,6 +2145,33 @@
           "$ref": "#/definitions/vegaMarketEvent"
         }
       }
+    },
+    "vegaBusEventType": {
+      "type": "string",
+      "enum": [
+        "BUS_EVENT_TYPE_UNSPECIFIED",
+        "BUS_EVENT_TYPE_ALL",
+        "BUS_EVENT_TYPE_TIME_UPDATE",
+        "BUS_EVENT_TYPE_TRANSFER_RESPONSES",
+        "BUS_EVENT_TYPE_POSITION_RESOLUTION",
+        "BUS_EVENT_TYPE_ORDER",
+        "BUS_EVENT_TYPE_ACCOUNT",
+        "BUS_EVENT_TYPE_PARTY",
+        "BUS_EVENT_TYPE_TRADE",
+        "BUS_EVENT_TYPE_MARGIN_LEVELS",
+        "BUS_EVENT_TYPE_PROPOSAL",
+        "BUS_EVENT_TYPE_VOTE",
+        "BUS_EVENT_TYPE_MARKET_DATA",
+        "BUS_EVENT_TYPE_NODE_SIGNATURE",
+        "BUS_EVENT_TYPE_LOSS_SOCIALIZATION",
+        "BUS_EVENT_TYPE_SETTLE_POSITION",
+        "BUS_EVENT_TYPE_SETTLE_DISTRESSED",
+        "BUS_EVENT_TYPE_MARKET_CREATED",
+        "BUS_EVENT_TYPE_ASSET",
+        "BUS_EVENT_TYPE_MARKET_TICK",
+        "BUS_EVENT_TYPE_MARKET"
+      ],
+      "default": "BUS_EVENT_TYPE_UNSPECIFIED"
     },
     "vegaCandle": {
       "type": "object",
@@ -2387,33 +2414,6 @@
         }
       },
       "description": "Ethereum event (for oracles)."
-    },
-    "vegaEventType": {
-      "type": "string",
-      "enum": [
-        "TYPE_UNSPECIFIED",
-        "TYPE_ALL",
-        "TIME_UPDATE",
-        "TRANSFER_RESPONSES",
-        "POSITION_RESOLUTION",
-        "ORDER",
-        "ACCOUNT",
-        "PARTY",
-        "TRADE",
-        "MARGIN_LEVELS",
-        "PROPOSAL",
-        "VOTE",
-        "MARKET_DATA",
-        "NODE_SIGNATURE",
-        "LOSS_SOCIALIZATION",
-        "SETTLE_POSITION",
-        "SETTLE_DISTRESSED",
-        "MARKET_CREATED",
-        "ASSET",
-        "MARKET_TICK",
-        "MARKET"
-      ],
-      "default": "TYPE_UNSPECIFIED"
     },
     "vegaExternalRiskModel": {
       "type": "object",

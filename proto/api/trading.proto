@@ -1025,7 +1025,7 @@ message EstimateFeeResponse {
 }
 
 message ObserveEventsRequest {
-  repeated vega.EventType type = 1;
+  repeated vega.BusEventType type = 1;
   string marketID = 2;
   string partyID = 3;
 }

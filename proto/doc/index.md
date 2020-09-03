@@ -160,7 +160,7 @@
     - [TradeSettlement](#vega.TradeSettlement)
     - [TransferResponses](#vega.TransferResponses)
 
-    - [EventType](#vega.EventType)
+    - [BusEventType](#vega.BusEventType)
 
 
 
@@ -1069,7 +1069,7 @@ Response for a list of markets on Vega.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [vega.EventType](#vega.EventType) | repeated |  |
+| type | [vega.BusEventType](#vega.BusEventType) | repeated |  |
 | marketID | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
 
@@ -2397,7 +2397,7 @@ An event related to validator management with foreign networks.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | ID | [string](#string) |  |  |
-| type | [EventType](#vega.EventType) |  |  |
+| type | [BusEventType](#vega.BusEventType) |  |  |
 | timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
 | transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
 | positionResolution | [PositionResolution](#vega.PositionResolution) |  |  |
@@ -2575,34 +2575,34 @@ TransferResponses - a slice of transfer response objects
 
 
 
-<a name="vega.EventType"></a>
+<a name="vega.BusEventType"></a>
 
-### EventType
+### BusEventType
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| TYPE_UNSPECIFIED | 0 |  |
-| TYPE_ALL | 1 |  |
-| TIME_UPDATE | 2 |  |
-| TRANSFER_RESPONSES | 3 |  |
-| POSITION_RESOLUTION | 4 |  |
-| ORDER | 5 |  |
-| ACCOUNT | 6 |  |
-| PARTY | 7 |  |
-| TRADE | 8 |  |
-| MARGIN_LEVELS | 9 |  |
-| PROPOSAL | 10 |  |
-| VOTE | 11 |  |
-| MARKET_DATA | 12 |  |
-| NODE_SIGNATURE | 13 |  |
-| LOSS_SOCIALIZATION | 14 |  |
-| SETTLE_POSITION | 15 |  |
-| SETTLE_DISTRESSED | 16 |  |
-| MARKET_CREATED | 17 |  |
-| ASSET | 18 |  |
-| MARKET_TICK | 19 |  |
-| MARKET | 101 | special event for all events implementing a specific interface |
+| BUS_EVENT_TYPE_UNSPECIFIED | 0 |  |
+| BUS_EVENT_TYPE_ALL | 1 |  |
+| BUS_EVENT_TYPE_TIME_UPDATE | 2 |  |
+| BUS_EVENT_TYPE_TRANSFER_RESPONSES | 3 |  |
+| BUS_EVENT_TYPE_POSITION_RESOLUTION | 4 |  |
+| BUS_EVENT_TYPE_ORDER | 5 |  |
+| BUS_EVENT_TYPE_ACCOUNT | 6 |  |
+| BUS_EVENT_TYPE_PARTY | 7 |  |
+| BUS_EVENT_TYPE_TRADE | 8 |  |
+| BUS_EVENT_TYPE_MARGIN_LEVELS | 9 |  |
+| BUS_EVENT_TYPE_PROPOSAL | 10 |  |
+| BUS_EVENT_TYPE_VOTE | 11 |  |
+| BUS_EVENT_TYPE_MARKET_DATA | 12 |  |
+| BUS_EVENT_TYPE_NODE_SIGNATURE | 13 |  |
+| BUS_EVENT_TYPE_LOSS_SOCIALIZATION | 14 |  |
+| BUS_EVENT_TYPE_SETTLE_POSITION | 15 |  |
+| BUS_EVENT_TYPE_SETTLE_DISTRESSED | 16 |  |
+| BUS_EVENT_TYPE_MARKET_CREATED | 17 |  |
+| BUS_EVENT_TYPE_ASSET | 18 |  |
+| BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
+| BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
 
