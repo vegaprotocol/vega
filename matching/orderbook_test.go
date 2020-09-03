@@ -1972,11 +1972,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
+	iocOrderId := "1000000000000000000000" //Must be 22 characters
 	iocOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
-		Id:          "100001",
+		Id:          iocOrderId,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		PartyID:     "B",
@@ -1991,13 +1992,13 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, "100001", confirmation.Order.Id)
+	assert.Equal(t, iocOrderId, confirmation.Order.Id)
 	assert.Equal(t, 1, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	// Check to see if the order still exists (it should not)
-	nonorder, err := book.GetOrderByID("100001")
-	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, err)
+	nonorder, err := book.GetOrderByID(iocOrderId)
+	assert.Equal(t, matching.ErrOrderDoesNotExist, err)
 	assert.Equal(t, (*types.Order)(nil), nonorder)
 }
 
