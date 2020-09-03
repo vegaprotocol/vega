@@ -423,7 +423,7 @@ func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
-	m.matching.EnterAuction()
+	m.matching.EnterAuction() // TODO (WG 03/09/20): Cancel orders, calling this only to be able the test the triggers for now.
 	// Change market type to auction
 
 	// Check the orderbook for any non auction friendly orders
@@ -438,7 +438,7 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 
 		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	}
-	m.matching.LeaveAuction()
+	m.matching.LeaveAuction() // TODO (WG 03/09/20): Push out trades, calling this only to be able the test the triggers for now.
 	// Change market type to continuous trading
 
 	// Move any parked orders back into the orderbook
