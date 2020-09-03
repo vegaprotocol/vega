@@ -374,9 +374,9 @@ func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time)
 	isMarketCurrentlyInAuction := m.GetTradingMode() == types.MarketState_MARKET_STATE_AUCTION
 
 	if isMarketCurrentlyInAuction {
-		if m.shouldLeaveAuctionPerTime(t) {
+		if m.shouldLeaveAuctionPerTime(t) && !m.shouldEnterAuctionPerTime(t) {
 			indicativeUncrossingPrice, indicativeVolume, _ := m.matching.GetIndicativePriceAndVolume()
-			if (indicativeVolume == 0 || !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice)) && !m.shouldEnterAuctionPerTime(t) {
+			if indicativeVolume == 0 || !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
 				m.LeaveAuction(ctx)
 			}
 
