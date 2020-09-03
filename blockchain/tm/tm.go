@@ -58,8 +58,9 @@ func New(
 	service ApplicationService,
 	time ApplicationTime,
 	cancel func(),
+	ghandler GenesisHandler,
 ) (*TMChain, error) {
-	app := NewApplication(log, cfg, stats, proc, service, time, cancel)
+	app := NewApplication(log, cfg, stats, proc, service, time, cancel, ghandler)
 	socketServer := NewServer(log, cfg, app)
 	if err := socketServer.Start(); err != nil {
 		return nil, errors.Wrap(err, "ABCI socket server error")

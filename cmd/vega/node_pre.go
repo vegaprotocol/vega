@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -21,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -374,6 +376,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 
+	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
+	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {
+		l.timeService.SetTimeNow(context.Background(), t)
+	})
+
 	l.broker = broker.New(l.ctx)
 	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub)
 
@@ -415,6 +422,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
 	}
+	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
@@ -436,7 +444,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
 	// now instanciate the blockchain layer
-	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel)
+	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel, l.genesisHandler)
 	if err != nil {
 		return errors.Wrap(err, "unable to start the blockchain")
 	}

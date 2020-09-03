@@ -1434,13 +1434,7 @@ func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types
 	if len(order.PartyID) == 0 {
 		return nil, errors.New("invalid party")
 	}
-	req := protoapi.PartyByIDRequest{PartyID: order.PartyID}
-	res, err := r.tradingDataClient.PartyByID(ctx, &req)
-	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Party, nil
+	return &types.Party{Id: order.PartyID}, nil
 }
 
 // END: Order Resolver
@@ -1838,10 +1832,12 @@ func (r *myMutationResolver) PrepareProposal(
 	if reference != nil {
 		ref = *reference
 	}
+
 	terms, err := proposalTerms.IntoProto()
 	if err != nil {
 		return nil, err
 	}
+
 	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
 		PartyID:   partyID,
 		Reference: ref,
