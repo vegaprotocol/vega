@@ -401,12 +401,13 @@ func (m *Market) shouldEnterAuctionPerTime(t time.Time) bool {
 }
 
 func (m *Market) shouldLeaveAuctionPerTime(t time.Time) bool {
+	b := true
 	for _, trigger := range m.auctionTriggers {
 		if !trigger.LeavePerTime(t) {
-			return false
+			b = false // Don't exit early in case multiple triggers hit and internal stage changes relevant
 		}
 	}
-	return true
+	return b
 }
 
 func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
