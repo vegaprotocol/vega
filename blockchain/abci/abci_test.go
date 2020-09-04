@@ -15,12 +15,14 @@ import (
 type testTx struct {
 	payload    []byte
 	pubkey     []byte
+	hash       []byte
 	command    blockchain.Command
 	validateFn func() error
 }
 
 func (tx *testTx) Payload() []byte             { return tx.payload }
 func (tx *testTx) PubKey() []byte              { return tx.pubkey }
+func (tx *testTx) Hash() []byte                { return tx.hash }
 func (tx *testTx) Command() blockchain.Command { return tx.command }
 func (tx *testTx) Validate() error {
 	if fn := tx.validateFn; fn != nil {
