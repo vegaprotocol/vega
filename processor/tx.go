@@ -3,6 +3,7 @@ package processor
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/blockchain"
 	types "code.vegaprotocol.io/vega/proto"
@@ -22,54 +23,87 @@ var (
 )
 
 type Tx struct {
-	proto *types.Transaction
+	tx  *types.Transaction
+	sig *types.Signature
 }
 
-func NewTx(tx *types.Transaction) (*Tx, error) {
+func NewTx(tx *types.Transaction, sig *types.Signature) (*Tx, error) {
 	if len(tx.InputData) < TxValidLen {
 		return nil, ErrInvalidTxPayloadLen
 	}
 
-	return &Tx{tx}, nil
+	return &Tx{tx, sig}, nil
 }
 
 // Hash returns hash of the given Tx. Hashes are unique to every vega tx.
 // The hash is the first TxHeaderLen bytes.
-func (tx *Tx) Hash() []byte { return tx.proto.InputData[:TxHeaderLen] }
+func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHeaderLen] }
 
 // Payload returns the payload of the transaction, this is all the bytes,
 // excluding the prefix and the command.
-func (tx *Tx) Payload() []byte { return tx.proto.InputData[TxHeaderLen:] }
+func (tx *Tx) Payload() []byte { return tx.tx.InputData[TxHeaderLen:] }
 
-func (tx *Tx) PubKey() []byte { return tx.proto.GetPubKey() }
+func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
 
 // Command returns the Command of the Tx
 func (tx *Tx) Command() blockchain.Command {
-	cmd := tx.proto.InputData[TxPrefixLen]
+	cmd := tx.tx.InputData[TxPrefixLen]
 	return blockchain.Command(cmd)
 }
 
-// Validate returns error if the Tx is invalid.
+func (tx *Tx) Unmarshal(i interface{}) error {
+	if t, ok := i.(proto.Message); ok {
+		return proto.Unmarshal(tx.Payload(), t)
+	}
+	return nil
+}
+
+// toProto decodes a tx given its command into the respective proto type
+func (tx *Tx) toProto() (interface{}, error) {
+	msgs := map[blockchain.Command]proto.Message{
+		blockchain.SubmitOrderCommand:   &types.OrderSubmission{},
+		blockchain.CancelOrderCommand:   &types.OrderCancellation{},
+		blockchain.AmendOrderCommand:    &types.OrderAmendment{},
+		blockchain.ProposeCommand:       &types.Proposal{},
+		blockchain.VoteCommand:          &types.Vote{},
+		blockchain.NodeVoteCommand:      &types.NodeVote{},
+		blockchain.WithdrawCommand:      &types.Withdraw{},
+		blockchain.RegisterNodeCommand:  &types.NodeRegistration{},
+		blockchain.NodeSignatureCommand: &types.NodeSignature{},
+		blockchain.ChainEventCommand:    &types.ChainEvent{},
+	}
+	msg, ok := msgs[tx.Command()]
+	if !ok {
+		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", tx.Command().String())
+	}
+
+	if err := tx.Unmarshal(msg); err != nil {
+		return nil, err
+	}
+
+	return msg, nil
+}
+
+// Validate verifies that the pubkey matches
 func (tx *Tx) Validate() error {
-	switch tx.Command() {
-	case blockchain.SubmitOrderCommand:
-		order, err := tx.asOrderSubmission()
-		if err != nil {
-			return err
-		}
+	cmd, err := tx.toProto()
+	if err != nil {
+		return err
+	}
 
-		if order.PartyID != hex.EncodeToString(tx.PubKey()) {
-			return ErrOrderSubmissionPartyAndPubKeyDoesNotMatch
+	pubkey := hex.EncodeToString(tx.PubKey())
+	// Verify party ID on those types who have it.
+	if t, ok := cmd.(interface{ GetPartyID() string }); ok {
+		if t.GetPartyID() != pubkey {
+			return errors.New("pubkey does not match with party-id")
 		}
+	}
 
-		return nil
-
-	case blockchain.CancelOrderCommand:
-		order, err := tx.asOrderCancellation()
-		if err != nil {
-			return err
+	switch t := cmd.(type) {
+	case *types.NodeRegistration:
+		if hex.EncodeToString(t.PubKey) != pubkey {
+			return errors.New("pubkey mismatch")
 		}
-		_ = order
 	}
 
 	return nil
@@ -99,22 +133,4 @@ func (tx *Tx) asOrderSubmission() (*types.Order, error) {
 	}
 
 	return &order, nil
-}
-
-func (tx *Tx) asOrderCancellation() (*types.OrderCancellation, error) {
-	order := &types.OrderCancellation{}
-	err := proto.Unmarshal(tx.Payload(), order)
-	if err != nil {
-		return nil, err
-	}
-	return order, nil
-}
-
-func (tx *Tx) asWithdraw() (*types.Withdraw, error) {
-	w := &types.Withdraw{}
-	err := proto.Unmarshal(tx.Payload(), w)
-	if err != nil {
-		return nil, err
-	}
-	return w, nil
 }

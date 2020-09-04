@@ -217,7 +217,7 @@ func (a *AbciApplication) BeginBlock(beginBlock types.RequestBeginBlock) types.R
 // the rest using CheckTx against the post-Commit mempool state]
 //
 func (a *AbciApplication) CheckTx(txn types.RequestCheckTx) types.ResponseCheckTx {
-	tx, err := proto.NewTxFromSignedBundlePayload(txn.Tx)
+	tx, _, err := proto.NewTxFromSignedBundlePayload(txn.Tx)
 	if err != nil {
 		a.log.Error("Error when decoding payload in CheckTx", logging.Error(err))
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
