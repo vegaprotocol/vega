@@ -25,4 +25,4 @@ type OnInitChainHandler func(types.RequestInitChain) types.ResponseInitChain
 type OnBeginBlockHandler func(types.RequestBeginBlock) types.ResponseBeginBlock
 type OnCheckTxHandler func(context.Context, types.RequestCheckTx) (context.Context, types.ResponseCheckTx)
 type OnDeliverTxHandler func(context.Context, types.RequestDeliverTx) (context.Context, types.ResponseDeliverTx)
-type OnCommitHandler func(types.RequestCommit) types.ResponseCommit
+type OnCommitHandler func() types.ResponseCommit

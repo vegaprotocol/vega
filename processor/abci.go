@@ -25,7 +25,6 @@ type App struct {
 	previousTimestamp time.Time
 	hasRegistered     bool
 	size              uint64
-	seenPayloads      map[string]struct{}
 
 	Config
 	log      *logging.Logger
@@ -66,8 +65,7 @@ func NewApp(
 	top ValidatorTopology,
 ) *App {
 	app := &App{
-		abci:         abci.New(&codec{}),
-		seenPayloads: map[string]struct{}{},
+		abci: abci.New(&codec{}),
 
 		log:      log,
 		Config:   config,
@@ -108,6 +106,10 @@ func NewApp(
 		HandleDeliverTx(blockchain.ChainEventCommand, app.DeliverChainEvent)
 
 	return app
+}
+
+func (app *App) Abci() *abci.App {
+	return app.abci
 }
 
 func (app *App) cancel() {
@@ -153,7 +155,7 @@ func (app *App) OnBeginBlock(tmtypes.RequestBeginBlock) (resp tmtypes.ResponseBe
 	return
 }
 
-func (app *App) OnCommit(req tmtypes.RequestCommit) (resp tmtypes.ResponseCommit) {
+func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 

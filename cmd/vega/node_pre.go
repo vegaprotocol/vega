@@ -447,6 +447,27 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return errors.Wrap(err, "unable to start the blockchain")
 	}
 
+	app := processor.NewApp(
+		l.Log,
+		l.processor.Config,
+		l.cancel,
+		l.assets,
+		l.banking,
+		l.erc,
+		l.evtfwd,
+		l.executionEngine,
+		commander,
+		l.collateral,
+		l.governance,
+		l.notary,
+		l.stats.Blockchain,
+		l.timeService,
+		l.topology,
+	)
+	_ = app
+
+	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) })
+
 	// get the chain client as well.
 	l.blockchainClient = l.blockchain.Client()
 	l.topology.SetChain(l.blockchain.Client())

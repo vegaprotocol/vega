@@ -33,9 +33,9 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBegi
 	return
 }
 
-func (app *App) Commit(req types.RequestCommit) (resp types.ResponseCommit) {
+func (app *App) Commit() (resp types.ResponseCommit) {
 	if fn := app.OnCommit; fn != nil {
-		return fn(req)
+		return fn()
 	}
 	return
 }
