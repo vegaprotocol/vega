@@ -50,7 +50,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		return NewResponseCheckTx(AbciTxnValidationFailure)
 	}
 
-	ctx := context.Background()
+	ctx := TxToContext(context.Background(), tx)
 	if fn := app.OnCheckTx; fn != nil {
 		ctx, resp = fn(ctx, req)
 		if resp.IsErr() {
@@ -75,7 +75,7 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here
-	ctx := context.Background()
+	ctx := TxToContext(context.Background(), tx)
 	if fn := app.OnDeliverTx; fn != nil {
 		ctx, resp = fn(ctx, req)
 		if resp.IsErr() {

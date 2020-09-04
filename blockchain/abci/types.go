@@ -12,6 +12,7 @@ type Tx interface {
 	Command() blockchain.Command
 	Payload() []byte
 	PubKey() []byte
+	Hash() []byte
 	Validate() error
 }
 

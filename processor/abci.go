@@ -3,12 +3,14 @@ package processor
 import (
 	"context"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
@@ -163,9 +165,16 @@ func (app *App) OnCommit(req tmtypes.RequestCommit) (resp tmtypes.ResponseCommit
 	return
 }
 
-func (app *App) OnDeliverTx(ctx context.Context, _ tmtypes.RequestDeliverTx) (context.Context, tmtypes.ResponseDeliverTx) {
+// OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
+func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx) (context.Context, tmtypes.ResponseDeliverTx) {
 	app.size++
-	return ctx, tmtypes.ResponseDeliverTx{}
+
+	tx := abci.TxFromContext(ctx)
+
+	return contextutil.WithTraceID(
+		ctx,
+		hex.EncodeToString([]byte(tx.Hash())),
+	), tmtypes.ResponseDeliverTx{}
 }
 
 func (app *App) updateStats() {

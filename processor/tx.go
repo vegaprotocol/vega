@@ -33,6 +33,10 @@ func NewTx(tx *types.Transaction) (*Tx, error) {
 	return &Tx{tx}, nil
 }
 
+// Hash returns hash of the given Tx. Hashes are unique to every vega tx.
+// The hash is the first TxHeaderLen bytes.
+func (tx *Tx) Hash() []byte { return tx.proto.InputData[:TxHeaderLen] }
+
 // Payload returns the payload of the transaction, this is all the bytes,
 // excluding the prefix and the command.
 func (tx *Tx) Payload() []byte { return tx.proto.InputData[TxHeaderLen:] }
