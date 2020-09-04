@@ -3986,7 +3986,7 @@ enum ProposalRejectionReason {
   "The proposal has no product specified"
   NoProduct
   "The specified product is not supported"
-  UnuspportedProduct
+  UnsupportedProduct
   "Invalid future maturity timestamp (expect RFC3339)"
   InvalidFutureMaturityTimestamp
   "The product maturity is already in the past"
