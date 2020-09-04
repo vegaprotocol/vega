@@ -1091,7 +1091,7 @@ const (
 	// The proposal has no product specified
 	ProposalRejectionReasonNoProduct ProposalRejectionReason = "NoProduct"
 	// The specified product is not supported
-	ProposalRejectionReasonUUnsupportedProduct ProposalRejectionReason = "UnsupportedProduct"
+	ProposalRejectionReasonUnsupportedProduct ProposalRejectionReason = "UnsupportedProduct"
 	// Invalid future maturity timestamp (expect RFC3339)
 	ProposalRejectionReasonInvalidFutureMaturityTimestamp ProposalRejectionReason = "InvalidFutureMaturityTimestamp"
 	// The product maturity is already in the past
