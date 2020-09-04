@@ -2,67 +2,131 @@ package subscribers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+type priceLevel struct {
+	price       int64
+	totalOrders int64
+	totalVolume int64
+}
+
+// MarketDepthBuilder is a subscriber of order events
+// used to build the live market depth structure
 type MarketDepthBuilder struct {
 	*Base
-	mu    sync.Mutex
-	cfg   Config
-	log   *logging.Logger
-	store OrderStore
-	buf   []types.Order
+	mu         sync.Mutex
+	buf        []types.Order
+	liveOrders map[string]*types.Order
+	buySide    []*priceLevel
+	sellSide   []*priceLevel
 }
 
-func NewMarketDepthBuilder(ctx context.Context, cfg Config, log *logging.Logger, ack bool) *MarketDepthBuilder {
-	log = log.Named(namedLogger)
-	log.SetLevel(cfg.OrderEventLogLevel.Level)
-
-	o := MarketDepthBuilder{
+// NewMarketDepthBuilder constructor to create a market depth subscriber
+func NewMarketDepthBuilder(ctx context.Context, ack bool) *MarketDepthBuilder {
+	mdb := MarketDepthBuilder{
 		Base: NewBase(ctx, 10, ack),
-		log:  log,
 		buf:  []types.Order{},
-		cfg:  cfg,
 	}
-	if o.isRunning() {
-		go o.loop(o.ctx)
+	if mdb.isRunning() {
+		go mdb.loop(mdb.ctx)
 	}
-	return &o
+	return &mdb
 }
 
-func (o *MarketDepthBuilder) loop(ctx context.Context) {
+func (mdb *MarketDepthBuilder) loop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			o.Halt()
+			mdb.Halt()
 			return
-		case e := <-o.ch:
-			if o.isRunning() {
-				o.Update(e)
+		case e := <-mdb.ch:
+			if mdb.isRunning() {
+				mdb.Push(e)
 			}
 		}
 	}
 }
 
-func (o *MarketDepthBuilder) Update(evts ...events.Event) {
+// Push takes order messages and applied them to the makret depth structure
+func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch te := e.(type) {
 		case OE:
-			o.updateMarketDepth(te.Order())
+			mdb.updateMarketDepth(te.Order())
 		}
 	}
 }
 
-func (o *MarketDepthBuilder) Types() []events.Type {
+// Types returns all the message types this subscriber wants to receive
+func (mdb *MarketDepthBuilder) Types() []events.Type {
 	return []events.Type{
 		events.OrderEvent,
 	}
 }
 
-func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
+func (mdb *MarketDepthBuilder) orderExists(orderID string) *types.Order {
+	return mdb.liveOrders[orderID]
+}
 
+func (mdb *MarketDepthBuilder) removeOrder(order *types.Order) {
+	// Find the price level
+
+	// Update the values
+
+	// Remove the orderID from the list of live orders
+}
+
+func (mdb *MarketDepthBuilder) addOrder(order *types.Order) {
+
+}
+
+func (mdb *MarketDepthBuilder) updateOrder(originalOrder, newOrder *types.Order) {
+
+}
+
+func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
+	fmt.Println("MDB Order:", order)
+
+	// Do we know about this order already?
+	originalOrder := mdb.orderExists(order.Id)
+	if originalOrder != nil {
+		// Remove the original order values
+
+		// Insert the new order values
+	} else {
+		// We have a new order, add it to the structure
+	}
+}
+
+/*****************************************************************************/
+/*                 FUNCTIONS TO HELP WITH UNIT TESTING                       */
+/*****************************************************************************/
+
+func (mdb *MarketDepthBuilder) GetOrderCount() int {
+	return len(mdb.liveOrders)
+}
+
+func (mdb *MarketDepthBuilder) GetVolumeAtPrice(price uint64) int {
+	return len(mdb.liveOrders)
+}
+
+func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(price uint64) int {
+	return len(mdb.liveOrders)
+}
+
+func (mdb *MarketDepthBuilder) GetPriceLevels() int {
+	return mdb.GetBuyPriceLevels() + mdb.GetSellPriceLevels()
+}
+
+func (mdb *MarketDepthBuilder) GetBuyPriceLevels() int {
+	return len(mdb.buySide)
+}
+
+func (mdb *MarketDepthBuilder) GetSellPriceLevels() int {
+	return len(mdb.sellSide)
 }

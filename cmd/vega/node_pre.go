@@ -220,6 +220,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -382,7 +383,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	})
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub,
+		l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin,
+		l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub, l.marketDepthSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
