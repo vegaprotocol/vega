@@ -1,15 +1,15 @@
 package abci
 
-import abci "github.com/tendermint/tendermint/abci/types"
+import "github.com/tendermint/tendermint/abci/types"
 
-func NewResponseCheckTx(code uint32) abci.ResponseCheckTx {
-	return abci.ResponseCheckTx{
+func NewResponseCheckTx(code uint32) types.ResponseCheckTx {
+	return types.ResponseCheckTx{
 		Code: code,
 	}
 }
 
-func NewResponseDeliverTx(code uint32) abci.ResponseDeliverTx {
-	return abci.ResponseDeliverTx{
+func NewResponseDeliverTx(code uint32) types.ResponseDeliverTx {
+	return types.ResponseDeliverTx{
 		Code: code,
 	}
 }

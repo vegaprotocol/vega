@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/blockchain"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
