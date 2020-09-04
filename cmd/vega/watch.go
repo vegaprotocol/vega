@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/spf13/cobra"
-
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-
 	"code.vegaprotocol.io/vega/blockchain/tm"
+
+	"github.com/spf13/cobra"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type watchCommand struct {
