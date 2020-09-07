@@ -131,6 +131,12 @@ type ERC20Input struct {
 	ContractAddress string `json:"contractAddress"`
 }
 
+// ERC20 specific details to start a withdrawal
+type Erc20WithdrawalDetails struct {
+	// The ethereum address to which the withdrawn funds will be send to
+	ReceiverAddress string `json:"receiverAddress"`
+}
+
 // An Ethereum oracle
 type EthereumEvent struct {
 	// The ID of the ethereum contract to use (string)
@@ -404,6 +410,11 @@ type PreparedVote struct {
 	Blob string `json:"blob"`
 	// The vote serialised in the blob field
 	Vote *ProposalVote `json:"vote"`
+}
+
+type PreparedWithdrawal struct {
+	// blob: the raw transaction to sign & submit
+	Blob string `json:"blob"`
 }
 
 type ProposalTerms struct {

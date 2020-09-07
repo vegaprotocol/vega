@@ -1132,6 +1132,16 @@ func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
 	}
 }
 
+func (e *Erc20WithdrawalDetails) IntoProtoExt() *types.WithdrawExt {
+	return &types.WithdrawExt{
+		Ext: &types.WithdrawExt_Erc20{
+			Erc20: &types.Erc20WithdrawExt{
+				ReceiverAddress: e.ReceiverAddress,
+			},
+		},
+	}
+}
+
 func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
 	return &types.NewMarketConfiguration_Continuous{
 		Continuous: &types.ContinuousTrading{

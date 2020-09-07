@@ -44,6 +44,7 @@ type TradingClient interface {
 	PrepareProposal(ctx context.Context, in *protoapi.PrepareProposalRequest, opts ...grpc.CallOption) (*protoapi.PrepareProposalResponse, error)
 
 	PrepareVote(ctx context.Context, in *protoapi.PrepareVoteRequest, opts ...grpc.CallOption) (*protoapi.PrepareVoteResponse, error)
+	PrepareWithdraw(ctx context.Context, in *protoapi.PrepareWithdrawRequest, opts ...grpc.CallOption) (*protoapi.PrepareWithdrawResponse, error)
 	// unary calls - writes
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
 }
@@ -1678,6 +1679,40 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 // BEGIN: Mutation Resolver
 
 type myMutationResolver VegaResolverRoot
+
+func (r *myMutationResolver) PrepareWithdrawal(
+	ctx context.Context,
+	partyID, amount, asset string,
+	erc20Details *Erc20WithdrawalDetails,
+) (*PreparedWithdrawal, error) {
+	var ext *types.WithdrawExt
+	if erc20Details != nil {
+		ext = erc20Details.IntoProtoExt()
+	}
+
+	amountU, err := safeStringUint64(amount)
+	if err != nil {
+		return nil, err
+	}
+
+	req := protoapi.PrepareWithdrawRequest{
+		Withdraw: &types.WithdrawSubmission{
+			PartyID: partyID,
+			Asset:   asset,
+			Amount:  amountU,
+			Ext:     ext,
+		},
+	}
+
+	res, err := r.tradingClient.PrepareWithdraw(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PreparedWithdrawal{
+		Blob: base64.StdEncoding.EncodeToString(res.Blob),
+	}, nil
+}
 
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error) {
 	decodedData, err := base64.StdEncoding.DecodeString(data)

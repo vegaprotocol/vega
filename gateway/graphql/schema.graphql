@@ -111,7 +111,7 @@ type Mutation {
     nullable as not required by all kind of withdrawals
     """
     erc20Details: Erc20WithdrawalDetails
-  ): PreparedVote!
+  ): PreparedWithdrawal!
 
   """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
@@ -270,6 +270,11 @@ type MarketData {
   auctionEnd: Int
   "time in seconds until the start of the next auction (0 if no new auction scheduled)"
   auctionStart: Int
+}
+
+type PreparedWithdrawal {
+  "blob: the raw transaction to sign & submit"
+  blob: String!
 }
 
 type PreparedSubmitOrder {
