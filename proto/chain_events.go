@@ -67,7 +67,6 @@ func (c *ERC20Event) PrepareToSign() ([]byte, error) {
 	out = append(out, []byte(fmt.Sprintf("%v", c.Block))...)
 	out = append(out, []byte(fmt.Sprintf("%v", c.Index))...)
 
-	fmt.Printf("PREPARE To SIGN ERC20EVENT\n")
 	var (
 		next []byte
 		err  error
@@ -78,10 +77,8 @@ func (c *ERC20Event) PrepareToSign() ([]byte, error) {
 	case *ERC20Event_AssetDelist:
 		next, err = act.AssetDelist.PrepareToSign()
 	case *ERC20Event_Deposit:
-		fmt.Printf("PREPARE IN DEPOSIT\n")
 		next, err = act.Deposit.PrepareToSign()
 	case *ERC20Event_Withdrawal:
-		fmt.Printf("PREPARE IN WITHDRAWAL\n")
 		next, err = act.Withdrawal.PrepareToSign()
 	default:
 		err = ErrUnsupportedChainEvent
@@ -113,10 +110,6 @@ func (c *ERC20Deposit) PrepareToSign() ([]byte, error) {
 
 func (c *ERC20Withdrawal) PrepareToSign() ([]byte, error) {
 	out := []byte{}
-	fmt.Printf("PREPARE SIGN WITHDRAWAL\n")
-	fmt.Printf("REFERENCE NONCE: %v\n", c.ReferenceNonce)
-	fmt.Printf("REFERENCE NONCE: %v\n", c.ReferenceNonce)
-	fmt.Printf("REFERENCE NONCE: %v\n", c.ReferenceNonce)
 	out = append(out, []byte(c.VegaAssetID)...)
 	out = append(out, []byte(c.TargetEthereumAddress)...)
 	out = append(out, []byte(c.ReferenceNonce)...)

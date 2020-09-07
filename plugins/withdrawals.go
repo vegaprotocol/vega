@@ -96,6 +96,7 @@ func (w *Withdrawal) GetByParty(party string, openOnly bool) []types.Withdrawal 
 	withdrawals := w.withdrawals[party]
 	for _, w := range withdrawals {
 		if openOnly && w.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
+			continue
 		}
 		out = append(out, w)
 	}

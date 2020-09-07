@@ -1937,7 +1937,6 @@ A request to get a list of withdrawal from a given party
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  | The party to get the withdrawals for, required |
-| open | [bool](#bool) |  | Should we return only open withdrawals ? |
 
 
 
@@ -2042,7 +2041,7 @@ The response for a list of withdrawals
 | Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
 | EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
 | ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
-| Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by it&#39;s ID |
+| Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
 
 

@@ -1036,6 +1036,84 @@
           "trading"
         ]
       }
+    },
+    "/withdrawals/party/{partyID}": {
+      "get": {
+        "summary": "Get withdrawals for a party",
+        "operationId": "Withdrawals",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawalsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "description": "The party to get the withdrawals for, required",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/withdrawals/{ID}": {
+      "get": {
+        "summary": "Get a withdrawal by its ID",
+        "operationId": "Withdrawal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiWithdrawalResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "description": "The id of the withdrawal",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/withdrawals/{withdrawalID}/approval/erc20": {
+      "get": {
+        "summary": "Get the bundle approval for an ERC20 withdrawal\nthese data are being used to bundle the call to the smart contract on the ethereum bridge",
+        "operationId": "ERC20WithdrawalApproval",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiERC20WithdrawalApprovalResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "withdrawalID",
+            "description": "The ID of the withdrawal",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
     }
   },
   "definitions": {

@@ -323,7 +323,7 @@ service trading_data {
   // these data are being used to bundle the call to the smart contract on the ethereum bridge
   rpc ERC20WithdrawalApproval(ERC20WithdrawalApprovalRequest) returns (ERC20WithdrawalApprovalResponse);
 
-  // Get a withdrawal by it's ID
+  // Get a withdrawal by its ID
   rpc Withdrawal(WithdrawalRequest) returns (WithdrawalResponse);
 
   // Get withdrawals for a party
@@ -1049,8 +1049,6 @@ message ObserveEventsResponse {
 message WithdrawalsRequest {
   // The party to get the withdrawals for, required
   string partyID = 1;
-  // Should we return only open withdrawals ?
-  bool open = 2;
 }
 
 // The response for a list of withdrawals

@@ -291,7 +291,7 @@ func (t *tradingDataService) Withdrawals(ctx context.Context, req *protoapi.With
 	if len(req.PartyID) <= 0 {
 		return nil, ErrMissingPartyID
 	}
-	withdrawals := t.WithdrawalService.GetByParty(req.PartyID, req.Open)
+	withdrawals := t.WithdrawalService.GetByParty(req.PartyID, false)
 	out := make([]*types.Withdrawal, 0, len(withdrawals))
 	for _, v := range withdrawals {
 		v := v
