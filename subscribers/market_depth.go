@@ -2,7 +2,9 @@ package subscribers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -10,9 +12,9 @@ import (
 )
 
 type priceLevel struct {
-	price       int64
-	totalOrders int64
-	totalVolume int64
+	price       uint64
+	totalOrders uint64
+	totalVolume uint64
 }
 
 // MarketDepthBuilder is a subscriber of order events
@@ -29,8 +31,9 @@ type MarketDepthBuilder struct {
 // NewMarketDepthBuilder constructor to create a market depth subscriber
 func NewMarketDepthBuilder(ctx context.Context, ack bool) *MarketDepthBuilder {
 	mdb := MarketDepthBuilder{
-		Base: NewBase(ctx, 10, ack),
-		buf:  []types.Order{},
+		Base:       NewBase(ctx, 10, ack),
+		buf:        []types.Order{},
+		liveOrders: map[string]*types.Order{},
 	}
 	if mdb.isRunning() {
 		go mdb.loop(mdb.ctx)
@@ -73,33 +76,140 @@ func (mdb *MarketDepthBuilder) orderExists(orderID string) *types.Order {
 	return mdb.liveOrders[orderID]
 }
 
-func (mdb *MarketDepthBuilder) removeOrder(order *types.Order) {
+func (mdb *MarketDepthBuilder) removeOrder(order *types.Order) error {
 	// Find the price level
+	pl := mdb.getPriceLevel(order.Side, order.Price)
 
+	if pl == nil {
+		fmt.Println("Unable to find price level for order:", order)
+		return errors.New("Unknown pricelevel")
+	}
 	// Update the values
+	pl.totalOrders--
+	pl.totalVolume -= order.Remaining
+
+	// See if we can remove this price level
+	if pl.totalOrders == 0 {
+		mdb.removePriceLevel(order)
+	}
 
 	// Remove the orderID from the list of live orders
+	delete(mdb.liveOrders, order.Id)
+	return nil
+}
+
+func (mdb *MarketDepthBuilder) createNewPriceLevel(order *types.Order) *priceLevel {
+	pl := &priceLevel{
+		price:       order.Price,
+		totalOrders: 1,
+		totalVolume: order.Remaining,
+	}
+
+	if order.Side == types.Side_SIDE_BUY {
+		index := sort.Search(len(mdb.buySide), func(i int) bool { return mdb.buySide[i].price <= order.Price })
+		if index < len(mdb.buySide) {
+			// We need to go midslice
+			mdb.buySide = append(mdb.buySide, nil)
+			copy(mdb.buySide[index+1:], mdb.buySide[index:])
+			mdb.buySide[index] = pl
+		} else {
+			// We can tag on the end
+			mdb.buySide = append(mdb.buySide, pl)
+		}
+	} else {
+		index := sort.Search(len(mdb.sellSide), func(i int) bool { return mdb.sellSide[i].price >= order.Price })
+		if index < len(mdb.sellSide) {
+			// We need to go midslice
+			mdb.sellSide = append(mdb.sellSide, nil)
+			copy(mdb.sellSide[index+1:], mdb.sellSide[index:])
+			mdb.sellSide[index] = pl
+		} else {
+			// We can tag on the end
+			mdb.sellSide = append(mdb.sellSide, pl)
+		}
+	}
+	return pl
 }
 
 func (mdb *MarketDepthBuilder) addOrder(order *types.Order) {
+	// Cache the orderID
+	mdb.liveOrders[order.Id] = order
 
+	// Update the price level
+	pl := mdb.getPriceLevel(order.Side, order.Price)
+
+	if pl == nil {
+		pl = mdb.createNewPriceLevel(order)
+	} else {
+		pl.totalOrders++
+		pl.totalVolume += order.Remaining
+	}
 }
 
 func (mdb *MarketDepthBuilder) updateOrder(originalOrder, newOrder *types.Order) {
+	// If the price is the size, we can update the original order
+	if originalOrder.Price == newOrder.Price {
+		// Update
+	} else {
+		mdb.removeOrder(originalOrder)
+		mdb.addOrder(newOrder)
+	}
+}
 
+func (mdb *MarketDepthBuilder) getPriceLevel(side types.Side, price uint64) *priceLevel {
+	var i int
+	if side == types.Side_SIDE_BUY {
+		// buy side levels should be ordered in descending
+		i = sort.Search(len(mdb.buySide), func(i int) bool { return mdb.buySide[i].price <= price })
+		if i < len(mdb.buySide) && mdb.buySide[i].price == price {
+			return mdb.buySide[i]
+		}
+	} else {
+		// sell side levels should be ordered in ascending
+		i = sort.Search(len(mdb.sellSide), func(i int) bool { return mdb.sellSide[i].price >= price })
+		if i < len(mdb.sellSide) && mdb.sellSide[i].price == price {
+			return mdb.sellSide[i]
+		}
+	}
+	return nil
+}
+
+func (mdb *MarketDepthBuilder) removePriceLevel(order *types.Order) {
+	var i int
+	if order.Side == types.Side_SIDE_BUY {
+		// buy side levels should be ordered in descending
+		i = sort.Search(len(mdb.buySide), func(i int) bool { return mdb.buySide[i].price == order.Price })
+		if i < len(mdb.buySide) && mdb.buySide[i].price == order.Price {
+			copy(mdb.buySide[i:], mdb.buySide[i+1:])
+			mdb.buySide[len(mdb.buySide)-1] = nil
+			mdb.buySide = mdb.buySide[:len(mdb.buySide)-1]
+		}
+	} else {
+		// sell side levels should be ordered in ascending
+		i = sort.Search(len(mdb.sellSide), func(i int) bool { return mdb.sellSide[i].price == order.Price })
+		// we found the level just return it.
+		if i < len(mdb.sellSide) && mdb.sellSide[i].price == order.Price {
+			copy(mdb.sellSide[i:], mdb.sellSide[i+1:])
+			mdb.sellSide[len(mdb.sellSide)-1] = nil
+			mdb.sellSide = mdb.sellSide[:len(mdb.sellSide)-1]
+		}
+	}
 }
 
 func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
-	fmt.Println("MDB Order:", order)
-
 	// Do we know about this order already?
 	originalOrder := mdb.orderExists(order.Id)
 	if originalOrder != nil {
-		// Remove the original order values
-
-		// Insert the new order values
+		// Check to see if we are updating the order of removing it
+		if order.Status == types.Order_STATUS_CANCELLED ||
+			order.Status == types.Order_STATUS_EXPIRED ||
+			order.Status == types.Order_STATUS_STOPPED {
+			mdb.removeOrder(order)
+		} else {
+			mdb.updateOrder(originalOrder, order)
+		}
 	} else {
-		// We have a new order, add it to the structure
+		mdb.addOrder(order)
 	}
 }
 
@@ -111,12 +221,20 @@ func (mdb *MarketDepthBuilder) GetOrderCount() int {
 	return len(mdb.liveOrders)
 }
 
-func (mdb *MarketDepthBuilder) GetVolumeAtPrice(price uint64) int {
-	return len(mdb.liveOrders)
+func (mdb *MarketDepthBuilder) GetVolumeAtPrice(side types.Side, price uint64) uint64 {
+	pl := mdb.getPriceLevel(side, price)
+	if pl == nil {
+		return 0
+	}
+	return pl.totalVolume
 }
 
-func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(price uint64) int {
-	return len(mdb.liveOrders)
+func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(side types.Side, price uint64) uint64 {
+	pl := mdb.getPriceLevel(side, price)
+	if pl == nil {
+		return 0
+	}
+	return pl.totalOrders
 }
 
 func (mdb *MarketDepthBuilder) GetPriceLevels() int {
