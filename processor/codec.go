@@ -28,7 +28,7 @@ func (c *codec) Decode(payload []byte) (abci.Tx, error) {
 		return nil, fmt.Errorf("unable to unmarshal transaction from signed bundle: %w", err)
 	}
 
-	tx, err := NewTx(protoTx, nil)
+	tx, err := NewTx(protoTx)
 	if err != nil {
 		return nil, err
 	}

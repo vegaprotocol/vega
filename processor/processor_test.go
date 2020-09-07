@@ -70,7 +70,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		cb = c
 	})
 	wal := getTestStubWallet()
-	wallet.EXPECT().Get(nodewallet.Vega).Times(1).Return(wal, true)
+	wallet.EXPECT().Get(nodewallet.Vega).AnyTimes().Return(wal, true)
 	top.EXPECT().IsValidator().AnyTimes().Return(true)
 
 	proc, err := processor.New(log, processor.NewDefaultConfig(), eng, ts, stat, cmd, wallet, assets, top, gov, nil, notary, evtfwd, col, erc, bank)

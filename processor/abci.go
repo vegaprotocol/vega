@@ -63,7 +63,13 @@ func NewApp(
 	stats Stats,
 	time TimeService,
 	top ValidatorTopology,
-) *App {
+	wallet Wallet,
+) (*App, error) {
+	vegaWallet, ok := wallet.Get(nodewallet.Vega)
+	if !ok {
+		return nil, ErrVegaWalletRequired
+	}
+
 	app := &App{
 		abci: abci.New(&codec{}),
 
@@ -72,18 +78,19 @@ func NewApp(
 		cancelFn: cancelFn,
 		idGen:    NewIDGen(),
 
-		assets:  assets,
-		banking: banking,
-		cmd:     cmd,
-		col:     col,
-		erc:     erc,
-		evtfwd:  evtfwd,
-		exec:    exec,
-		gov:     gov,
-		notary:  notary,
-		stats:   stats,
-		time:    time,
-		top:     top,
+		assets:     assets,
+		banking:    banking,
+		cmd:        cmd,
+		col:        col,
+		erc:        erc,
+		evtfwd:     evtfwd,
+		exec:       exec,
+		gov:        gov,
+		notary:     notary,
+		stats:      stats,
+		time:       time,
+		top:        top,
+		vegaWallet: vegaWallet,
 	}
 
 	// setup handlers
@@ -105,7 +112,7 @@ func NewApp(
 		HandleDeliverTx(blockchain.NodeVoteCommand, app.DeliverNodeVote).
 		HandleDeliverTx(blockchain.ChainEventCommand, app.DeliverChainEvent)
 
-	return app
+	return app, nil
 }
 
 func (app *App) Abci() *abci.App {

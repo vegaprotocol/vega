@@ -12,32 +12,30 @@ import (
 )
 
 const (
-	TxPrefixLen  = 36
+	TxHashLen    = 36
 	TxCommandLen = 1
-	TxHeaderLen  = TxPrefixLen + TxCommandLen
-	TxValidLen   = TxHeaderLen
+	TxHeaderLen  = TxHashLen + TxCommandLen
 )
 
 var (
-	ErrInvalidTxPayloadLen = errors.New("payload size is incorrec, should be > 37 bytes")
+	ErrInvalidTxPayloadLen = errors.New("payload size is incorrect, should be > 37 bytes")
 )
 
 type Tx struct {
-	tx  *types.Transaction
-	sig *types.Signature
+	tx *types.Transaction
 }
 
-func NewTx(tx *types.Transaction, sig *types.Signature) (*Tx, error) {
-	if len(tx.InputData) < TxValidLen {
+func NewTx(tx *types.Transaction) (*Tx, error) {
+	if len(tx.InputData) < TxHeaderLen {
 		return nil, ErrInvalidTxPayloadLen
 	}
 
-	return &Tx{tx, sig}, nil
+	return &Tx{tx}, nil
 }
 
 // Hash returns hash of the given Tx. Hashes are unique to every vega tx.
 // The hash is the first TxHeaderLen bytes.
-func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHeaderLen] }
+func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHashLen] }
 
 // Payload returns the payload of the transaction, this is all the bytes,
 // excluding the prefix and the command.
@@ -47,7 +45,7 @@ func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
 
 // Command returns the Command of the Tx
 func (tx *Tx) Command() blockchain.Command {
-	cmd := tx.tx.InputData[TxPrefixLen]
+	cmd := tx.tx.InputData[TxHashLen]
 	return blockchain.Command(cmd)
 }
 
