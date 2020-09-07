@@ -111,6 +111,18 @@ type ComplexityRoot struct {
 		ContractAddress func(childComplexity int) int
 	}
 
+	Erc20WithdrawalApproval struct {
+		Amount      func(childComplexity int) int
+		AssetSource func(childComplexity int) int
+		Expiry      func(childComplexity int) int
+		Nonce       func(childComplexity int) int
+		Signatures  func(childComplexity int) int
+	}
+
+	Erc20WithdrawalDetails struct {
+		ReceiverAddress func(childComplexity int) int
+	}
+
 	EthereumEvent struct {
 		ContractID func(childComplexity int) int
 		Event      func(childComplexity int) int
@@ -228,7 +240,7 @@ type ComplexityRoot struct {
 		PrepareOrderSubmit func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) int
 		PrepareProposal    func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote        func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
-		PrepareWithdrawal  func(childComplexity int, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetails) int
+		PrepareWithdrawal  func(childComplexity int, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
 		SubmitTransaction  func(childComplexity int, data string, sig SignatureInput) int
 	}
 
@@ -276,14 +288,15 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Accounts  func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
-		Id        func(childComplexity int) int
-		Margins   func(childComplexity int, marketID *string) int
-		Orders    func(childComplexity int, skip *int, first *int, last *int) int
-		Positions func(childComplexity int) int
-		Proposals func(childComplexity int, inState *ProposalState) int
-		Trades    func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
-		Votes     func(childComplexity int) int
+		Accounts    func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
+		Id          func(childComplexity int) int
+		Margins     func(childComplexity int, marketID *string) int
+		Orders      func(childComplexity int, skip *int, first *int, last *int) int
+		Positions   func(childComplexity int) int
+		Proposals   func(childComplexity int, inState *ProposalState) int
+		Trades      func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
+		Votes       func(childComplexity int) int
+		Withdrawals func(childComplexity int) int
 	}
 
 	Position struct {
@@ -354,6 +367,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Asset                      func(childComplexity int, assetID string) int
 		Assets                     func(childComplexity int) int
+		Erc20WithdrawalApproval    func(childComplexity int, withdrawalID string) int
 		EstimateFeeForOrder        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		Market                     func(childComplexity int, id string) int
 		Markets                    func(childComplexity int, id *string) int
@@ -370,6 +384,7 @@ type ComplexityRoot struct {
 		Proposals                  func(childComplexity int, inState *ProposalState) int
 		Statistics                 func(childComplexity int) int
 		UpdateMarketProposals      func(childComplexity int, marketID *string, inState *ProposalState) int
+		Withdrawal                 func(childComplexity int, id string) int
 	}
 
 	ScalingFactors struct {
@@ -485,6 +500,17 @@ type ComplexityRoot struct {
 		Party    func(childComplexity int) int
 		Value    func(childComplexity int) int
 	}
+
+	Withdrawal struct {
+		Amount  func(childComplexity int) int
+		Asset   func(childComplexity int) int
+		Details func(childComplexity int) int
+		Expiry  func(childComplexity int) int
+		ID      func(childComplexity int) int
+		PartyID func(childComplexity int) int
+		Ref     func(childComplexity int) int
+		Status  func(childComplexity int) int
+	}
 }
 
 type AccountResolver interface {
@@ -546,7 +572,7 @@ type MutationResolver interface {
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
-	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetails) (*PreparedWithdrawal, error)
+	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
 	SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error)
 }
 type NodeSignatureResolver interface {
@@ -579,6 +605,7 @@ type PartyResolver interface {
 	Margins(ctx context.Context, obj *proto.Party, marketID *string) ([]*proto.MarginLevels, error)
 	Proposals(ctx context.Context, obj *proto.Party, inState *ProposalState) ([]*proto.GovernanceData, error)
 	Votes(ctx context.Context, obj *proto.Party) ([]*ProposalVote, error)
+	Withdrawals(ctx context.Context, obj *proto.Party) ([]*Withdrawal, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.Position) (*Market, error)
@@ -624,6 +651,8 @@ type QueryResolver interface {
 	Asset(ctx context.Context, assetID string) (*Asset, error)
 	Assets(ctx context.Context) ([]*Asset, error)
 	EstimateFeeForOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*OrderFeeEstimate, error)
+	Withdrawal(ctx context.Context, id string) (*Withdrawal, error)
+	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error)
@@ -895,6 +924,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Erc20.ContractAddress(childComplexity), true
+
+	case "Erc20WithdrawalApproval.amount":
+		if e.complexity.Erc20WithdrawalApproval.Amount == nil {
+			break
+		}
+
+		return e.complexity.Erc20WithdrawalApproval.Amount(childComplexity), true
+
+	case "Erc20WithdrawalApproval.assetSource":
+		if e.complexity.Erc20WithdrawalApproval.AssetSource == nil {
+			break
+		}
+
+		return e.complexity.Erc20WithdrawalApproval.AssetSource(childComplexity), true
+
+	case "Erc20WithdrawalApproval.expiry":
+		if e.complexity.Erc20WithdrawalApproval.Expiry == nil {
+			break
+		}
+
+		return e.complexity.Erc20WithdrawalApproval.Expiry(childComplexity), true
+
+	case "Erc20WithdrawalApproval.nonce":
+		if e.complexity.Erc20WithdrawalApproval.Nonce == nil {
+			break
+		}
+
+		return e.complexity.Erc20WithdrawalApproval.Nonce(childComplexity), true
+
+	case "Erc20WithdrawalApproval.signatures":
+		if e.complexity.Erc20WithdrawalApproval.Signatures == nil {
+			break
+		}
+
+		return e.complexity.Erc20WithdrawalApproval.Signatures(childComplexity), true
+
+	case "Erc20WithdrawalDetails.receiverAddress":
+		if e.complexity.Erc20WithdrawalDetails.ReceiverAddress == nil {
+			break
+		}
+
+		return e.complexity.Erc20WithdrawalDetails.ReceiverAddress(childComplexity), true
 
 	case "EthereumEvent.contractId":
 		if e.complexity.EthereumEvent.ContractID == nil {
@@ -1453,7 +1524,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareWithdrawal(childComplexity, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetails)), true
+		return e.complexity.Mutation.PrepareWithdrawal(childComplexity, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput)), true
 
 	case "Mutation.submitTransaction":
 		if e.complexity.Mutation.SubmitTransaction == nil {
@@ -1744,6 +1815,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Party.Votes(childComplexity), true
 
+	case "Party.withdrawals":
+		if e.complexity.Party.Withdrawals == nil {
+			break
+		}
+
+		return e.complexity.Party.Withdrawals(childComplexity), true
+
 	case "Position.averageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
 			break
@@ -1987,6 +2065,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Assets(childComplexity), true
 
+	case "Query.erc20WithdrawalApproval":
+		if e.complexity.Query.Erc20WithdrawalApproval == nil {
+			break
+		}
+
+		args, err := ec.field_Query_erc20WithdrawalApproval_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Erc20WithdrawalApproval(childComplexity, args["withdrawalId"].(string)), true
+
 	case "Query.estimateFeeForOrder":
 		if e.complexity.Query.EstimateFeeForOrder == nil {
 			break
@@ -2173,6 +2263,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.UpdateMarketProposals(childComplexity, args["marketId"].(*string), args["inState"].(*ProposalState)), true
+
+	case "Query.withdrawal":
+		if e.complexity.Query.Withdrawal == nil {
+			break
+		}
+
+		args, err := ec.field_Query_withdrawal_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Withdrawal(childComplexity, args["id"].(string)), true
 
 	case "ScalingFactors.collateralRelease":
 		if e.complexity.ScalingFactors.CollateralRelease == nil {
@@ -2770,6 +2872,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Vote.Value(childComplexity), true
 
+	case "Withdrawal.amount":
+		if e.complexity.Withdrawal.Amount == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.Amount(childComplexity), true
+
+	case "Withdrawal.asset":
+		if e.complexity.Withdrawal.Asset == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.Asset(childComplexity), true
+
+	case "Withdrawal.details":
+		if e.complexity.Withdrawal.Details == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.Details(childComplexity), true
+
+	case "Withdrawal.expiry":
+		if e.complexity.Withdrawal.Expiry == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.Expiry(childComplexity), true
+
+	case "Withdrawal.id":
+		if e.complexity.Withdrawal.ID == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.ID(childComplexity), true
+
+	case "Withdrawal.partyId":
+		if e.complexity.Withdrawal.PartyID == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.PartyID(childComplexity), true
+
+	case "Withdrawal.ref":
+		if e.complexity.Withdrawal.Ref == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.Ref(childComplexity), true
+
+	case "Withdrawal.status":
+		if e.complexity.Withdrawal.Status == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.Status(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -2963,7 +3121,7 @@ type Mutation {
     ERC20 specific details to process the withdrawal
     nullable as not required by all kind of withdrawals
     """
-    erc20Details: Erc20WithdrawalDetails
+    erc20Details: Erc20WithdrawalDetailsInput
   ): PreparedWithdrawal!
 
   """
@@ -2980,7 +3138,7 @@ type Mutation {
 }
 
 "ERC20 specific details to start a withdrawal"
-input Erc20WithdrawalDetails {
+input Erc20WithdrawalDetailsInput {
   "The ethereum address to which the withdrawn funds will be send to"
   receiverAddress: String!
 }
@@ -3280,6 +3438,17 @@ type Query {
     type: OrderType!
   ): OrderFeeEstimate!
 
+  "find a withdrawal using its id"
+  withdrawal(
+    "id of the withdrawal"
+    id: String!
+  ): Withdrawal
+
+  "find a erc20 withdrawal approval using it a withdrawal id"
+  erc20WithdrawalApproval(
+    "id of the withdrawal"
+    withdrawalId: String!
+  ): Erc20WithdrawalApproval
 }
 
 "Represents an asset in vega"
@@ -3791,6 +3960,9 @@ type Party {
   ): [Proposal]
 
   votes: [ProposalVote]
+
+  "The list of all withdrawals initiated by the party"
+  withdrawals: [Withdrawal!]
 }
 
 """
@@ -3969,6 +4141,61 @@ type Account {
   type: AccountType!
   "Market (only relevant to margin accounts)"
   market: Market
+}
+
+"All the data related to the approval of a withdrawal from the network"
+type Erc20WithdrawalApproval {
+  "The source asset in the ethereum network"
+  assetSource: String!
+  "The amount to be withdrawan"
+  amount: String!
+  "The expiry of the approval (RFC3339Nano)"
+  expiry: String!
+  "The nonce to be used in the request"
+  nonce: String!
+  """
+  Signature aggregate from the nodes, to be in the following format:
+  0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+"The details of a withdrawal processed by vega"
+type Withdrawal {
+  "The Vega internal id of the withdrawal"
+  id: String!
+  "The PartyID initiating the witndrawal"
+  partyId: String!
+  "The amount to be withdrawn"
+  amount: String!
+  "The asset to be withdrawn"
+  asset: String!
+  "The current status of the withdrawal"
+  status: WithdrawalStatus!
+  "A reference the foreign chain can use to refere to when processing the withdrawal"
+  ref: String!
+  "The time until when the withdrawal will be valid (RFC3339Nano)"
+  expiry: String!
+  "Foreign chain specific details about the withdrawal"
+  details: WithdrawalDetails
+}
+
+union WithdrawalDetails = Erc20WithdrawalDetails
+
+"Specific details for an erc20 withdrawal"
+type Erc20WithdrawalDetails {
+  "The ethereum address of the receiver of the asset funds"
+  receiverAddress: String!
+}
+
+"The status of a withdrawal"
+enum WithdrawalStatus {
+  "The withdrawal is open and being processed by the network"
+  Open
+  "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  Cancelled
+  "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  Finalized
 }
 
 "Valid order types, these determine what happens when an order is added to the book"
@@ -4980,9 +5207,9 @@ func (ec *executionContext) field_Mutation_prepareWithdrawal_args(ctx context.Co
 		}
 	}
 	args["asset"] = arg2
-	var arg3 *Erc20WithdrawalDetails
+	var arg3 *Erc20WithdrawalDetailsInput
 	if tmp, ok := rawArgs["erc20Details"]; ok {
-		arg3, err = ec.unmarshalOErc20WithdrawalDetails2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetails(ctx, tmp)
+		arg3, err = ec.unmarshalOErc20WithdrawalDetailsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5164,6 +5391,20 @@ func (ec *executionContext) field_Query_asset_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["assetId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_erc20WithdrawalApproval_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["withdrawalId"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["withdrawalId"] = arg0
 	return args, nil
 }
 
@@ -5478,6 +5719,20 @@ func (ec *executionContext) field_Query_updateMarketProposals_args(ctx context.C
 		}
 	}
 	args["inState"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_withdrawal_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -6688,6 +6943,210 @@ func (ec *executionContext) _ERC20_contractAddress(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ContractAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20WithdrawalApproval_assetSource(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Erc20WithdrawalApproval",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetSource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20WithdrawalApproval_amount(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Erc20WithdrawalApproval",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20WithdrawalApproval_expiry(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Erc20WithdrawalApproval",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Expiry, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20WithdrawalApproval_nonce(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Erc20WithdrawalApproval",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nonce, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20WithdrawalApproval_signatures(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalApproval) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Erc20WithdrawalApproval",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Signatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Erc20WithdrawalDetails_receiverAddress(ctx context.Context, field graphql.CollectedField, obj *Erc20WithdrawalDetails) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Erc20WithdrawalDetails",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReceiverAddress, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9179,7 +9638,7 @@ func (ec *executionContext) _Mutation_prepareWithdrawal(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareWithdrawal(rctx, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetails))
+		return ec.resolvers.Mutation().PrepareWithdrawal(rctx, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10452,6 +10911,37 @@ func (ec *executionContext) _Party_votes(ctx context.Context, field graphql.Coll
 	res := resTmp.([]*ProposalVote)
 	fc.Result = res
 	return ec.marshalOProposalVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_withdrawals(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().Withdrawals(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Withdrawal)
+	fc.Result = res
+	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawalᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
@@ -12210,6 +12700,82 @@ func (ec *executionContext) _Query_estimateFeeForOrder(ctx context.Context, fiel
 	res := resTmp.(*OrderFeeEstimate)
 	fc.Result = res
 	return ec.marshalNOrderFeeEstimate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderFeeEstimate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_withdrawal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_withdrawal_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Withdrawal(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Withdrawal)
+	fc.Result = res
+	return ec.marshalOWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_erc20WithdrawalApproval(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_erc20WithdrawalApproval_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Erc20WithdrawalApproval(rctx, args["withdrawalId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Erc20WithdrawalApproval)
+	fc.Result = res
+	return ec.marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalApproval(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15064,6 +15630,275 @@ func (ec *executionContext) _Vote_datetime(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Withdrawal_id(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_partyId(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_amount(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_asset(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Asset, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_status(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(WithdrawalStatus)
+	fc.Result = res
+	return ec.marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawalStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_ref(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ref, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_expiry(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Expiry, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_details(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Details, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(WithdrawalDetails)
+	fc.Result = res
+	return ec.marshalOWithdrawalDetails2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawalDetails(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16221,8 +17056,8 @@ func (ec *executionContext) unmarshalInputERC20Input(ctx context.Context, obj in
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputErc20WithdrawalDetails(ctx context.Context, obj interface{}) (Erc20WithdrawalDetails, error) {
-	var it Erc20WithdrawalDetails
+func (ec *executionContext) unmarshalInputErc20WithdrawalDetailsInput(ctx context.Context, obj interface{}) (Erc20WithdrawalDetailsInput, error) {
+	var it Erc20WithdrawalDetailsInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -16789,6 +17624,22 @@ func (ec *executionContext) _TradingMode(ctx context.Context, sel ast.SelectionS
 	}
 }
 
+func (ec *executionContext) _WithdrawalDetails(ctx context.Context, sel ast.SelectionSet, obj WithdrawalDetails) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case Erc20WithdrawalDetails:
+		return ec._Erc20WithdrawalDetails(ctx, sel, &obj)
+	case *Erc20WithdrawalDetails:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Erc20WithdrawalDetails(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -17183,6 +18034,80 @@ func (ec *executionContext) _ERC20(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = graphql.MarshalString("ERC20")
 		case "contractAddress":
 			out.Values[i] = ec._ERC20_contractAddress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var erc20WithdrawalApprovalImplementors = []string{"Erc20WithdrawalApproval"}
+
+func (ec *executionContext) _Erc20WithdrawalApproval(ctx context.Context, sel ast.SelectionSet, obj *Erc20WithdrawalApproval) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, erc20WithdrawalApprovalImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Erc20WithdrawalApproval")
+		case "assetSource":
+			out.Values[i] = ec._Erc20WithdrawalApproval_assetSource(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._Erc20WithdrawalApproval_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "expiry":
+			out.Values[i] = ec._Erc20WithdrawalApproval_expiry(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonce":
+			out.Values[i] = ec._Erc20WithdrawalApproval_nonce(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "signatures":
+			out.Values[i] = ec._Erc20WithdrawalApproval_signatures(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var erc20WithdrawalDetailsImplementors = []string{"Erc20WithdrawalDetails", "WithdrawalDetails"}
+
+func (ec *executionContext) _Erc20WithdrawalDetails(ctx context.Context, sel ast.SelectionSet, obj *Erc20WithdrawalDetails) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, erc20WithdrawalDetailsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Erc20WithdrawalDetails")
+		case "receiverAddress":
+			out.Values[i] = ec._Erc20WithdrawalDetails_receiverAddress(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -18585,6 +19510,17 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 				res = ec._Party_votes(ctx, field, obj)
 				return res
 			})
+		case "withdrawals":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_withdrawals(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19380,6 +20316,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "withdrawal":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_withdrawal(ctx, field)
+				return res
+			})
+		case "erc20WithdrawalApproval":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_erc20WithdrawalApproval(ctx, field)
 				return res
 			})
 		case "__type":
@@ -20270,6 +21228,65 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var withdrawalImplementors = []string{"Withdrawal"}
+
+func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSet, obj *Withdrawal) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, withdrawalImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Withdrawal")
+		case "id":
+			out.Values[i] = ec._Withdrawal_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "partyId":
+			out.Values[i] = ec._Withdrawal_partyId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._Withdrawal_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "asset":
+			out.Values[i] = ec._Withdrawal_asset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "status":
+			out.Values[i] = ec._Withdrawal_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "ref":
+			out.Values[i] = ec._Withdrawal_ref(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "expiry":
+			out.Values[i] = ec._Withdrawal_expiry(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "details":
+			out.Values[i] = ec._Withdrawal_details(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21285,6 +22302,29 @@ func (ec *executionContext) marshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋ
 	return v
 }
 
+func (ec *executionContext) marshalNWithdrawal2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v Withdrawal) graphql.Marshaler {
+	return ec._Withdrawal(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v *Withdrawal) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Withdrawal(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawalStatus(ctx context.Context, v interface{}) (WithdrawalStatus, error) {
+	var res WithdrawalStatus
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNWithdrawalStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawalStatus(ctx context.Context, sel ast.SelectionSet, v WithdrawalStatus) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -21748,15 +22788,26 @@ func (ec *executionContext) unmarshalOERC20Input2ᚖcodeᚗvegaprotocolᚗioᚋv
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOErc20WithdrawalDetails2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetails(ctx context.Context, v interface{}) (Erc20WithdrawalDetails, error) {
-	return ec.unmarshalInputErc20WithdrawalDetails(ctx, v)
+func (ec *executionContext) marshalOErc20WithdrawalApproval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalApproval(ctx context.Context, sel ast.SelectionSet, v Erc20WithdrawalApproval) graphql.Marshaler {
+	return ec._Erc20WithdrawalApproval(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalOErc20WithdrawalDetails2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetails(ctx context.Context, v interface{}) (*Erc20WithdrawalDetails, error) {
+func (ec *executionContext) marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalApproval(ctx context.Context, sel ast.SelectionSet, v *Erc20WithdrawalApproval) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Erc20WithdrawalApproval(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOErc20WithdrawalDetailsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx context.Context, v interface{}) (Erc20WithdrawalDetailsInput, error) {
+	return ec.unmarshalInputErc20WithdrawalDetailsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOErc20WithdrawalDetailsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx context.Context, v interface{}) (*Erc20WithdrawalDetailsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOErc20WithdrawalDetails2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetails(ctx, v)
+	res, err := ec.unmarshalOErc20WithdrawalDetailsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx, v)
 	return &res, err
 }
 
@@ -22662,6 +23713,64 @@ func (ec *executionContext) marshalOVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋga
 		return graphql.Null
 	}
 	return ec._Vote(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOWithdrawal2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v Withdrawal) graphql.Marshaler {
+	return ec._Withdrawal(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawalᚄ(ctx context.Context, sel ast.SelectionSet, v []*Withdrawal) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawal(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawal(ctx context.Context, sel ast.SelectionSet, v *Withdrawal) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Withdrawal(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOWithdrawalDetails2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐWithdrawalDetails(ctx context.Context, sel ast.SelectionSet, v WithdrawalDetails) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._WithdrawalDetails(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

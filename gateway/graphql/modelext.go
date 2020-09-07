@@ -6,6 +6,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/pkg/errors"
 )
 
@@ -1132,7 +1133,7 @@ func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
 	}
 }
 
-func (e *Erc20WithdrawalDetails) IntoProtoExt() *types.WithdrawExt {
+func (e *Erc20WithdrawalDetailsInput) IntoProtoExt() *types.WithdrawExt {
 	return &types.WithdrawExt{
 		Ext: &types.WithdrawExt_Erc20{
 			Erc20: &types.Erc20WithdrawExt{
@@ -1158,4 +1159,33 @@ func defaultNewMarket() *types.NewMarketConfiguration {
 		DecimalPlaces:  0,
 		TradingMode:    defaultTradingMode(),
 	}
+}
+
+func WithdrawDetailsFromProto(w *types.WithdrawExt) WithdrawalDetails {
+	if w == nil {
+		return nil
+	}
+	switch ex := w.Ext.(type) {
+	case *types.WithdrawExt_Erc20:
+		return &Erc20WithdrawalDetails{ReceiverAddress: ex.Erc20.ReceiverAddress}
+	default:
+		return nil
+	}
+}
+
+func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
+	status, err := convertWithdrawalStatusFromProto(w.Status)
+	if err != nil {
+		return nil, err
+	}
+	return &Withdrawal{
+		ID:      w.Id,
+		PartyID: w.PartyID,
+		Amount:  fmt.Sprintf("%v", w.Amount),
+		Asset:   w.Asset,
+		Status:  status,
+		Ref:     w.Ref,
+		Expiry:  vegatime.Format(vegatime.UnixNano(w.Expiry)),
+		Details: WithdrawDetailsFromProto(w.Ext),
+	}, nil
 }

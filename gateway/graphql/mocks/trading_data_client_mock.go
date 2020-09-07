@@ -137,6 +137,26 @@ func (mr *MockTradingDataClientMockRecorder) CandlesSubscribe(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandlesSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).CandlesSubscribe), varargs...)
 }
 
+// ERC20WithdrawalApproval mocks base method
+func (m *MockTradingDataClient) ERC20WithdrawalApproval(arg0 context.Context, arg1 *api.ERC20WithdrawalApprovalRequest, arg2 ...grpc.CallOption) (*api.ERC20WithdrawalApprovalResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ERC20WithdrawalApproval", varargs...)
+	ret0, _ := ret[0].(*api.ERC20WithdrawalApprovalResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ERC20WithdrawalApproval indicates an expected call of ERC20WithdrawalApproval
+func (mr *MockTradingDataClientMockRecorder) ERC20WithdrawalApproval(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ERC20WithdrawalApproval", reflect.TypeOf((*MockTradingDataClient)(nil).ERC20WithdrawalApproval), varargs...)
+}
+
 // EstimateFee mocks base method
 func (m *MockTradingDataClient) EstimateFee(arg0 context.Context, arg1 *api.EstimateFeeRequest, arg2 ...grpc.CallOption) (*api.EstimateFeeResponse, error) {
 	m.ctrl.T.Helper()
@@ -1015,4 +1035,44 @@ func (mr *MockTradingDataClientMockRecorder) TradesSubscribe(arg0, arg1 interfac
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesSubscribe", reflect.TypeOf((*MockTradingDataClient)(nil).TradesSubscribe), varargs...)
+}
+
+// Withdrawal mocks base method
+func (m *MockTradingDataClient) Withdrawal(arg0 context.Context, arg1 *api.WithdrawalRequest, arg2 ...grpc.CallOption) (*api.WithdrawalResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Withdrawal", varargs...)
+	ret0, _ := ret[0].(*api.WithdrawalResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Withdrawal indicates an expected call of Withdrawal
+func (mr *MockTradingDataClientMockRecorder) Withdrawal(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdrawal", reflect.TypeOf((*MockTradingDataClient)(nil).Withdrawal), varargs...)
+}
+
+// Withdrawals mocks base method
+func (m *MockTradingDataClient) Withdrawals(arg0 context.Context, arg1 *api.WithdrawalsRequest, arg2 ...grpc.CallOption) (*api.WithdrawalsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Withdrawals", varargs...)
+	ret0, _ := ret[0].(*api.WithdrawalsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Withdrawals indicates an expected call of Withdrawals
+func (mr *MockTradingDataClientMockRecorder) Withdrawals(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdrawals", reflect.TypeOf((*MockTradingDataClient)(nil).Withdrawals), varargs...)
 }

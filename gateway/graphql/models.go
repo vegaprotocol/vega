@@ -35,6 +35,10 @@ type TradingMode interface {
 	IsTradingMode()
 }
 
+type WithdrawalDetails interface {
+	IsWithdrawalDetails()
+}
+
 // Represents an asset in vega
 type Asset struct {
 	// The id of the asset
@@ -131,8 +135,31 @@ type ERC20Input struct {
 	ContractAddress string `json:"contractAddress"`
 }
 
-// ERC20 specific details to start a withdrawal
+// All the data related to the approval of a withdrawal from the network
+type Erc20WithdrawalApproval struct {
+	// The source asset in the ethereum network
+	AssetSource string `json:"assetSource"`
+	// The amount to be withdrawan
+	Amount string `json:"amount"`
+	// The expiry of the approval (RFC3339Nano)
+	Expiry string `json:"expiry"`
+	// The nonce to be used in the request
+	Nonce string `json:"nonce"`
+	// Signature aggregate from the nodes, to be in the following format:
+	// 0x + sig1 + sig2 + ... + sigN
+	Signatures string `json:"signatures"`
+}
+
+// Specific details for an erc20 withdrawal
 type Erc20WithdrawalDetails struct {
+	// The ethereum address of the receiver of the asset funds
+	ReceiverAddress string `json:"receiverAddress"`
+}
+
+func (Erc20WithdrawalDetails) IsWithdrawalDetails() {}
+
+// ERC20 specific details to start a withdrawal
+type Erc20WithdrawalDetailsInput struct {
 	// The ethereum address to which the withdrawn funds will be send to
 	ReceiverAddress string `json:"receiverAddress"`
 }
@@ -613,6 +640,26 @@ type Vote struct {
 	Party *proto.Party `json:"party"`
 	// ISO-8601 time and date when the vote reached Vega network
 	Datetime string `json:"datetime"`
+}
+
+// The details of a withdrawal processed by vega
+type Withdrawal struct {
+	// The Vega internal id of the withdrawal
+	ID string `json:"id"`
+	// The PartyID initiating the witndrawal
+	PartyID string `json:"partyId"`
+	// The amount to be withdrawn
+	Amount string `json:"amount"`
+	// The asset to be withdrawn
+	Asset string `json:"asset"`
+	// The current status of the withdrawal
+	Status WithdrawalStatus `json:"status"`
+	// A reference the foreign chain can use to refere to when processing the withdrawal
+	Ref string `json:"ref"`
+	// The time until when the withdrawal will be valid (RFC3339Nano)
+	Expiry string `json:"expiry"`
+	// Foreign chain specific details about the withdrawal
+	Details WithdrawalDetails `json:"details"`
 }
 
 // The various account types we have (used by collateral)
@@ -1363,5 +1410,52 @@ func (e *VoteValue) UnmarshalGQL(v interface{}) error {
 }
 
 func (e VoteValue) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The status of a withdrawal
+type WithdrawalStatus string
+
+const (
+	// The withdrawal is open and being processed by the network
+	WithdrawalStatusOpen WithdrawalStatus = "Open"
+	// The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
+	WithdrawalStatusCancelled WithdrawalStatus = "Cancelled"
+	// The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	WithdrawalStatusFinalized WithdrawalStatus = "Finalized"
+)
+
+var AllWithdrawalStatus = []WithdrawalStatus{
+	WithdrawalStatusOpen,
+	WithdrawalStatusCancelled,
+	WithdrawalStatusFinalized,
+}
+
+func (e WithdrawalStatus) IsValid() bool {
+	switch e {
+	case WithdrawalStatusOpen, WithdrawalStatusCancelled, WithdrawalStatusFinalized:
+		return true
+	}
+	return false
+}
+
+func (e WithdrawalStatus) String() string {
+	return string(e)
+}
+
+func (e *WithdrawalStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WithdrawalStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WithdrawalStatus", str)
+	}
+	return nil
+}
+
+func (e WithdrawalStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
