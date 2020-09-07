@@ -147,9 +147,20 @@ func (mdb *MarketDepthBuilder) addOrder(order *types.Order) {
 }
 
 func (mdb *MarketDepthBuilder) updateOrder(originalOrder, newOrder *types.Order) {
-	// If the price is the size, we can update the original order
+	// If the price is the same, we can update the original order
 	if originalOrder.Price == newOrder.Price {
 		// Update
+		pl := mdb.getPriceLevel(originalOrder.Side, originalOrder.Price)
+		pl.totalVolume += (newOrder.Remaining - originalOrder.Remaining)
+
+		if newOrder.Remaining == 0 {
+			mdb.removeOrder(newOrder)
+			pl.totalOrders -= 1
+		}
+
+		if pl.totalOrders == 0 {
+			mdb.removePriceLevel(newOrder)
+		}
 	} else {
 		mdb.removeOrder(originalOrder)
 		mdb.addOrder(newOrder)
@@ -197,6 +208,19 @@ func (mdb *MarketDepthBuilder) removePriceLevel(order *types.Order) {
 }
 
 func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
+	// Non persistent and network orders do not matter
+	if order.Type == types.Order_TYPE_MARKET ||
+		order.TimeInForce == types.Order_TIF_FOK ||
+		order.TimeInForce == types.Order_TIF_IOC {
+		return
+	}
+
+	// Orders that where not valid are ignored
+	if order.Status == types.Order_STATUS_INVALID ||
+		order.Status == types.Order_STATUS_REJECTED {
+		return
+	}
+
 	// Do we know about this order already?
 	originalOrder := mdb.orderExists(order.Id)
 	if originalOrder != nil {
@@ -209,7 +233,9 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 			mdb.updateOrder(originalOrder, order)
 		}
 	} else {
-		mdb.addOrder(order)
+		if order.Remaining > 0 {
+			mdb.addOrder(order)
+		}
 	}
 }
 
