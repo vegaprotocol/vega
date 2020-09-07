@@ -11,18 +11,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-type Stats interface {
-	IncHeight()
-	TotalTxLastBatch() uint64
-	Height() uint64
-	SetAverageTxPerBatch(uint64)
-	SetTotalTxLastBatch(uint64)
-	TotalTxCurrentBatch() uint64
-	SetTotalTxCurrentBatch(uint64)
-	IncTotalTxCurrentBatch()
-	SetAverageTxSizeBytes(uint64)
-}
-
 type Processor interface {
 	Validate([]byte) error
 	Process(payload []byte) error
@@ -41,7 +29,6 @@ type ApplicationTime interface {
 type NOOPChain struct {
 	log         *logging.Logger
 	ticker      *time.Ticker
-	stats       Stats
 	time        ApplicationTime
 	proc        Processor
 	service     ApplicationService
@@ -56,7 +43,6 @@ type NOOPChain struct {
 func New(
 	log *logging.Logger,
 	cfg Config,
-	stats Stats,
 	timeService ApplicationTime,
 	proc Processor,
 	service ApplicationService,
@@ -68,7 +54,6 @@ func New(
 	n := &NOOPChain{
 		log:         log,
 		ticker:      time.NewTicker(cfg.BlockDuration.Get()),
-		stats:       stats,
 		blockHeight: 1,
 		time:        timeService,
 		proc:        proc,
@@ -99,8 +84,6 @@ func (n *NOOPChain) startTicker() {
 				)
 				n.service.Commit()
 				n.blockHeight++
-				n.stats.IncHeight()
-				n.stats.SetTotalTxLastBatch(n.totalTxLastBatch)
 				n.totalTxLastBatch = 0
 				n.time.SetTimeNow(context.Background(), time.Now())
 				n.log.Info("starting new block",
@@ -167,4 +150,8 @@ func (c *NOOPChain) Validators() ([]*tmtypes.Validator, error) {
 
 func (c *NOOPChain) GenesisValidators() ([]*tmtypes.Validator, error) {
 	return nil, nil
+}
+
+func (c *NOOPChain) Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error {
+	return nil
 }
