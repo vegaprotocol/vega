@@ -46,7 +46,7 @@ func testCancelOrderNoOrderID(t *testing.T) {
 		PartyID:  "partyid",
 	}
 	err := svc.svc.PrepareCancelOrder(ctx, &arg)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }
 
 func testCancelOrderNoPartyID(t *testing.T) {
@@ -55,7 +55,7 @@ func testCancelOrderNoPartyID(t *testing.T) {
 	ctx := context.Background()
 	arg := proto.OrderCancellation{
 		MarketID: "marketid",
-		PartyID:  "partyid",
+		OrderID:  "partyid",
 	}
 
 	err := svc.svc.PrepareCancelOrder(ctx, &arg)

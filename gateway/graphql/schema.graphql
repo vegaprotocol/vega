@@ -40,11 +40,11 @@ type Mutation {
   """
   prepareOrderCancel(
     "ID of the order to cancel"
-    id: ID!
+    id: ID
     "ID of the party placing the order"
     partyId: String!
     "ID of the market where to find the order"
-    marketId: String!
+    marketId: String
   ): PreparedCancelOrder!
 
   """
