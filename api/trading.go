@@ -221,9 +221,9 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	msg, err := proto.Marshal(req.Evt)
+	msg, err := req.Evt.PrepareToSign()
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		return nil, apiError(codes.InvalidArgument, err)
 	}
 
 	// verify the signature then

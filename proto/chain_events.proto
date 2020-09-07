@@ -66,12 +66,10 @@ message ERC20Withdrawal {
 
   // The Vega network internal identifier of the asset.
   string vegaAssetID = 1;
-  // The party identifier (pub-key) initiating the withdrawal.
-  string sourcePartyId = 2;
   // The target Ethereum wallet address.
-  string targetEthereumAddress = 3;
+  string targetEthereumAddress = 2;
   // The reference nonce used for the transaction.
-  string referenceNonce = 4;
+  string referenceNonce = 3;
 }
 
 // An event related to an ERC20 token.

@@ -2386,7 +2386,6 @@ An asset withdrawal for an ERC20 token.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
-| sourcePartyId | [string](#string) |  | The party identifier (pub-key) initiating the withdrawal. |
 | targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address. |
 | referenceNonce | [string](#string) |  | The reference nonce used for the transaction. |
 

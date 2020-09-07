@@ -2409,10 +2409,6 @@
           "type": "string",
           "description": "The Vega network internal identifier of the asset."
         },
-        "sourcePartyId": {
-          "type": "string",
-          "description": "The party identifier (pub-key) initiating the withdrawal."
-        },
         "targetEthereumAddress": {
           "type": "string",
           "description": "The target Ethereum wallet address."

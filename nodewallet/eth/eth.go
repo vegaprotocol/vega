@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/pkg/errors"
 )
 
 // ETHClient ...
@@ -19,10 +20,11 @@ type ETHClient interface {
 }
 
 type Wallet struct {
-	cfg Config
-	acc accounts.Account
-	ks  *keystore.KeyStore
-	clt ETHClient
+	cfg        Config
+	acc        accounts.Account
+	ks         *keystore.KeyStore
+	clt        ETHClient
+	passphrase string
 }
 
 func DevInit(path, passphrase string) (string, error) {
@@ -54,11 +56,17 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 	if err != nil {
 		return nil, err
 	}
+
+	if err := ks.Unlock(acc, passphrase); err != nil {
+		return nil, errors.Wrap(err, "unable to unlock wallet")
+	}
+
 	return &Wallet{
-		cfg: cfg,
-		acc: acc,
-		ks:  ks,
-		clt: ethclt,
+		cfg:        cfg,
+		acc:        acc,
+		ks:         ks,
+		clt:        ethclt,
+		passphrase: passphrase,
 	}, nil
 
 }
@@ -68,7 +76,7 @@ func (w *Wallet) Chain() string {
 }
 
 func (w *Wallet) Sign(data []byte) ([]byte, error) {
-	return w.ks.SignHash(w.acc, accounts.TextHash(data))
+	return w.ks.SignHash(w.acc, data)
 }
 
 func (w *Wallet) Algo() string {

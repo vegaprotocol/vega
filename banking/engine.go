@@ -147,7 +147,8 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
 
-	w, ref := e.newWithdrawal(party, assetID, amount)
+	now, _ := e.tsvc.GetTimeNow()
+	w, ref := e.newWithdrawal(party, assetID, amount, time.Time{}, now)
 	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
@@ -273,7 +274,9 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 		return ErrWrongAssetUsedForERC20Withdraw
 	}
 
-	w, ref := e.newWithdrawal(party, assetID, amount)
+	now, _ := e.tsvc.GetTimeNow()
+	expiry := now.Add(e.cfg.WithdrawalExpiry.Duration)
+	w, ref := e.newWithdrawal(party, assetID, amount, expiry, now)
 	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	// try to lock the funds
@@ -301,12 +304,9 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 		return err
 	}
 
-	now, _ := e.tsvc.GetTimeNow()
-	expiry := now.Add(e.cfg.WithdrawalExpiry.Duration)
-
 	// then get the signature for the withdrawal and send it
 	erc20asset, _ := asset.ERC20() // no check error as we checked earlier we had an erc20 asset.
-	_, sig, err := erc20asset.SignWithdrawal(amount, expiry.Unix(), ext.GetReceiverAddress(), ref)
+	_, sig, err := erc20asset.SignWithdrawal(amount, w.Expiry, ext.GetReceiverAddress(), ref)
 	if err != nil {
 		// we don't cancel it here
 		// we may not be able to sign for some reason, but other may be able
@@ -393,14 +393,16 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
-		defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		if err != nil {
+			// Nothing to do, withrawal does not exists
 			return err
 		}
 		if w.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
+			// withdrawal was already canceled or finalized
 			return ErrInvalidWithdrawalState
 		}
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, aa.withdrawal.nonce}
 		return e.finalizeWithdrawal(ctx, w.PartyID, w.Asset, w.Amount)
 	default:
@@ -445,14 +447,15 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 
 }
 
-func (e *Engine) newWithdrawal(partyID, asset string, amount uint64) (w *types.Withdrawal, ref *big.Int) {
+func (e *Engine) newWithdrawal(partyID, asset string, amount uint64, expiry time.Time, now time.Time) (w *types.Withdrawal, ref *big.Int) {
 	w = &types.Withdrawal{
 		Status:  types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
 		PartyID: partyID,
 		Asset:   asset,
 		Amount:  amount,
+		Expiry:  expiry.Unix(),
 	}
-	return w, e.idgen.SetID(w)
+	return w, e.idgen.SetID(w, now)
 }
 
 type HasVegaAssetID interface {

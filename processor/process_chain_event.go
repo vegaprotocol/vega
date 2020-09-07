@@ -88,12 +88,15 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
-		if err := p.checkVegaAssetID(act.Deposit, "ERC20.AssetList"); err != nil {
+		act.Deposit.VegaAssetID = act.Deposit.VegaAssetID[2:]
+
+		if err := p.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
 		return p.banking.DepositERC20(act.Deposit, evt.Block, evt.Index)
 	case *types.ERC20Event_Withdrawal:
-		if err := p.checkVegaAssetID(act.Withdrawal, "ERC20.AssetList"); err != nil {
+		act.Withdrawal.VegaAssetID = act.Withdrawal.VegaAssetID[2:]
+		if err := p.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
 			return err
 		}
 		return p.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index)
