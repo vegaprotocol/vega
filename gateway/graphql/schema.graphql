@@ -95,6 +95,25 @@ type Mutation {
   ): PreparedVote!
 
   """
+  Prepare a withdrawal so it can be signed and submitted.
+  Returns a pending withdrawSubmission with a transaction blob for signing.
+  """
+  prepareWithdrawal(
+    "The party which wants to withdraw funds"
+    partyID: String!
+    "The amount to be withdrawn"
+    amount: String!
+    "The asset from which we want to withdraw funds"
+    asset: String!
+
+    """
+    ERC20 specific details to process the withdrawal
+    nullable as not required by all kind of withdrawals
+    """
+    erc20Details: Erc20WithdrawalDetails
+  ): PreparedVote!
+
+  """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
   """
@@ -105,6 +124,12 @@ type Mutation {
     sig: SignatureInput!
   ): TransactionSubmitted!
 
+}
+
+"ERC20 specific details to start a withdrawal"
+input Erc20WithdrawalDetails {
+  "The ethereum address to which the withdrawn funds will be send to"
+  receiverAddress: String!
 }
 
 "A signature to be bundled with a transaction"

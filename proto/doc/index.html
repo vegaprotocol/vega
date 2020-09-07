@@ -1129,6 +1129,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.WithdrawExt"><span class="badge">M</span>WithdrawExt</a>
+                </li>
+
+                <li>
                   <a href="#vega.WithdrawSubmission"><span class="badge">M</span>WithdrawSubmission</a>
                 </li>
 
@@ -11263,6 +11267,30 @@ against replay attack. </p></td>
 
 
 
+        <h3 id="vega.WithdrawExt">WithdrawExt</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>erc20</td>
+                  <td><a href="#vega.Erc20WithdrawExt">Erc20WithdrawExt</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.WithdrawSubmission">WithdrawSubmission</h3>
         <p>A request for withdrawing funds from a trader</p>
 
@@ -11295,10 +11323,10 @@ against replay attack. </p></td>
                 </tr>
 
                 <tr>
-                  <td>erc20</td>
-                  <td><a href="#vega.Erc20WithdrawExt">Erc20WithdrawExt</a></td>
+                  <td>ext</td>
+                  <td><a href="#vega.WithdrawExt">WithdrawExt</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>foreign chain specifics </p></td>
                 </tr>
 
             </tbody>
@@ -11366,6 +11394,13 @@ to refer to this withdrawal </p></td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>The time until when the withdrawal is valid </p></td>
+                </tr>
+
+                <tr>
+                  <td>ext</td>
+                  <td><a href="#vega.WithdrawExt">WithdrawExt</a></td>
+                  <td></td>
+                  <td><p>foreign chain specifis </p></td>
                 </tr>
 
             </tbody>

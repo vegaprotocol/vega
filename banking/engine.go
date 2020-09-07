@@ -148,7 +148,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 	}
 
 	now, _ := e.tsvc.GetTimeNow()
-	w, ref := e.newWithdrawal(party, assetID, amount, time.Time{}, now)
+	w, ref := e.newWithdrawal(party, assetID, amount, time.Time{}, now, nil)
 	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
@@ -276,7 +276,12 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 
 	now, _ := e.tsvc.GetTimeNow()
 	expiry := now.Add(e.cfg.WithdrawalExpiry.Duration)
-	w, ref := e.newWithdrawal(party, assetID, amount, expiry, now)
+	wext := &types.WithdrawExt{
+		Ext: &types.WithdrawExt_Erc20{
+			Erc20: ext,
+		},
+	}
+	w, ref := e.newWithdrawal(party, assetID, amount, expiry, now, wext)
 	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	// try to lock the funds
@@ -447,13 +452,14 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 
 }
 
-func (e *Engine) newWithdrawal(partyID, asset string, amount uint64, expiry time.Time, now time.Time) (w *types.Withdrawal, ref *big.Int) {
+func (e *Engine) newWithdrawal(partyID, asset string, amount uint64, expiry time.Time, now time.Time, wext *types.WithdrawExt) (w *types.Withdrawal, ref *big.Int) {
 	w = &types.Withdrawal{
 		Status:  types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
 		PartyID: partyID,
 		Asset:   asset,
 		Amount:  amount,
 		Expiry:  expiry.Unix(),
+		Ext:     wext,
 	}
 	return w, e.idgen.SetID(w, now)
 }

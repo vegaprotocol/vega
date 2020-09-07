@@ -28,7 +28,7 @@ func (p *Processor) processWithdraw(ctx context.Context, w *types.WithdrawSubmis
 	case asset.IsBuiltinAsset():
 		return p.banking.WithdrawalBuiltinAsset(ctx, w.PartyID, w.Asset, w.Amount)
 	case asset.IsERC20():
-		ext := w.GetErc20()
+		ext := w.Ext.GetErc20()
 		if ext == nil {
 			return ErrMissingWithdrawERC20Ext
 		}

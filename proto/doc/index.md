@@ -240,6 +240,7 @@
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
+    - [WithdrawExt](#vega.WithdrawExt)
     - [WithdrawSubmission](#vega.WithdrawSubmission)
     - [Withdrawal](#vega.Withdrawal)
 
@@ -4162,6 +4163,21 @@ Represents the response from a transfer.
 
 
 
+<a name="vega.WithdrawExt"></a>
+
+### WithdrawExt
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| erc20 | [Erc20WithdrawExt](#vega.Erc20WithdrawExt) |  |  |
+
+
+
+
+
+
 <a name="vega.WithdrawSubmission"></a>
 
 ### WithdrawSubmission
@@ -4173,7 +4189,7 @@ A request for withdrawing funds from a trader
 | partyID | [string](#string) |  | The party which wants to withdraw funds |
 | amount | [uint64](#uint64) |  | The amount to be withdrawn |
 | asset | [string](#string) |  | The asset we want to withdraw |
-| erc20 | [Erc20WithdrawExt](#vega.Erc20WithdrawExt) |  |  |
+| ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifics |
 
 
 
@@ -4195,6 +4211,7 @@ The representation of a withdrawal in the vega network
 | status | [Withdrawal.Status](#vega.Withdrawal.Status) |  | The status of this withdrawal |
 | ref | [string](#string) |  | The reference which is used by the foreign chain to refer to this withdrawal |
 | expiry | [int64](#int64) |  | The time until when the withdrawal is valid |
+| ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifis |
 
 
 

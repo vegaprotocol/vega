@@ -4212,6 +4212,14 @@
       },
       "description": "Governance vote."
     },
+    "vegaWithdrawExt": {
+      "type": "object",
+      "properties": {
+        "erc20": {
+          "$ref": "#/definitions/vegaErc20WithdrawExt"
+        }
+      }
+    },
     "vegaWithdrawSubmission": {
       "type": "object",
       "properties": {
@@ -4228,8 +4236,9 @@
           "type": "string",
           "title": "The asset we want to withdraw"
         },
-        "erc20": {
-          "$ref": "#/definitions/vegaErc20WithdrawExt"
+        "ext": {
+          "$ref": "#/definitions/vegaWithdrawExt",
+          "title": "foreign chain specifics"
         }
       },
       "title": "A request for withdrawing funds from a trader"
@@ -4266,6 +4275,10 @@
           "type": "string",
           "format": "int64",
           "title": "The time until when the withdrawal is valid"
+        },
+        "ext": {
+          "$ref": "#/definitions/vegaWithdrawExt",
+          "title": "foreign chain specifis"
         }
       },
       "title": "The representation of a withdrawal in the vega network"

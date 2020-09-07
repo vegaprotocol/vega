@@ -549,6 +549,8 @@ message Withdrawal {
   string ref = 6;
   // The time until when the withdrawal is valid
   int64 expiry = 7;
+  // foreign chain specifis
+  WithdrawExt ext = 8;
 }
 
 // A request for withdrawing funds from a trader
@@ -559,10 +561,14 @@ message WithdrawSubmission {
   uint64 amount = 2;
   // The asset we want to withdraw
   string asset = 3;
+  // foreign chain specifics
+  WithdrawExt ext = 4;
+}
 
+message WithdrawExt {
   // foreign chain specifics
   oneof ext {
-    Erc20WithdrawExt erc20 = 1001;
+    Erc20WithdrawExt erc20 = 1;
   }
 }
 
