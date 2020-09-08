@@ -447,14 +447,14 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction()
 	if err != nil {
-		m.log.Error("Error leaving auction: ", logging.Error(err))
+		m.log.Error("Error leaving auction", logging.Error(err))
 	}
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
 		_, err := m.CancelOrder(ctx, order.PartyID, order.Id)
 		if err != nil {
-			m.log.Error("Failed to cancel order: ", logging.String("OrderID", order.Id))
+			m.log.Error("Failed to cancel order", logging.String("OrderID", order.Id))
 		}
 	}
 
@@ -462,7 +462,7 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	for _, uo := range uncrossedOrders {
 		err := m.applyFees(ctx, uo.Order, uo.Trades)
 		if err != nil {
-			m.log.Error("Unable to apply fees to order: ", logging.String("OrderID", uo.Order.Id))
+			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uo.Order.Id))
 		}
 	}
 	// Send an event bus update
