@@ -1949,7 +1949,7 @@ type PositionResolution {
   distressed: Int!
   "number of traders closed out"
   closed: Int!
-  "the mark price at which traders were distressed/closed out
+  "the mark price at which traders were distressed/closed out"
   markPrice: Int!
 }
 
@@ -2042,7 +2042,7 @@ enum BusEventType {
   Market
 }
 
-"union type for wrapped events in stream"
+"union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
 union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick
 
 type BusEvent {

@@ -15,6 +15,11 @@ type AssetSource interface {
 	IsAssetSource()
 }
 
+// union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind
+type Event interface {
+	IsEvent()
+}
+
 type Oracle interface {
 	IsOracle()
 }
@@ -57,6 +62,8 @@ type Asset struct {
 	InfrastructureFeeAccount *proto.Account `json:"infrastructureFeeAccount"`
 }
 
+func (Asset) IsEvent() {}
+
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
 	// The id of the asset
@@ -87,6 +94,15 @@ type BuiltinAssetInput struct {
 	Decimals int `json:"decimals"`
 	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
 	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
+}
+
+type BusEvent struct {
+	// the id for this event
+	EventID string `json:"eventID"`
+	// the type of event we're dealing with
+	Type BusEventType `json:"type"`
+	// the payload - the wrapped event
+	Event Event `json:"event"`
 }
 
 // A mode where Vega try to execute order as soon as they are received
@@ -267,6 +283,21 @@ type InstrumentMetadata struct {
 	Tags []string `json:"tags"`
 }
 
+type LedgerEntry struct {
+	// account from which the asset was taken
+	FromAccount string `json:"fromAccount"`
+	// account to which the balance was transferred
+	ToAccount string `json:"toAccount"`
+	// the amount transferred
+	Amount int `json:"amount"`
+	// The transfer reference
+	Reference string `json:"reference"`
+	// Type of ledger entry
+	Type string `json:"type"`
+	// The time at which the transfer was made
+	Timestamp string `json:"timestamp"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
@@ -306,6 +337,17 @@ type LogNormalRiskModelInput struct {
 	// Params for the log normal risk model
 	Params *LogNormalModelParamsInput `json:"params"`
 }
+
+type LossSocialization struct {
+	// the market ID where loss socialization happened
+	MarketID string `json:"marketID"`
+	// the party that was part of the loss socialization
+	PartyID string `json:"partyID"`
+	// the amount lost
+	Amount int `json:"amount"`
+}
+
+func (LossSocialization) IsEvent() {}
 
 type MarginCalculator struct {
 	// The scaling factors that will be used for margin calculation
@@ -352,6 +394,26 @@ type Market struct {
 	// marketData for the given market
 	Data *proto.MarketData `json:"data"`
 }
+
+func (Market) IsEvent() {}
+
+type MarketEvent struct {
+	// the market ID
+	MarketID string `json:"marketID"`
+	// the message - market events are used for logging
+	Payload string `json:"payload"`
+}
+
+func (MarketEvent) IsEvent() {}
+
+type MarketTick struct {
+	// the market ID
+	MarketID string `json:"marketID"`
+	// the block time
+	Time string `json:"time"`
+}
+
+func (MarketTick) IsEvent() {}
 
 // A new asset proposal change
 type NewAsset struct {
@@ -409,6 +471,19 @@ type OrderFeeEstimate struct {
 	// The total estimated amount of fee if the order was to trade
 	TotalFeeAmount string `json:"totalFeeAmount"`
 }
+
+type PositionResolution struct {
+	// the market ID where position resolution happened
+	MarketID string `json:"marketID"`
+	// number of distressed traders on market
+	Distressed int `json:"distressed"`
+	// number of traders closed out
+	Closed int `json:"closed"`
+	// the mark price at which traders were distressed/closed out
+	MarkPrice int `json:"markPrice"`
+}
+
+func (PositionResolution) IsEvent() {}
 
 type PreparedAmendOrder struct {
 	// the raw transaction to sign & submit
@@ -502,6 +577,30 @@ type ScalingFactors struct {
 	CollateralRelease float64 `json:"collateralRelease"`
 }
 
+type SettleDistressed struct {
+	// the market in which a position was closed out
+	MarketID string `json:"marketID"`
+	// the party who closed out
+	PartyID string `json:"partyID"`
+	// the margin taken from distressed trader
+	Margin int `json:"margin"`
+	// the price at which position was closed out
+	Price int `json:"price"`
+}
+
+type SettlePosition struct {
+	// the market in which a position was settled
+	MarketID string `json:"marketID"`
+	// the party who settled a position
+	PartyID string `json:"partyID"`
+	// the settle price
+	Price int `json:"price"`
+	// the trades that were settled to close the overall position
+	TradeSettlements []*TradeSettlement `json:"tradeSettlements"`
+}
+
+func (SettlePosition) IsEvent() {}
+
 // A signature to be bundled with a transaction
 type SignatureInput struct {
 	// The signature, base64 encoded
@@ -535,6 +634,13 @@ type SimpleRiskModelParamsInput struct {
 	FactorShort float64 `json:"factorShort"`
 }
 
+type TimeUpdate struct {
+	// timestamp - new block time
+	Timestamp string `json:"timestamp"`
+}
+
+func (TimeUpdate) IsEvent() {}
+
 // A tradable instrument is a combination of an instrument and a risk model
 type TradableInstrument struct {
 	// An instance of or reference to a fully specified instrument.
@@ -555,9 +661,37 @@ type TradeFee struct {
 	LiquidityFee string `json:"liquidityFee"`
 }
 
+type TradeSettlement struct {
+	// the size of the trade
+	Size int `json:"size"`
+	// the price of the trade
+	Price int `json:"price"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }
+
+type TransferBalance struct {
+	// Account involved in transfer
+	Account *proto.Account `json:"account"`
+	// The new balance of the account
+	Balance int `json:"balance"`
+}
+
+type TransferResponse struct {
+	// the ledger entries and balances resulting from a transfer request
+	Transfers []*LedgerEntry `json:"transfers"`
+	// the balances of accounts involved in the transfer
+	Balances []*TransferBalance `json:"balances"`
+}
+
+type TransferResponses struct {
+	// a group of transfer responses - events from core
+	Responsesn []*TransferResponse `json:"responsesn"`
+}
+
+func (TransferResponses) IsEvent() {}
 
 // Incomplete change definition for governance proposal terms
 // TODO: complete the type
@@ -642,6 +776,8 @@ type Vote struct {
 	Datetime string `json:"datetime"`
 }
 
+func (Vote) IsEvent() {}
+
 // The details of a withdrawal processed by vega
 type Withdrawal struct {
 	// The Vega internal id of the withdrawal
@@ -724,6 +860,103 @@ func (e *AccountType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e AccountType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type BusEventType string
+
+const (
+	// all events
+	BusEventTypeAll BusEventType = "All"
+	// event type indicating TimeUpdate
+	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
+	// transfer response event
+	BusEventTypeTransferResponses BusEventType = "TransferResponses"
+	// position resolution event
+	BusEventTypePositionResolution BusEventType = "PositionResolution"
+	// order event
+	BusEventTypeOrder BusEventType = "Order"
+	// account event
+	BusEventTypeAccount BusEventType = "Account"
+	// party event
+	BusEventTypeParty BusEventType = "Party"
+	// trade event
+	BusEventTypeTrade BusEventType = "Trade"
+	// margin levels event
+	BusEventTypeMarginLevels BusEventType = "MarginLevels"
+	// proposal event
+	BusEventTypeProposal BusEventType = "Proposal"
+	// vote event
+	BusEventTypeVote BusEventType = "Vote"
+	// market data event
+	BusEventTypeMarketData BusEventType = "MarketData"
+	// node signature event
+	BusEventTypeNodeSignature BusEventType = "NodeSignature"
+	// loss socialization event
+	BusEventTypeLossSocialization BusEventType = "LossSocialization"
+	// settle position event
+	BusEventTypeSettlePosition BusEventType = "SettlePosition"
+	// settle distressed event
+	BusEventTypeSettleDistressed BusEventType = "SettleDistressed"
+	// market created event
+	BusEventTypeMarketCreated BusEventType = "MarketCreated"
+	// asset event
+	BusEventTypeAsset BusEventType = "Asset"
+	// market tick event
+	BusEventTypeMarketTick BusEventType = "MarketTick"
+	// constant for market events - mainly used for logging
+	BusEventTypeMarket BusEventType = "Market"
+)
+
+var AllBusEventType = []BusEventType{
+	BusEventTypeAll,
+	BusEventTypeTimeUpdate,
+	BusEventTypeTransferResponses,
+	BusEventTypePositionResolution,
+	BusEventTypeOrder,
+	BusEventTypeAccount,
+	BusEventTypeParty,
+	BusEventTypeTrade,
+	BusEventTypeMarginLevels,
+	BusEventTypeProposal,
+	BusEventTypeVote,
+	BusEventTypeMarketData,
+	BusEventTypeNodeSignature,
+	BusEventTypeLossSocialization,
+	BusEventTypeSettlePosition,
+	BusEventTypeSettleDistressed,
+	BusEventTypeMarketCreated,
+	BusEventTypeAsset,
+	BusEventTypeMarketTick,
+	BusEventTypeMarket,
+}
+
+func (e BusEventType) IsValid() bool {
+	switch e {
+	case BusEventTypeAll, BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeMarket:
+		return true
+	}
+	return false
+}
+
+func (e BusEventType) String() string {
+	return string(e)
+}
+
+func (e *BusEventType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BusEventType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BusEventType", str)
+	}
+	return nil
+}
+
+func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

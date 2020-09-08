@@ -2568,6 +2568,10 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 	return nil, ErrInvalidVotesSubscription
 }
 
+func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string) (<-chan []*BusEvent, error) {
+	return nil, ErrInvalidProposal
+}
+
 // START: Account Resolver
 
 type myAccountResolver VegaResolverRoot
