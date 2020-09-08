@@ -8,10 +8,12 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmprototypes "github.com/tendermint/tendermint/proto/types"
 )
 
 type AbciTestSuite struct {
@@ -57,7 +59,7 @@ func (s *AbciTestSuite) testCommitSuccess(t *testing.T, proc *procTest) {
 		assert.True(t, ok)
 	}).Return(nil)
 	s.app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmtypes.Header{
+		Header: tmprototypes.Header{
 			Time: now,
 		},
 	})
