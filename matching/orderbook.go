@@ -658,7 +658,7 @@ func (b *OrderBook) DeleteOrder(
 		return nil, types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
-	delete(b.ordersByID, order.Id)
+	delete(b.ordersPerParty[order.PartyID], order.Id)
 	return dorder, err
 }
 
