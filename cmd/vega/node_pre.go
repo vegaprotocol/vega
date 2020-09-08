@@ -442,12 +442,14 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 
 	// now instanciate the blockchain layer
-	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, commander, l.cancel, l.genesisHandler, l.topology)
-	if err != nil {
-		return errors.Wrap(err, "unable to start the blockchain")
-	}
+	/*
+		l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel, l.genesisHandler, l.topology)
+		if err != nil {
+			return errors.Wrap(err, "unable to start the blockchain")
+		}
+	*/
 
-	app := processor.NewApp(
+	app, err := processor.NewApp(
 		l.Log,
 		l.processor.Config,
 		l.cancel,
@@ -463,14 +465,25 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.stats.Blockchain,
 		l.timeService,
 		l.topology,
+		l.nodeWallet,
 	)
-	_ = app
+	if err != nil {
+		return err
+	}
+
+	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, app.Abci())
+	if err != nil {
+		return err
+	}
+
+	clt := l.blockchain.Client()
+	commander.SetChain(clt)
 
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) })
 
 	// get the chain client as well.
-	l.blockchainClient = l.blockchain.Client()
-	l.topology.SetChain(l.blockchain.Client())
+	l.blockchainClient = clt
+	l.topology.SetChain(clt)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {

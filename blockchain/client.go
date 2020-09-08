@@ -34,7 +34,7 @@ type Client struct {
 }
 
 // NewClient instantiate a new blockchain client
-func newClient(clt chainClientImpl) *Client {
+func NewClient(clt chainClientImpl) *Client {
 	return &Client{
 		clt: clt,
 	}

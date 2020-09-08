@@ -126,9 +126,14 @@ func (app *App) cancel() {
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block
-func (app *App) OnBeginBlock(tmtypes.RequestBeginBlock) (resp tmtypes.ResponseBeginBlock) {
-	var err error
+func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.ResponseBeginBlock) {
+	hash := hex.EncodeToString(req.Hash)
+	ctx := contextutil.WithTraceID(context.Background(), hash)
 
+	now := req.Header.Time
+	app.time.SetTimeNow(ctx, now)
+
+	var err error
 	if app.currentTimestamp, err = app.time.GetTimeNow(); err != nil {
 		app.cancel()
 		return

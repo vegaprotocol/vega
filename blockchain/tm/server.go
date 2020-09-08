@@ -6,6 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/tendermint/tendermint/abci/server"
+	"github.com/tendermint/tendermint/abci/types"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/libs/service"
 )
@@ -14,12 +15,12 @@ import (
 type Server struct {
 	Config
 	log  *logging.Logger
-	abci *AbciApplication
+	abci types.Application
 	srv  service.Service
 }
 
 // NewServer instantiate a new server
-func NewServer(log *logging.Logger, config Config, app *AbciApplication) *Server {
+func NewServer(log *logging.Logger, config Config, app types.Application) *Server {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())

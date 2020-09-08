@@ -50,6 +50,7 @@ type TimeService interface {
 	GetTimeNow() (time.Time, error)
 	GetTimeLastBatch() (time.Time, error)
 	NotifyOnTick(f func(context.Context, time.Time))
+	SetTimeNow(context.Context, time.Time)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine

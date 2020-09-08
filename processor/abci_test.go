@@ -48,6 +48,7 @@ func (s *AbciTestSuite) testCommitSuccess(t *testing.T, proc *procTest) {
 	proc.top.EXPECT().Ready().AnyTimes().Return(false)
 	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
 
+	proc.ts.EXPECT().SetTimeNow(gomock.Any(), now).Times(1)
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	proc.cmd.EXPECT().Command(blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ blockchain.Command, payload proto.Message) {
@@ -55,7 +56,11 @@ func (s *AbciTestSuite) testCommitSuccess(t *testing.T, proc *procTest) {
 		_, ok := payload.(*types.NodeRegistration)
 		assert.True(t, ok)
 	}).Return(nil)
-	s.app.OnBeginBlock(tmtypes.RequestBeginBlock{})
+	s.app.OnBeginBlock(tmtypes.RequestBeginBlock{
+		Header: tmtypes.Header{
+			Time: now,
+		},
+	})
 
 	duration := time.Duration(now.UnixNano() - prev.UnixNano()).Seconds()
 	var (
