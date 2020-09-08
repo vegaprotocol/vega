@@ -43,6 +43,8 @@ type testMargin struct {
 	margin   uint64
 	general  uint64
 	market   string
+	vwBuy    uint64
+	vwSell   uint64
 }
 
 var (
@@ -96,6 +98,7 @@ func testMarginLevelsTS(t *testing.T) {
 			return markPrice, nil
 		})
 
+	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
 	ts := time.Date(2018, time.January, 23, 0, 0, 0, 0, time.UTC)
 	eng.OnTimeUpdate(ts)
 
@@ -132,6 +135,7 @@ func testMarginTopup(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -161,11 +165,12 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		general: 10,
 		market:  "ETH/DEC19",
 	}
+	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
 		})
-	riskevt, err := eng.UpdateMarginOnNewOrder(evt, uint64(markPrice))
+	riskevt, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, uint64(markPrice))
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
@@ -186,6 +191,7 @@ func testMarginNoop(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
+	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -211,6 +217,7 @@ func testMarginOverflow(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
+	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -319,7 +326,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		general: 100000,
 		market:  "ETH/DEC19",
 	}
-	riskevt, err := testE.UpdateMarginOnNewOrder(evt, uint64(markPrice))
+	riskevt, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(markPrice))
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -427,7 +434,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 
 	previousMarkPrice := 103
 
-	riskevt, err := testE.UpdateMarginOnNewOrder(evt, uint64(previousMarkPrice))
+	riskevt, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(previousMarkPrice))
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -515,6 +522,14 @@ func (m testMargin) Sell() int64 {
 
 func (m testMargin) Size() int64 {
 	return m.size
+}
+
+func (m testMargin) VWBuy() uint64 {
+	return m.vwBuy
+}
+
+func (m testMargin) VWSell() uint64 {
+	return m.vwSell
 }
 
 func (m testMargin) ClearPotentials() {}

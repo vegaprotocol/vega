@@ -85,6 +85,7 @@ func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
 	t.Run("fees transfer continuous - OK with enough in general", testFeeTransferContinuousOKWithEnoughInGenral)
 	t.Run("fees transfer continuous - OK with enough in margin + general", testFeeTransferContinuousOKWithEnoughInGeneralAndMargin)
 	t.Run("fees transfer continuous - transfer with 0 amount", testFeeTransferContinuousOKWith0Amount)
+	t.Run("fees transfer check account events", testFeeTransferContinuousOKCheckAccountEvents)
 }
 
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
@@ -274,7 +275,71 @@ func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
 	assert.NotNil(t, transfers)
 	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
 	assert.Len(t, transfers, 1)
+}
 
+func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	_, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	margin, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), margin, 10000)
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 1000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				MinAmount: 1000,
+			},
+			{
+				Owner: "mytrader",
+				Amount: &types.FinancialAmount{
+					Amount: 3000,
+				},
+				Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
+				MinAmount: 3000,
+			},
+		},
+		tfa: map[string]uint64{trader: 1000},
+	}
+
+	var (
+		seenLiqui bool
+		seenInfra bool
+	)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(evt events.Event) {
+		if evt.Type() != events.AccountEvent {
+			t.FailNow()
+		}
+		accRaw := evt.(*events.Acc)
+		acc := accRaw.Account()
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
+			assert.Equal(t, 1000, int(acc.Balance))
+			seenInfra = true
+		}
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
+			assert.Equal(t, 3000, int(acc.Balance))
+			seenLiqui = true
+		}
+	})
+	transfers, err := eng.TransferFeesContinuousTrading(
+		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 2)
+	assert.True(t, seenInfra)
+	assert.True(t, seenLiqui)
 }
 
 func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
@@ -1640,6 +1705,33 @@ func TestWithdrawalOK(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+			assert.Equal(t, 400, int(acc.Balance))
+		} else if acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
+			assert.Equal(t, 100, int(acc.Balance))
+		} else {
+			t.FailNow()
+		}
+	})
+
+	err = eng.Engine.LockFundsForWithdraw(context.Background(), trader, testMarketAsset, 100)
+	assert.NoError(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
+			assert.Equal(t, 0, int(acc.Balance))
+		} else {
+			t.FailNow()
+		}
+	})
+
 	err = eng.Engine.Withdraw(context.Background(), trader, testMarketAsset, 100)
 	assert.Nil(t, err)
 }
@@ -1655,6 +1747,33 @@ func TestWithdrawalExact(t *testing.T) {
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+			assert.Equal(t, 0, int(acc.Balance))
+		} else if acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
+			assert.Equal(t, 500, int(acc.Balance))
+		} else {
+			t.FailNow()
+		}
+	})
+
+	err = eng.Engine.LockFundsForWithdraw(context.Background(), trader, testMarketAsset, 500)
+	assert.NoError(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
+			assert.Equal(t, 0, int(acc.Balance))
+		} else {
+			t.FailNow()
+		}
+	})
 
 	err = eng.Engine.Withdraw(context.Background(), trader, testMarketAsset, 500)
 	assert.Nil(t, err)
@@ -1672,9 +1791,9 @@ func TestWithdrawalNotEnough(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.Withdraw(context.Background(), trader, testMarketAsset, 600)
-	assert.Error(t, err)
+	err = eng.Engine.LockFundsForWithdraw(context.Background(), trader, testMarketAsset, 600)
+	assert.EqualError(t, err, collateral.ErrNotEnoughFundsToWithdraw.Error())
+
 }
 
 func TestWithdrawalInvalidAccount(t *testing.T) {
@@ -1689,6 +1808,9 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
+	err = eng.Engine.LockFundsForWithdraw(context.Background(), "invalid", testMarketAsset, 600)
+	assert.Error(t, err)
+	err = nil
 	err = eng.Engine.Withdraw(context.Background(), "invalid", testMarketAsset, 600)
 	assert.Error(t, err)
 }
@@ -1820,6 +1942,7 @@ type marketPositionFake struct {
 	party           string
 	size, buy, sell int64
 	price           uint64
+	vwBuy, vwSell   uint64
 }
 
 func (m marketPositionFake) Party() string    { return m.party }
@@ -1827,6 +1950,8 @@ func (m marketPositionFake) Size() int64      { return m.size }
 func (m marketPositionFake) Buy() int64       { return m.buy }
 func (m marketPositionFake) Sell() int64      { return m.sell }
 func (m marketPositionFake) Price() uint64    { return m.price }
+func (m marketPositionFake) VWBuy() uint64    { return m.vwBuy }
+func (m marketPositionFake) VWSell() uint64   { return m.vwSell }
 func (m marketPositionFake) ClearPotentials() {}
 
 type mtmFake struct {
@@ -1837,6 +1962,8 @@ type mtmFake struct {
 func (m mtmFake) Party() string             { return m.party }
 func (m mtmFake) Size() int64               { return 0 }
 func (m mtmFake) Price() uint64             { return 0 }
+func (m mtmFake) VWBuy() uint64             { return 0 }
+func (m mtmFake) VWSell() uint64            { return 0 }
 func (m mtmFake) Buy() int64                { return 0 }
 func (m mtmFake) Sell() int64               { return 0 }
 func (m mtmFake) ClearPotentials()          {}
@@ -1857,6 +1984,7 @@ type riskFake struct {
 	party           string
 	size, buy, sell int64
 	price           uint64
+	vwBuy, vwSell   uint64
 	margins         *types.MarginLevels
 	amount          int64
 	transfer        *types.Transfer
@@ -1868,6 +1996,8 @@ func (m riskFake) Size() int64                       { return m.size }
 func (m riskFake) Buy() int64                        { return m.buy }
 func (m riskFake) Sell() int64                       { return m.sell }
 func (m riskFake) Price() uint64                     { return m.price }
+func (m riskFake) VWBuy() uint64                     { return m.vwBuy }
+func (m riskFake) VWSell() uint64                    { return m.vwSell }
 func (m riskFake) ClearPotentials()                  {}
 func (m riskFake) Transfer() *types.Transfer         { return m.transfer }
 func (m riskFake) Amount() int64                     { return m.amount }

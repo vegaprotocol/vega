@@ -159,6 +159,12 @@ type AssetService interface {
 	GetAll() ([]types.Asset, error)
 }
 
+// FeeService Provides apis to estimate fees
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/fee_service_mock.go -package mocks code.vegaprotocol.io/vega/api  FeeService
+type FeeService interface {
+	EstimateFee(context.Context, *types.Order) (*types.Fee, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -176,8 +182,24 @@ type tradingDataService struct {
 	TransferResponseService TransferResponseService
 	governanceService       GovernanceDataService
 	AssetService            AssetService
+	FeeService              FeeService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
+}
+
+func (t *tradingDataService) EstimateFee(ctx context.Context, req *protoapi.EstimateFeeRequest) (*protoapi.EstimateFeeResponse, error) {
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	fee, err := t.FeeService.EstimateFee(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateFeeResponse{
+		Fee: fee,
+	}, nil
 }
 
 func (t *tradingDataService) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {
@@ -1406,23 +1428,6 @@ func (t *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 
 	// If we get here then no match was found
 	return nil, ErrOrderNotFound
-}
-
-func (t *tradingDataService) OrderByReferenceID(ctx context.Context, in *protoapi.OrderByReferenceIDRequest) (*types.Order, error) {
-	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("OrderByReferenceID", startTime)
-	if len(in.ReferenceID) == 0 {
-		// Invalid parameter
-		return nil, ErrMissingReferenceIDParameter
-	}
-
-	order, err := t.OrderService.GetByReference(ctx, in.ReferenceID)
-	if err != nil {
-		return nil, err
-	}
-
-	// If we get here we have matched against referenceID and all is good
-	return order, nil
 }
 
 // OrderVersionsByID returns all versions of the order by its orderID

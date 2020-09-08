@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
+	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -67,6 +68,7 @@ type Config struct {
 	Notary      notary.Config
 	EvtForward  evtforward.Config
 	Subscribers subscribers.Config
+	Genesis     genesis.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -106,6 +108,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Assets:         assets.NewDefaultConfig(defaultStoreDirPath),
 		Notary:         notary.NewDefaultConfig(),
 		EvtForward:     evtforward.NewDefaultConfig(),
+		Genesis:        genesis.NewDefaultConfig(),
 		Subscribers:    subscribers.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,

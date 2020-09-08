@@ -36,6 +36,10 @@ type chainImpl interface {
 	Stop() error
 }
 
+type GenesisHandler interface {
+	OnGenesis(genesisTime time.Time, appState []byte, validatorsPubkey [][]byte) error
+}
+
 type Blockchain struct {
 	log        *logging.Logger
 	clt        *Client
@@ -54,6 +58,8 @@ func New(
 	stats *stats.Blockchain,
 	commander Commander,
 	cancel func(),
+	ghandler GenesisHandler,
+	top tm.ValidatorTopology,
 ) (*Blockchain, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -70,7 +76,7 @@ func New(
 
 	switch strings.ToLower(cfg.ChainProvider) {
 	case "tendermint":
-		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel)
+		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel, ghandler, top)
 		if err == nil {
 			clt, err = tm.NewClient(cfg.Tendermint)
 		}

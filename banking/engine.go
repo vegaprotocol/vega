@@ -32,6 +32,7 @@ type Assets interface {
 type Collateral interface {
 	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
 	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
+	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
 	EnableAsset(ctx context.Context, asset types.Asset) error
 }
 
@@ -110,6 +111,15 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 	if !asset.IsBuiltinAsset() {
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
+	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
+		e.log.Error("cannot withdraw asset for party",
+			logging.String("party-id", party),
+			logging.String("asset-id", assetID),
+			logging.Uint64("amount", amount),
+			logging.Error(err))
+		return err
+	}
+
 	return e.finalizeWithdrawal(ctx, party, assetID, amount)
 }
 

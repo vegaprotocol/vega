@@ -18,6 +18,8 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/fee"
+	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -118,6 +120,7 @@ type NodeCommand struct {
 	governanceService *governance.Svc
 	notaryService     *notary.Svc
 	assetService      *assets.Svc
+	feeService        *fee.Svc
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -142,12 +145,13 @@ type NodeCommand struct {
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
 
-	assets   *assets.Service
-	topology *validators.Topology
-	notary   *notary.Notary
-	evtfwd   *evtforward.EvtForwarder
-	erc      *validators.ExtResChecker
-	banking  *banking.Engine
+	assets         *assets.Service
+	topology       *validators.Topology
+	notary         *notary.Notary
+	evtfwd         *evtforward.EvtForwarder
+	erc            *validators.ExtResChecker
+	banking        *banking.Engine
+	genesisHandler *genesis.Handler
 
 	// plugins
 	settlePlugin *plugins.Positions
@@ -217,6 +221,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.notaryService,
 		l.evtfwd,
 		l.assetService,
+		l.feeService,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

@@ -79,11 +79,12 @@ type ComplexityRoot struct {
 	}
 
 	BuiltinAsset struct {
-		Decimals    func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Symbol      func(childComplexity int) int
-		TotalSupply func(childComplexity int) int
+		Decimals            func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		MaxFaucetAmountMint func(childComplexity int) int
+		Name                func(childComplexity int) int
+		Symbol              func(childComplexity int) int
+		TotalSupply         func(childComplexity int) int
 	}
 
 	Candle struct {
@@ -194,7 +195,6 @@ type ComplexityRoot struct {
 		Fees               func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
-		OrderByReference   func(childComplexity int, reference string) int
 		Orders             func(childComplexity int, skip *int, first *int, last *int) int
 		TradableInstrument func(childComplexity int) int
 		Trades             func(childComplexity int, skip *int, first *int, last *int) int
@@ -267,6 +267,11 @@ type ComplexityRoot struct {
 		Type            func(childComplexity int) int
 		UpdatedAt       func(childComplexity int) int
 		Version         func(childComplexity int) int
+	}
+
+	OrderFeeEstimate struct {
+		Fee            func(childComplexity int) int
+		TotalFeeAmount func(childComplexity int) int
 	}
 
 	Party struct {
@@ -344,6 +349,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Asset                      func(childComplexity int, assetID string) int
 		Assets                     func(childComplexity int) int
+		EstimateFeeForOrder        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		Market                     func(childComplexity int, id string) int
 		Markets                    func(childComplexity int, id *string) int
 		NetworkParametersProposals func(childComplexity int, inState *ProposalState) int
@@ -351,7 +357,7 @@ type ComplexityRoot struct {
 		NewMarketProposals         func(childComplexity int, inState *ProposalState) int
 		NodeSignatures             func(childComplexity int, resourceID string) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
-		OrderByReferenceID         func(childComplexity int, referenceID string) int
+		OrderByReference           func(childComplexity int, referenceID string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
 		Parties                    func(childComplexity int, id *string) int
 		Party                      func(childComplexity int, id string) int
@@ -511,7 +517,6 @@ type MarketResolver interface {
 	Trades(ctx context.Context, obj *Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
 	Depth(ctx context.Context, obj *Market, maxDepth *int) (*proto.MarketDepth, error)
 	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
-	OrderByReference(ctx context.Context, obj *Market, reference string) (*proto.Order, error)
 	Data(ctx context.Context, obj *Market) (*proto.MarketData, error)
 }
 type MarketDataResolver interface {
@@ -602,7 +607,7 @@ type QueryResolver interface {
 	Statistics(ctx context.Context) (*proto.Statistics, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*proto.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*proto.Order, error)
-	OrderByReferenceID(ctx context.Context, referenceID string) (*proto.Order, error)
+	OrderByReference(ctx context.Context, referenceID string) (*proto.Order, error)
 	Proposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	Proposal(ctx context.Context, id *string, reference *string) (*proto.GovernanceData, error)
 	NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
@@ -612,6 +617,7 @@ type QueryResolver interface {
 	NodeSignatures(ctx context.Context, resourceID string) ([]*proto.NodeSignature, error)
 	Asset(ctx context.Context, assetID string) (*Asset, error)
 	Assets(ctx context.Context) ([]*Asset, error)
+	EstimateFeeForOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*OrderFeeEstimate, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *proto.Statistics) (int, error)
@@ -771,6 +777,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BuiltinAsset.ID(childComplexity), true
+
+	case "BuiltinAsset.maxFaucetAmountMint":
+		if e.complexity.BuiltinAsset.MaxFaucetAmountMint == nil {
+			break
+		}
+
+		return e.complexity.BuiltinAsset.MaxFaucetAmountMint(childComplexity), true
 
 	case "BuiltinAsset.name":
 		if e.complexity.BuiltinAsset.Name == nil {
@@ -1221,18 +1234,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.Name(childComplexity), true
 
-	case "Market.orderByReference":
-		if e.complexity.Market.OrderByReference == nil {
-			break
-		}
-
-		args, err := ec.field_Market_orderByReference_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Market.OrderByReference(childComplexity, args["reference"].(string)), true
-
 	case "Market.orders":
 		if e.complexity.Market.Orders == nil {
 			break
@@ -1630,6 +1631,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Version(childComplexity), true
 
+	case "OrderFeeEstimate.fee":
+		if e.complexity.OrderFeeEstimate.Fee == nil {
+			break
+		}
+
+		return e.complexity.OrderFeeEstimate.Fee(childComplexity), true
+
+	case "OrderFeeEstimate.totalFeeAmount":
+		if e.complexity.OrderFeeEstimate.TotalFeeAmount == nil {
+			break
+		}
+
+		return e.complexity.OrderFeeEstimate.TotalFeeAmount(childComplexity), true
+
 	case "Party.accounts":
 		if e.complexity.Party.Accounts == nil {
 			break
@@ -1947,6 +1962,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Assets(childComplexity), true
 
+	case "Query.estimateFeeForOrder":
+		if e.complexity.Query.EstimateFeeForOrder == nil {
+			break
+		}
+
+		args, err := ec.field_Query_estimateFeeForOrder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EstimateFeeForOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
+
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
 			break
@@ -2031,17 +2058,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.OrderByID(childComplexity, args["orderID"].(string), args["version"].(*int)), true
 
-	case "Query.orderByReferenceID":
-		if e.complexity.Query.OrderByReferenceID == nil {
+	case "Query.orderByReference":
+		if e.complexity.Query.OrderByReference == nil {
 			break
 		}
 
-		args, err := ec.field_Query_orderByReferenceID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_orderByReference_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByReferenceID(childComplexity, args["referenceID"].(string)), true
+		return e.complexity.Query.OrderByReference(childComplexity, args["referenceID"].(string)), true
 
 	case "Query.orderVersions":
 		if e.complexity.Query.OrderVersions == nil {
@@ -3119,7 +3146,7 @@ type Query {
     last: Int): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReferenceID(
+  orderByReference(
     "ReferenceID for an order"
     referenceID: String!
   ): Order!
@@ -3177,6 +3204,27 @@ type Query {
 
   "The list of all assets in use in the vega network"
   assets: [Asset!]
+
+  "return an estiamation of fee it the order was to trade"
+  estimateFeeForOrder(
+    "ID of the market to place the order"
+    marketId: String!
+    "ID of the party placing the order"
+    partyId: String!
+    "Price of the asset"
+    price: String
+    "Size of the order"
+    size: String!
+    "Side of the order (Buy or Sell)"
+    side: Side!
+    "TimeInForce of the order"
+    timeInForce: OrderTimeInForce!
+    "exiration of the the order"
+    expiration: String
+    "type of the order"
+    type: OrderType!
+  ): OrderFeeEstimate!
+
 }
 
 "Represents an asset in vega"
@@ -3228,6 +3276,9 @@ type BuiltinAsset {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 "Represents a signature for the approval of a resource from a validator"
@@ -3568,12 +3619,6 @@ type Market {
     interval: Interval!
   ): [Candle]
 
-  "Query an order by reference for the given market"
-  orderByReference (
-    "reference of the order"
-    reference: String!
-  ): Order!
-
   "marketData for the given market"
   data: MarketData!
 }
@@ -3773,6 +3818,15 @@ type Order {
 
   "UpdatedAt is the last time the order was altered"
   updatedAt: String!
+}
+
+"An estimate of the fee to be paid by the order"
+type OrderFeeEstimate {
+  "The estimated fee if the order was to trade"
+  fee: TradeFee!
+
+  "The total estimated amount of fee if the order was to trade"
+  totalFeeAmount: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -4085,6 +4139,8 @@ enum AccountType {
   FeeInfrastructure
   "Liquidity fee account - the account where all infrastructure fees are collected"
   FeeLiquidity
+  "LockWithdraw - and account use for party in the process of withdrawing funds"
+  LockWithdraw
 }
 
 input SimpleRiskModelParamsInput {
@@ -4411,6 +4467,9 @@ input BuiltinAssetInput {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 """
@@ -4554,20 +4613,6 @@ func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs
 		}
 	}
 	args["maxDepth"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Market_orderByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["reference"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["reference"] = arg0
 	return args, nil
 }
 
@@ -5029,6 +5074,76 @@ func (ec *executionContext) field_Query_asset_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_estimateFeeForOrder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["price"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["price"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["size"]; ok {
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["size"] = arg3
+	var arg4 Side
+	if tmp, ok := rawArgs["side"]; ok {
+		arg4, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["side"] = arg4
+	var arg5 OrderTimeInForce
+	if tmp, ok := rawArgs["timeInForce"]; ok {
+		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["timeInForce"] = arg5
+	var arg6 *string
+	if tmp, ok := rawArgs["expiration"]; ok {
+		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["expiration"] = arg6
+	var arg7 OrderType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg7, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg7
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_market_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5135,7 +5250,7 @@ func (ec *executionContext) field_Query_orderByID_args(ctx context.Context, rawA
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_orderByReferenceID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_orderByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -6052,6 +6167,40 @@ func (ec *executionContext) _BuiltinAsset_decimals(ctx context.Context, field gr
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BuiltinAsset_maxFaucetAmountMint(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BuiltinAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxFaucetAmountMint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Candle_timestamp(ctx context.Context, field graphql.CollectedField, obj *proto.Candle) (ret graphql.Marshaler) {
@@ -8179,47 +8328,6 @@ func (ec *executionContext) _Market_candles(ctx context.Context, field graphql.C
 	return ec.marshalOCandle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Market_orderByReference(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Market",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Market_orderByReference_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().OrderByReference(rctx, obj, args["reference"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.Order)
-	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Market_data(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -9858,6 +9966,74 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OrderFeeEstimate_fee(ctx context.Context, field graphql.CollectedField, obj *OrderFeeEstimate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OrderFeeEstimate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TradeFee)
+	fc.Result = res
+	return ec.marshalNTradeFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeFee(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OrderFeeEstimate_totalFeeAmount(ctx context.Context, field graphql.CollectedField, obj *OrderFeeEstimate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OrderFeeEstimate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalFeeAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -11448,7 +11624,7 @@ func (ec *executionContext) _Query_orderVersions(ctx context.Context, field grap
 	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrderᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_orderByReferenceID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_orderByReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11464,7 +11640,7 @@ func (ec *executionContext) _Query_orderByReferenceID(ctx context.Context, field
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_orderByReferenceID_args(ctx, rawArgs)
+	args, err := ec.field_Query_orderByReference_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -11472,7 +11648,7 @@ func (ec *executionContext) _Query_orderByReferenceID(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByReferenceID(rctx, args["referenceID"].(string))
+		return ec.resolvers.Query().OrderByReference(rctx, args["referenceID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11825,6 +12001,47 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 	res := resTmp.([]*Asset)
 	fc.Result = res
 	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_estimateFeeForOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_estimateFeeForOrder_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EstimateFeeForOrder(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*OrderFeeEstimate)
+	fc.Result = res
+	return ec.marshalNOrderFeeEstimate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderFeeEstimate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -15764,6 +15981,12 @@ func (ec *executionContext) unmarshalInputBuiltinAssetInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "maxFaucetAmountMint":
+			var err error
+			it.MaxFaucetAmountMint, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -16558,6 +16781,11 @@ func (ec *executionContext) _BuiltinAsset(ctx context.Context, sel ast.Selection
 			}
 		case "decimals":
 			out.Values[i] = ec._BuiltinAsset_decimals(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maxFaucetAmountMint":
+			out.Values[i] = ec._BuiltinAsset_maxFaucetAmountMint(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -17407,20 +17635,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				res = ec._Market_candles(ctx, field, obj)
 				return res
 			})
-		case "orderByReference":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_orderByReference(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "data":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -18044,6 +18258,38 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var orderFeeEstimateImplementors = []string{"OrderFeeEstimate"}
+
+func (ec *executionContext) _OrderFeeEstimate(ctx context.Context, sel ast.SelectionSet, obj *OrderFeeEstimate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderFeeEstimateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OrderFeeEstimate")
+		case "fee":
+			out.Values[i] = ec._OrderFeeEstimate_fee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalFeeAmount":
+			out.Values[i] = ec._OrderFeeEstimate_totalFeeAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18788,7 +19034,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_orderVersions(ctx, field)
 				return res
 			})
-		case "orderByReferenceID":
+		case "orderByReference":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -18796,7 +19042,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_orderByReferenceID(ctx, field)
+				res = ec._Query_orderByReference(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -18902,6 +19148,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_assets(ctx, field)
+				return res
+			})
+		case "estimateFeeForOrder":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_estimateFeeForOrder(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
@@ -20374,6 +20634,20 @@ func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Order(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOrderFeeEstimate2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderFeeEstimate(ctx context.Context, sel ast.SelectionSet, v OrderFeeEstimate) graphql.Marshaler {
+	return ec._OrderFeeEstimate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOrderFeeEstimate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderFeeEstimate(ctx context.Context, sel ast.SelectionSet, v *OrderFeeEstimate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OrderFeeEstimate(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {

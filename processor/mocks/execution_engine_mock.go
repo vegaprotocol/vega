@@ -50,10 +50,10 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1 interface{}) *g
 }
 
 // CancelOrder mocks base method
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (*proto.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) ([]*proto.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.OrderCancellationConfirmation)
+	ret0, _ := ret[0].([]*proto.OrderCancellationConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

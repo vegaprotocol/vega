@@ -662,6 +662,7 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 		DecimalPlaces:  int(newMarket.DecimalPlaces),
 		RiskParameters: risk,
 		TradingMode:    mode,
+		Metadata:       newMarket.Metadata,
 	}
 	result.Instrument.assignProductFromProto(newMarket.Instrument)
 	return result, nil
@@ -832,17 +833,21 @@ func (b *BuiltinAssetInput) IntoProto() (*types.BuiltinAsset, error) {
 		return nil, errors.New("BuiltinAssetInput.Symbol: cannot be empty")
 	}
 	if len(b.TotalSupply) <= 0 {
-		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be empty")
+		return nil, errors.New("BuiltinAssetInput.TotalSupply: cannot be empty")
+	}
+	if len(b.MaxFaucetAmountMint) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.MaxFaucetAmountMint: cannot be empty")
 	}
 	if b.Decimals <= 0 {
 		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be <= 0")
 	}
 
 	return &types.BuiltinAsset{
-		Name:        b.Name,
-		Symbol:      b.Symbol,
-		TotalSupply: b.TotalSupply,
-		Decimals:    uint64(b.Decimals),
+		Name:                b.Name,
+		Symbol:              b.Symbol,
+		TotalSupply:         b.TotalSupply,
+		Decimals:            uint64(b.Decimals),
+		MaxFaucetAmountMint: b.MaxFaucetAmountMint,
 	}, nil
 }
 
@@ -1033,10 +1038,11 @@ func (a AccountType) IntoProto() types.AccountType {
 
 func BuiltinAssetFromProto(ba *types.BuiltinAsset) *BuiltinAsset {
 	return &BuiltinAsset{
-		Name:        ba.Name,
-		Symbol:      ba.Symbol,
-		TotalSupply: ba.TotalSupply,
-		Decimals:    int(ba.Decimals),
+		Name:                ba.Name,
+		Symbol:              ba.Symbol,
+		TotalSupply:         ba.TotalSupply,
+		Decimals:            int(ba.Decimals),
+		MaxFaucetAmountMint: ba.MaxFaucetAmountMint,
 	}
 }
 

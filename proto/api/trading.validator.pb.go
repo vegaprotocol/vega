@@ -99,6 +99,9 @@ func (this *AssetsResponse) Validate() error {
 	return nil
 }
 func (this *AssetByIDRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
 	return nil
 }
 func (this *AssetByIDResponse) Validate() error {
@@ -110,6 +113,9 @@ func (this *AssetByIDResponse) Validate() error {
 	return nil
 }
 func (this *GetNodeSignaturesAggregateRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
 	return nil
 }
 func (this *GetNodeSignaturesAggregateResponse) Validate() error {
@@ -733,9 +739,6 @@ func (this *PrepareVoteResponse) Validate() error {
 func (this *OrderByIDRequest) Validate() error {
 	return nil
 }
-func (this *OrderByReferenceIDRequest) Validate() error {
-	return nil
-}
 func (this *OrderVersionsByIDRequest) Validate() error {
 	if this.Pagination != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Pagination); err != nil {
@@ -750,6 +753,22 @@ func (this *OrderVersionsResponse) Validate() error {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Orders", err)
 			}
+		}
+	}
+	return nil
+}
+func (this *EstimateFeeRequest) Validate() error {
+	if this.Order != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
+		}
+	}
+	return nil
+}
+func (this *EstimateFeeResponse) Validate() error {
+	if this.Fee != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Fee); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Fee", err)
 		}
 	}
 	return nil

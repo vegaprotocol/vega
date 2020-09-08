@@ -349,6 +349,12 @@ func (bs *badgerStore) accountGeneralIDKey(partyID string, assetID string) []byt
 		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_GENERAL), partyID, assetID))
 }
 
+// accountWithdrawKey relates only to a party and asset, no market index/references
+func (bs *badgerStore) accountWithdrawIDKey(partyID string, assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_A:%s",
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW), partyID, assetID))
+}
+
 // accountMarginKey is composed from a party market and asset, has a market index (future work could add an asset index)
 func (bs *badgerStore) accountMarginIDKey(partyID string, marketID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_M:%s_A:%s",

@@ -40,6 +40,11 @@ type ApplicationTime interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/tm ValidatorTopology
+type ValidatorTopology interface {
+	Exists(key []byte) bool
+}
+
 type TMChain struct {
 	log          *logging.Logger
 	socketServer *Server
@@ -48,6 +53,7 @@ type TMChain struct {
 	service      ApplicationService
 	time         ApplicationTime
 	cancel       func()
+	top          ValidatorTopology
 }
 
 func New(
@@ -58,8 +64,10 @@ func New(
 	service ApplicationService,
 	time ApplicationTime,
 	cancel func(),
+	ghandler GenesisHandler,
+	top ValidatorTopology,
 ) (*TMChain, error) {
-	app := NewApplication(log, cfg, stats, proc, service, time, cancel)
+	app := NewApplication(log, cfg, stats, proc, service, time, cancel, ghandler, top)
 	socketServer := NewServer(log, cfg, app)
 	if err := socketServer.Start(); err != nil {
 		return nil, errors.Wrap(err, "ABCI socket server error")

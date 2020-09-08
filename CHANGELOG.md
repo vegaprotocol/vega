@@ -1,12 +1,38 @@
 # Changelog
 
+## 0.24.0
+
+*2020-09-04*
+
+One new API endpoint allows cancelling multiple orders simultaneously, either all orders by market, a single order in a specific market, or just all open orders.
+
+Other than that it's mainly bugfixes, many of which fix subtly incorrect API output.
+
+### New
+
+- [#2107](https://github.com/vegaprotocol/vega/pull/2107) Support for cancelling multiple orders at once
+- [#2186](https://github.com/vegaprotocol/vega/pull/2186) Add per-party rate-limit of 50 requests over 3 blocks
+
+### Improvements
+
+- [#2177](https://github.com/vegaprotocol/vega/pull/2177) GraphQL: Add Governance proposal metadata
+- [#2098](https://github.com/vegaprotocol/vega/pull/2098) Fix crashed in event bus
+- [#2041](https://github.com/vegaprotocol/vega/pull/2041) Fix a rounding error in the output of Positions API
+- [#1934](https://github.com/vegaprotocol/vega/pull/1934) Improve API documentation
+- [#2110](https://github.com/vegaprotocol/vega/pull/2110) Send Infrastructure fees to the correct account
+- [#2117](https://github.com/vegaprotocol/vega/pull/2117) Prevent creation of withdrawal requests for more than the available balance
+- [#2136](https://github.com/vegaprotocol/vega/pull/2136) gRPC: Fetch all accounts for a market did not return all accounts
+- [#2151](https://github.com/vegaprotocol/vega/pull/2151) Prevent wasteful event bus subscriptions
+- [#2167](https://github.com/vegaprotocol/vega/pull/2167) Ensure events in the event bus maintain their order
+- [#2178](https://github.com/vegaprotocol/vega/pull/2178) Fix API returning incorrectly formatted orders when a party has no collateral
+
 ## 0.23.1
 
 *2020-08-27*
 
 This release backports a fix from the forthcoming 0.24.0 release that fixes a GraphQL issue with the new `Asset` type. When fetching the Assets from the top level, all the details came through. When fetching them as a nested property, only the ID was filled in. This is now fixed.
 
-## Improvements
+### Improvements
 
 - [#2140](https://github.com/vegaprotocol/vega/pull/2140) GraphQL fix for fetching assets as nested properties
 
@@ -28,7 +54,7 @@ This release contains a lot of groundwork for Fees and Auction mode.
 
 ### New
 
-- [#2092](https://github.com/vegaprotocol/vega/issues/2092) 💥 Disable order amends
+- 💥 [#2092](https://github.com/vegaprotocol/vega/pull/2092) Disable order amends
 - [#2027](https://github.com/vegaprotocol/vega/pull/2027) Add built in asset faucet endpoint
 - [#2075](https://github.com/vegaprotocol/vega/pull/2075), [#2086](https://github.com/vegaprotocol/vega/pull/2086), [#2083](https://github.com/vegaprotocol/vega/pull/2083), [#2078](https://github.com/vegaprotocol/vega/pull/2078) Add time & size limits to faucet requests
 - [#2068](https://github.com/vegaprotocol/vega/pull/2068) Add REST endpoint to fetch governance proposals by Party

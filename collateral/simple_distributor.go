@@ -57,12 +57,13 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	// TODO(): just rounding the stuff, needs to be done differently later
 	if totalamount != s.collected {
 		// last one get the remaining bits
-		s.requests[len(s.requests)-1].request.Amount.Amount += s.collected - totalamount
+		mismatch := s.collected - totalamount
+		s.requests[len(s.requests)-1].request.Amount.Amount += mismatch
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
-			evt.AmountLost()-s.collected-totalamount)
+			evt.AmountLost()+mismatch)
 	}
 
 	return evts

@@ -57,6 +57,7 @@ http:
       body: "*"
     - selector: api.trading.PrepareCancelOrder
       post: '/orders/prepare/cancel'
+      body: "*"
     - selector: api.trading.PrepareAmendOrder
       post: '/orders/prepare/amend'
       body: "*"
@@ -66,6 +67,11 @@ http:
       get: '/orders/{orderID}/versions'
     - selector: api.trading_data.TradesByOrder
       get: '/orders/{orderID}/trades'
+
+    # Fee
+    - selector: api.trading_data.FeeEstimate
+      post: '/orders/fee/estimate'
+      body: "*"
 
     # Parties
     - selector: api.trading_data.Parties
@@ -94,6 +100,7 @@ http:
     - selector: api.trading.PrepareProposal
       post: '/governance/prepare/proposal'
       body: "*"
+
 
     # Miscellaneous
     - selector: api.trading_data.Statistics
