@@ -20,6 +20,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// event types, 2 groups: actual single values, and then some events that capture a group of events
 type BusEventType int32
 
 const (
@@ -231,6 +232,7 @@ func (m *TransferResponses) GetResponses() []*TransferResponse {
 	return nil
 }
 
+// PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
 type PositionResolution struct {
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	Distressed           int64    `protobuf:"varint,2,opt,name=distressed,proto3" json:"distressed,omitempty"`
@@ -294,7 +296,7 @@ func (m *PositionResolution) GetMarkPrice() uint64 {
 	return 0
 }
 
-// LossSocialization event
+// LossSocialization event amount of wins unable to be distributed
 type LossSocialization struct {
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
@@ -350,6 +352,7 @@ func (m *LossSocialization) GetAmount() int64 {
 	return 0
 }
 
+// TradeSettlement data, part of settle position event
 type TradeSettlement struct {
 	Size                 int64    `protobuf:"varint,1,opt,name=size,proto3" json:"size,omitempty"`
 	Price                uint64   `protobuf:"varint,2,opt,name=price,proto3" json:"price,omitempty"`
@@ -397,6 +400,7 @@ func (m *TradeSettlement) GetPrice() uint64 {
 	return 0
 }
 
+// SettlePosition data for party: position settlements (part of trader position information)
 type SettlePosition struct {
 	MarketID             string             `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	PartyID              string             `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
@@ -460,6 +464,8 @@ func (m *SettlePosition) GetTradeSettlements() []*TradeSettlement {
 	return nil
 }
 
+// SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
+// be followed by a number of these events
 type SettleDistressed struct {
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
@@ -523,6 +529,7 @@ func (m *SettleDistressed) GetPrice() uint64 {
 	return 0
 }
 
+// Time update for each market, can be used to see when new markets actually started in terms of block-time
 type MarketTick struct {
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	Time                 int64    `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
@@ -570,6 +577,8 @@ func (m *MarketTick) GetTime() int64 {
 	return 0
 }
 
+// BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
+// the actual data is set as a oneof field
 type BusEvent struct {
 	ID   string       `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	Type BusEventType `protobuf:"varint,2,opt,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`

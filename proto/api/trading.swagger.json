@@ -1415,7 +1415,8 @@
             "$ref": "#/definitions/vegaBusEvent"
           }
         }
-      }
+      },
+      "title": "Response type streamed back when observing events. Slice of wrapped events"
     },
     "apiOptionalProposalState": {
       "type": "object",
@@ -2144,7 +2145,8 @@
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
-      }
+      },
+      "title": "BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.\nthe actual data is set as a oneof field"
     },
     "vegaBusEventType": {
       "type": "string",
@@ -2171,7 +2173,8 @@
         "BUS_EVENT_TYPE_MARKET_TICK",
         "BUS_EVENT_TYPE_MARKET"
       ],
-      "default": "BUS_EVENT_TYPE_UNSPECIFIED"
+      "default": "BUS_EVENT_TYPE_UNSPECIFIED",
+      "title": "event types, 2 groups: actual single values, and then some events that capture a group of events"
     },
     "vegaCandle": {
       "type": "object",
@@ -2766,7 +2769,7 @@
           "format": "int64"
         }
       },
-      "title": "LossSocialization event"
+      "title": "LossSocialization event amount of wins unable to be distributed"
     },
     "vegaMarginCalculator": {
       "type": "object",
@@ -2962,7 +2965,8 @@
           "type": "string",
           "format": "int64"
         }
-      }
+      },
+      "title": "Time update for each market, can be used to see when new markets actually started in terms of block-time"
     },
     "vegaNetworkConfiguration": {
       "type": "object",
@@ -3397,7 +3401,8 @@
           "type": "string",
           "format": "uint64"
         }
-      }
+      },
+      "title": "PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market"
     },
     "vegaPrice": {
       "type": "object",
@@ -3580,7 +3585,8 @@
           "type": "string",
           "format": "uint64"
         }
-      }
+      },
+      "title": "SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely\nbe followed by a number of these events"
     },
     "vegaSettlePosition": {
       "type": "object",
@@ -3601,7 +3607,8 @@
             "$ref": "#/definitions/vegaTradeSettlement"
           }
         }
-      }
+      },
+      "title": "SettlePosition data for party: position settlements (part of trader position information)"
     },
     "vegaSide": {
       "type": "string",
@@ -3955,7 +3962,8 @@
           "type": "string",
           "format": "uint64"
         }
-      }
+      },
+      "title": "TradeSettlement data, part of settle position event"
     },
     "vegaTradeType": {
       "type": "string",

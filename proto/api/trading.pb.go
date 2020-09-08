@@ -4474,6 +4474,7 @@ func (m *EstimateFeeResponse) GetFee() *proto1.Fee {
 	return nil
 }
 
+// Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
 type ObserveEventsRequest struct {
 	Type                 []proto1.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
 	MarketID             string                `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
@@ -4529,6 +4530,7 @@ func (m *ObserveEventsRequest) GetPartyID() string {
 	return ""
 }
 
+// Response type streamed back when observing events. Slice of wrapped events
 type ObserveEventsResponse struct {
 	Events               []*proto1.BusEvent `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`

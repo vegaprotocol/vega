@@ -1024,12 +1024,14 @@ message EstimateFeeResponse {
   vega.Fee fee = 2;
 }
 
+// Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
 message ObserveEventsRequest {
   repeated vega.BusEventType type = 1;
   string marketID = 2;
   string partyID = 3;
 }
 
+// Response type streamed back when observing events. Slice of wrapped events
 message ObserveEventsResponse {
   repeated vega.BusEvent events = 1;
 }

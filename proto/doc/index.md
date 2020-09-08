@@ -107,8 +107,11 @@
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
 
+
+
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
+
 
 - [proto/assets.proto](#proto/assets.proto)
     - [Asset](#vega.Asset)
@@ -116,6 +119,10 @@
     - [BuiltinAsset](#vega.BuiltinAsset)
     - [DevAssets](#vega.DevAssets)
     - [ERC20](#vega.ERC20)
+
+
+
+
 
 - [proto/chain_events.proto](#proto/chain_events.proto)
     - [AddValidator](#vega.AddValidator)
@@ -137,6 +144,10 @@
     - [RemoveValidator](#vega.RemoveValidator)
     - [ValidatorEvent](#vega.ValidatorEvent)
 
+
+
+
+
 - [proto/events.proto](#proto/events.proto)
     - [BusEvent](#vega.BusEvent)
     - [LossSocialization](#vega.LossSocialization)
@@ -150,6 +161,9 @@
     - [TransferResponses](#vega.TransferResponses)
 
     - [BusEventType](#vega.BusEventType)
+
+
+
 
 - [proto/governance.proto](#proto/governance.proto)
     - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
@@ -172,6 +186,9 @@
     - [ProposalError](#vega.ProposalError)
     - [Vote.Value](#vega.Vote.Value)
 
+
+
+
 - [proto/markets.proto](#proto/markets.proto)
     - [AuctionDuration](#vega.AuctionDuration)
     - [ContinuousTrading](#vega.ContinuousTrading)
@@ -192,6 +209,10 @@
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
+
+
+
+
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
@@ -247,6 +268,9 @@
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
+
+
+
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -1040,7 +1064,7 @@ Response for a list of markets on Vega.
 <a name="api.ObserveEventsRequest"></a>
 
 ### ObserveEventsRequest
-
+Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
 
 
 | Field | Type | Label | Description |
@@ -1057,7 +1081,7 @@ Response for a list of markets on Vega.
 <a name="api.ObserveEventsResponse"></a>
 
 ### ObserveEventsResponse
-
+Response type streamed back when observing events. Slice of wrapped events
 
 
 | Field | Type | Label | Description |
@@ -2367,7 +2391,8 @@ An event related to validator management with foreign networks.
 <a name="vega.BusEvent"></a>
 
 ### BusEvent
-
+BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
+the actual data is set as a oneof field
 
 
 | Field | Type | Label | Description |
@@ -2402,7 +2427,7 @@ An event related to validator management with foreign networks.
 <a name="vega.LossSocialization"></a>
 
 ### LossSocialization
-LossSocialization event
+LossSocialization event amount of wins unable to be distributed
 
 
 | Field | Type | Label | Description |
@@ -2436,7 +2461,7 @@ interface has a method to return a string for logging
 <a name="vega.MarketTick"></a>
 
 ### MarketTick
-
+Time update for each market, can be used to see when new markets actually started in terms of block-time
 
 
 | Field | Type | Label | Description |
@@ -2452,7 +2477,7 @@ interface has a method to return a string for logging
 <a name="vega.PositionResolution"></a>
 
 ### PositionResolution
-
+PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
 
 
 | Field | Type | Label | Description |
@@ -2470,7 +2495,8 @@ interface has a method to return a string for logging
 <a name="vega.SettleDistressed"></a>
 
 ### SettleDistressed
-
+SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
+be followed by a number of these events
 
 
 | Field | Type | Label | Description |
@@ -2488,7 +2514,7 @@ interface has a method to return a string for logging
 <a name="vega.SettlePosition"></a>
 
 ### SettlePosition
-
+SettlePosition data for party: position settlements (part of trader position information)
 
 
 | Field | Type | Label | Description |
@@ -2521,7 +2547,7 @@ TimeUpdate - event containing the latest block time
 <a name="vega.TradeSettlement"></a>
 
 ### TradeSettlement
-
+TradeSettlement data, part of settle position event
 
 
 | Field | Type | Label | Description |
@@ -2554,7 +2580,7 @@ TransferResponses - a slice of transfer response objects
 <a name="vega.BusEventType"></a>
 
 ### BusEventType
-
+event types, 2 groups: actual single values, and then some events that capture a group of events
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
@@ -4280,21 +4306,21 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 
 ## Scalar Value Types
 
-| .proto Type | Notes | C++ | Java | Python | Go | C# | PHP | Ruby |
-| ----------- | ----- | --- | ---- | ------ | -- | -- | --- | ---- |
-| <a name="double" /> double |  | double | double | float | float64 | double | float | Float |
-| <a name="float" /> float |  | float | float | float | float32 | float | float | Float |
-| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long | uint32 | uint | integer | Bignum or Fixnum (as required) |
-| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum or Fixnum (as required) |
-| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int | uint32 | uint | integer | Bignum or Fixnum (as required) |
-| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long | uint64 | ulong | integer/string | Bignum |
-| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int | int32 | int | integer | Bignum or Fixnum (as required) |
-| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long | int64 | long | integer/string | Bignum |
-| <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
-| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
-| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
+| .proto Type | Notes | C++ Type | Java Type | Python Type |
+| ----------- | ----- | -------- | --------- | ----------- |
+| <a name="double" /> double |  | double | double | float |
+| <a name="float" /> float |  | float | float | float |
+| <a name="int32" /> int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int32 | int | int |
+| <a name="int64" /> int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | int64 | long | int/long |
+| <a name="uint32" /> uint32 | Uses variable-length encoding. | uint32 | int | int/long |
+| <a name="uint64" /> uint64 | Uses variable-length encoding. | uint64 | long | int/long |
+| <a name="sint32" /> sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int32 | int | int |
+| <a name="sint64" /> sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | int64 | long | int/long |
+| <a name="fixed32" /> fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | uint32 | int | int |
+| <a name="fixed64" /> fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | uint64 | long | int/long |
+| <a name="sfixed32" /> sfixed32 | Always four bytes. | int32 | int | int |
+| <a name="sfixed64" /> sfixed64 | Always eight bytes. | int64 | long | int/long |
+| <a name="bool" /> bool |  | bool | boolean | boolean |
+| <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode |
+| <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str |
 

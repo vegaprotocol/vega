@@ -25,6 +25,7 @@ message TransferResponses {
   repeated TransferResponse responses = 1;
 }
 
+// PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
 message PositionResolution {
   string marketID = 1;
   int64 distressed = 2;
@@ -32,18 +33,20 @@ message PositionResolution {
   uint64 markPrice = 4;
 }
 
-// LossSocialization event
+// LossSocialization event amount of wins unable to be distributed
 message LossSocialization {
   string marketID = 1;
   string partyID = 2;
   int64 amount = 3;
 }
 
+// TradeSettlement data, part of settle position event
 message TradeSettlement {
   int64 size = 1;
   uint64 price = 2;
 }
 
+// SettlePosition data for party: position settlements (part of trader position information)
 message SettlePosition {
   string marketID = 1;
   string partyID = 2;
@@ -51,6 +54,8 @@ message SettlePosition {
   repeated TradeSettlement tradeSettlements = 4;
 }
 
+// SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
+// be followed by a number of these events
 message SettleDistressed {
   string marketID = 1;
   string partyID = 2;
@@ -58,11 +63,13 @@ message SettleDistressed {
   uint64 price = 4;
 }
 
+// Time update for each market, can be used to see when new markets actually started in terms of block-time
 message MarketTick {
   string ID = 1;
   int64 time = 2;
 }
 
+// event types, 2 groups: actual single values, and then some events that capture a group of events
 enum BusEventType {
     BUS_EVENT_TYPE_UNSPECIFIED = 0;
     BUS_EVENT_TYPE_ALL = 1;
@@ -88,6 +95,8 @@ enum BusEventType {
     BUS_EVENT_TYPE_MARKET = 101; // special event for all events implementing a specific interface
 }
 
+// BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
+// the actual data is set as a oneof field
 message BusEvent {
   string ID = 1;
   BusEventType type = 2;

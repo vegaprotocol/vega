@@ -1788,7 +1788,7 @@ func (t *tradingDataService) ObserveProposalVotes(
 
 func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, stream protoapi.TradingData_ObserveEventBusServer) error {
 	startTime := vegatime.Now()
-	defer metrics.APIRequestAndTimeGRPC("ObserveProposalVotes", startTime)
+	defer metrics.APIRequestAndTimeGRPC("ObserveEventBus", startTime)
 	if err := in.Validate(); err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
