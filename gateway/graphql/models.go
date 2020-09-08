@@ -1091,7 +1091,7 @@ const (
 	// The proposal has no product specified
 	ProposalRejectionReasonNoProduct ProposalRejectionReason = "NoProduct"
 	// The specified product is not supported
-	ProposalRejectionReasonUnuspportedProduct ProposalRejectionReason = "UnuspportedProduct"
+	ProposalRejectionReasonUnsupportedProduct ProposalRejectionReason = "UnsupportedProduct"
 	// Invalid future maturity timestamp (expect RFC3339)
 	ProposalRejectionReasonInvalidFutureMaturityTimestamp ProposalRejectionReason = "InvalidFutureMaturityTimestamp"
 	// The product maturity is already in the past
@@ -1118,7 +1118,7 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInsufficientTokens,
 	ProposalRejectionReasonInvalidInstrumentSecurity,
 	ProposalRejectionReasonNoProduct,
-	ProposalRejectionReasonUnuspportedProduct,
+	ProposalRejectionReasonUnsupportedProduct,
 	ProposalRejectionReasonInvalidFutureMaturityTimestamp,
 	ProposalRejectionReasonProductMaturityIsPassed,
 	ProposalRejectionReasonNoTradingMode,
@@ -1131,7 +1131,7 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonIncompatibleTimestamps:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonIncompatibleTimestamps:
 		return true
 	}
 	return false

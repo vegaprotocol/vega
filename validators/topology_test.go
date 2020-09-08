@@ -173,3 +173,4 @@ func (t testPubKey) Address() crypto.Address { return t.addr }
 func (t testPubKey) Bytes() []byte                           { return t.bytes }
 func (t testPubKey) VerifyBytes(msg []byte, sig []byte) bool { return true }
 func (t testPubKey) Equals(crypto.PubKey) bool               { return false }
+func (t testPubKey) Type() string                            { return "test-pk" }
