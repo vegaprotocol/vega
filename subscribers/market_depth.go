@@ -239,6 +239,11 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	}
 }
 
+// GetMarketDepth builds up the structure to be sent out to any market depth listeners
+func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
+	return nil, nil
+}
+
 /*****************************************************************************/
 /*                 FUNCTIONS TO HELP WITH UNIT TESTING                       */
 /*****************************************************************************/
