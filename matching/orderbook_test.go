@@ -2482,10 +2482,6 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
-	defer book.Finish()
-
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
 
 	orders, err := book.EnterAuction()
 
