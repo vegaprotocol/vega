@@ -55,6 +55,8 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [ObserveEventsRequest](#api.ObserveEventsRequest)
+    - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
     - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
     - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
@@ -134,6 +136,20 @@
     - [Identifier](#vega.Identifier)
     - [RemoveValidator](#vega.RemoveValidator)
     - [ValidatorEvent](#vega.ValidatorEvent)
+
+- [proto/events.proto](#proto/events.proto)
+    - [BusEvent](#vega.BusEvent)
+    - [LossSocialization](#vega.LossSocialization)
+    - [MarketEvent](#vega.MarketEvent)
+    - [MarketTick](#vega.MarketTick)
+    - [PositionResolution](#vega.PositionResolution)
+    - [SettleDistressed](#vega.SettleDistressed)
+    - [SettlePosition](#vega.SettlePosition)
+    - [TimeUpdate](#vega.TimeUpdate)
+    - [TradeSettlement](#vega.TradeSettlement)
+    - [TransferResponses](#vega.TransferResponses)
+
+    - [BusEventType](#vega.BusEventType)
 
 - [proto/governance.proto](#proto/governance.proto)
     - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
@@ -1021,6 +1037,38 @@ Response for a list of markets on Vega.
 
 
 
+<a name="api.ObserveEventsRequest"></a>
+
+### ObserveEventsRequest
+Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [vega.BusEventType](#vega.BusEventType) | repeated |  |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.ObserveEventsResponse"></a>
+
+### ObserveEventsResponse
+Response type streamed back when observing events. Slice of wrapped events
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| events | [vega.BusEvent](#vega.BusEvent) | repeated |  |
+
+
+
+
+
+
 <a name="api.ObservePartyProposalsRequest"></a>
 
 ### ObservePartyProposalsRequest
@@ -1870,6 +1918,7 @@ Response for the current consensus coordinated time on the Vega network, referre
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
+| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
@@ -2298,6 +2347,240 @@ An event related to validator management with foreign networks.
 
 
 
+
+
+
+
+
+
+
+
+
+
+<a name="proto/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/events.proto
+
+
+
+<a name="vega.BusEvent"></a>
+
+### BusEvent
+BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
+the actual data is set as a oneof field
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| type | [BusEventType](#vega.BusEventType) |  |  |
+| timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
+| transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
+| positionResolution | [PositionResolution](#vega.PositionResolution) |  |  |
+| order | [Order](#vega.Order) |  |  |
+| account | [Account](#vega.Account) |  |  |
+| party | [Party](#vega.Party) |  |  |
+| trade | [Trade](#vega.Trade) |  |  |
+| marginLevels | [MarginLevels](#vega.MarginLevels) |  |  |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| vote | [Vote](#vega.Vote) |  |  |
+| marketData | [MarketData](#vega.MarketData) |  |  |
+| nodeSignature | [NodeSignature](#vega.NodeSignature) |  |  |
+| lossSocialization | [LossSocialization](#vega.LossSocialization) |  |  |
+| settlePosition | [SettlePosition](#vega.SettlePosition) |  |  |
+| settleDistressed | [SettleDistressed](#vega.SettleDistressed) |  |  |
+| marketCreated | [Market](#vega.Market) |  |  |
+| asset | [Asset](#vega.Asset) |  |  |
+| marketTick | [MarketTick](#vega.MarketTick) |  |  |
+| market | [MarketEvent](#vega.MarketEvent) |  |  |
+
+
+
+
+
+
+<a name="vega.LossSocialization"></a>
+
+### LossSocialization
+LossSocialization event amount of wins unable to be distributed
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| amount | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.MarketEvent"></a>
+
+### MarketEvent
+MarketEvent - the common denominator for all market events
+interface has a method to return a string for logging
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| payload | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.MarketTick"></a>
+
+### MarketTick
+Time update for each market, can be used to see when new markets actually started in terms of block-time
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| time | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.PositionResolution"></a>
+
+### PositionResolution
+PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| distressed | [int64](#int64) |  |  |
+| closed | [int64](#int64) |  |  |
+| markPrice | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.SettleDistressed"></a>
+
+### SettleDistressed
+SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
+be followed by a number of these events
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| margin | [uint64](#uint64) |  |  |
+| price | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.SettlePosition"></a>
+
+### SettlePosition
+SettlePosition data for party: position settlements (part of trader position information)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| price | [uint64](#uint64) |  |  |
+| tradeSettlements | [TradeSettlement](#vega.TradeSettlement) | repeated |  |
+
+
+
+
+
+
+<a name="vega.TimeUpdate"></a>
+
+### TimeUpdate
+TimeUpdate - event containing the latest block time
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| timestamp | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.TradeSettlement"></a>
+
+### TradeSettlement
+TradeSettlement data, part of settle position event
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| size | [int64](#int64) |  |  |
+| price | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.TransferResponses"></a>
+
+### TransferResponses
+TransferResponses - a slice of transfer response objects
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| responses | [TransferResponse](#vega.TransferResponse) | repeated |  |
+
+
+
+
+
+
+
+
+<a name="vega.BusEventType"></a>
+
+### BusEventType
+event types, 2 groups: actual single values, and then some events that capture a group of events
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BUS_EVENT_TYPE_UNSPECIFIED | 0 |  |
+| BUS_EVENT_TYPE_ALL | 1 |  |
+| BUS_EVENT_TYPE_TIME_UPDATE | 2 |  |
+| BUS_EVENT_TYPE_TRANSFER_RESPONSES | 3 |  |
+| BUS_EVENT_TYPE_POSITION_RESOLUTION | 4 |  |
+| BUS_EVENT_TYPE_ORDER | 5 |  |
+| BUS_EVENT_TYPE_ACCOUNT | 6 |  |
+| BUS_EVENT_TYPE_PARTY | 7 |  |
+| BUS_EVENT_TYPE_TRADE | 8 |  |
+| BUS_EVENT_TYPE_MARGIN_LEVELS | 9 |  |
+| BUS_EVENT_TYPE_PROPOSAL | 10 |  |
+| BUS_EVENT_TYPE_VOTE | 11 |  |
+| BUS_EVENT_TYPE_MARKET_DATA | 12 |  |
+| BUS_EVENT_TYPE_NODE_SIGNATURE | 13 |  |
+| BUS_EVENT_TYPE_LOSS_SOCIALIZATION | 14 |  |
+| BUS_EVENT_TYPE_SETTLE_POSITION | 15 |  |
+| BUS_EVENT_TYPE_SETTLE_DISTRESSED | 16 |  |
+| BUS_EVENT_TYPE_MARKET_CREATED | 17 |  |
+| BUS_EVENT_TYPE_ASSET | 18 |  |
+| BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
+| BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
 

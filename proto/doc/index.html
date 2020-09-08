@@ -383,6 +383,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.ObserveEventsRequest"><span class="badge">M</span>ObserveEventsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.ObserveEventsResponse"><span class="badge">M</span>ObserveEventsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.ObservePartyProposalsRequest"><span class="badge">M</span>ObservePartyProposalsRequest</a>
                 </li>
 
@@ -700,6 +708,61 @@
                   <a href="#vega.ValidatorEvent"><span class="badge">M</span>ValidatorEvent</a>
                 </li>
 
+
+
+
+            </ul>
+          </li>
+
+
+          <li>
+            <a href="#proto%2fevents.proto">proto/events.proto</a>
+            <ul>
+
+                <li>
+                  <a href="#vega.BusEvent"><span class="badge">M</span>BusEvent</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LossSocialization"><span class="badge">M</span>LossSocialization</a>
+                </li>
+
+                <li>
+                  <a href="#vega.MarketEvent"><span class="badge">M</span>MarketEvent</a>
+                </li>
+
+                <li>
+                  <a href="#vega.MarketTick"><span class="badge">M</span>MarketTick</a>
+                </li>
+
+                <li>
+                  <a href="#vega.PositionResolution"><span class="badge">M</span>PositionResolution</a>
+                </li>
+
+                <li>
+                  <a href="#vega.SettleDistressed"><span class="badge">M</span>SettleDistressed</a>
+                </li>
+
+                <li>
+                  <a href="#vega.SettlePosition"><span class="badge">M</span>SettlePosition</a>
+                </li>
+
+                <li>
+                  <a href="#vega.TimeUpdate"><span class="badge">M</span>TimeUpdate</a>
+                </li>
+
+                <li>
+                  <a href="#vega.TradeSettlement"><span class="badge">M</span>TradeSettlement</a>
+                </li>
+
+                <li>
+                  <a href="#vega.TransferResponses"><span class="badge">M</span>TransferResponses</a>
+                </li>
+
+
+                <li>
+                  <a href="#vega.BusEventType"><span class="badge">E</span>BusEventType</a>
+                </li>
 
 
 
@@ -2865,6 +2928,68 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
 
+        <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
+        <p>Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.BusEventType">vega.BusEventType</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.ObserveEventsResponse">ObserveEventsResponse</h3>
+        <p>Response type streamed back when observing events. Slice of wrapped events</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>events</td>
+                  <td><a href="#vega.BusEvent">vega.BusEvent</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.ObservePartyProposalsRequest">ObservePartyProposalsRequest</h3>
         <p>Request to subscribe to a stream of governance proposals for a party.</p>
 
@@ -4944,6 +5069,13 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
               </tr>
 
               <tr>
+                <td>ObserveEventBus</td>
+                <td><a href="#api.ObserveEventsRequest">ObserveEventsRequest</a></td>
+                <td><a href="#api.ObserveEventsResponse">ObserveEventsResponse</a> stream</td>
+                <td><p>Subscribe to a stream of events from the core</p></td>
+              </tr>
+
+              <tr>
                 <td>Statistics</td>
                 <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
                 <td><a href="#vega.Statistics">.vega.Statistics</a></td>
@@ -5914,6 +6046,635 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
 
+
+
+
+
+
+
+
+      <div class="file-heading">
+        <h2 id="proto/events.proto">proto/events.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+
+        <h3 id="vega.BusEvent">BusEvent</h3>
+        <p>BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.</p><p>the actual data is set as a oneof field</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.BusEventType">BusEventType</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>timeUpdate</td>
+                  <td><a href="#vega.TimeUpdate">TimeUpdate</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>transferResponses</td>
+                  <td><a href="#vega.TransferResponses">TransferResponses</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>positionResolution</td>
+                  <td><a href="#vega.PositionResolution">PositionResolution</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>order</td>
+                  <td><a href="#vega.Order">Order</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>account</td>
+                  <td><a href="#vega.Account">Account</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>party</td>
+                  <td><a href="#vega.Party">Party</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>trade</td>
+                  <td><a href="#vega.Trade">Trade</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marginLevels</td>
+                  <td><a href="#vega.MarginLevels">MarginLevels</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>proposal</td>
+                  <td><a href="#vega.Proposal">Proposal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>vote</td>
+                  <td><a href="#vega.Vote">Vote</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketData</td>
+                  <td><a href="#vega.MarketData">MarketData</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>nodeSignature</td>
+                  <td><a href="#vega.NodeSignature">NodeSignature</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>lossSocialization</td>
+                  <td><a href="#vega.LossSocialization">LossSocialization</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>settlePosition</td>
+                  <td><a href="#vega.SettlePosition">SettlePosition</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>settleDistressed</td>
+                  <td><a href="#vega.SettleDistressed">SettleDistressed</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketCreated</td>
+                  <td><a href="#vega.Market">Market</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#vega.Asset">Asset</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketTick</td>
+                  <td><a href="#vega.MarketTick">MarketTick</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>market</td>
+                  <td><a href="#vega.MarketEvent">MarketEvent</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.LossSocialization">LossSocialization</h3>
+        <p>LossSocialization event amount of wins unable to be distributed</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.MarketEvent">MarketEvent</h3>
+        <p>MarketEvent - the common denominator for all market events</p><p>interface has a method to return a string for logging</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>payload</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.MarketTick">MarketTick</h3>
+        <p>Time update for each market, can be used to see when new markets actually started in terms of block-time</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>time</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PositionResolution">PositionResolution</h3>
+        <p>PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>distressed</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>closed</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>markPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.SettleDistressed">SettleDistressed</h3>
+        <p>SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely</p><p>be followed by a number of these events</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>margin</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>price</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.SettlePosition">SettlePosition</h3>
+        <p>SettlePosition data for party: position settlements (part of trader position information)</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>price</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>tradeSettlements</td>
+                  <td><a href="#vega.TradeSettlement">TradeSettlement</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.TimeUpdate">TimeUpdate</h3>
+        <p>TimeUpdate - event containing the latest block time</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>timestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.TradeSettlement">TradeSettlement</h3>
+        <p>TradeSettlement data, part of settle position event</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>size</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>price</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.TransferResponses">TransferResponses</h3>
+        <p>TransferResponses - a slice of transfer response objects</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>responses</td>
+                  <td><a href="#vega.TransferResponse">TransferResponse</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+
+
+        <h3 id="vega.BusEventType">BusEventType</h3>
+        <p>event types, 2 groups: actual single values, and then some events that capture a group of events</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_ALL</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_TIME_UPDATE</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_TRANSFER_RESPONSES</td>
+                <td>3</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_POSITION_RESOLUTION</td>
+                <td>4</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_ORDER</td>
+                <td>5</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_ACCOUNT</td>
+                <td>6</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_PARTY</td>
+                <td>7</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_TRADE</td>
+                <td>8</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_MARGIN_LEVELS</td>
+                <td>9</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_PROPOSAL</td>
+                <td>10</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_VOTE</td>
+                <td>11</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_MARKET_DATA</td>
+                <td>12</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_NODE_SIGNATURE</td>
+                <td>13</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_LOSS_SOCIALIZATION</td>
+                <td>14</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_SETTLE_POSITION</td>
+                <td>15</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_SETTLE_DISTRESSED</td>
+                <td>16</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_MARKET_CREATED</td>
+                <td>17</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_ASSET</td>
+                <td>18</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_MARKET_TICK</td>
+                <td>19</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_MARKET</td>
+                <td>101</td>
+                <td><p>special event for all events implementing a specific interface</p></td>
+              </tr>
+
+          </tbody>
+        </table>
 
 
 
