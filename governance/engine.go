@@ -309,8 +309,8 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, ErrProposalEnactTimeTooLate
 	}
 
-	if proposal.Terms.ClosingTimestamp < proposal.Terms.ValidationTimestamp {
-		e.log.Debug("proposal closing time can't be smaller than validation time",
+	if proposal.Terms.ClosingTimestamp <= proposal.Terms.ValidationTimestamp {
+		e.log.Debug("proposal closing time can't be smaller or equal than validation time",
 			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
 			logging.Int64("validation-time", proposal.Terms.ValidationTimestamp),
 			logging.String("id", proposal.ID))
