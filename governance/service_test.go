@@ -186,5 +186,5 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 	testAuthor := "test-author"
 	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
-	assert.EqualError(t, err, governance.ErrInvalidProposalTerms.Error())
+	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
 }
