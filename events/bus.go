@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
@@ -296,7 +297,7 @@ func GetPartyAndMarketFilter(mID, pID string) func(Event) bool {
 func (t Type) ToProto() types.BusEventType {
 	pt, ok := toProto[t]
 	if !ok {
-		return types.BusEventType_BUS_EVENT_TYPE_UNSPECIFIED
+		panic(fmt.Sprintf("Converting events.Type %s to proto BusEventType: no corresponding value found", t))
 	}
 	return pt
 }
