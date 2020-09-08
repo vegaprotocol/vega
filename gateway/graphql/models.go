@@ -145,7 +145,7 @@ type Erc20WithdrawalApproval struct {
 	Expiry string `json:"expiry"`
 	// The nonce to be used in the request
 	Nonce string `json:"nonce"`
-	// Signature aggregate from the nodes, to be in the following format:
+	// Signature aggregate from the nodes, in the following format:
 	// 0x + sig1 + sig2 + ... + sigN
 	Signatures string `json:"signatures"`
 }
@@ -411,12 +411,12 @@ type OrderFeeEstimate struct {
 }
 
 type PreparedAmendOrder struct {
-	// blob: the raw transaction to sign & submit
+	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
 }
 
 type PreparedCancelOrder struct {
-	// blob: the raw transaction to sign & submit
+	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
 }
 
@@ -428,7 +428,7 @@ type PreparedProposal struct {
 }
 
 type PreparedSubmitOrder struct {
-	// blob: the raw transaction to sign & submit
+	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
 }
 
@@ -440,7 +440,7 @@ type PreparedVote struct {
 }
 
 type PreparedWithdrawal struct {
-	// blob: the raw transaction to sign & submit
+	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
 }
 

@@ -230,7 +230,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 	now, _ := e.tsvc.GetTimeNow()
 	asset, err := e.assets.Get(w.VegaAssetID)
 	if err != nil {
-		e.log.Error("unable to get asset by id",
+		e.log.Debug("unable to get asset by id",
 			logging.String("asset-id", w.VegaAssetID),
 			logging.Error(err))
 		return err
@@ -265,7 +265,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string, amount uint64, ext *types.Erc20WithdrawExt) error {
 	asset, err := e.assets.Get(assetID)
 	if err != nil {
-		e.log.Error("unable to get asset by id",
+		e.log.Debug("unable to get asset by id",
 			logging.String("asset-id", assetID),
 			logging.Error(err))
 		return err
@@ -288,7 +288,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
-		e.log.Error("cannot withdraw asset for party",
+		e.log.Debug("cannot withdraw asset for party",
 			logging.String("party-id", party),
 			logging.String("asset-id", assetID),
 			logging.Uint64("amount", amount),

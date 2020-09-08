@@ -1052,7 +1052,7 @@
         "parameters": [
           {
             "name": "partyID",
-            "description": "The party to get the withdrawals for, required",
+            "description": "The party to get the withdrawals for",
             "in": "path",
             "required": true,
             "type": "string"

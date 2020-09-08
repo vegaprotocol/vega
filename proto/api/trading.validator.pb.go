@@ -787,6 +787,9 @@ func (this *ObserveEventsResponse) Validate() error {
 	return nil
 }
 func (this *WithdrawalsRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
 	return nil
 }
 func (this *WithdrawalsResponse) Validate() error {
@@ -800,6 +803,9 @@ func (this *WithdrawalsResponse) Validate() error {
 	return nil
 }
 func (this *WithdrawalRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
 	return nil
 }
 func (this *WithdrawalResponse) Validate() error {
@@ -811,6 +817,9 @@ func (this *WithdrawalResponse) Validate() error {
 	return nil
 }
 func (this *ERC20WithdrawalApprovalRequest) Validate() error {
+	if this.WithdrawalID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("WithdrawalID", fmt.Errorf(`value '%v' must not be an empty string`, this.WithdrawalID))
+	}
 	return nil
 }
 func (this *ERC20WithdrawalApprovalResponse) Validate() error {

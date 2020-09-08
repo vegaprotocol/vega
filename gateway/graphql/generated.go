@@ -3284,22 +3284,22 @@ type MarketData {
 }
 
 type PreparedWithdrawal {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
 type PreparedSubmitOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
 type PreparedCancelOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
 type PreparedAmendOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
@@ -4154,7 +4154,7 @@ type Erc20WithdrawalApproval {
   "The nonce to be used in the request"
   nonce: String!
   """
-  Signature aggregate from the nodes, to be in the following format:
+  Signature aggregate from the nodes, in the following format:
   0x + sig1 + sig2 + ... + sigN
   """
   signatures: String!

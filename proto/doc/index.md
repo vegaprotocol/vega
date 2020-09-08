@@ -1937,7 +1937,7 @@ A request to get a list of withdrawal from a given party
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | The party to get the withdrawals for, required |
+| partyID | [string](#string) |  | The party to get the withdrawals for |
 
 
 

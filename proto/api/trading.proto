@@ -1047,8 +1047,8 @@ message ObserveEventsResponse {
 
 // A request to get a list of withdrawal from a given party
 message WithdrawalsRequest {
-  // The party to get the withdrawals for, required
-  string partyID = 1;
+  // The party to get the withdrawals for
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 // The response for a list of withdrawals
@@ -1060,20 +1060,20 @@ message WithdrawalsResponse {
 // A request to get a specific withdrawal by ID
 message WithdrawalRequest {
   // The id of the withdrawal
-  string ID = 1;
+  string ID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 // A response for a withdrawal
 message WithdrawalResponse {
   // The withdrawal matching the ID from the request
-  vega.Withdrawal withdrawal = 1;
+  vega.Withdrawal withdrawal = 1 ;
 }
 
 // The request to get all information required to bundle the call
 // to finalize the withdrawal on the erc20 bridge
 message ERC20WithdrawalApprovalRequest {
   // The ID of the withdrawal
-  string withdrawalID = 1;
+  string withdrawalID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
 // The response with all information required to bundle the call
