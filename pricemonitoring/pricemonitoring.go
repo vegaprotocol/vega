@@ -9,6 +9,7 @@ import (
 type PriceMonitoring struct {
 	riskModel                    risk.Model
 	horizonProbabilityLevelPairs []HorizonProbabilityLevelPair
+	updateFrequency              time.Duration
 }
 
 // NewPriceMonitoring return a new instance of PriceMonitoring
@@ -17,7 +18,7 @@ func NewPriceMonitoring(riskModel risk.Model, horizonProbabilityLevelPairs []Hor
 }
 
 // RecordPriceChange informs price monitoring module of a price change
-func (pm *PriceMonitoring) RecordPriceChange(price uint64, time time.Time) {
+func (pm *PriceMonitoring) RecordPriceChange(price uint64, now time.Time) {
 
 }
 
