@@ -435,7 +435,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context) {
 	// If we were an opening auction, clear it
-	if m.mkt.OpeningAuction != nil {
+	if m.isOpeningAuction() {
 		m.mkt.OpeningAuction = nil
 	}
 
