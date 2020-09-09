@@ -8,9 +8,9 @@ type Auction struct {
 	*Base
 	// marketID for the market creating the auction event
 	marketID string
-	// start time in seconds since 1/1/1970 of the current/last auction
+	// start time in nanoseconds since 1/1/1970 of the current/last auction
 	auctionStart int64
-	// stop time in seconds since 1/1/1970 of the current/last auction
+	// stop time in nanoseconds since 1/1/1970 of the current/last auction
 	auctionStop int64
 	// is/was this an opening auction
 	openingAuction bool
