@@ -1999,7 +1999,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	// Check to see if the order still exists (it should not)
 	nonorder, err := book.GetOrderByID(iocOrderId)
 	assert.Equal(t, matching.ErrOrderDoesNotExist, err)
-	assert.Equal(t, (*types.Order)(nil), nonorder)
+	assert.Nil(t, nonorder)
 }
 
 func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
@@ -2482,10 +2482,6 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
-	defer book.Finish()
-
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
 
 	orders, err := book.EnterAuction()
 
