@@ -9513,6 +9513,27 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><p>Time until next auction (used in FBA&#39;s) - currently always 0. </p></td>
                 </tr>
 
+                <tr>
+                  <td>indicativePrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>indicative price (zero if not in auction) </p></td>
+                </tr>
+
+                <tr>
+                  <td>indicativeVolume</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>indicative volume (zero if not in auction) </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketState</td>
+                  <td><a href="#vega.MarketState">MarketState</a></td>
+                  <td></td>
+                  <td><p>the current state of the market </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -12006,6 +12027,12 @@ with an expiration that was badly formatted or otherwise invalid.</p></td>
                 <td>ORDER_ERROR_INCORRECT_MARKET_TYPE</td>
                 <td>22</td>
                 <td><p>Order was submitted with an incorrect or invalid market type.</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_INVALID_TIME_IN_FORCE</td>
+                <td>23</td>
+                <td><p>Order was submitted with invalid time in force</p></td>
               </tr>
 
           </tbody>

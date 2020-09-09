@@ -398,6 +398,8 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_SELF_TRADING, nil
 	case OrderRejectionReasonInternalError:
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
+	case OrderRejectionReasonInvalidTimeInForce:
+		return types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err

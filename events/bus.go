@@ -74,6 +74,7 @@ const (
 	MarketCreatedEvent
 	AssetEvent
 	MarketTickEvent
+	AuctionEvent
 	WithdrawalEvent
 )
 
@@ -150,6 +151,7 @@ var (
 		MarketCreatedEvent:     "MarketCreatedEvent",
 		AssetEvent:             "AssetEvent",
 		MarketTickEvent:        "MarketTickEvent",
+		AuctionEvent:           "AuctionEvent",
 		WithdrawalEvent:        "WithdrawalEvent",
 	}
 )
@@ -233,6 +235,7 @@ func (b Base) Type() Type {
 	return b.et
 }
 
+// MarketEvents return all the possible market events
 func MarketEvents() []Type {
 	return marketEvents
 }

@@ -290,6 +290,8 @@ enum OrderError {
   ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
   // Order was submitted with an incorrect or invalid market type.
   ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
+	// Order was submitted with invalid time in force
+	ORDER_ERROR_INVALID_TIME_IN_FORCE = 23;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -868,6 +870,12 @@ message MarketData {
   int64 auctionEnd = 10;
   // Time until next auction (used in FBA's) - currently always 0.
   int64 auctionStart = 11;
+  // indicative price (zero if not in auction)
+  uint64 indicativePrice = 12;
+  // indicative volume (zero if not in auction)
+  uint64 indicativeVolume = 13;
+  // the current state of the market
+  MarketState marketState = 14;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
