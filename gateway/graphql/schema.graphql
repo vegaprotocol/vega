@@ -1278,6 +1278,8 @@ enum ProposalRejectionReason {
   MissingBuiltinAssetField
   "The ERC20 contract address is missing from an ERC20 asset proposal"
   MissingERC20ContractAddress
+  "The specified asset for the market proposal is invalid"
+  InvalidAsset
   "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
   IncompatibleTimestamps
 }
