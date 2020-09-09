@@ -335,8 +335,6 @@ func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 		return nil, nil
 	}
 
-	//var allTrades []*types.Trade
-	//var allOrders []*types.Order
 	var uncrossedOrder *UncrossedOrder
 	var allOrders []*UncrossedOrder
 
@@ -587,10 +585,10 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if isPersistent(order) && order.Remaining > 0 && err == nil {
 
 		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
-		if order.TimeInForce == types.Order_TIF_GTT ||
-			(order.TimeInForce == types.Order_TIF_GFN ||
-				order.TimeInForce == types.Order_TIF_GFA) &&
-				order.ExpiresAt > 0 {
+		if (order.TimeInForce == types.Order_TIF_GTT ||
+			order.TimeInForce == types.Order_TIF_GFN ||
+			order.TimeInForce == types.Order_TIF_GFA) &&
+			order.ExpiresAt > 0 {
 			b.insertExpiringOrder(*order)
 		}
 
