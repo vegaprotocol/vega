@@ -193,10 +193,10 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Set the market state
 	b.marketState = types.MarketState_MARKET_STATE_AUCTION
 
-	// Return all the orders that have been cancelled from the book
-	cancelledOrders := buyCancelledOrders
-	cancelledOrders = append(cancelledOrders, sellCancelledOrders...)
-	return cancelledOrders, nil
+	// Return all the orders that have been removed from the book and need to be cancelled
+	ordersToCancel := buyCancelledOrders
+	ordersToCancel = append(ordersToCancel, sellCancelledOrders...)
+	return ordersToCancel, nil
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
@@ -529,16 +529,21 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 	if order.CreatedAt > b.latestTimestamp {
 		b.latestTimestamp = order.CreatedAt
 	}
-	_, trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
 
-	if err != nil {
-		if err == ErrWashTrade {
-			// we still want to submit this order, but know there will be no trades coming out of it
-			return nil, nil
+	var trades []*types.Trade
+	var err error
+	if b.marketState != types.MarketState_MARKET_STATE_AUCTION {
+		_, trades, err = b.getOppositeSide(order.Side).fakeUncross(order)
+
+		if err != nil {
+			if err == ErrWashTrade {
+				// we still want to submit this order, but know there will be no trades coming out of it
+				return nil, nil
+			}
+			// some random error happened, return both trades and error
+			// this is a case that isn't covered by the current SubmitOrder call
+			return trades, err
 		}
-		// some random error happened, return both trades and error
-		// this is a case that isn't covered by the current SubmitOrder call
-		return trades, err
 	}
 	// no error uncrossing, in all other cases, return trades (could be empty) without an error
 	return trades, nil
@@ -678,7 +683,7 @@ func (b *OrderBook) DeleteOrder(
 		return nil, types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
-	delete(b.ordersByID, order.Id)
+	delete(b.ordersPerParty[order.PartyID], order.Id)
 	return dorder, err
 }
 

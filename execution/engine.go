@@ -41,6 +41,14 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
+// AuctionTrigger can be checked with time or price to see if argument should trigger entry to or exit from the auction mode
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_trigger_mock.go -package mocks code.vegaprotocol.io/vega/execution AuctionTrigger
+type AuctionTrigger interface {
+	EnterPerPrice(price uint64) bool
+	EnterPerTime(time time.Time) bool
+	LeavePerTime(time time.Time) bool
+}
+
 // Engine is the execution engine
 type Engine struct {
 	Config
@@ -173,6 +181,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
+		nil,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
@@ -260,6 +269,11 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
+	}
+
+	// ensure that if orderID is specified marketId is as well
+	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+		return nil, ErrInvalidOrderCancellation
 	}
 
 	if len(order.PartyID) > 0 {

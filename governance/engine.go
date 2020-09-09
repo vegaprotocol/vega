@@ -316,8 +316,8 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 			logging.String("id", proposal.ID))
 		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
 	}
-	if proposal.Terms.EnactmentTimestamp <= proposal.Terms.ClosingTimestamp {
-		e.log.Debug("proposal enactment time can't be smaller or equal than closing time",
+	if proposal.Terms.EnactmentTimestamp < proposal.Terms.ClosingTimestamp {
+		e.log.Debug("proposal enactment time can't be smaller than closing time",
 			logging.Int64("enactment-time", proposal.Terms.EnactmentTimestamp),
 			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
 			logging.String("id", proposal.ID))

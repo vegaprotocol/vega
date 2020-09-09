@@ -6,6 +6,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/pkg/errors"
 )
 
@@ -356,7 +357,7 @@ func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
 // NewMarketTradingModeFromProto ...
 func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	if ptm == nil {
-		return nil, ErrNilTradingMode
+		ptm = defaultTradingMode()
 	}
 	switch ptmimpl := ptm.(type) {
 	case *types.NewMarketConfiguration_Continuous:
@@ -602,6 +603,9 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 }
 
 func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
+	if instrument == nil {
+		instrument = defaultInstrumentConfiguration()
+	}
 	if future := instrument.GetFuture(); future != nil {
 		i.FutureProduct = &FutureProduct{
 			Asset:    &Asset{ID: future.Asset},
@@ -615,6 +619,9 @@ func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.Instr
 
 // RiskConfigurationFromProto ...
 func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskModel, error) {
+	if newMarket.RiskParameters == nil {
+		newMarket.RiskParameters = defaultRiskParameters()
+	}
 	switch params := newMarket.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_Simple:
 		return &SimpleRiskModel{
@@ -641,7 +648,7 @@ func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskMo
 // NewMarketFromProto ...
 func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, error) {
 	if newMarket == nil {
-		return nil, ErrNilMarket
+		newMarket = defaultNewMarket()
 	}
 	risk, err := RiskConfigurationFromProto(newMarket)
 	if err != nil {
@@ -664,6 +671,7 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 		TradingMode:    mode,
 		Metadata:       newMarket.Metadata,
 	}
+
 	result.Instrument.assignProductFromProto(newMarket.Instrument)
 	return result, nil
 }
@@ -1089,5 +1097,95 @@ func NewAssetFromProto(newAsset *types.NewAsset) (*NewAsset, error) {
 	}
 	return &NewAsset{
 		Source: source,
+	}, nil
+}
+
+func defaultFutureProductConfiguration() *types.InstrumentConfiguration_Future {
+	return &types.InstrumentConfiguration_Future{
+		Future: &types.FutureProduct{
+			Asset:    "",
+			Maturity: "",
+		},
+	}
+}
+
+func defaultInstrumentConfiguration() *types.InstrumentConfiguration {
+	return &types.InstrumentConfiguration{
+		Name:      "",
+		Code:      "",
+		BaseName:  "",
+		QuoteName: "",
+		Product:   defaultFutureProductConfiguration(),
+	}
+}
+
+func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
+	return &types.NewMarketConfiguration_LogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0,
+			Tau:                   0,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0,
+				Sigma: 0,
+			},
+		},
+	}
+}
+
+func (e *Erc20WithdrawalDetailsInput) IntoProtoExt() *types.WithdrawExt {
+	return &types.WithdrawExt{
+		Ext: &types.WithdrawExt_Erc20{
+			Erc20: &types.Erc20WithdrawExt{
+				ReceiverAddress: e.ReceiverAddress,
+			},
+		},
+	}
+}
+
+func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
+	return &types.NewMarketConfiguration_Continuous{
+		Continuous: &types.ContinuousTrading{
+			TickSize: "0",
+		},
+	}
+}
+
+func defaultNewMarket() *types.NewMarketConfiguration {
+	return &types.NewMarketConfiguration{
+		Instrument:     defaultInstrumentConfiguration(),
+		RiskParameters: defaultRiskParameters(),
+		Metadata:       []string{},
+		DecimalPlaces:  0,
+		TradingMode:    defaultTradingMode(),
+	}
+}
+
+func WithdrawDetailsFromProto(w *types.WithdrawExt) WithdrawalDetails {
+	if w == nil {
+		return nil
+	}
+	switch ex := w.Ext.(type) {
+	case *types.WithdrawExt_Erc20:
+		return &Erc20WithdrawalDetails{ReceiverAddress: ex.Erc20.ReceiverAddress}
+	default:
+		return nil
+	}
+}
+
+func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
+	status, err := convertWithdrawalStatusFromProto(w.Status)
+	if err != nil {
+		return nil, err
+	}
+	return &Withdrawal{
+		ID:      w.Id,
+		PartyID: w.PartyID,
+		Amount:  fmt.Sprintf("%v", w.Amount),
+		Asset:   w.Asset,
+		Status:  status,
+		Ref:     w.Ref,
+		Expiry:  vegatime.Format(vegatime.UnixNano(w.Expiry)),
+		Details: WithdrawDetailsFromProto(w.Ext),
 	}, nil
 }

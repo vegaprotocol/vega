@@ -2,7 +2,6 @@ package tm
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"sync"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/proto/crypto/keys"
 )
 
 const (
@@ -23,9 +23,6 @@ const (
 	AbciTxnOK uint32 = 0
 	// AbciTxnValidationFailure ...
 	AbciTxnValidationFailure uint32 = 51
-
-	// Maximum sample size for average calculation, used in statistics (average tx per block etc).
-	statsSampleSize = 5000
 )
 
 type GenesisHandler interface {
@@ -39,7 +36,6 @@ type AbciApplication struct {
 
 	cfgMu     sync.Mutex
 	log       *logging.Logger
-	stats     Stats
 	processor Processor
 	service   ApplicationService
 	appHash   []byte
@@ -54,13 +50,15 @@ type AbciApplication struct {
 	blockHeightCounter prometheus.Counter
 
 	ghandler  GenesisHandler
+	top       ValidatorTopology
 	rateLimit *ratelimit.Rates
 }
 
 // NewApplication returns a new instance of the Abci application
 func NewApplication(log *logging.Logger,
-	config Config, stats Stats, proc Processor, svc ApplicationService,
-	time ApplicationTime, onCriticalError func(), ghandler GenesisHandler) *AbciApplication {
+	config Config, proc Processor, svc ApplicationService,
+	time ApplicationTime, onCriticalError func(), ghandler GenesisHandler,
+	top ValidatorTopology) *AbciApplication {
 
 	// setup logger
 	log = log.Named(namedLogger)
@@ -69,12 +67,12 @@ func NewApplication(log *logging.Logger,
 	app := AbciApplication{
 		log:             log,
 		Config:          config,
-		stats:           stats,
 		processor:       proc,
 		service:         svc,
 		time:            time,
 		onCriticalError: onCriticalError,
 		ghandler:        ghandler,
+		top:             top,
 		rateLimit: ratelimit.New(
 			config.RateLimit.Requests,
 			config.RateLimit.PerNBlocks,
@@ -136,12 +134,15 @@ func (a *AbciApplication) InitChain(req types.RequestInitChain) types.ResponseIn
 	vators := make([][]byte, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
-		vators = append(vators, v.PubKey.Data)
+		var data []byte
+		switch t := v.PubKey.Sum.(type) {
+		case *keys.PublicKey_Ed25519:
+			data = t.Ed25519
+		}
 
-		// Prevent validators for being rate-limited.
-		// This should be updated when each time the validator set is updated.
-		key := base64.StdEncoding.EncodeToString(v.PubKey.Data)
-		a.rateLimit.WhiteList(key)
+		if len(data) > 0 {
+			vators = append(vators, data)
+		}
 	}
 
 	if err := a.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
@@ -222,13 +223,16 @@ func (a *AbciApplication) CheckTx(txn types.RequestCheckTx) types.ResponseCheckT
 		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
 	}
 
-	// Use the Tx's pubkey to verify its rate allowance
-	key := ratelimit.Key(tx.GetPubKey()).String()
-	if ok := a.rateLimit.Allow(key); !ok {
-		a.log.Error("Rate limit exceeded", logging.String("key", key))
-		return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
+	// Verify ratelimit if node is not a validator
+	if !a.top.Exists(tx.GetPubKey()) {
+		// Use the Tx's pubkey to verify its rate allowance
+		key := ratelimit.Key(tx.GetPubKey()).String()
+		if ok := a.rateLimit.Allow(key); !ok {
+			a.log.Error("Rate limit exceeded", logging.String("key", key))
+			return types.ResponseCheckTx{Code: AbciTxnValidationFailure}
+		}
+		a.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", a.rateLimit.Count(key)))
 	}
-	a.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", a.rateLimit.Count(key)))
 
 	if err := a.processor.Validate(txn.Tx); err != nil {
 		a.log.Error("Error when validating payload in CheckTx", logging.Error(err))
@@ -267,8 +271,6 @@ func (a *AbciApplication) CheckTx(txn types.RequestCheckTx) types.ResponseCheckT
 //
 func (a *AbciApplication) DeliverTx(txn types.RequestDeliverTx) types.ResponseDeliverTx {
 	a.size++ // Always increment size first, ensure appHash is consistent
-	txLength := len(txn.Tx)
-	a.setTxStats(txLength)
 
 	err := a.processor.Process(txn.Tx)
 	if err != nil {
@@ -307,7 +309,6 @@ func (a *AbciApplication) Commit() types.ResponseCommit {
 	appHash := make([]byte, 8)
 	binary.BigEndian.PutUint64(appHash, uint64(a.size))
 	a.appHash = appHash
-	a.stats.IncHeight()
 
 	// Notify the abci/blockchain service imp that the transactions block/batch has completed
 	if err := a.service.Commit(); err != nil {
@@ -315,62 +316,6 @@ func (a *AbciApplication) Commit() types.ResponseCommit {
 	}
 
 	// todo: when an error happens on service commit should we return a different response to ABCI? (#179)
-
-	a.setBatchStats()
 	a.processor.ResetSeenPayloads()
 	return types.ResponseCommit{Data: appHash}
-}
-
-// setBatchStats is used to calculate any statistics that should be
-// recorded once per batch, typically called from commit.
-func (a *AbciApplication) setBatchStats() {
-	// Calculate the average total txn per batch, over n blocks
-	if a.txTotals == nil {
-		a.txTotals = make([]uint64, 0)
-	}
-	a.txTotals = append(a.txTotals, a.stats.TotalTxLastBatch())
-	totalTx := uint64(0)
-	for _, itx := range a.txTotals {
-		totalTx += itx
-	}
-	averageTxTotal := totalTx / uint64(len(a.txTotals))
-
-	a.log.Debug("Batch stats for height",
-		logging.Uint64("height", a.stats.Height()),
-		logging.Uint64("average-tx-total", averageTxTotal))
-
-	a.stats.SetAverageTxPerBatch(averageTxTotal)
-	a.stats.SetTotalTxLastBatch(a.stats.TotalTxCurrentBatch())
-	a.stats.SetTotalTxCurrentBatch(0)
-
-	// MAX sample size for avg calculation is defined as const.
-	if len(a.txTotals) == statsSampleSize {
-		a.txTotals = nil
-	}
-}
-
-// setTxStats is used to calculate any statistics that should be
-// recorded once per transaction delivery.
-func (a *AbciApplication) setTxStats(txLength int) {
-	a.stats.IncTotalTxCurrentBatch()
-	if a.txSizes == nil {
-		a.txSizes = make([]int, 0)
-	}
-	a.txSizes = append(a.txSizes, txLength)
-	totalTx := 0
-	for _, itx := range a.txSizes {
-		totalTx += itx
-	}
-	averageTxBytes := totalTx / len(a.txSizes)
-
-	a.log.Debug("Transaction stats for height",
-		logging.Uint64("height", a.stats.Height()),
-		logging.Int("average-tx-bytes", averageTxBytes))
-
-	a.stats.SetAverageTxSizeBytes(uint64(averageTxBytes))
-
-	// MAX sample size for avg calculation is defined as const.
-	if len(a.txSizes) == statsSampleSize {
-		a.txSizes = nil
-	}
 }

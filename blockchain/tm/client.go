@@ -3,13 +3,16 @@ package tm
 import (
 	"context"
 	"errors"
+	"os"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
-
+	tmlog "github.com/tendermint/tendermint/libs/log"
+	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 var (
@@ -32,6 +35,13 @@ func NewClient(cfg Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// log errors only
+	clt.Logger = tmlog.NewFilter(
+		tmlog.NewTMLogger(os.Stdout),
+		tmlog.AllowError(),
+	)
+
 	return &Client{
 		tmclt: clt,
 	}, nil
@@ -89,7 +99,8 @@ func (c *Client) Health() (*tmctypes.ResultHealth, error) {
 }
 
 func (c *Client) Validators() ([]*tmtypes.Validator, error) {
-	res, err := c.tmclt.Validators(nil, 0, 100)
+	perPage := 100
+	res, err := c.tmclt.Validators(nil, nil, &perPage)
 	if err != nil {
 		return nil, err
 	}
@@ -120,4 +131,42 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 	}
 
 	return validators, nil
+}
+
+// Subscribe subscribes to any event matching query (https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants).
+// Subscribe will call fn each time it receives an event from the node.
+// The function returns nil when the context is canceled or when fn returns an error.
+func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {
+	if err := c.tmclt.Start(); err != nil {
+		return err
+	}
+	defer c.tmclt.Stop()
+
+	errCh := make(chan error)
+
+	for _, query := range queries {
+		q, err := tmquery.New(query)
+		if err != nil {
+			return err
+		}
+
+		// For subscription we use "vega" as the client name but it's ignored by the implementation.
+		// 10 is the channel capacity which is absolutely arbitraty.
+		out, err := c.tmclt.Subscribe(ctx, "vega", q.String(), 10)
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			for res := range out {
+				if err := fn(res); err != nil {
+					errCh <- err
+					return
+				}
+			}
+		}()
+	}
+	defer c.tmclt.UnsubscribeAll(context.Background(), "vega")
+
+	return <-errCh
 }

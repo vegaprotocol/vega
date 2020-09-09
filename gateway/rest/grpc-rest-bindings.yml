@@ -95,6 +95,13 @@ http:
     - selector: api.trading_data.GetProposalsByParty
       get: '/parties/{partyID}/proposals'
 
+    # withdrawals
+    - selector: api.trading_data.Withdrawal
+      get: '/withdrawals/{ID}'
+    - selector: api.trading_data.Withdrawals
+      get: '/withdrawals/party/{partyID}'
+    - selector: api.trading_data.ERC20WithdrawalApproval
+      get: '/withdrawals/{withdrawalID}/approval/erc20'
 
     # Governance
     - selector: api.trading.PrepareProposal

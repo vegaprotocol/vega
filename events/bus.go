@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
@@ -11,10 +12,30 @@ import (
 )
 
 var (
-	ErrUnsuportedEvent = errors.New("unknown payload for event")
+	ErrUnsuportedEvent  = errors.New("unknown payload for event")
+	ErrInvalidEventType = errors.New("invalid proto event type")
 )
 
 type Type int
+
+// simple interface for event filtering on market ID
+type marketFilterable interface {
+	Event
+	MarketID() string
+}
+
+// simple interface for event filtering on party ID
+type partyFilterable interface {
+	Event
+	PartyID() string
+}
+
+// simple interface for event filtering by party and market ID
+type marketPartyFilterable interface {
+	Event
+	MarketID() string
+	PartyID() string
+}
 
 // Base common denominator all event-bus events share
 type Base struct {
@@ -54,6 +75,7 @@ const (
 	AssetEvent
 	MarketTickEvent
 	AuctionEvent
+	WithdrawalEvent
 )
 
 var (
@@ -61,6 +83,51 @@ var (
 		PositionResolution,
 		MarketCreatedEvent,
 		MarketTickEvent,
+	}
+
+	protoMap = map[types.BusEventType]Type{
+		types.BusEventType_BUS_EVENT_TYPE_ALL:                 All,
+		types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:         TimeUpdate,
+		types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:  TransferResponses,
+		types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION: PositionResolution,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET:              MarketEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ORDER:               OrderEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:             AccountEvent,
+		types.BusEventType_BUS_EVENT_TYPE_PARTY:               PartyEvent,
+		types.BusEventType_BUS_EVENT_TYPE_TRADE:               TradeEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:       MarginLevelsEvent,
+		types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:            ProposalEvent,
+		types.BusEventType_BUS_EVENT_TYPE_VOTE:                VoteEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:         MarketDataEvent,
+		types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:      NodeSignatureEvent,
+		types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:  LossSocializationEvent,
+		types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:     SettlePositionEvent,
+		types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:   SettleDistressedEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:      MarketCreatedEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ASSET:               AssetEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
+	}
+
+	toProto = map[Type]types.BusEventType{
+		TimeUpdate:             types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+		TransferResponses:      types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
+		PositionResolution:     types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
+		MarketEvent:            types.BusEventType_BUS_EVENT_TYPE_MARKET,
+		OrderEvent:             types.BusEventType_BUS_EVENT_TYPE_ORDER,
+		AccountEvent:           types.BusEventType_BUS_EVENT_TYPE_ACCOUNT,
+		PartyEvent:             types.BusEventType_BUS_EVENT_TYPE_PARTY,
+		TradeEvent:             types.BusEventType_BUS_EVENT_TYPE_TRADE,
+		MarginLevelsEvent:      types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS,
+		ProposalEvent:          types.BusEventType_BUS_EVENT_TYPE_PROPOSAL,
+		VoteEvent:              types.BusEventType_BUS_EVENT_TYPE_VOTE,
+		MarketDataEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA,
+		NodeSignatureEvent:     types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE,
+		LossSocializationEvent: types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION,
+		SettlePositionEvent:    types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION,
+		SettleDistressedEvent:  types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED,
+		MarketCreatedEvent:     types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED,
+		AssetEvent:             types.BusEventType_BUS_EVENT_TYPE_ASSET,
+		MarketTickEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
 	}
 
 	eventStrings = map[Type]string{
@@ -85,6 +152,7 @@ var (
 		AssetEvent:             "AssetEvent",
 		MarketTickEvent:        "MarketTickEvent",
 		AuctionEvent:           "AuctionEvent",
+		WithdrawalEvent:        "WithdrawalEvent",
 	}
 )
 
@@ -129,6 +197,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.Asset:
 		e := NewAssetEvent(ctx, tv)
+		return e, nil
+	case types.Withdrawal:
+		e := NewWithdrawalEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
@@ -176,4 +247,65 @@ func (t Type) String() string {
 		return "UNKNOWN EVENT"
 	}
 	return s
+}
+
+// ProtoToInternal converts the proto message enum to our internal constants
+// we're not using a map to de-duplicate the event types here, so we can exploit
+// duplicating the same event to control the internal subscriber channel buffer
+func ProtoToInternal(pTypes ...types.BusEventType) ([]Type, error) {
+	ret := make([]Type, 0, len(pTypes))
+	for _, t := range pTypes {
+		// all events -> subscriber should return a nil slice
+		if t == types.BusEventType_BUS_EVENT_TYPE_ALL {
+			return nil, nil
+		}
+		it, ok := protoMap[t]
+		if !ok {
+			return nil, ErrInvalidEventType
+		}
+		if it == MarketEvent {
+			ret = append(ret, marketEvents...)
+		} else {
+			ret = append(ret, it)
+		}
+	}
+	return ret, nil
+}
+
+func GetMarketIDFilter(mID string) func(Event) bool {
+	return func(e Event) bool {
+		me, ok := e.(marketFilterable)
+		if !ok {
+			return false
+		}
+		return (me.MarketID() == mID)
+	}
+}
+
+func GetPartyIDFilter(pID string) func(Event) bool {
+	return func(e Event) bool {
+		pe, ok := e.(partyFilterable)
+		if !ok {
+			return false
+		}
+		return (pe.PartyID() == pID)
+	}
+}
+
+func GetPartyAndMarketFilter(mID, pID string) func(Event) bool {
+	return func(e Event) bool {
+		mpe, ok := e.(marketPartyFilterable)
+		if !ok {
+			return false
+		}
+		return (mpe.MarketID() == mID && mpe.PartyID() == pID)
+	}
+}
+
+func (t Type) ToProto() types.BusEventType {
+	pt, ok := toProto[t]
+	if !ok {
+		panic(fmt.Sprintf("Converting events.Type %s to proto BusEventType: no corresponding value found", t))
+	}
+	return pt
 }

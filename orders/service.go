@@ -47,6 +47,8 @@ var (
 	ErrNoType = errors.New("no value has been set for the type")
 	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
 	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
+	// ErrCancelOrderWithOrderIDRequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
+	ErrCancelOrderWithOrderIDRequireMarketID = errors.New("cancel order with orderID require marketID")
 )
 
 // TimeService ...
@@ -191,6 +193,12 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 	if err := order.Validate(); err != nil {
 		return errors.Wrap(err, "order cancellation invalid")
 	}
+
+	// ensure that if orderID is specified marketId is as well
+	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+		return ErrCancelOrderWithOrderIDRequireMarketID
+	}
+
 	return nil
 }
 

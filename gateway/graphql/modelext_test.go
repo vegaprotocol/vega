@@ -583,6 +583,47 @@ func TestModelConverters(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, protoTerms)
 	})
+
+	t.Run("ProposalTermsFromProto with invalid proposa uses defaults", func(t *testing.T) {
+		pm := &proto.NewMarketConfiguration{
+			Instrument: &proto.InstrumentConfiguration{
+				Name:      "December 2020 ETH vs VUSD future",
+				Code:      "CRYPTO:ETHVUSD/DEC20",
+				BaseName:  "ETH",
+				QuoteName: "VUSD",
+				Product: &proto.InstrumentConfiguration_Future{
+					Future: &proto.FutureProduct{
+						Asset:    "VUSD",
+						Maturity: "2020-12-31T23:59:59Z",
+					},
+				},
+			},
+			// we use a nil risk parameters
+			RiskParameters: nil,
+			Metadata: []string{
+				"asset_class:fx/crypto",
+				"product:futures",
+			},
+			DecimalPlaces: 5,
+			TradingMode: &proto.NewMarketConfiguration_Continuous{
+				Continuous: &proto.ContinuousTrading{
+					TickSize: "0.1",
+				},
+			},
+		}
+
+		protoTerms, err := gql.ProposalTermsFromProto(&proto.ProposalTerms{
+			ClosingTimestamp:   1234567,
+			EnactmentTimestamp: 1234568,
+			Change: &proto.ProposalTerms_NewMarket{
+				NewMarket: &proto.NewMarket{
+					Changes: pm,
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, protoTerms)
+	})
 }
 
 func intptr(i int) *int {

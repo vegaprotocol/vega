@@ -253,7 +253,7 @@ func testValidateCommandsFail(t *testing.T) {
 		blockchain.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		blockchain.WithdrawCommand: &types.Withdraw{
+		blockchain.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
 	}
@@ -294,7 +294,7 @@ func testValidateCommandsSuccess(t *testing.T) {
 		blockchain.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		blockchain.WithdrawCommand: &types.Withdraw{
+		blockchain.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
 		blockchain.ProposeCommand: &types.Proposal{

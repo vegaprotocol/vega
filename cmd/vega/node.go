@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
@@ -121,6 +122,7 @@ type NodeCommand struct {
 	notaryService     *notary.Svc
 	assetService      *assets.Svc
 	feeService        *fee.Svc
+	eventService      *subscribers.Service
 
 	blockchain       *blockchain.Blockchain
 	blockchainClient *blockchain.Client
@@ -154,9 +156,10 @@ type NodeCommand struct {
 	genesisHandler *genesis.Handler
 
 	// plugins
-	settlePlugin *plugins.Positions
-	notaryPlugin *plugins.Notary
-	assetPlugin  *plugins.Asset
+	settlePlugin     *plugins.Positions
+	notaryPlugin     *plugins.Notary
+	assetPlugin      *plugins.Asset
+	withdrawalPlugin *plugins.Withdrawal
 }
 
 // Init initialises the node command.
@@ -222,6 +225,8 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.evtfwd,
 		l.assetService,
 		l.feeService,
+		l.eventService,
+		l.withdrawalPlugin,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
@@ -239,6 +244,19 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	l.Log.Info("Vega startup complete")
+
+	// Start the stats collection client for tendermint
+	tm := stats.NewTendermint(l.blockchain.Client(), l.stats)
+	go func() {
+		for {
+			select {
+			case <-time.NewTicker(1 * time.Second).C:
+				if err := tm.Collect(l.ctx); err != nil {
+					l.Log.Info("Can't start stats Collection", logging.Error(err))
+				}
+			}
+		}
+	}()
 
 	waitSig(l.ctx, l.Log)
 

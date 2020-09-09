@@ -161,6 +161,8 @@ type Banking interface {
 	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
 	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
+	LockWithdrawalERC20(context.Context, string, string, uint64, *types.Erc20WithdrawExt) error
+	WithdrawalERC20(*types.ERC20Withdrawal, uint64, uint64) error
 }
 
 // Processor handle processing of all transaction sent through the node
@@ -370,8 +372,8 @@ func (p *Processor) getOrderAmendment(payload []byte) (*types.OrderAmendment, er
 	return amendment, nil
 }
 
-func (p *Processor) getWithdraw(payload []byte) (*types.Withdraw, error) {
-	w := &types.Withdraw{}
+func (p *Processor) getWithdrawSubmission(payload []byte) (*types.WithdrawSubmission, error) {
+	w := &types.WithdrawSubmission{}
 	err := proto.Unmarshal(payload, w)
 	if err != nil {
 		return nil, errors.Wrap(err, "error decoding order to proto")
@@ -497,7 +499,7 @@ func (p *Processor) ValidateSigned(key, data []byte, cmd blockchain.Command) err
 		// }
 		return nil
 	case blockchain.WithdrawCommand:
-		withdraw, err := p.getWithdraw(data)
+		withdraw, err := p.getWithdrawSubmission(data)
 		if err != nil {
 			return err
 		}
@@ -564,7 +566,7 @@ func (p *Processor) Process(ctx context.Context, data []byte, pubkey []byte, cmd
 		return errors.New("not implemented")
 		// return p.amendOrder(ctx, order)
 	case blockchain.WithdrawCommand:
-		withdraw, err := p.getWithdraw(data)
+		withdraw, err := p.getWithdrawSubmission(data)
 		if err != nil {
 			return err
 		}

@@ -40,11 +40,11 @@ type Mutation {
   """
   prepareOrderCancel(
     "ID of the order to cancel"
-    id: ID!
+    id: ID
     "ID of the party placing the order"
     partyId: String!
     "ID of the market where to find the order"
-    marketId: String!
+    marketId: String
   ): PreparedCancelOrder!
 
   """
@@ -95,6 +95,25 @@ type Mutation {
   ): PreparedVote!
 
   """
+  Prepare a withdrawal so it can be signed and submitted.
+  Returns a pending withdrawSubmission with a transaction blob for signing.
+  """
+  prepareWithdrawal(
+    "The party which wants to withdraw funds"
+    partyID: String!
+    "The amount to be withdrawn"
+    amount: String!
+    "The asset from which we want to withdraw funds"
+    asset: String!
+
+    """
+    ERC20 specific details to process the withdrawal
+    nullable as not required by all kind of withdrawals
+    """
+    erc20Details: Erc20WithdrawalDetailsInput
+  ): PreparedWithdrawal!
+
+  """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
   """
@@ -105,6 +124,12 @@ type Mutation {
     sig: SignatureInput!
   ): TransactionSubmitted!
 
+}
+
+"ERC20 specific details to start a withdrawal"
+input Erc20WithdrawalDetailsInput {
+  "The ethereum address to which the withdrawn funds will be send to"
+  receiverAddress: String!
 }
 
 "A signature to be bundled with a transaction"
@@ -253,18 +278,23 @@ type MarketData {
   marketState: MarketState!
 }
 
+type PreparedWithdrawal {
+  "the raw transaction to sign & submit"
+  blob: String!
+}
+
 type PreparedSubmitOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
 type PreparedCancelOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
 type PreparedAmendOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
@@ -403,6 +433,17 @@ type Query {
     type: OrderType!
   ): OrderFeeEstimate!
 
+  "find a withdrawal using its id"
+  withdrawal(
+    "id of the withdrawal"
+    id: String!
+  ): Withdrawal
+
+  "find a erc20 withdrawal approval using it a withdrawal id"
+  erc20WithdrawalApproval(
+    "id of the withdrawal"
+    withdrawalId: String!
+  ): Erc20WithdrawalApproval
 }
 
 "Represents an asset in vega"
@@ -914,6 +955,9 @@ type Party {
   ): [Proposal]
 
   votes: [ProposalVote]
+
+  "The list of all withdrawals initiated by the party"
+  withdrawals: [Withdrawal!]
 }
 
 """
@@ -1094,6 +1138,61 @@ type Account {
   market: Market
 }
 
+"All the data related to the approval of a withdrawal from the network"
+type Erc20WithdrawalApproval {
+  "The source asset in the ethereum network"
+  assetSource: String!
+  "The amount to be withdrawan"
+  amount: String!
+  "The expiry of the approval (RFC3339Nano)"
+  expiry: String!
+  "The nonce to be used in the request"
+  nonce: String!
+  """
+  Signature aggregate from the nodes, in the following format:
+  0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+"The details of a withdrawal processed by vega"
+type Withdrawal {
+  "The Vega internal id of the withdrawal"
+  id: String!
+  "The PartyID initiating the witndrawal"
+  partyId: String!
+  "The amount to be withdrawn"
+  amount: String!
+  "The asset to be withdrawn"
+  asset: String!
+  "The current status of the withdrawal"
+  status: WithdrawalStatus!
+  "A reference the foreign chain can use to refere to when processing the withdrawal"
+  ref: String!
+  "The time until when the withdrawal will be valid (RFC3339Nano)"
+  expiry: String!
+  "Foreign chain specific details about the withdrawal"
+  details: WithdrawalDetails
+}
+
+union WithdrawalDetails = Erc20WithdrawalDetails
+
+"Specific details for an erc20 withdrawal"
+type Erc20WithdrawalDetails {
+  "The ethereum address of the receiver of the asset funds"
+  receiverAddress: String!
+}
+
+"The status of a withdrawal"
+enum WithdrawalStatus {
+  "The withdrawal is open and being processed by the network"
+  Open
+  "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  Cancelled
+  "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  Finalized
+}
+
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
 
@@ -1164,7 +1263,7 @@ enum ProposalRejectionReason {
   "The proposal has no product specified"
   NoProduct
   "The specified product is not supported"
-  UnuspportedProduct
+  UnsupportedProduct
   "Invalid future maturity timestamp (expect RFC3339)"
   InvalidFutureMaturityTimestamp
   "The product maturity is already in the past"

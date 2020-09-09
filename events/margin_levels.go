@@ -34,3 +34,17 @@ func (m MarginLevels) MarketID() string {
 func (m MarginLevels) Asset() string {
 	return m.l.Asset
 }
+
+func (m MarginLevels) Proto() types.MarginLevels {
+	return m.l
+}
+
+func (m MarginLevels) StreamMessage() *types.BusEvent {
+	return &types.BusEvent{
+		ID:   m.traceID,
+		Type: m.et.ToProto(),
+		Event: &types.BusEvent_MarginLevels{
+			MarginLevels: &m.l,
+		},
+	}
+}
