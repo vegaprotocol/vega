@@ -2,7 +2,6 @@ package governance
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -72,7 +71,6 @@ type ExtResChecker interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	mu                     sync.Mutex
 	log                    *logging.Logger
 	accs                   Accounts
 	currentTime            time.Time
@@ -122,9 +120,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 		e.log.SetLevel(cfg.Level.Get())
 	}
 
-	e.mu.Lock()
 	e.Config = cfg
-	e.mu.Unlock()
 }
 
 func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.ProposalError, err error) {

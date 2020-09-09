@@ -102,8 +102,10 @@ type withdrawalRef struct {
 
 func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets, notary Notary, broker Broker) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
-	return &Engine{
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 
+	return &Engine{
 		cfg:         cfg,
 		log:         log,
 		broker:      broker,
@@ -116,6 +118,20 @@ func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsv
 		notary:      notary,
 		withdrawals: map[string]withdrawalRef{},
 	}
+}
+
+// ReloadConf updates the internal configuration
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfg = cfg
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {

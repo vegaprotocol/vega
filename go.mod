@@ -17,6 +17,7 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.4.0
 	github.com/google/btree v1.0.0
+	github.com/google/martian v2.1.0+incompatible
 	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2

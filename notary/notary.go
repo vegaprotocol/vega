@@ -73,7 +73,7 @@ func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, 
 	}
 }
 
-// ReloadConf updates the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration
 func (n *Notary) ReloadConf(cfg Config) {
 	n.log.Info("reloading configuration")
 	if n.log.GetLevel() != cfg.Level.Get() {
