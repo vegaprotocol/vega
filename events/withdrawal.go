@@ -21,3 +21,5 @@ func NewWithdrawalEvent(ctx context.Context, w types.Withdrawal) *Withdrawal {
 func (w *Withdrawal) Withdrawal() types.Withdrawal {
 	return w.w
 }
+
+func (w Withdrawal) PartyID() string { return w.w.PartyID }

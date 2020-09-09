@@ -43,8 +43,13 @@ func NewWithdrawal(ctx context.Context) *Withdrawal {
 
 func (w *Withdrawal) Push(evts ...events.Event) {
 	for _, e := range evts {
-		if wse, ok := e.(WithdrawalEvent); ok {
-			w.ch <- wse.Withdrawal()
+		select {
+		case <-w.Closed():
+			return
+		default:
+			if wse, ok := e.(WithdrawalEvent); ok {
+				w.ch <- wse.Withdrawal()
+			}
 		}
 	}
 }

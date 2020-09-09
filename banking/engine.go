@@ -149,10 +149,11 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 
 	now, _ := e.tsvc.GetTimeNow()
 	w, ref := e.newWithdrawal(party, assetID, amount, time.Time{}, now, nil)
-	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Error("cannot withdraw asset for party",
 			logging.String("party-id", party),
@@ -162,6 +163,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 		return err
 	}
 	w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 
 	return e.finalizeWithdrawal(ctx, party, assetID, amount)
@@ -282,11 +284,12 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 		},
 	}
 	w, ref := e.newWithdrawal(party, assetID, amount, expiry, now, wext)
-	defer e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	// try to lock the funds
 	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Debug("cannot withdraw asset for party",
 			logging.String("party-id", party),
@@ -299,6 +302,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 	// we were able to lock the funds, then we can send the vote through the network
 	if err := e.notary.StartAggregate(w.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Error("unable to start aggregating signature for the withdrawal",
 			logging.String("withdrawal-id", w.Id),
