@@ -44,7 +44,7 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 		blockchain.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		blockchain.WithdrawCommand: &types.Withdraw{
+		blockchain.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
 		blockchain.ProposeCommand: &types.Proposal{
@@ -93,7 +93,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 		blockchain.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		blockchain.WithdrawCommand: &types.Withdraw{
+		blockchain.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
 		blockchain.ProposeCommand: &types.Proposal{
