@@ -546,18 +546,6 @@ func (m *Market) GetTradingMode() types.MarketState {
 	return m.tradeMode // TODO (WG 03/09/20): Adding this only to be able the test the triggers for now. Needs to be reconciled with orderbook's marketState - don't need both.
 }
 
-// SubmitOrder submits the given order
-func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
-	orderValidity := "invalid"
-	defer func() {
-		timer.EngineTimeCounterAdd()
-		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
-	}()
-
-	// Move any parked orders back into the orderbook
-}
-
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
 	if (m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
@@ -709,7 +697,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		m.matching.GetMarketState() != types.MarketState_MARKET_STATE_AUCTION {
 
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err := m.evaluateAuctionTriggersAndGetTrades(ctx, order)
+		trades, err = m.evaluateAuctionTriggersAndGetTrades(ctx, order)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, order, err)
 		}
