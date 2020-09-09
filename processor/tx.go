@@ -65,7 +65,7 @@ func (tx *Tx) toProto() (interface{}, error) {
 		blockchain.ProposeCommand:       &types.Proposal{},
 		blockchain.VoteCommand:          &types.Vote{},
 		blockchain.NodeVoteCommand:      &types.NodeVote{},
-		blockchain.WithdrawCommand:      &types.Withdraw{},
+		blockchain.WithdrawCommand:      &types.WithdrawSubmission{},
 		blockchain.RegisterNodeCommand:  &types.NodeRegistration{},
 		blockchain.NodeSignatureCommand: &types.NodeSignature{},
 		blockchain.ChainEventCommand:    &types.ChainEvent{},

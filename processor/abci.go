@@ -321,7 +321,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx) error {
-	w := &types.Withdraw{}
+	w := &types.WithdrawSubmission{}
 	if err := tx.(*Tx).Unmarshal(w); err != nil {
 		return err
 	}
@@ -340,7 +340,11 @@ func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx) error {
 	case asset.IsBuiltinAsset():
 		return app.banking.WithdrawalBuiltinAsset(ctx, w.PartyID, w.Asset, w.Amount)
 	case asset.IsERC20():
-		return errors.New("unimplemented withdrawal for ERC20")
+		ext := w.Ext.GetErc20()
+		if ext == nil {
+			return ErrMissingWithdrawERC20Ext
+		}
+		return app.banking.LockWithdrawalERC20(ctx, w.PartyID, w.Asset, w.Amount, ext)
 	}
 
 	return errors.New("unimplemented withdrawal")
