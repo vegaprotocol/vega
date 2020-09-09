@@ -253,7 +253,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 	for seq, skel := range skels {
 		monYear := skel.maturity.Format("Jan06")
 		monYearUpper := strings.ToUpper(monYear)
-		auctionDuration, _ := time.ParseDuration(skel.openingAuctionDuration)
+		auctionDuration, err := time.ParseDuration(skel.openingAuctionDuration)
+		if err != nil {
+			return nil, err
+		}
 
 		mkt := proto.Market{
 			Id:            skel.id,
@@ -321,7 +324,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
-		err := createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
+		err = createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
 		if err != nil {
 			return nil, err
 		}
