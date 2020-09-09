@@ -315,6 +315,8 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS, nil
 	case ProposalRejectionReasonIncompatibleTimestamps:
 		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, nil
+	case ProposalRejectionReasonInvalidAsset:
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from GraphQL to Proto: %v", x)
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -355,6 +357,8 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonMissingERC20ContractAddress, nil
 	case types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS:
 		return ProposalRejectionReasonIncompatibleTimestamps, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET:
+		return ProposalRejectionReasonInvalidAsset, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err
