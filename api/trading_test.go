@@ -77,7 +77,8 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 			t.Fatalf("Expected some sort of error, but got none.")
 		}
 		fmt.Println(err.Error())
-		if strings.Contains(err.Error(), "Internal error") {
+
+		if strings.Contains(err.Error(), "InvalidArgument") {
 			return
 		}
 		fmt.Printf("Sleeping for %d milliseconds\n", sleepTime)
