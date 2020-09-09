@@ -55,7 +55,7 @@ func getTestTop(t *testing.T) *testTop {
 		},
 	)
 
-	top := validators.NewTopology(logging.NewTestLogger(), bc, true)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), bc, true)
 
 	_ = <-ch
 	_ = <-ch
