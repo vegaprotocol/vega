@@ -321,7 +321,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
-		return big.NewInt(0), "", err
+		return nil, "", err
 	}
 
 	iter, err := bf.FilterAssetWithdrawn(
@@ -335,7 +335,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		[]*big.Int{})
 
 	if err != nil {
-		return big.NewInt(0), "", err
+		return nil, "", err
 	}
 
 	defer iter.Close()
@@ -355,7 +355,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 	}
 
 	if event == nil {
-		return big.NewInt(0), "", ErrUnableToFindWithdrawal
+		return nil, "", ErrUnableToFindWithdrawal
 	}
 
 	return nonce, event.Raw.TxHash.Hex(), nil

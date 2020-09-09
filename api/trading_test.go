@@ -246,7 +246,7 @@ func getTestGRPCServer(
 	eventService := subscribers.NewService(broker)
 
 	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
-	withdrawal := plugins.NewWithdrawal(context.Background())
+	withdrawal := plugins.NewWithdrawal(ctx)
 
 	g = api.NewGRPCServer(
 		logger,
