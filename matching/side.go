@@ -27,7 +27,7 @@ type OrderBookSide struct {
 }
 
 // When we enter an auction we have to park all pegged orders
-// and cancel all orders that are not good for auction
+// and cancel all orders that are GFN
 func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
 	ordersToCancel := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
