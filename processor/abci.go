@@ -391,7 +391,7 @@ func (app *App) DeliverRegisterNode(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 	vote := &types.NodeVote{}
-	if err := tx.(*Tx).Unmarshal(&vote); err != nil {
+	if err := tx.(*Tx).Unmarshal(vote); err != nil {
 		return err
 	}
 

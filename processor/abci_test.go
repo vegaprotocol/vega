@@ -33,6 +33,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) error {
 		proc.eng,
 		proc.cmd,
 		proc.col,
+		nil,
 		proc.gov,
 		proc.notary,
 		proc.stat,
