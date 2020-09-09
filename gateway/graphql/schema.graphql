@@ -215,7 +215,7 @@ type Subscription {
   "Subscribe to votes, either by proposal id or pary id"
   votes(
     "Optional proposal id which votes are to be streamed"
-    proposalID: String
+    proposalId: String
     "Optional party id whose votes are to be streamed"
     partyID: String
   ): ProposalVote!
@@ -1349,7 +1349,7 @@ enum OrderRejectionReason {
   InsufficientFundsToPayFees
 
   "Invalid Time In Force"
-  InvalidTimeInForce  
+  InvalidTimeInForce
 }
 
 enum OrderType {
@@ -1829,7 +1829,7 @@ type ProposalVote {
   vote: Vote!
 
   "Proposal casting the vote on"
-  proposalID: ID!
+  proposalId: ID!
 }
 
 type PreparedVote {

@@ -2060,7 +2060,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProposalTerms.EnactmentDatetime(childComplexity), true
 
-	case "ProposalVote.proposalID":
+	case "ProposalVote.proposalId":
 		if e.complexity.ProposalVote.ProposalID == nil {
 			break
 		}
@@ -2660,7 +2660,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Votes(childComplexity, args["proposalID"].(*string), args["partyID"].(*string)), true
+		return e.complexity.Subscription.Votes(childComplexity, args["proposalId"].(*string), args["partyID"].(*string)), true
 
 	case "TradableInstrument.instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -3254,7 +3254,7 @@ type Subscription {
   "Subscribe to votes, either by proposal id or pary id"
   votes(
     "Optional proposal id which votes are to be streamed"
-    proposalID: String
+    proposalId: String
     "Optional party id whose votes are to be streamed"
     partyID: String
   ): ProposalVote!
@@ -4388,7 +4388,7 @@ enum OrderRejectionReason {
   InsufficientFundsToPayFees
 
   "Invalid Time In Force"
-  InvalidTimeInForce  
+  InvalidTimeInForce
 }
 
 enum OrderType {
@@ -4868,7 +4868,7 @@ type ProposalVote {
   vote: Vote!
 
   "Proposal casting the vote on"
-  proposalID: ID!
+  proposalId: ID!
 }
 
 type PreparedVote {
@@ -5959,13 +5959,13 @@ func (ec *executionContext) field_Subscription_votes_args(ctx context.Context, r
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["proposalID"]; ok {
+	if tmp, ok := rawArgs["proposalId"]; ok {
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["proposalID"] = arg0
+	args["proposalId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["partyID"]; ok {
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
@@ -12122,7 +12122,7 @@ func (ec *executionContext) _ProposalVote_vote(ctx context.Context, field graphq
 	return ec.marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVote(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProposalVote_proposalID(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProposalVote_proposalId(ctx context.Context, field graphql.CollectedField, obj *ProposalVote) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -14619,7 +14619,7 @@ func (ec *executionContext) _Subscription_votes(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Votes(rctx, args["proposalID"].(*string), args["partyID"].(*string))
+		return ec.resolvers.Subscription().Votes(rctx, args["proposalId"].(*string), args["partyID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20255,8 +20255,8 @@ func (ec *executionContext) _ProposalVote(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "proposalID":
-			out.Values[i] = ec._ProposalVote_proposalID(ctx, field, obj)
+		case "proposalId":
+			out.Values[i] = ec._ProposalVote_proposalId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
