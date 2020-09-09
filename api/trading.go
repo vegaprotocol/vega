@@ -31,7 +31,6 @@ type TradeOrderService interface {
 	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error
 	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) error
 	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error
-	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 }
 
 // AccountService ...
@@ -53,8 +52,16 @@ type EvtForwarder interface {
 	Forward(e *types.ChainEvent, pk string) error
 }
 
+// Blockchain ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
+type Blockchain interface {
+	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
+}
+
 type tradingService struct {
-	log               *logging.Logger
+	log *logging.Logger
+
+	blockchain        Blockchain
 	tradeOrderService TradeOrderService
 	accountService    AccountService
 	marketService     MarketService
@@ -130,10 +137,12 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	if req == nil || req.Tx == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
-	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
+
+	if ok, err := s.blockchain.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
 		s.log.Error("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
+
 	return &protoapi.SubmitTransactionResponse{
 		Success: true,
 	}, nil

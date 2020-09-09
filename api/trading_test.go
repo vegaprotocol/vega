@@ -203,7 +203,7 @@ func getTestGRPCServer(
 	timeService := vegatime.New(conf.Time)
 
 	// Order Service
-	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService, blockchainClient)
+	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create order service")
 		return
