@@ -128,7 +128,33 @@ func (this *PositionTrade) Validate() error {
 func (this *Statistics) Validate() error {
 	return nil
 }
-func (this *Withdraw) Validate() error {
+func (this *Withdrawal) Validate() error {
+	if this.Ext != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Ext); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Ext", err)
+		}
+	}
+	return nil
+}
+func (this *WithdrawSubmission) Validate() error {
+	if this.Ext != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Ext); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Ext", err)
+		}
+	}
+	return nil
+}
+func (this *WithdrawExt) Validate() error {
+	if oneOfNester, ok := this.GetExt().(*WithdrawExt_Erc20); ok {
+		if oneOfNester.Erc20 != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Erc20); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Erc20", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *Erc20WithdrawExt) Validate() error {
 	return nil
 }
 func (this *OrderAmendment) Validate() error {

@@ -219,6 +219,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.ERC20WithdrawalApprovalRequest"><span class="badge">M</span>ERC20WithdrawalApprovalRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.ERC20WithdrawalApprovalResponse"><span class="badge">M</span>ERC20WithdrawalApprovalResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.EstimateFeeRequest"><span class="badge">M</span>EstimateFeeRequest</a>
                 </li>
 
@@ -584,6 +592,22 @@
 
                 <li>
                   <a href="#api.VegaTimeResponse"><span class="badge">M</span>VegaTimeResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.WithdrawalRequest"><span class="badge">M</span>WithdrawalRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.WithdrawalResponse"><span class="badge">M</span>WithdrawalResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.WithdrawalsRequest"><span class="badge">M</span>WithdrawalsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.WithdrawalsResponse"><span class="badge">M</span>WithdrawalsResponse</a>
                 </li>
 
 
@@ -957,6 +981,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Erc20WithdrawExt"><span class="badge">M</span>Erc20WithdrawExt</a>
+                </li>
+
+                <li>
                   <a href="#vega.ErrorDetail"><span class="badge">M</span>ErrorDetail</a>
                 </li>
 
@@ -1101,7 +1129,15 @@
                 </li>
 
                 <li>
-                  <a href="#vega.Withdraw"><span class="badge">M</span>Withdraw</a>
+                  <a href="#vega.WithdrawExt"><span class="badge">M</span>WithdrawExt</a>
+                </li>
+
+                <li>
+                  <a href="#vega.WithdrawSubmission"><span class="badge">M</span>WithdrawSubmission</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Withdrawal"><span class="badge">M</span>Withdrawal</a>
                 </li>
 
 
@@ -1151,6 +1187,10 @@
 
                 <li>
                   <a href="#vega.TransferType"><span class="badge">E</span>TransferType</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Withdrawal.Status"><span class="badge">E</span>Withdrawal.Status</a>
                 </li>
 
 
@@ -1523,6 +1563,110 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.ERC20WithdrawalApprovalRequest">ERC20WithdrawalApprovalRequest</h3>
+        <p>The request to get all information required to bundle the call</p><p>to finalize the withdrawal on the erc20 bridge</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>withdrawalID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The ID of the withdrawal </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>withdrawalID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.ERC20WithdrawalApprovalResponse">ERC20WithdrawalApprovalResponse</h3>
+        <p>The response with all information required to bundle the call</p><p>to finalize the withdrawal on the erc20 bridge</p><p>function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>assetSource</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The address of asset on ethereum </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The amount to be withdrawn </p></td>
+                </tr>
+
+                <tr>
+                  <td>expiry</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The expiry / until what time the request is valid </p></td>
+                </tr>
+
+                <tr>
+                  <td>nonce</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The nonce, which is actually the internal reference for the withdrawal </p></td>
+                </tr>
+
+                <tr>
+                  <td>signatures</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The signatures bundle as hex encoded data, forward by 0x
+e.g: 0x &#43; sig1 &#43; sig2 &#43; ... &#43; sixN </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -4290,7 +4434,7 @@ Default is true, if false the results will be returned in ascending order. </p><
 
                 <tr>
                   <td>withdraw</td>
-                  <td><a href="#vega.Withdraw">vega.Withdraw</a></td>
+                  <td><a href="#vega.WithdrawSubmission">vega.WithdrawSubmission</a></td>
                   <td></td>
                   <td><p>An asset withdrawal. </p></td>
                 </tr>
@@ -4725,6 +4869,156 @@ Important - success does not mean that the transaction is confirmed by consensus
                   <td></td>
                   <td><p>Timestamp representation of current VegaTime.
 Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> corresponds to <tt>2020-01-31T12:30:59.111222333Z</tt> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.WithdrawalRequest">WithdrawalRequest</h3>
+        <p>A request to get a specific withdrawal by ID</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The id of the withdrawal </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.WithdrawalResponse">WithdrawalResponse</h3>
+        <p>A response for a withdrawal</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.Withdrawal">vega.Withdrawal</a></td>
+                  <td></td>
+                  <td><p>The withdrawal matching the ID from the request </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.WithdrawalsRequest">WithdrawalsRequest</h3>
+        <p>A request to get a list of withdrawal from a given party</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The party to get the withdrawals for </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.WithdrawalsResponse">WithdrawalsResponse</h3>
+        <p>The response for a list of withdrawals</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>withdrawals</td>
+                  <td><a href="#vega.Withdrawal">vega.Withdrawal</a></td>
+                  <td>repeated</td>
+                  <td><p>The list of withdrawals for the specified party </p></td>
                 </tr>
 
             </tbody>
@@ -5178,6 +5472,28 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                 <td><a href="#api.EstimateFeeRequest">EstimateFeeRequest</a></td>
                 <td><a href="#api.EstimateFeeResponse">EstimateFeeResponse</a></td>
                 <td><p>Get an estimate for the fee to be paid for a given order</p></td>
+              </tr>
+
+              <tr>
+                <td>ERC20WithdrawalApproval</td>
+                <td><a href="#api.ERC20WithdrawalApprovalRequest">ERC20WithdrawalApprovalRequest</a></td>
+                <td><a href="#api.ERC20WithdrawalApprovalResponse">ERC20WithdrawalApprovalResponse</a></td>
+                <td><p>Get the bundle approval for an ERC20 withdrawal
+these data are being used to bundle the call to the smart contract on the ethereum bridge</p></td>
+              </tr>
+
+              <tr>
+                <td>Withdrawal</td>
+                <td><a href="#api.WithdrawalRequest">WithdrawalRequest</a></td>
+                <td><a href="#api.WithdrawalResponse">WithdrawalResponse</a></td>
+                <td><p>Get a withdrawal by its ID</p></td>
+              </tr>
+
+              <tr>
+                <td>Withdrawals</td>
+                <td><a href="#api.WithdrawalsRequest">WithdrawalsRequest</a></td>
+                <td><a href="#api.WithdrawalsResponse">WithdrawalsResponse</a></td>
+                <td><p>Get withdrawals for a party</p></td>
               </tr>
 
           </tbody>
@@ -5898,13 +6214,6 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Vega network internal identifier of the asset. </p></td>
-                </tr>
-
-                <tr>
-                  <td>sourcePartyId</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>The party identifier (pub-key) initiating the withdrawal. </p></td>
                 </tr>
 
                 <tr>
@@ -8847,6 +9156,30 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
 
 
+        <h3 id="vega.Erc20WithdrawExt">Erc20WithdrawExt</h3>
+        <p>An extension of data required for the withdraw submissions</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>receiverAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The address into which the bridge will release the funds </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.ErrorDetail">ErrorDetail</h3>
         <p>Represents Vega domain specific error information over gRPC/Protobuf.</p>
 
@@ -11015,8 +11348,32 @@ against replay attack. </p></td>
 
 
 
-        <h3 id="vega.Withdraw">Withdraw</h3>
-        <p>Represents a withdrawal of an asset by a party on Vega.</p>
+        <h3 id="vega.WithdrawExt">WithdrawExt</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>erc20</td>
+                  <td><a href="#vega.Erc20WithdrawExt">Erc20WithdrawExt</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.WithdrawSubmission">WithdrawSubmission</h3>
+        <p>A request for withdrawing funds from a trader</p>
 
 
           <table class="field-table">
@@ -11029,21 +11386,102 @@ against replay attack. </p></td>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Unique party identifier affecting the withdrawal. </p></td>
+                  <td><p>The party which wants to withdraw funds </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Total amount to withdraw. </p></td>
+                  <td><p>The amount to be withdrawn </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Asset identifier. </p></td>
+                  <td><p>The asset we want to withdraw </p></td>
+                </tr>
+
+                <tr>
+                  <td>ext</td>
+                  <td><a href="#vega.WithdrawExt">WithdrawExt</a></td>
+                  <td></td>
+                  <td><p>foreign chain specifics </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Withdrawal">Withdrawal</h3>
+        <p>The representation of a withdrawal in the vega network</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The id of the withdrawal </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The party initiating the withdrawal </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The amount to be withdrawn </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The asset we want to withdraw funds from </p></td>
+                </tr>
+
+                <tr>
+                  <td>status</td>
+                  <td><a href="#vega.Withdrawal.Status">Withdrawal.Status</a></td>
+                  <td></td>
+                  <td><p>The status of this withdrawal </p></td>
+                </tr>
+
+                <tr>
+                  <td>ref</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The reference which is used by the foreign chain
+to refer to this withdrawal </p></td>
+                </tr>
+
+                <tr>
+                  <td>expiry</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The time until when the withdrawal is valid </p></td>
+                </tr>
+
+                <tr>
+                  <td>ext</td>
+                  <td><a href="#vega.WithdrawExt">WithdrawExt</a></td>
+                  <td></td>
+                  <td><p>foreign chain specifis </p></td>
                 </tr>
 
             </tbody>
@@ -11723,6 +12161,42 @@ with a distressed party in order to zero-out the position of the party.</p></td>
                 <td>TRANSFER_TYPE_LIQUIDITY_FEE_PAY</td>
                 <td>12</td>
                 <td><p>Pay liquidity fee.</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Withdrawal.Status">Withdrawal.Status</h3>
+        <p>The status of the withdrawal</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>WITHDRAWAL_STATUS_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>The default value</p></td>
+              </tr>
+
+              <tr>
+                <td>WITHDRAWAL_STATUS_OPEN</td>
+                <td>1</td>
+                <td><p>The withdrawal is open and being processed by the network</p></td>
+              </tr>
+
+              <tr>
+                <td>WITHDRAWAL_STATUS_CANCELLED</td>
+                <td>2</td>
+                <td><p>The withdrawal have been cancelled</p></td>
+              </tr>
+
+              <tr>
+                <td>WITHDRAWAL_STATUS_FINALIZED</td>
+                <td>3</td>
+                <td><p>The withdrawal went through and is fully finalized (funds remove from the
+vega network, and unlocked from the foreign chain bridge)</p></td>
               </tr>
 
           </tbody>

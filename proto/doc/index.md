@@ -14,6 +14,8 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest)
+    - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
     - [EstimateFeeRequest](#api.EstimateFeeRequest)
     - [EstimateFeeResponse](#api.EstimateFeeResponse)
     - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
@@ -106,6 +108,10 @@
     - [TradesStream](#api.TradesStream)
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
+    - [WithdrawalRequest](#api.WithdrawalRequest)
+    - [WithdrawalResponse](#api.WithdrawalResponse)
+    - [WithdrawalsRequest](#api.WithdrawalsRequest)
+    - [WithdrawalsResponse](#api.WithdrawalsResponse)
 
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
@@ -197,6 +203,7 @@
     - [Account](#vega.Account)
     - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
+    - [Erc20WithdrawExt](#vega.Erc20WithdrawExt)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
@@ -233,7 +240,9 @@
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
-    - [Withdraw](#vega.Withdraw)
+    - [WithdrawExt](#vega.WithdrawExt)
+    - [WithdrawSubmission](#vega.WithdrawSubmission)
+    - [Withdrawal](#vega.Withdrawal)
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
@@ -247,6 +256,7 @@
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
+    - [Withdrawal.Status](#vega.Withdrawal.Status)
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -404,6 +414,43 @@ Request to subscribe to a stream of (Candles)[#vega.Candle].
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier. Required field. |
 | interval | [vega.Interval](#vega.Interval) |  | Time interval for the candles. Required field. |
+
+
+
+
+
+
+<a name="api.ERC20WithdrawalApprovalRequest"></a>
+
+### ERC20WithdrawalApprovalRequest
+The request to get all information required to bundle the call
+to finalize the withdrawal on the erc20 bridge
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdrawalID | [string](#string) |  | The ID of the withdrawal |
+
+
+
+
+
+
+<a name="api.ERC20WithdrawalApprovalResponse"></a>
+
+### ERC20WithdrawalApprovalResponse
+The response with all information required to bundle the call
+to finalize the withdrawal on the erc20 bridge
+function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| assetSource | [string](#string) |  | The address of asset on ethereum |
+| amount | [string](#string) |  | The amount to be withdrawn |
+| expiry | [int64](#int64) |  | The expiry / until what time the request is valid |
+| nonce | [string](#string) |  | The nonce, which is actually the internal reference for the withdrawal |
+| signatures | [string](#string) |  | The signatures bundle as hex encoded data, forward by 0x e.g: 0x &#43; sig1 &#43; sig2 &#43; ... &#43; sixN |
 
 
 
@@ -1597,7 +1644,7 @@ Request for preparing a withdrawal.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| withdraw | [vega.Withdraw](#vega.Withdraw) |  | An asset withdrawal. |
+| withdraw | [vega.WithdrawSubmission](#vega.WithdrawSubmission) |  | An asset withdrawal. |
 
 
 
@@ -1852,6 +1899,66 @@ Response for the current consensus coordinated time on the Vega network, referre
 
 
 
+<a name="api.WithdrawalRequest"></a>
+
+### WithdrawalRequest
+A request to get a specific withdrawal by ID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The id of the withdrawal |
+
+
+
+
+
+
+<a name="api.WithdrawalResponse"></a>
+
+### WithdrawalResponse
+A response for a withdrawal
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdrawal | [vega.Withdrawal](#vega.Withdrawal) |  | The withdrawal matching the ID from the request |
+
+
+
+
+
+
+<a name="api.WithdrawalsRequest"></a>
+
+### WithdrawalsRequest
+A request to get a list of withdrawal from a given party
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  | The party to get the withdrawals for |
+
+
+
+
+
+
+<a name="api.WithdrawalsResponse"></a>
+
+### WithdrawalsResponse
+The response for a list of withdrawals
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdrawals | [vega.Withdrawal](#vega.Withdrawal) | repeated | The list of withdrawals for the specified party |
+
+
+
+
+
+
 
 
 
@@ -1934,6 +2041,9 @@ Response for the current consensus coordinated time on the Vega network, referre
 | AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier. |
 | Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
 | EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
+| ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
+| Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
+| Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
 
 
 
@@ -2276,7 +2386,6 @@ An asset withdrawal for an ERC20 token.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
-| sourcePartyId | [string](#string) |  | The party identifier (pub-key) initiating the withdrawal. |
 | targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address. |
 | referenceNonce | [string](#string) |  | The reference nonce used for the transaction. |
 
@@ -3348,6 +3457,21 @@ referred to commonly as a candlestick or candle.
 
 
 
+<a name="vega.Erc20WithdrawExt"></a>
+
+### Erc20WithdrawExt
+An extension of data required for the withdraw submissions
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| receiverAddress | [string](#string) |  | The address into which the bridge will release the funds |
+
+
+
+
+
+
 <a name="vega.ErrorDetail"></a>
 
 ### ErrorDetail
@@ -4039,17 +4163,55 @@ Represents the response from a transfer.
 
 
 
-<a name="vega.Withdraw"></a>
+<a name="vega.WithdrawExt"></a>
 
-### Withdraw
-Represents a withdrawal of an asset by a party on Vega.
+### WithdrawExt
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | Unique party identifier affecting the withdrawal. |
-| amount | [uint64](#uint64) |  | Total amount to withdraw. |
-| asset | [string](#string) |  | Asset identifier. |
+| erc20 | [Erc20WithdrawExt](#vega.Erc20WithdrawExt) |  |  |
+
+
+
+
+
+
+<a name="vega.WithdrawSubmission"></a>
+
+### WithdrawSubmission
+A request for withdrawing funds from a trader
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  | The party which wants to withdraw funds |
+| amount | [uint64](#uint64) |  | The amount to be withdrawn |
+| asset | [string](#string) |  | The asset we want to withdraw |
+| ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifics |
+
+
+
+
+
+
+<a name="vega.Withdrawal"></a>
+
+### Withdrawal
+The representation of a withdrawal in the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | The id of the withdrawal |
+| partyID | [string](#string) |  | The party initiating the withdrawal |
+| amount | [uint64](#uint64) |  | The amount to be withdrawn |
+| asset | [string](#string) |  | The asset we want to withdraw funds from |
+| status | [Withdrawal.Status](#vega.Withdrawal.Status) |  | The status of this withdrawal |
+| ref | [string](#string) |  | The reference which is used by the foreign chain to refer to this withdrawal |
+| expiry | [int64](#int64) |  | The time until when the withdrawal is valid |
+| ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifis |
 
 
 
@@ -4270,6 +4432,20 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 | TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 | Receive maker fee. |
 | TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 | Pay infrastructure fee. |
 | TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
+
+
+
+<a name="vega.Withdrawal.Status"></a>
+
+### Withdrawal.Status
+The status of the withdrawal
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| WITHDRAWAL_STATUS_UNSPECIFIED | 0 | The default value |
+| WITHDRAWAL_STATUS_OPEN | 1 | The withdrawal is open and being processed by the network |
+| WITHDRAWAL_STATUS_CANCELLED | 2 | The withdrawal have been cancelled |
+| WITHDRAWAL_STATUS_FINALIZED | 3 | The withdrawal went through and is fully finalized (funds remove from the vega network, and unlocked from the foreign chain bridge) |
 
 
 

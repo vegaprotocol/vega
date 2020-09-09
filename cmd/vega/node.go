@@ -156,9 +156,10 @@ type NodeCommand struct {
 	genesisHandler *genesis.Handler
 
 	// plugins
-	settlePlugin *plugins.Positions
-	notaryPlugin *plugins.Notary
-	assetPlugin  *plugins.Asset
+	settlePlugin     *plugins.Positions
+	notaryPlugin     *plugins.Notary
+	assetPlugin      *plugins.Asset
+	withdrawalPlugin *plugins.Withdrawal
 }
 
 // Init initialises the node command.
@@ -225,6 +226,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.assetService,
 		l.feeService,
 		l.eventService,
+		l.withdrawalPlugin,
 		statusChecker,
 	)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })

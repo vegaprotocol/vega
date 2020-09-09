@@ -135,6 +135,26 @@ func (mr *MockTradingClientMockRecorder) PrepareVote(arg0, arg1 interface{}, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareVote", reflect.TypeOf((*MockTradingClient)(nil).PrepareVote), varargs...)
 }
 
+// PrepareWithdraw mocks base method
+func (m *MockTradingClient) PrepareWithdraw(arg0 context.Context, arg1 *api.PrepareWithdrawRequest, arg2 ...grpc.CallOption) (*api.PrepareWithdrawResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PrepareWithdraw", varargs...)
+	ret0, _ := ret[0].(*api.PrepareWithdrawResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PrepareWithdraw indicates an expected call of PrepareWithdraw
+func (mr *MockTradingClientMockRecorder) PrepareWithdraw(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareWithdraw", reflect.TypeOf((*MockTradingClient)(nil).PrepareWithdraw), varargs...)
+}
+
 // SubmitTransaction mocks base method
 func (m *MockTradingClient) SubmitTransaction(arg0 context.Context, arg1 *api.SubmitTransactionRequest, arg2 ...grpc.CallOption) (*api.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()

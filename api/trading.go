@@ -37,7 +37,7 @@ type TradeOrderService interface {
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	PrepareWithdraw(context.Context, *types.Withdraw) error
+	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
 }
 
 // GovernanceService ...
@@ -221,15 +221,22 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	msg, err := proto.Marshal(req.Evt)
+	msg, err := req.Evt.PrepareToSign()
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		return nil, apiError(codes.InvalidArgument, err)
 	}
 
 	// verify the signature then
 	err = verifySignature(s.log, msg, req.Signature, req.PubKey)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		// we try the other signature format
+		msg, err = proto.Marshal(req.Evt)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		}
+		if err = verifySignature(s.log, msg, req.Signature, req.PubKey); err != nil {
+			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		}
 	}
 
 	var ok = true

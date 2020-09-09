@@ -8,7 +8,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func (p *Processor) processWithdraw(ctx context.Context, w *types.Withdraw) error {
+var (
+	ErrMissingWithdrawERC20Ext = errors.New("missing withdraw submission erc20 ext")
+)
+
+func (p *Processor) processWithdraw(ctx context.Context, w *types.WithdrawSubmission) error {
 	asset, err := p.assets.Get(w.Asset)
 	if err != nil {
 		if err != nil {
@@ -24,7 +28,11 @@ func (p *Processor) processWithdraw(ctx context.Context, w *types.Withdraw) erro
 	case asset.IsBuiltinAsset():
 		return p.banking.WithdrawalBuiltinAsset(ctx, w.PartyID, w.Asset, w.Amount)
 	case asset.IsERC20():
-		return errors.New("unimplemented withdrawal for ERC20")
+		ext := w.Ext.GetErc20()
+		if ext == nil {
+			return ErrMissingWithdrawERC20Ext
+		}
+		return p.banking.LockWithdrawalERC20(ctx, w.PartyID, w.Asset, w.Amount, ext)
 	default:
 		return errors.New("unimplemented withdrawal")
 	}

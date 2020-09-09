@@ -74,6 +74,7 @@ const (
 	MarketCreatedEvent
 	AssetEvent
 	MarketTickEvent
+	WithdrawalEvent
 )
 
 var (
@@ -149,6 +150,7 @@ var (
 		MarketCreatedEvent:     "MarketCreatedEvent",
 		AssetEvent:             "AssetEvent",
 		MarketTickEvent:        "MarketTickEvent",
+		WithdrawalEvent:        "WithdrawalEvent",
 	}
 )
 
@@ -193,6 +195,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.Asset:
 		e := NewAssetEvent(ctx, tv)
+		return e, nil
+	case types.Withdrawal:
+		e := NewWithdrawalEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

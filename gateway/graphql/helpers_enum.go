@@ -6,6 +6,34 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+func convertWithdrawalStatusToProto(x WithdrawalStatus) (types.Withdrawal_Status, error) {
+	switch x {
+	case WithdrawalStatusOpen:
+		return types.Withdrawal_WITHDRAWAL_STATUS_OPEN, nil
+	case WithdrawalStatusCancelled:
+		return types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED, nil
+	case WithdrawalStatusFinalized:
+		return types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED, nil
+	default:
+		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
+		return types.Withdrawal_WITHDRAWAL_STATUS_UNSPECIFIED, err
+	}
+}
+
+func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStatus, error) {
+	switch x {
+	case types.Withdrawal_WITHDRAWAL_STATUS_OPEN:
+		return WithdrawalStatusOpen, nil
+	case types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED:
+		return WithdrawalStatusCancelled, nil
+	case types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED:
+		return WithdrawalStatusFinalized, nil
+	default:
+		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
+		return WithdrawalStatusOpen, err
+	}
+}
+
 func convertNodeSignatureKindToToProto(x NodeSignatureKind) (types.NodeSignatureKind, error) {
 	switch x {
 	case NodeSignatureKindAssetNew:
