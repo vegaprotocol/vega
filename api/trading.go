@@ -70,7 +70,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	defer metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", startTime)
 	err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	raw, err := proto.Marshal(req.Submission)
 	if err != nil {
