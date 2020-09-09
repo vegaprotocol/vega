@@ -270,6 +270,11 @@ func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
 
+	// ensure that if orderID is specified marketId is as well
+	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+		return nil, ErrInvalidOrderCancellation
+	}
+
 	if len(order.PartyID) > 0 {
 		if len(order.MarketID) > 0 {
 			if len(order.OrderID) > 0 {

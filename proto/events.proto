@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package vega;
+option go_package = "code.vegaprotocol.io/vega/proto";
+
+import "proto/markets.proto";
+import "proto/assets.proto";
+import "proto/governance.proto";
+import "proto/vega.proto";
+
+// MarketEvent - the common denominator for all market events
+// interface has a method to return a string for logging
+message MarketEvent {
+  string marketID = 1;
+  string payload = 2;
+}
+
+// TimeUpdate - event containing the latest block time
+message TimeUpdate {
+  int64 timestamp = 1;
+}
+
+// TransferResponses - a slice of transfer response objects
+message TransferResponses {
+  repeated TransferResponse responses = 1;
+}
+
+// PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
+message PositionResolution {
+  string marketID = 1;
+  int64 distressed = 2;
+  int64 closed = 3;
+  uint64 markPrice = 4;
+}
+
+// LossSocialization event amount of wins unable to be distributed
+message LossSocialization {
+  string marketID = 1;
+  string partyID = 2;
+  int64 amount = 3;
+}
+
+// TradeSettlement data, part of settle position event
+message TradeSettlement {
+  int64 size = 1;
+  uint64 price = 2;
+}
+
+// SettlePosition data for party: position settlements (part of trader position information)
+message SettlePosition {
+  string marketID = 1;
+  string partyID = 2;
+  uint64 price = 3;
+  repeated TradeSettlement tradeSettlements = 4;
+}
+
+// SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
+// be followed by a number of these events
+message SettleDistressed {
+  string marketID = 1;
+  string partyID = 2;
+  uint64 margin = 3;
+  uint64 price = 4;
+}
+
+// Time update for each market, can be used to see when new markets actually started in terms of block-time
+message MarketTick {
+  string ID = 1;
+  int64 time = 2;
+}
+
+// event types, 2 groups: actual single values, and then some events that capture a group of events
+enum BusEventType {
+    BUS_EVENT_TYPE_UNSPECIFIED = 0;
+    BUS_EVENT_TYPE_ALL = 1;
+    BUS_EVENT_TYPE_TIME_UPDATE = 2;
+    BUS_EVENT_TYPE_TRANSFER_RESPONSES = 3;
+    BUS_EVENT_TYPE_POSITION_RESOLUTION = 4;
+    BUS_EVENT_TYPE_ORDER = 5;
+    BUS_EVENT_TYPE_ACCOUNT = 6;
+    BUS_EVENT_TYPE_PARTY = 7;
+    BUS_EVENT_TYPE_TRADE = 8;
+    BUS_EVENT_TYPE_MARGIN_LEVELS = 9;
+    BUS_EVENT_TYPE_PROPOSAL = 10;
+    BUS_EVENT_TYPE_VOTE = 11;
+    BUS_EVENT_TYPE_MARKET_DATA = 12;
+    BUS_EVENT_TYPE_NODE_SIGNATURE = 13;
+    BUS_EVENT_TYPE_LOSS_SOCIALIZATION = 14;
+    BUS_EVENT_TYPE_SETTLE_POSITION = 15;
+    BUS_EVENT_TYPE_SETTLE_DISTRESSED = 16;
+    BUS_EVENT_TYPE_MARKET_CREATED = 17;
+    BUS_EVENT_TYPE_ASSET = 18;
+    BUS_EVENT_TYPE_MARKET_TICK = 19;
+
+    BUS_EVENT_TYPE_MARKET = 101; // special event for all events implementing a specific interface
+}
+
+// BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
+// the actual data is set as a oneof field
+message BusEvent {
+  string ID = 1;
+  BusEventType type = 2;
+  oneof event {
+    TimeUpdate timeUpdate = 101;
+    TransferResponses transferResponses = 102;
+    PositionResolution positionResolution = 103;
+    Order order = 104;
+    Account account = 105;
+    Party party = 106;
+    Trade trade = 107;
+    MarginLevels marginLevels = 108;
+    Proposal proposal = 109;
+    Vote vote = 110;
+    MarketData marketData = 111;
+    NodeSignature nodeSignature = 112;
+    LossSocialization lossSocialization = 113;
+    SettlePosition settlePosition = 114;
+    SettleDistressed settleDistressed = 115;
+    Market marketCreated = 116;
+    Asset asset = 117;
+    MarketTick marketTick = 118;
+    MarketEvent market = 201;
+  }
+}

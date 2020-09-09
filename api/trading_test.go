@@ -243,6 +243,7 @@ func getTestGRPCServer(
 	aplugin := plugins.NewAsset(context.Background())
 	assetService := assets.NewService(logger, conf.Assets, aplugin)
 	feeService := fee.NewService(logger, conf.Execution.Fee, marketStore)
+	eventService := subscribers.NewService(broker)
 
 	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
 
@@ -265,6 +266,7 @@ func getTestGRPCServer(
 		evtfwd,
 		assetService,
 		feeService,
+		eventService,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

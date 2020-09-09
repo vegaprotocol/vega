@@ -7,6 +7,7 @@ import "proto/markets.proto";
 import "proto/governance.proto";
 import "proto/chain_events.proto";
 import "proto/assets.proto";
+import "proto/events.proto";
 
 package api;
 
@@ -268,6 +269,9 @@ service trading_data {
 
   // Subscribe to a stream of proposal votes
   rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
+
+  // Subscribe to a stream of events from the core
+  rpc ObserveEventBus(ObserveEventsRequest) returns (stream ObserveEventsResponse);
 
   // -- Misc --
 
@@ -1018,4 +1022,16 @@ message EstimateFeeRequest {
 message EstimateFeeResponse {
   // Summary of the estimated fees for this order if it were to trade now
   vega.Fee fee = 2;
+}
+
+// Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+message ObserveEventsRequest {
+  repeated vega.BusEventType type = 1;
+  string marketID = 2;
+  string partyID = 3;
+}
+
+// Response type streamed back when observing events. Slice of wrapped events
+message ObserveEventsResponse {
+  repeated vega.BusEvent events = 1;
 }
