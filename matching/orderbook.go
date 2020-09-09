@@ -221,8 +221,7 @@ func (b *OrderBook) LeaveAuction() ([]*UncrossedOrder, []*types.Order, error) {
 		return nil, nil, err
 	}
 	// Return all the orders that have been cancelled from the book
-	ordersToCancel := buyOrdersToCancel
-	ordersToCancel = append(ordersToCancel, sellOrdersToCancel...)
+	ordersToCancel := append(buyOrdersToCancel, sellOrdersToCancel...)
 
 	// Flip back to continuous
 	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
