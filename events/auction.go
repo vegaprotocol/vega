@@ -14,7 +14,7 @@ type Auction struct {
 	auctionStop int64
 	// is/was this an opening auction
 	openingAuction bool
-	// are we entering or leaving the auction
+	// are we leaving the auction (=true) or entering an auction (=false)
 	leave bool
 }
 
@@ -30,7 +30,7 @@ func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, st
 	}
 }
 
-// Auction returns the action performed (either true=leave auction, or false=enter)
+// Auction returns the action performed (either true=leave auction, or false=entering auction)
 func (a *Auction) Auction() bool {
 	return a.leave
 }
