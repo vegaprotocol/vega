@@ -85,6 +85,9 @@ type Market struct {
 	// deps engines
 	collateral *collateral.Engine
 
+	// auction triggers
+	auctionTriggers []AuctionTrigger
+
 	broker Broker
 	closed bool
 
@@ -128,6 +131,7 @@ func NewMarket(
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
+	auctionTriggers []AuctionTrigger,
 ) (*Market, error) {
 
 	if len(mkt.Id) == 0 {
@@ -180,6 +184,10 @@ func NewMarket(
 		mode = types.MarketState_MARKET_STATE_AUCTION
 	}
 
+	if auctionTriggers == nil {
+		auctionTriggers = make([]AuctionTrigger, 0)
+	}
+
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -197,6 +205,7 @@ func NewMarket(
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
 		tradeMode:          mode,
+		auctionTriggers:    auctionTriggers,
 	}
 	return market, nil
 }
@@ -255,6 +264,8 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.currentTime = t
 
 	// TODO(): handle market start time
+
+	m.auctionModeTimeBasedSemaphore(ctx, t)
 
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Calculating risk factors (if required)",
@@ -361,9 +372,58 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
+func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time) {
+	isMarketCurrentlyInAuction := m.GetTradingMode() == types.MarketState_MARKET_STATE_AUCTION
+
+	if isMarketCurrentlyInAuction {
+		if m.shouldLeaveAuctionPerTime(t) && !m.shouldEnterAuctionPerTime(t) {
+			indicativeUncrossingPrice, indicativeVolume, _ := m.matching.GetIndicativePriceAndVolume()
+			if indicativeVolume == 0 || !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
+				m.LeaveAuction(ctx)
+			}
+
+		}
+	} else {
+		if m.shouldEnterAuctionPerTime(t) {
+			m.EnterAuction(ctx)
+		}
+	}
+}
+
+func (m *Market) shouldEnterAuctionPerTime(t time.Time) bool {
+	b := false
+	for _, trigger := range m.auctionTriggers {
+		if trigger.EnterPerTime(t) {
+			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
+		}
+	}
+	return b
+}
+
+func (m *Market) shouldLeaveAuctionPerTime(t time.Time) bool {
+	b := true
+	for _, trigger := range m.auctionTriggers {
+		if !trigger.LeavePerTime(t) {
+			b = false // Don't exit early in case multiple triggers hit and internal stage changes relevant
+		}
+	}
+	return b
+}
+
+func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
+	b := false
+	for _, trigger := range m.auctionTriggers {
+		if trigger.EnterPerPrice(price) {
+			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
+		}
+	}
+	return b
+}
+
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
+	m.matching.EnterAuction() // TODO (WG 03/09/20): Cancel orders, calling this only to be able the test the triggers for now.
 	// Change market type to auction
 
 	// Check the orderbook for any non auction friendly orders
@@ -375,11 +435,18 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	// @TODO this ought to come from m.mkt
 	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
 	if fba := m.mkt.GetDiscrete(); fba != nil {
+
 		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	}
+	m.matching.LeaveAuction() // TODO (WG 03/09/20): Push out trades, calling this only to be able the test the triggers for now.
 	// Change market type to continuous trading
 
 	// Move any parked orders back into the orderbook
+}
+
+// GetTradingMode : Return trading mode that the market is currently in
+func (m *Market) GetTradingMode() types.MarketState {
+	return m.tradeMode // TODO (WG 03/09/20): Adding this only to be able the test the triggers for now. Needs to be reconciled with orderbook's marketState - don't need both.
 }
 
 // SubmitOrder submits the given order
@@ -519,8 +586,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, ErrMarginCheckFailed
 	}
 
-	// first we call the order book to get the list of trades
-	trades, err := m.matching.GetTrades(order)
+	// first we call the order book to evaluate auction triggers and get the list of trades
+	trades, err := m.evaluateAuctionTriggersAndGetTrades(ctx, order)
 	if err != nil {
 		return nil, m.unregisterAndReject(ctx, order, err)
 	}
@@ -606,6 +673,15 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
+}
+
+func (m *Market) evaluateAuctionTriggersAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
+	trades, err := m.matching.GetTrades(order)
+	if err == nil && len(trades) > 0 && m.shouldEnterAuctionPerPrice(trades[len(trades)-1].Price) {
+		m.EnterAuction(ctx)
+		trades = make([]*types.Trade, 0)
+	}
+	return trades, err
 }
 
 func (m *Market) addParty(party string) {
@@ -1704,8 +1780,8 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			err = fmt.Errorf("order cancellation failed (no error given)")
 		}
 	} else {
-		// calculates the fees
-		trades, err := m.matching.GetTrades(newOrder)
+		// first we call the order book to evaluate auction triggers and get the list of trades
+		trades, err := m.evaluateAuctionTriggersAndGetTrades(ctx, newOrder)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, newOrder, err)
 		}

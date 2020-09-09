@@ -5,12 +5,14 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -165,6 +167,11 @@ type FeeService interface {
 	EstimateFee(context.Context, *types.Order) (*types.Fee, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/api EventService
+type EventService interface {
+	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, filters ...subscribers.EventFilter) <-chan []*types.BusEvent
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -183,6 +190,7 @@ type tradingDataService struct {
 	governanceService       GovernanceDataService
 	AssetService            AssetService
 	FeeService              FeeService
+	eventService            EventService
 	statusChecker           *monitoring.Status
 	ctx                     context.Context
 }
@@ -1769,6 +1777,51 @@ func (t *tradingDataService) ObserveProposalVotes(
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 				}
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-t.ctx.Done():
+			return apiError(codes.Aborted, ErrServerShutdown)
+		}
+	}
+}
+
+func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, stream protoapi.TradingData_ObserveEventBusServer) error {
+	startTime := vegatime.Now()
+	defer metrics.APIRequestAndTimeGRPC("ObserveEventBus", startTime)
+	if err := in.Validate(); err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	types, err := events.ProtoToInternal(in.Type...)
+	if err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+	filters := []subscribers.EventFilter{}
+	if len(in.MarketID) > 0 && len(in.PartyID) > 0 {
+		filters = append(filters, events.GetPartyAndMarketFilter(in.MarketID, in.PartyID))
+	} else {
+		if len(in.MarketID) > 0 {
+			filters = append(filters, events.GetMarketIDFilter(in.MarketID))
+		}
+		if len(in.PartyID) > 0 {
+			filters = append(filters, events.GetPartyIDFilter(in.PartyID))
+		}
+	}
+	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
+	for {
+		select {
+		case data, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			resp := &protoapi.ObserveEventsResponse{
+				Events: data,
+			}
+			if err := stream.Send(resp); err != nil {
+				t.log.Error("Error sending event on stream", logging.Error(err))
+				return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())

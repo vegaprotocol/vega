@@ -23,3 +23,20 @@ func NewTransferResponse(ctx context.Context, response []*types.TransferResponse
 func (t *TransferResponse) TransferResponses() []*types.TransferResponse {
 	return t.responses
 }
+
+func (t *TransferResponse) Proto() types.TransferResponses {
+	return types.TransferResponses{
+		Responses: t.responses,
+	}
+}
+
+func (t TransferResponse) StreamMessage() *types.BusEvent {
+	p := t.Proto()
+	return &types.BusEvent{
+		ID:   t.traceID,
+		Type: t.et.ToProto(),
+		Event: &types.BusEvent_TransferResponses{
+			TransferResponses: &p,
+		},
+	}
+}

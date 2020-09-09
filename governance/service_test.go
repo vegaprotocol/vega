@@ -136,6 +136,31 @@ func testPrepareProposalNormal(t *testing.T) {
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
 
+func testPrepareProposalEmpty(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	updateNetwork := types.UpdateNetwork{
+		Changes: &types.NetworkConfiguration{},
+	}
+	terms := types.ProposalTerms{
+		Change: &types.ProposalTerms_UpdateNetwork{
+			UpdateNetwork: &updateNetwork,
+		},
+	}
+
+	proposal, err := svc.PrepareProposal(svc.ctx, "", "", &terms)
+
+	assert.Error(t, err)
+	assert.Nil(t, proposal)
+}
+
+func TestPrepareProposal(t *testing.T) {
+	t.Run("Prepare a normal proposal", testPrepareProposalNormal)
+	t.Run("Prepare an empty proposal", testPrepareProposalEmpty)
+	t.Run("Prepare a proposal - fail same timestamps", testPrepareProposalWithAllSameTimestamps)
+}
+
 func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
@@ -161,30 +186,5 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 	testAuthor := "test-author"
 	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
-	assert.EqualError(t, err, governance.ErrInvalidProposalTerms.Error())
-}
-
-func testPrepareProposalEmpty(t *testing.T) {
-	svc := newTestService(t)
-	defer svc.ctrl.Finish()
-
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{},
-	}
-	terms := types.ProposalTerms{
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
-		},
-	}
-
-	proposal, err := svc.PrepareProposal(svc.ctx, "", "", &terms)
-
-	assert.Error(t, err)
-	assert.Nil(t, proposal)
-}
-
-func TestPrepareProposal(t *testing.T) {
-	t.Run("Prepare a normal proposal", testPrepareProposalNormal)
-	t.Run("Prepare a proposal - fail same timestamps", testPrepareProposalWithAllSameTimestamps)
-	t.Run("Prepare an empty proposal", testPrepareProposalEmpty)
+	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
 }

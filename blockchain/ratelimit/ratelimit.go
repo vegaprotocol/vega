@@ -55,7 +55,7 @@ func (r *Rates) NextBlock() {
 		return
 	}
 
-	for key, _ := range r.entries {
+	for key := range r.entries {
 		if r.Count(key) == 0 {
 			delete(r.entries, key)
 		}

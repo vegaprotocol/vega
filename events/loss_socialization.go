@@ -1,6 +1,10 @@
 package events
 
-import "context"
+import (
+	"context"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
 
 type LossSoc struct {
 	*Base
@@ -32,4 +36,23 @@ func (l LossSoc) Amount() int64 {
 
 func (l LossSoc) AmountLost() int64 {
 	return l.amount
+}
+
+func (l LossSoc) Proto() types.LossSocialization {
+	return types.LossSocialization{
+		MarketID: l.marketID,
+		PartyID:  l.partyID,
+		Amount:   l.amount,
+	}
+}
+
+func (l LossSoc) StreamMessage() *types.BusEvent {
+	p := l.Proto()
+	return &types.BusEvent{
+		ID:   l.traceID,
+		Type: l.et.ToProto(),
+		Event: &types.BusEvent_LossSocialization{
+			LossSocialization: &p,
+		},
+	}
 }

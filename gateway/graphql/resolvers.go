@@ -1781,22 +1781,18 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, party string, market string) (*PreparedCancelOrder, error) {
+func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, party string, market *string) (*PreparedCancelOrder, error) {
 	order := &types.OrderCancellation{}
 
-	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	if len(market) <= 0 {
-		return nil, errors.New("market missing or empty")
+	if market != nil {
+		order.MarketID = *market
 	}
-	order.MarketID = market
-	if len(id) == 0 {
-		return nil, errors.New("id missing or empty")
+	if id != nil {
+		order.OrderID = *id
 	}
-	order.OrderID = id
 	if len(party) == 0 {
 		return nil, errors.New("party missing or empty")
 	}
-
 	order.PartyID = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)

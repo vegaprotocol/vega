@@ -444,7 +444,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
 
 	// now instanciate the blockchain layer
-	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel, l.genesisHandler)
+	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, commander, l.cancel, l.genesisHandler, l.topology)
 	if err != nil {
 		return errors.Wrap(err, "unable to start the blockchain")
 	}
@@ -494,6 +494,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) })
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
+	l.eventService = subscribers.NewService(l.broker)
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) })
 	return
 }

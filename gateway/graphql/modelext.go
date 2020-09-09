@@ -356,7 +356,7 @@ func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
 // NewMarketTradingModeFromProto ...
 func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	if ptm == nil {
-		return nil, ErrNilTradingMode
+		ptm = defaultTradingMode()
 	}
 	switch ptmimpl := ptm.(type) {
 	case *types.NewMarketConfiguration_Continuous:
@@ -602,6 +602,9 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 }
 
 func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
+	if instrument == nil {
+		instrument = defaultInstrumentConfiguration()
+	}
 	if future := instrument.GetFuture(); future != nil {
 		i.FutureProduct = &FutureProduct{
 			Asset:    &Asset{ID: future.Asset},
@@ -615,6 +618,9 @@ func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.Instr
 
 // RiskConfigurationFromProto ...
 func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskModel, error) {
+	if newMarket.RiskParameters == nil {
+		newMarket.RiskParameters = defaultRiskParameters()
+	}
 	switch params := newMarket.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_Simple:
 		return &SimpleRiskModel{
@@ -641,7 +647,7 @@ func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskMo
 // NewMarketFromProto ...
 func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, error) {
 	if newMarket == nil {
-		return nil, ErrNilMarket
+		newMarket = defaultNewMarket()
 	}
 	risk, err := RiskConfigurationFromProto(newMarket)
 	if err != nil {
@@ -664,6 +670,7 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 		TradingMode:    mode,
 		Metadata:       newMarket.Metadata,
 	}
+
 	result.Instrument.assignProductFromProto(newMarket.Instrument)
 	return result, nil
 }
@@ -1090,4 +1097,55 @@ func NewAssetFromProto(newAsset *types.NewAsset) (*NewAsset, error) {
 	return &NewAsset{
 		Source: source,
 	}, nil
+}
+
+func defaultFutureProductConfiguration() *types.InstrumentConfiguration_Future {
+	return &types.InstrumentConfiguration_Future{
+		Future: &types.FutureProduct{
+			Asset:    "",
+			Maturity: "",
+		},
+	}
+}
+
+func defaultInstrumentConfiguration() *types.InstrumentConfiguration {
+	return &types.InstrumentConfiguration{
+		Name:      "",
+		Code:      "",
+		BaseName:  "",
+		QuoteName: "",
+		Product:   defaultFutureProductConfiguration(),
+	}
+}
+
+func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
+	return &types.NewMarketConfiguration_LogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0,
+			Tau:                   0,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0,
+				Sigma: 0,
+			},
+		},
+	}
+}
+
+func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
+	return &types.NewMarketConfiguration_Continuous{
+		Continuous: &types.ContinuousTrading{
+			TickSize: "0",
+		},
+	}
+}
+
+func defaultNewMarket() *types.NewMarketConfiguration {
+	return &types.NewMarketConfiguration{
+		Instrument:     defaultInstrumentConfiguration(),
+		RiskParameters: defaultRiskParameters(),
+		Metadata:       []string{},
+		DecimalPlaces:  0,
+		TradingMode:    defaultTradingMode(),
+	}
 }

@@ -269,7 +269,7 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, nil
 	case ProposalRejectionReasonNoProduct:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, nil
-	case ProposalRejectionReasonUnuspportedProduct:
+	case ProposalRejectionReasonUnsupportedProduct:
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, nil
 	case ProposalRejectionReasonInvalidFutureMaturityTimestamp:
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, nil
@@ -310,7 +310,7 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 	case types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT:
 		return ProposalRejectionReasonNoProduct, nil
 	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT:
-		return ProposalRejectionReasonUnuspportedProduct, nil
+		return ProposalRejectionReasonUnsupportedProduct, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP:
 		return ProposalRejectionReasonInvalidFutureMaturityTimestamp, nil
 	case types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED:

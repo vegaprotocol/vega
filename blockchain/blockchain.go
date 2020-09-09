@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/noop"
 	"code.vegaprotocol.io/vega/blockchain/tm"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/stats"
 )
 
 var (
@@ -47,7 +46,6 @@ type Blockchain struct {
 	abciEngine ABCIEngine
 	time       TimeService
 	processor  *codec
-	stats      *stats.Blockchain
 }
 
 func New(
@@ -55,10 +53,10 @@ func New(
 	cfg Config,
 	abciEngine ABCIEngine,
 	time TimeService,
-	stats *stats.Blockchain,
 	commander Commander,
 	cancel func(),
 	ghandler GenesisHandler,
+	top tm.ValidatorTopology,
 ) (*Blockchain, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -75,12 +73,12 @@ func New(
 
 	switch strings.ToLower(cfg.ChainProvider) {
 	case "tendermint":
-		chain, err = tm.New(log, cfg.Tendermint, stats, proc, abciEngine, time, cancel, ghandler)
+		chain, err = tm.New(log, cfg.Tendermint, proc, abciEngine, time, cancel, ghandler, top)
 		if err == nil {
 			clt, err = tm.NewClient(cfg.Tendermint)
 		}
 	case "noop":
-		noopchain := noop.New(log, cfg.Noop, stats, time, proc, abciEngine)
+		noopchain := noop.New(log, cfg.Noop, time, proc, abciEngine)
 		chain = noopchain
 		clt = noopchain
 	default:
@@ -101,7 +99,6 @@ func New(
 		abciEngine: abciEngine,
 		time:       time,
 		processor:  proc,
-		stats:      stats,
 	}, nil
 }
 
