@@ -84,10 +84,6 @@ func (tm *Tendermint) setBatchStats() {
 	}
 	averageTxTotal := totalTx / uint64(len(tm.txTotals))
 
-	tm.stats.log.Debug("Batch stats for height",
-		logging.Uint64("height", tm.stats.Blockchain.Height()),
-		logging.Uint64("average-tx-total", averageTxTotal))
-
 	tm.stats.Blockchain.SetAverageTxPerBatch(averageTxTotal)
 	tm.stats.Blockchain.SetTotalTxLastBatch(tm.stats.Blockchain.TotalTxCurrentBatch())
 	tm.stats.Blockchain.SetTotalTxCurrentBatch(0)
