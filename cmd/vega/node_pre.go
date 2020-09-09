@@ -460,6 +460,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.executionEngine,
 		commander,
 		l.collateral,
+		l.genesisHandler,
 		l.governance,
 		l.notary,
 		l.stats.Blockchain,

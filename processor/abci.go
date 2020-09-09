@@ -11,12 +11,14 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/contextutil"
+	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/proto/crypto/keys"
 )
 
 type App struct {
@@ -39,6 +41,7 @@ type App struct {
 	erc        ExtResChecker
 	evtfwd     EvtForwarder
 	exec       ExecutionEngine
+	ghandler   *genesis.Handler
 	gov        GovernanceEngine
 	notary     Notary
 	stats      Stats
@@ -58,6 +61,7 @@ func NewApp(
 	exec ExecutionEngine,
 	cmd Commander,
 	col Collateral,
+	ghandler *genesis.Handler,
 	gov GovernanceEngine,
 	notary Notary,
 	stats Stats,
@@ -85,6 +89,7 @@ func NewApp(
 		erc:        erc,
 		evtfwd:     evtfwd,
 		exec:       exec,
+		ghandler:   ghandler,
 		gov:        gov,
 		notary:     notary,
 		stats:      stats,
@@ -94,6 +99,7 @@ func NewApp(
 	}
 
 	// setup handlers
+	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnDeliverTx = app.OnDeliverTx
@@ -123,6 +129,30 @@ func (app *App) cancel() {
 	if fn := app.cancelFn; fn != nil {
 		fn()
 	}
+}
+
+func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+	vators := make([][]byte, 0, len(req.Validators))
+	// get just the pubkeys out of the validator list
+	for _, v := range req.Validators {
+		var data []byte
+		switch t := v.PubKey.Sum.(type) {
+		case *keys.PublicKey_Ed25519:
+			data = t.Ed25519
+		}
+
+		if len(data) > 0 {
+			vators = append(vators, data)
+		}
+	}
+
+	if err := app.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
+		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
+		panic(err)
+	}
+
+	return tmtypes.ResponseInitChain{}
+
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block
