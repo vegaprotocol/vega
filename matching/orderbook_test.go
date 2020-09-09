@@ -41,7 +41,8 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice, nil)
+	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice,
+		types.MarketState_MARKET_STATE_CONTINUOUS)
 
 	tob.OrderBook.LogRemovedOrdersDebug = true
 	return &tob

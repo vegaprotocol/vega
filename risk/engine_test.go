@@ -294,7 +294,8 @@ func testMarginWithOrderInBook(t *testing.T) {
 	// instantiate the book then fill it with the orders
 
 	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), nil)
+		log, conf.Matching, marketID, uint64(markPrice),
+		types.MarketState_MARKET_STATE_CONTINUOUS)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -399,7 +400,8 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	// instantiate the book then fill it with the orders
 
 	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), nil)
+		log, conf.Matching, marketID, uint64(markPrice),
+		types.MarketState_MARKET_STATE_CONTINUOUS)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{

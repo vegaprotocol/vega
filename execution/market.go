@@ -153,8 +153,13 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
+	marketState := types.MarketState_MARKET_STATE_CONTINUOUS
+	if mkt.OpeningAuction != nil {
+		marketState = types.MarketState_MARKET_STATE_AUCTION
+	}
+
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice, mkt.OpeningAuction)
+		tradableInstrument.Instrument.InitialMarkPrice, marketState)
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,

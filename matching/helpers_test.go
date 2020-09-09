@@ -25,7 +25,8 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100, nil)
+	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100,
+		types.MarketState_MARKET_STATE_CONTINUOUS)
 
 	// Turn on all the debug levels so we can cover more lines of code
 	tob.OrderBook.LogPriceLevelsDebug = true
