@@ -1,4 +1,4 @@
-package tm
+package abci
 
 import (
 	"context"
@@ -6,13 +6,13 @@ import (
 	"os"
 	"time"
 
+	"code.vegaprotocol.io/vega/vegatime"
+
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 var (
@@ -24,14 +24,12 @@ type Client struct {
 	tmclt *tmclihttp.HTTP
 }
 
-func NewClient(cfg Config) (*Client, error) {
-	if len(cfg.ClientAddr) <= 0 {
+func NewClient(addr string) (*Client, error) {
+	if len(addr) <= 0 {
 		return nil, ErrEmptyClientAddr
 	}
-	if len(cfg.ClientEndpoint) <= 0 {
-		return nil, ErrEmptyClientEndpoint
-	}
-	clt, err := tmclihttp.New(cfg.ClientAddr, cfg.ClientEndpoint)
+
+	clt, err := tmclihttp.New(addr, "/websocket")
 	if err != nil {
 		return nil, err
 	}

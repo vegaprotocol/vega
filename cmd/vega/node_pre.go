@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -434,22 +435,46 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
-	// TODO(jeremy): for now we assume a node started without the stores support
-	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, l.erc, l.banking)
+	// now instanciate the blockchain layer
+	app, err := processor.NewApp(
+		l.Log,
+		l.conf.Processor,
+		l.cancel,
+		l.assets,
+		l.banking,
+		l.broker,
+		l.erc,
+		l.evtfwd,
+		l.executionEngine,
+		commander,
+		l.collateral,
+		l.genesisHandler,
+		l.governance,
+		l.notary,
+		l.stats.Blockchain,
+		l.timeService,
+		l.topology,
+		l.nodeWallet,
+	)
 	if err != nil {
 		return err
 	}
 
-	// now instanciate the blockchain layer
-	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, commander, l.cancel, l.genesisHandler, l.topology)
-	if err != nil {
-		return errors.Wrap(err, "unable to start the blockchain")
+	srv := app.Abci().NewServer(l.Log, l.conf.Blockchain)
+	if err := srv.Start(); err != nil {
+		return err
 	}
+	l.abciServer = srv
+
+	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
+	if err != nil {
+		return err
+	}
+	l.blockchainClient = blockchain.NewClient(abciClt)
+	commander.SetChain(l.blockchainClient)
 
 	// get the chain client as well.
-	l.blockchainClient = l.blockchain.Client()
-	l.topology.SetChain(l.blockchain.Client())
+	l.topology.SetChain(l.blockchainClient)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
@@ -481,14 +506,13 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
-		func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) },
+		func(cfg config.Config) { l.abciServer.ReloadConf(cfg.Blockchain) },
 		func(cfg config.Config) { l.topology.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.erc.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
-		func(cfg config.Config) { l.processor.ReloadConf(cfg.Processor) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },

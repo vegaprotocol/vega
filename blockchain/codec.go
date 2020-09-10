@@ -84,7 +84,7 @@ func (c *codec) Process(payload []byte) error {
 	// get the block context, add transaction hash as trace ID
 	ctx := contextutil.WithTraceID(context.Background(), hexPayloadHash)
 
-	tx, err := types.NewTxFromSignedBundlePayload(payload)
+	tx, _, err := types.NewTxFromSignedBundlePayload(payload)
 	if err != nil {
 		c.log.Error(err.Error())
 		return err
