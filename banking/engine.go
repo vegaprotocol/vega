@@ -426,7 +426,11 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 			// withdrawal was already canceled or finalized
 			return ErrInvalidWithdrawalState
 		}
+		now, _ := e.tsvc.GetTimeNow()
+		// update with finalize time + tx hash
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+		w.WithdrawnTimestamp = now.UnixNano()
+		w.TxHash = aa.ref.hash
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, aa.withdrawal.nonce}
 		return e.finalizeWithdrawal(ctx, w.PartyID, w.Asset, w.Amount)
@@ -474,12 +478,13 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 
 func (e *Engine) newWithdrawal(partyID, asset string, amount uint64, expiry time.Time, now time.Time, wext *types.WithdrawExt) (w *types.Withdrawal, ref *big.Int) {
 	w = &types.Withdrawal{
-		Status:  types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
-		PartyID: partyID,
-		Asset:   asset,
-		Amount:  amount,
-		Expiry:  expiry.Unix(),
-		Ext:     wext,
+		Status:           types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
+		PartyID:          partyID,
+		Asset:            asset,
+		Amount:           amount,
+		Expiry:           expiry.Unix(),
+		Ext:              wext,
+		CreatedTimestamp: now.UnixNano(),
 	}
 	return w, e.idgen.SetID(w, now)
 }

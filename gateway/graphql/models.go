@@ -658,6 +658,12 @@ type Withdrawal struct {
 	Ref string `json:"ref"`
 	// The time until when the withdrawal will be valid (RFC3339Nano)
 	Expiry string `json:"expiry"`
+	// Time at which the withdrawal was created (RFC3339Nano)
+	CreatedTimestamp string `json:"createdTimestamp"`
+	// Time at which the withdrawal was finalized (RFC3339Nano)
+	WithdrawnTimestamp *string `json:"withdrawnTimestamp"`
+	// Hash of the transaction on the foreign chain
+	TxHash *string `json:"txHash"`
 	// Foreign chain specific details about the withdrawal
 	Details WithdrawalDetails `json:"details"`
 }

@@ -4214,6 +4214,9 @@ The representation of a withdrawal in the vega network
 | status | [Withdrawal.Status](#vega.Withdrawal.Status) |  | The status of this withdrawal |
 | ref | [string](#string) |  | The reference which is used by the foreign chain to refer to this withdrawal |
 | expiry | [int64](#int64) |  | The time until when the withdrawal is valid |
+| txHash | [string](#string) |  | The hash of the foreign chain for this transaction |
+| createdTimestamp | [int64](#int64) |  | The time at which the network started to process this withdrawal |
+| withdrawnTimestamp | [int64](#int64) |  | The time a which the withdrawal was finalized by the network |
 | ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifis |
 
 

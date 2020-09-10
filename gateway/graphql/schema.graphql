@@ -1171,6 +1171,12 @@ type Withdrawal {
   ref: String!
   "The time until when the withdrawal will be valid (RFC3339Nano)"
   expiry: String!
+  "Time at which the withdrawal was created (RFC3339Nano)"
+  createdTimestamp: String!
+  "Time at which the withdrawal was finalized (RFC3339Nano)"
+  withdrawnTimestamp: String
+  "Hash of the transaction on the foreign chain"
+  txHash: String
   "Foreign chain specific details about the withdrawal"
   details: WithdrawalDetails
 }

@@ -4301,6 +4301,20 @@
           "format": "int64",
           "title": "The time until when the withdrawal is valid"
         },
+        "txHash": {
+          "type": "string",
+          "title": "The hash of the foreign chain for this transaction"
+        },
+        "createdTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time at which the network started to process this withdrawal"
+        },
+        "withdrawnTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time a which the withdrawal was finalized by the network"
+        },
         "ext": {
           "$ref": "#/definitions/vegaWithdrawExt",
           "title": "foreign chain specifis"

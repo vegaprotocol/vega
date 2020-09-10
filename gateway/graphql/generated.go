@@ -505,14 +505,17 @@ type ComplexityRoot struct {
 	}
 
 	Withdrawal struct {
-		Amount  func(childComplexity int) int
-		Asset   func(childComplexity int) int
-		Details func(childComplexity int) int
-		Expiry  func(childComplexity int) int
-		ID      func(childComplexity int) int
-		Party   func(childComplexity int) int
-		Ref     func(childComplexity int) int
-		Status  func(childComplexity int) int
+		Amount             func(childComplexity int) int
+		Asset              func(childComplexity int) int
+		CreatedTimestamp   func(childComplexity int) int
+		Details            func(childComplexity int) int
+		Expiry             func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		Party              func(childComplexity int) int
+		Ref                func(childComplexity int) int
+		Status             func(childComplexity int) int
+		TxHash             func(childComplexity int) int
+		WithdrawnTimestamp func(childComplexity int) int
 	}
 }
 
@@ -2914,6 +2917,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Withdrawal.Asset(childComplexity), true
 
+	case "Withdrawal.createdTimestamp":
+		if e.complexity.Withdrawal.CreatedTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.CreatedTimestamp(childComplexity), true
+
 	case "Withdrawal.details":
 		if e.complexity.Withdrawal.Details == nil {
 			break
@@ -2955,6 +2965,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Withdrawal.Status(childComplexity), true
+
+	case "Withdrawal.txHash":
+		if e.complexity.Withdrawal.TxHash == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.TxHash(childComplexity), true
+
+	case "Withdrawal.withdrawnTimestamp":
+		if e.complexity.Withdrawal.WithdrawnTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Withdrawal.WithdrawnTimestamp(childComplexity), true
 
 	}
 	return 0, false
@@ -4210,6 +4234,12 @@ type Withdrawal {
   ref: String!
   "The time until when the withdrawal will be valid (RFC3339Nano)"
   expiry: String!
+  "Time at which the withdrawal was created (RFC3339Nano)"
+  createdTimestamp: String!
+  "Time at which the withdrawal was finalized (RFC3339Nano)"
+  withdrawnTimestamp: String
+  "Hash of the transaction on the foreign chain"
+  txHash: String
   "Foreign chain specific details about the withdrawal"
   details: WithdrawalDetails
 }
@@ -16009,6 +16039,102 @@ func (ec *executionContext) _Withdrawal_expiry(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Withdrawal_createdTimestamp(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_withdrawnTimestamp(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WithdrawnTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Withdrawal_txHash(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Withdrawal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TxHash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Withdrawal_details(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -21468,6 +21594,15 @@ func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createdTimestamp":
+			out.Values[i] = ec._Withdrawal_createdTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "withdrawnTimestamp":
+			out.Values[i] = ec._Withdrawal_withdrawnTimestamp(ctx, field, obj)
+		case "txHash":
+			out.Values[i] = ec._Withdrawal_txHash(ctx, field, obj)
 		case "details":
 			out.Values[i] = ec._Withdrawal_details(ctx, field, obj)
 		default:

@@ -551,8 +551,14 @@ message Withdrawal {
   string ref = 6;
   // The time until when the withdrawal is valid
   int64 expiry = 7;
+  // The hash of the foreign chain for this transaction
+  string txHash = 8;
+  // The time at which the network started to process this withdrawal
+  int64 createdTimestamp = 9;
+  // The time a which the withdrawal was finalized by the network
+  int64 withdrawnTimestamp = 10;
   // foreign chain specifis
-  WithdrawExt ext = 8;
+  WithdrawExt ext = 11;
 }
 
 // A request for withdrawing funds from a trader
