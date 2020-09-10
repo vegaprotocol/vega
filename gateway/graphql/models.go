@@ -483,7 +483,7 @@ type ProposalVote struct {
 	// Cast vote
 	Vote *Vote `json:"vote"`
 	// Proposal casting the vote on
-	ProposalID string `json:"proposalID"`
+	ProposalID string `json:"proposalId"`
 }
 
 type RiskParametersInput struct {
