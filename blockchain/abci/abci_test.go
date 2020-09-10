@@ -73,7 +73,7 @@ func TestABCICheckTx(t *testing.T) {
 			return errors.New("boom")
 		})
 
-	app.OnCheckTx = func(ctx context.Context, req types.RequestCheckTx) (context.Context, types.ResponseCheckTx) {
+	app.OnCheckTx = func(ctx context.Context, req types.RequestCheckTx, _ abci.Tx) (context.Context, types.ResponseCheckTx) {
 		resp := types.ResponseCheckTx{}
 		return context.WithValue(ctx, "key", "val"), resp
 	}

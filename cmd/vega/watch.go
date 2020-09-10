@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain/tm"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 
 	"github.com/spf13/cobra"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -30,15 +31,12 @@ See: https://docs.tendermint.com/master/app-dev/subscribing-to-events-via-websoc
 		Args: cobra.MinimumNArgs(1),
 	}
 
-	addr := tm.NewDefaultConfig().ClientAddr
-	w.cmd.Flags().StringVarP(&w.addr, "addr", "a", addr, "Node Address")
+	w.addr = blockchain.NewDefaultConfig().Tendermint.ClientAddr
+	w.cmd.Flags().StringVarP(&w.addr, "addr", "a", w.addr, "Node Address")
 }
 
 func (w *watchCommand) run(cmd *cobra.Command, args []string) error {
-	cfg := tm.NewDefaultConfig()
-	cfg.ClientAddr = w.addr
-
-	c, err := tm.NewClient(cfg)
+	c, err := abci.NewClient(w.addr)
 	if err != nil {
 		return err
 	}

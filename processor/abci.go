@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/contextutil"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
@@ -36,6 +37,7 @@ type App struct {
 	// service injection
 	assets     Assets
 	banking    Banking
+	broker     Broker
 	cmd        Commander
 	col        Collateral
 	erc        ExtResChecker
@@ -56,6 +58,7 @@ func NewApp(
 	cancelFn func(),
 	assets Assets,
 	banking Banking,
+	broker Broker,
 	erc ExtResChecker,
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
@@ -84,6 +87,7 @@ func NewApp(
 
 		assets:     assets,
 		banking:    banking,
+		broker:     broker,
 		cmd:        cmd,
 		col:        col,
 		erc:        erc,
@@ -117,6 +121,8 @@ func NewApp(
 		HandleDeliverTx(blockchain.RegisterNodeCommand, app.DeliverRegisterNode).
 		HandleDeliverTx(blockchain.NodeVoteCommand, app.DeliverNodeVote).
 		HandleDeliverTx(blockchain.ChainEventCommand, app.DeliverChainEvent)
+
+	app.time.NotifyOnTick(app.onTick)
 
 	return app, nil
 }
@@ -245,11 +251,10 @@ func (app *App) updateStats() {
 }
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
-func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx) (context.Context, tmtypes.ResponseDeliverTx) {
+func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
 	app.size++
 
 	// update the context with Tracing Info.
-	tx := abci.TxFromContext(ctx)
 	hash := hex.EncodeToString(tx.Hash())
 	ctx = contextutil.WithTraceID(ctx, hash)
 
@@ -269,15 +274,18 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 	order.CreatedAt = app.currentTimestamp.UnixNano()
+	app.stats.IncTotalCreateOrder()
 
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, order)
 	if conf != nil {
-		app.log.Debug("Order confirmed",
-			logging.Order(*order),
-			logging.OrderWithTag(*conf.Order, "aggressive-order"),
-			logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
-			logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
+		if app.log.GetLevel() == logging.DebugLevel {
+			app.log.Debug("Order confirmed",
+				logging.Order(*order),
+				logging.OrderWithTag(*conf.Order, "aggressive-order"),
+				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
+				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
+		}
 
 		app.stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 		app.stats.AddTotalTrades(uint64(len(conf.Trades)))
@@ -495,6 +503,10 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 	}
 }
 
+type HasVegaAssetID interface {
+	GetVegaAssetID() string
+}
+
 func (app *App) checkVegaAssetID(a HasVegaAssetID, action string) error {
 	id := a.GetVegaAssetID()
 	_, err := app.assets.Get(id)
@@ -506,4 +518,103 @@ func (app *App) checkVegaAssetID(a HasVegaAssetID, action string) error {
 		return err
 	}
 	return nil
+}
+
+func (app *App) onTick(ctx context.Context, t time.Time) {
+	app.idGen.NewBatch()
+	acceptedProposals := app.gov.OnChainTimeUpdate(ctx, t)
+	for _, toEnact := range acceptedProposals {
+		prop := toEnact.Proposal()
+		switch {
+		case toEnact.IsNewMarket():
+			app.enactMarket(ctx, prop, toEnact.NewMarket())
+		case toEnact.IsNewAsset():
+			app.enactAsset(ctx, prop, toEnact.NewAsset())
+		case toEnact.IsUpdateMarket():
+			app.log.Error("update market enactment is not implemented")
+		case toEnact.IsUpdateNetwork():
+			app.log.Error("update network enactment is not implemented")
+		default:
+			prop.State = types.Proposal_STATE_FAILED
+			app.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", prop.ID))
+		}
+		app.broker.Send(events.NewProposalEvent(ctx, *prop))
+	}
+}
+
+func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
+	prop.State = types.Proposal_STATE_ENACTED
+	// first check if this asset is real
+	asset, err := app.assets.Get(prop.ID)
+	if err != nil {
+		// this should not happen
+		app.log.Error("invalid asset is getting enacted",
+			logging.String("asset-id", prop.ID),
+			logging.Error(err))
+		prop.State = types.Proposal_STATE_FAILED
+		return
+	}
+
+	// if this is a builtin asset nothing needs to be done, just start the asset
+	// straigh away
+	if asset.IsBuiltinAsset() {
+		err = app.banking.EnableBuiltinAsset(ctx, asset.ProtoAsset().ID)
+		if err != nil {
+			// this should not happen
+			app.log.Error("unable to get builtin asset enabled",
+				logging.String("asset-id", prop.ID),
+				logging.Error(err))
+			prop.State = types.Proposal_STATE_FAILED
+		}
+		return
+	}
+
+	// then instruct the notary to start getting signature from validators
+	if err := app.notary.StartAggregate(prop.ID, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+		prop.State = types.Proposal_STATE_FAILED
+		app.log.Error("unable to enact proposal",
+			logging.String("proposal-id", prop.ID),
+			logging.Error(err))
+		return
+	}
+
+	// if we are not a validator the job is done here
+	if !app.top.IsValidator() {
+		// nothing to do
+		return
+	}
+
+	var sig []byte
+	switch {
+	case asset.IsERC20():
+		asset, _ := asset.ERC20()
+		_, sig, err = asset.SignBridgeWhitelisting()
+	}
+	if err != nil {
+		app.log.Error("unable to sign whitelisting transaction",
+			logging.String("asset-id", prop.ID),
+			logging.Error(err))
+		prop.State = types.Proposal_STATE_FAILED
+		return
+	}
+	payload := &types.NodeSignature{
+		ID:   prop.ID,
+		Sig:  sig,
+		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+	}
+	if err := app.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
+		// do nothing for now, we'll need a retry mechanism for this and all command soon
+		app.log.Error("unable to send command for notary",
+			logging.Error(err))
+	}
+}
+
+func (app *App) enactMarket(ctx context.Context, prop *types.Proposal, mkt *types.Market) {
+	prop.State = types.Proposal_STATE_ENACTED
+	if err := app.exec.SubmitMarket(ctx, mkt); err != nil {
+		prop.State = types.Proposal_STATE_FAILED
+		app.log.Error("failed to submit new market",
+			logging.String("market-id", mkt.Id),
+			logging.Error(err))
+	}
 }

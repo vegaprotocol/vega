@@ -25,6 +25,22 @@ func concatBytes(bzs ...[]byte) []byte {
 	return buf.Bytes()
 }
 
+func txEncode(t *testing.T, cmd blockchain.Command, msg proto.Message) *types.Transaction {
+	var hash [processor.TxHashLen]byte // empty hash works for this
+	payload, err := proto.Marshal(msg)
+	require.NoError(t, err)
+
+	bz := concatBytes(
+		hash[:],
+		[]byte{byte(cmd)},
+		payload,
+	)
+
+	return &types.Transaction{
+		InputData: bz,
+	}
+}
+
 type TxTestSuite struct {
 }
 
@@ -54,21 +70,9 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 
 	for cmd, msg := range msgs {
 		// Build the Tx
-		var hash [processor.TxHashLen]byte // empty hash works for this
-		payload, err := proto.Marshal(msg)
-		require.NoError(t, err)
-
-		input := concatBytes(
-			hash[:],
-			[]byte{byte(cmd)},
-			payload,
-		)
-
-		rawTx := &types.Transaction{
-			InputData: input,
-			From: &types.Transaction_PubKey{
-				PubKey: key,
-			},
+		rawTx := txEncode(t, cmd, msg)
+		rawTx.From = &types.Transaction_PubKey{
+			PubKey: key,
 		}
 		tx, err := processor.NewTx(rawTx)
 		require.NoError(t, err)
@@ -103,21 +107,9 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 
 	for cmd, msg := range msgs {
 		// Build the Tx
-		var hash [processor.TxHashLen]byte // empty hash works for this
-		payload, err := proto.Marshal(msg)
-		require.NoError(t, err)
-
-		input := concatBytes(
-			hash[:],
-			[]byte{byte(cmd)},
-			payload,
-		)
-
-		rawTx := &types.Transaction{
-			InputData: input,
-			From: &types.Transaction_PubKey{
-				PubKey: key,
-			},
+		rawTx := txEncode(t, cmd, msg)
+		rawTx.From = &types.Transaction_PubKey{
+			PubKey: key,
 		}
 		tx, err := processor.NewTx(rawTx)
 		require.NoError(t, err)
@@ -130,21 +122,13 @@ func (s *TxTestSuite) testValidateSignedInvalidCommand(t *testing.T) {
 	cmd := blockchain.VoteCommand
 	party := []byte("party-id")
 	// wrong type for this command
-	payload, err := proto.Marshal(&types.Proposal{
+	prop := &types.Proposal{
 		ID:        "XXX",
 		PartyID:   hex.EncodeToString(party),
 		Reference: "some-reference",
-	})
-
-	var hash [processor.TxHashLen]byte // empty hash works for this
-	input := concatBytes(
-		hash[:],
-		[]byte{byte(cmd)},
-		payload,
-	)
-	rawTx := &types.Transaction{
-		InputData: input,
 	}
+
+	rawTx := txEncode(t, cmd, prop)
 	tx, err := processor.NewTx(rawTx)
 	require.NoError(t, err)
 

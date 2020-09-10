@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -32,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
-	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -124,7 +124,7 @@ type NodeCommand struct {
 	feeService        *fee.Svc
 	eventService      *subscribers.Service
 
-	blockchain       *blockchain.Blockchain
+	abciServer       *abci.Server
 	blockchainClient *blockchain.Client
 
 	pproffhandlr *pprof.Pprofhandler
@@ -138,7 +138,6 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
-	processor       *processor.Processor
 	governance      *governance.Engine
 	collateral      *collateral.Engine
 
@@ -252,7 +251,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.Log.Info("Vega startup complete")
 
 	// Start the stats collection client for tendermint
-	tm := stats.NewTendermint(l.blockchain.Client(), l.stats)
+	tm := stats.NewTendermint(l.blockchainClient, l.stats)
 	go func() {
 		for {
 			select {
@@ -268,7 +267,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	l.blockchain.Stop()
+	l.abciServer.Stop()
 	statusChecker.Stop()
 
 	// cleanup gateway

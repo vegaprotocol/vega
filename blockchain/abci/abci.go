@@ -43,16 +43,16 @@ func (app *App) Commit() (resp types.ResponseCommit) {
 func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	tx, err := app.codec.Decode(req.GetTx())
 	if err != nil {
-		return NewResponseCheckTx(AbciTxnDecodingFailure)
+		return NewResponseCheckTx(AbciTxnDecodingFailure, err.Error())
 	}
 
 	if err := tx.Validate(); err != nil {
-		return NewResponseCheckTx(AbciTxnValidationFailure)
+		return NewResponseCheckTx(AbciTxnValidationFailure, err.Error())
 	}
 
-	ctx := TxToContext(context.Background(), tx)
+	ctx := context.Background()
 	if fn := app.OnCheckTx; fn != nil {
-		ctx, resp = fn(ctx, req)
+		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
 			return resp
 		}
@@ -71,13 +71,13 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
 	tx, err := app.codec.Decode(req.GetTx())
 	if err != nil {
-		return NewResponseDeliverTx(AbciTxnDecodingFailure)
+		return NewResponseDeliverTx(AbciTxnDecodingFailure, err.Error())
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here
-	ctx := TxToContext(context.Background(), tx)
+	ctx := context.Background()
 	if fn := app.OnDeliverTx; fn != nil {
-		ctx, resp = fn(ctx, req)
+		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
 			return resp
 		}
@@ -86,12 +86,12 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	// Lookup for deliver tx, fail if not found
 	fn := app.deliverTxs[tx.Command()]
 	if fn == nil {
-		return NewResponseDeliverTx(AbciUnknownCommandError)
+		return NewResponseDeliverTx(AbciUnknownCommandError, "")
 	}
 
 	if err := fn(ctx, tx); err != nil {
-		return NewResponseDeliverTx(AbciTxnInternalError)
+		return NewResponseDeliverTx(AbciTxnInternalError, err.Error())
 	}
 
-	return NewResponseDeliverTx(types.CodeTypeOK)
+	return NewResponseDeliverTx(types.CodeTypeOK, "")
 }
