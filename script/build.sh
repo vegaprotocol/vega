@@ -77,7 +77,6 @@ set_version() {
 
 set_ldflags() {
     ldflags="-X main.Version=$version -X main.VersionHash=$version_hash"
-	ldflags="$ldflags -extldflags '-static'"
 }
 
 parse_args() {

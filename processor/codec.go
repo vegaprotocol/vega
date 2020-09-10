@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/wallet/crypto"
@@ -33,13 +32,8 @@ func (c *codec) Decode(payload []byte) (abci.Tx, error) {
 		return nil, err
 	}
 
-	// FIXME(): for now we just not verify 2 command which are
-	// not require to be signed. This will need to be removed once we have
-	// only signed commadn
-	if tx.Command() != blockchain.WithdrawCommand {
-		if err := verifyBundle(bundle, protoTx.GetPubKey()); err != nil {
-			return nil, err
-		}
+	if err := verifyBundle(bundle, protoTx.GetPubKey()); err != nil {
+		return nil, err
 	}
 
 	return tx, nil
