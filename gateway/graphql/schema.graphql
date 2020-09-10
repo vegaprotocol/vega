@@ -1160,11 +1160,11 @@ type Withdrawal {
   "The Vega internal id of the withdrawal"
   id: String!
   "The PartyID initiating the witndrawal"
-  partyId: String!
+  party: Party!
   "The amount to be withdrawn"
   amount: String!
   "The asset to be withdrawn"
-  asset: String!
+  asset: Asset!
   "The current status of the withdrawal"
   status: WithdrawalStatus!
   "A reference the foreign chain can use to refere to when processing the withdrawal"

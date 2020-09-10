@@ -233,7 +233,7 @@ func (r *VegaResolverRoot) Asset() AssetResolver {
 	return (*myAssetResolver)(r)
 }
 
-// asset resolver
+// asset resolvet
 
 type myAssetResolver VegaResolverRoot
 
@@ -286,7 +286,18 @@ func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*Withdraw
 		return nil, err
 	}
 
-	return NewWithdrawalFromProto(res.Withdrawal)
+	w, err := NewWithdrawalFromProto(res.Withdrawal)
+	if err != nil {
+		return nil, err
+	}
+
+	asset, err := r.Asset(ctx, res.Withdrawal.Asset)
+	if err != nil {
+		return nil, err
+	}
+
+	w.Asset = asset
+	return w, nil
 }
 
 func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party string, price *string, size string, side Side,
@@ -1015,6 +1026,16 @@ func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) (
 	out := make([]*Withdrawal, 0, len(res.Withdrawals))
 	for _, v := range res.Withdrawals {
 		w, err := NewWithdrawalFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		req := protoapi.AssetByIDRequest{ID: v.Asset}
+		res, err := r.tradingDataClient.AssetByID(ctx, &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, err
+		}
+		w.Asset, err = AssetFromProto(res.Asset)
 		if err != nil {
 			return nil, err
 		}

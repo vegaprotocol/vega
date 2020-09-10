@@ -1180,9 +1180,8 @@ func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
 	}
 	return &Withdrawal{
 		ID:      w.Id,
-		PartyID: w.PartyID,
+		Party:   &types.Party{Id: w.PartyID},
 		Amount:  fmt.Sprintf("%v", w.Amount),
-		Asset:   w.Asset,
 		Status:  status,
 		Ref:     w.Ref,
 		Expiry:  vegatime.Format(vegatime.UnixNano(w.Expiry)),

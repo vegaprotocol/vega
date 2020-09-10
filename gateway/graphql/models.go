@@ -647,11 +647,11 @@ type Withdrawal struct {
 	// The Vega internal id of the withdrawal
 	ID string `json:"id"`
 	// The PartyID initiating the witndrawal
-	PartyID string `json:"partyId"`
+	Party *proto.Party `json:"party"`
 	// The amount to be withdrawn
 	Amount string `json:"amount"`
 	// The asset to be withdrawn
-	Asset string `json:"asset"`
+	Asset *Asset `json:"asset"`
 	// The current status of the withdrawal
 	Status WithdrawalStatus `json:"status"`
 	// A reference the foreign chain can use to refere to when processing the withdrawal

@@ -510,7 +510,7 @@ type ComplexityRoot struct {
 		Details func(childComplexity int) int
 		Expiry  func(childComplexity int) int
 		ID      func(childComplexity int) int
-		PartyID func(childComplexity int) int
+		Party   func(childComplexity int) int
 		Ref     func(childComplexity int) int
 		Status  func(childComplexity int) int
 	}
@@ -2935,12 +2935,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Withdrawal.ID(childComplexity), true
 
-	case "Withdrawal.partyId":
-		if e.complexity.Withdrawal.PartyID == nil {
+	case "Withdrawal.party":
+		if e.complexity.Withdrawal.Party == nil {
 			break
 		}
 
-		return e.complexity.Withdrawal.PartyID(childComplexity), true
+		return e.complexity.Withdrawal.Party(childComplexity), true
 
 	case "Withdrawal.ref":
 		if e.complexity.Withdrawal.Ref == nil {
@@ -4199,11 +4199,11 @@ type Withdrawal {
   "The Vega internal id of the withdrawal"
   id: String!
   "The PartyID initiating the witndrawal"
-  partyId: String!
+  party: Party!
   "The amount to be withdrawn"
   amount: String!
   "The asset to be withdrawn"
-  asset: String!
+  asset: Asset!
   "The current status of the withdrawal"
   status: WithdrawalStatus!
   "A reference the foreign chain can use to refere to when processing the withdrawal"
@@ -15805,7 +15805,7 @@ func (ec *executionContext) _Withdrawal_id(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Withdrawal_partyId(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
+func (ec *executionContext) _Withdrawal_party(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -15822,7 +15822,7 @@ func (ec *executionContext) _Withdrawal_partyId(ctx context.Context, field graph
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PartyID, nil
+		return obj.Party, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15834,9 +15834,9 @@ func (ec *executionContext) _Withdrawal_partyId(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*proto.Party)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_amount(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
@@ -15902,9 +15902,9 @@ func (ec *executionContext) _Withdrawal_asset(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*Asset)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_status(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
@@ -21438,8 +21438,8 @@ func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "partyId":
-			out.Values[i] = ec._Withdrawal_partyId(ctx, field, obj)
+		case "party":
+			out.Values[i] = ec._Withdrawal_party(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
