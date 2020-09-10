@@ -268,17 +268,66 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	}
 
 	// Send out market depth updates to any listeners
-	for _, pl := range md.changes {
+	// PETE TODO once market data updates are done
+	/*	for _, pl := range md.changes {
 		// Send out message for each price level that was changed
-		fmt.Println(pl)
-	}
+		fmt.Println("PriceLevel:", pl)
+	}*/
 
 	// Clear the list of changes
 	md.changes = nil
 }
 
+// Returns the min of 2 uint64s
+func min(x, y uint64) uint64 {
+	if y < x {
+		return y
+	}
+	return x
+}
+
 // GetMarketDepth builds up the structure to be sent out to any market depth listeners
 func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
+	md, ok := mdb.marketDepths[market]
+	if !ok || md == nil {
+		// When a market is new with no orders there will not be any market depth/order book
+		// so we do not need to try and calculate the depth cumulative volumes etc
+		return &types.MarketDepth{
+			MarketID: market,
+			Buy:      []*types.PriceLevel{},
+			Sell:     []*types.PriceLevel{},
+		}, nil
+	}
+
+	buyLimit := uint64(len(md.buySide))
+	sellLimit := uint64(len(md.sellSide))
+	if limit > 0 {
+		buyLimit = min(buyLimit, limit)
+		sellLimit = min(sellLimit, limit)
+	}
+
+	buyPtr := make([]*types.PriceLevel, buyLimit)
+	sellPtr := make([]*types.PriceLevel, sellLimit)
+
+	// Copy the data across
+	for index := uint64(0); index < buyLimit; index++ {
+		pl := md.buySide[index]
+		buyPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
+			Price: pl.price}
+	}
+
+	for index := uint64(0); index < sellLimit; index++ {
+		pl := md.sellSide[index]
+		sellPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
+			Price: pl.price}
+	}
+
+	return &types.MarketDepth{
+		MarketID: market,
+		Buy:      buyPtr,
+		Sell:     sellPtr,
+	}, nil
+
 	return nil, nil
 }
 

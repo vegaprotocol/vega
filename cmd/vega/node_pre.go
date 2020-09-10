@@ -473,7 +473,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) })
 
-	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore); err != nil {
+	if l.marketService, err = markets.NewService(l.Log,
+		l.conf.Markets,
+		l.marketStore,
+		l.orderStore,
+		l.marketDataStore,
+		l.marketDepthSub); err != nil {
 		return
 	}
 
