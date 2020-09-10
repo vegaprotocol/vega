@@ -6,7 +6,6 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
-	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -32,21 +31,6 @@ func NewMockOrderStore(ctrl *gomock.Controller) *MockOrderStore {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockOrderStore) EXPECT() *MockOrderStoreMockRecorder {
 	return m.recorder
-}
-
-// GetMarketDepth mocks base method
-func (m *MockOrderStore) GetMarketDepth(arg0 context.Context, arg1 string, arg2 uint64) (*proto.MarketDepth, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMarketDepth", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*proto.MarketDepth)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetMarketDepth indicates an expected call of GetMarketDepth
-func (mr *MockOrderStoreMockRecorder) GetMarketDepth(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDepth", reflect.TypeOf((*MockOrderStore)(nil).GetMarketDepth), arg0, arg1, arg2)
 }
 
 // Subscribe mocks base method

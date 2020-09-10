@@ -192,8 +192,13 @@ func getTestGRPCServer(
 
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
+	marketDepth := subscribers.NewMarketDepthBuilder(ctx, true)
+	if marketDepth == nil {
+		return
+	}
+
 	// Market Service
-	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore)
+	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create market service")
 		return
