@@ -471,9 +471,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 	l.blockchainClient = blockchain.NewClient(abciClt)
-
 	commander.SetChain(l.blockchainClient)
-	//l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) })
 
 	// get the chain client as well.
 	l.topology.SetChain(l.blockchainClient)
