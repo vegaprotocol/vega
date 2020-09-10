@@ -204,6 +204,7 @@ func (g *GRPCServer) Start() {
 
 	tradingSvc := &tradingService{
 		log:               g.log,
+		blockchain:        g.client,
 		tradeOrderService: g.orderService,
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
