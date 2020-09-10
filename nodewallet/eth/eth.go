@@ -71,6 +71,11 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 
 }
 
+func (w *Wallet) Cleanup() error {
+	// just remove the wallet from the tmp file
+	return w.ks.Delete(w.acc, w.passphrase)
+}
+
 func (w *Wallet) Chain() string {
 	return "ethereum"
 }

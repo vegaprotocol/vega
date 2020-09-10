@@ -197,6 +197,11 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWallet
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
+	defer func() {
+		if err := l.nodeWallet.Cleanup(); err != nil {
+			l.Log.Error("error cleaning up nodewallet", logging.Error(err))
+		}
+	}()
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	statusChecker.OnChainDisconnect(l.cancel)
