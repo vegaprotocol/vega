@@ -128,6 +128,9 @@ func (this *PositionTrade) Validate() error {
 func (this *Statistics) Validate() error {
 	return nil
 }
+func (this *Deposit) Validate() error {
+	return nil
+}
 func (this *Withdrawal) Validate() error {
 	if this.Ext != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Ext); err != nil {

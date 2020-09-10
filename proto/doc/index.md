@@ -203,6 +203,7 @@
     - [Account](#vega.Account)
     - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
+    - [Deposit](#vega.Deposit)
     - [Erc20WithdrawExt](#vega.Erc20WithdrawExt)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
@@ -246,6 +247,7 @@
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
+    - [Deposit.Status](#vega.Deposit.Status)
     - [Interval](#vega.Interval)
     - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
@@ -2502,6 +2504,8 @@ the actual data is set as a oneof field
 | marketCreated | [Market](#vega.Market) |  |  |
 | asset | [Asset](#vega.Asset) |  |  |
 | marketTick | [MarketTick](#vega.MarketTick) |  |  |
+| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
+| deposit | [Deposit](#vega.Deposit) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2689,6 +2693,8 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_MARKET_CREATED | 17 |  |
 | BUS_EVENT_TYPE_ASSET | 18 |  |
 | BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
+| BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
+| BUS_EVENT_TYPE_DEPOSIT | 21 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
@@ -3451,6 +3457,27 @@ referred to commonly as a candlestick or candle.
 | close | [uint64](#uint64) |  | Closing trade price. |
 | volume | [uint64](#uint64) |  | Total trading volume during the candle interval. |
 | interval | [Interval](#vega.Interval) |  | Time interval for the candle. See [`Interval`](#vega.Interval). |
+
+
+
+
+
+
+<a name="vega.Deposit"></a>
+
+### Deposit
+The representation of a deposit in the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | The ID of the deposit |
+| partyID | [string](#string) |  | The party initiating the deposit |
+| asset | [string](#string) |  | The vega asset targeted by this deposit |
+| amount | [string](#string) |  | The amount to be deposited |
+| txHash | [string](#string) |  | The hash of the transaction from the foreign chain |
+| creditedTimestamp | [int64](#int64) |  | The time where the vega account got updated with the deposit |
+| createdTimestamp | [int64](#int64) |  | The time the deposit has been created in the vega network |
 
 
 
@@ -4260,6 +4287,19 @@ The Vega blockchain status as reported by the node the caller is connected to.
 | CHAIN_STATUS_DISCONNECTED | 1 | Blockchain is disconnected. |
 | CHAIN_STATUS_REPLAYING | 2 | Blockchain is replaying historic transactions. |
 | CHAIN_STATUS_CONNECTED | 3 | Blockchain is connected and receiving transactions. |
+
+
+
+<a name="vega.Deposit.Status"></a>
+
+### Deposit.Status
+The status of the deposit
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEPOSIT_STATUS_UNSPECIFIED | 0 | Default value, always invalid. |
+| DEPOSIT_STATUS_OPEN | 1 | The deposit is being processed by the network |
+| DEPOSIT_STATUS_FINALIZED | 2 | The deposit has been finalized and accounts have been updated |
 
 
 

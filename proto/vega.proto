@@ -521,6 +521,34 @@ enum ChainStatus {
   // Note: ChainStatus does not exist in GraphQL.
 }
 
+// The representation of a deposit in the vega network
+message Deposit {
+  // The status of the deposit
+  enum Status {
+    // Default value, always invalid.
+    DEPOSIT_STATUS_UNSPECIFIED = 0;
+    // The deposit is being processed by the network
+    DEPOSIT_STATUS_OPEN = 1;
+    // The deposit has been finalized and accounts have been updated
+    DEPOSIT_STATUS_FINALIZED = 2;
+  }
+
+  // The ID of the deposit
+  string id = 1;
+  // The party initiating the deposit
+  string partyID = 2;
+  // The vega asset targeted by this deposit
+  string asset = 3;
+  // The amount to be deposited
+  string amount = 4;
+  // The hash of the transaction from the foreign chain
+  string txHash = 5;
+  // The time where the vega account got updated with the deposit
+  int64 creditedTimestamp = 6;
+  // The time the deposit has been created in the vega network
+  int64 createdTimestamp = 7;
+}
+
 // The representation of a withdrawal in the vega network
 message Withdrawal {
   // The status of the withdrawal

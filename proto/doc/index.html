@@ -981,6 +981,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Deposit"><span class="badge">M</span>Deposit</a>
+                </li>
+
+                <li>
                   <a href="#vega.Erc20WithdrawExt"><span class="badge">M</span>Erc20WithdrawExt</a>
                 </li>
 
@@ -1147,6 +1151,10 @@
 
                 <li>
                   <a href="#vega.ChainStatus"><span class="badge">E</span>ChainStatus</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Deposit.Status"><span class="badge">E</span>Deposit.Status</a>
                 </li>
 
                 <li>
@@ -6519,6 +6527,20 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.Withdrawal">Withdrawal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.Deposit">Deposit</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
                   <td>market</td>
                   <td><a href="#vega.MarketEvent">MarketEvent</a></td>
                   <td></td>
@@ -6973,6 +6995,18 @@ these data are being used to bundle the call to the smart contract on the ethere
               <tr>
                 <td>BUS_EVENT_TYPE_MARKET_TICK</td>
                 <td>19</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_WITHDRAWAL</td>
+                <td>20</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_DEPOSIT</td>
+                <td>21</td>
                 <td><p></p></td>
               </tr>
 
@@ -9147,6 +9181,72 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><a href="#vega.Interval">Interval</a></td>
                   <td></td>
                   <td><p>Time interval for the candle. See <a href="#vega.Interval"><tt>Interval</tt></a>. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Deposit">Deposit</h3>
+        <p>The representation of a deposit in the vega network</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The ID of the deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The party initiating the deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The vega asset targeted by this deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The amount to be deposited </p></td>
+                </tr>
+
+                <tr>
+                  <td>txHash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The hash of the transaction from the foreign chain </p></td>
+                </tr>
+
+                <tr>
+                  <td>creditedTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The time where the vega account got updated with the deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>createdTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The time the deposit has been created in the vega network </p></td>
                 </tr>
 
             </tbody>
@@ -11640,6 +11740,35 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td>CHAIN_STATUS_CONNECTED</td>
                 <td>3</td>
                 <td><p>Blockchain is connected and receiving transactions.</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Deposit.Status">Deposit.Status</h3>
+        <p>The status of the deposit</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>DEPOSIT_STATUS_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, always invalid.</p></td>
+              </tr>
+
+              <tr>
+                <td>DEPOSIT_STATUS_OPEN</td>
+                <td>1</td>
+                <td><p>The deposit is being processed by the network</p></td>
+              </tr>
+
+              <tr>
+                <td>DEPOSIT_STATUS_FINALIZED</td>
+                <td>2</td>
+                <td><p>The deposit has been finalized and accounts have been updated</p></td>
               </tr>
 
           </tbody>

@@ -2255,6 +2255,12 @@
         "marketTick": {
           "$ref": "#/definitions/vegaMarketTick"
         },
+        "withdrawal": {
+          "$ref": "#/definitions/vegaWithdrawal"
+        },
+        "deposit": {
+          "$ref": "#/definitions/vegaDeposit"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2284,6 +2290,8 @@
         "BUS_EVENT_TYPE_MARKET_CREATED",
         "BUS_EVENT_TYPE_ASSET",
         "BUS_EVENT_TYPE_MARKET_TICK",
+        "BUS_EVENT_TYPE_WITHDRAWAL",
+        "BUS_EVENT_TYPE_DEPOSIT",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -2384,6 +2392,42 @@
         }
       },
       "description": "Continuous trading."
+    },
+    "vegaDeposit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The ID of the deposit"
+        },
+        "partyID": {
+          "type": "string",
+          "title": "The party initiating the deposit"
+        },
+        "asset": {
+          "type": "string",
+          "title": "The vega asset targeted by this deposit"
+        },
+        "amount": {
+          "type": "string",
+          "title": "The amount to be deposited"
+        },
+        "txHash": {
+          "type": "string",
+          "title": "The hash of the transaction from the foreign chain"
+        },
+        "creditedTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time where the vega account got updated with the deposit"
+        },
+        "createdTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time the deposit has been created in the vega network"
+        }
+      },
+      "title": "The representation of a deposit in the vega network"
     },
     "vegaDiscreteTrading": {
       "type": "object",
