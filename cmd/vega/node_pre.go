@@ -285,15 +285,22 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return err
 	}
 
-	// TODO: remove that once we have infrastructure to use token through governance
-	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
+	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
 	if err != nil {
 		return err
 	}
 
-	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
+	return nil
+}
+
+// load all asset from genesis state
+func (l *NodeCommand) UponGenesis(rawstate []byte) error {
+	state, err := assets.LoadGenesisState(rawstate)
 	if err != nil {
 		return err
+	}
+	if state == nil {
+		return nil
 	}
 
 	h := func(key []byte) []byte {
@@ -302,12 +309,44 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return hasher.Sum(nil)
 	}
 
+	assetSrcs := []proto.AssetSource{}
+	for _, v := range state.Builtins {
+		v := v
+		assetSrc := proto.AssetSource{
+			Source: &proto.AssetSource_BuiltinAsset{
+				BuiltinAsset: &v,
+			},
+		}
+		assetSrcs = append(assetSrcs, assetSrc)
+	}
+	for _, v := range state.ERC20 {
+		v := v
+		assetSrc := proto.AssetSource{
+			Source: &proto.AssetSource_Erc20{
+				Erc20: &v,
+			},
+		}
+		assetSrcs = append(assetSrcs, assetSrc)
+	}
+
 	for _, v := range assetSrcs {
 		v := v
 		id := hex.EncodeToString(h([]byte(v.String())))
-		err := l.loadAsset(id, v)
+		err := l.loadAsset(id, &v)
 		if err != nil {
 			return err
+		}
+	}
+
+	// then we load the markets
+	if len(l.mktscfg) > 0 {
+		for _, mkt := range l.mktscfg {
+			mkt := mkt
+			err = l.executionEngine.SubmitMarket(l.ctx, &mkt)
+			if err != nil {
+				l.Log.Panic("Unable to submit market",
+					logging.Error(err))
+			}
 		}
 	}
 
@@ -527,6 +566,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
+	)
+
+	l.genesisHandler.OnGenesisAppStateLoaded(
+		l.UponGenesis,
 	)
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
