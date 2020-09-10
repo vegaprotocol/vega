@@ -33,8 +33,7 @@ func DefaultGenesisState() GenesisState {
 				Symbol:              "VUSD",
 				TotalSupply:         "21000000",
 				Decimals:            5,
-				MaxFaucetAmountMint: "500000000", // 1000VUSD
-
+				MaxFaucetAmountMint: "500000000", // 5000VUSD
 			},
 		},
 		ERC20: []types.ERC20{
