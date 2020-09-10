@@ -223,26 +223,20 @@ func (l *NodeCommand) setupSubscibers() {
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
+	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
+	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
+
 	// always enabled market,parties etc stores as they are in memory or boths use them
 	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
-
-	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) })
-
-	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
 
 	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
 	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
 
 	// if stores are not enabled, initialise the noop stores and do nothing else
 	if !l.conf.StoresEnabled {
@@ -256,22 +250,28 @@ func (l *NodeCommand) setupStorages() (err error) {
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) })
 
 	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) })
-
 	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
-
 	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })
+
+	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
+	)
 
 	return
 }
@@ -413,9 +413,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, nil, !l.noStores)
 
-	l.erc = validators.NewExtResChecker(l.Log, l.topology, commander, l.timeService)
+	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
 	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
@@ -426,7 +426,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
 
 	l.evtfwd, err = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	if err != nil {
@@ -442,15 +441,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
-
 	// now instanciate the blockchain layer
 	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, commander, l.cancel, l.genesisHandler, l.topology)
 	if err != nil {
 		return errors.Wrap(err, "unable to start the blockchain")
 	}
-
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) })
 
 	// get the chain client as well.
 	l.blockchainClient = l.blockchain.Client()
@@ -460,43 +455,57 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) })
+
 	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) })
-
 	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.riskStore, l.settlePlugin); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) })
-
 	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore); err != nil {
 		return
 	}
-
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) })
-
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
-
 	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) })
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) })
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) })
+
+	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
+		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
+		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
+		func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) },
+		func(cfg config.Config) { l.topology.ReloadConf(cfg.Validators) },
+		func(cfg config.Config) { l.erc.ReloadConf(cfg.Validators) },
+		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
+		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
+		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
+		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
+		func(cfg config.Config) { l.processor.ReloadConf(cfg.Processor) },
+
+		// services
+		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
+		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
+		func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) },
+		func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) },
+		func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) },
+		func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) },
+		func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) },
+		func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) },
+		func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) },
+		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
+		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
+		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
+	)
+
+	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
 	return
 }
 

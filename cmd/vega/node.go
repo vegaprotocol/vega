@@ -197,13 +197,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
 	statusChecker.OnChainDisconnect(l.cancel)
-	statusChecker.OnChainVersionObtained(func(v string) {
-		l.stats.SetChainVersion(v)
-	})
-
-	var err error
+	statusChecker.OnChainVersionObtained(
+		func(v string) { l.stats.SetChainVersion(v) },
+	)
 
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
@@ -229,13 +226,22 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.withdrawalPlugin,
 		statusChecker,
 	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
+
+	// watch configs
+	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
+		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
+	)
+
+	// start the grpc server
 	go grpcServer.Start()
 	metrics.Start(l.conf.Metrics)
 
 	// start gateway
-	var gty *Gateway
-
+	var (
+		gty *Gateway
+		err error
+	)
 	if l.conf.GatewayEnabled {
 		gty, err = startGateway(l.Log, l.conf.Gateway)
 		if err != nil {

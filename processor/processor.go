@@ -167,8 +167,8 @@ type Banking interface {
 
 // Processor handle processing of all transaction sent through the node
 type Processor struct {
-	log *logging.Logger
-	Config
+	log               *logging.Logger
+	cfg               Config
 	hasRegistered     bool
 	stat              Stats
 	exec              ExecutionEngine
@@ -204,7 +204,7 @@ func New(log *logging.Logger, config Config, exec ExecutionEngine, ts TimeServic
 	p := &Processor{
 		log:        log,
 		stat:       stat,
-		Config:     config,
+		cfg:        config,
 		exec:       exec,
 		time:       ts,
 		wallet:     wallet,
@@ -325,7 +325,7 @@ func (p *Processor) ReloadConf(cfg Config) {
 		p.log.SetLevel(cfg.Level.Get())
 	}
 
-	p.Config = cfg
+	p.cfg = cfg
 }
 
 func (p *Processor) getOrderSubmission(payload []byte) (*types.Order, error) {
@@ -670,7 +670,7 @@ func (p *Processor) cancelOrder(ctx context.Context, order *types.OrderCancellat
 		)
 		return err
 	}
-	if p.LogOrderCancelDebug {
+	if p.cfg.LogOrderCancelDebug {
 		for _, v := range msg {
 			p.log.Debug("Order cancelled", logging.Order(*v.Order))
 		}
@@ -695,7 +695,7 @@ func (p *Processor) amendOrder(ctx context.Context, order *types.OrderAmendment)
 		)
 		return err
 	}
-	if p.LogOrderAmendDebug {
+	if p.cfg.LogOrderAmendDebug {
 		p.log.Debug("Order amended", logging.String("order", order.String()))
 	}
 	return nil
