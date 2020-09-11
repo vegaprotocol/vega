@@ -32,7 +32,6 @@ type Order struct {
 	batchCountForGC int32
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberID    uint64
-	depth           map[string]*Depth
 	onCriticalError func()
 }
 
@@ -56,7 +55,6 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 		log:             log,
 		Config:          c,
 		badger:          &bs,
-		depth:           map[string]*Depth{},
 		subscribers:     map[uint64]chan<- []types.Order{},
 		onCriticalError: onCriticalError,
 	}, nil
@@ -491,13 +489,6 @@ func (os *Order) notify(items []types.Order) error {
 func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error) {
 	results := make(map[string][]byte)
 	for _, order := range batch {
-		// TODO(jeremy): move this somewhere else so we do not try to do it
-		// at each iteration of orders
-		// validate an order book (depth of market) exists for order market
-		if exists := os.depth[order.MarketID]; exists == nil {
-			os.depth[order.MarketID] = NewMarketDepth(order.MarketID)
-		}
-
 		orderBuf, err := proto.Marshal(&order)
 		if err != nil {
 			return nil, err
@@ -539,12 +530,6 @@ func (os *Order) writeBatch(batch []types.Order) error {
 		}
 		return err
 	}
-
-	// Depth of market updater
-	for idx := range batch {
-		os.depth[batch[idx].MarketID].Update(batch[idx])
-	}
-
 	return nil
 }
 
