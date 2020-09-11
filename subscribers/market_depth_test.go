@@ -30,7 +30,7 @@ func buildOrder(id string, side types.Side, orderType types.Order_Type, price ui
 }
 
 func TestBuyPriceLevels(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 9, 9)
@@ -67,7 +67,7 @@ func TestBuyPriceLevels(t *testing.T) {
 }
 
 func TestSellPriceLevels(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order1 := buildOrder("Order1", types.Side_SIDE_SELL, types.Order_TYPE_LIMIT, 100, 9, 9)
@@ -104,7 +104,7 @@ func TestSellPriceLevels(t *testing.T) {
 }
 
 func TestAddOrderToEmptyBook(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -120,7 +120,7 @@ func TestAddOrderToEmptyBook(t *testing.T) {
 }
 
 func TestCancelOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -141,7 +141,7 @@ func TestCancelOrder(t *testing.T) {
 }
 
 func TestStoppedOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -162,7 +162,7 @@ func TestStoppedOrder(t *testing.T) {
 }
 
 func TestExpiredOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -183,7 +183,7 @@ func TestExpiredOrder(t *testing.T) {
 }
 
 func TestAmendOrderPrice(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -207,7 +207,7 @@ func TestAmendOrderPrice(t *testing.T) {
 }
 
 func TestAmendOrderVolumeUp(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -229,7 +229,7 @@ func TestAmendOrderVolumeUp(t *testing.T) {
 }
 
 func TestAmendOrderVolumeDown(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -251,7 +251,7 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 }
 
 func TestAmendOrderVolumeDownToZero(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -273,7 +273,7 @@ func TestAmendOrderVolumeDownToZero(t *testing.T) {
 }
 
 func TestPartialFill(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -294,7 +294,7 @@ func TestPartialFill(t *testing.T) {
 }
 
 func TestFullyFill(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -316,7 +316,7 @@ func TestFullyFill(t *testing.T) {
 }
 
 func TestMarketOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	// market orders should not stay on the book
@@ -333,7 +333,7 @@ func TestMarketOrder(t *testing.T) {
 }
 
 func TestFOKOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	// FOK orders do not stay on the book
@@ -351,7 +351,7 @@ func TestFOKOrder(t *testing.T) {
 }
 
 func TestIOCOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	// IOC orders do not stay on the book
@@ -369,7 +369,7 @@ func TestIOCOrder(t *testing.T) {
 }
 
 func TestRejectedOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	// Rejected orders should be ignored
@@ -387,7 +387,7 @@ func TestRejectedOrder(t *testing.T) {
 }
 
 func TestInvalidOrder(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	// Invalid orders should be ignored
@@ -405,7 +405,7 @@ func TestInvalidOrder(t *testing.T) {
 }
 
 func TestPartialMatchOrders(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -431,7 +431,7 @@ func TestPartialMatchOrders(t *testing.T) {
 }
 
 func TestFullyMatchOrders(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
@@ -458,7 +458,7 @@ func TestFullyMatchOrders(t *testing.T) {
 }
 
 func TestRemovingPriceLevels(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
+	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
 
 	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 10)
