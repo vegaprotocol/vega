@@ -16,6 +16,7 @@ code.vegaprotocol.io/quant v0.1.1-0.20200811152438-178bb002c267 h1:YD5B8njt/ThB7
 code.vegaprotocol.io/quant v0.1.1-0.20200811152438-178bb002c267/go.mod h1:pX4ABfPF2oXclr/+b+r10yi3u5qBJHR2sjS50m6+4mA=
 code.vegaprotocol.io/quant v0.1.1-0.20200908112754-bf26f7093387 h1:jfqTk+kNxXI8rSZglGiXeYAFW2oYtILx63rvv2QIg2A=
 code.vegaprotocol.io/quant v0.1.1-0.20200908112754-bf26f7093387/go.mod h1:pX4ABfPF2oXclr/+b+r10yi3u5qBJHR2sjS50m6+4mA=
+dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/99designs/gqlgen v0.10.2 h1:FfjCqIWejHDJeLpQTI0neoZo5vDO3sdo5oNCucet3A0=
 github.com/99designs/gqlgen v0.10.2/go.mod h1:aDB7oabSAyZ4kUHLEySsLxnWrBy3lA0A2gWKU+qoHwI=
 github.com/99designs/gqlgen v0.11.3 h1:oFSxl1DFS9X///uHV3y6CEfpcXWrDUxVblR4Xib2bs4=
