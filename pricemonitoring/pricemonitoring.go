@@ -22,10 +22,13 @@ var (
 	errHorizonNotInFuture       = errors.New("Horizon must be represented by a positive duration")
 )
 
+// PriceRangeProvider provides the minimium and maximum price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
 type PriceRangeProvider interface {
 	PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64)
 }
 
+// PriceMonitoring allows tracking price changes and verifying them against the theoretical levels implied by the risk model.
+// Reset() needs to be called after initialization and after each auction period to assure proper behaviour.
 type PriceMonitoring struct {
 	riskModel                    PriceRangeProvider
 	horizonProbabilityLevelPairs []HorizonProbabilityLevelPair
@@ -92,7 +95,7 @@ func (pm *PriceMonitoring) UpdateTime(now time.Time) error {
 			})
 		pm.pricesPerCurrentTime = make([]uint64, 0)
 		pm.currentTime = now
-		if err := pm.updateBounds(); err != nil { //TODO: Verify with research team if we should care about bound violations due to bound update
+		if err := pm.updateBounds(); err != nil {
 			return err
 		}
 	}
@@ -167,12 +170,12 @@ func (pm *PriceMonitoring) GetHorizonProbablityLevelPairs() []HorizonProbability
 // (e.g. τ = 1 hour, p = 95%)
 type HorizonProbabilityLevelPair struct {
 	Horizon          time.Duration
-	ProbabilityLevel float32
+	ProbabilityLevel float64
 }
 
 // NewHorizonProbabilityLevelPair returns a new instance of HorizonProbabilityLevelPair
 // if probability level is in the range (0,1) and an error otherwise
-func NewHorizonProbabilityLevelPair(horizon time.Duration, probabilityLevel float32) (*HorizonProbabilityLevelPair, error) {
+func NewHorizonProbabilityLevelPair(horizon time.Duration, probabilityLevel float64) (*HorizonProbabilityLevelPair, error) {
 	if probabilityLevel <= 0 || probabilityLevel >= 1 {
 		return nil, errProbabilityLevel
 	}
