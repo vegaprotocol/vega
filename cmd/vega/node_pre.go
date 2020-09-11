@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -404,6 +405,38 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	return nil
 }
 
+func (l *NodeCommand) LoadValidatorsOnGenesis(rawstate []byte) error {
+	// Load a ValidatorMapping from validators package
+	state, err := validators.LoadGenesisState(rawstate)
+	if err != nil {
+		return err
+	}
+
+	// vals is a map of tm pubkey -> vega pubkey
+	// tm is base64 encoded, vega is hex
+	for tm, vega := range state {
+		tmBytes, err := base64.StdEncoding.DecodeString(tm)
+		if err != nil {
+			return err
+		}
+
+		vegaBytes, err := hex.DecodeString(vega)
+		if err != nil {
+			return err
+		}
+
+		nr := &proto.NodeRegistration{
+			PubKey:      vegaBytes,
+			ChainPubKey: tmBytes,
+		}
+		if err := l.topology.AddNodeRegistration(nr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -461,7 +494,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, nil, !l.noStores)
+
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, !l.noStores)
 
 	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
@@ -519,9 +553,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.blockchainClient = blockchain.NewClient(abciClt)
 	commander.SetChain(l.blockchainClient)
 
-	// get the chain client as well.
-	l.topology.SetChain(l.blockchainClient)
-
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return
@@ -578,6 +609,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		l.UponGenesis,
+	)
+
+	l.genesisHandler.OnGenesisAppStateLoaded(
+		l.LoadValidatorsOnGenesis,
 	)
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)

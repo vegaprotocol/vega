@@ -1,7 +1,6 @@
 package validators_test
 
 import (
-	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -12,9 +11,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 func tmTestPubKey() testPubKey {
@@ -23,62 +19,48 @@ func tmTestPubKey() testPubKey {
 
 type testTop struct {
 	*validators.Topology
-	ctrl *gomock.Controller
-	bc   *mocks.MockBlockchainClient
+	ctrl   *gomock.Controller
+	wallet *mocks.MockWallet
 }
 
 func getTestTop(t *testing.T) *testTop {
 	ctrl := gomock.NewController(t)
-	bc := mocks.NewMockBlockchainClient(ctrl)
+	wallet := mocks.NewMockWallet(ctrl)
 
-	ch := make(chan struct{}, 2)
-	bc.EXPECT().GetStatus(gomock.Any()).Times(1).DoAndReturn(
-		func(ctx context.Context) (*tmctypes.ResultStatus, error) {
-			defer func() { ch <- struct{}{} }()
-			return &tmctypes.ResultStatus{
-				ValidatorInfo: tmctypes.ValidatorInfo{
-					Address: bytes.HexBytes([]byte("addresstm")),
-					PubKey:  tmTestPubKey(),
-				},
-			}, nil
-		},
-	)
-	bc.EXPECT().GenesisValidators().Times(1).DoAndReturn(
-		func() ([]*tmtypes.Validator, error) {
-			defer func() { ch <- struct{}{} }()
-			return []*tmtypes.Validator{
-				&tmtypes.Validator{
-					Address: bytes.HexBytes([]byte("addresstm")),
-					PubKey:  tmTestPubKey(),
-				},
-			}, nil
-		},
-	)
-
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), bc, true)
-
-	_ = <-ch
-	_ = <-ch
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, true)
 
 	return &testTop{
 		Topology: top,
 		ctrl:     ctrl,
-		bc:       bc,
+		wallet:   wallet,
 	}
 }
 
 func TestValidatorTopology(t *testing.T) {
-	t.Run("add node registration - success", testAddNodeRegistrationSuccess)
-	t.Run("add node registration - failure", testAddNodeRegistrationFailure)
-	t.Run("get len ", testGetLen)
-	t.Run("get self tm", testGetSelfTM)
-	t.Run("exists", testExists)
-	t.Run("ready", testReady)
+	tests := []struct {
+		name string
+		fn   func(t *testing.T, top *testTop)
+	}{
+		{"add node registration - success", testAddNodeRegistrationSuccess},
+		{"add node registration - failure", testAddNodeRegistrationFailure},
+		{"get len ", testGetLen},
+		{"exists", testExists},
+	}
+
+	for _, test := range tests {
+		top := getTestTop(t)
+		defer top.ctrl.Finish()
+		top.UpdateValidatorSet([][]byte{
+			tmTestPubKey().Bytes(),
+		})
+
+		t.Run(test.name, func(t *testing.T) {
+			test.fn(t, top)
+		})
+	}
 }
 
-func testAddNodeRegistrationSuccess(t *testing.T) {
-	top := getTestTop(t)
-	defer top.ctrl.Finish()
+func testAddNodeRegistrationSuccess(t *testing.T, top *testTop) {
 	nr := types.NodeRegistration{
 		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
@@ -87,25 +69,7 @@ func testAddNodeRegistrationSuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testReady(t *testing.T) {
-	top := getTestTop(t)
-	defer top.ctrl.Finish()
-
-	assert.False(t, top.Ready())
-
-	nr := types.NodeRegistration{
-		ChainPubKey: tmTestPubKey().bytes,
-		PubKey:      []byte("vega-key"),
-	}
-	err := top.AddNodeRegistration(&nr)
-	assert.NoError(t, err)
-
-	assert.True(t, top.Ready())
-}
-
-func testAddNodeRegistrationFailure(t *testing.T) {
-	top := getTestTop(t)
-	defer top.ctrl.Finish()
+func testAddNodeRegistrationFailure(t *testing.T, top *testTop) {
 	nr := types.NodeRegistration{
 		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
@@ -121,10 +85,7 @@ func testAddNodeRegistrationFailure(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func testGetLen(t *testing.T) {
-	top := getTestTop(t)
-	defer top.ctrl.Finish()
-
+func testGetLen(t *testing.T, top *testTop) {
 	// first len is 0
 	assert.Equal(t, 0, top.Len())
 
@@ -138,18 +99,7 @@ func testGetLen(t *testing.T) {
 	assert.Equal(t, 1, top.Len())
 }
 
-func testGetSelfTM(t *testing.T) {
-	top := getTestTop(t)
-	defer top.ctrl.Finish()
-
-	key := top.SelfChainPubKey()
-	assert.NotNil(t, key)
-}
-
-func testExists(t *testing.T) {
-	top := getTestTop(t)
-	defer top.ctrl.Finish()
-
+func testExists(t *testing.T, top *testTop) {
 	assert.False(t, top.Exists([]byte("vega-key")))
 
 	nr := types.NodeRegistration{
