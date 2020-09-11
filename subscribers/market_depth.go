@@ -87,7 +87,7 @@ func (md *MarketDepth) orderExists(orderID string) *types.Order {
 	return md.liveOrders[orderID]
 }
 
-func (md *MarketDepth) removeOrder(order *types.Order) error {
+func (md *MarketDepth) removeOrder(order *types.Order, reduceAmount uint64) error {
 	// Find the price level
 	pl := md.getPriceLevel(order.Side, order.Price)
 
@@ -97,7 +97,7 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 	}
 	// Update the values
 	pl.totalOrders--
-	pl.totalVolume -= order.Remaining
+	pl.totalVolume -= reduceAmount
 
 	// See if we can remove this price level
 	if pl.totalOrders == 0 {
@@ -146,7 +146,8 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 
 func (md *MarketDepth) addOrder(order *types.Order) {
 	// Cache the orderID
-	md.liveOrders[order.Id] = order
+	orderCopy := *order
+	md.liveOrders[order.Id] = &orderCopy
 
 	// Update the price level
 	pl := md.getPriceLevel(order.Side, order.Price)
@@ -163,22 +164,17 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
 	if originalOrder.Price == newOrder.Price {
-		// Update
-		pl := md.getPriceLevel(originalOrder.Side, originalOrder.Price)
-		pl.totalVolume += (newOrder.Remaining - originalOrder.Remaining)
-
 		if newOrder.Remaining == 0 {
-			md.removeOrder(newOrder)
-			pl.totalOrders -= 1
+			md.removeOrder(newOrder, originalOrder.Remaining-newOrder.Remaining)
+		} else {
+			// Update
+			pl := md.getPriceLevel(originalOrder.Side, originalOrder.Price)
+			pl.totalVolume += (newOrder.Remaining - originalOrder.Remaining)
+			originalOrder.Remaining = newOrder.Remaining
+			md.changes = append(md.changes, pl)
 		}
-
-		if pl.totalOrders == 0 {
-			md.removePriceLevel(newOrder)
-		}
-
-		md.changes = append(md.changes, pl)
 	} else {
-		md.removeOrder(originalOrder)
+		md.removeOrder(originalOrder, originalOrder.Remaining-newOrder.Remaining)
 		md.addOrder(newOrder)
 	}
 }
@@ -205,7 +201,7 @@ func (md *MarketDepth) removePriceLevel(order *types.Order) {
 	var i int
 	if order.Side == types.Side_SIDE_BUY {
 		// buy side levels should be ordered in descending
-		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price == order.Price })
+		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price <= order.Price })
 		if i < len(md.buySide) && md.buySide[i].price == order.Price {
 			copy(md.buySide[i:], md.buySide[i+1:])
 			md.buySide[len(md.buySide)-1] = nil
@@ -213,7 +209,7 @@ func (md *MarketDepth) removePriceLevel(order *types.Order) {
 		}
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price == order.Price })
+		i = sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price >= order.Price })
 		// we found the level just return it.
 		if i < len(md.sellSide) && md.sellSide[i].price == order.Price {
 			copy(md.sellSide[i:], md.sellSide[i+1:])
@@ -257,7 +253,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		if order.Status == types.Order_STATUS_CANCELLED ||
 			order.Status == types.Order_STATUS_EXPIRED ||
 			order.Status == types.Order_STATUS_STOPPED {
-			md.removeOrder(order)
+			md.removeOrder(order, order.Remaining)
 		} else {
 			md.updateOrder(originalOrder, order)
 		}

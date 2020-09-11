@@ -385,3 +385,83 @@ func TestInvalidOrder(t *testing.T) {
 	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
 	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
 }
+
+func TestPartialMatchOrders(t *testing.T) {
+	ctx, _ := context.WithCancel(context.Background())
+	mdb := getTestMDB(t, ctx, true)
+
+	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+	order2 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 8)
+	event2 := events.NewOrderEvent(ctx, order2)
+	mdb.Push(event2)
+
+	order3 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 5)
+	event3 := events.NewOrderEvent(ctx, order3)
+	mdb.Push(event3)
+	order4 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 1)
+	event4 := events.NewOrderEvent(ctx, order4)
+	mdb.Push(event4)
+
+	assert.Equal(t, mdb.GetBuyPriceLevels("M"), 1)
+	assert.Equal(t, mdb.GetSellPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetOrderCount("M"), 1)
+
+	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100), uint64(1))
+	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(1))
+}
+
+func TestFullyMatchOrders(t *testing.T) {
+	ctx, _ := context.WithCancel(context.Background())
+	mdb := getTestMDB(t, ctx, true)
+
+	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+	order2 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 8)
+	event2 := events.NewOrderEvent(ctx, order2)
+	mdb.Push(event2)
+
+	order3 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 5)
+	event3 := events.NewOrderEvent(ctx, order3)
+	mdb.Push(event3)
+	order4 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 0)
+	order4.Status = types.Order_STATUS_FILLED
+	event4 := events.NewOrderEvent(ctx, order4)
+	mdb.Push(event4)
+
+	assert.Equal(t, mdb.GetBuyPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetSellPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetOrderCount("M"), 0)
+
+	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+}
+
+func TestRemovingPriceLevels(t *testing.T) {
+	ctx, _ := context.WithCancel(context.Background())
+	mdb := getTestMDB(t, ctx, true)
+
+	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 10)
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+	order2 := buildOrder("Order2", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
+	event2 := events.NewOrderEvent(ctx, order2)
+	mdb.Push(event2)
+	order3 := buildOrder("Order3", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 102, 10, 10)
+	event3 := events.NewOrderEvent(ctx, order3)
+	mdb.Push(event3)
+
+	order4 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 0)
+	order4.Status = types.Order_STATUS_FILLED
+	event4 := events.NewOrderEvent(ctx, order4)
+	mdb.Push(event4)
+
+	assert.Equal(t, mdb.GetBuyPriceLevels("M"), 2)
+	assert.Equal(t, mdb.GetSellPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetOrderCount("M"), 2)
+
+	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 101), uint64(0))
+	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 101), uint64(0))
+}
