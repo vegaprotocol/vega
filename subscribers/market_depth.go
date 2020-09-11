@@ -327,8 +327,6 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 		Buy:      buyPtr,
 		Sell:     sellPtr,
 	}, nil
-
-	return nil, nil
 }
 
 /*****************************************************************************/
