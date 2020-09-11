@@ -23,7 +23,7 @@ var (
 )
 
 type PriceRangeProvider interface {
-	PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float32) (minPrice float64, maxPrice float64)
+	PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64)
 }
 
 type PriceMonitoring struct {
@@ -112,9 +112,9 @@ func (pm *PriceMonitoring) updateBounds() error { //TODO: Think if this really n
 			minPrice, maxPrice := pm.riskModel.PriceRange(lastPrice, pm.horizonsAsYearFraction[p.Horizon], p.ProbabilityLevel)
 			pm.priceMoveBounds[p] = priceMoveBound{MinValidMoveDown: minPrice - lastPrice, MaxValidMoveUp: maxPrice - lastPrice}
 		}
-
-		// Do the housekeeping: remove redundant bounds and average prices
+		// TODO: Do the housekeeping: remove redundant bounds and average prices
 	}
+	return nil
 }
 
 // CheckBoundViolations returns an array of booleans, each corresponding to a given horizon and probability level pair.
