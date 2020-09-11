@@ -3,10 +3,12 @@ package notary
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -19,6 +21,7 @@ var (
 // ValidatorTopology...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/notary ValidatorTopology
 type ValidatorTopology interface {
+	IsValidator() bool
 	Exists([]byte) bool
 	Len() int
 }
@@ -26,6 +29,11 @@ type ValidatorTopology interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/notary Broker
 type Broker interface {
 	Send(event events.Event)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
+type Commander interface {
+	Command(cmd blockchain.Command, payload proto.Message) error
 }
 
 // Notary will aggregate all signatures of a node for
@@ -38,6 +46,7 @@ type Notary struct {
 	// resource to be signed -> signatures
 	sigs   map[idKind]map[nodeSig]struct{}
 	top    ValidatorTopology
+	cmd    Commander
 	broker Broker
 }
 
@@ -52,7 +61,7 @@ type nodeSig struct {
 	sig  string
 }
 
-func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker) *Notary {
+func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, cmd Commander) *Notary {
 	log = log.Named(namedLogger)
 	return &Notary{
 		cfg:    cfg,
@@ -60,10 +69,11 @@ func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker) 
 		sigs:   map[idKind]map[nodeSig]struct{}{},
 		top:    top,
 		broker: broker,
+		cmd:    cmd,
 	}
 }
 
-// ReloadConf updates the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration
 func (n *Notary) ReloadConf(cfg Config) {
 	n.log.Info("reloading configuration")
 	if n.log.GetLevel() != cfg.Level.Get() {
@@ -133,4 +143,20 @@ func (n *Notary) IsSigned(resID string, kind types.NodeSignatureKind) ([]types.N
 	}
 
 	return nil, false
+}
+
+func (n *Notary) SendSignature(id string, sig []byte, kind types.NodeSignatureKind) error {
+	if !n.top.IsValidator() {
+		return nil
+	}
+	nsig := &types.NodeSignature{
+		ID:   id,
+		Sig:  sig,
+		Kind: kind,
+	}
+	if err := n.cmd.Command(blockchain.NodeSignatureCommand, nsig); err != nil {
+		// do nothing for now, we'll need a retry mechanism for this and all command soon
+		n.log.Error("unable to send command for notary", logging.Error(err))
+	}
+	return nil
 }

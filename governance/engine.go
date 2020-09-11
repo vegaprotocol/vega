@@ -2,7 +2,6 @@ package governance
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -72,7 +71,6 @@ type ExtResChecker interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	mu                     sync.Mutex
 	log                    *logging.Logger
 	accs                   Accounts
 	currentTime            time.Time
@@ -122,9 +120,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 		e.log.SetLevel(cfg.Level.Get())
 	}
 
-	e.mu.Lock()
 	e.Config = cfg
-	e.mu.Unlock()
 }
 
 func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.ProposalError, err error) {
@@ -309,8 +305,8 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, ErrProposalEnactTimeTooLate
 	}
 
-	if proposal.Terms.ClosingTimestamp < proposal.Terms.ValidationTimestamp {
-		e.log.Debug("proposal closing time can't be smaller than validation time",
+	if proposal.Terms.ClosingTimestamp <= proposal.Terms.ValidationTimestamp {
+		e.log.Debug("proposal closing time can't be smaller or equal than validation time",
 			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
 			logging.Int64("validation-time", proposal.Terms.ValidationTimestamp),
 			logging.String("id", proposal.ID))

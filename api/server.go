@@ -16,9 +16,11 @@ import (
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/plugins"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -51,6 +53,8 @@ type GRPCServer struct {
 	evtfwd                  EvtForwarder
 	assetService            *assets.Svc
 	feeService              *fee.Svc
+	eventService            *subscribers.Service
+	withdrawalService       *plugins.Withdrawal
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -82,6 +86,8 @@ func NewGRPCServer(
 	evtfwd EvtForwarder,
 	assetService *assets.Svc,
 	feeService *fee.Svc,
+	eventService *subscribers.Service,
+	withdrawalService *plugins.Withdrawal,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -108,6 +114,8 @@ func NewGRPCServer(
 		evtfwd:                  evtfwd,
 		assetService:            assetService,
 		feeService:              feeService,
+		eventService:            eventService,
+		withdrawalService:       withdrawalService,
 		statusChecker:           statusChecker,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
@@ -196,6 +204,7 @@ func (g *GRPCServer) Start() {
 
 	tradingSvc := &tradingService{
 		log:               g.log,
+		blockchain:        g.client,
 		tradeOrderService: g.orderService,
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
@@ -224,7 +233,9 @@ func (g *GRPCServer) Start() {
 		governanceService:       g.governanceService,
 		AssetService:            g.assetService,
 		FeeService:              g.feeService,
+		eventService:            g.eventService,
 		statusChecker:           g.statusChecker,
+		WithdrawalService:       g.withdrawalService,
 		ctx:                     g.ctx,
 	}
 	g.tradingDataService = tradingDataSvc

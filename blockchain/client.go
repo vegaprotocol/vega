@@ -24,6 +24,7 @@ type chainClientImpl interface {
 	SendTransaction(context.Context, []byte) (bool, error)
 	GenesisValidators() ([]*tmtypes.Validator, error)
 	Validators() ([]*tmtypes.Validator, error)
+	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
 }
 
 // Client abstract all communication to the blockchain
@@ -33,7 +34,7 @@ type Client struct {
 }
 
 // NewClient instantiate a new blockchain client
-func newClient(clt chainClientImpl) *Client {
+func NewClient(clt chainClientImpl) *Client {
 	return &Client{
 		clt: clt,
 	}
@@ -115,4 +116,8 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 }
 func (c *Client) Validators() ([]*tmtypes.Validator, error) {
 	return c.clt.Validators()
+}
+
+func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {
+	return c.clt.Subscribe(ctx, fn, queries...)
 }

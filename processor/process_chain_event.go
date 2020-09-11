@@ -15,14 +15,14 @@ var (
 	ErrChainEventAssetListERC20WithoutEnoughSignature = errors.New("chain event for erc20 asset list received with missing node signatures")
 )
 
-func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
+func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
 	// first verify the event was emited by a validator
-	if !p.top.Exists(pubkey) {
+	if !app.top.Exists(pubkey) {
 		return ErrChainEventFromNonValidator
 	}
 
 	// ack the new event then
-	if !p.evtfwd.Ack(ce) {
+	if !app.evtfwd.Ack(ce) {
 		// there was an error, or this was already acked
 		// but that's not a big issue we just going to ignore that.
 		return nil
@@ -32,9 +32,9 @@ func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent,
 	// figure out what to do with it.
 	switch ce.Event.(type) {
 	case *types.ChainEvent_Builtin:
-		return p.processChainEventBuiltinAsset(ctx, ce)
+		return app.processChainEventBuiltinAsset(ctx, ce)
 	case *types.ChainEvent_Erc20:
-		return p.processChainEventERC20(ctx, ce)
+		return app.processChainEventERC20(ctx, ce)
 	case *types.ChainEvent_Btc:
 		return errors.New("BTC Event not implemented")
 	case *types.ChainEvent_Validator:
@@ -44,7 +44,7 @@ func (p *Processor) processChainEvent(ctx context.Context, ce *types.ChainEvent,
 	}
 }
 
-func (p *Processor) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent) error {
+func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent) error {
 	evt := ce.GetBuiltin()
 	if evt == nil {
 		return ErrNotABuiltinAssetEvent
@@ -52,21 +52,21 @@ func (p *Processor) processChainEventBuiltinAsset(ctx context.Context, ce *types
 
 	switch act := evt.Action.(type) {
 	case *types.BuiltinAssetEvent_Deposit:
-		if err := p.checkVegaAssetID(act.Deposit, "BuiltinAsset.Deposit"); err != nil {
+		if err := app.checkVegaAssetID(act.Deposit, "BuiltinAsset.Deposit"); err != nil {
 			return err
 		}
-		return p.banking.DepositBuiltinAsset(act.Deposit, ce.Nonce)
+		return app.banking.DepositBuiltinAsset(act.Deposit, ce.Nonce)
 	case *types.BuiltinAssetEvent_Withdrawal:
-		if err := p.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
+		if err := app.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
 			return err
 		}
-		return p.col.Withdraw(ctx, act.Withdrawal.PartyID, act.Withdrawal.VegaAssetID, act.Withdrawal.Amount)
+		return app.col.Withdraw(ctx, act.Withdrawal.PartyID, act.Withdrawal.VegaAssetID, act.Withdrawal.Amount)
 	default:
 		return ErrUnsupportedEventAction
 	}
 }
 
-func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainEvent) error {
+func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent) error {
 	evt := ce.GetErc20()
 	if evt == nil {
 		return ErrNotAnERC20Event
@@ -74,24 +74,24 @@ func (p *Processor) processChainEventERC20(ctx context.Context, ce *types.ChainE
 
 	switch act := evt.Action.(type) {
 	case *types.ERC20Event_AssetList:
-		if err := p.checkVegaAssetID(act.AssetList, "ERC20.AssetList"); err != nil {
+		if err := app.checkVegaAssetID(act.AssetList, "ERC20.AssetList"); err != nil {
 			return err
 		}
 		// now check that the notary is GO for this asset
-		_, ok := p.notary.IsSigned(
+		_, ok := app.notary.IsSigned(
 			act.AssetList.VegaAssetID,
 			types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
 		if !ok {
 			return ErrChainEventAssetListERC20WithoutEnoughSignature
 		}
-		return p.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index)
+		return app.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index)
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
-		if err := p.checkVegaAssetID(act.Deposit, "ERC20.AssetList"); err != nil {
+		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetList"); err != nil {
 			return err
 		}
-		return p.banking.DepositERC20(act.Deposit, evt.Block, evt.Index)
+		return app.banking.DepositERC20(act.Deposit, evt.Block, evt.Index)
 	case *types.ERC20Event_Withdrawal:
 		return errors.New("ERC20.Withdrawal not implemented")
 	default:
@@ -103,11 +103,11 @@ type HasVegaAssetID interface {
 	GetVegaAssetID() string
 }
 
-func (p *Processor) checkVegaAssetID(a HasVegaAssetID, action string) error {
+func (app *App) checkVegaAssetID(a HasVegaAssetID, action string) error {
 	id := a.GetVegaAssetID()
-	_, err := p.assets.Get(id)
+	_, err := app.assets.Get(id)
 	if err != nil {
-		p.log.Error("invalid vega asset ID",
+		app.log.Error("invalid vega asset ID",
 			logging.String("action", action),
 			logging.Error(err),
 			logging.String("asset-id", id))

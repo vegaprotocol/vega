@@ -44,6 +44,7 @@ type TradingClient interface {
 	PrepareProposal(ctx context.Context, in *protoapi.PrepareProposalRequest, opts ...grpc.CallOption) (*protoapi.PrepareProposalResponse, error)
 
 	PrepareVote(ctx context.Context, in *protoapi.PrepareVoteRequest, opts ...grpc.CallOption) (*protoapi.PrepareVoteResponse, error)
+	PrepareWithdraw(ctx context.Context, in *protoapi.PrepareWithdrawRequest, opts ...grpc.CallOption) (*protoapi.PrepareWithdrawResponse, error)
 	// unary calls - writes
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
 }
@@ -112,6 +113,9 @@ type TradingDataClient interface {
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
 	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
 	EstimateFee(ctx context.Context, in *protoapi.EstimateFeeRequest, opts ...grpc.CallOption) (*protoapi.EstimateFeeResponse, error)
+	Withdrawal(ctx context.Context, in *protoapi.WithdrawalRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalResponse, error)
+	Withdrawals(ctx context.Context, in *protoapi.WithdrawalsRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalsResponse, error)
+	ERC20WithdrawalApproval(ctx context.Context, in *protoapi.ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*protoapi.ERC20WithdrawalApprovalResponse, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -229,7 +233,7 @@ func (r *VegaResolverRoot) Asset() AssetResolver {
 	return (*myAssetResolver)(r)
 }
 
-// asset resolver
+// asset resolvet
 
 type myAssetResolver VegaResolverRoot
 
@@ -256,6 +260,45 @@ func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Ass
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid string) (*Erc20WithdrawalApproval, error) {
+	res, err := r.tradingDataClient.ERC20WithdrawalApproval(
+		ctx, &protoapi.ERC20WithdrawalApprovalRequest{WithdrawalID: wid},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Erc20WithdrawalApproval{
+		AssetSource: res.AssetSource,
+		Amount:      res.Amount,
+		Expiry:      vegatime.Format(vegatime.UnixNano(res.Expiry)),
+		Nonce:       res.Nonce,
+		Signatures:  res.Signatures,
+	}, nil
+}
+
+func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*Withdrawal, error) {
+	res, err := r.tradingDataClient.Withdrawal(
+		ctx, &protoapi.WithdrawalRequest{ID: wid},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	w, err := NewWithdrawalFromProto(res.Withdrawal)
+	if err != nil {
+		return nil, err
+	}
+
+	asset, err := r.Asset(ctx, res.Withdrawal.Asset)
+	if err != nil {
+		return nil, err
+	}
+
+	w.Asset = asset
+	return w, nil
+}
 
 func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party string, price *string, size string, side Side,
 	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderFeeEstimate, error) {
@@ -972,6 +1015,36 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 	return resp.Data, nil
 }
 
+func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) ([]*Withdrawal, error) {
+	res, err := r.tradingDataClient.Withdrawals(
+		ctx, &protoapi.WithdrawalsRequest{PartyID: party.Id},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*Withdrawal, 0, len(res.Withdrawals))
+	for _, v := range res.Withdrawals {
+		w, err := NewWithdrawalFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		req := protoapi.AssetByIDRequest{ID: v.Asset}
+		res, err := r.tradingDataClient.AssetByID(ctx, &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, err
+		}
+		w.Asset, err = AssetFromProto(res.Asset)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, w)
+	}
+
+	return out, nil
+}
+
 func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
 	resp, err := r.tradingDataClient.GetVotesByParty(ctx, &protoapi.GetVotesByPartyRequest{
 		PartyID: party.Id,
@@ -1186,6 +1259,18 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 // BEGIN: MarketData resolver
 
 type myMarketDataResolver VegaResolverRoot
+
+func (r *myMarketDataResolver) MarketState(_ context.Context, m *types.MarketData) (MarketState, error) {
+	return convertMarketStateFromProto(m.MarketState)
+}
+
+func (r *myMarketDataResolver) IndicativePrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.IndicativePrice, 10), nil
+}
+
+func (r *myMarketDataResolver) IndicativeVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.IndicativeVolume, 10), nil
+}
 
 func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestBidPrice, 10), nil
@@ -1679,6 +1764,40 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 
 type myMutationResolver VegaResolverRoot
 
+func (r *myMutationResolver) PrepareWithdrawal(
+	ctx context.Context,
+	partyID, amount, asset string,
+	erc20Details *Erc20WithdrawalDetailsInput,
+) (*PreparedWithdrawal, error) {
+	var ext *types.WithdrawExt
+	if erc20Details != nil {
+		ext = erc20Details.IntoProtoExt()
+	}
+
+	amountU, err := safeStringUint64(amount)
+	if err != nil {
+		return nil, err
+	}
+
+	req := protoapi.PrepareWithdrawRequest{
+		Withdraw: &types.WithdrawSubmission{
+			PartyID: partyID,
+			Asset:   asset,
+			Amount:  amountU,
+			Ext:     ext,
+		},
+	}
+
+	res, err := r.tradingClient.PrepareWithdraw(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PreparedWithdrawal{
+		Blob: base64.StdEncoding.EncodeToString(res.Blob),
+	}, nil
+}
+
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error) {
 	decodedData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
@@ -1781,22 +1900,18 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id string, party string, market string) (*PreparedCancelOrder, error) {
+func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, party string, market *string) (*PreparedCancelOrder, error) {
 	order := &types.OrderCancellation{}
 
-	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	if len(market) <= 0 {
-		return nil, errors.New("market missing or empty")
+	if market != nil {
+		order.MarketID = *market
 	}
-	order.MarketID = market
-	if len(id) == 0 {
-		return nil, errors.New("id missing or empty")
+	if id != nil {
+		order.OrderID = *id
 	}
-	order.OrderID = id
 	if len(party) == 0 {
 		return nil, errors.New("party missing or empty")
 	}
-
 	order.PartyID = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)

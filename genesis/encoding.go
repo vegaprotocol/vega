@@ -4,16 +4,19 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/governance"
 )
 
 type GenesisState struct {
 	Governance governance.GenesisState `json:"governance"`
+	Assets     assets.GenesisState     `json:"assets"`
 }
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Governance: governance.DefaultGenesisState(),
+		Assets:     assets.DefaultGenesisState(),
 	}
 }
 

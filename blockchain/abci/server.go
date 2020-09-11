@@ -1,39 +1,41 @@
-package tm
+package abci
 
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/tendermint/tendermint/abci/server"
+	"github.com/tendermint/tendermint/abci/types"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/libs/service"
 )
 
 // Server is an abstraction over the abci server
 type Server struct {
-	Config
+	blockchain.Config
 	log  *logging.Logger
-	abci *AbciApplication
+	abci types.Application
 	srv  service.Service
 }
 
 // NewServer instantiate a new server
-func NewServer(log *logging.Logger, config Config, app *AbciApplication) *Server {
+func NewServer(log *logging.Logger, config blockchain.Config, app *App) *Server {
 	// setup logger
-	log = log.Named(namedLogger)
+	log = log.Named("tm")
 	log.SetLevel(config.Level.Get())
 
 	return &Server{
-		log:    log,
 		Config: config,
+		log:    log,
 		abci:   app,
 		srv:    nil,
 	}
 }
 
 // ReloadConf update the internal configuration
-func (s *Server) ReloadConf(cfg Config) {
+func (s *Server) ReloadConf(cfg blockchain.Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
@@ -51,7 +53,7 @@ func (s *Server) ReloadConf(cfg Config) {
 // Start configures and runs a new socket based ABCI tendermint blockchain
 // server for the VEGA application.
 func (s *Server) Start() error {
-	addr := fmt.Sprintf("%s:%d", s.ServerAddr, s.ServerPort)
+	addr := fmt.Sprintf("%s:%d", s.Tendermint.ServerAddr, s.Tendermint.ServerPort)
 	srv, err := server.NewServer(addr, "socket", s.abci)
 	if err != nil {
 		return err
@@ -59,8 +61,8 @@ func (s *Server) Start() error {
 	srv.SetLogger(&abciLogger{s.log.Named("abci.socket-server")})
 
 	s.log.Info("Starting abci-blockchain socket server",
-		logging.String("addr", s.ServerAddr),
-		logging.Int("port", s.ServerPort))
+		logging.String("addr", s.Tendermint.ServerAddr),
+		logging.Int("port", s.Tendermint.ServerPort))
 
 	if err := srv.Start(); err != nil {
 		return err

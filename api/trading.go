@@ -31,13 +31,12 @@ type TradeOrderService interface {
 	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error
 	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) error
 	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error
-	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 }
 
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	PrepareWithdraw(context.Context, *types.Withdraw) error
+	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
 }
 
 // GovernanceService ...
@@ -53,8 +52,16 @@ type EvtForwarder interface {
 	Forward(e *types.ChainEvent, pk string) error
 }
 
+// Blockchain ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
+type Blockchain interface {
+	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
+}
+
 type tradingService struct {
-	log               *logging.Logger
+	log *logging.Logger
+
+	blockchain        Blockchain
 	tradeOrderService TradeOrderService
 	accountService    AccountService
 	marketService     MarketService
@@ -70,7 +77,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	defer metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", startTime)
 	err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMalformedRequest, err)
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	raw, err := proto.Marshal(req.Submission)
 	if err != nil {
@@ -130,10 +137,12 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	if req == nil || req.Tx == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
-	if ok, err := s.tradeOrderService.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
+
+	if ok, err := s.blockchain.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
 		s.log.Error("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
+
 	return &protoapi.SubmitTransactionResponse{
 		Success: true,
 	}, nil
@@ -221,15 +230,22 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	msg, err := proto.Marshal(req.Evt)
+	msg, err := req.Evt.PrepareToSign()
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		return nil, apiError(codes.InvalidArgument, err)
 	}
 
 	// verify the signature then
 	err = verifySignature(s.log, msg, req.Signature, req.PubKey)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		// we try the other signature format
+		msg, err = proto.Marshal(req.Evt)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		}
+		if err = verifySignature(s.log, msg, req.Signature, req.PubKey); err != nil {
+			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+		}
 	}
 
 	var ok = true

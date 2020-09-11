@@ -7,6 +7,7 @@ import (
 	"hash/fnv"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain"
@@ -45,18 +46,20 @@ type ValidatorTopology interface {
 // and will try to send them to the vega chain.
 // this will select a node in the network to forward the event
 type EvtForwarder struct {
-	log              *logging.Logger
-	cfg              Config
-	cmd              Commander
-	nodes            []nodeHash
-	self             string
-	ackedEvts        map[string]*types.ChainEvent
-	evts             map[string]tsEvt
-	currentTime      time.Time
-	top              ValidatorTopology
-	bcQueueWhitelist map[string]struct{}
-	mu               sync.RWMutex
-	evtsmu           sync.Mutex
+	log         *logging.Logger
+	cfg         Config
+	cmd         Commander
+	nodes       []nodeHash
+	self        string
+	ackedEvts   map[string]*types.ChainEvent
+	evts        map[string]tsEvt
+	currentTime time.Time
+	top         ValidatorTopology
+	mu          sync.RWMutex
+	evtsmu      sync.Mutex
+
+	// this is actually an map[string]struct{}
+	bcQueueWhitelist atomic.Value
 }
 
 type tsEvt struct {
@@ -75,11 +78,8 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		return nil, err
 	}
 
-	whitelist := make(map[string]struct{}, len(cfg.BlockchainQueueWhitelist))
-	for _, v := range cfg.BlockchainQueueWhitelist {
-		whitelist[v] = struct{}{}
-	}
-
+	var whitelist atomic.Value
+	whitelist.Store(buildWhitelist(cfg))
 	evtf := &EvtForwarder{
 		cfg:              cfg,
 		log:              log,
@@ -95,6 +95,33 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
 	return evtf, nil
+}
+
+func buildWhitelist(cfg Config) map[string]struct{} {
+	whitelist := make(map[string]struct{}, len(cfg.BlockchainQueueWhitelist))
+	for _, v := range cfg.BlockchainQueueWhitelist {
+		whitelist[v] = struct{}{}
+	}
+	return whitelist
+}
+
+// ReloadConf updates the internal configuration of the collateral engine
+func (e *EvtForwarder) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfg = cfg
+	// update the whitelist
+	e.log.Info("evtforward whitelist updated",
+		logging.Reflect("list", cfg.BlockchainQueueWhitelist))
+	e.bcQueueWhitelist.Store(buildWhitelist(cfg))
+
 }
 
 // Ack will return true if the event is newly acknowledge
@@ -119,11 +146,17 @@ func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 	return true
 }
 
+func (e *EvtForwarder) isWhitelisted(pubkey string) bool {
+	whitelist := e.bcQueueWhitelist.Load().(map[string]struct{})
+	_, ok := whitelist[pubkey]
+	return ok
+}
+
 // Forward will forward an ChainEvent to the tendermint network
 // we expect the pubkey to be an ed25519 pubkey hex encoded
 func (e *EvtForwarder) Forward(evt *types.ChainEvent, pubkey string) error {
 	// check if the sender of the event is whitelisted
-	if _, ok := e.bcQueueWhitelist[pubkey]; !ok {
+	if !e.isWhitelisted(pubkey) {
 		return ErrPubKeyNotWhitelisted
 	}
 
