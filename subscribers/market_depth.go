@@ -3,7 +3,6 @@ package subscribers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"sync"
 
@@ -101,7 +100,6 @@ func (md *MarketDepth) removeOrder(order *types.Order, reduceAmount uint64) erro
 	pl := md.getPriceLevel(order.Side, order.Price)
 
 	if pl == nil {
-		fmt.Println("Unable to find price level for order:", order)
 		return errors.New("Unknown pricelevel")
 	}
 	// Update the values
@@ -273,35 +271,33 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		}
 	}
 
-	buyPtr := []*types.PriceLevel{}
+	/*buyPtr := []*types.PriceLevel{}
 	sellPtr := []*types.PriceLevel{}
 
 	// Send out market depth updates to any listeners
 	// PETE TODO once market data updates are done
-	for _, pl := range md.changes {
-		if pl.side == types.Side_SIDE_BUY {
-			buyPtr = append(buyPtr, &types.PriceLevel{
-				Price:          pl.price,
-				NumberOfOrders: pl.totalOrders,
-				Volume:         pl.totalVolume,
-			})
-		} else {
-			sellPtr = append(sellPtr, &types.PriceLevel{
-				Price:          pl.price,
-				NumberOfOrders: pl.totalOrders,
-				Volume:         pl.totalVolume,
-			})
+		for _, pl := range md.changes {
+			if pl.side == types.Side_SIDE_BUY {
+				buyPtr = append(buyPtr, &types.PriceLevel{
+					Price:          pl.price,
+					NumberOfOrders: pl.totalOrders,
+					Volume:         pl.totalVolume,
+				})
+			} else {
+				sellPtr = append(sellPtr, &types.PriceLevel{
+					Price:          pl.price,
+					NumberOfOrders: pl.totalOrders,
+					Volume:         pl.totalVolume,
+				})
+			}
 		}
-	}
 
-	marketDepthUpdate := &types.MarketDepthUpdate{
-		MarketID:       order.MarketID,
-		Buy:            buyPtr,
-		Sell:           sellPtr,
-		SequenceNumber: md.sequenceNumber,
-	}
-
-	fmt.Println("MDU", marketDepthUpdate)
+		marketDepthUpdate := &types.MarketDepthUpdate{
+			MarketID:       order.MarketID,
+			Buy:            buyPtr,
+			Sell:           sellPtr,
+			SequenceNumber: md.sequenceNumber,
+		}*/
 
 	// Clear the list of changes
 	md.changes = nil
