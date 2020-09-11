@@ -338,10 +338,9 @@ type ComplexityRoot struct {
 	}
 
 	PriceLevel struct {
-		CumulativeVolume func(childComplexity int) int
-		NumberOfOrders   func(childComplexity int) int
-		Price            func(childComplexity int) int
-		Volume           func(childComplexity int) int
+		NumberOfOrders func(childComplexity int) int
+		Price          func(childComplexity int) int
+		Volume         func(childComplexity int) int
 	}
 
 	Proposal struct {
@@ -626,7 +625,6 @@ type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *proto.PriceLevel) (string, error)
 	Volume(ctx context.Context, obj *proto.PriceLevel) (string, error)
 	NumberOfOrders(ctx context.Context, obj *proto.PriceLevel) (string, error)
-	CumulativeVolume(ctx context.Context, obj *proto.PriceLevel) (string, error)
 }
 type ProposalResolver interface {
 	ID(ctx context.Context, obj *proto.GovernanceData) (*string, error)
@@ -1947,13 +1945,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PreparedWithdrawal.Blob(childComplexity), true
-
-	case "PriceLevel.cumulativeVolume":
-		if e.complexity.PriceLevel.CumulativeVolume == nil {
-			break
-		}
-
-		return e.complexity.PriceLevel.CumulativeVolume(childComplexity), true
 
 	case "PriceLevel.numberOfOrders":
 		if e.complexity.PriceLevel.NumberOfOrders == nil {
@@ -3911,9 +3902,6 @@ type PriceLevel {
 
     "The number of orders at this price level (uint64)"
     numberOfOrders: String!
-
-    "The cumulative total volume to this price level (uint64)"
-    cumulativeVolume: String!
 }
 
 "Candle stick representation of trading"
@@ -11644,40 +11632,6 @@ func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.PriceLevel().NumberOfOrders(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PriceLevel_cumulativeVolume(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PriceLevel",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PriceLevel().CumulativeVolume(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20038,20 +19992,6 @@ func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._PriceLevel_numberOfOrders(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "cumulativeVolume":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PriceLevel_cumulativeVolume(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

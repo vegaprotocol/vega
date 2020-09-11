@@ -12,9 +12,14 @@ import (
 )
 
 type priceLevel struct {
-	price       uint64
+	// Price of the price level
+	price uint64
+	// How many orders are at this level
 	totalOrders uint64
+	// How much volume is at this level
 	totalVolume uint64
+	// What side of the book is this level
+	side types.Side
 }
 
 // MarketDepth holds all the details about a single markets MarketDepth
@@ -29,6 +34,10 @@ type MarketDepth struct {
 	sellSide []*priceLevel
 	// All price levels that have changed in the last update
 	changes []*priceLevel
+	// Sequence number is an increment-only value to identify a state
+	// of the market depth in time. Used when trying to match updates
+	// to a snapshot dump
+	sequenceNumber uint64
 }
 
 // MarketDepthBuilder is a subscriber of order events
@@ -116,6 +125,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 		price:       order.Price,
 		totalOrders: 1,
 		totalVolume: order.Remaining,
+		side:        order.Side,
 	}
 
 	if order.Side == types.Side_SIDE_BUY {
@@ -263,15 +273,40 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		}
 	}
 
+	buyPtr := []*types.PriceLevel{}
+	sellPtr := []*types.PriceLevel{}
+
 	// Send out market depth updates to any listeners
 	// PETE TODO once market data updates are done
-	/*	for _, pl := range md.changes {
-		// Send out message for each price level that was changed
-		fmt.Println("PriceLevel:", pl)
-	}*/
+	for _, pl := range md.changes {
+		if pl.side == types.Side_SIDE_BUY {
+			buyPtr = append(buyPtr, &types.PriceLevel{
+				Price:          pl.price,
+				NumberOfOrders: pl.totalOrders,
+				Volume:         pl.totalVolume,
+			})
+		} else {
+			sellPtr = append(sellPtr, &types.PriceLevel{
+				Price:          pl.price,
+				NumberOfOrders: pl.totalOrders,
+				Volume:         pl.totalVolume,
+			})
+		}
+	}
+
+	marketDepthUpdate := &types.MarketDepthUpdate{
+		MarketID:       order.MarketID,
+		Buy:            buyPtr,
+		Sell:           sellPtr,
+		SequenceNumber: md.sequenceNumber,
+	}
+
+	fmt.Println("MDU", marketDepthUpdate)
 
 	// Clear the list of changes
 	md.changes = nil
+
+	md.sequenceNumber++
 }
 
 // Returns the min of 2 uint64s

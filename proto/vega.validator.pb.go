@@ -119,6 +119,23 @@ func (this *MarketDepth) Validate() error {
 	}
 	return nil
 }
+func (this *MarketDepthUpdate) Validate() error {
+	for _, item := range this.Buy {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Buy", err)
+			}
+		}
+	}
+	for _, item := range this.Sell {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Sell", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *Position) Validate() error {
 	return nil
 }

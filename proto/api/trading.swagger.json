@@ -3072,6 +3072,11 @@
             "$ref": "#/definitions/vegaPriceLevel"
           },
           "description": "Collection of price levels for the sell side of the book."
+        },
+        "sequenceNumber": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Sequence number for the market depth dump"
         }
       },
       "description": "Represents market depth or order book data for the specified market on Vega."
@@ -3590,11 +3595,6 @@
           "type": "string",
           "format": "uint64",
           "description": "Volume at the price level."
-        },
-        "cumulativeVolume": {
-          "type": "string",
-          "format": "uint64",
-          "description": "Cumulative volume at the price level."
         }
       },
       "description": "Represents a price level from market depth or order book data."
