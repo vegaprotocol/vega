@@ -77,7 +77,8 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 			t.Fatalf("Expected some sort of error, but got none.")
 		}
 		fmt.Println(err.Error())
-		if strings.Contains(err.Error(), "Internal error") {
+
+		if strings.Contains(err.Error(), "InvalidArgument") {
 			return
 		}
 		fmt.Printf("Sleeping for %d milliseconds\n", sleepTime)
@@ -203,7 +204,7 @@ func getTestGRPCServer(
 	timeService := vegatime.New(conf.Time)
 
 	// Order Service
-	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService, blockchainClient)
+	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create order service")
 		return
@@ -243,8 +244,10 @@ func getTestGRPCServer(
 	aplugin := plugins.NewAsset(context.Background())
 	assetService := assets.NewService(logger, conf.Assets, aplugin)
 	feeService := fee.NewService(logger, conf.Execution.Fee, marketStore)
+	eventService := subscribers.NewService(broker)
 
 	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
+	withdrawal := plugins.NewWithdrawal(ctx)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -265,6 +268,8 @@ func getTestGRPCServer(
 		evtfwd,
 		assetService,
 		feeService,
+		eventService,
+		withdrawal,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

@@ -34,7 +34,7 @@ func getTestExtResChecker(t *testing.T) *testExtResChecker {
 	tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	nv := validators.NewExtResChecker(
-		logging.NewTestLogger(), top, cmd, tsvc)
+		logging.NewTestLogger(), validators.NewDefaultConfig(), top, cmd, tsvc)
 	assert.NotNil(t, nv)
 
 	return &testExtResChecker{

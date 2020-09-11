@@ -47,6 +47,8 @@ var (
 	ErrNoType = errors.New("no value has been set for the type")
 	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
 	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
+	// ErrCancelOrderWithOrderIDRequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
+	ErrCancelOrderWithOrderIDRequireMarketID = errors.New("cancel order with orderID require marketID")
 )
 
 // TimeService ...
@@ -69,29 +71,18 @@ type OrderStore interface {
 	Unsubscribe(id uint64) error
 }
 
-// Blockchain ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
-type Blockchain interface {
-	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
-}
-
 // Svc represents the order service
 type Svc struct {
 	Config
 	log *logging.Logger
 
-	blockchain    Blockchain
 	orderStore    OrderStore
 	timeService   TimeService
 	subscriberCnt int32
 }
 
 // NewService creates an Orders service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService, client Blockchain) (*Svc, error) {
-	if client == nil {
-		return nil, errors.New("blockchain client is nil when calling NewService in OrderService")
-	}
-
+func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -99,7 +90,6 @@ func NewService(log *logging.Logger, config Config, store OrderStore, time TimeS
 	return &Svc{
 		log:         log,
 		Config:      config,
-		blockchain:  client,
 		orderStore:  store,
 		timeService: time,
 	}, nil
@@ -117,13 +107,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
-}
-
-func (s *Svc) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
-	if bundle == nil {
-		return false, ErrEmptySubmitTransactionRequest
-	}
-	return s.blockchain.SubmitTransaction(ctx, bundle)
 }
 
 func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error {
@@ -152,9 +135,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNoType
 	}
 
-	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED ||
-		sub.TimeInForce == types.Order_TIF_GFA ||
-		sub.TimeInForce == types.Order_TIF_GFN {
+	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoTimeInForce
 	}
 
@@ -193,6 +174,12 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 	if err := order.Validate(); err != nil {
 		return errors.Wrap(err, "order cancellation invalid")
 	}
+
+	// ensure that if orderID is specified marketId is as well
+	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+		return ErrCancelOrderWithOrderIDRequireMarketID
+	}
+
 	return nil
 }
 

@@ -291,10 +291,11 @@ func testMarginWithOrderInBook(t *testing.T) {
 	broker := mocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	// instantiate the book then fil it with the orders
+	// instantiate the book then fill it with the orders
 
 	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice))
+		log, conf.Matching, marketID, uint64(markPrice),
+		types.MarketState_MARKET_STATE_CONTINUOUS)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -396,10 +397,11 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	broker := mocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	// instantiate the book then fil it with the orders
+	// instantiate the book then fill it with the orders
 
 	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice))
+		log, conf.Matching, marketID, uint64(markPrice),
+		types.MarketState_MARKET_STATE_CONTINUOUS)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{

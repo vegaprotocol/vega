@@ -72,6 +72,20 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 	return s, nil
 }
 
+// ReloadConf updates the internal configuration
+func (a *Service) ReloadConf(cfg Config) {
+	a.log.Info("reloading configuration")
+	if a.log.GetLevel() != cfg.Level.Get() {
+		a.log.Info("updating log level",
+			logging.String("old", a.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		a.log.SetLevel(cfg.Level.Get())
+	}
+
+	a.cfg = cfg
+}
+
 func (a *Service) onTick(_ context.Context, t time.Time) {
 	// update block time on id generator
 	a.idgen.NewBatch()

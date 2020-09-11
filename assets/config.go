@@ -1,27 +1,17 @@
 package assets
 
 import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/golang/protobuf/jsonpb"
 )
 
 const (
-	namedLogger  = "assets"
-	devAssetPath = "dev_assets.json"
+	namedLogger = "assets"
 )
 
 type Config struct {
-	Level               encoding.LogLevel
-	DevAssetSourcesPath string
-	ERC20               ERC20Config
+	Level encoding.LogLevel
+	ERC20 ERC20Config
 }
 
 type ERC20Config struct {
@@ -33,98 +23,9 @@ type ERC20Config struct {
 func NewDefaultConfig(defaultRootPath string) Config {
 
 	return Config{
-		Level:               encoding.LogLevel{Level: logging.InfoLevel},
-		DevAssetSourcesPath: filepath.Join(defaultRootPath, devAssetPath),
+		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		ERC20: ERC20Config{
 			BridgeAddress: "0xf6C9d3e937fb2dA4995272C1aC3f3D466B7c23fC",
 		},
 	}
-}
-
-func GenDevAssetSourcesPath(defaultRootPath string) error {
-	assets := types.DevAssets{Sources: []*types.AssetSource{
-		&types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:                "Ether",
-					Symbol:              "ETH",
-					TotalSupply:         "110436690",
-					Decimals:            5,
-					MaxFaucetAmountMint: "10000000", // 100ETH
-				},
-			},
-		},
-		&types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:                "Bitcoin",
-					Symbol:              "BTC",
-					TotalSupply:         "21000000",
-					Decimals:            5,
-					MaxFaucetAmountMint: "1000000", // 10BTC
-				},
-			},
-		},
-		&types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:                "VUSD",
-					Symbol:              "VUSD",
-					TotalSupply:         "21000000",
-					Decimals:            5,
-					MaxFaucetAmountMint: "500000000", // 1000VUSD
-
-				},
-			},
-		},
-		// FIXME(): enable these assets again when we can supportt higher number
-		// of decimals and we have properly tester erc20 token support.
-		// this is the VUSD5
-		// &types.AssetSource{
-		// 	Source: &types.AssetSource_Erc20{
-		// 		Erc20: &types.ERC20{
-		// 			ContractAddress: "0x308C71DE1FdA14db838555188211Fc87ef349272",
-		// 		},
-		// 	},
-		// },
-		// this is the VUSD
-		// &types.AssetSource{
-		// 	Source: &types.AssetSource_Erc20{
-		// 		Erc20: &types.ERC20{
-		// 			ContractAddress: "0x955C6789A7fbee203B4bE0F01428E769308813f2",
-		// 		},
-		// 	},
-		// },
-	}}
-
-	m := jsonpb.Marshaler{
-		Indent: "  ",
-	}
-	buf, err := m.MarshalToString(&assets)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(filepath.Join(defaultRootPath, devAssetPath))
-	if err != nil {
-		return err
-	}
-
-	if _, err = f.WriteString(string(buf)); err != nil {
-		return err
-	}
-	return nil
-}
-
-func LoadDevAssets(cfg Config) ([]*types.AssetSource, error) {
-	path := filepath.Join(cfg.DevAssetSourcesPath)
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	assets := types.DevAssets{}
-	err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &assets)
-	if err != nil {
-		return nil, err
-	}
-	return assets.Sources, nil
 }

@@ -169,6 +169,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	mkt, err := NewMarket(
+		ctx,
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
@@ -268,6 +269,11 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
+	}
+
+	// ensure that if orderID is specified marketId is as well
+	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+		return nil, ErrInvalidOrderCancellation
 	}
 
 	if len(order.PartyID) > 0 {

@@ -6,6 +6,34 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+func convertWithdrawalStatusToProto(x WithdrawalStatus) (types.Withdrawal_Status, error) {
+	switch x {
+	case WithdrawalStatusOpen:
+		return types.Withdrawal_WITHDRAWAL_STATUS_OPEN, nil
+	case WithdrawalStatusCancelled:
+		return types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED, nil
+	case WithdrawalStatusFinalized:
+		return types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED, nil
+	default:
+		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
+		return types.Withdrawal_WITHDRAWAL_STATUS_UNSPECIFIED, err
+	}
+}
+
+func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStatus, error) {
+	switch x {
+	case types.Withdrawal_WITHDRAWAL_STATUS_OPEN:
+		return WithdrawalStatusOpen, nil
+	case types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED:
+		return WithdrawalStatusCancelled, nil
+	case types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED:
+		return WithdrawalStatusFinalized, nil
+	default:
+		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
+		return WithdrawalStatusOpen, err
+	}
+}
+
 func convertNodeSignatureKindToToProto(x NodeSignatureKind) (types.NodeSignatureKind, error) {
 	switch x {
 	case NodeSignatureKindAssetNew:
@@ -269,7 +297,7 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, nil
 	case ProposalRejectionReasonNoProduct:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, nil
-	case ProposalRejectionReasonUnuspportedProduct:
+	case ProposalRejectionReasonUnsupportedProduct:
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, nil
 	case ProposalRejectionReasonInvalidFutureMaturityTimestamp:
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, nil
@@ -287,6 +315,8 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS, nil
 	case ProposalRejectionReasonIncompatibleTimestamps:
 		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, nil
+	case ProposalRejectionReasonInvalidAsset:
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from GraphQL to Proto: %v", x)
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -310,7 +340,7 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 	case types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT:
 		return ProposalRejectionReasonNoProduct, nil
 	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT:
-		return ProposalRejectionReasonUnuspportedProduct, nil
+		return ProposalRejectionReasonUnsupportedProduct, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP:
 		return ProposalRejectionReasonInvalidFutureMaturityTimestamp, nil
 	case types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED:
@@ -327,6 +357,8 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonMissingERC20ContractAddress, nil
 	case types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS:
 		return ProposalRejectionReasonIncompatibleTimestamps, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET:
+		return ProposalRejectionReasonInvalidAsset, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err
@@ -370,6 +402,8 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_SELF_TRADING, nil
 	case OrderRejectionReasonInternalError:
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
+	case OrderRejectionReasonInvalidTimeInForce:
+		return types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err

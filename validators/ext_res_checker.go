@@ -73,25 +73,44 @@ type res struct {
 
 type ExtResChecker struct {
 	log       *logging.Logger
+	cfg       Config
 	resources map[string]*res
 	now       time.Time
 	top       ValidatorTopology
 	cmd       Commander
 }
 
-func NewExtResChecker(log *logging.Logger, top ValidatorTopology, cmd Commander, tsvc TimeService) (e *ExtResChecker) {
+func NewExtResChecker(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (e *ExtResChecker) {
 	defer func() {
 		tsvc.NotifyOnTick(e.OnTick)
 	}()
 
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
+
 	now, _ := tsvc.GetTimeNow()
 	return &ExtResChecker{
 		log:       log,
+		cfg:       cfg,
 		now:       now,
 		cmd:       cmd,
 		top:       top,
 		resources: map[string]*res{},
 	}
+}
+
+// ReloadConf updates the internal configuration
+func (e *ExtResChecker) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfg = cfg
 }
 
 func (e ExtResChecker) Stop() {

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/faucet"
@@ -164,11 +163,6 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 		return err
 	}
 
-	// init the devAssets
-	if err := assets.GenDevAssetSourcesPath(rootPath); err != nil {
-		return err
-	}
-
 	logger.Info("configuration generated successfully", logging.String("path", rootPath))
 
 	return nil
@@ -195,52 +189,56 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		- Maturity dates should be not all the same, for variety.
 	*/
 	skels := []struct {
-		id                    string
-		decimalPlaces         uint64
-		baseName              string
-		settlementAsset       string
-		quoteName             string
-		maturity              time.Time
-		initialMarkPrice      uint64
-		settlementValue       uint64
-		sigma                 float64
-		riskAversionParameter float64
+		id                     string
+		decimalPlaces          uint64
+		baseName               string
+		settlementAsset        string
+		quoteName              string
+		maturity               time.Time
+		initialMarkPrice       uint64
+		settlementValue        uint64
+		sigma                  float64
+		riskAversionParameter  float64
+		openingAuctionDuration string
 	}{
 		{
-			id:                    "VHSRA2G5MDFKREFJ5TOAGHZBBDGCYS67",
-			decimalPlaces:         5,
-			baseName:              "ETH",
-			quoteName:             "VUSD",
-			settlementAsset:       "VUSD",
-			maturity:              time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
-			initialMarkPrice:      1410000,
-			settlementValue:       1500000,
-			riskAversionParameter: 0.001,
-			sigma:                 1.5,
+			id:                     "VHSRA2G5MDFKREFJ5TOAGHZBBDGCYS67",
+			decimalPlaces:          5,
+			baseName:               "ETH",
+			quoteName:              "VUSD",
+			settlementAsset:        "VUSD",
+			maturity:               time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
+			initialMarkPrice:       1410000,
+			settlementValue:        1500000,
+			riskAversionParameter:  0.001,
+			sigma:                  1.5,
+			openingAuctionDuration: "10s",
 		},
 		{
-			id:                    "LBXRA65PN4FN5HBWRI2YBCOYDG2PBGYU",
-			decimalPlaces:         5,
-			baseName:              "GBP",
-			quoteName:             "VUSD",
-			settlementAsset:       "VUSD",
-			maturity:              time.Date(2020, 10, 30, 22, 59, 59, 0, time.UTC),
-			initialMarkPrice:      130000,
-			settlementValue:       126000,
-			riskAversionParameter: 0.01,
-			sigma:                 0.09,
+			id:                     "LBXRA65PN4FN5HBWRI2YBCOYDG2PBGYU",
+			decimalPlaces:          5,
+			baseName:               "GBP",
+			quoteName:              "VUSD",
+			settlementAsset:        "VUSD",
+			maturity:               time.Date(2020, 10, 30, 22, 59, 59, 0, time.UTC),
+			initialMarkPrice:       130000,
+			settlementValue:        126000,
+			riskAversionParameter:  0.01,
+			sigma:                  0.09,
+			openingAuctionDuration: "0m20s",
 		},
 		{
-			id:                    "RTJVFCMFZZQQLLYVSXTWEN62P6AH6OCN",
-			decimalPlaces:         5,
-			baseName:              "ETH",
-			quoteName:             "BTC",
-			settlementAsset:       "BTC",
-			maturity:              time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
-			initialMarkPrice:      10000,
-			settlementValue:       98123,
-			riskAversionParameter: 0.001,
-			sigma:                 2.0,
+			id:                     "RTJVFCMFZZQQLLYVSXTWEN62P6AH6OCN",
+			decimalPlaces:          5,
+			baseName:               "ETH",
+			quoteName:              "BTC",
+			settlementAsset:        "BTC",
+			maturity:               time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
+			initialMarkPrice:       10000,
+			settlementValue:        98123,
+			riskAversionParameter:  0.001,
+			sigma:                  2.0,
+			openingAuctionDuration: "0h0m30s",
 		},
 	}
 
@@ -249,6 +247,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 	for seq, skel := range skels {
 		monYear := skel.maturity.Format("Jan06")
 		monYearUpper := strings.ToUpper(monYear)
+		auctionDuration, err := time.ParseDuration(skel.openingAuctionDuration)
+		if err != nil {
+			return nil, err
+		}
 
 		mkt := proto.Market{
 			Id:            skel.id,
@@ -310,9 +312,13 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			TradingMode: &proto.Market_Continuous{
 				Continuous: &proto.ContinuousTrading{},
 			},
+			OpeningAuction: &proto.AuctionDuration{
+				Duration: int64(auctionDuration.Seconds()),
+				Volume:   0,
+			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
-		err := createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
+		err = createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
 		if err != nil {
 			return nil, err
 		}

@@ -6,12 +6,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -31,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
-	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -121,8 +122,9 @@ type NodeCommand struct {
 	notaryService     *notary.Svc
 	assetService      *assets.Svc
 	feeService        *fee.Svc
+	eventService      *subscribers.Service
 
-	blockchain       *blockchain.Blockchain
+	abciServer       *abci.Server
 	blockchainClient *blockchain.Client
 
 	pproffhandlr *pprof.Pprofhandler
@@ -136,7 +138,6 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
-	processor       *processor.Processor
 	governance      *governance.Engine
 	collateral      *collateral.Engine
 
@@ -154,9 +155,10 @@ type NodeCommand struct {
 	genesisHandler *genesis.Handler
 
 	// plugins
-	settlePlugin *plugins.Positions
-	notaryPlugin *plugins.Notary
-	assetPlugin  *plugins.Asset
+	settlePlugin     *plugins.Positions
+	notaryPlugin     *plugins.Notary
+	assetPlugin      *plugins.Asset
+	withdrawalPlugin *plugins.Withdrawal
 }
 
 // Init initialises the node command.
@@ -194,13 +196,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
 	statusChecker.OnChainDisconnect(l.cancel)
-	statusChecker.OnChainVersionObtained(func(v string) {
-		l.stats.SetChainVersion(v)
-	})
-
-	var err error
+	statusChecker.OnChainVersionObtained(
+		func(v string) { l.stats.SetChainVersion(v) },
+	)
 
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
@@ -222,15 +221,26 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.evtfwd,
 		l.assetService,
 		l.feeService,
+		l.eventService,
+		l.withdrawalPlugin,
 		statusChecker,
 	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
+
+	// watch configs
+	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
+		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
+	)
+
+	// start the grpc server
 	go grpcServer.Start()
 	metrics.Start(l.conf.Metrics)
 
 	// start gateway
-	var gty *Gateway
-
+	var (
+		gty *Gateway
+		err error
+	)
 	if l.conf.GatewayEnabled {
 		gty, err = startGateway(l.Log, l.conf.Gateway)
 		if err != nil {
@@ -240,11 +250,24 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	l.Log.Info("Vega startup complete")
 
+	// Start the stats collection client for tendermint
+	tm := stats.NewTendermint(l.blockchainClient, l.stats)
+	go func() {
+		for {
+			select {
+			case <-time.NewTicker(1 * time.Second).C:
+				if err := tm.Collect(l.ctx); err != nil {
+					l.Log.Info("Can't start stats Collection", logging.Error(err))
+				}
+			}
+		}
+	}()
+
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	l.blockchain.Stop()
+	l.abciServer.Stop()
 	statusChecker.Stop()
 
 	// cleanup gateway

@@ -290,6 +290,8 @@ enum OrderError {
   ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
   // Order was submitted with an incorrect or invalid market type.
   ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
+	// Order was submitted with invalid time in force
+	ORDER_ERROR_INVALID_TIME_IN_FORCE = 23;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -519,14 +521,63 @@ enum ChainStatus {
   // Note: ChainStatus does not exist in GraphQL.
 }
 
-// Represents a withdrawal of an asset by a party on Vega.
-message Withdraw {
-  // Unique party identifier affecting the withdrawal.
+// The representation of a withdrawal in the vega network
+message Withdrawal {
+  // The status of the withdrawal
+  enum Status {
+    // The default value
+    WITHDRAWAL_STATUS_UNSPECIFIED = 0;
+    // The withdrawal is open and being processed by the network
+    WITHDRAWAL_STATUS_OPEN = 1;
+    // The withdrawal have been cancelled
+    WITHDRAWAL_STATUS_CANCELLED = 2;
+    // The withdrawal went through and is fully finalized (funds remove from the
+    // vega network, and unlocked from the foreign chain bridge)
+    WITHDRAWAL_STATUS_FINALIZED = 3;
+  }
+
+  // The id of the withdrawal
+  string id = 1;
+  // The party initiating the withdrawal
+  string partyID = 2;
+  // The amount to be withdrawn
+  uint64 amount = 3;
+  // The asset we want to withdraw funds from
+  string asset = 4;
+  // The status of this withdrawal
+  Status status = 5;
+  // The reference which is used by the foreign chain
+  // to refer to this withdrawal
+  string ref = 6;
+  // The time until when the withdrawal is valid
+  int64 expiry = 7;
+  // foreign chain specifis
+  WithdrawExt ext = 8;
+}
+
+// A request for withdrawing funds from a trader
+message WithdrawSubmission {
+  // The party which wants to withdraw funds
   string partyID = 1;
-  // Total amount to withdraw.
+  // The amount to be withdrawn
   uint64 amount = 2;
-  // Asset identifier.
+  // The asset we want to withdraw
   string asset = 3;
+  // foreign chain specifics
+  WithdrawExt ext = 4;
+}
+
+message WithdrawExt {
+  // foreign chain specifics
+  oneof ext {
+    Erc20WithdrawExt erc20 = 1;
+  }
+}
+
+// An extension of data required for the withdraw submissions
+message Erc20WithdrawExt {
+  // The address into which the bridge will release the funds
+  string receiverAddress = 1;
 }
 
 // An order amendment is a request to amend or update an existing order on Vega.
@@ -592,9 +643,9 @@ message OrderCancellation {
   // The following three fields are used for lookup of the order only:
 
   // Unique identifier for the order (set by the system after consensus). Required field.
-  string orderID = 1 [(validator.field) = {string_not_empty: true}];
+  string orderID = 1;
   // Market identifier for the order. Required field.
-  string marketID = 2 [(validator.field) = {string_not_empty: true}];
+  string marketID = 2;
   // Party identifier for the order. Required field.
   string partyID = 3 [(validator.field) = {string_not_empty: true}];
 }
@@ -819,6 +870,12 @@ message MarketData {
   int64 auctionEnd = 10;
   // Time until next auction (used in FBA's) - currently always 0.
   int64 auctionStart = 11;
+  // indicative price (zero if not in auction)
+  uint64 indicativePrice = 12;
+  // indicative volume (zero if not in auction)
+  uint64 indicativeVolume = 13;
+  // the current state of the market
+  MarketState marketState = 14;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.

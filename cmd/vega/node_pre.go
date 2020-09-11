@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -223,26 +224,20 @@ func (l *NodeCommand) setupSubscibers() {
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
+	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
+	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
+
 	// always enabled market,parties etc stores as they are in memory or boths use them
 	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) })
-
-	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) })
-
-	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) })
 
 	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) })
 	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) })
 
 	// if stores are not enabled, initialise the noop stores and do nothing else
 	if !l.conf.StoresEnabled {
@@ -256,22 +251,28 @@ func (l *NodeCommand) setupStorages() (err error) {
 	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) })
 
 	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) })
-
 	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) })
-
 	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) })
+
+	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.candleStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.transferResponseStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.partyStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
+	)
 
 	return
 }
@@ -284,15 +285,22 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return err
 	}
 
-	// TODO: remove that once we have infrastructure to use token through governance
-	assetSrcs, err := assets.LoadDevAssets(l.conf.Assets)
+	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
 	if err != nil {
 		return err
 	}
 
-	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
+	return nil
+}
+
+// load all asset from genesis state
+func (l *NodeCommand) UponGenesis(rawstate []byte) error {
+	state, err := assets.LoadGenesisState(rawstate)
 	if err != nil {
 		return err
+	}
+	if state == nil {
+		return nil
 	}
 
 	h := func(key []byte) []byte {
@@ -301,12 +309,44 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 		return hasher.Sum(nil)
 	}
 
+	assetSrcs := []proto.AssetSource{}
+	for _, v := range state.Builtins {
+		v := v
+		assetSrc := proto.AssetSource{
+			Source: &proto.AssetSource_BuiltinAsset{
+				BuiltinAsset: &v,
+			},
+		}
+		assetSrcs = append(assetSrcs, assetSrc)
+	}
+	for _, v := range state.ERC20 {
+		v := v
+		assetSrc := proto.AssetSource{
+			Source: &proto.AssetSource_Erc20{
+				Erc20: &v,
+			},
+		}
+		assetSrcs = append(assetSrcs, assetSrc)
+	}
+
 	for _, v := range assetSrcs {
 		v := v
 		id := hex.EncodeToString(h([]byte(v.String())))
-		err := l.loadAsset(id, v)
+		err := l.loadAsset(id, &v)
 		if err != nil {
 			return err
+		}
+	}
+
+	// then we load the markets
+	if len(l.mktscfg) > 0 {
+		for _, mkt := range l.mktscfg {
+			mkt := mkt
+			err = l.executionEngine.SubmitMarket(l.ctx, &mkt)
+			if err != nil {
+				l.Log.Panic("Unable to submit market",
+					logging.Error(err))
+			}
 		}
 	}
 
@@ -375,6 +415,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.settlePlugin = plugins.NewPositions(l.ctx)
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 	l.assetPlugin = plugins.NewAsset(l.ctx)
+	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {
@@ -382,7 +423,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	})
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub)
+	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -412,9 +453,9 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, nil, !l.noStores)
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, nil, !l.noStores)
 
-	l.erc = validators.NewExtResChecker(l.Log, l.topology, commander, l.timeService)
+	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
 	netParams := governance.DefaultNetworkParameters(l.Log)
 	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
@@ -424,77 +465,114 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
 
-	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) })
+	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
 	l.evtfwd, err = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	if err != nil {
 		return err
 	}
 
-	l.banking = banking.New(l.Log, l.collateral, l.erc, l.timeService, l.assets)
+	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
-	// TODO(jeremy): for now we assume a node started without the stores support
-	// is a validator, this will need to be changed later on.
-	l.processor, err = processor.New(l.Log, l.conf.Processor, l.executionEngine, l.timeService, l.stats.Blockchain, commander, l.nodeWallet, l.assets, l.topology, l.governance, l.broker, l.notary, l.evtfwd, l.collateral, l.erc, l.banking)
+	// now instanciate the blockchain layer
+	app, err := processor.NewApp(
+		l.Log,
+		l.conf.Processor,
+		l.cancel,
+		l.assets,
+		l.banking,
+		l.broker,
+		l.erc,
+		l.evtfwd,
+		l.executionEngine,
+		commander,
+		l.collateral,
+		l.genesisHandler,
+		l.governance,
+		l.notary,
+		l.stats.Blockchain,
+		l.timeService,
+		l.topology,
+		l.nodeWallet,
+	)
 	if err != nil {
 		return err
 	}
 
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) })
-
-	// now instanciate the blockchain layer
-	l.blockchain, err = blockchain.New(l.Log, l.conf.Blockchain, l.processor, l.timeService, l.stats.Blockchain, commander, l.cancel, l.genesisHandler, l.topology)
-	if err != nil {
-		return errors.Wrap(err, "unable to start the blockchain")
+	srv := app.Abci().NewServer(l.Log, l.conf.Blockchain)
+	if err := srv.Start(); err != nil {
+		return err
 	}
+	l.abciServer = srv
 
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.blockchain.ReloadConf(cfg.Blockchain) })
+	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
+	if err != nil {
+		return err
+	}
+	l.blockchainClient = blockchain.NewClient(abciClt)
+	commander.SetChain(l.blockchainClient)
 
 	// get the chain client as well.
-	l.blockchainClient = l.blockchain.Client()
-	l.topology.SetChain(l.blockchain.Client())
+	l.topology.SetChain(l.blockchainClient)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) })
-	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService, l.blockchainClient); err != nil {
+
+	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) })
-
 	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.riskStore, l.settlePlugin); err != nil {
 		return
 	}
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) })
-
 	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore); err != nil {
 		return
 	}
-
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) })
-
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) })
-
 	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) })
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) })
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) })
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) })
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) })
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) })
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) })
+	l.eventService = subscribers.NewService(l.broker)
+
+	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
+		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
+		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
+		func(cfg config.Config) { l.abciServer.ReloadConf(cfg.Blockchain) },
+		func(cfg config.Config) { l.topology.ReloadConf(cfg.Validators) },
+		func(cfg config.Config) { l.erc.ReloadConf(cfg.Validators) },
+		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
+		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
+		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
+		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
+
+		// services
+		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
+		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
+		func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) },
+		func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) },
+		func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) },
+		func(cfg config.Config) { l.governanceService.ReloadConf(cfg.Governance) },
+		func(cfg config.Config) { l.assetService.ReloadConf(cfg.Assets) },
+		func(cfg config.Config) { l.notaryService.ReloadConf(cfg.Notary) },
+		func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) },
+		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
+		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
+		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
+	)
+
+	l.genesisHandler.OnGenesisAppStateLoaded(
+		l.UponGenesis,
+	)
+
+	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
 	return
 }
 

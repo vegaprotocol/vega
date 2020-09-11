@@ -29,6 +29,7 @@ type BlockchainClient interface {
 
 type Topology struct {
 	log *logging.Logger
+	cfg Config
 	clt BlockchainClient
 	// tendermint validator pubkey to vega pubkey
 	validators map[string]string
@@ -45,10 +46,13 @@ type Topology struct {
 	mu sync.Mutex
 }
 
-func NewTopology(log *logging.Logger, clt BlockchainClient, isValidator bool) *Topology {
+func NewTopology(log *logging.Logger, cfg Config, clt BlockchainClient, isValidator bool) *Topology {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 
 	t := &Topology{
 		log:               log,
+		cfg:               cfg,
 		clt:               clt,
 		validators:        map[string]string{},
 		chainValidators:   []*tmtypes.Validator{},
@@ -58,6 +62,20 @@ func NewTopology(log *logging.Logger, clt BlockchainClient, isValidator bool) *T
 
 	go t.handleGenesisValidators()
 	return t
+}
+
+// ReloadConf updates the internal configuration
+func (t *Topology) ReloadConf(cfg Config) {
+	t.log.Info("reloading configuration")
+	if t.log.GetLevel() != cfg.Level.Get() {
+		t.log.Info("updating log level",
+			logging.String("old", t.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		t.log.SetLevel(cfg.Level.Get())
+	}
+
+	t.cfg = cfg
 }
 
 func (t *Topology) IsValidator() bool {

@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -33,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/zannen/toml"
@@ -69,6 +71,8 @@ type Config struct {
 	EvtForward  evtforward.Config
 	Subscribers subscribers.Config
 	Genesis     genesis.Config
+	Validators  validators.Config
+	Banking     banking.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -109,6 +113,8 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Notary:         notary.NewDefaultConfig(),
 		EvtForward:     evtforward.NewDefaultConfig(),
 		Genesis:        genesis.NewDefaultConfig(),
+		Validators:     validators.NewDefaultConfig(),
+		Banking:        banking.NewDefaultConfig(),
 		Subscribers:    subscribers.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,

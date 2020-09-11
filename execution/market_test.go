@@ -73,7 +73,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, numberOfTri
 		triggers[i] = mt
 	}
 
-	mktEngine, err := execution.NewMarket(
+	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), triggers)
 	assert.NoError(t, err)
@@ -149,7 +149,8 @@ func getMarkets(closingAt time.Time) []types.Market {
 				},
 			},
 		},
-		OpeningAuction: &types.AuctionDuration{},
+		// For now all tests are done without an opening auction
+		//		OpeningAuction: &types.AuctionDuration{},
 		TradingMode: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},

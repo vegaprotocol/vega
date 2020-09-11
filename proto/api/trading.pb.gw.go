@@ -845,6 +845,87 @@ func request_TradingData_Assets_0(ctx context.Context, marshaler runtime.Marshal
 
 }
 
+func request_TradingData_ERC20WithdrawalApproval_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ERC20WithdrawalApprovalRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["withdrawalID"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "withdrawalID")
+	}
+
+	protoReq.WithdrawalID, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "withdrawalID", err)
+	}
+
+	msg, err := client.ERC20WithdrawalApproval(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func request_TradingData_Withdrawal_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq WithdrawalRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["ID"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ID")
+	}
+
+	protoReq.ID, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ID", err)
+	}
+
+	msg, err := client.Withdrawal(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func request_TradingData_Withdrawals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq WithdrawalsRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["partyID"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+	}
+
+	protoReq.PartyID, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+	}
+
+	msg, err := client.Withdrawals(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
 // RegisterTradingHandlerFromEndpoint is same as RegisterTradingHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterTradingHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
@@ -1588,6 +1669,66 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+	mux.Handle("GET", pattern_TradingData_ERC20WithdrawalApproval_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TradingData_ERC20WithdrawalApproval_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TradingData_ERC20WithdrawalApproval_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TradingData_Withdrawal_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TradingData_Withdrawal_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TradingData_Withdrawal_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TradingData_Withdrawals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TradingData_Withdrawals_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TradingData_Withdrawals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -1645,6 +1786,12 @@ var (
 	pattern_TradingData_AssetByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"assets", "ID"}, ""))
 
 	pattern_TradingData_Assets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"assets"}, ""))
+
+	pattern_TradingData_ERC20WithdrawalApproval_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"withdrawals", "withdrawalID", "approval", "erc20"}, ""))
+
+	pattern_TradingData_Withdrawal_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"withdrawals", "ID"}, ""))
+
+	pattern_TradingData_Withdrawals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"withdrawals", "party", "partyID"}, ""))
 )
 
 var (
@@ -1701,4 +1848,10 @@ var (
 	forward_TradingData_AssetByID_0 = runtime.ForwardResponseMessage
 
 	forward_TradingData_Assets_0 = runtime.ForwardResponseMessage
+
+	forward_TradingData_ERC20WithdrawalApproval_0 = runtime.ForwardResponseMessage
+
+	forward_TradingData_Withdrawal_0 = runtime.ForwardResponseMessage
+
+	forward_TradingData_Withdrawals_0 = runtime.ForwardResponseMessage
 )
