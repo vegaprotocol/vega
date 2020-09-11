@@ -214,7 +214,6 @@ func TestAmendOrderVolumeUp(t *testing.T) {
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 
-	// Amend the price to force a change in price level
 	amendorder := *order
 	amendorder.Size = 20
 	amendorder.Remaining = 20
@@ -237,7 +236,6 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 
-	// Amend the price to force a change in price level
 	amendorder := *order
 	amendorder.Size = 5
 	amendorder.Remaining = 5
@@ -252,6 +250,28 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(1))
 }
 
+func TestAmendOrderVolumeDownToZero(t *testing.T) {
+	ctx, _ := context.WithCancel(context.Background())
+	mdb := getTestMDB(t, ctx, true)
+
+	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
+	event := events.NewOrderEvent(ctx, order)
+	mdb.Push(event)
+
+	amendorder := *order
+	amendorder.Size = 0
+	amendorder.Remaining = 0
+	event2 := events.NewOrderEvent(ctx, &amendorder)
+	mdb.Push(event2)
+
+	assert.Equal(t, mdb.GetBuyPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetSellPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetOrderCount("M"), 0)
+
+	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+}
+
 func TestPartialFill(t *testing.T) {
 	ctx, _ := context.WithCancel(context.Background())
 	mdb := getTestMDB(t, ctx, true)
@@ -260,7 +280,6 @@ func TestPartialFill(t *testing.T) {
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 
-	// Amend the price to force a change in price level
 	pforder := *order
 	pforder.Remaining = 5
 	event2 := events.NewOrderEvent(ctx, &pforder)
@@ -282,7 +301,6 @@ func TestFullyFill(t *testing.T) {
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 
-	// Amend the price to force a change in price level
 	fforder := *order
 	fforder.Remaining = 0
 	fforder.Status = types.Order_STATUS_FILLED
