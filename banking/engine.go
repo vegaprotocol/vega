@@ -94,6 +94,7 @@ type Engine struct {
 	seen        map[txRef]struct{}
 	idgen       IDgenerator
 	withdrawals map[string]withdrawalRef
+	deposits    map[string]*types.Deposit
 }
 
 type withdrawalRef struct {
@@ -118,6 +119,7 @@ func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsv
 		seen:        map[txRef]struct{}{},
 		notary:      notary,
 		withdrawals: map[string]withdrawalRef{},
+		deposits:    map[string]*types.Deposit{},
 	}
 }
 
@@ -207,12 +209,13 @@ func (e *Engine) DepositBuiltinAsset(
 	}
 
 	aa := &assetAction{
-		id:       id(d, nonce),
+		id:       dep.Id,
 		state:    pendingState,
 		builtinD: d,
 		asset:    asset,
 	}
 	e.assetActs[aa.id] = aa
+	e.deposits[dep.Id] = dep
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
@@ -250,7 +253,7 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, blockN
 		return ErrWrongAssetTypeUsedInERC20ChainEvent
 	}
 	aa := &assetAction{
-		id:          id(d, uint64(now.UnixNano())),
+		id:          dep.Id,
 		state:       pendingState,
 		erc20D:      d,
 		asset:       asset,
@@ -258,6 +261,7 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, blockN
 		txIndex:     txIndex,
 	}
 	e.assetActs[aa.id] = aa
+	e.deposits[dep.Id] = dep
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
@@ -425,12 +429,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
 	case aa.IsBuiltinAssetDeposit():
-		return e.finalizeDeposit(ctx, aa.deposit)
+		return e.finalizeDeposit(ctx, aa.deposit, aa.id)
 	case aa.IsERC20Deposit():
 		// here the event queue send us a 0x... pubkey
 		// we do the slice operation to remove it ([2:]
 		aa.deposit.partyID = aa.deposit.partyID[2:]
-		return e.finalizeDeposit(ctx, aa.deposit)
+		return e.finalizeDeposit(ctx, aa.deposit, aa.id)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20Withdrawal():
@@ -466,7 +470,10 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	return nil, ErrNotMatchingWithdrawalForReference
 }
 
-func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit) error {
+func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit, id string) error {
+	dep := e.deposits[id]
+	dep.Status = types.Deposit_DEPOSIT_STATUS_FINALIZED
+	e.broker.Send(events.NewDepositEvent(ctx, *dep))
 	return e.col.Deposit(ctx, d.partyID, d.assetID, d.amount)
 }
 

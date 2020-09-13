@@ -6,6 +6,34 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+func convertDepositStatusToProto(x DepositStatus) (types.Deposit_Status, error) {
+	switch x {
+	case DepositStatusOpen:
+		return types.Deposit_DEPOSIT_STATUS_OPEN, nil
+	case DepositStatusCancelled:
+		return types.Deposit_DEPOSIT_STATUS_CANCELLED, nil
+	case DepositStatusFinalized:
+		return types.Deposit_DEPOSIT_STATUS_FINALIZED, nil
+	default:
+		err := fmt.Errorf("failed to convert DepositStatus from GraphQL to Proto: %v", x)
+		return types.Deposit_DEPOSIT_STATUS_UNSPECIFIED, err
+	}
+}
+
+func convertDepositStatusFromProto(x types.Deposit_Status) (DepositStatus, error) {
+	switch x {
+	case types.Deposit_DEPOSIT_STATUS_OPEN:
+		return DepositStatusOpen, nil
+	case types.Deposit_DEPOSIT_STATUS_CANCELLED:
+		return DepositStatusCancelled, nil
+	case types.Deposit_DEPOSIT_STATUS_FINALIZED:
+		return DepositStatusFinalized, nil
+	default:
+		err := fmt.Errorf("failed to convert DepositStatus from GraphQL to Proto: %v", x)
+		return DepositStatusOpen, err
+	}
+}
+
 func convertWithdrawalStatusToProto(x WithdrawalStatus) (types.Withdrawal_Status, error) {
 	switch x {
 	case WithdrawalStatusOpen:
