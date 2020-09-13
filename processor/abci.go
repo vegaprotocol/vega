@@ -38,7 +38,6 @@ type App struct {
 	banking    Banking
 	broker     Broker
 	cmd        Commander
-	col        Collateral
 	erc        ExtResChecker
 	evtfwd     EvtForwarder
 	exec       ExecutionEngine
@@ -62,7 +61,6 @@ func NewApp(
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
 	cmd Commander,
-	col Collateral,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
 	notary Notary,
@@ -88,7 +86,6 @@ func NewApp(
 		banking:    banking,
 		broker:     broker,
 		cmd:        cmd,
-		col:        col,
 		erc:        erc,
 		evtfwd:     evtfwd,
 		exec:       exec,

@@ -141,15 +141,6 @@ type EvtForwarder interface {
 	Ack(*types.ChainEvent) bool
 }
 
-// Collateral ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/processor Collateral
-type Collateral interface {
-	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
-	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
-	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
-	EnableAsset(ctx context.Context, asset types.Asset) error
-}
-
 // Banking ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {

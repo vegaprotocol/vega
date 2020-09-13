@@ -26,7 +26,6 @@ type procTest struct {
 	gov    *mocks.MockGovernanceEngine
 	notary *mocks.MockNotary
 	evtfwd *mocks.MockEvtForwarder
-	col    *mocks.MockCollateral
 	erc    *mocks.MockExtResChecker
 	bank   *mocks.MockBanking
 }
@@ -50,7 +49,6 @@ func getTestProcessor(t *testing.T) *procTest {
 	gov := mocks.NewMockGovernanceEngine(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
-	col := mocks.NewMockCollateral(ctrl)
 	erc := mocks.NewMockExtResChecker(ctrl)
 	bank := mocks.NewMockBanking(ctrl)
 
@@ -76,7 +74,6 @@ func getTestProcessor(t *testing.T) *procTest {
 		gov:    gov,
 		notary: notary,
 		evtfwd: evtfwd,
-		col:    col,
 		erc:    erc,
 		bank:   bank,
 	}
