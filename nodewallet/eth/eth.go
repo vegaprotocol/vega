@@ -20,11 +20,12 @@ type ETHClient interface {
 }
 
 type Wallet struct {
-	cfg        Config
-	acc        accounts.Account
-	ks         *keystore.KeyStore
-	clt        ETHClient
-	passphrase string
+	cfg           Config
+	acc           accounts.Account
+	ks            *keystore.KeyStore
+	clt           ETHClient
+	bridgeAddress string
+	passphrase    string
 }
 
 func DevInit(path, passphrase string) (string, error) {
@@ -96,5 +97,9 @@ func (w *Wallet) Client() ETHClient {
 }
 
 func (w *Wallet) BridgeAddress() string {
-	return w.cfg.BridgeAddress
+	return w.bridgeAddress
+}
+
+func (w *Wallet) SetERC20BridgeAddress(addr string) {
+	w.bridgeAddress = addr
 }

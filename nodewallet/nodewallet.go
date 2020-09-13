@@ -1,14 +1,17 @@
 package nodewallet
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"code.vegaprotocol.io/vega/nodewallet/vega"
+	"github.com/pkg/errors"
 )
 
 type Blockchain string
@@ -65,6 +68,48 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 		wallets: wallets,
 		ethclt:  ethclt,
 	}, nil
+}
+
+// UponGenesis load the genesis configuration into the governance engine
+func (s *Service) UponGenesis(rawState []byte) error {
+	s.log.Debug("loading genesis configuration")
+	state, err := LoadGenesisState(rawState)
+	if err != nil {
+		s.log.Error("unable to load genesis state",
+			logging.Error(err))
+		return err
+	}
+
+	// ensure the state is loaded properly
+	if state == nil {
+		return errors.New("missing genesis state")
+	}
+	if len(state.ETH.ChainID) <= 0 {
+		return errors.New("missing chain ID")
+	}
+	if len(state.ETH.ERC20BridgeAddress) <= 0 {
+		return errors.New("missing erc20 bridge address")
+	}
+
+	// first validate chain ID
+	chainID, err := s.ethclt.ChainID(context.Background())
+	if err != nil {
+		return err
+	}
+	stateChainID, ok := big.NewInt(0).SetString(state.ETH.ChainID, 10)
+	if !ok {
+		return fmt.Errorf("unable to load eth chain ID: %v", state.ETH.ChainID)
+	}
+	if chainID.Cmp(stateChainID) != 0 {
+		return fmt.Errorf("invalid eth chain ID, expected %v got %v",
+			chainID.String(), stateChainID.String())
+	}
+
+	// then set the ETH wallet with the BridgeAddress
+	ethwal := s.wallets[Ethereum].(*eth.Wallet)
+	ethwal.SetERC20BridgeAddress(state.ETH.ERC20BridgeAddress)
+
+	return nil
 }
 
 // ReloadConf is used in order to reload the internal configuration of

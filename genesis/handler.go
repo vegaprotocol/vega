@@ -60,6 +60,8 @@ func (h *Handler) OnGenesisTimeLoaded(f func(time.Time)) {
 	h.onGenesisTimeLoadedCB = append(h.onGenesisTimeLoadedCB, f)
 }
 
-func (h *Handler) OnGenesisAppStateLoaded(f func([]byte) error) {
-	h.onGenesisAppStateLoadedCB = append(h.onGenesisAppStateLoadedCB, f)
+func (h *Handler) OnGenesisAppStateLoaded(fns ...func([]byte) error) {
+	for _, f := range fns {
+		h.onGenesisAppStateLoadedCB = append(h.onGenesisAppStateLoadedCB, f)
+	}
 }
