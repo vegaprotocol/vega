@@ -1794,6 +1794,10 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	return market, nil
 }
 
+func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+}
+
 func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
