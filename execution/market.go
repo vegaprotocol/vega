@@ -1122,7 +1122,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	asset, _ := m.mkt.GetAsset()
 
 	// pay the fees now
-	fees, err := m.fee.CalculateFeeForPositionResolution(
+	fees, distressedPartiesFees, err := m.fee.CalculateFeeForPositionResolution(
 		confirmation.Trades, closedMPs)
 	if err != nil {
 		m.log.Error("unable to calculate fees for positions resolutions",
@@ -1168,7 +1168,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		m.broker.SendBatch(tradeEvts)
 	}
 
-	if err = m.zeroOutNetwork(ctx, closedMPs, &no, o); err != nil {
+	if err = m.zeroOutNetwork(ctx, closedMPs, &no, o, distressedPartiesFees); err != nil {
 		m.log.Error(
 			"Failed to create closing order with distressed traders",
 			logging.Error(err),
@@ -1213,7 +1213,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	return err
 }
 
-func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order) error {
+func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1275,15 +1275,17 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 
 		// now let's create the trade between the party and network
 		var (
-			buyOrder  *types.Order
-			sellOrder *types.Order
+			buyOrder, sellOrder     *types.Order
+			buySideFee, sellSideFee *types.Fee
 		)
 		if order.Side == types.Side_SIDE_BUY {
 			buyOrder = &order
 			sellOrder = &partyOrder
+			sellSideFee = fees[trader.Party()]
 		} else {
 			sellOrder = &order
 			buyOrder = &partyOrder
+			buySideFee = fees[trader.Party()]
 		}
 
 		trade := types.Trade{
@@ -1298,6 +1300,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Seller:    sellOrder.PartyID,
 			Timestamp: partyOrder.CreatedAt,
 			Type:      types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD,
+			SellerFee: sellSideFee,
+			BuyerFee:  buySideFee,
 		}
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, trade))
 
