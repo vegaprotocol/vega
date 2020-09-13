@@ -14,6 +14,10 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [DepositRequest](#api.DepositRequest)
+    - [DepositResponse](#api.DepositResponse)
+    - [DepositsRequest](#api.DepositsRequest)
+    - [DepositsResponse](#api.DepositsResponse)
     - [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest)
     - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
     - [EstimateFeeRequest](#api.EstimateFeeRequest)
@@ -416,6 +420,66 @@ Request to subscribe to a stream of (Candles)[#vega.Candle].
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier. Required field. |
 | interval | [vega.Interval](#vega.Interval) |  | Time interval for the candles. Required field. |
+
+
+
+
+
+
+<a name="api.DepositRequest"></a>
+
+### DepositRequest
+A request to get a specific deposit by ID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The id of the withdrawal |
+
+
+
+
+
+
+<a name="api.DepositResponse"></a>
+
+### DepositResponse
+A response for a deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposit | [vega.Deposit](#vega.Deposit) |  | The deposit matching the ID from the request |
+
+
+
+
+
+
+<a name="api.DepositsRequest"></a>
+
+### DepositsRequest
+A request to get a list of deposit from a given party
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  | The party to get the deposits for |
+
+
+
+
+
+
+<a name="api.DepositsResponse"></a>
+
+### DepositsResponse
+The response for a list of deposits
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposits | [vega.Deposit](#vega.Deposit) | repeated | The list of deposits for the specified party |
 
 
 
@@ -2046,6 +2110,8 @@ The response for a list of withdrawals
 | ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
 | Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
+| Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
+| Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
 
 
 

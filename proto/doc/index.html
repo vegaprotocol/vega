@@ -219,6 +219,22 @@
                 </li>
 
                 <li>
+                  <a href="#api.DepositRequest"><span class="badge">M</span>DepositRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.DepositResponse"><span class="badge">M</span>DepositResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.DepositsRequest"><span class="badge">M</span>DepositsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.DepositsResponse"><span class="badge">M</span>DepositsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.ERC20WithdrawalApprovalRequest"><span class="badge">M</span>ERC20WithdrawalApprovalRequest</a>
                 </li>
 
@@ -1571,6 +1587,156 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.DepositRequest">DepositRequest</h3>
+        <p>A request to get a specific deposit by ID</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The id of the withdrawal </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.DepositResponse">DepositResponse</h3>
+        <p>A response for a deposit</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.Deposit">vega.Deposit</a></td>
+                  <td></td>
+                  <td><p>The deposit matching the ID from the request </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.DepositsRequest">DepositsRequest</h3>
+        <p>A request to get a list of deposit from a given party</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The party to get the deposits for </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.DepositsResponse">DepositsResponse</h3>
+        <p>The response for a list of deposits</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>deposits</td>
+                  <td><a href="#vega.Deposit">vega.Deposit</a></td>
+                  <td>repeated</td>
+                  <td><p>The list of deposits for the specified party </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -5501,6 +5667,20 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <td>Withdrawals</td>
                 <td><a href="#api.WithdrawalsRequest">WithdrawalsRequest</a></td>
                 <td><a href="#api.WithdrawalsResponse">WithdrawalsResponse</a></td>
+                <td><p>Get withdrawals for a party</p></td>
+              </tr>
+
+              <tr>
+                <td>Deposit</td>
+                <td><a href="#api.DepositRequest">DepositRequest</a></td>
+                <td><a href="#api.DepositResponse">DepositResponse</a></td>
+                <td><p>Get a deposit by its ID</p></td>
+              </tr>
+
+              <tr>
+                <td>Deposits</td>
+                <td><a href="#api.DepositsRequest">DepositsRequest</a></td>
+                <td><a href="#api.DepositsResponse">DepositsResponse</a></td>
                 <td><p>Get withdrawals for a party</p></td>
               </tr>
 

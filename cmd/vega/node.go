@@ -224,6 +224,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.feeService,
 		l.eventService,
 		l.withdrawalPlugin,
+		l.depositPlugin,
 		statusChecker,
 	)
 

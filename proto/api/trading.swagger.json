@@ -84,6 +84,58 @@
         ]
       }
     },
+    "/deposits/party/{partyID}": {
+      "get": {
+        "summary": "Get withdrawals for a party",
+        "operationId": "Deposits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiDepositsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "description": "The party to get the deposits for",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/deposits/{ID}": {
+      "get": {
+        "summary": "Get a deposit by its ID",
+        "operationId": "Deposit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiDepositResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "description": "The id of the withdrawal",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/governance/prepare/proposal": {
       "post": {
         "summary": "Prepare a governance proposal",
@@ -1211,6 +1263,29 @@
         }
       },
       "description": "Response for a list of candles for a market at an interval."
+    },
+    "apiDepositResponse": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "$ref": "#/definitions/vegaDeposit",
+          "title": "The deposit matching the ID from the request"
+        }
+      },
+      "title": "A response for a deposit"
+    },
+    "apiDepositsResponse": {
+      "type": "object",
+      "properties": {
+        "deposits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaDeposit"
+          },
+          "title": "The list of deposits for the specified party"
+        }
+      },
+      "title": "The response for a list of deposits"
     },
     "apiERC20WithdrawalApprovalResponse": {
       "type": "object",
