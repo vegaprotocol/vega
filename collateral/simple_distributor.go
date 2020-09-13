@@ -20,6 +20,7 @@ type simpleDistributor struct {
 	expectCollected int64
 	collected       int64
 	requests        []request
+	ts              int64
 }
 
 func (s *simpleDistributor) LossSocializationEnabled() bool {
@@ -45,7 +46,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	)
 	for _, v := range s.requests {
 		totalamount += int64(math.Floor(v.amount))
-		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, int64(math.Floor(v.amount))-v.request.Amount.Amount)
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, int64(math.Floor(v.amount))-v.request.Amount.Amount, s.ts)
 		v.request.Amount.Amount = int64(math.Floor(v.amount))
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
@@ -63,7 +64,8 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
-			evt.AmountLost()+mismatch)
+			evt.AmountLost()+mismatch,
+			s.ts)
 	}
 
 	return evts

@@ -12,15 +12,17 @@ type SettlePos struct {
 	marketID string
 	price    uint64
 	trades   []TradeSettlement
+	ts       int64
 }
 
-func NewSettlePositionEvent(ctx context.Context, partyID, marketID string, price uint64, trades []TradeSettlement) *SettlePos {
+func NewSettlePositionEvent(ctx context.Context, partyID, marketID string, price uint64, trades []TradeSettlement, ts int64) *SettlePos {
 	return &SettlePos{
 		Base:     newBase(ctx, SettlePositionEvent),
 		partyID:  partyID,
 		marketID: marketID,
 		price:    price,
 		trades:   trades,
+		ts:       ts,
 	}
 }
 
@@ -38,6 +40,10 @@ func (s SettlePos) Price() uint64 {
 
 func (s SettlePos) Trades() []TradeSettlement {
 	return s.trades
+}
+
+func (s SettlePos) Timestamp() int64 {
+	return s.ts
 }
 
 func (s SettlePos) Proto() types.SettlePosition {

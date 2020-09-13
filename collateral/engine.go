@@ -496,7 +496,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("market-id", lsevt.market))
 
 			brokerEvts = append(brokerEvts,
-				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount)))
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount), e.currentTime))
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -551,6 +551,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		expectCollected: expectCollected,
 		collected:       int64(settle.Balance),
 		requests:        []request{},
+		ts:              e.currentTime,
 	}
 
 	if distr.LossSocializationEnabled() {

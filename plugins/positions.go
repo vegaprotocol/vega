@@ -23,18 +23,21 @@ type SE interface {
 	PartyID() string
 	MarketID() string
 	Price() uint64
+	Timestamp() int64
 }
 
 // SPE SettlePositionEvent
 type SPE interface {
 	SE
 	Trades() []events.TradeSettlement
+	Timestamp() int64
 }
 
 // SDE SettleDistressedEvent
 type SDE interface {
 	SE
 	Margin() uint64
+	Timestamp() int64
 }
 
 // LSE LossSocializationEvent
@@ -44,6 +47,7 @@ type LSE interface {
 	MarketID() string
 	Amount() int64
 	AmountLost() int64
+	Timestamp() int64
 }
 
 // Positions plugin taking settlement data to build positions API data
@@ -93,6 +97,7 @@ func (p *Positions) applyLossSocialization(e LSE) {
 	}
 	pos.RealisedPNLFP += float64(amountLoss)
 	pos.RealisedPNL += amountLoss
+	pos.Position.UpdatedAt = e.Timestamp()
 	p.data[marketID][partyID] = pos
 }
 
@@ -106,6 +111,7 @@ func (p *Positions) updatePosition(e SPE) {
 		calc = seToProto(e)
 	}
 	updateSettlePosition(&calc, e)
+	calc.Position.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
 
@@ -131,6 +137,7 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	// the volume now is zero, though, so we'll end up moving this position to storage
 	calc.UnrealisedPNLFP = 0
 	calc.AverageEntryPriceFP = 0
+	calc.Position.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
 

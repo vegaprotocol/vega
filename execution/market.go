@@ -294,6 +294,7 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	defer m.mu.Unlock()
 
 	m.risk.OnTimeUpdate(t)
+	m.settlement.OnTick(t)
 
 	closed = t.After(m.closingAt)
 	m.closed = closed

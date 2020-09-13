@@ -3673,6 +3673,11 @@
           "type": "string",
           "format": "uint64",
           "description": "Average entry price for the position, the price is an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "int64",
+          "title": "last time the position was updated"
         }
       },
       "description": "Represents position data for a party on the specified market on Vega."
