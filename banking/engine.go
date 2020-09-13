@@ -21,6 +21,7 @@ import (
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
+	ErrWrongAssetTypeUsedInERC20ChainEvent        = errors.New("non ERC20 for ERC20 chain event")
 	ErrWrongAssetUsedForERC20Withdraw             = errors.New("non erc20 asset used for lock withdraw")
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
@@ -185,16 +186,23 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 	return e.finalizeWithdrawal(ctx, party, assetID, amount)
 }
 
-func (e *Engine) DepositBuiltinAsset(d *types.BuiltinAssetDeposit, nonce uint64) error {
+func (e *Engine) DepositBuiltinAsset(
+	ctx context.Context, d *types.BuiltinAssetDeposit, nonce uint64) error {
 	now, _ := e.tsvc.GetTimeNow()
+	dep := e.newDeposit(d.PartyID, d.VegaAssetID, d.Amount)
+	e.broker.Send(events.NewDepositEvent(ctx, *dep))
 	asset, err := e.assets.Get(d.VegaAssetID)
 	if err != nil {
+		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		e.log.Error("unable to get asset by id",
 			logging.String("asset-id", d.VegaAssetID),
 			logging.Error(err))
 		return err
 	}
 	if !asset.IsBuiltinAsset() {
+		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
 
@@ -223,14 +231,23 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) DepositERC20(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
+func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
 	now, _ := e.tsvc.GetTimeNow()
+	dep := e.newDeposit(d.TargetPartyID, d.VegaAssetID, 0)
+	e.broker.Send(events.NewDepositEvent(ctx, *dep))
 	asset, err := e.assets.Get(d.VegaAssetID)
 	if err != nil {
+		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		e.log.Error("unable to get asset by id",
 			logging.String("asset-id", d.VegaAssetID),
 			logging.Error(err))
 		return err
+	}
+	if !asset.IsERC20() {
+		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		e.broker.Send(events.NewDepositEvent(ctx, *dep))
+		return ErrWrongAssetTypeUsedInERC20ChainEvent
 	}
 	aa := &assetAction{
 		id:          id(d, uint64(now.UnixNano())),
@@ -487,6 +504,19 @@ func (e *Engine) newWithdrawal(partyID, asset string, amount uint64, expiry time
 		CreatedTimestamp: now.UnixNano(),
 	}
 	return w, e.idgen.SetID(w, now)
+}
+
+func (e *Engine) newDeposit(partyID, asset string, amount uint64) (d *types.Deposit) {
+	now, _ := e.tsvc.GetTimeNow()
+	d = &types.Deposit{
+		Status:           types.Deposit_DEPOSIT_STATUS_OPEN,
+		PartyID:          partyID,
+		Asset:            asset,
+		Amount:           fmt.Sprintf("%v", amount),
+		CreatedTimestamp: now.UnixNano(),
+	}
+	e.idgen.SetDepositID(d, now)
+	return
 }
 
 type HasVegaAssetID interface {

@@ -9208,6 +9208,13 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                 </tr>
 
                 <tr>
+                  <td>status</td>
+                  <td><a href="#vega.Deposit.Status">Deposit.Status</a></td>
+                  <td></td>
+                  <td><p>Status of the deposit </p></td>
+                </tr>
+
+                <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -11766,8 +11773,14 @@ These fees reward traders who provide the best priced liquidity that actually al
               </tr>
 
               <tr>
-                <td>DEPOSIT_STATUS_FINALIZED</td>
+                <td>DEPOSIT_STATUS_CANCELLED</td>
                 <td>2</td>
+                <td><p>The deposit has been cancelled by the network</p></td>
+              </tr>
+
+              <tr>
+                <td>DEPOSIT_STATUS_FINALIZED</td>
+                <td>3</td>
                 <td><p>The deposit has been finalized and accounts have been updated</p></td>
               </tr>
 

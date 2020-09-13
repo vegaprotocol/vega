@@ -3472,6 +3472,7 @@ The representation of a deposit in the vega network
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | The ID of the deposit |
+| status | [Deposit.Status](#vega.Deposit.Status) |  | Status of the deposit |
 | partyID | [string](#string) |  | The party initiating the deposit |
 | asset | [string](#string) |  | The vega asset targeted by this deposit |
 | amount | [string](#string) |  | The amount to be deposited |
@@ -4299,7 +4300,8 @@ The status of the deposit
 | ---- | ------ | ----------- |
 | DEPOSIT_STATUS_UNSPECIFIED | 0 | Default value, always invalid. |
 | DEPOSIT_STATUS_OPEN | 1 | The deposit is being processed by the network |
-| DEPOSIT_STATUS_FINALIZED | 2 | The deposit has been finalized and accounts have been updated |
+| DEPOSIT_STATUS_CANCELLED | 2 | The deposit has been cancelled by the network |
+| DEPOSIT_STATUS_FINALIZED | 3 | The deposit has been finalized and accounts have been updated |
 
 
 

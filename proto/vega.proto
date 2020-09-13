@@ -529,24 +529,28 @@ message Deposit {
     DEPOSIT_STATUS_UNSPECIFIED = 0;
     // The deposit is being processed by the network
     DEPOSIT_STATUS_OPEN = 1;
+    // The deposit has been cancelled by the network
+    DEPOSIT_STATUS_CANCELLED = 2;
     // The deposit has been finalized and accounts have been updated
-    DEPOSIT_STATUS_FINALIZED = 2;
+    DEPOSIT_STATUS_FINALIZED = 3;
   }
 
   // The ID of the deposit
   string id = 1;
+  // Status of the deposit
+  Status status = 2;
   // The party initiating the deposit
-  string partyID = 2;
+  string partyID = 3;
   // The vega asset targeted by this deposit
-  string asset = 3;
+  string asset = 4;
   // The amount to be deposited
-  string amount = 4;
+  string amount = 5;
   // The hash of the transaction from the foreign chain
-  string txHash = 5;
+  string txHash = 6;
   // The time where the vega account got updated with the deposit
-  int64 creditedTimestamp = 6;
+  int64 creditedTimestamp = 7;
   // The time the deposit has been created in the vega network
-  int64 createdTimestamp = 7;
+  int64 createdTimestamp = 8;
 }
 
 // The representation of a withdrawal in the vega network

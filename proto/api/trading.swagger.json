@@ -2400,6 +2400,10 @@
           "type": "string",
           "title": "The ID of the deposit"
         },
+        "status": {
+          "$ref": "#/definitions/vegaDepositStatus",
+          "title": "Status of the deposit"
+        },
         "partyID": {
           "type": "string",
           "title": "The party initiating the deposit"
@@ -2428,6 +2432,18 @@
         }
       },
       "title": "The representation of a deposit in the vega network"
+    },
+    "vegaDepositStatus": {
+      "type": "string",
+      "enum": [
+        "DEPOSIT_STATUS_UNSPECIFIED",
+        "DEPOSIT_STATUS_OPEN",
+        "DEPOSIT_STATUS_CANCELLED",
+        "DEPOSIT_STATUS_FINALIZED"
+      ],
+      "default": "DEPOSIT_STATUS_UNSPECIFIED",
+      "description": "- DEPOSIT_STATUS_UNSPECIFIED: Default value, always invalid.\n - DEPOSIT_STATUS_OPEN: The deposit is being processed by the network\n - DEPOSIT_STATUS_CANCELLED: The deposit has been cancelled by the network\n - DEPOSIT_STATUS_FINALIZED: The deposit has been finalized and accounts have been updated",
+      "title": "The status of the deposit"
     },
     "vegaDiscreteTrading": {
       "type": "object",
