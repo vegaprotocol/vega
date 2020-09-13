@@ -154,8 +154,7 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
 			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
 				logging.Error(err),
-				logging.String("badger-key", string(primaryKey)),
-				logging.String("raw-bytes", string(orderBuf)))
+				logging.String("badger-key", string(primaryKey)))
 			return err
 		}
 		return nil
@@ -202,8 +201,7 @@ func (os *Order) GetByPartyAndID(ctx context.Context, party string, id string) (
 		if err := proto.Unmarshal(orderBuf, &order); err != nil {
 			os.log.Error("Failed to unmarshal order value from badger in order store (getByPartyAndId)",
 				logging.Error(err),
-				logging.String("badger-key", string(primaryKey)),
-				logging.String("raw-bytes", string(orderBuf)))
+				logging.String("badger-key", string(primaryKey)))
 			return err
 		}
 		return nil
@@ -243,8 +241,7 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 		if err != nil {
 			os.log.Error("Failed to unmarshal order value from badger in order store (GetByReference)",
 				logging.Error(err),
-				logging.String("badger-key", string(refKey)),
-				logging.String("raw-bytes", string(orderBuf)))
+				logging.String("badger-key", string(refKey)))
 			return err
 		}
 		return nil
@@ -291,8 +288,7 @@ func (os *Order) GetByOrderID(ctx context.Context, id string, version *uint64) (
 		if err != nil {
 			os.log.Error("Failed to unmarshal order value from badger in order store (GetByOrderId)",
 				logging.Error(err),
-				logging.String("badger-id-key", string(primaryKey)),
-				logging.String("raw-bytes", string(orderBuf)))
+				logging.String("badger-id-key", string(primaryKey)))
 			return err
 		}
 		return nil
@@ -459,8 +455,7 @@ func (os *Order) getOrdersIndirectly(
 			if err := proto.Unmarshal(orderBuf, &order); err != nil {
 				os.log.Error("Failed to unmarshal order value from badger in order store (getOrdersIndirectly)",
 					logging.Error(err),
-					logging.String("badger-key", string(primaryIndex)),
-					logging.String("raw-bytes", string(orderBuf)))
+					logging.String("badger-key", string(primaryIndex)))
 				return nil, err
 			}
 
@@ -519,8 +514,7 @@ func (os *Order) getOrdersDirectly(
 			if err := proto.Unmarshal(orderBuf, &order); err != nil {
 				os.log.Error("Failed to unmarshal order value from badger in order store (getByMarket)",
 					logging.Error(err),
-					logging.String("badger-key", string(it.Item().Key())),
-					logging.String("raw-bytes", string(orderBuf)))
+					logging.String("badger-key", string(it.Item().Key())))
 
 				return nil, err
 			}

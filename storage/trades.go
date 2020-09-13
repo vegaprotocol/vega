@@ -144,8 +144,7 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarket)",
 					logging.Error(err),
-					logging.String("badger-key", string(it.Item().Key())),
-					logging.String("raw-bytes", string(tradeBuf)))
+					logging.String("badger-key", string(it.Item().Key())))
 
 				return nil, err
 			}
@@ -178,8 +177,7 @@ func (ts *Trade) GetByMarketAndID(ctx context.Context, market string, id string)
 		trade = nil
 		ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByMarketAndId)",
 			logging.Error(err),
-			logging.String("badger-key", string(item.Key())),
-			logging.String("raw-bytes", string(tradeBuf)))
+			logging.String("badger-key", string(item.Key())))
 	}
 	return
 }
@@ -237,8 +235,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByParty)",
 					logging.Error(err),
-					logging.String("badger-key", string(marketKey)),
-					logging.String("raw-bytes", string(tradeBuf)))
+					logging.String("badger-key", string(marketKey)))
 
 				return nil, err
 			}
@@ -279,8 +276,7 @@ func (ts *Trade) GetByPartyAndID(ctx context.Context, party string, id string) (
 		if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 			ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByPartyAndId)",
 				logging.Error(err),
-				logging.String("badger-key", string(marketKey)),
-				logging.String("raw-bytes", string(tradeBuf)))
+				logging.String("badger-key", string(marketKey)))
 
 			return err
 		}
@@ -343,8 +339,7 @@ func (ts *Trade) GetByOrderID(ctx context.Context, orderID string, skip, limit u
 			if err := proto.Unmarshal(tradeBuf, &trade); err != nil {
 				ts.log.Error("Failed to unmarshal trade value from badger in trade store (getByOrderId)",
 					logging.Error(err),
-					logging.String("badger-key", string(marketKey)),
-					logging.String("raw-bytes", string(tradeBuf)))
+					logging.String("badger-key", string(marketKey)))
 
 				return nil, err
 			}
