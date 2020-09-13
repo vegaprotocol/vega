@@ -159,6 +159,7 @@ type NodeCommand struct {
 	notaryPlugin     *plugins.Notary
 	assetPlugin      *plugins.Asset
 	withdrawalPlugin *plugins.Withdrawal
+	depositPlugin    *plugins.Deposit
 }
 
 // Init initialises the node command.
