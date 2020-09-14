@@ -7,9 +7,9 @@
 # --doc_out:           Generate documentation in proto/doc/
 # --doc_opt:           Options for generating documentation
 
-sed=sed
+sed="sed"
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed=gsed
+    sed="gsed"
 fi
 
 
