@@ -345,14 +345,12 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 	sellPtr := make([]*types.PriceLevel, sellLimit)
 
 	// Copy the data across
-	for index := uint64(0); index < buyLimit; index++ {
-		pl := md.buySide[index]
+	for index, pl := range md.buySide[:buyLimit] {
 		buyPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
 			Price: pl.price}
 	}
 
-	for index := uint64(0); index < sellLimit; index++ {
-		pl := md.sellSide[index]
+	for index, pl := range md.sellSide[:sellLimit] {
 		sellPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
 			Price: pl.price}
 	}
