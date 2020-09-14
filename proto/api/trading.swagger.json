@@ -84,6 +84,58 @@
         ]
       }
     },
+    "/deposits/party/{partyID}": {
+      "get": {
+        "summary": "Get withdrawals for a party",
+        "operationId": "Deposits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiDepositsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "description": "The party to get the deposits for",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/deposits/{ID}": {
+      "get": {
+        "summary": "Get a deposit by its ID",
+        "operationId": "Deposit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiDepositResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "description": "The id of the withdrawal",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/governance/prepare/proposal": {
       "post": {
         "summary": "Prepare a governance proposal",
@@ -1212,6 +1264,29 @@
       },
       "description": "Response for a list of candles for a market at an interval."
     },
+    "apiDepositResponse": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "$ref": "#/definitions/vegaDeposit",
+          "title": "The deposit matching the ID from the request"
+        }
+      },
+      "title": "A response for a deposit"
+    },
+    "apiDepositsResponse": {
+      "type": "object",
+      "properties": {
+        "deposits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaDeposit"
+          },
+          "title": "The list of deposits for the specified party"
+        }
+      },
+      "title": "The response for a list of deposits"
+    },
     "apiERC20WithdrawalApprovalResponse": {
       "type": "object",
       "properties": {
@@ -2255,6 +2330,12 @@
         "marketTick": {
           "$ref": "#/definitions/vegaMarketTick"
         },
+        "withdrawal": {
+          "$ref": "#/definitions/vegaWithdrawal"
+        },
+        "deposit": {
+          "$ref": "#/definitions/vegaDeposit"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2284,6 +2365,8 @@
         "BUS_EVENT_TYPE_MARKET_CREATED",
         "BUS_EVENT_TYPE_ASSET",
         "BUS_EVENT_TYPE_MARKET_TICK",
+        "BUS_EVENT_TYPE_WITHDRAWAL",
+        "BUS_EVENT_TYPE_DEPOSIT",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -2384,6 +2467,58 @@
         }
       },
       "description": "Continuous trading."
+    },
+    "vegaDeposit": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The ID of the deposit"
+        },
+        "status": {
+          "$ref": "#/definitions/vegaDepositStatus",
+          "title": "Status of the deposit"
+        },
+        "partyID": {
+          "type": "string",
+          "title": "The party initiating the deposit"
+        },
+        "asset": {
+          "type": "string",
+          "title": "The vega asset targeted by this deposit"
+        },
+        "amount": {
+          "type": "string",
+          "title": "The amount to be deposited"
+        },
+        "txHash": {
+          "type": "string",
+          "title": "The hash of the transaction from the foreign chain"
+        },
+        "creditedTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time where the vega account got updated with the deposit"
+        },
+        "createdTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time the deposit has been created in the vega network"
+        }
+      },
+      "title": "The representation of a deposit in the vega network"
+    },
+    "vegaDepositStatus": {
+      "type": "string",
+      "enum": [
+        "DEPOSIT_STATUS_UNSPECIFIED",
+        "DEPOSIT_STATUS_OPEN",
+        "DEPOSIT_STATUS_CANCELLED",
+        "DEPOSIT_STATUS_FINALIZED"
+      ],
+      "default": "DEPOSIT_STATUS_UNSPECIFIED",
+      "description": "- DEPOSIT_STATUS_UNSPECIFIED: Default value, always invalid.\n - DEPOSIT_STATUS_OPEN: The deposit is being processed by the network\n - DEPOSIT_STATUS_CANCELLED: The deposit has been cancelled by the network\n - DEPOSIT_STATUS_FINALIZED: The deposit has been finalized and accounts have been updated",
+      "title": "The status of the deposit"
     },
     "vegaDiscreteTrading": {
       "type": "object",
@@ -4300,6 +4435,20 @@
           "type": "string",
           "format": "int64",
           "title": "The time until when the withdrawal is valid"
+        },
+        "txHash": {
+          "type": "string",
+          "title": "The hash of the foreign chain for this transaction"
+        },
+        "createdTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time at which the network started to process this withdrawal"
+        },
+        "withdrawnTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The time at which the withdrawal was finalized by the network"
         },
         "ext": {
           "$ref": "#/definitions/vegaWithdrawExt",

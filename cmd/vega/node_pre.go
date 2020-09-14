@@ -417,6 +417,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
+	l.depositPlugin = plugins.NewDeposit(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {
@@ -424,7 +425,13 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	})
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin)
+	l.broker.SubscribeBatch(
+		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
+		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
+		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
+		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
+		l.depositPlugin,
+	)
 
 	now, _ := l.timeService.GetTimeNow()
 

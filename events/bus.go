@@ -76,6 +76,7 @@ const (
 	MarketTickEvent
 	AuctionEvent
 	WithdrawalEvent
+	DepositEvent
 )
 
 var (
@@ -106,6 +107,8 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:      MarketCreatedEvent,
 		types.BusEventType_BUS_EVENT_TYPE_ASSET:               AssetEvent,
 		types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
+		types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:          WithdrawalEvent,
+		types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:             DepositEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
@@ -128,6 +131,8 @@ var (
 		MarketCreatedEvent:     types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED,
 		AssetEvent:             types.BusEventType_BUS_EVENT_TYPE_ASSET,
 		MarketTickEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
+		WithdrawalEvent:        types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL,
+		DepositEvent:           types.BusEventType_BUS_EVENT_TYPE_DEPOSIT,
 	}
 
 	eventStrings = map[Type]string{
@@ -153,6 +158,7 @@ var (
 		MarketTickEvent:        "MarketTickEvent",
 		AuctionEvent:           "AuctionEvent",
 		WithdrawalEvent:        "WithdrawalEvent",
+		DepositEvent:           "DepositEvent",
 	}
 )
 
@@ -200,6 +206,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.Withdrawal:
 		e := NewWithdrawalEvent(ctx, tv)
+		return e, nil
+	case types.Deposit:
+		e := NewDepositEvent(ctx, tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

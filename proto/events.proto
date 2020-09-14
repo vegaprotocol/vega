@@ -91,6 +91,8 @@ enum BusEventType {
     BUS_EVENT_TYPE_MARKET_CREATED = 17;
     BUS_EVENT_TYPE_ASSET = 18;
     BUS_EVENT_TYPE_MARKET_TICK = 19;
+    BUS_EVENT_TYPE_WITHDRAWAL = 20;
+    BUS_EVENT_TYPE_DEPOSIT = 21;
 
     BUS_EVENT_TYPE_MARKET = 101; // special event for all events implementing a specific interface
 }
@@ -119,6 +121,8 @@ message BusEvent {
     Market marketCreated = 116;
     Asset asset = 117;
     MarketTick marketTick = 118;
-    MarketEvent market = 201;
+    Withdrawal withdrawal = 119;
+    Deposit deposit = 120;
+    MarketEvent market = 1001;
   }
 }

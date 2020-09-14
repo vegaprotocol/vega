@@ -103,6 +103,12 @@ http:
     - selector: api.trading_data.ERC20WithdrawalApproval
       get: '/withdrawals/{withdrawalID}/approval/erc20'
 
+    # deposits
+    - selector: api.trading_data.Deposit
+      get: '/deposits/{ID}'
+    - selector: api.trading_data.Deposits
+      get: '/deposits/party/{partyID}'
+
     # Governance
     - selector: api.trading.PrepareProposal
       post: '/governance/prepare/proposal'

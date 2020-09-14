@@ -63,3 +63,5 @@ models:
     fields:
       infrastructureFeeAccount:
         resolver: true
+  Deposit:
+    model: code.vegaprotocol.io/vega/proto.Deposit

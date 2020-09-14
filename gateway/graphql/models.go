@@ -658,6 +658,12 @@ type Withdrawal struct {
 	Ref string `json:"ref"`
 	// The time until when the withdrawal will be valid (RFC3339Nano)
 	Expiry string `json:"expiry"`
+	// Time at which the withdrawal was created (RFC3339Nano)
+	CreatedTimestamp string `json:"createdTimestamp"`
+	// Time at which the withdrawal was finalized (RFC3339Nano)
+	WithdrawnTimestamp *string `json:"withdrawnTimestamp"`
+	// Hash of the transaction on the foreign chain
+	TxHash *string `json:"txHash"`
 	// Foreign chain specific details about the withdrawal
 	Details WithdrawalDetails `json:"details"`
 }
@@ -718,6 +724,53 @@ func (e *AccountType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e AccountType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The status of a deposit
+type DepositStatus string
+
+const (
+	// The deposit is open and being processed by the network
+	DepositStatusOpen DepositStatus = "Open"
+	// The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
+	DepositStatusCancelled DepositStatus = "Cancelled"
+	// The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	DepositStatusFinalized DepositStatus = "Finalized"
+)
+
+var AllDepositStatus = []DepositStatus{
+	DepositStatusOpen,
+	DepositStatusCancelled,
+	DepositStatusFinalized,
+}
+
+func (e DepositStatus) IsValid() bool {
+	switch e {
+	case DepositStatusOpen, DepositStatusCancelled, DepositStatusFinalized:
+		return true
+	}
+	return false
+}
+
+func (e DepositStatus) String() string {
+	return string(e)
+}
+
+func (e *DepositStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DepositStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DepositStatus", str)
+	}
+	return nil
+}
+
+func (e DepositStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

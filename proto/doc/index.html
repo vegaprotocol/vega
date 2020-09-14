@@ -219,6 +219,22 @@
                 </li>
 
                 <li>
+                  <a href="#api.DepositRequest"><span class="badge">M</span>DepositRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.DepositResponse"><span class="badge">M</span>DepositResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.DepositsRequest"><span class="badge">M</span>DepositsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.DepositsResponse"><span class="badge">M</span>DepositsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.ERC20WithdrawalApprovalRequest"><span class="badge">M</span>ERC20WithdrawalApprovalRequest</a>
                 </li>
 
@@ -981,6 +997,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.Deposit"><span class="badge">M</span>Deposit</a>
+                </li>
+
+                <li>
                   <a href="#vega.Erc20WithdrawExt"><span class="badge">M</span>Erc20WithdrawExt</a>
                 </li>
 
@@ -1147,6 +1167,10 @@
 
                 <li>
                   <a href="#vega.ChainStatus"><span class="badge">E</span>ChainStatus</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Deposit.Status"><span class="badge">E</span>Deposit.Status</a>
                 </li>
 
                 <li>
@@ -1563,6 +1587,156 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="api.DepositRequest">DepositRequest</h3>
+        <p>A request to get a specific deposit by ID</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The id of the withdrawal </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>ID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.DepositResponse">DepositResponse</h3>
+        <p>A response for a deposit</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.Deposit">vega.Deposit</a></td>
+                  <td></td>
+                  <td><p>The deposit matching the ID from the request </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.DepositsRequest">DepositsRequest</h3>
+        <p>A request to get a list of deposit from a given party</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The party to get the deposits for </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>partyID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.DepositsResponse">DepositsResponse</h3>
+        <p>The response for a list of deposits</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>deposits</td>
+                  <td><a href="#vega.Deposit">vega.Deposit</a></td>
+                  <td>repeated</td>
+                  <td><p>The list of deposits for the specified party </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -5496,6 +5670,20 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <td><p>Get withdrawals for a party</p></td>
               </tr>
 
+              <tr>
+                <td>Deposit</td>
+                <td><a href="#api.DepositRequest">DepositRequest</a></td>
+                <td><a href="#api.DepositResponse">DepositResponse</a></td>
+                <td><p>Get a deposit by its ID</p></td>
+              </tr>
+
+              <tr>
+                <td>Deposits</td>
+                <td><a href="#api.DepositsRequest">DepositsRequest</a></td>
+                <td><a href="#api.DepositsResponse">DepositsResponse</a></td>
+                <td><p>Get withdrawals for a party</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -6519,6 +6707,20 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.Withdrawal">Withdrawal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.Deposit">Deposit</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
                   <td>market</td>
                   <td><a href="#vega.MarketEvent">MarketEvent</a></td>
                   <td></td>
@@ -6973,6 +7175,18 @@ these data are being used to bundle the call to the smart contract on the ethere
               <tr>
                 <td>BUS_EVENT_TYPE_MARKET_TICK</td>
                 <td>19</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_WITHDRAWAL</td>
+                <td>20</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_DEPOSIT</td>
+                <td>21</td>
                 <td><p></p></td>
               </tr>
 
@@ -9147,6 +9361,79 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><a href="#vega.Interval">Interval</a></td>
                   <td></td>
                   <td><p>Time interval for the candle. See <a href="#vega.Interval"><tt>Interval</tt></a>. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Deposit">Deposit</h3>
+        <p>The representation of a deposit in the vega network</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The ID of the deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>status</td>
+                  <td><a href="#vega.Deposit.Status">Deposit.Status</a></td>
+                  <td></td>
+                  <td><p>Status of the deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The party initiating the deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>asset</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The vega asset targeted by this deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The amount to be deposited </p></td>
+                </tr>
+
+                <tr>
+                  <td>txHash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The hash of the transaction from the foreign chain </p></td>
+                </tr>
+
+                <tr>
+                  <td>creditedTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The time where the vega account got updated with the deposit </p></td>
+                </tr>
+
+                <tr>
+                  <td>createdTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The time the deposit has been created in the vega network </p></td>
                 </tr>
 
             </tbody>
@@ -11499,6 +11786,27 @@ to refer to this withdrawal </p></td>
                 </tr>
 
                 <tr>
+                  <td>txHash</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The hash of the foreign chain for this transaction </p></td>
+                </tr>
+
+                <tr>
+                  <td>createdTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The time at which the network started to process this withdrawal </p></td>
+                </tr>
+
+                <tr>
+                  <td>withdrawnTimestamp</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>The time at which the withdrawal was finalized by the network </p></td>
+                </tr>
+
+                <tr>
                   <td>ext</td>
                   <td><a href="#vega.WithdrawExt">WithdrawExt</a></td>
                   <td></td>
@@ -11619,6 +11927,41 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td>CHAIN_STATUS_CONNECTED</td>
                 <td>3</td>
                 <td><p>Blockchain is connected and receiving transactions.</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.Deposit.Status">Deposit.Status</h3>
+        <p>The status of the deposit</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>DEPOSIT_STATUS_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, always invalid.</p></td>
+              </tr>
+
+              <tr>
+                <td>DEPOSIT_STATUS_OPEN</td>
+                <td>1</td>
+                <td><p>The deposit is being processed by the network</p></td>
+              </tr>
+
+              <tr>
+                <td>DEPOSIT_STATUS_CANCELLED</td>
+                <td>2</td>
+                <td><p>The deposit has been cancelled by the network</p></td>
+              </tr>
+
+              <tr>
+                <td>DEPOSIT_STATUS_FINALIZED</td>
+                <td>3</td>
+                <td><p>The deposit has been finalized and accounts have been updated</p></td>
               </tr>
 
           </tbody>

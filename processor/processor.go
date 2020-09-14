@@ -144,10 +144,10 @@ type EvtForwarder interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
-	DepositBuiltinAsset(*types.BuiltinAssetDeposit, uint64) error
+	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, uint64) error
 	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
-	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
+	DepositERC20(context.Context, *types.ERC20Deposit, uint64, uint64) error
 	LockWithdrawalERC20(context.Context, string, string, uint64, *types.Erc20WithdrawExt) error
 	WithdrawalERC20(*types.ERC20Withdrawal, uint64, uint64) error
 }
