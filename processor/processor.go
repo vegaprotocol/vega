@@ -54,7 +54,6 @@ type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	Generate() error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
 

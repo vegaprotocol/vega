@@ -158,7 +158,6 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 		zero       uint64 = 0
 	)
 
-	proc.eng.EXPECT().Generate().Times(1).Return(nil)
 	proc.stat.EXPECT().SetBlockDuration(uint64(duration * float64(time.Second.Nanoseconds()))).Times(1)
 	proc.stat.EXPECT().IncTotalBatches().Times(1).Do(func() {
 		totBatches++

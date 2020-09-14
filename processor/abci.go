@@ -227,10 +227,6 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	app.updateStats()
 
-	if err := app.exec.Generate(); err != nil {
-		app.log.Error("failure generating data in execution engine (commit)")
-	}
-
 	return resp
 }
 
