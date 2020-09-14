@@ -243,6 +243,7 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 		}
 		if err = verifySignature(s.log, msg, req.Signature, req.PubKey); err != nil {
+			s.log.Debug("invalid tx signature", logging.String("pubkey", req.PubKey))
 			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 		}
 	}
@@ -300,9 +301,6 @@ func verifySignature(
 		return err
 	}
 	if !ok {
-		if log != nil {
-			log.Error("invalid tx signature", logging.String("pubkey", pubKey))
-		}
 		return ErrInvalidSignature
 	}
 	return nil
