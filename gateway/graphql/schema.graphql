@@ -878,9 +878,6 @@ type PriceLevel {
 
     "The number of orders at this price level (uint64)"
     numberOfOrders: String!
-
-    "The cumulative total volume to this price level (uint64)"
-    cumulativeVolume: String!
 }
 
 "Candle stick representation of trading"

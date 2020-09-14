@@ -221,6 +221,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -430,8 +431,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin,
-	)
+		l.depositPlugin, l.marketDepthSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -533,7 +533,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.riskStore, l.settlePlugin); err != nil {
 		return
 	}
-	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore); err != nil {
+	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub); err != nil {
 		return
 	}
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)

@@ -1033,6 +1033,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.MarketDepthUpdate"><span class="badge">M</span>MarketDepthUpdate</a>
+                </li>
+
+                <li>
                   <a href="#vega.NodeRegistration"><span class="badge">M</span>NodeRegistration</a>
                 </li>
 
@@ -9859,6 +9863,58 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><p>Collection of price levels for the sell side of the book. </p></td>
                 </tr>
 
+                <tr>
+                  <td>sequenceNumber</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Sequence number for the market depth dump </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.MarketDepthUpdate">MarketDepthUpdate</h3>
+        <p>Represents the changed market depth since the last update</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Market identifier. </p></td>
+                </tr>
+
+                <tr>
+                  <td>buy</td>
+                  <td><a href="#vega.PriceLevel">PriceLevel</a></td>
+                  <td>repeated</td>
+                  <td><p>Collection of updated price levels for the buy side of the book. </p></td>
+                </tr>
+
+                <tr>
+                  <td>sell</td>
+                  <td><a href="#vega.PriceLevel">PriceLevel</a></td>
+                  <td>repeated</td>
+                  <td><p>Collection of updated price levels for the sell side of the book. </p></td>
+                </tr>
+
+                <tr>
+                  <td>sequenceNumber</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Sequence number for the market depth update </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -10814,13 +10870,6 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Volume at the price level. </p></td>
-                </tr>
-
-                <tr>
-                  <td>cumulativeVolume</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p>Cumulative volume at the price level. </p></td>
                 </tr>
 
             </tbody>

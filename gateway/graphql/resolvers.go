@@ -1748,10 +1748,6 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 	return strconv.FormatUint(obj.Price, 10), nil
 }
 
-func (r *myPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *types.PriceLevel) (string, error) {
-	return strconv.FormatUint(obj.CumulativeVolume, 10), nil
-}
-
 // END: Price Level Resolver
 
 // BEGIN: Position Resolver

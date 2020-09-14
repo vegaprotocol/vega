@@ -65,7 +65,6 @@ type CandleStore interface {
 type OrderStore interface {
 	orders.OrderStore
 	SaveBatch([]types.Order) error
-	GetMarketDepth(context.Context, string, uint64) (*proto.MarketDepth, error)
 	Close() error
 	ReloadConf(storage.Config)
 }
@@ -108,6 +107,7 @@ type NodeCommand struct {
 	marketDataSub  *subscribers.MarketDataSub
 	newMarketSub   *subscribers.Market
 	candleSub      *subscribers.CandleSub
+	marketDepthSub *subscribers.MarketDepthBuilder
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

@@ -216,6 +216,7 @@
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
+    - [MarketDepthUpdate](#vega.MarketDepthUpdate)
     - [NodeRegistration](#vega.NodeRegistration)
     - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
@@ -3697,6 +3698,25 @@ Represents market depth or order book data for the specified market on Vega.
 | marketID | [string](#string) |  | Market identifier. |
 | buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of price levels for the buy side of the book. |
 | sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of price levels for the sell side of the book. |
+| sequenceNumber | [uint64](#uint64) |  | Sequence number for the market depth dump |
+
+
+
+
+
+
+<a name="vega.MarketDepthUpdate"></a>
+
+### MarketDepthUpdate
+Represents the changed market depth since the last update
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier. |
+| buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the buy side of the book. |
+| sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the sell side of the book. |
+| sequenceNumber | [uint64](#uint64) |  | Sequence number for the market depth update |
 
 
 
@@ -3960,7 +3980,6 @@ Represents a price level from market depth or order book data.
 | price | [uint64](#uint64) |  | Price for the price level, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
 | numberOfOrders | [uint64](#uint64) |  | Number of orders at the price level. |
 | volume | [uint64](#uint64) |  | Volume at the price level. |
-| cumulativeVolume | [uint64](#uint64) |  | Cumulative volume at the price level. |
 
 
 

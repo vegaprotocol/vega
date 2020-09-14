@@ -401,8 +401,6 @@ message PriceLevel {
   uint64 numberOfOrders = 2;
   // Volume at the price level.
   uint64 volume = 3;
-  // Cumulative volume at the price level.
-  uint64 cumulativeVolume = 4;
 }
 
 // Represents market depth or order book data for the specified market on Vega.
@@ -413,6 +411,20 @@ message MarketDepth {
   repeated PriceLevel buy = 2;
   // Collection of price levels for the sell side of the book.
   repeated PriceLevel sell = 3;
+  // Sequence number for the market depth dump
+  uint64 sequenceNumber = 4;
+}
+
+// Represents the changed market depth since the last update
+message MarketDepthUpdate {
+  // Market identifier.
+  string marketID = 1;
+  // Collection of updated price levels for the buy side of the book.
+  repeated PriceLevel buy = 2;
+  // Collection of updated price levels for the sell side of the book.
+  repeated PriceLevel sell = 3;
+  // Sequence number for the market depth update
+  uint64 sequenceNumber = 4;
 }
 
 // Represents position data for a party on the specified market on Vega.

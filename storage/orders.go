@@ -32,7 +32,6 @@ type Order struct {
 	batchCountForGC int32
 	subscribers     map[uint64]chan<- []types.Order
 	subscriberID    uint64
-	depth           map[string]*Depth
 	onCriticalError func()
 }
 
@@ -56,7 +55,6 @@ func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, e
 		log:             log,
 		Config:          c,
 		badger:          &bs,
-		depth:           map[string]*Depth{},
 		subscribers:     map[uint64]chan<- []types.Order{},
 		onCriticalError: onCriticalError,
 	}, nil
@@ -315,93 +313,6 @@ func (os *Order) GetAllVersionsByOrderID(
 	return os.getOrdersDirectly(ctx, verionsPrefix, validForPrefix, skip, limit, descending, nil)
 }
 
-// GetMarketDepth calculates and returns order book/depth of market for a given market.
-func (os *Order) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
-
-	// validate
-	depth, ok := os.depth[market]
-	if !ok || depth == nil {
-		// When a market is new with no orders there will not be any market depth/order book
-		// so we do not need to try and calculate the depth cumulative volumes etc
-		return &types.MarketDepth{
-			MarketID: market,
-			Buy:      []*types.PriceLevel{},
-			Sell:     []*types.PriceLevel{},
-		}, nil
-	}
-
-	// load from store
-	buy := depth.BuySide(limit)
-	sell := depth.SellSide(limit)
-
-	buyPtr := make([]*types.PriceLevel, 0, len(buy))
-	sellPtr := make([]*types.PriceLevel, 0, len(sell))
-
-	ctx, cancel := context.WithTimeout(ctx, os.Config.Timeout.Duration)
-	defer cancel()
-	deadline, _ := ctx.Deadline()
-	// 2 routines, each can push one error on here, so buffer to avoid deadlock
-	errCh := make(chan error, 2)
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	// recalculate accumulated volume, concurrently rather than sequentially
-	// make the most of the time we have
-	// --- buy side ---
-	go func() {
-		defer wg.Done()
-		var cumulativeVolume uint64
-		for i, b := range buy {
-			select {
-			case <-ctx.Done():
-				if deadline.Before(time.Now()) {
-					errCh <- ErrTimeoutReached
-				}
-				return
-			default:
-				// keep running total
-				cumulativeVolume += b.Volume
-				buy[i].CumulativeVolume = cumulativeVolume
-				aCopy := buy[i].PriceLevel
-				buyPtr = append(buyPtr, &aCopy)
-			}
-		}
-	}()
-	// --- sell side ---
-	go func() {
-		defer wg.Done()
-		var cumulativeVolume uint64
-		for i, s := range sell {
-			select {
-			case <-ctx.Done():
-				if deadline.Before(time.Now()) {
-					errCh <- ErrTimeoutReached
-				}
-				return
-			default:
-				// keep running total
-				cumulativeVolume += s.Volume
-				sell[i].CumulativeVolume = cumulativeVolume
-				aCopy := sell[i].PriceLevel
-				sellPtr = append(sellPtr, &aCopy)
-			}
-		}
-	}()
-	wg.Wait()
-	close(errCh)
-	// the second error is the same, they're both ctx.Err()
-	for err := range errCh {
-		return nil, err
-	}
-
-	// return new re-calculated market depth for each side of order book
-	return &types.MarketDepth{
-		MarketID: market,
-		Buy:      buyPtr,
-		Sell:     sellPtr,
-	}, nil
-}
-
 type orderFilter = func(orderEntry *types.Order) bool
 
 // getOrdersIndirectly loads a collection of orders based on keyPrefix
@@ -572,13 +483,6 @@ func (os *Order) notify(items []types.Order) error {
 func (os *Order) orderBatchToMap(batch []types.Order) (map[string][]byte, error) {
 	results := make(map[string][]byte)
 	for _, order := range batch {
-		// TODO(jeremy): move this somewhere else so we do not try to do it
-		// at each iteration of orders
-		// validate an order book (depth of market) exists for order market
-		if exists := os.depth[order.MarketID]; exists == nil {
-			os.depth[order.MarketID] = NewMarketDepth(order.MarketID)
-		}
-
 		orderBuf, err := proto.Marshal(&order)
 		if err != nil {
 			return nil, err
@@ -620,12 +524,6 @@ func (os *Order) writeBatch(batch []types.Order) error {
 		}
 		return err
 	}
-
-	// Depth of market updater
-	for idx := range batch {
-		os.depth[batch[idx].MarketID].Update(batch[idx])
-	}
-
 	return nil
 }
 

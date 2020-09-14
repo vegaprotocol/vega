@@ -17,12 +17,13 @@ import (
 
 type testService struct {
 	*markets.Svc
-	ctx    context.Context
-	cfunc  context.CancelFunc
-	log    *logging.Logger
-	ctrl   *gomock.Controller
-	order  *mocks.MockOrderStore
-	market *mocks.MockMarketStore
+	ctx         context.Context
+	cfunc       context.CancelFunc
+	log         *logging.Logger
+	ctrl        *gomock.Controller
+	order       *mocks.MockOrderStore
+	market      *mocks.MockMarketStore
+	marketDepth *mocks.MockMarketDepth
 }
 
 func getTestService(t *testing.T) *testService {
@@ -30,6 +31,7 @@ func getTestService(t *testing.T) *testService {
 	order := mocks.NewMockOrderStore(ctrl)
 	market := mocks.NewMockMarketStore(ctrl)
 	marketdata := mocks.NewMockMarketDataStore(ctrl)
+	marketdepth := mocks.NewMockMarketDepth(ctrl)
 	log := logging.NewTestLogger()
 	ctx, cfunc := context.WithCancel(context.Background())
 	svc, err := markets.NewService(
@@ -38,16 +40,18 @@ func getTestService(t *testing.T) *testService {
 		market,
 		order,
 		marketdata,
+		marketdepth,
 	)
 	assert.NoError(t, err)
 	return &testService{
-		Svc:    svc,
-		ctx:    ctx,
-		cfunc:  cfunc,
-		log:    log,
-		ctrl:   ctrl,
-		order:  order,
-		market: market,
+		Svc:         svc,
+		ctx:         ctx,
+		cfunc:       cfunc,
+		log:         log,
+		ctrl:        ctrl,
+		order:       order,
+		market:      market,
+		marketDepth: marketdepth,
 	}
 }
 
@@ -114,7 +118,7 @@ func TestMarketService_GetDepth(t *testing.T) {
 	}
 
 	svc.market.EXPECT().GetByID(market.Id).Times(1).Return(market, nil)
-	svc.order.EXPECT().GetMarketDepth(svc.ctx, market.Id, limit).Times(1).Return(depth, nil)
+	svc.marketDepth.EXPECT().GetMarketDepth(svc.ctx, market.Id, limit).Times(1).Return(depth, nil)
 
 	got, err := svc.GetDepth(svc.ctx, market.Id, limit)
 	assert.NoError(t, err)
@@ -160,7 +164,7 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 		go writeToChannel(ch)
 	})
 
-	svc.order.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).Times(1).Return(&depth, nil)
+	svc.marketDepth.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).Times(1).Return(&depth, nil)
 	// waitgroup here ensures that unsubscribe was indeed called
 	svc.order.EXPECT().Unsubscribe(uint64(1)).Times(1).Return(nil).Do(func(_ uint64) {
 		wg.Done()
