@@ -257,7 +257,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	// Do we know about this order already?
 	originalOrder := md.orderExists(order.Id)
 	if originalOrder != nil {
-		// Check to see if we are updating the order of removing it
+		// Check to see if we are updating the order or removing it
 		if order.Status == types.Order_STATUS_CANCELLED ||
 			order.Status == types.Order_STATUS_EXPIRED ||
 			order.Status == types.Order_STATUS_STOPPED {

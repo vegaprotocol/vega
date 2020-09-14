@@ -297,6 +297,24 @@ func TestPartialFill(t *testing.T) {
 	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(1))
 }
 
+func TestIOCPartialFill(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx, true)
+
+	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 5)
+	order.Status = types.Order_STATUS_PARTIALLY_FILLED
+	order.TimeInForce = types.Order_TIF_IOC
+	event := events.NewOrderEvent(ctx, order)
+	mdb.Push(event)
+
+	assert.Equal(t, mdb.GetBuyPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetSellPriceLevels("M"), 0)
+	assert.Equal(t, mdb.GetOrderCount("M"), 0)
+
+	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+}
+
 func TestFullyFill(t *testing.T) {
 	ctx := context.Background()
 	mdb := getTestMDB(t, ctx, true)
