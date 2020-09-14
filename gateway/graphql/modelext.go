@@ -1178,13 +1178,25 @@ func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var withdrawnTs, txHash *string
+	if w.WithdrawnTimestamp != 0 {
+		*withdrawnTs = vegatime.Format(vegatime.UnixNano(w.WithdrawnTimestamp))
+	}
+	if len(w.TxHash) > 0 {
+		*txHash = w.TxHash
+	}
+
 	return &Withdrawal{
-		ID:      w.Id,
-		Party:   &types.Party{Id: w.PartyID},
-		Amount:  fmt.Sprintf("%v", w.Amount),
-		Status:  status,
-		Ref:     w.Ref,
-		Expiry:  vegatime.Format(vegatime.UnixNano(w.Expiry)),
-		Details: WithdrawDetailsFromProto(w.Ext),
+		ID:                 w.Id,
+		Party:              &types.Party{Id: w.PartyID},
+		Amount:             fmt.Sprintf("%v", w.Amount),
+		Status:             status,
+		Ref:                w.Ref,
+		Expiry:             vegatime.Format(vegatime.UnixNano(w.Expiry)),
+		CreatedTimestamp:   vegatime.Format(vegatime.UnixNano(w.CreatedTimestamp)),
+		WithdrawnTimestamp: withdrawnTs,
+		TxHash:             txHash,
+		Details:            WithdrawDetailsFromProto(w.Ext),
 	}, nil
 }

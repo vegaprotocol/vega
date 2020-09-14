@@ -12,6 +12,7 @@ import (
 type IDgenerator struct {
 	batches     uint64
 	withdrawals uint64
+	deposits    uint64
 }
 
 // NewIDGen returns an IDgenerator, and is used to abstract this type.
@@ -32,4 +33,9 @@ func (i *IDgenerator) SetID(w *types.Withdrawal, t time.Time) *big.Int {
 	w.Id = fmt.Sprintf("W%010d-%010d", i.batches, i.withdrawals)
 	w.Ref = ref.String()
 	return ref
+}
+
+func (i *IDgenerator) SetDepositID(d *types.Deposit, t time.Time) {
+	i.deposits++
+	d.Id = fmt.Sprintf("D%010d-%010d", i.batches, i.deposits)
 }

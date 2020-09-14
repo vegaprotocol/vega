@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/proto"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

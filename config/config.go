@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
@@ -73,6 +74,7 @@ type Config struct {
 	Genesis     genesis.Config
 	Validators  validators.Config
 	Banking     banking.Config
+	Stats       stats.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -115,6 +117,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Genesis:        genesis.NewDefaultConfig(),
 		Validators:     validators.NewDefaultConfig(),
 		Banking:        banking.NewDefaultConfig(),
+		Stats:          stats.NewDefaultConfig(),
 		Subscribers:    subscribers.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,

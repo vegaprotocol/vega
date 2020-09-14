@@ -428,7 +428,7 @@ message MarketDepthUpdate {
 }
 
 // Represents position data for a party on the specified market on Vega.
-message Position {
+message Position{
   // Market identifier.
   string marketID = 1;
   // Party identifier.
@@ -442,6 +442,8 @@ message Position {
   // Average entry price for the position, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 averageEntryPrice = 6;
+  // last time the position was updated
+  int64 updatedAt = 7;
 }
 
 message PositionTrade {
@@ -533,6 +535,38 @@ enum ChainStatus {
   // Note: ChainStatus does not exist in GraphQL.
 }
 
+// The representation of a deposit in the vega network
+message Deposit {
+  // The status of the deposit
+  enum Status {
+    // Default value, always invalid.
+    DEPOSIT_STATUS_UNSPECIFIED = 0;
+    // The deposit is being processed by the network
+    DEPOSIT_STATUS_OPEN = 1;
+    // The deposit has been cancelled by the network
+    DEPOSIT_STATUS_CANCELLED = 2;
+    // The deposit has been finalized and accounts have been updated
+    DEPOSIT_STATUS_FINALIZED = 3;
+  }
+
+  // The ID of the deposit
+  string id = 1;
+  // Status of the deposit
+  Status status = 2;
+  // The party initiating the deposit
+  string partyID = 3;
+  // The vega asset targeted by this deposit
+  string asset = 4;
+  // The amount to be deposited
+  string amount = 5;
+  // The hash of the transaction from the foreign chain
+  string txHash = 6;
+  // The time where the vega account got updated with the deposit
+  int64 creditedTimestamp = 7;
+  // The time the deposit has been created in the vega network
+  int64 createdTimestamp = 8;
+}
+
 // The representation of a withdrawal in the vega network
 message Withdrawal {
   // The status of the withdrawal
@@ -563,8 +597,14 @@ message Withdrawal {
   string ref = 6;
   // The time until when the withdrawal is valid
   int64 expiry = 7;
+  // The hash of the foreign chain for this transaction
+  string txHash = 8;
+  // The time at which the network started to process this withdrawal
+  int64 createdTimestamp = 9;
+  // The time at which the withdrawal was finalized by the network
+  int64 withdrawnTimestamp = 10;
   // foreign chain specifis
-  WithdrawExt ext = 8;
+  WithdrawExt ext = 11;
 }
 
 // A request for withdrawing funds from a trader

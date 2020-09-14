@@ -159,6 +159,7 @@ type NodeCommand struct {
 	notaryPlugin     *plugins.Notary
 	assetPlugin      *plugins.Asset
 	withdrawalPlugin *plugins.Withdrawal
+	depositPlugin    *plugins.Deposit
 }
 
 // Init initialises the node command.
@@ -223,6 +224,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.feeService,
 		l.eventService,
 		l.withdrawalPlugin,
+		l.depositPlugin,
 		statusChecker,
 	)
 

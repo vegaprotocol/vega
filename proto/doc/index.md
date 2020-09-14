@@ -14,6 +14,10 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [DepositRequest](#api.DepositRequest)
+    - [DepositResponse](#api.DepositResponse)
+    - [DepositsRequest](#api.DepositsRequest)
+    - [DepositsResponse](#api.DepositsResponse)
     - [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest)
     - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
     - [EstimateFeeRequest](#api.EstimateFeeRequest)
@@ -203,6 +207,7 @@
     - [Account](#vega.Account)
     - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
+    - [Deposit](#vega.Deposit)
     - [Erc20WithdrawExt](#vega.Erc20WithdrawExt)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
@@ -247,6 +252,7 @@
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
+    - [Deposit.Status](#vega.Deposit.Status)
     - [Interval](#vega.Interval)
     - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
@@ -415,6 +421,66 @@ Request to subscribe to a stream of (Candles)[#vega.Candle].
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier. Required field. |
 | interval | [vega.Interval](#vega.Interval) |  | Time interval for the candles. Required field. |
+
+
+
+
+
+
+<a name="api.DepositRequest"></a>
+
+### DepositRequest
+A request to get a specific deposit by ID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The id of the withdrawal |
+
+
+
+
+
+
+<a name="api.DepositResponse"></a>
+
+### DepositResponse
+A response for a deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposit | [vega.Deposit](#vega.Deposit) |  | The deposit matching the ID from the request |
+
+
+
+
+
+
+<a name="api.DepositsRequest"></a>
+
+### DepositsRequest
+A request to get a list of deposit from a given party
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  | The party to get the deposits for |
+
+
+
+
+
+
+<a name="api.DepositsResponse"></a>
+
+### DepositsResponse
+The response for a list of deposits
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposits | [vega.Deposit](#vega.Deposit) | repeated | The list of deposits for the specified party |
 
 
 
@@ -2045,6 +2111,8 @@ The response for a list of withdrawals
 | ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
 | Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
+| Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
+| Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
 
 
 
@@ -2503,6 +2571,8 @@ the actual data is set as a oneof field
 | marketCreated | [Market](#vega.Market) |  |  |
 | asset | [Asset](#vega.Asset) |  |  |
 | marketTick | [MarketTick](#vega.MarketTick) |  |  |
+| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
+| deposit | [Deposit](#vega.Deposit) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2690,6 +2760,8 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_MARKET_CREATED | 17 |  |
 | BUS_EVENT_TYPE_ASSET | 18 |  |
 | BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
+| BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
+| BUS_EVENT_TYPE_DEPOSIT | 21 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
@@ -3458,6 +3530,28 @@ referred to commonly as a candlestick or candle.
 
 
 
+<a name="vega.Deposit"></a>
+
+### Deposit
+The representation of a deposit in the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | The ID of the deposit |
+| status | [Deposit.Status](#vega.Deposit.Status) |  | Status of the deposit |
+| partyID | [string](#string) |  | The party initiating the deposit |
+| asset | [string](#string) |  | The vega asset targeted by this deposit |
+| amount | [string](#string) |  | The amount to be deposited |
+| txHash | [string](#string) |  | The hash of the transaction from the foreign chain |
+| creditedTimestamp | [int64](#int64) |  | The time where the vega account got updated with the deposit |
+| createdTimestamp | [int64](#int64) |  | The time the deposit has been created in the vega network |
+
+
+
+
+
+
 <a name="vega.Erc20WithdrawExt"></a>
 
 ### Erc20WithdrawExt
@@ -3837,6 +3931,7 @@ Represents position data for a party on the specified market on Vega.
 | realisedPNL | [int64](#int64) |  | Realised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. |
 | unrealisedPNL | [int64](#int64) |  | Unrealised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. |
 | averageEntryPrice | [uint64](#uint64) |  | Average entry price for the position, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| updatedAt | [int64](#int64) |  | last time the position was updated |
 
 
 
@@ -4233,6 +4328,9 @@ The representation of a withdrawal in the vega network
 | status | [Withdrawal.Status](#vega.Withdrawal.Status) |  | The status of this withdrawal |
 | ref | [string](#string) |  | The reference which is used by the foreign chain to refer to this withdrawal |
 | expiry | [int64](#int64) |  | The time until when the withdrawal is valid |
+| txHash | [string](#string) |  | The hash of the foreign chain for this transaction |
+| createdTimestamp | [int64](#int64) |  | The time at which the network started to process this withdrawal |
+| withdrawnTimestamp | [int64](#int64) |  | The time at which the withdrawal was finalized by the network |
 | ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifis |
 
 
@@ -4276,6 +4374,20 @@ The Vega blockchain status as reported by the node the caller is connected to.
 | CHAIN_STATUS_DISCONNECTED | 1 | Blockchain is disconnected. |
 | CHAIN_STATUS_REPLAYING | 2 | Blockchain is replaying historic transactions. |
 | CHAIN_STATUS_CONNECTED | 3 | Blockchain is connected and receiving transactions. |
+
+
+
+<a name="vega.Deposit.Status"></a>
+
+### Deposit.Status
+The status of the deposit
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEPOSIT_STATUS_UNSPECIFIED | 0 | Default value, always invalid. |
+| DEPOSIT_STATUS_OPEN | 1 | The deposit is being processed by the network |
+| DEPOSIT_STATUS_CANCELLED | 2 | The deposit has been cancelled by the network |
+| DEPOSIT_STATUS_FINALIZED | 3 | The deposit has been finalized and accounts have been updated |
 
 
 

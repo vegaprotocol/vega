@@ -146,7 +146,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, l.conf.Stats, l.cli.version, l.cli.versionHash)
 
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
@@ -273,6 +273,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 		func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.stats.ReloadConf(cfg.Stats) },
 	)
 
 	return
@@ -417,6 +418,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
+	l.depositPlugin = plugins.NewDeposit(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {
@@ -424,10 +426,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	})
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
-		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub,
-		l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin,
-		l.candleSub, l.withdrawalPlugin, l.marketDepthSub)
+	l.broker.SubscribeBatch(
+		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
+		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
+		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
+		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
+		l.depositPlugin, l.marketDepthSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -555,6 +559,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
+		func(cfg config.Config) { app.ReloadConf(cfg.Processor) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },

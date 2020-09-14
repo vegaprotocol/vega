@@ -43,12 +43,17 @@ type Engine struct {
 	Config
 	log *logging.Logger
 
-	market  string
-	product Product
-	pos     map[string]*pos
-	mu      *sync.Mutex
-	trades  map[string][]*pos
-	broker  Broker
+	market      string
+	product     Product
+	pos         map[string]*pos
+	mu          *sync.Mutex
+	trades      map[string][]*pos
+	broker      Broker
+	currentTime time.Time
+}
+
+func (e *Engine) OnTick(t time.Time) {
+	e.currentTime = t
 }
 
 // New instantiates a new instance of the settlement engine
@@ -179,7 +184,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []ev
 			tradeset = append(tradeset, t)
 		}
 		// create (and add position to buffer)
-		evts = append(evts, events.NewSettlePositionEvent(ctx, evt.Party(), e.market, evt.Price(), tradeset))
+		evts = append(evts, events.NewSettlePositionEvent(ctx, evt.Party(), e.market, evt.Price(), tradeset, e.currentTime.UnixNano()))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price == markPrice {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
@@ -248,7 +253,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	e.mu.Lock()
 	for _, v := range evts {
 		key := v.Party()
-		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), v.MarginBalance()+v.GeneralBalance()))
+		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), v.MarginBalance()+v.GeneralBalance(), e.currentTime.UnixNano()))
 		delete(e.pos, key)
 		delete(e.trades, key)
 	}

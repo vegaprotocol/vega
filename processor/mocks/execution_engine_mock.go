@@ -64,20 +64,6 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1)
 }
 
-// Generate mocks base method
-func (m *MockExecutionEngine) Generate() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Generate")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Generate indicates an expected call of Generate
-func (mr *MockExecutionEngineMockRecorder) Generate() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockExecutionEngine)(nil).Generate))
-}
-
 // SubmitMarket mocks base method
 func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
 	m.ctrl.T.Helper()
