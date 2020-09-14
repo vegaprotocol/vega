@@ -460,6 +460,12 @@ func (this *MarketDepthSubscribeRequest) Validate() error {
 	}
 	return nil
 }
+func (this *MarketDepthUpdatesSubscribeRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	return nil
+}
 func (this *PositionsSubscribeRequest) Validate() error {
 	return nil
 }

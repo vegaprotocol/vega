@@ -58,6 +58,7 @@
     - [MarketDepthRequest](#api.MarketDepthRequest)
     - [MarketDepthResponse](#api.MarketDepthResponse)
     - [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest)
+    - [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest)
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
@@ -1105,6 +1106,21 @@ Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
 
 
 
+<a name="api.MarketDepthUpdatesSubscribeRequest"></a>
+
+### MarketDepthUpdatesSubscribeRequest
+Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+
+
+
+
+
+
 <a name="api.MarketsDataResponse"></a>
 
 ### MarketsDataResponse
@@ -2099,6 +2115,7 @@ The response for a list of withdrawals
 | CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream | Subscribe to a stream of Candles |
 | MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream | Subscribe to a stream of Margin Levels |
 | MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream | Subscribe to a stream of Market Depth |
+| MarketDepthUpdatesSubscribe | [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest) | [.vega.MarketDepthUpdate](#vega.MarketDepthUpdate) stream | Subscribe to a stream of Market Depth PriceLevel Updates |
 | MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream | Subscribe to a stream of Markets Data |
 | OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream | Subscribe to a stream of Orders |
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
