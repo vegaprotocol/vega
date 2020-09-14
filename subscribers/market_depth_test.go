@@ -190,19 +190,23 @@ func TestAmendOrderPrice(t *testing.T) {
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 
+	order2 := buildOrder("Order2", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
+	event2 := events.NewOrderEvent(ctx, order2)
+	mdb.Push(event2)
+
 	// Amend the price to force a change in price level
 	amendorder := *order
 	amendorder.Price = 90
-	event2 := events.NewOrderEvent(ctx, &amendorder)
-	mdb.Push(event2)
+	event3 := events.NewOrderEvent(ctx, &amendorder)
+	mdb.Push(event3)
 
-	assert.Equal(t, mdb.GetBuyPriceLevels("M"), 1)
+	assert.Equal(t, mdb.GetBuyPriceLevels("M"), 2)
 	assert.Equal(t, mdb.GetSellPriceLevels("M"), 0)
-	assert.Equal(t, mdb.GetOrderCount("M"), 1)
+	assert.Equal(t, mdb.GetOrderCount("M"), 2)
 
-	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100), uint64(10))
 	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 90), uint64(10))
-	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(0))
+	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100), uint64(1))
 	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 90), uint64(1))
 }
 

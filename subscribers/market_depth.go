@@ -173,7 +173,7 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
 	if originalOrder.Price == newOrder.Price {
 		if newOrder.Remaining == 0 {
-			md.removeOrder(newOrder, originalOrder.Remaining-newOrder.Remaining)
+			md.removeOrder(newOrder, originalOrder.Remaining)
 		} else {
 			// Update
 			pl := md.getPriceLevel(originalOrder.Side, originalOrder.Price)
@@ -182,7 +182,7 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 			md.changes = append(md.changes, pl)
 		}
 	} else {
-		md.removeOrder(originalOrder, originalOrder.Remaining-newOrder.Remaining)
+		md.removeOrder(originalOrder, originalOrder.Remaining)
 		md.addOrder(newOrder)
 	}
 }
