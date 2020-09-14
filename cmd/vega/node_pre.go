@@ -146,7 +146,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, l.conf.Stats, l.cli.version, l.cli.versionHash)
 
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
@@ -272,6 +272,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 		func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.stats.ReloadConf(cfg.Stats) },
 	)
 
 	return
@@ -551,6 +552,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
+		func(cfg config.Config) { app.ReloadConf(cfg.Processor) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },

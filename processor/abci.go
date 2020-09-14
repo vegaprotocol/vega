@@ -28,7 +28,7 @@ type App struct {
 	hasRegistered     bool
 	size              uint64
 
-	Config
+	cfg      Config
 	log      *logging.Logger
 	cancelFn func()
 	idGen    *IDgenerator
@@ -69,6 +69,9 @@ func NewApp(
 	top ValidatorTopology,
 	wallet Wallet,
 ) (*App, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	vegaWallet, ok := wallet.Get(nodewallet.Vega)
 	if !ok {
 		return nil, ErrVegaWalletRequired
@@ -78,7 +81,7 @@ func NewApp(
 		abci: abci.New(&codec{}),
 
 		log:      log,
-		Config:   config,
+		cfg:      config,
 		cancelFn: cancelFn,
 		idGen:    NewIDGen(),
 
@@ -122,6 +125,20 @@ func NewApp(
 	app.time.NotifyOnTick(app.onTick)
 
 	return app, nil
+}
+
+// ReloadConf updates the internal configuration
+func (a *App) ReloadConf(cfg Config) {
+	a.log.Info("reloading configuration")
+	if a.log.GetLevel() != cfg.Level.Get() {
+		a.log.Info("updating log level",
+			logging.String("old", a.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		a.log.SetLevel(cfg.Level.Get())
+	}
+
+	a.cfg = cfg
 }
 
 func (app *App) Abci() *abci.App {
@@ -316,7 +333,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
 	}
-	if app.LogOrderCancelDebug {
+	if app.cfg.LogOrderCancelDebug {
 		for _, v := range msg {
 			app.log.Debug("Order cancelled", logging.Order(*v.Order))
 		}
@@ -340,7 +357,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
 	}
-	if app.LogOrderAmendDebug {
+	if app.cfg.LogOrderAmendDebug {
 		app.log.Debug("Order amended", logging.Order(*msg.Order))
 	}
 

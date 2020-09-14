@@ -252,7 +252,7 @@ func getTestGRPCServer(
 	g = api.NewGRPCServer(
 		logger,
 		conf.API,
-		stats.New(logger, "ver", "hash"),
+		stats.New(logger, conf.Stats, "ver", "hash"),
 		blockchainClient,
 		timeService,
 		marketService,
