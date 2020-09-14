@@ -7,6 +7,13 @@
 # --doc_out:           Generate documentation in proto/doc/
 # --doc_opt:           Options for generating documentation
 
+sed=sed
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed=gsed
+fi
+
+
+
 paths="paths=source_relative"
 
 # proto (excl subdirs): Generate *.pb.go and *.validator.pb.go
@@ -38,11 +45,11 @@ do
 			-Ivendor/github.com/google/protobuf/src \
 			--doc_out="$(dirname "$outputfile")" \
 			--doc_opt="$fileformat,$(basename "$outputfile")"
-	sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
+	$sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
 done
 
 # shellcheck disable=SC2016
-sed --in-place -r \
+$sed --in-place -r \
 	-e 's#`([^`]*)`#<tt>\1</tt>#g' \
 	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
 	proto/doc/index.html
@@ -89,7 +96,7 @@ done
 # Make *.validator.pb.go files deterministic.
 find proto -name '*.validator.pb.go' | sort | while read -r pbfile
 do
-	sed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
+	$sed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
 		&& ./script/fix_imports.sh "$pbfile"
 done
 
