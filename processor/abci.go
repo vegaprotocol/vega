@@ -400,7 +400,8 @@ func (app *App) DeliverWithdraw(
 		return err
 	}
 
-	return app.processWithdraw(ctx, w, id)
+	party := hex.EncodeToString(tx.PubKey())
+	return app.processWithdraw(ctx, party, w, id)
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {

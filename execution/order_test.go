@@ -25,7 +25,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
-		Id:          "someid",
+		Id:          "v0000000000000-0000001",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -50,7 +50,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
 
 	// Create a new order (generates one order message)
-	orderAmend.Id = "amendingorder"
+	orderAmend.Id = "v0000000000000-0000001"
 	orderAmend.Reference = "amendingorderreference"
 	confirmation, err = tm.market.SubmitOrder(context.TODO(), &orderAmend)
 	assert.NotNil(t, confirmation)
@@ -58,32 +58,31 @@ func TestOrderBufferOutputCount(t *testing.T) {
 
 	amend := &types.OrderAmendment{
 		MarketID: tm.market.GetID(),
-		PartyID:  party1,
 		OrderID:  orderAmend.Id,
 	}
 
 	// Amend price down (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price - 1}
-	amendConf, err := tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err := tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend price up (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price + 1}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size down (generates one order message)
 	amend.Price = nil
 	amend.SizeDelta = -1
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size up (generates one order message)
 	amend.SizeDelta = +1
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -91,26 +90,26 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	amend.SizeDelta = 0
 	amend.TimeInForce = types.Order_TIF_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend TIF -> GTC (generates one order message)
 	amend.TimeInForce = types.Order_TIF_GTC
 	amend.ExpiresAt = nil
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend ExpiresAt (generates two order messages)
 	amend.TimeInForce = types.Order_TIF_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 200000000000}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 }
@@ -128,7 +127,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
-		Id:          "someid",
+		Id:          "v0000000000000-0000001",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -149,22 +148,20 @@ func TestAmendCancelResubmit(t *testing.T) {
 
 	amend := &types.OrderAmendment{
 		OrderID:  orderID,
-		PartyID:  confirmation.GetOrder().GetPartyID(),
 		MarketID: confirmation.GetOrder().GetMarketID(),
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(context.TODO(), amend)
+	amended, err := tm.market.AmendOrder(context.TODO(), confirmation.GetOrder().GetPartyID(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
 	amend = &types.OrderAmendment{
 		OrderID:   orderID,
-		PartyID:   confirmation.GetOrder().GetPartyID(),
 		MarketID:  confirmation.GetOrder().GetMarketID(),
 		Price:     &types.Price{Value: 101},
 		SizeDelta: 1,
 	}
-	amended, err = tm.market.AmendOrder(context.TODO(), amend)
+	amended, err = tm.market.AmendOrder(context.TODO(), confirmation.GetOrder().GetPartyID(), amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 }
@@ -184,7 +181,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
-		Id:          "someid",
+		Id:          "v0000000000000-0000001",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -203,9 +200,8 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	cancelOrder := &types.OrderCancellation{
 		OrderID:  confirmation.GetOrder().Id,
 		MarketID: confirmation.GetOrder().MarketID,
-		PartyID:  party2,
 	}
-	cancelconf, err := tm.market.CancelOrder(context.TODO(), cancelOrder.PartyID, cancelOrder.OrderID)
+	cancelconf, err := tm.market.CancelOrder(context.TODO(), party2, cancelOrder.OrderID)
 	assert.Nil(t, cancelconf)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
@@ -224,7 +220,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIF_GTC,
-		Id:          "someid",
+		Id:          "v0000000000000-0000001",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -243,7 +239,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	orderSell := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIF_IOC,
-		Id:          "someid",
+		Id:          "v0000000000000-0000001",
 		Side:        types.Side_SIDE_SELL,
 		PartyID:     party2,
 		MarketID:    tm.market.GetID(),
@@ -275,7 +271,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 		CreatedAt:   10000000000,
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIF_GTC,
-		Id:          "someid",
+		Id:          "v0000000000000-0000001",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -295,12 +291,11 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 
 	amend := &types.OrderAmendment{
 		OrderID:     buyConfirmation.GetOrder().GetId(),
-		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
 		ExpiresAt:   &types.Timestamp{Value: 10000000010},
 		TimeInForce: types.Order_TIF_GTT,
 	}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), party1, amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -324,6 +319,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Id:          "v0000000000000-0000001",
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIF_GTC,
 		Side:        types.Side_SIDE_BUY,
@@ -341,6 +337,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderSell := &types.Order{
+		Id:          "v0000000000000-0000002",
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIF_IOC,
 		Side:        types.Side_SIDE_SELL,
@@ -359,11 +356,10 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 
 	amend := &types.OrderAmendment{
 		OrderID:  buyConfirmation.GetOrder().GetId(),
-		PartyID:  party1,
 		MarketID: tm.market.GetID(),
 		Price:    &types.Price{Value: 20},
 	}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), party1, amend)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -385,6 +381,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Id:          "v0000000000000-0000001",
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
@@ -405,11 +402,10 @@ func TestAmendWrongPartyID(t *testing.T) {
 	// Send an aend but use the wrong partyID
 	amend := &types.OrderAmendment{
 		OrderID:  confirmation.GetOrder().GetId(),
-		PartyID:  party2,
 		MarketID: confirmation.GetOrder().GetMarketID(),
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), party2, amend)
 	assert.Nil(t, amended)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
@@ -426,6 +422,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	orderSell1 := &types.Order{
+		Id:          "v0000000000000-0000001",
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
@@ -443,6 +440,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderSell2 := &types.Order{
+		Id:          "v0000000000000-0000002",
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
@@ -461,6 +459,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 
 	// This order should partially fill and then be rejected
 	orderBuy1 := &types.Order{
+		Id:          "v0000000000000-0000001",
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
@@ -484,7 +483,6 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	tif types.Order_TimeInForce, expiresAt int64, pass bool) *types.OrderConfirmation {
 	amend := &types.OrderAmendment{
 		OrderID:     orderID,
-		PartyID:     party,
 		MarketID:    tm.market.GetID(),
 		SizeDelta:   sizeDelta,
 		TimeInForce: tif,
@@ -498,7 +496,7 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 		amend.ExpiresAt = &types.Timestamp{Value: expiresAt}
 	}
 
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), party, amend)
 	if pass {
 		assert.NotNil(t, amended)
 		assert.NoError(t, err)
@@ -529,8 +527,9 @@ func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Orde
 }
 
 func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce, expiresAt int64, side types.Side, party string,
-	size uint64, price uint64) string {
+	size uint64, price uint64, orderId string) string {
 	order := &types.Order{
+		Id:          orderId,
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        orderType,
 		TimeInForce: tif,
@@ -569,10 +568,10 @@ func TestAmendToFill(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// test_AmendMarketOrderFail
-	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100) // 1 - a8
-	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110)  // 1 - a8
-	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120)  // 1 - a8
-	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50)    // 1 - a8
+	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100, "v0000000000000-0000001") // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110, "v0000000000000-0000002")  // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120, "v0000000000000-0000003")  // 1 - a8
+	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50, "v0000000000000-0000004")    // 1 - a8
 	amendOrder(t, tm, "party2", orderId, 0, 500, types.Order_TIF_UNSPECIFIED, 0, true)
 }
 

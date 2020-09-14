@@ -26,7 +26,7 @@ func TestMargins(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
-		Id:          "someid",
+		Id:          "v0000000000000-0000001",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -51,17 +51,16 @@ func TestMargins(t *testing.T) {
 	amend := &types.OrderAmendment{
 		OrderID:   orderID,
 		MarketID:  tm.market.GetID(),
-		PartyID:   party1,
 		SizeDelta: int64(10000),
 	}
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err := tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend price and size up to breach margin
 	amend.SizeDelta = 1000000000
 	amend.Price = &types.Price{Value: 1000000000}
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }
@@ -169,10 +168,9 @@ func TestPartialFillMargins(t *testing.T) {
 	amend := &types.OrderAmendment{
 		OrderID:   orderID,
 		MarketID:  tm.market.GetID(),
-		PartyID:   party1,
 		SizeDelta: int64(999),
 	}
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err := tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }

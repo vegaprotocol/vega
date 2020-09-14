@@ -16,8 +16,6 @@ type Mutation {
   prepareOrderSubmit(
     "ID of the market to place the order"
     marketId: String!
-    "ID of the party placing the order"
-    partyId: String!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -43,8 +41,6 @@ type Mutation {
   prepareOrderCancel(
     "ID of the order to cancel"
     id: ID
-    "ID of the party placing the order"
-    partyId: String!
     "ID of the market where to find the order"
     marketId: String
   ): PreparedCancelOrder!
@@ -56,8 +52,6 @@ type Mutation {
   prepareOrderAmend(
     "ID of the order to amend"
     id: ID!
-    "ID of the party which created the order"
-    partyId: String!
     "New price for this order"
     price: String!
     "New size for this order"
@@ -101,8 +95,6 @@ type Mutation {
   Returns a pending withdrawSubmission with a transaction blob for signing.
   """
   prepareWithdrawal(
-    "The party which wants to withdraw funds"
-    partyID: String!
     "The amount to be withdrawn"
     amount: String!
     "The asset from which we want to withdraw funds"

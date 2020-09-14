@@ -354,12 +354,12 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) int
-		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) int
-		PrepareOrderCancel        func(childComplexity int, id *string, partyID string, marketID *string) int
-		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) int
+		PrepareOrderAmend         func(childComplexity int, id string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) int
+		PrepareOrderCancel        func(childComplexity int, id *string, marketID *string) int
+		PrepareOrderSubmit        func(childComplexity int, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote               func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
-		PrepareWithdrawal         func(childComplexity int, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
+		PrepareWithdrawal         func(childComplexity int, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
 		SubmitTransaction         func(childComplexity int, data string, sig SignatureInput) int
 	}
 
@@ -826,12 +826,12 @@ type MarketDepthUpdateResolver interface {
 	SequenceNumber(ctx context.Context, obj *proto.MarketDepthUpdate) (string, error)
 }
 type MutationResolver interface {
-	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) (*PreparedSubmitOrder, error)
-	PrepareOrderCancel(ctx context.Context, id *string, partyID string, marketID *string) (*PreparedCancelOrder, error)
-	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) (*PreparedAmendOrder, error)
+	PrepareOrderSubmit(ctx context.Context, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) (*PreparedSubmitOrder, error)
+	PrepareOrderCancel(ctx context.Context, id *string, marketID *string) (*PreparedCancelOrder, error)
+	PrepareOrderAmend(ctx context.Context, id string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
-	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
+	PrepareWithdrawal(ctx context.Context, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
 	SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error)
 	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error)
 }
@@ -2222,7 +2222,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce)), true
+		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce)), true
 
 	case "Mutation.prepareOrderCancel":
 		if e.complexity.Mutation.PrepareOrderCancel == nil {
@@ -2234,7 +2234,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderCancel(childComplexity, args["id"].(*string), args["partyId"].(string), args["marketId"].(*string)), true
+		return e.complexity.Mutation.PrepareOrderCancel(childComplexity, args["id"].(*string), args["marketId"].(*string)), true
 
 	case "Mutation.prepareOrderSubmit":
 		if e.complexity.Mutation.PrepareOrderSubmit == nil {
@@ -2246,7 +2246,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrder)), true
+		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrder)), true
 
 	case "Mutation.prepareProposal":
 		if e.complexity.Mutation.PrepareProposal == nil {
@@ -2282,7 +2282,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareWithdrawal(childComplexity, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput)), true
+		return e.complexity.Mutation.PrepareWithdrawal(childComplexity, args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput)), true
 
 	case "Mutation.submitTransaction":
 		if e.complexity.Mutation.SubmitTransaction == nil {
@@ -4071,8 +4071,6 @@ type Mutation {
   prepareOrderSubmit(
     "ID of the market to place the order"
     marketId: String!
-    "ID of the party placing the order"
-    partyId: String!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -4098,8 +4096,6 @@ type Mutation {
   prepareOrderCancel(
     "ID of the order to cancel"
     id: ID
-    "ID of the party placing the order"
-    partyId: String!
     "ID of the market where to find the order"
     marketId: String
   ): PreparedCancelOrder!
@@ -4111,8 +4107,6 @@ type Mutation {
   prepareOrderAmend(
     "ID of the order to amend"
     id: ID!
-    "ID of the party which created the order"
-    partyId: String!
     "New price for this order"
     price: String!
     "New size for this order"
@@ -4156,8 +4150,6 @@ type Mutation {
   Returns a pending withdrawSubmission with a transaction blob for signing.
   """
   prepareWithdrawal(
-    "The party which wants to withdraw funds"
-    partyID: String!
     "The amount to be withdrawn"
     amount: String!
     "The asset from which we want to withdraw funds"
@@ -6623,45 +6615,37 @@ func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Co
 	}
 	args["id"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
+	if tmp, ok := rawArgs["price"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyId"] = arg1
+	args["price"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["price"]; ok {
+	if tmp, ok := rawArgs["sizeDelta"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["price"] = arg2
-	var arg3 string
-	if tmp, ok := rawArgs["sizeDelta"]; ok {
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sizeDelta"] = arg3
-	var arg4 *string
+	args["sizeDelta"] = arg2
+	var arg3 *string
 	if tmp, ok := rawArgs["expiration"]; ok {
-		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["expiration"] = arg4
-	var arg5 OrderTimeInForce
+	args["expiration"] = arg3
+	var arg4 OrderTimeInForce
 	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		arg4, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["timeInForce"] = arg5
+	args["timeInForce"] = arg4
 	return args, nil
 }
 
@@ -6676,22 +6660,14 @@ func (ec *executionContext) field_Mutation_prepareOrderCancel_args(ctx context.C
 		}
 	}
 	args["id"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
-	var arg2 *string
+	var arg1 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketId"] = arg2
+	args["marketId"] = arg1
 	return args, nil
 }
 
@@ -6706,78 +6682,70 @@ func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.C
 		}
 	}
 	args["marketId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
-	var arg2 *string
+	var arg1 *string
 	if tmp, ok := rawArgs["price"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["price"] = arg2
-	var arg3 string
+	args["price"] = arg1
+	var arg2 string
 	if tmp, ok := rawArgs["size"]; ok {
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["size"] = arg3
-	var arg4 Side
+	args["size"] = arg2
+	var arg3 Side
 	if tmp, ok := rawArgs["side"]; ok {
-		arg4, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
+		arg3, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["side"] = arg4
-	var arg5 OrderTimeInForce
+	args["side"] = arg3
+	var arg4 OrderTimeInForce
 	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		arg4, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["timeInForce"] = arg5
-	var arg6 *string
+	args["timeInForce"] = arg4
+	var arg5 *string
 	if tmp, ok := rawArgs["expiration"]; ok {
-		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["expiration"] = arg6
-	var arg7 OrderType
+	args["expiration"] = arg5
+	var arg6 OrderType
 	if tmp, ok := rawArgs["type"]; ok {
-		arg7, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+		arg6, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg7
-	var arg8 *string
+	args["type"] = arg6
+	var arg7 *string
 	if tmp, ok := rawArgs["reference"]; ok {
-		arg8, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg7, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["reference"] = arg8
-	var arg9 *PeggedOrder
+	args["reference"] = arg7
+	var arg8 *PeggedOrder
 	if tmp, ok := rawArgs["peggedOrder"]; ok {
-		arg9, err = ec.unmarshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrder(ctx, tmp)
+		arg8, err = ec.unmarshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrder(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["peggedOrder"] = arg9
+	args["peggedOrder"] = arg8
 	return args, nil
 }
 
@@ -6845,37 +6813,29 @@ func (ec *executionContext) field_Mutation_prepareWithdrawal_args(ctx context.Co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["partyID"]; ok {
+	if tmp, ok := rawArgs["amount"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyID"] = arg0
+	args["amount"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["amount"]; ok {
+	if tmp, ok := rawArgs["asset"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["amount"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["asset"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["asset"] = arg2
-	var arg3 *Erc20WithdrawalDetailsInput
+	args["asset"] = arg1
+	var arg2 *Erc20WithdrawalDetailsInput
 	if tmp, ok := rawArgs["erc20Details"]; ok {
-		arg3, err = ec.unmarshalOErc20WithdrawalDetailsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx, tmp)
+		arg2, err = ec.unmarshalOErc20WithdrawalDetailsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["erc20Details"] = arg3
+	args["erc20Details"] = arg2
 	return args, nil
 }
 
@@ -13335,7 +13295,7 @@ func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrder))
+		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrder))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13376,7 +13336,7 @@ func (ec *executionContext) _Mutation_prepareOrderCancel(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderCancel(rctx, args["id"].(*string), args["partyId"].(string), args["marketId"].(*string))
+		return ec.resolvers.Mutation().PrepareOrderCancel(rctx, args["id"].(*string), args["marketId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13417,7 +13377,7 @@ func (ec *executionContext) _Mutation_prepareOrderAmend(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce))
+		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13540,7 +13500,7 @@ func (ec *executionContext) _Mutation_prepareWithdrawal(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareWithdrawal(rctx, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput))
+		return ec.resolvers.Mutation().PrepareWithdrawal(rctx, args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

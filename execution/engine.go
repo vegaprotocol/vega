@@ -54,8 +54,9 @@ type Engine struct {
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
-	broker Broker
-	time   TimeService
+	broker      Broker
+	time        TimeService
+	currentTime time.Time
 }
 
 // NewEngine takes stores and engines and returns
@@ -196,9 +197,40 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	return nil
 }
 
+func (e *Engine) buildOrderFromSubmission(
+	party string,
+	sub *types.OrderSubmission,
+) *types.Order {
+	order := &types.Order{
+		Id:          sub.Id,
+		MarketID:    sub.MarketID,
+		PartyID:     party,
+		Price:       sub.Price,
+		Size:        sub.Size,
+		Side:        sub.Side,
+		TimeInForce: sub.TimeInForce,
+		Type:        sub.Type,
+		ExpiresAt:   sub.ExpiresAt,
+		Reference:   sub.Reference,
+		Status:      types.Order_STATUS_ACTIVE,
+		CreatedAt:   e.currentTime.UnixNano(),
+		Version:     InitialOrderVersion,
+		Remaining:   sub.Size,
+	}
+
+	// set those at the begining as even rejected order get through the buffers
+	e.idgen.SetID(order)
+
+	return order
+}
+
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
+func (e *Engine) SubmitOrder(
+	ctx context.Context, party string, sub *types.OrderSubmission,
+) (*types.OrderConfirmation, error) {
+	timer := metrics.NewTimeCounter(sub.MarketID, "execution", "SubmitOrder")
+
+	order := e.buildOrderFromSubmission(party, sub)
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submit order", logging.Order(*order))
@@ -238,7 +270,9 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *Engine) AmendOrder(
+	ctx context.Context, party string, orderAmendment *types.OrderAmendment,
+) (*types.OrderConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Amend order", logging.OrderAmendment(orderAmendment))
 	}
@@ -250,7 +284,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(ctx, orderAmendment)
+	conf, err := mkt.AmendOrder(ctx, party, orderAmendment)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +296,9 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(
+	ctx context.Context, party string, order *types.OrderCancellation,
+) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
@@ -272,17 +308,14 @@ func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation
 		return nil, ErrInvalidOrderCancellation
 	}
 
-	if len(order.PartyID) > 0 {
-		if len(order.MarketID) > 0 {
-			if len(order.OrderID) > 0 {
-				return e.cancelOrder(ctx, order.PartyID, order.MarketID, order.OrderID)
-			}
-			return e.cancelOrderByMarket(ctx, order.PartyID, order.MarketID)
+	if len(order.MarketID) > 0 {
+		if len(order.OrderID) > 0 {
+			return e.cancelOrder(ctx, party, order.MarketID, order.OrderID)
 		}
-		return e.cancelAllPartyOrders(ctx, order.PartyID)
+		return e.cancelOrderByMarket(ctx, party, order.MarketID)
 	}
 
-	return nil, ErrInvalidOrderCancellation
+	return e.cancelAllPartyOrders(ctx, party)
 }
 
 func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string) ([]*types.OrderCancellationConfirmation, error) {

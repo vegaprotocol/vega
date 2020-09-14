@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -23,10 +24,10 @@ func TestVersioning(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
+		Id:          "v0000000000000-0000001",
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTC,
-		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -34,6 +35,7 @@ func TestVersioning(t *testing.T) {
 		Price:       price,
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
+		Version:     execution.InitialOrderVersion,
 		Reference:   "party1-buy-order",
 	}
 	// Create an order and check version is set to 1
@@ -48,31 +50,30 @@ func TestVersioning(t *testing.T) {
 	amend := &types.OrderAmendment{
 		OrderID:  orderID,
 		MarketID: tm.market.GetID(),
-		PartyID:  party1,
 		Price:    &types.Price{Value: price + 1},
 	}
 
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err := tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend price down, check version moves to 3
 	amend.Price = &types.Price{Value: price - 1}
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend quantity up, check version moves to 4
 	amend.Price = nil
 	amend.SizeDelta = 1
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend quantity down, check version moves to 5
 	amend.Price = nil
 	amend.SizeDelta = -2
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -80,20 +81,20 @@ func TestVersioning(t *testing.T) {
 	amend.TimeInForce = types.Order_TIF_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
 	amend.SizeDelta = 0
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Update expiry time, check version moves to 7
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Flip back GTC, check version moves to 8
 	amend.TimeInForce = types.Order_TIF_GTC
 	amend.ExpiresAt = nil
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), party1, amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 

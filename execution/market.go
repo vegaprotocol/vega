@@ -854,7 +854,9 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 }
 
 // SubmitOrder submits the given order
-func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) SubmitOrder(
+	ctx context.Context, order *types.Order,
+) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1795,7 +1797,9 @@ func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfir
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(
+	ctx context.Context, party string, orderAmendment *types.OrderAmendment,
+) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1811,7 +1815,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Invalid order ID",
 				logging.String("id", orderAmendment.GetOrderID()),
-				logging.String("party", orderAmendment.GetPartyID()),
+				logging.String("party", party),
 				logging.String("market", orderAmendment.GetMarketID()),
 				logging.Error(err))
 		}
@@ -1820,11 +1824,11 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// We can only amend this order if we created it
-	if existingOrder.PartyID != orderAmendment.PartyID {
+	if existingOrder.PartyID != party {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Invalid party ID",
 				logging.String("original party id:", existingOrder.PartyID),
-				logging.String("amend party id:", orderAmendment.PartyID))
+				logging.String("amend party id:", party))
 		}
 		return nil, types.ErrInvalidPartyID
 	}

@@ -64,9 +64,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 }
 
 func (s *Svc) PrepareWithdraw(ctx context.Context, w *types.WithdrawSubmission) error {
-	if len(w.PartyID) <= 0 {
-		return ErrMissingPartyID
-	}
 	if len(w.Asset) <= 0 {
 		return ErrMissingAsset
 	}
