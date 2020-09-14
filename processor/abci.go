@@ -114,6 +114,7 @@ func NewApp(
 	app.abci.
 		HandleDeliverTx(blockchain.SubmitOrderCommand, app.DeliverSubmitOrder).
 		HandleDeliverTx(blockchain.CancelOrderCommand, app.DeliverCancelOrder).
+		HandleDeliverTx(blockchain.AmendOrderCommand, app.DeliverAmendOrder).
 		HandleDeliverTx(blockchain.WithdrawCommand, app.DeliverWithdraw).
 		HandleDeliverTx(blockchain.ProposeCommand, app.DeliverPropose).
 		HandleDeliverTx(blockchain.VoteCommand, app.DeliverVote).
@@ -322,6 +323,28 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 		for _, v := range msg {
 			app.log.Debug("Order cancelled", logging.Order(*v.Order))
 		}
+	}
+
+	return nil
+}
+
+func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
+	order := &types.OrderAmendment{}
+	if err := tx.(*Tx).Unmarshal(order); err != nil {
+		return err
+	}
+
+	app.stats.IncTotalAmendOrder()
+	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderID))
+
+	// Submit the cancel new order request to the Vega trading core
+	msg, err := app.exec.AmendOrder(ctx, order)
+	if err != nil {
+		app.log.Error("error on amending order", logging.String("order-id", order.OrderID), logging.Error(err))
+		return err
+	}
+	if app.LogOrderAmendDebug {
+		app.log.Debug("Order amended", logging.Order(*msg.Order))
 	}
 
 	return nil

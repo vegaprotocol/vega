@@ -114,21 +114,20 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
-	return nil, apiError(codes.Unimplemented, errors.New("not implemented"))
-	// err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
-	// if err != nil {
-	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	// }
-	// raw, err := proto.Marshal(req.Amendment)
-	// if err != nil {
-	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	// }
-	// if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
-	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	// }
-	// return &protoapi.PrepareAmendOrderResponse{
-	// 	Blob: raw,
-	// }, nil
+	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	}
+	raw, err := proto.Marshal(req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	}
+	if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	}
+	return &protoapi.PrepareAmendOrderResponse{
+		Blob: raw,
+	}, nil
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
