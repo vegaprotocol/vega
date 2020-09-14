@@ -60,7 +60,7 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 		if err := app.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
 			return err
 		}
-		return app.col.Withdraw(ctx, act.Withdrawal.PartyID, act.Withdrawal.VegaAssetID, act.Withdrawal.Amount)
+		return errors.New("unreachable")
 	default:
 		return ErrUnsupportedEventAction
 	}

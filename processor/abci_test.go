@@ -56,7 +56,6 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 		proc.evtfwd,
 		proc.eng,
 		proc.cmd,
-		proc.col,
 		nil,
 		proc.gov,
 		proc.notary,
