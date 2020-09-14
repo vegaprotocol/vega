@@ -416,7 +416,7 @@ message MarketDepth {
 }
 
 // Represents position data for a party on the specified market on Vega.
-message Position {
+message Position{
   // Market identifier.
   string marketID = 1;
   // Party identifier.
@@ -430,6 +430,8 @@ message Position {
   // Average entry price for the position, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 averageEntryPrice = 6;
+  // last time the position was updated
+  int64 updatedAt = 7;
 }
 
 message PositionTrade {

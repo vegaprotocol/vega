@@ -11,14 +11,16 @@ type LossSoc struct {
 	partyID  string
 	marketID string
 	amount   int64
+	ts       int64
 }
 
-func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount int64) *LossSoc {
+func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount int64, ts int64) *LossSoc {
 	return &LossSoc{
 		Base:     newBase(ctx, LossSocializationEvent),
 		partyID:  partyID,
 		marketID: marketID,
 		amount:   amount,
+		ts:       ts,
 	}
 }
 
@@ -36,6 +38,10 @@ func (l LossSoc) Amount() int64 {
 
 func (l LossSoc) AmountLost() int64 {
 	return l.amount
+}
+
+func (l LossSoc) Timestamp() int64 {
+	return l.ts
 }
 
 func (l LossSoc) Proto() types.LossSocialization {
