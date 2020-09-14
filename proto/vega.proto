@@ -587,7 +587,7 @@ message Withdrawal {
   string txHash = 8;
   // The time at which the network started to process this withdrawal
   int64 createdTimestamp = 9;
-  // The time a which the withdrawal was finalized by the network
+  // The time at which the withdrawal was finalized by the network
   int64 withdrawnTimestamp = 10;
   // foreign chain specifis
   WithdrawExt ext = 11;

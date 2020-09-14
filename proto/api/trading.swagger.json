@@ -4448,7 +4448,7 @@
         "withdrawnTimestamp": {
           "type": "string",
           "format": "int64",
-          "title": "The time a which the withdrawal was finalized by the network"
+          "title": "The time at which the withdrawal was finalized by the network"
         },
         "ext": {
           "$ref": "#/definitions/vegaWithdrawExt",

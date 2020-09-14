@@ -23,3 +23,18 @@ func (d *Deposit) Deposit() types.Deposit {
 }
 
 func (d Deposit) PartyID() string { return d.d.PartyID }
+
+func (d Deposit) Proto() types.Deposit {
+	return d.d
+}
+
+func (d Deposit) StreamMessage() *types.BusEvent {
+	dep := d.d
+	return &types.BusEvent{
+		ID:   d.traceID,
+		Type: d.et.ToProto(),
+		Event: &types.BusEvent_Deposit{
+			Deposit: &dep,
+		},
+	}
+}

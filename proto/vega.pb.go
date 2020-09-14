@@ -2405,7 +2405,7 @@ type Withdrawal struct {
 	TxHash string `protobuf:"bytes,8,opt,name=txHash,proto3" json:"txHash,omitempty"`
 	// The time at which the network started to process this withdrawal
 	CreatedTimestamp int64 `protobuf:"varint,9,opt,name=createdTimestamp,proto3" json:"createdTimestamp,omitempty"`
-	// The time a which the withdrawal was finalized by the network
+	// The time at which the withdrawal was finalized by the network
 	WithdrawnTimestamp int64 `protobuf:"varint,10,opt,name=withdrawnTimestamp,proto3" json:"withdrawnTimestamp,omitempty"`
 	// foreign chain specifis
 	Ext                  *WithdrawExt `protobuf:"bytes,11,opt,name=ext,proto3" json:"ext,omitempty"`

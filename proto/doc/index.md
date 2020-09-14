@@ -4310,7 +4310,7 @@ The representation of a withdrawal in the vega network
 | expiry | [int64](#int64) |  | The time until when the withdrawal is valid |
 | txHash | [string](#string) |  | The hash of the foreign chain for this transaction |
 | createdTimestamp | [int64](#int64) |  | The time at which the network started to process this withdrawal |
-| withdrawnTimestamp | [int64](#int64) |  | The time a which the withdrawal was finalized by the network |
+| withdrawnTimestamp | [int64](#int64) |  | The time at which the withdrawal was finalized by the network |
 | ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifis |
 
 
