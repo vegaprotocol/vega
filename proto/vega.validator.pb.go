@@ -189,9 +189,6 @@ func (this *OrderAmendment) Validate() error {
 	if this.OrderID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("OrderID", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderID))
 	}
-	if this.PartyID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
-	}
 	if this.Price != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Price); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Price", err)
@@ -207,9 +204,6 @@ func (this *OrderAmendment) Validate() error {
 func (this *OrderSubmission) Validate() error {
 	if this.MarketID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
-	}
-	if this.PartyID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
@@ -231,9 +225,6 @@ func (this *OrderSubmission) Validate() error {
 	return nil
 }
 func (this *OrderCancellation) Validate() error {
-	if this.PartyID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
-	}
 	return nil
 }
 func (this *NodeRegistration) Validate() error {

@@ -694,14 +694,12 @@ message Withdrawal {
 
 // A request for withdrawing funds from a trader
 message WithdrawSubmission {
-  // The party which wants to withdraw funds
-  string partyID = 1;
   // The amount to be withdrawn
-  uint64 amount = 2;
+  uint64 amount = 1;
   // The asset we want to withdraw
-  string asset = 3;
+  string asset = 2;
   // foreign chain specifics
-  WithdrawExt ext = 4;
+  WithdrawExt ext = 3;
 }
 
 message WithdrawExt {
@@ -723,26 +721,24 @@ message OrderAmendment {
 
   // Order identifier, this is required to find the order and will not be updated. Required field.
   string orderID = 1 [(validator.field) = {string_not_empty : true}];
-  // Party identifier, this is required to find the order and will not be updated. Required field.
-  string partyID = 2 [(validator.field) = {string_not_empty: true}];
   // Market identifier, this is required to find the order and will not be updated.
-  string marketID = 3;
+  string marketID = 2;
 
   // All fields below can be altered by this command:
 
   // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged. See [`Price`](#vega.Price).
-  Price price = 4;
+  Price price = 3;
   // Amend the size for the order by the delta specified.
   // To reduce the size from the current value set a negative integer value.
   // To increase the size from the current value, set a positive integer value.
   // To leave the size unchanged set a value of zero.
-  int64 sizeDelta = 5;
+  int64 sizeDelta = 4;
   // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-  Timestamp expiresAt = 6;
+  Timestamp expiresAt = 5;
   // Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
   // See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`.
-  Order.TimeInForce timeInForce = 7;
+  Order.TimeInForce timeInForce = 6;
 }
 
 // An order submission is a request to submit or create a new order on Vega.
@@ -751,42 +747,36 @@ message OrderSubmission {
   string id = 1 [(validator.field) = {string_not_empty: false}];
   // Market identifier for the order. Required field.
   string marketID = 2 [(validator.field) = {string_not_empty: true}];
-  // Party identifier for the order. Required field.
-  string partyID = 3 [(validator.field) = {string_not_empty: true}];
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
   // Required field for Limit orders, however it is not required for market orders.
-  uint64 price = 4;
+  uint64 price = 3;
   // Size for the order, for example, in a futures market the size equals the number of contracts. Cannot be negative.
-  uint64 size = 5 [(validator.field) = {int_gt: 0}];
+  uint64 size = 4 [(validator.field) = {int_gt: 0}];
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side). Required field.
-  Side side = 6 [(validator.field) = {is_in_enum: true}];
+  Side side = 5 [(validator.field) = {is_in_enum: true}];
   // Time in force indicates how long an order will remain active before it is executed or expires.
   // See [`Order.TimeInForce`](#vega.Order.TimeInForce). Required field.
-  Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
+  Order.TimeInForce timeInForce = 6 [(validator.field) = {is_in_enum: true}];
   // Timestamp for when the order will expire, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   // Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`.
-  int64 expiresAt = 8;
+  int64 expiresAt = 7;
   // Type for the order. See [`Order.Type`](#vega.Order.Type). Required field.
-  Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
+  Order.Type type = 8 [(validator.field) = {is_in_enum : true}];
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
   // set internally by the node to return a unique reference identifier for the order submission.
-  string reference = 10;
+  string reference = 9;
   // Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order
-  PeggedOrder peggedOrder = 11;
+  PeggedOrder peggedOrder = 10;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega.
 message OrderCancellation {
-  // The following three fields are used for lookup of the order only:
-
-  // Unique identifier for the order (set by the system after consensus). Required field.
+  // Unique identifier for the order (set by the system after consensus)
   string orderID = 1;
-  // Market identifier for the order. Required field.
+  // Market identifier for the order
   string marketID = 2;
-  // Party identifier for the order. Required field.
-  string partyID = 3 [(validator.field) = {string_not_empty: true}];
 }
 
 // Used to Register a node as a validator during network start-up.

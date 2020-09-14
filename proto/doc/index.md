@@ -4521,7 +4521,6 @@ The `orderID`, `partyID` and `marketID` fields are used for lookup of the order 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | orderID | [string](#string) |  | Order identifier, this is required to find the order and will not be updated. Required field. |
-| partyID | [string](#string) |  | Party identifier, this is required to find the order and will not be updated. Required field. |
 | marketID | [string](#string) |  | Market identifier, this is required to find the order and will not be updated. |
 | price | [Price](#vega.Price) |  | Amend the price for the order, if the Price value is set, otherwise price will remain unchanged. See [`Price`](#vega.Price). |
 | sizeDelta | [int64](#int64) |  | Amend the size for the order by the delta specified. To reduce the size from the current value set a negative integer value. To increase the size from the current value, set a positive integer value. To leave the size unchanged set a value of zero. |
@@ -4538,14 +4537,11 @@ The `orderID`, `partyID` and `marketID` fields are used for lookup of the order 
 ### OrderCancellation
 An order cancellation is a request to cancel an existing order on Vega.
 
-The following three fields are used for lookup of the order only:
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| orderID | [string](#string) |  | Unique identifier for the order (set by the system after consensus). Required field. |
-| marketID | [string](#string) |  | Market identifier for the order. Required field. |
-| partyID | [string](#string) |  | Party identifier for the order. Required field. |
+| orderID | [string](#string) |  | Unique identifier for the order (set by the system after consensus) |
+| marketID | [string](#string) |  | Market identifier for the order |
 
 
 
@@ -4594,7 +4590,6 @@ An order submission is a request to submit or create a new order on Vega.
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | Unique identifier for the order (set by the system after consensus). |
 | marketID | [string](#string) |  | Market identifier for the order. Required field. |
-| partyID | [string](#string) |  | Party identifier for the order. Required field. |
 | price | [uint64](#uint64) |  | Price for the order, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. Required field for Limit orders, however it is not required for market orders. |
 | size | [uint64](#uint64) |  | Size for the order, for example, in a futures market the size equals the number of contracts. Cannot be negative. |
 | side | [Side](#vega.Side) |  | Side for the order, e.g. SIDE_BUY or SIDE_SELL. See [`Side`](#vega.Side). Required field. |
@@ -5028,7 +5023,6 @@ A request for withdrawing funds from a trader
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | The party which wants to withdraw funds |
 | amount | [uint64](#uint64) |  | The amount to be withdrawn |
 | asset | [string](#string) |  | The asset we want to withdraw |
 | ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifics |

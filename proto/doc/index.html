@@ -12176,13 +12176,6 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
 
                 <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Party identifier, this is required to find the order and will not be updated. Required field. </p></td>
-                </tr>
-
-                <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -12249,17 +12242,6 @@ See <a href="#api.VegaTimeResponse"><tt>TimeInForce</tt></a>.<tt>timestamp</tt>.
                   </td>
                 </tr>
 
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
               </tbody>
             </table>
 
@@ -12268,7 +12250,7 @@ See <a href="#api.VegaTimeResponse"><tt>TimeInForce</tt></a>.<tt>timestamp</tt>.
 
 
         <h3 id="vega.OrderCancellation">OrderCancellation</h3>
-        <p>An order cancellation is a request to cancel an existing order on Vega.</p><p>The following three fields are used for lookup of the order only:</p>
+        <p>An order cancellation is a request to cancel an existing order on Vega.</p>
 
 
           <table class="field-table">
@@ -12281,52 +12263,18 @@ See <a href="#api.VegaTimeResponse"><tt>TimeInForce</tt></a>.<tt>timestamp</tt>.
                   <td>orderID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Unique identifier for the order (set by the system after consensus). Required field. </p></td>
+                  <td><p>Unique identifier for the order (set by the system after consensus) </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Market identifier for the order. Required field. </p></td>
-                </tr>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Party identifier for the order. Required field. </p></td>
+                  <td><p>Market identifier for the order </p></td>
                 </tr>
 
             </tbody>
           </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
 
 
 
@@ -12416,13 +12364,6 @@ See <a href="#api.VegaTimeResponse"><tt>TimeInForce</tt></a>.<tt>timestamp</tt>.
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the order. Required field. </p></td>
-                </tr>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Party identifier for the order. Required field. </p></td>
                 </tr>
 
                 <tr>
@@ -12516,17 +12457,6 @@ set internally by the node to return a unique reference identifier for the order
 
                 <tr>
                   <td>marketID</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>partyID</td>
                   <td>
                     <ul>
 
@@ -13714,13 +13644,6 @@ BlockHeight is used as a mechanism for replay protection. </p></td>
               <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
             </thead>
             <tbody>
-
-                <tr>
-                  <td>partyID</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>The party which wants to withdraw funds </p></td>
-                </tr>
 
                 <tr>
                   <td>amount</td>

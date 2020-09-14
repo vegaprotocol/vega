@@ -3981,10 +3981,6 @@
           "type": "string",
           "description": "Order identifier, this is required to find the order and will not be updated. Required field."
         },
-        "partyID": {
-          "type": "string",
-          "description": "Party identifier, this is required to find the order and will not be updated. Required field."
-        },
         "marketID": {
           "type": "string",
           "description": "Market identifier, this is required to find the order and will not be updated."
@@ -4014,15 +4010,11 @@
       "properties": {
         "orderID": {
           "type": "string",
-          "description": "Unique identifier for the order (set by the system after consensus). Required field."
+          "title": "Unique identifier for the order (set by the system after consensus)"
         },
         "marketID": {
           "type": "string",
-          "description": "Market identifier for the order. Required field."
-        },
-        "partyID": {
-          "type": "string",
-          "description": "Party identifier for the order. Required field."
+          "title": "Market identifier for the order"
         }
       },
       "description": "An order cancellation is a request to cancel an existing order on Vega."
@@ -4105,10 +4097,6 @@
         "marketID": {
           "type": "string",
           "description": "Market identifier for the order. Required field."
-        },
-        "partyID": {
-          "type": "string",
-          "description": "Party identifier for the order. Required field."
         },
         "price": {
           "type": "string",
@@ -5068,10 +5056,6 @@
     "vegaWithdrawSubmission": {
       "type": "object",
       "properties": {
-        "partyID": {
-          "type": "string",
-          "title": "The party which wants to withdraw funds"
-        },
         "amount": {
           "type": "string",
           "format": "uint64",
