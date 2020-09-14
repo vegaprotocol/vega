@@ -23,7 +23,6 @@ var (
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "order_id",
 		MarketID:    "market_id",
-		PartyID:     "party",
 		Price:       10000,
 		Size:        1,
 		Side:        types.Side(1),
@@ -169,7 +168,6 @@ func testPrepareCancelOrderSuccess(t *testing.T) {
 	cancel := types.OrderCancellation{
 		OrderID:  "order.Id",
 		MarketID: "order.MarketID",
-		PartyID:  "order.PartyID",
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -182,7 +180,6 @@ func testGetByOrderIDDefaultVersion(t *testing.T) {
 	order := &types.Order{
 		Id:          orderSubmission.Id,
 		MarketID:    orderSubmission.MarketID,
-		PartyID:     orderSubmission.PartyID,
 		Side:        orderSubmission.Side,
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,
@@ -206,7 +203,6 @@ func testGetByOrderIDFirstVersion(t *testing.T) {
 	order := &types.Order{
 		Id:          orderSubmission.Id,
 		MarketID:    orderSubmission.MarketID,
-		PartyID:     orderSubmission.PartyID,
 		Side:        orderSubmission.Side,
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,

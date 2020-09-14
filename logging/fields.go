@@ -179,6 +179,16 @@ func OrderAmendment(oa *types.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
+// OrderAmendment constructs a single string field to contain all the object information
+func OrderSubmission(os *types.OrderSubmission) zap.Field {
+	return zap.String("order-submission", os.String())
+}
+
+// OrderAmendment constructs a single string field to contain all the object information
+func OrderCancellation(oc *types.OrderCancellation) zap.Field {
+	return zap.String("order-cancellation", oc.String())
+}
+
 // Reflect constructs a field by running reflection over all the
 // field of value passed as a parameter.
 // This should never be used we basic log level,

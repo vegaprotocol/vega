@@ -1575,7 +1575,7 @@ type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) PrepareWithdrawal(
 	ctx context.Context,
-	partyID, amount, asset string,
+	amount, asset string,
 	erc20Details *Erc20WithdrawalDetailsInput,
 ) (*PreparedWithdrawal, error) {
 	var ext *types.WithdrawExt
@@ -1590,10 +1590,9 @@ func (r *myMutationResolver) PrepareWithdrawal(
 
 	req := protoapi.PrepareWithdrawRequest{
 		Withdraw: &types.WithdrawSubmission{
-			PartyID: partyID,
-			Asset:   asset,
-			Amount:  amountU,
-			Ext:     ext,
+			Asset:  asset,
+			Amount: amountU,
+			Ext:    ext,
 		},
 	}
 
@@ -1637,9 +1636,18 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrder) (*PreparedSubmitOrder, error) {
-
+func (r *myMutationResolver) PrepareOrderSubmit(
+	ctx context.Context,
+	market string,
+	price *string,
+	size string,
+	side Side,
+	timeInForce OrderTimeInForce,
+	expiration *string,
+	ty OrderType,
+	reference *string,
+	po *PeggedOrder,
+) (*PreparedSubmitOrder, error) {
 	order := &types.OrderSubmission{}
 
 	var (
@@ -1664,11 +1672,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		return nil, errors.New("market missing or empty")
 	}
 	order.MarketID = market
-	if len(party) <= 0 {
-		return nil, errors.New("party missing or empty")
-	}
 
-	order.PartyID = party
 	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
 		return nil, err
 	}
@@ -1722,7 +1726,8 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, party string, market *string) (*PreparedCancelOrder, error) {
+func (r *myMutationResolver) PrepareOrderCancel(
+	ctx context.Context, id, market *string) (*PreparedCancelOrder, error) {
 	order := &types.OrderCancellation{}
 
 	if market != nil {
@@ -1731,10 +1736,6 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string,
 	if id != nil {
 		order.OrderID = *id
 	}
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-	order.PartyID = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
 
@@ -1815,7 +1816,12 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {
+func (r *myMutationResolver) PrepareOrderAmend(
+	ctx context.Context,
+	id, price, size string,
+	expiration *string,
+	tif OrderTimeInForce,
+) (*PreparedAmendOrder, error) {
 	order := &types.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
@@ -1823,10 +1829,6 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("id missing or empty")
 	}
 	order.OrderID = id
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-	order.PartyID = party
 
 	var err error
 	pricevalue, err := strconv.ParseUint(price, 10, 64)

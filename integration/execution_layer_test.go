@@ -13,7 +13,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
-	uuid "github.com/satori/go.uuid"
 )
 
 func theMarketsStartsOnAndExpiresOn(start, expires string) error {
@@ -234,21 +233,16 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
 		}
 
-		order := proto.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Id:          uuid.NewV4().String(),
+		order := proto.OrderSubmission{
 			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
 			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
 		}
-		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
+		result, err := execsetup.engine.SubmitOrder(context.Background(), val(row, 0), &order)
 		if err != nil {
 			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, val(row, 0))
 		}
@@ -280,23 +274,18 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
 		}
 
-		order := proto.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Id:          uuid.NewV4().String(),
+		order := proto.OrderSubmission{
 			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
 			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		if _, err := execsetup.engine.SubmitOrder(context.Background(), &order); err == nil {
-			return fmt.Errorf("expected trader %s to not exist", order.PartyID)
+		if _, err := execsetup.engine.SubmitOrder(context.Background(), val(row, 0), &order); err == nil {
+			return fmt.Errorf("expected trader %s to not exist", val(row, 0))
 		}
 	}
 	return nil
@@ -322,24 +311,19 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
 		}
 
-		order := proto.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Id:          uuid.NewV4().String(),
+		order := proto.OrderSubmission{
 			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
 			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
 			Reference:   val(row, 8),
 		}
-		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
+		result, err := execsetup.engine.SubmitOrder(context.Background(), val(row, 0), &order)
 		if err != nil {
-			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, order.PartyID, order.Reference)
+			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, val(row, 0), order.Reference)
 		}
 		if int64(len(result.Trades)) != i64val(row, 5) {
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
@@ -361,11 +345,10 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 
 		cancel := proto.OrderCancellation{
 			OrderID:  o.Id,
-			PartyID:  o.PartyID,
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.Background(), o.PartyID, &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -386,11 +369,10 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 
 		cancel := proto.OrderCancellation{
 			OrderID:  o.Id,
-			PartyID:  o.PartyID,
 			MarketID: o.MarketID,
 		}
 
-		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
+		if _, err = execsetup.engine.CancelOrder(context.Background(), o.PartyID, &cancel); err == nil {
 			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
 		}
 	}
@@ -411,11 +393,10 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 
 		cancel := proto.OrderCancellation{
 			OrderID:  o.Id,
-			PartyID:  o.PartyID,
 			MarketID: o.MarketID,
 		}
 
-		_, err = execsetup.engine.CancelOrder(context.Background(), &cancel)
+		_, err = execsetup.engine.CancelOrder(context.Background(), o.PartyID, &cancel)
 		if err != nil {
 			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
 		}
@@ -560,20 +541,16 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			continue
 		}
 
-		order := proto.Order{
-			Id:          uuid.NewV4().String(),
+		order := proto.OrderSubmission{
 			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIF_GTT,
-			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err := execsetup.engine.SubmitOrder(context.Background(), &order)
+		_, err := execsetup.engine.SubmitOrder(context.Background(), val(row, 0), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 6), err)
 		}
@@ -629,20 +606,16 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
-		order := proto.Order{
-			Id:          uuid.NewV4().String(),
+		order := proto.OrderSubmission{
 			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        oty,
 			TimeInForce: proto.Order_TIF_GTT,
-			CreatedAt:   time.Now().UnixNano(),
 		}
-		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
+		_, err = execsetup.engine.SubmitOrder(context.Background(), val(row, 0), &order)
 		if err == nil {
 			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
 		}
@@ -836,14 +809,13 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 
 		amend := proto.OrderAmendment{
 			OrderID:     o.Id,
-			PartyID:     o.PartyID,
 			MarketID:    o.MarketID,
 			Price:       price,
 			SizeDelta:   i64val(row, 3),
 			TimeInForce: tif,
 		}
 
-		_, err = execsetup.engine.AmendOrder(context.Background(), &amend)
+		_, err = execsetup.engine.AmendOrder(context.Background(), o.PartyID, &amend)
 		if err != nil && success {
 			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyID, o.Reference, err)
 		}

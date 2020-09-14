@@ -295,36 +295,21 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
-	s := &types.OrderSubmission{}
-	if err := tx.Unmarshal(s); err != nil {
+	order := &types.OrderSubmission{}
+	err := tx.(*Tx).Unmarshal(order)
+	if err != nil {
 		return err
 	}
-
-	order := &types.Order{
-		Id:          s.Id,
-		MarketID:    s.MarketID,
-		PartyID:     s.PartyID,
-		Price:       s.Price,
-		Size:        s.Size,
-		Side:        s.Side,
-		TimeInForce: s.TimeInForce,
-		Type:        s.Type,
-		ExpiresAt:   s.ExpiresAt,
-		Reference:   s.Reference,
-		Status:      types.Order_STATUS_ACTIVE,
-		CreatedAt:   app.currentTimestamp.UnixNano(),
-		Remaining:   s.Size,
-		PeggedOrder: s.PeggedOrder,
-	}
+	party := hex.EncodeToString(tx.PubKey())
 
 	app.stats.IncTotalCreateOrder()
 
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, order)
+	conf, err := app.exec.SubmitOrder(ctx, party, order)
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
-				logging.Order(*order),
+				logging.OrderSubmission(order),
 				logging.OrderWithTag(*conf.Order, "aggressive-order"),
 				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
 				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
@@ -340,7 +325,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	if err != nil && app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("error message on creating order",
-			logging.Order(*order),
+			logging.OrderSubmission(order),
 			logging.Error(err))
 	}
 
@@ -352,12 +337,13 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
+	party := hex.EncodeToString(tx.PubKey())
 
 	app.stats.IncTotalCancelOrder()
 	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderID))
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order)
+	msg, err := app.exec.CancelOrder(ctx, party, order)
 	if err != nil {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
@@ -376,12 +362,13 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
+	party := hex.EncodeToString(tx.PubKey())
 
 	app.stats.IncTotalAmendOrder()
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderID))
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, order)
+	msg, err := app.exec.AmendOrder(ctx, party, order)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err

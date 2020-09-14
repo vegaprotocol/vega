@@ -51,9 +51,9 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
-	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, party string, order *types.OrderSubmission) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, party string, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, party string, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
 	Hash() []byte

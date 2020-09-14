@@ -44,21 +44,13 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
 	msgs := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyID: party,
-		},
-		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyID: party,
-		},
-		txn.AmendOrderCommand: &types.OrderAmendment{
-			PartyID: party,
-		},
+		txn.SubmitOrderCommand: &types.OrderSubmission{},
+		txn.CancelOrderCommand: &types.OrderCancellation{},
+		txn.AmendOrderCommand:  &types.OrderAmendment{},
 		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		txn.WithdrawCommand: &types.WithdrawSubmission{
-			PartyID: party,
-		},
+		txn.WithdrawCommand: &types.WithdrawSubmission{},
 		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 		},
@@ -81,19 +73,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString([]byte("another-party"))
 	msgs := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyID: party,
-		},
-		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyID: party,
-		},
-		txn.AmendOrderCommand: &types.OrderAmendment{
-			PartyID: party,
-		},
 		txn.VoteCommand: &types.Vote{
-			PartyID: party,
-		},
-		txn.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
 		txn.ProposeCommand: &types.Proposal{

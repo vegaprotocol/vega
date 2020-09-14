@@ -68,15 +68,9 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyID: party,
-		},
-		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyID: party,
-		},
-		// txn.AmendOrderCommand: &types.OrderAmendment{
-		// 	PartyID: party,
-		// },
+		txn.SubmitOrderCommand: &types.OrderSubmission{},
+		txn.CancelOrderCommand: &types.OrderCancellation{},
+		txn.AmendOrderCommand:  &types.OrderAmendment{},
 		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
@@ -84,13 +78,10 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		// txn.WithdrawCommand: &types.Withdraw{
-		// 	PartyID: party,
-		// },
 	}
 	zero := uint64(0)
 
-	// proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
+	proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
 	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
 	proc.stat.EXPECT().Height().AnyTimes()
 	proc.stat.EXPECT().SetAverageTxSizeBytes(gomock.Any()).AnyTimes()
@@ -104,11 +95,11 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
-	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{
+	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{
 		Order: &types.Order{},
 	}, nil)
-	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
-	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
+	proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
