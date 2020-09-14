@@ -302,6 +302,14 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	// Clear the list of changes
 	md.changes = nil
 
+	/*
+		PETE TODO: Would it make sense here to pre-allocate with the size of the current changes? in case we often have the same size of change?
+		either something like:
+		md.changes = make([]*pricelevel{}, 0. len(md.changes)
+		or
+		md.changes = md.changes[:0] // which would not release pointers to pricelevels though
+	*/
+
 	md.sequenceNumber++
 }
 
