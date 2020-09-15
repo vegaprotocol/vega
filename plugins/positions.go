@@ -144,8 +144,8 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 // GetPositionsByMarketAndParty get the position of a single trader in a given market
 func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
+	defer p.mu.RUnlock()
 	mp, ok := p.data[market]
-	p.mu.RUnlock()
 	if !ok {
 		return nil, nil
 	}
@@ -159,11 +159,10 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 // GetPositionsByParty get all positions for a given trader
 func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
-	data := p.data
-	p.mu.RUnlock()
+	defer p.mu.RUnlock()
 	// at most, trader is active in all markets
-	positions := make([]*types.Position, 0, len(data))
-	for _, traders := range data {
+	positions := make([]*types.Position, 0, len(p.data))
+	for _, traders := range p.data {
 		if pos, ok := traders[party]; ok {
 			positions = append(positions, &pos.Position)
 		}
@@ -178,8 +177,8 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 // GetPositionsByMarket get all trader positions in a given market
 func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
+	defer p.mu.RUnlock()
 	mp, ok := p.data[market]
-	p.mu.RUnlock()
 	if !ok {
 		return nil, ErrMarketNotFound
 	}
