@@ -86,6 +86,20 @@ func (mr *MockStatsMockRecorder) CurrentTradesInBatch() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentTradesInBatch", reflect.TypeOf((*MockStats)(nil).CurrentTradesInBatch))
 }
 
+// Height mocks base method
+func (m *MockStats) Height() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Height")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// Height indicates an expected call of Height
+func (mr *MockStatsMockRecorder) Height() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Height", reflect.TypeOf((*MockStats)(nil).Height))
+}
+
 // IncCurrentOrdersInBatch mocks base method
 func (m *MockStats) IncCurrentOrdersInBatch() {
 	m.ctrl.T.Helper()
@@ -158,6 +172,18 @@ func (mr *MockStatsMockRecorder) IncTotalOrders() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncTotalOrders", reflect.TypeOf((*MockStats)(nil).IncTotalOrders))
 }
 
+// IncTotalTxCurrentBatch mocks base method
+func (m *MockStats) IncTotalTxCurrentBatch() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IncTotalTxCurrentBatch")
+}
+
+// IncTotalTxCurrentBatch indicates an expected call of IncTotalTxCurrentBatch
+func (mr *MockStatsMockRecorder) IncTotalTxCurrentBatch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncTotalTxCurrentBatch", reflect.TypeOf((*MockStats)(nil).IncTotalTxCurrentBatch))
+}
+
 // NewBatch mocks base method
 func (m *MockStats) NewBatch() {
 	m.ctrl.T.Helper()
@@ -182,6 +208,30 @@ func (mr *MockStatsMockRecorder) SetAverageOrdersPerBatch(arg0 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAverageOrdersPerBatch", reflect.TypeOf((*MockStats)(nil).SetAverageOrdersPerBatch), arg0)
 }
 
+// SetAverageTxPerBatch mocks base method
+func (m *MockStats) SetAverageTxPerBatch(arg0 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAverageTxPerBatch", arg0)
+}
+
+// SetAverageTxPerBatch indicates an expected call of SetAverageTxPerBatch
+func (mr *MockStatsMockRecorder) SetAverageTxPerBatch(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAverageTxPerBatch", reflect.TypeOf((*MockStats)(nil).SetAverageTxPerBatch), arg0)
+}
+
+// SetAverageTxSizeBytes mocks base method
+func (m *MockStats) SetAverageTxSizeBytes(arg0 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAverageTxSizeBytes", arg0)
+}
+
+// SetAverageTxSizeBytes indicates an expected call of SetAverageTxSizeBytes
+func (mr *MockStatsMockRecorder) SetAverageTxSizeBytes(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAverageTxSizeBytes", reflect.TypeOf((*MockStats)(nil).SetAverageTxSizeBytes), arg0)
+}
+
 // SetBlockDuration mocks base method
 func (m *MockStats) SetBlockDuration(arg0 uint64) {
 	m.ctrl.T.Helper()
@@ -204,6 +254,30 @@ func (m *MockStats) SetOrdersPerSecond(arg0 uint64) {
 func (mr *MockStatsMockRecorder) SetOrdersPerSecond(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOrdersPerSecond", reflect.TypeOf((*MockStats)(nil).SetOrdersPerSecond), arg0)
+}
+
+// SetTotalTxCurrentBatch mocks base method
+func (m *MockStats) SetTotalTxCurrentBatch(arg0 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetTotalTxCurrentBatch", arg0)
+}
+
+// SetTotalTxCurrentBatch indicates an expected call of SetTotalTxCurrentBatch
+func (mr *MockStatsMockRecorder) SetTotalTxCurrentBatch(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTotalTxCurrentBatch", reflect.TypeOf((*MockStats)(nil).SetTotalTxCurrentBatch), arg0)
+}
+
+// SetTotalTxLastBatch mocks base method
+func (m *MockStats) SetTotalTxLastBatch(arg0 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetTotalTxLastBatch", arg0)
+}
+
+// SetTotalTxLastBatch indicates an expected call of SetTotalTxLastBatch
+func (mr *MockStatsMockRecorder) SetTotalTxLastBatch(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTotalTxLastBatch", reflect.TypeOf((*MockStats)(nil).SetTotalTxLastBatch), arg0)
 }
 
 // SetTradesPerSecond mocks base method
@@ -244,4 +318,32 @@ func (m *MockStats) TotalOrders() uint64 {
 func (mr *MockStatsMockRecorder) TotalOrders() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalOrders", reflect.TypeOf((*MockStats)(nil).TotalOrders))
+}
+
+// TotalTxCurrentBatch mocks base method
+func (m *MockStats) TotalTxCurrentBatch() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TotalTxCurrentBatch")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// TotalTxCurrentBatch indicates an expected call of TotalTxCurrentBatch
+func (mr *MockStatsMockRecorder) TotalTxCurrentBatch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalTxCurrentBatch", reflect.TypeOf((*MockStats)(nil).TotalTxCurrentBatch))
+}
+
+// TotalTxLastBatch mocks base method
+func (m *MockStats) TotalTxLastBatch() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TotalTxLastBatch")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// TotalTxLastBatch indicates an expected call of TotalTxLastBatch
+func (mr *MockStatsMockRecorder) TotalTxLastBatch() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalTxLastBatch", reflect.TypeOf((*MockStats)(nil).TotalTxLastBatch))
 }
