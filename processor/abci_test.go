@@ -146,6 +146,7 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	proc.stat.EXPECT().SetTotalTxLastBatch(gomock.Any())
 	proc.stat.EXPECT().TotalTxCurrentBatch()
 	proc.stat.EXPECT().TotalTxLastBatch()
+	proc.stat.EXPECT().IncHeight()
 
 	proc.top.EXPECT().Ready().AnyTimes().Return(false)
 	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))

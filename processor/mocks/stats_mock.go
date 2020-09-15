@@ -112,6 +112,18 @@ func (mr *MockStatsMockRecorder) IncCurrentOrdersInBatch() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncCurrentOrdersInBatch", reflect.TypeOf((*MockStats)(nil).IncCurrentOrdersInBatch))
 }
 
+// IncHeight mocks base method
+func (m *MockStats) IncHeight() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IncHeight")
+}
+
+// IncHeight indicates an expected call of IncHeight
+func (mr *MockStatsMockRecorder) IncHeight() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncHeight", reflect.TypeOf((*MockStats)(nil).IncHeight))
+}
+
 // IncTotalAmendOrder mocks base method
 func (m *MockStats) IncTotalAmendOrder() {
 	m.ctrl.T.Helper()

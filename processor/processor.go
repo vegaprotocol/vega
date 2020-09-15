@@ -86,6 +86,7 @@ type Stats interface {
 	SetTradesPerSecond(i uint64)
 	// blockchain stats
 	IncTotalTxCurrentBatch()
+	IncHeight()
 	Height() uint64
 	SetAverageTxPerBatch(i uint64)
 	SetAverageTxSizeBytes(i uint64)
