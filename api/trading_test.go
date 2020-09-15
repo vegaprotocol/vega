@@ -193,7 +193,7 @@ func getTestGRPCServer(
 
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
-	marketDepth := subscribers.NewMarketDepthBuilder(ctx, true)
+	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
 	if marketDepth == nil {
 		return
 	}

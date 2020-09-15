@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -54,15 +55,19 @@ type MarketDepthBuilder struct {
 	subscriberID uint64
 	// Map of subscriberIds to their channels
 	subscribers map[uint64]chan<- *types.MarketDepthUpdate
+	// Logger
+	log *logging.Logger
 }
 
 // NewMarketDepthBuilder constructor to create a market depth subscriber
-func NewMarketDepthBuilder(ctx context.Context, ack bool) *MarketDepthBuilder {
+func NewMarketDepthBuilder(ctx context.Context, log *logging.Logger, ack bool) *MarketDepthBuilder {
 	mdb := MarketDepthBuilder{
 		Base:         NewBase(ctx, 10, ack),
+		log:          log,
 		marketDepths: map[string]*MarketDepth{},
-		subscribers: map[uint64]chan<- *types.MarketDepthUpdate{},
+		subscribers:  map[uint64]chan<- *types.MarketDepthUpdate{},
 	}
+
 	if mdb.isRunning() {
 		go mdb.loop(mdb.ctx)
 	}
@@ -312,15 +317,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	}
 
 	// Clear the list of changes
-	md.changes = nil
-
-	/*
-		PETE TODO: Would it make sense here to pre-allocate with the size of the current changes? in case we often have the same size of change?
-		either something like:
-		md.changes = make([]*pricelevel{}, 0. len(md.changes)
-		or
-		md.changes = md.changes[:0] // which would not release pointers to pricelevels though
-	*/
+	md.changes = make([]*priceLevel, 0, len(md.changes))
 
 	md.sequenceNumber++
 }
@@ -359,18 +356,21 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 	// Copy the data across
 	for index, pl := range md.buySide[:buyLimit] {
 		buyPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
-			Price: pl.price}
+			NumberOfOrders: pl.totalOrders,
+			Price:          pl.price}
 	}
 
 	for index, pl := range md.sellSide[:sellLimit] {
 		sellPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
-			Price: pl.price}
+			NumberOfOrders: pl.totalOrders,
+			Price:          pl.price}
 	}
 
 	return &types.MarketDepth{
-		MarketID: market,
-		Buy:      buyPtr,
-		Sell:     sellPtr,
+		MarketID:       market,
+		Buy:            buyPtr,
+		Sell:           sellPtr,
+		SequenceNumber: md.sequenceNumber,
 	}, nil
 }
 
@@ -444,7 +444,7 @@ func (mdb *MarketDepthBuilder) Subscribe(updates chan<- *types.MarketDepthUpdate
 	mdb.subscriberID++
 	mdb.subscribers[mdb.subscriberID] = updates
 
-	//	mdb.log.Debug("Account subscriber added in account store",
+	//	mdb.log.Debug("Market depth updates subscriber added",
 	//		logging.Uint64("subscriber-id", a.subscriberID))
 
 	return mdb.subscriberID
@@ -456,7 +456,7 @@ func (mdb *MarketDepthBuilder) Unsubscribe(id uint64) error {
 	defer mdb.mu.Unlock()
 
 	if len(mdb.subscribers) == 0 {
-		//		a.log.Debug("Un-subscribe called in account store, no subscribers connected",
+		//		a.log.Debug("Un-subscribe called on market depth updates, no subscribers connected",
 		//			logging.Uint64("subscriber-id", id))
 
 		return nil
@@ -465,14 +465,14 @@ func (mdb *MarketDepthBuilder) Unsubscribe(id uint64) error {
 	if _, exists := mdb.subscribers[id]; exists {
 		delete(mdb.subscribers, id)
 
-		//		a.log.Debug("Un-subscribe called in account store, subscriber removed",
+		//		a.log.Debug("Un-subscribe called on market depth updates, subscriber removed",
 		//			logging.Uint64("subscriber-id", id))
 
 		return nil
 	}
 
-	//	a.log.Warn("Un-subscribe called in account store, subscriber does not exist",
+	//	a.log.Warn("Un-subscribe called on market depth updates, subscriber does not exist",
 	//		logging.Uint64("subscriber-id", id))
 
-	return fmt.Errorf("subscriber to Account store does not exist with id: %d", id)
+	return fmt.Errorf("subscriber to market depth updates does not exist with id: %d", id)
 }
