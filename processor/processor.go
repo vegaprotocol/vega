@@ -84,6 +84,15 @@ type Stats interface {
 	CurrentTradesInBatch() uint64
 	SetOrdersPerSecond(i uint64)
 	SetTradesPerSecond(i uint64)
+	// blockchain stats
+	IncTotalTxCurrentBatch()
+	Height() uint64
+	SetAverageTxPerBatch(i uint64)
+	SetAverageTxSizeBytes(i uint64)
+	SetTotalTxLastBatch(i uint64)
+	SetTotalTxCurrentBatch(i uint64)
+	TotalTxCurrentBatch() uint64
+	TotalTxLastBatch() uint64
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/processor Wallet
