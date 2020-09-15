@@ -3,6 +3,7 @@ package subscribers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"sync"
 
@@ -43,9 +44,16 @@ type MarketDepth struct {
 // used to build the live market depth structure
 type MarketDepthBuilder struct {
 	*Base
+	// Mutex to protect access to subscribers
 	mu sync.Mutex
 	// Map of all the markets to their market depth
 	marketDepths map[string]*MarketDepth
+	// Keep count of the number of clients requesting updates
+	subscribersCount int32
+	// Incrementing counter for subscriberID
+	subscriberID uint64
+	// Map of subscriberIds to their channels
+	subscribers map[uint64]chan<- *types.MarketDepthUpdate
 }
 
 // NewMarketDepthBuilder constructor to create a market depth subscriber
@@ -53,6 +61,7 @@ func NewMarketDepthBuilder(ctx context.Context, ack bool) *MarketDepthBuilder {
 	mdb := MarketDepthBuilder{
 		Base:         NewBase(ctx, 10, ack),
 		marketDepths: map[string]*MarketDepth{},
+		subscribers: map[uint64]chan<- *types.MarketDepthUpdate{},
 	}
 	if mdb.isRunning() {
 		go mdb.loop(mdb.ctx)
@@ -271,33 +280,36 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		}
 	}
 
-	/*buyPtr := []*types.PriceLevel{}
+	buyPtr := []*types.PriceLevel{}
 	sellPtr := []*types.PriceLevel{}
 
 	// Send out market depth updates to any listeners
-	// PETE TODO once market data updates are done
-		for _, pl := range md.changes {
-			if pl.side == types.Side_SIDE_BUY {
-				buyPtr = append(buyPtr, &types.PriceLevel{
-					Price:          pl.price,
-					NumberOfOrders: pl.totalOrders,
-					Volume:         pl.totalVolume,
-				})
-			} else {
-				sellPtr = append(sellPtr, &types.PriceLevel{
-					Price:          pl.price,
-					NumberOfOrders: pl.totalOrders,
-					Volume:         pl.totalVolume,
-				})
-			}
+	for _, pl := range md.changes {
+		if pl.side == types.Side_SIDE_BUY {
+			buyPtr = append(buyPtr, &types.PriceLevel{
+				Price:          pl.price,
+				NumberOfOrders: pl.totalOrders,
+				Volume:         pl.totalVolume,
+			})
+		} else {
+			sellPtr = append(sellPtr, &types.PriceLevel{
+				Price:          pl.price,
+				NumberOfOrders: pl.totalOrders,
+				Volume:         pl.totalVolume,
+			})
 		}
+	}
 
-		marketDepthUpdate := &types.MarketDepthUpdate{
-			MarketID:       order.MarketID,
-			Buy:            buyPtr,
-			Sell:           sellPtr,
-			SequenceNumber: md.sequenceNumber,
-		}*/
+	marketDepthUpdate := &types.MarketDepthUpdate{
+		MarketID:       order.MarketID,
+		Buy:            buyPtr,
+		Sell:           sellPtr,
+		SequenceNumber: md.sequenceNumber,
+	}
+
+	for _, channel := range mdb.subscribers {
+		channel <- marketDepthUpdate
+	}
 
 	// Clear the list of changes
 	md.changes = nil
@@ -422,4 +434,45 @@ func (mdb *MarketDepthBuilder) GetSellPriceLevels(market string) int {
 		return len(md.sellSide)
 	}
 	return 0
+}
+
+// Subscribe allows a client to register for updates of the market depth book
+func (mdb *MarketDepthBuilder) Subscribe(updates chan<- *types.MarketDepthUpdate) uint64 {
+	mdb.mu.Lock()
+	defer mdb.mu.Unlock()
+
+	mdb.subscriberID++
+	mdb.subscribers[mdb.subscriberID] = updates
+
+	//	mdb.log.Debug("Account subscriber added in account store",
+	//		logging.Uint64("subscriber-id", a.subscriberID))
+
+	return mdb.subscriberID
+}
+
+// Unsubscribe allows the client to unregister interest in market depth updates
+func (mdb *MarketDepthBuilder) Unsubscribe(id uint64) error {
+	mdb.mu.Lock()
+	defer mdb.mu.Unlock()
+
+	if len(mdb.subscribers) == 0 {
+		//		a.log.Debug("Un-subscribe called in account store, no subscribers connected",
+		//			logging.Uint64("subscriber-id", id))
+
+		return nil
+	}
+
+	if _, exists := mdb.subscribers[id]; exists {
+		delete(mdb.subscribers, id)
+
+		//		a.log.Debug("Un-subscribe called in account store, subscriber removed",
+		//			logging.Uint64("subscriber-id", id))
+
+		return nil
+	}
+
+	//	a.log.Warn("Un-subscribe called in account store, subscriber does not exist",
+	//		logging.Uint64("subscriber-id", id))
+
+	return fmt.Errorf("subscriber to Account store does not exist with id: %d", id)
 }

@@ -38,6 +38,8 @@ type OrderStore interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/vega/markets MarketDepth
 type MarketDepth interface {
 	GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error)
+	Subscribe(orders chan<- *types.MarketDepthUpdate) uint64
+	Unsubscribe(id uint64) error
 }
 
 // Svc represent the market service
@@ -212,6 +214,77 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 		}
 	}()
 
+	return depth, ref
+}
+
+// ObserveDepthUpdates provides a way to listen to changes on the Depth of Market for a given market.
+func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market string) (<-chan *types.MarketDepthUpdate, uint64) {
+	depth := make(chan *types.MarketDepthUpdate)
+	internal := make(chan *types.MarketDepthUpdate)
+	ref := s.marketDepth.Subscribe(internal)
+
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
+	go func() {
+		atomic.AddInt32(&s.subscribersCnt, 1)
+		defer atomic.AddInt32(&s.subscribersCnt, -1)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
+		defer cancel()
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Debug(
+					"Market depth updates subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				if err := s.marketDepth.Unsubscribe(ref); err != nil {
+					s.log.Error(
+						"Failure un-subscribing market depth updates subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(depth)
+				return
+			case update := <-internal:
+				retryCount := retries
+				success := false
+				for !success && retryCount >= 0 {
+					select {
+					case depth <- update:
+						s.log.Debug(
+							"Market depth update for subscriber sent successfully",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+						)
+						success = true
+					default:
+						retryCount--
+						if retryCount >= 0 {
+							s.log.Debug(
+								"Market depth update for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip),
+							)
+							time.Sleep(time.Duration(10) * time.Millisecond)
+						}
+					}
+				}
+				if !success && retryCount <= 0 {
+					s.log.Warn(
+						"Market depth updates subscriber has hit the retry limit",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+						logging.Int("retries", retries),
+					)
+					cancel()
+				}
+			}
+		}
+	}()
 	return depth, ref
 }
 
