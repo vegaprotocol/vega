@@ -1318,6 +1318,39 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 	return &resp, nil
 }
 
+func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.TransferResponse, error) {
+	acc, err := e.GetAccountByID(e.accountID(market, party, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		return nil, err
+	}
+	resp := types.TransferResponse{
+		Transfers: []*types.LedgerEntry{},
+	}
+
+	if acc.Balance > 0 {
+		genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+		if err != nil {
+			return nil, err
+		}
+
+		resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
+			FromAccount: acc.Id,
+			ToAccount:   genAcc.Id,
+			Amount:      acc.Balance,
+			Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_HIGH.String(),
+			Type:        types.TransferType_TRANSFER_TYPE_MARGIN_HIGH.String(),
+			Timestamp:   e.currentTime,
+		})
+		if err := e.IncrementBalance(ctx, genAcc.Id, acc.Balance); err != nil {
+			return nil, err
+		}
+		if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
+			return nil, err
+		}
+	}
+	return &resp, nil
+}
+
 // CreateMarketAccounts will create all required accounts for a market once
 // a new market is accepted through the network
 func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string, insurance uint64) (insuranceID, settleID string, err error) {

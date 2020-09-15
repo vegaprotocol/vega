@@ -631,6 +631,33 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 	return nil
 }
 
+func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
+	// if this position went 0
+	pos, ok := m.position.GetPositionByPartyID(partyID)
+	if !ok {
+		// position was never created or party went distressed and don't exist
+		// all good we can return
+		return
+	}
+
+	// now chec if all  buy/sell/size are 0
+	if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || pos.VWBuy() != 0 || pos.VWSell() != 0 {
+		// position is not 0, nothing to release surely
+		return
+	}
+
+	asset, _ := m.mkt.GetAsset()
+	transfers, err := m.collateral.ClearPartyMarginAccount(
+		ctx, partyID, m.GetID(), asset)
+	if err != nil {
+		m.log.Error("unable to clear party margin account", logging.Error(err))
+		return
+	}
+	evt := events.NewTransferResponse(
+		ctx, []*types.TransferResponse{transfers})
+	m.broker.Send(evt)
+}
+
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
@@ -691,6 +718,10 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
+
+	// from here we may have assigned some margin.
+	// we add the check to roll it back in case we have a 0 positions after this
+	defer m.releaseMarginExcess(ctx, order.PartyID)
 
 	// If we are not in an opening auction, apply fees
 	var trades []*types.Trade
@@ -1540,6 +1571,8 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		}
 		return nil, types.ErrInvalidPartyID
 	}
+
+	defer m.releaseMarginExcess(ctx, partyID)
 
 	cancellation, err := m.matching.CancelOrder(order)
 	if cancellation == nil || err != nil {
