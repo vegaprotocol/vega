@@ -1939,7 +1939,7 @@ type TransferResponse {
 
 type TransferResponses {
   "a group of transfer responses - events from core"
-  responsesn: [TransferResponse!]
+  responses: [TransferResponse!]
 }
 
 type PositionResolution {
@@ -2043,7 +2043,7 @@ enum BusEventType {
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed
 
 type BusEvent {
   "the id for this event"

@@ -570,7 +570,7 @@ type ComplexityRoot struct {
 	}
 
 	TransferResponses struct {
-		Responsesn func(childComplexity int) int
+		Responses func(childComplexity int) int
 	}
 
 	UpdateMarket struct {
@@ -3252,12 +3252,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransferResponse.Transfers(childComplexity), true
 
-	case "TransferResponses.responsesn":
-		if e.complexity.TransferResponses.Responsesn == nil {
+	case "TransferResponses.responses":
+		if e.complexity.TransferResponses.Responses == nil {
 			break
 		}
 
-		return e.complexity.TransferResponses.Responsesn(childComplexity), true
+		return e.complexity.TransferResponses.Responses(childComplexity), true
 
 	case "UpdateMarket.marketId":
 		if e.complexity.UpdateMarket.MarketID == nil {
@@ -5442,7 +5442,7 @@ type TransferResponse {
 
 type TransferResponses {
   "a group of transfer responses - events from core"
-  responsesn: [TransferResponse!]
+  responses: [TransferResponse!]
 }
 
 type PositionResolution {
@@ -5546,7 +5546,7 @@ enum BusEventType {
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed
 
 type BusEvent {
   "the id for this event"
@@ -17672,7 +17672,7 @@ func (ec *executionContext) _TransferResponse_balances(ctx context.Context, fiel
 	return ec.marshalOTransferBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransferBalanceᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TransferResponses_responsesn(ctx context.Context, field graphql.CollectedField, obj *TransferResponses) (ret graphql.Marshaler) {
+func (ec *executionContext) _TransferResponses_responses(ctx context.Context, field graphql.CollectedField, obj *TransferResponses) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -17689,7 +17689,7 @@ func (ec *executionContext) _TransferResponses_responsesn(ctx context.Context, f
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Responsesn, nil
+		return obj.Responses, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20192,6 +20192,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._MarketTick(ctx, sel, obj)
+	case SettleDistressed:
+		return ec._SettleDistressed(ctx, sel, &obj)
+	case *SettleDistressed:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._SettleDistressed(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -23477,7 +23484,7 @@ func (ec *executionContext) _ScalingFactors(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var settleDistressedImplementors = []string{"SettleDistressed"}
+var settleDistressedImplementors = []string{"SettleDistressed", "Event"}
 
 func (ec *executionContext) _SettleDistressed(ctx context.Context, sel ast.SelectionSet, obj *SettleDistressed) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, settleDistressedImplementors)
@@ -24433,8 +24440,8 @@ func (ec *executionContext) _TransferResponses(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("TransferResponses")
-		case "responsesn":
-			out.Values[i] = ec._TransferResponses_responsesn(ctx, field, obj)
+		case "responses":
+			out.Values[i] = ec._TransferResponses_responses(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

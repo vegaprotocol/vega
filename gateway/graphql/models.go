@@ -588,6 +588,8 @@ type SettleDistressed struct {
 	Price int `json:"price"`
 }
 
+func (SettleDistressed) IsEvent() {}
+
 type SettlePosition struct {
 	// the market in which a position was settled
 	MarketID string `json:"marketID"`
@@ -688,7 +690,7 @@ type TransferResponse struct {
 
 type TransferResponses struct {
 	// a group of transfer responses - events from core
-	Responsesn []*TransferResponse `json:"responsesn"`
+	Responses []*TransferResponse `json:"responses"`
 }
 
 func (TransferResponses) IsEvent() {}
