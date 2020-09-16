@@ -699,7 +699,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// Perform check and allocate margin
-	newOrderMarginRiskRollback, err := m.checkMarginForOrder(ctx, pos, order)
+	_, err = m.checkMarginForOrder(ctx, pos, order)
 	if err != nil {
 		_, err1 := m.position.UnregisterOrder(order)
 		if err1 != nil {
@@ -718,7 +718,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
-	_ = newOrderMarginRiskRollback
 
 	// from here we may have assigned some margin.
 	// we add the check to roll it back in case we have a 0 positions after this
