@@ -228,6 +228,9 @@ func (md *MarketDepth) removePriceLevel(order *types.Order) {
 }
 
 func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
+	mdb.mu.Lock()
+	defer mdb.mu.Unlock()
+
 	// Non persistent and network orders do not matter
 	if order.Type == types.Order_TYPE_MARKET ||
 		order.TimeInForce == types.Order_TIF_FOK ||
@@ -323,6 +326,8 @@ func min(x, y uint64) uint64 {
 
 // GetMarketDepth builds up the structure to be sent out to any market depth listeners
 func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
+	mdb.mu.Lock()
+	defer mdb.mu.Unlock()
 	md, ok := mdb.marketDepths[market]
 	if !ok || md == nil {
 		// When a market is new with no orders there will not be any market depth/order book
