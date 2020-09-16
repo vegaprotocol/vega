@@ -43,7 +43,7 @@ type MarketDepth struct {
 // used to build the live market depth structure
 type MarketDepthBuilder struct {
 	*Base
-	mu sync.Mutex
+	mu sync.RWMutex
 	// Map of all the markets to their market depth
 	marketDepths map[string]*MarketDepth
 }
@@ -326,8 +326,8 @@ func min(x, y uint64) uint64 {
 
 // GetMarketDepth builds up the structure to be sent out to any market depth listeners
 func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
-	mdb.mu.Lock()
-	defer mdb.mu.Unlock()
+	mdb.mu.RLock()
+	defer mdb.mu.RUnlock()
 	md, ok := mdb.marketDepths[market]
 	if !ok || md == nil {
 		// When a market is new with no orders there will not be any market depth/order book
