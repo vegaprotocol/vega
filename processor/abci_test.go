@@ -93,6 +93,11 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	zero := uint64(0)
 
 	// proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
+	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
+	proc.stat.EXPECT().Height().AnyTimes()
+	proc.stat.EXPECT().SetAverageTxSizeBytes(gomock.Any()).AnyTimes()
+	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
+
 	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
 	// creating an order, should be no trades
@@ -134,6 +139,14 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App, proc *procTest) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
+
+	// stats
+	proc.stat.EXPECT().SetAverageTxPerBatch(gomock.Any())
+	proc.stat.EXPECT().SetTotalTxCurrentBatch(gomock.Any())
+	proc.stat.EXPECT().SetTotalTxLastBatch(gomock.Any())
+	proc.stat.EXPECT().TotalTxCurrentBatch()
+	proc.stat.EXPECT().TotalTxLastBatch()
+	proc.stat.EXPECT().IncHeight()
 
 	proc.top.EXPECT().Ready().AnyTimes().Return(false)
 	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))

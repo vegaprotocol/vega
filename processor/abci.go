@@ -27,6 +27,8 @@ type App struct {
 	previousTimestamp time.Time
 	hasRegistered     bool
 	size              uint64
+	txTotals          []uint64
+	txSizes           []int
 
 	cfg      Config
 	log      *logging.Logger
@@ -226,43 +228,15 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	binary.BigEndian.PutUint64(resp.Data, uint64(app.size))
 
 	app.updateStats()
+	app.setBatchStats()
 
 	return resp
-}
-
-func (app *App) updateStats() {
-	app.stats.IncTotalBatches()
-	avg := app.stats.TotalOrders() / app.stats.TotalBatches()
-	app.stats.SetAverageOrdersPerBatch(avg)
-	duration := time.Duration(app.currentTimestamp.UnixNano() - app.previousTimestamp.UnixNano()).Seconds()
-	var (
-		currentOrders, currentTrades uint64
-	)
-	app.stats.SetBlockDuration(uint64(duration * float64(time.Second.Nanoseconds())))
-	if duration > 0 {
-		currentOrders, currentTrades = uint64(float64(app.stats.CurrentOrdersInBatch())/duration),
-			uint64(float64(app.stats.CurrentTradesInBatch())/duration)
-	}
-	app.stats.SetOrdersPerSecond(currentOrders)
-	app.stats.SetTradesPerSecond(currentTrades)
-	// log stats
-	app.log.Debug("Processor batch stats",
-		logging.Int64("previousTimestamp", app.previousTimestamp.UnixNano()),
-		logging.Int64("currentTimestamp", app.currentTimestamp.UnixNano()),
-		logging.Float64("duration", duration),
-		logging.Uint64("currentOrdersInBatch", app.stats.CurrentOrdersInBatch()),
-		logging.Uint64("currentTradesInBatch", app.stats.CurrentTradesInBatch()),
-		logging.Uint64("total-batches", app.stats.TotalBatches()),
-		logging.Uint64("avg-orders-batch", avg),
-		logging.Uint64("orders-per-sec", currentOrders),
-		logging.Uint64("trades-per-sec", currentTrades),
-	)
-	app.stats.NewBatch() // sets previous batch orders/trades to current, zeroes current tally
 }
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
 func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
 	app.size++
+	app.setTxStats(len(req.Tx))
 
 	// update the context with Tracing Info.
 	hash := hex.EncodeToString(tx.Hash())
