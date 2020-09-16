@@ -45,7 +45,7 @@ steps:
       # Get a list of files that changed in this PR, in order to limit CI to only test things that
       # changed in this PR.
       - git diff --name-only "$$DRONE_COMMIT_BEFORE...$$DRONE_COMMIT_AFTER" >git_diff.txt
-      - if [[ "$DRONE_TARGET_BRANCH" == master -o "$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$' git_diff.txt)" -gt 0]] ; then
+      - if [[ "$$DRONE_TARGET_BRANCH" == master -o "$$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$$' git_diff.txt)" -gt 0 ]] ; then
           # Build normal executable
           ./script/build.sh -a build -t linux/amd64 || exit 1;
         else
@@ -63,7 +63,7 @@ steps:
     pull: always
     environment: {}
     commands:
-      - if [[ "$DRONE_TARGET_BRANCH" == master -o "$(grep -c '\.md$$' ~/git_diff.txt)" -gt 0 ]] ; then
+      - if [[ "$$DRONE_TARGET_BRANCH" == master -o "$$(grep -c '\.md$$' ~/git_diff.txt)" -gt 0 ]] ; then
           mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md' || exit 1 ;
         else
           echo "No md files changed. Skipping mdspell." ;
@@ -89,7 +89,7 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       - failed=""
-      - if [[ "$DRONE_TARGET_BRANCH" == master -o "$(grep -cE '(^go.(mod|sum)|\.go)$' git_diff.txt)" -gt 0]] ; then
+      - if [[ "$$DRONE_TARGET_BRANCH" == master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ]] ; then
           make retest || exit 1 ;
           for target in gqlgen_check print_check proto_check race vet ;
           do
