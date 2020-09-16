@@ -1886,7 +1886,7 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 		}
 	}
 	// number of retries to -1 to have pretty much unlimited retries
-	ch := t.eventService.ObserveEvents(ctx, -1, types, filters...)
+	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
 	for {
 		select {
 		case data, ok := <-ch:

@@ -2596,6 +2596,10 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 			if isStreamClosed(err, r.log) {
 				return
 			}
+			if err != nil {
+				r.log.Error("Event bus stream error", logging.Error(err))
+				return
+			}
 			be := busEventFromProto(data.Events...)
 			out <- be
 		}
