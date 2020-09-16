@@ -46,7 +46,7 @@ steps:
       # changed in this PR.
       - git diff --name-only "$$DRONE_COMMIT_BEFORE...$$DRONE_COMMIT_AFTER" >git_diff.txt
       - if [[ "$$DRONE_TARGET_BRANCH" == master -o "$$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$$' git_diff.txt)" -gt 0 ]] ; then
-          # Build normal executable
+          echo "Building executable" ;
           ./script/build.sh -a build -t linux/amd64 || exit 1;
         else
           echo "No Go files changed. Skipping building of binary." ;
