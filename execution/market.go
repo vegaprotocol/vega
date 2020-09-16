@@ -718,6 +718,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			logging.Error(err))
 		return nil, ErrMarginCheckFailed
 	}
+	_ = newOrderMarginRiskRollback
 
 	// from here we may have assigned some margin.
 	// we add the check to roll it back in case we have a 0 positions after this
@@ -766,42 +767,21 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
-	// or if the order was stopped because of a wash trade
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
-	if (order.TimeInForce == types.Order_TIF_FOK || order.TimeInForce == types.Order_TIF_IOC || order.Status == types.Order_STATUS_STOPPED) &&
-		confirmation.Order.Remaining != 0 {
+	if ((order.TimeInForce == types.Order_TIF_FOK ||
+		order.TimeInForce == types.Order_TIF_IOC ||
+		order.Status == types.Order_STATUS_STOPPED) &&
+		confirmation.Order.Remaining != 0) ||
+		// Also do it if specifically we went against a wash trade
+		(order.Status == types.Order_STATUS_REJECTED &&
+			order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING) {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
 		}
-
-		// if the specific case we are in and FOK or IOC
-		// we moved some margin, which may never be released
-		// as we never create a position in the settlement engine.
-		// to be fair the monies would be released later on if the
-		// party place an order which stay in the book / trade.
-		// but in the case the party is actually neve used again
-		// the funds woulds be locked on the margin account until
-		// the market is being closed.
-		// we also check the margin risk update was not nil, as it's not
-		// guaranteed the trader had to pay any margin
-		asset, _ := m.mkt.GetAsset()
-		if order.Remaining == order.Size && newOrderMarginRiskRollback != nil {
-			transfers, err := m.collateral.RollbackMarginUpdateOnOrder(
-				ctx, m.GetID(), asset, newOrderMarginRiskRollback)
-			if err != nil {
-				m.log.Error("Unable to rollback risk updates",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-			evt := events.NewTransferResponse(
-				ctx, []*types.TransferResponse{transfers})
-			m.broker.Send(evt)
-		}
-
 	}
 
 	// Insert aggressive remaining order
