@@ -63,7 +63,7 @@ steps:
     pull: always
     environment: {}
     commands:
-      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -c '\.md$$' ~/git_diff.txt)" -gt 0 ; then
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -c '\.md$$' git_diff.txt)" -gt 0 ; then
           mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md' || exit 1 ;
         else
           echo "No md files changed. Skipping mdspell." ;
