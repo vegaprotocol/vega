@@ -505,3 +505,26 @@ func TestRemovingPriceLevels(t *testing.T) {
 	assert.Equal(t, mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 101), uint64(0))
 	assert.Equal(t, mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 101), uint64(0))
 }
+
+func TestMarketDepthFields(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx, true)
+
+	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 10)
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+
+	md, err := mdb.GetMarketDepth(ctx, "M", 0)
+	assert.Nil(t, err)
+	assert.NotNil(t, md)
+
+	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, len(md.GetBuy()), 1)
+
+	priceLevels := md.GetBuy()
+	pl := priceLevels[0]
+	assert.NotNil(t, pl)
+	assert.Equal(t, pl.NumberOfOrders, uint64(1))
+	assert.Equal(t, pl.Price, uint64(101))
+	assert.Equal(t, pl.Volume, uint64(10))
+}
