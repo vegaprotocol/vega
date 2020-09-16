@@ -96,7 +96,7 @@ func (w *Wallet) Client() ETHClient {
 	return w.clt
 }
 
-func (w *Wallet) BridgeAddress() string {
+func (w Wallet) BridgeAddress() string {
 	return w.bridgeAddress
 }
 
