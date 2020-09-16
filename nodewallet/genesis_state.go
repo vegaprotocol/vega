@@ -15,8 +15,8 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		// generate ropsten settings
 		ETH: ETHGenesisState{
-			ChainID:            "3",
-			ERC20BridgeAddress: "0xf6C9d3e937fb2dA4995272C1aC3f3D466B7c23fC",
+			ChainID:            "",
+			ERC20BridgeAddress: "",
 		},
 	}
 }
