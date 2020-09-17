@@ -538,8 +538,8 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 
 	if err != nil {
 		if err == ErrWashTrade {
-			// we still want to submit this order, but know there will be no trades coming out of it
-			return nil, nil
+			// we still want to submit this order, there might be trades coming out of it
+			return trades, nil
 		}
 		// some random error happened, return both trades and error
 		// this is a case that isn't covered by the current SubmitOrder call
