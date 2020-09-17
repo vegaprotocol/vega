@@ -29,6 +29,10 @@ func NewStreamSub(ctx context.Context, types []events.Type, filters ...EventFilt
 	trades := false
 	expandedTypes := make([]events.Type, 0, len(types))
 	for _, t := range types {
+		if t == events.All {
+			expandedTypes = nil
+			break
+		}
 		if t == events.MarketEvent {
 			expandedTypes = append(expandedTypes, events.MarketEvents()...)
 		} else {
@@ -58,9 +62,8 @@ func NewStreamSub(ctx context.Context, types []events.Type, filters ...EventFilt
 		filters: filters,
 		updated: make(chan struct{}), // create a blocking channel for these
 	}
-	if s.isRunning() {
-		go s.loop(s.ctx)
-	}
+	// running or not, we're using the channel
+	go s.loop(s.ctx)
 	return s
 }
 
@@ -80,9 +83,7 @@ func (s *StreamSub) loop(ctx context.Context) {
 			s.Halt()
 			return
 		case e := <-s.ch:
-			if s.isRunning() {
-				s.Push(e)
-			}
+			s.Push(e)
 		}
 	}
 }

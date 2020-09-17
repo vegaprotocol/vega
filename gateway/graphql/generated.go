@@ -3725,8 +3725,8 @@ type Subscription {
 
   "Subscribe to event data from the event bus"
   busEvents(
-    "the types to subscribe to"
-    types: [BusEventType!]
+    "the types to subscribe to has to be an array"
+    types: [BusEventType!]!
     "optional filter by market ID"
     marketID: String
     "optional filter by party ID"
@@ -6509,7 +6509,7 @@ func (ec *executionContext) field_Subscription_busEvents_args(ctx context.Contex
 	args := map[string]interface{}{}
 	var arg0 []BusEventType
 	if tmp, ok := rawArgs["types"]; ok {
-		arg0, err = ec.unmarshalOBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventTypeᚄ(ctx, tmp)
+		arg0, err = ec.unmarshalNBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventTypeᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -24952,6 +24952,63 @@ func (ec *executionContext) marshalNBusEventType2codeᚗvegaprotocolᚗioᚋvega
 	return v
 }
 
+func (ec *executionContext) unmarshalNBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventTypeᚄ(ctx context.Context, v interface{}) ([]BusEventType, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]BusEventType, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNBusEventType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventType(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []BusEventType) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBusEventType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventType(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalNCandle2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐCandle(ctx context.Context, sel ast.SelectionSet, v proto.Candle) graphql.Marshaler {
 	return ec._Candle(ctx, sel, &v)
 }
@@ -26175,66 +26232,6 @@ func (ec *executionContext) marshalOBusEvent2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNBusEvent2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEvent(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) unmarshalOBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventTypeᚄ(ctx context.Context, v interface{}) ([]BusEventType, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]BusEventType, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNBusEventType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventType(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOBusEventType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []BusEventType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBusEventType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

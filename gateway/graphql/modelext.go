@@ -1371,7 +1371,7 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 	for _, t := range btypes {
 		switch t {
 		case BusEventTypeAll:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_UNSPECIFIED)
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ALL)
 		case BusEventTypeTimeUpdate:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
 		case BusEventTypeTransferResponses:

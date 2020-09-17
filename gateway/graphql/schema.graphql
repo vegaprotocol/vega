@@ -222,8 +222,8 @@ type Subscription {
 
   "Subscribe to event data from the event bus"
   busEvents(
-    "the types to subscribe to"
-    types: [BusEventType!]
+    "the types to subscribe to has to be an array"
+    types: [BusEventType!]!
     "optional filter by market ID"
     marketID: String
     "optional filter by party ID"
