@@ -35,9 +35,11 @@ func (g *genesisCommand) Init(c *Cli) {
 	}
 
 	g.cmd.Flags().StringVarP(&g.tmRoot, "tm-root", "t", "$HOME/.tendermint", "The root path of tendermint")
-	g.cmd.Flags().StringVarP(&g.vegaWalletPath, "vega-wallet-path", "v", "$HOME/.vegaimport/wallet-vega", "The path of vega wallet")
+	g.cmd.Flags().StringVarP(&g.vegaWalletPath, "vega-wallet-path", "v", "", "The path of vega wallet")
 	g.cmd.Flags().StringVarP(&g.walletPassphrase, "vega-wallet-passphrase", "p", "", "Vega wallet passphrase")
 	g.cmd.Flags().BoolVarP(&g.inPlace, "in-place", "i", true, "Edit the genesis file in-place")
+
+	g.cmd.MarkFlagRequired("vega-wallet-path")
 }
 
 func (g *genesisCommand) Run(cmd *cobra.Command, args []string) error {
