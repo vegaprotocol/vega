@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -405,38 +404,6 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	return nil
 }
 
-func (l *NodeCommand) LoadValidatorsOnGenesis(rawstate []byte) error {
-	// Load a ValidatorMapping from validators package
-	state, err := validators.LoadGenesisState(rawstate)
-	if err != nil {
-		return err
-	}
-
-	// vals is a map of tm pubkey -> vega pubkey
-	// tm is base64 encoded, vega is hex
-	for tm, vega := range state {
-		tmBytes, err := base64.StdEncoding.DecodeString(tm)
-		if err != nil {
-			return err
-		}
-
-		vegaBytes, err := hex.DecodeString(vega)
-		if err != nil {
-			return err
-		}
-
-		nr := &proto.NodeRegistration{
-			PubKey:      vegaBytes,
-			ChainPubKey: tmBytes,
-		}
-		if err := l.topology.AddNodeRegistration(nr); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -505,7 +472,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
 	}
+
+	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
 	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
@@ -605,14 +576,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
-	)
-
-	l.genesisHandler.OnGenesisAppStateLoaded(
-		l.UponGenesis,
-	)
-
-	l.genesisHandler.OnGenesisAppStateLoaded(
-		l.LoadValidatorsOnGenesis,
 	)
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)

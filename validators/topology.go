@@ -1,11 +1,13 @@
 package validators
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -132,5 +134,36 @@ func (t *Topology) AddNodeRegistration(nr *types.NodeRegistration) error {
 	t.log.Info("new node registration successful",
 		logging.String("node-key", hex.EncodeToString(nr.PubKey)),
 		logging.String("tm-key", hex.EncodeToString(nr.ChainPubKey)))
+	return nil
+}
+
+func (t *Topology) LoadValidatorsOnGenesis(rawstate []byte) error {
+	state, err := LoadGenesisState(rawstate)
+	if err != nil {
+		return err
+	}
+
+	// vals is a map of tm pubkey -> vega pubkey
+	// tm is base64 encoded, vega is hex
+	for tm, vega := range state {
+		tmBytes, err := base64.StdEncoding.DecodeString(tm)
+		if err != nil {
+			return err
+		}
+
+		vegaBytes, err := hex.DecodeString(vega)
+		if err != nil {
+			return err
+		}
+
+		nr := &proto.NodeRegistration{
+			PubKey:      vegaBytes,
+			ChainPubKey: tmBytes,
+		}
+		if err := t.AddNodeRegistration(nr); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
