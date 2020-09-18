@@ -28,6 +28,11 @@ func (v *Vote) ProposalID() string {
 	return v.v.ProposalID
 }
 
+// IsParty - used in event stream API filter
+func (v Vote) IsParty(id string) bool {
+	return (v.v.PartyID == id)
+}
+
 // PartyID - return the PartyID for subscribers' convenience
 func (v *Vote) PartyID() string {
 	return v.v.PartyID

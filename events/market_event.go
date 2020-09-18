@@ -24,6 +24,10 @@ func (m Market) MarketEvent() string {
 	return fmt.Sprintf("Market ID %s created (%s)", m.m.Id, m.m.String())
 }
 
+func (m Market) MarketID() string {
+	return m.m.Id
+}
+
 func (m Market) Market() types.Market {
 	return m.m
 }

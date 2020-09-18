@@ -184,7 +184,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []ev
 			tradeset = append(tradeset, t)
 		}
 		// create (and add position to buffer)
-		evts = append(evts, events.NewSettlePositionEvent(ctx, evt.Party(), e.market, evt.Price(), tradeset, e.currentTime.UnixNano()))
+		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.currentTime.UnixNano()))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
 		if !hasTraded && current.price == markPrice {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked

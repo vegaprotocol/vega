@@ -18,6 +18,10 @@ func NewMarketDataEvent(ctx context.Context, md types.MarketData) *MarketData {
 	}
 }
 
+func (m MarketData) MarketID() string {
+	return m.md.Market
+}
+
 func (m MarketData) MarketData() types.MarketData {
 	return m.md
 }

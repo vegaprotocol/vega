@@ -19,7 +19,7 @@ type StreamSub struct {
 	*Base
 	mu          *sync.Mutex // pointer because types is a value receiver, linter complains
 	types       []events.Type
-	data        []events.Event
+	data        []StreamEvent
 	filters     []EventFilter
 	changeCount int
 	updated     chan struct{}
@@ -58,7 +58,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, filters ...EventFilt
 		Base:    NewBase(ctx, bufLen, false),
 		mu:      &sync.Mutex{},
 		types:   expandedTypes,
-		data:    []events.Event{},
+		data:    []StreamEvent{},
 		filters: filters,
 		updated: make(chan struct{}), // create a blocking channel for these
 	}
@@ -94,8 +94,12 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.mu.Lock()
 	closeUpdate := (s.changeCount == 0)
-	save := make([]events.Event, 0, len(evts))
+	save := make([]StreamEvent, 0, len(evts))
 	for _, e := range evts {
+		se, ok := e.(StreamEvent)
+		if !ok {
+			continue
+		}
 		keep := true
 		for _, f := range s.filters {
 			if !f(e) {
@@ -104,14 +108,14 @@ func (s *StreamSub) Push(evts ...events.Event) {
 			}
 		}
 		if keep {
-			save = append(save, e)
+			save = append(save, se)
 		}
 	}
 	s.changeCount += len(save)
+	s.data = append(s.data, save...)
 	if closeUpdate && s.changeCount > 0 {
 		close(s.updated)
 	}
-	s.data = append(s.data, save...)
 	s.mu.Unlock()
 }
 
@@ -123,13 +127,11 @@ func (s *StreamSub) GetData() []*types.BusEvent {
 	s.changeCount = 0
 	// copy the data for return, clear the internal slice
 	data := s.data
-	s.data = make([]events.Event, 0, cap(data))
+	s.data = make([]StreamEvent, 0, cap(data))
 	s.mu.Unlock()
 	messages := make([]*types.BusEvent, 0, len(data))
 	for _, d := range data {
-		if se, ok := d.(StreamEvent); ok {
-			messages = append(messages, se.StreamMessage())
-		}
+		messages = append(messages, d.StreamMessage())
 	}
 	return messages
 }

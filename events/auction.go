@@ -30,6 +30,10 @@ func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, st
 	}
 }
 
+func (a Auction) MarketID() string {
+	return a.marketID
+}
+
 // Auction returns the action performed (either true=leave auction, or false=entering auction)
 func (a *Auction) Auction() bool {
 	return a.leave

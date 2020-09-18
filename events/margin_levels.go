@@ -23,6 +23,10 @@ func (m MarginLevels) MarginLevels() types.MarginLevels {
 	return m.l
 }
 
+func (m MarginLevels) IsParty(id string) bool {
+	return (m.l.PartyID == id)
+}
+
 func (m MarginLevels) PartyID() string {
 	return m.l.PartyID
 }

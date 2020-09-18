@@ -22,6 +22,10 @@ func (w *Withdrawal) Withdrawal() types.Withdrawal {
 	return w.w
 }
 
+func (w Withdrawal) IsParty(id string) bool {
+	return (w.w.PartyID == id)
+}
+
 func (w Withdrawal) PartyID() string { return w.w.PartyID }
 
 func (w Withdrawal) Proto() types.Withdrawal {
