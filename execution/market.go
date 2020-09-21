@@ -311,7 +311,9 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	// TODO(): handle market start time
 
-	m.auctionModeTimeBasedSemaphore(ctx, t)
+	if !m.isOpeningAuction() {
+		m.auctionModeTimeBasedSemaphore(ctx, t)
+	}
 
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Calculating risk factors (if required)",
