@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"sync/atomic"
 
@@ -98,27 +99,36 @@ func (r *Recorder) Record(ev interface{}) error {
 	return err
 }
 
+func (r *Recorder) read() ([]byte, error) {
+	if _, err := r.f.Read(r.size); err != nil {
+		return nil, fmt.Errorf("unable to read msg size: %w", err)
+	}
+
+	bufsize := binary.BigEndian.Uint32(r.size[0:])
+	buf := make([]byte, bufsize)
+	if _, err := r.f.Read(buf); err != nil {
+		// in this case as we reading from a file
+		// if we cannot get all the size we asked for, an error happend
+		return nil, fmt.Errorf("unable to read msg: %w", err)
+	}
+
+	return buf, nil
+}
+
 // Replay reads events previously recorded into a record file and replay them in order.
 func (r *Recorder) Replay(app types.Application) error {
-
-	var err error
 	for {
 		if !r.isRunning() {
 			return ErrRecorderStopped
 		}
 
-		_, err = r.f.Read(r.size)
+		buf, err := r.read()
 		if err != nil {
-			return fmt.Errorf("unable to read msg size: %w", err)
-		}
-
-		bufsize := binary.BigEndian.Uint32(r.size[0:])
-		buf := make([]byte, bufsize)
-		_, err = r.f.Read(buf)
-		if err != nil {
-			// in this case as we reading from a file
-			// if we cannot get all the size we asked for, an error happend
-			return fmt.Errorf("unable to read msg: %w", err)
+			// mask the error if we reached the end of file
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
 		}
 
 		// unmarshal the buffer
