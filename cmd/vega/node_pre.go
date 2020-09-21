@@ -436,7 +436,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 
 	var abciApp tmtypes.Application
 	if l.record != "" {
-		rec, err := recorder.New(l.record)
+		rec, err := recorder.NewRecord(l.record)
 		if err != nil {
 			return nil, err
 		}
@@ -459,7 +459,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	l.abciServer = srv
 
 	if l.replay != "" {
-		rec, err := recorder.New(l.record)
+		rec, err := recorder.NewReplay(l.replay)
 		if err != nil {
 			return nil, err
 		}

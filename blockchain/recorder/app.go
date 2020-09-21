@@ -8,17 +8,6 @@ type App struct {
 	rec *Recorder
 }
 
-// NewApp returns a new Recorder using path as the target for the record file.
-func NewAppWithPath(app types.Application, path string) (*App, error) {
-	rec, err := New(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewApp(app, rec), nil
-
-}
-
 func NewApp(app types.Application, rec *Recorder) *App {
 	return &App{
 		Application: app,
@@ -27,20 +16,27 @@ func NewApp(app types.Application, rec *Recorder) *App {
 }
 
 func (r *App) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	// record(req)
+	if err := r.rec.Record(&req); err != nil {
+		panic(err)
+	}
 	resp := r.Application.InitChain(req)
 	// record(resp)
 	return resp
 }
 
 func (r *App) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
-	// record(req)
+	if err := r.rec.Record(&req); err != nil {
+		panic(err)
+	}
 	resp := r.Application.BeginBlock(req)
 	// record(resp)
 	return resp
 }
 
 func (r *App) DeliverTx(req types.RequestDeliverTx) types.ResponseDeliverTx {
+	if err := r.rec.Record(&req); err != nil {
+		panic(err)
+	}
 	// record(req)
 	resp := r.Application.DeliverTx(req)
 	// record(resp)

@@ -3,6 +3,7 @@ package recorder
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 	"sync/atomic"
 
@@ -25,9 +26,19 @@ type Recorder struct {
 	running int32 // any value different to 0 means not running
 }
 
-// New returns a new event recorder given a file path.
-func New(path string) (*Recorder, error) {
+func NewRecord(path string) (*Recorder, error) {
 	f, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	return &Recorder{
+		size: make([]byte, 4),
+		f:    f,
+	}, nil
+}
+
+func NewReplay(path string) (*Recorder, error) {
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +93,7 @@ func (r *Recorder) Record(ev interface{}) error {
 	}
 
 	binary.BigEndian.PutUint32(r.size, uint32(len(buf)))
+
 	_, err = r.f.Write(append(r.size, buf...))
 	return err
 }
@@ -97,23 +109,23 @@ func (r *Recorder) Replay(app types.Application) error {
 
 		_, err = r.f.Read(r.size)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to read msg size: %w", err)
 		}
 
-		bufsize := binary.LittleEndian.Uint32(r.size[0:])
+		bufsize := binary.BigEndian.Uint32(r.size[0:])
 		buf := make([]byte, bufsize)
 		_, err = r.f.Read(buf)
 		if err != nil {
 			// in this case as we reading from a file
 			// if we cannot get all the size we asked for, an error happend
-			return err
+			return fmt.Errorf("unable to read msg: %w", err)
 		}
 
 		// unmarshal the buffer
 		tmEvent := tmreplay.TmEvent{}
 		err = proto.Unmarshal(buf, &tmEvent)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to unmarshal message: %w", err)
 		}
 
 		switch ev := tmEvent.Action.(type) {
