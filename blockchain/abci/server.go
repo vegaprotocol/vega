@@ -21,7 +21,7 @@ type Server struct {
 }
 
 // NewServer instantiate a new server
-func NewServer(log *logging.Logger, config blockchain.Config, app *App) *Server {
+func NewServer(log *logging.Logger, config blockchain.Config, app types.Application) *Server {
 	// setup logger
 	log = log.Named("tm")
 	log.SetLevel(config.Level.Get())
