@@ -2,6 +2,7 @@ package pricemonitoring
 
 import (
 	"errors"
+	"sort"
 	"time"
 )
 
@@ -16,10 +17,11 @@ type timestampedAveragePrice struct {
 }
 
 var (
-	errProbabilityLevel         = errors.New("Probability level must be in the interval (0,1)")
-	errTimeSequence             = errors.New("Received a time that's before the last received time")
-	errPriceHistoryNotAvailable = errors.New("Price history not available")
-	errHorizonNotInFuture       = errors.New("Horizon must be represented by a positive duration")
+	errProbabilityLevel           = errors.New("Probability level must be in the interval (0,1)")
+	errTimeSequence               = errors.New("Received a time that's before the last received time")
+	errPriceHistoryNotAvailable   = errors.New("Price history not available")
+	errHorizonNotInFuture         = errors.New("Horizon must be represented by a positive duration")
+	errUpdateFrequencyNotPositive = errors.New("Update frequency must be represented by a positive duration")
 )
 
 // PriceRangeProvider provides the minimium and maximum price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
@@ -42,10 +44,18 @@ type PriceMonitoring struct {
 	priceMoveBounds        map[HorizonProbabilityLevelPair]priceMoveBound
 }
 
-// NewPriceMonitoring return a new instance of PriceMonitoring
+// NewPriceMonitoring return a new instance of PriceMonitoring.
+// Note that horizonProbabilityLevelPairs will get sorte by horizon (ascending) and probabilit level (descending) to aid performance.
 func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPairs []HorizonProbabilityLevelPair, updateFrequency time.Duration) (*PriceMonitoring, error) {
-	//TODO: Check if updateFrequency positive
-	//TODO: Sort horizonProbabilityLevelPairs by horizon
+	if updateFrequency.Nanoseconds() <= 0 {
+		return nil, errUpdateFrequencyNotPositive
+	}
+
+	sort.Slice(horizonProbabilityLevelPairs,
+		func(i, j int) bool {
+			return horizonProbabilityLevelPairs[i].Horizon < horizonProbabilityLevelPairs[j].Horizon &&
+				horizonProbabilityLevelPairs[i].ProbabilityLevel > horizonProbabilityLevelPairs[j].ProbabilityLevel
+		})
 
 	horizonsAsYearFraction := make(map[time.Duration]float64)
 	nanosecondsInAYear := (365.25 * 24 * time.Hour).Nanoseconds()
@@ -109,13 +119,24 @@ func (pm *PriceMonitoring) updateBounds() error { //TODO: Think if this really n
 		if len(pm.averagePriceHistory) < 1 {
 			return errPriceHistoryNotAvailable
 		}
-		lastPrice := pm.averagePriceHistory[len(pm.averagePriceHistory)-1].AveragePrice
+		latestPrice := pm.averagePriceHistory[len(pm.averagePriceHistory)-1].AveragePrice
 		for _, p := range pm.horizonProbabilityLevelPairs {
 
-			minPrice, maxPrice := pm.riskModel.PriceRange(lastPrice, pm.horizonsAsYearFraction[p.Horizon], p.ProbabilityLevel)
-			pm.priceMoveBounds[p] = priceMoveBound{MinValidMoveDown: minPrice - lastPrice, MaxValidMoveUp: maxPrice - lastPrice}
+			minPrice, maxPrice := pm.riskModel.PriceRange(latestPrice, pm.horizonsAsYearFraction[p.Horizon], p.ProbabilityLevel)
+			pm.priceMoveBounds[p] = priceMoveBound{MinValidMoveDown: minPrice - latestPrice, MaxValidMoveUp: maxPrice - latestPrice}
 		}
-		// TODO: Do the housekeeping: remove redundant bounds and average prices
+
+		// Remove redundant average prices
+		maxTau := pm.horizonProbabilityLevelPairs[len(pm.horizonProbabilityLevelPairs)].Horizon
+		minRequiredHorizon := pm.currentTime.Add(-maxTau)
+		var i int
+		for i = 0; i < len(pm.averagePriceHistory); i++ {
+			if !pm.averagePriceHistory[i].Time.Before(minRequiredHorizon) {
+				break
+			}
+		}
+		pm.averagePriceHistory = pm.averagePriceHistory[i:]
+
 	}
 	return nil
 }
@@ -130,6 +151,7 @@ func (pm *PriceMonitoring) CheckBoundViolations(price uint64) ([]bool, error) {
 	referencePrice := -1.0
 	var err error
 	for i, p := range pm.horizonProbabilityLevelPairs {
+		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
 		if p.Horizon != prevHorizon {
 			referencePrice, err = pm.getReferencePrice(pm.currentTime.Add(-p.Horizon))
 			if err != nil {
