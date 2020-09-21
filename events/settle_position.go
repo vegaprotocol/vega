@@ -30,6 +30,10 @@ func (s SettlePos) MarketID() string {
 	return s.marketID
 }
 
+func (s SettlePos) IsParty(id string) bool {
+	return (s.partyID == id)
+}
+
 func (s SettlePos) PartyID() string {
 	return s.partyID
 }

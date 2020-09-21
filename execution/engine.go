@@ -67,7 +67,7 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
-	time TimeService,
+	ts TimeService,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -84,7 +84,7 @@ func NewEngine(
 		log:        log,
 		Config:     executionConfig,
 		markets:    map[string]*Market{},
-		time:       time,
+		time:       ts,
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,

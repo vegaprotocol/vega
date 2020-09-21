@@ -18,6 +18,14 @@ func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
 	}
 }
 
+func (t Trade) MarketID() string {
+	return t.t.MarketID
+}
+
+func (t Trade) IsParty(id string) bool {
+	return (t.t.Buyer == id || t.t.Seller == id)
+}
+
 func (t *Trade) Trade() types.Trade {
 	return t.t
 }

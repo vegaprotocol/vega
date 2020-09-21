@@ -27,7 +27,7 @@ type marketFilterable interface {
 // simple interface for event filtering on party ID
 type partyFilterable interface {
 	Event
-	PartyID() string
+	IsParty(id string) bool
 }
 
 // simple interface for event filtering by party and market ID
@@ -297,7 +297,7 @@ func GetPartyIDFilter(pID string) func(Event) bool {
 		if !ok {
 			return false
 		}
-		return (pe.PartyID() == pID)
+		return pe.IsParty(pID)
 	}
 }
 
