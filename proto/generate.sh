@@ -38,11 +38,11 @@ do
 			-Ivendor/github.com/google/protobuf/src \
 			--doc_out="$(dirname "$outputfile")" \
 			--doc_opt="$fileformat,$(basename "$outputfile")"
-	gsed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
+	sed --in-place -e 's#[ \t][ \t]*$##' "$outputfile"
 done
 
 # shellcheck disable=SC2016
-gsed --in-place -r \
+sed --in-place -r \
 	-e 's#`([^`]*)`#<tt>\1</tt>#g' \
 	-e 's#\[([^]]*)\]\(([^)]*)\)#<a href="\2">\1</a>#g' \
 	proto/doc/index.html
@@ -89,7 +89,7 @@ done
 # Make *.validator.pb.go files deterministic.
 find proto -name '*.validator.pb.go' | sort | while read -r pbfile
 do
-	gsed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
+	sed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
 		&& ./script/fix_imports.sh "$pbfile"
 done
 
