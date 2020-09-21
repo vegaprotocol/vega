@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/banking/mocks"
+	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
@@ -63,6 +64,7 @@ func TestBanking(t *testing.T) {
 	t.Run("test deposit failure", testDepositFailure)
 	t.Run("test deposit failure - not builtin", testDepositFailureNotBuiltin)
 	t.Run("test deposit error - start check fail", testDepositError)
+	t.Run("test deposit error - missing id", testMissingID)
 }
 
 func testDepositSuccess(t *testing.T) {
@@ -72,15 +74,16 @@ func testDepositSuccess(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	now := time.Now()
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now, nil)
+	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      42,
 	}
 
+	ctx := contextutil.WithCommandID(context.Background(), "depositid")
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(context.Background(), bad, 42)
+	err := eng.DepositBuiltinAsset(ctx, bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -101,15 +104,16 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(testAsset, nil)
 	now := time.Now()
-	eng.tsvc.EXPECT().GetTimeNow().Times(4).Return(now, nil)
+	eng.OnTick(context.Background(), now.Add(1*time.Second))
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      42,
 	}
 
+	ctx := contextutil.WithCommandID(context.Background(), "depositid")
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(context.Background(), bad, 42)
+	err := eng.DepositBuiltinAsset(ctx, bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -122,8 +126,9 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 
+	ctx = contextutil.WithCommandID(context.Background(), "depositid2")
 	// call the deposit function
-	err = eng.DepositBuiltinAsset(context.Background(), bad, 43)
+	err = eng.DepositBuiltinAsset(ctx, bad, 43)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -144,15 +149,16 @@ func testDepositFailure(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	now := time.Now()
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now, nil)
+	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
 		Amount:      42,
 	}
 
+	ctx := contextutil.WithCommandID(context.Background(), "depositid")
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(context.Background(), bad, 42)
+	err := eng.DepositBuiltinAsset(ctx, bad, 42)
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
@@ -171,7 +177,7 @@ func testDepositError(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	now := time.Now()
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now, nil)
+	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
@@ -182,8 +188,9 @@ func testDepositError(t *testing.T) {
 	expectError := errors.New("bad bad bad")
 	eng.erc.err = expectError
 
+	ctx := contextutil.WithCommandID(context.Background(), "depositid")
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(context.Background(), bad, 42)
+	err := eng.DepositBuiltinAsset(ctx, bad, 42)
 	assert.EqualError(t, err, expectError.Error())
 }
 
@@ -195,7 +202,7 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	expectError := errors.New("bad bad bad")
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, expectError)
 	now := time.Now()
-	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now, nil)
+	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
@@ -203,6 +210,25 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	}
 
 	// call the deposit function
+	ctx := contextutil.WithCommandID(context.Background(), "depositid")
+	err := eng.DepositBuiltinAsset(ctx, bad, 42)
+	assert.EqualError(t, err, expectError.Error())
+}
+
+func testMissingID(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	expectError := errors.New("missing deposit ID from context")
+	now := time.Now()
+	eng.OnTick(context.Background(), now)
+	bad := &types.BuiltinAssetDeposit{
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      42,
+	}
+
 	err := eng.DepositBuiltinAsset(context.Background(), bad, 42)
 	assert.EqualError(t, err, expectError.Error())
 }

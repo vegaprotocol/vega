@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -37,6 +38,7 @@ var (
 	ErrUnsupportedProposalType                 = errors.New("unsupported proposal type")
 	ErrProposalOpeningAuctionDurationTooShort  = errors.New("proposal opening auction duration is too short")
 	ErrProposalOpeningAuctionDurationTooLong   = errors.New("proposal opening auction duration is too long")
+	ErrMissingCommandIDFromContext             = errors.New("could not find command id from the context")
 )
 
 // Broker - event bus
@@ -228,6 +230,13 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
 // Only open can be submitted and validated at this point. No further validation happens.
 func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal) error {
+	pid, ok := contextutil.CommandIDFromContext(ctx)
+	if !ok {
+		return ErrMissingCommandIDFromContext
+	}
+	p.ID = pid
+	p.Timestamp = e.currentTime.UnixNano()
+
 	if _, exists := e.activeProposals[p.ID]; exists {
 		return ErrProposalIsDuplicate // state is not allowed to change externally
 	}

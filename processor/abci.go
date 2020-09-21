@@ -17,6 +17,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/vegatime"
+	"golang.org/x/crypto/sha3"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/proto/crypto/keys"
@@ -33,7 +34,6 @@ type App struct {
 	cfg      Config
 	log      *logging.Logger
 	cancelFn func()
-	idGen    *IDgenerator
 	rates    *ratelimit.Rates
 
 	// service injection
@@ -86,12 +86,10 @@ func NewApp(
 		log:      log,
 		cfg:      config,
 		cancelFn: cancelFn,
-		idGen:    NewIDGen(),
 		rates: ratelimit.New(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-
 		assets:     assets,
 		banking:    banking,
 		broker:     broker,
@@ -396,6 +394,9 @@ func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
+	// adding the command ID to the ctx so it can be reused later on.
+	ctx = app.addCommandIDToCtx(ctx, tx)
+
 	return app.processWithdraw(ctx, w)
 }
 
@@ -405,15 +406,14 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
+	// adding the command ID to the ctx so it can be reused later on.
+	ctx = app.addCommandIDToCtx(ctx, tx)
+
 	app.log.Debug("Submitting proposal",
 		logging.String("proposal-id", prop.ID),
 		logging.String("proposal-reference", prop.Reference),
 		logging.String("proposal-party", prop.PartyID),
 		logging.String("proposal-terms", prop.Terms.String()))
-
-	// TODO(JEREMY): use hash of the signature here.
-	app.idGen.SetProposalID(prop)
-	prop.Timestamp = app.currentTimestamp.UnixNano()
 
 	return app.gov.SubmitProposal(ctx, *prop)
 }
@@ -467,11 +467,13 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
+	// adding the command ID to the ctx so it can be reused later on.
+	ctx = app.addCommandIDToCtx(ctx, tx)
+
 	return app.processChainEvent(ctx, ce, tx.PubKey())
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {
-	app.idGen.NewBatch()
 	acceptedProposals := app.gov.OnChainTimeUpdate(ctx, t)
 	for _, toEnact := range acceptedProposals {
 		prop := toEnact.Proposal()
@@ -567,4 +569,15 @@ func (app *App) enactMarket(ctx context.Context, prop *types.Proposal, mkt *type
 			logging.String("market-id", mkt.Id),
 			logging.Error(err))
 	}
+}
+
+// addCommmandIDToCtx will build the command id and add it the context.
+// the command id is built using the signature of the proposer of the command
+// the signature is then hashed with sha3_256
+// the hash is the hex string encoded
+func (app *App) addCommandIDToCtx(ctx context.Context, tx abci.Tx) context.Context {
+	signature := tx.Signature()
+	hasher := sha3.New256()
+	hasher.Write(signature)
+	return contextutil.WithCommandID(ctx, hex.EncodeToString(hasher.Sum(nil)))
 }
