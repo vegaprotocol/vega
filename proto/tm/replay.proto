@@ -126,8 +126,11 @@ message VersionParams {
   uint64 appVersion = 1;
 }
 
-message Header {}
-
+message Header {
+  string chainId = 1;
+  int64 height = 2;
+  int64 time = 3;
+}
 
 message PublicKey {
   oneof sum {

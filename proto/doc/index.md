@@ -3602,6 +3602,13 @@ Tradable Instrument definition.
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chainId | [string](#string) |  |  |
+| height | [int64](#int64) |  |  |
+| time | [int64](#int64) |  |  |
+
+
 
 
 
