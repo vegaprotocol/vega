@@ -406,7 +406,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	return nil
 }
 
-func (l *NodeCommand) startABCI(commander *nodewallet.Commander) (*processor.App, error) {
+func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
 	if l.record != "" && l.replay != "" {
 		return nil, errors.New("you can't specify both record and replay flags")
 	}
@@ -440,6 +440,13 @@ func (l *NodeCommand) startABCI(commander *nodewallet.Commander) (*processor.App
 		if err != nil {
 			return nil, err
 		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			//			rec.Close()
+		}()
+
 		abciApp = recorder.NewApp(app.Abci(), rec)
 	} else {
 		abciApp = app.Abci()
@@ -558,7 +565,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instanciate the blockchain layer
-	app, err := l.startABCI(commander)
+	app, err := l.startABCI(l.ctx, commander)
 	if err != nil {
 		return err
 	}
