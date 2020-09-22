@@ -445,7 +445,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		// closer
 		go func() {
 			<-ctx.Done()
-			//			rec.Close()
+			rec.Stop()
 		}()
 
 		abciApp = recorder.NewApp(app.Abci(), rec)
@@ -464,6 +464,12 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		if err != nil {
 			return nil, err
 		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
 
 		go func() {
 			if err := rec.Replay(abciApp); err != nil {

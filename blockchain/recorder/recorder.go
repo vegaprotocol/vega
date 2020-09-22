@@ -29,7 +29,7 @@ type ABCIApp interface {
 
 // Recorder records and replay ABCI events given a record file path.
 type Recorder struct {
-	size    []byte
+	size    [4]byte
 	f       afero.File
 	running int32 // any value different to 0 means not running
 }
@@ -40,8 +40,7 @@ func NewRecord(path string, fs afero.Fs) (*Recorder, error) {
 		return nil, err
 	}
 	return &Recorder{
-		size: make([]byte, 4),
-		f:    f,
+		f: f,
 	}, nil
 }
 
@@ -51,8 +50,7 @@ func NewReplay(path string, fs afero.Fs) (*Recorder, error) {
 		return nil, err
 	}
 	return &Recorder{
-		size: make([]byte, 4),
-		f:    f,
+		f: f,
 	}, nil
 }
 
@@ -100,14 +98,14 @@ func (r *Recorder) Record(ev interface{}) error {
 		return err
 	}
 
-	binary.BigEndian.PutUint32(r.size, uint32(len(buf)))
+	binary.BigEndian.PutUint32(r.size[0:], uint32(len(buf)))
 
-	_, err = r.f.Write(append(r.size, buf...))
+	_, err = r.f.Write(append(r.size[0:], buf...))
 	return err
 }
 
 func (r *Recorder) read() ([]byte, error) {
-	if _, err := r.f.Read(r.size); err != nil {
+	if _, err := r.f.Read(r.size[0:]); err != nil {
 		return nil, fmt.Errorf("unable to read msg size: %w", err)
 	}
 
