@@ -93,12 +93,17 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 	}
 	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
 	done := make(chan struct{})
+	mu := sync.Mutex{}
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(true)
 	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
 	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
 	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
+		// race detector complains about appending here, because data comes from
+		// different go routines, so we'll use a quick & dirty fix: mutex the slice
+		mu.Lock()
+		defer mu.Unlock()
 		allData = append(allData, evts...)
 		if len(allData) >= cap(allData) {
 			close(done)
@@ -138,6 +143,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 		events.NewPartyEvent(ctxH2, types.Party{Id: "test-party-h2"}),
 	}
 	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
+	mu := sync.Mutex{}
 	done := make(chan struct{})
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	sub.EXPECT().Types().Times(2).Return(nil)
@@ -145,6 +151,8 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
 	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
 	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
+		mu.Lock()
+		defer mu.Unlock()
 		allData = append(allData, evts...)
 		if len(allData) >= cap(allData) {
 			close(done)
