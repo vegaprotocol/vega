@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"sync/atomic"
 
 	tmreplay "code.vegaprotocol.io/vega/proto/tm"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/spf13/afero"
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -20,15 +20,22 @@ var (
 	ErrUnsupportedAction     = errors.New("unsupported action")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/abci_app_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/recorder ABCIApp
+type ABCIApp interface {
+	InitChain(types.RequestInitChain) types.ResponseInitChain
+	DeliverTx(types.RequestDeliverTx) types.ResponseDeliverTx
+	BeginBlock(types.RequestBeginBlock) types.ResponseBeginBlock
+}
+
 // Recorder records and replay ABCI events given a record file path.
 type Recorder struct {
 	size    []byte
-	f       *os.File
+	f       afero.File
 	running int32 // any value different to 0 means not running
 }
 
-func NewRecord(path string) (*Recorder, error) {
-	f, err := os.Create(path)
+func NewRecord(path string, fs afero.Fs) (*Recorder, error) {
+	f, err := fs.Create(path)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +45,8 @@ func NewRecord(path string) (*Recorder, error) {
 	}, nil
 }
 
-func NewReplay(path string) (*Recorder, error) {
-	f, err := os.Open(path)
+func NewReplay(path string, fs afero.Fs) (*Recorder, error) {
+	f, err := fs.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +123,7 @@ func (r *Recorder) read() ([]byte, error) {
 }
 
 // Replay reads events previously recorded into a record file and replay them in order.
-func (r *Recorder) Replay(app types.Application) error {
+func (r *Recorder) Replay(app ABCIApp) error {
 	for {
 		if !r.isRunning() {
 			return ErrRecorderStopped

@@ -50,6 +50,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"golang.org/x/crypto/sha3"
@@ -436,7 +437,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 
 	var abciApp tmtypes.Application
 	if l.record != "" {
-		rec, err := recorder.NewRecord(l.record)
+		rec, err := recorder.NewRecord(l.record, afero.NewOsFs())
 		if err != nil {
 			return nil, err
 		}
@@ -459,7 +460,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	l.abciServer = srv
 
 	if l.replay != "" {
-		rec, err := recorder.NewReplay(l.replay)
+		rec, err := recorder.NewReplay(l.replay, afero.NewOsFs())
 		if err != nil {
 			return nil, err
 		}
