@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -34,6 +35,7 @@ type App struct {
 	log      *logging.Logger
 	cancelFn func()
 	idGen    *IDgenerator
+	rates    *ratelimit.Rates
 
 	// service injection
 	assets     Assets
@@ -86,6 +88,10 @@ func NewApp(
 		cfg:      config,
 		cancelFn: cancelFn,
 		idGen:    NewIDGen(),
+		rates: ratelimit.New(
+			config.Ratelimit.Requests,
+			config.Ratelimit.PerNBlocks,
+		),
 
 		assets:     assets,
 		banking:    banking,
@@ -107,6 +113,7 @@ func NewApp(
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
 	app.abci.OnCommit = app.OnCommit
+	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
 
 	app.abci.
@@ -185,6 +192,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.Respon
 	now := req.Header.Time
 	app.time.SetTimeNow(ctx, now)
 
+	app.rates.NextBlock()
+
 	var err error
 	if app.currentTimestamp, err = app.time.GetTimeNow(); err != nil {
 		app.cancel()
@@ -231,6 +240,35 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.setBatchStats()
 
 	return resp
+}
+
+// OnCheckTxHandler performs validations like ratelimiting
+func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+	resp := tmtypes.ResponseCheckTx{}
+
+	// Check ratelimits
+	if app.limitPubkey(tx.PubKey()) {
+		resp.Code = abci.AbciTxnValidationFailure
+	}
+
+	return ctx, resp
+}
+
+// limitPubkey returns whether a request should be rate limited or not
+func (app *App) limitPubkey(pk []byte) bool {
+	// Do not rate limit validators nodes.
+	if app.top.Exists(pk) {
+		return false
+	}
+
+	key := ratelimit.Key(pk).String()
+	if !app.rates.Allow(key) {
+		app.log.Error("Rate limit exceeded", logging.String("key", key))
+		return true
+	}
+
+	app.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", app.rates.Count(key)))
+	return false
 }
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.

@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"code.vegaprotocol.io/vega/blockchain/noop"
-	"code.vegaprotocol.io/vega/blockchain/ratelimit"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -19,7 +18,6 @@ type Config struct {
 	LogOrderAmendDebug  bool
 	LogOrderCancelDebug bool
 	ChainProvider       string
-	RateLimit           ratelimit.Config
 
 	Tendermint TendermintConfig
 	Noop       noop.Config
@@ -45,7 +43,6 @@ type TendermintConfig struct {
 	ClientEndpoint string
 	ServerPort     int
 	ServerAddr     string
-	RateLimit      ratelimit.Config
 }
 
 // NewDefaultTendermintConfig creates an instance of the package specific configuration, given a
