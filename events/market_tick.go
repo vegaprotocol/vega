@@ -58,3 +58,7 @@ func (m MarketTick) StreamMessage() *types.BusEvent {
 		},
 	}
 }
+
+func (m MarketTick) StreamMarketMessage() *types.BusEvent {
+	return m.StreamMessage()
+}

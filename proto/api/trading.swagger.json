@@ -2114,6 +2114,30 @@
       },
       "description": "An auction duration is used to configure 3 auction periods:\n1. `duration \u003e 0`, `volume == 0`:\n  The auction will last for at least N seconds.\n2. `duration == 0`, `volume \u003e 0`:\n  The auction will end once we can close with given traded volume.\n3. `duration \u003e 0`, `volume \u003e 0`:\n  The auction will take at least N seconds, but can end sooner if we can trade a certain volume."
     },
+    "vegaAuctionEvent": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "openingAuction": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "leave": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "int64"
+        },
+        "end": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "vegaBTCDeposit": {
       "type": "object",
       "properties": {
@@ -2336,6 +2360,9 @@
         "deposit": {
           "$ref": "#/definitions/vegaDeposit"
         },
+        "auction": {
+          "$ref": "#/definitions/vegaAuctionEvent"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2367,6 +2394,7 @@
         "BUS_EVENT_TYPE_MARKET_TICK",
         "BUS_EVENT_TYPE_WITHDRAWAL",
         "BUS_EVENT_TYPE_DEPOSIT",
+        "BUS_EVENT_TYPE_AUCTION",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",

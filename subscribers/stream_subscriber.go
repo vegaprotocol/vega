@@ -15,18 +15,24 @@ type StreamEvent interface {
 	StreamMessage() *types.BusEvent
 }
 
+type MarketStreamEvent interface {
+	StreamEvent
+	StreamMarketMessage() *types.BusEvent
+}
+
 type StreamSub struct {
 	*Base
-	mu          *sync.Mutex // pointer because types is a value receiver, linter complains
-	types       []events.Type
-	data        []StreamEvent
-	filters     []EventFilter
-	changeCount int
-	updated     chan struct{}
+	mu             *sync.Mutex // pointer because types is a value receiver, linter complains
+	types          []events.Type
+	data           []StreamEvent
+	filters        []EventFilter
+	changeCount    int
+	updated        chan struct{}
+	marketEvtsOnly bool
 }
 
 func NewStreamSub(ctx context.Context, types []events.Type, filters ...EventFilter) *StreamSub {
-	trades := false
+	trades, meo := false, (len(types) == 1 && types[0] == events.MarketEvent)
 	expandedTypes := make([]events.Type, 0, len(types))
 	for _, t := range types {
 		if t == events.All {
@@ -55,12 +61,13 @@ func NewStreamSub(ctx context.Context, types []events.Type, filters ...EventFilt
 		bufLen += 100 // add buffer for 100 events
 	}
 	s := &StreamSub{
-		Base:    NewBase(ctx, bufLen, false),
-		mu:      &sync.Mutex{},
-		types:   expandedTypes,
-		data:    []StreamEvent{},
-		filters: filters,
-		updated: make(chan struct{}), // create a blocking channel for these
+		Base:           NewBase(ctx, bufLen, false),
+		mu:             &sync.Mutex{},
+		types:          expandedTypes,
+		data:           []StreamEvent{},
+		filters:        filters,
+		updated:        make(chan struct{}), // create a blocking channel for these
+		marketEvtsOnly: meo,
 	}
 	// running or not, we're using the channel
 	go s.loop(s.ctx)
@@ -96,8 +103,17 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	closeUpdate := (s.changeCount == 0)
 	save := make([]StreamEvent, 0, len(evts))
 	for _, e := range evts {
-		se, ok := e.(StreamEvent)
-		if !ok {
+		var se StreamEvent
+		if s.marketEvtsOnly {
+			// ensure we can get a market stream event from this
+			me, ok := e.(MarketStreamEvent)
+			if !ok {
+				continue
+			}
+			se = me
+		} else if ste, ok := e.(StreamEvent); ok {
+			se = ste
+		} else {
 			continue
 		}
 		keep := true
@@ -131,7 +147,12 @@ func (s *StreamSub) GetData() []*types.BusEvent {
 	s.mu.Unlock()
 	messages := make([]*types.BusEvent, 0, len(data))
 	for _, d := range data {
-		messages = append(messages, d.StreamMessage())
+		if s.marketEvtsOnly {
+			e := d.(MarketStreamEvent) // we know this works already
+			messages = append(messages, e.StreamMessage())
+		} else {
+			messages = append(messages, d.StreamMessage())
+		}
 	}
 	return messages
 }

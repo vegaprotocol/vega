@@ -64,6 +64,21 @@ type Asset struct {
 
 func (Asset) IsEvent() {}
 
+type AuctionEvent struct {
+	// the market ID
+	MarketID string `json:"marketID"`
+	// event fired because of auction end
+	Leave bool `json:"leave"`
+	// event related to opening auction
+	OpeningAuction bool `json:"openingAuction"`
+	// start time of auction
+	AuctionStart string `json:"auctionStart"`
+	// optional end time of auction
+	AuctionEnd string `json:"auctionEnd"`
+}
+
+func (AuctionEvent) IsEvent() {}
+
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
 	// The id of the asset
@@ -906,6 +921,8 @@ const (
 	BusEventTypeAsset BusEventType = "Asset"
 	// market tick event
 	BusEventTypeMarketTick BusEventType = "MarketTick"
+	// auction event
+	BusEventTypeAuction BusEventType = "Auction"
 	// constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
@@ -930,12 +947,13 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeMarketCreated,
 	BusEventTypeAsset,
 	BusEventTypeMarketTick,
+	BusEventTypeAuction,
 	BusEventTypeMarket,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeAll, BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeMarket:
+	case BusEventTypeAll, BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeMarket:
 		return true
 	}
 	return false
