@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -42,11 +41,4 @@ func (app *App) HandleCheckTx(cmd blockchain.Command, fn TxHandler) *App {
 func (app *App) HandleDeliverTx(cmd blockchain.Command, fn TxHandler) *App {
 	app.deliverTxs[cmd] = fn
 	return app
-}
-
-func (app *App) NewServer(log *logging.Logger, cfg blockchain.Config) *Server {
-	log = log.Named("tm")
-	log.SetLevel(cfg.Level.Get())
-
-	return NewServer(log, cfg, app)
 }

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -49,7 +50,9 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -404,6 +407,87 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	return nil
 }
 
+func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
+	if l.record != "" && l.replay != "" {
+		return nil, errors.New("you can't specify both record and replay flags")
+	}
+
+	app, err := processor.NewApp(
+		l.Log,
+		l.conf.Processor,
+		l.cancel,
+		l.assets,
+		l.banking,
+		l.broker,
+		l.erc,
+		l.evtfwd,
+		l.executionEngine,
+		commander,
+		l.genesisHandler,
+		l.governance,
+		l.notary,
+		l.stats.Blockchain,
+		l.timeService,
+		l.topology,
+		l.nodeWallet,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var abciApp tmtypes.Application
+	if l.record != "" {
+		rec, err := recorder.NewRecord(l.record, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		abciApp = recorder.NewApp(app.Abci(), rec)
+	} else {
+		abciApp = app.Abci()
+	}
+
+	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
+	if err := srv.Start(); err != nil {
+		return nil, err
+	}
+	l.abciServer = srv
+
+	if l.replay != "" {
+		rec, err := recorder.NewReplay(l.replay, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		go func() {
+			if err := rec.Replay(abciApp); err != nil {
+				log.Fatalf("replay: %v", err)
+			}
+		}()
+	}
+
+	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
+	if err != nil {
+		return nil, err
+	}
+	l.blockchainClient = blockchain.NewClient(abciClt)
+	commander.SetChain(l.blockchainClient)
+
+	return app, nil
+}
+
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -488,41 +572,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instanciate the blockchain layer
-	app, err := processor.NewApp(
-		l.Log,
-		l.conf.Processor,
-		l.cancel,
-		l.assets,
-		l.banking,
-		l.broker,
-		l.erc,
-		l.evtfwd,
-		l.executionEngine,
-		commander,
-		l.genesisHandler,
-		l.governance,
-		l.notary,
-		l.stats.Blockchain,
-		l.timeService,
-		l.topology,
-		l.nodeWallet,
-	)
+	app, err := l.startABCI(l.ctx, commander)
 	if err != nil {
 		return err
 	}
-
-	srv := app.Abci().NewServer(l.Log, l.conf.Blockchain)
-	if err := srv.Start(); err != nil {
-		return err
-	}
-	l.abciServer = srv
-
-	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
-	if err != nil {
-		return err
-	}
-	l.blockchainClient = blockchain.NewClient(abciClt)
-	commander.SetChain(l.blockchainClient)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
@@ -576,6 +629,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
+	)
+
+	l.genesisHandler.OnGenesisAppStateLoaded(
+		l.UponGenesis,
 	)
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)

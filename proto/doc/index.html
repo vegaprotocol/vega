@@ -981,6 +981,105 @@
 
 
           <li>
+            <a href="#proto%2ftm%2freplay.proto">proto/tm/replay.proto</a>
+            <ul>
+
+                <li>
+                  <a href="#vega.BlockParams"><span class="badge">M</span>BlockParams</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ConsensusParams"><span class="badge">M</span>ConsensusParams</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Event"><span class="badge">M</span>Event</a>
+                </li>
+
+                <li>
+                  <a href="#vega.EventAttribute"><span class="badge">M</span>EventAttribute</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Evidence"><span class="badge">M</span>Evidence</a>
+                </li>
+
+                <li>
+                  <a href="#vega.EvidenceParams"><span class="badge">M</span>EvidenceParams</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Header"><span class="badge">M</span>Header</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LastCommitInfo"><span class="badge">M</span>LastCommitInfo</a>
+                </li>
+
+                <li>
+                  <a href="#vega.PublicKey"><span class="badge">M</span>PublicKey</a>
+                </li>
+
+                <li>
+                  <a href="#vega.RequestBeginBlock"><span class="badge">M</span>RequestBeginBlock</a>
+                </li>
+
+                <li>
+                  <a href="#vega.RequestDeliverTx"><span class="badge">M</span>RequestDeliverTx</a>
+                </li>
+
+                <li>
+                  <a href="#vega.RequestInitChain"><span class="badge">M</span>RequestInitChain</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ResponseBeginBlock"><span class="badge">M</span>ResponseBeginBlock</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ResponseDeliverTx"><span class="badge">M</span>ResponseDeliverTx</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ResponseInitChain"><span class="badge">M</span>ResponseInitChain</a>
+                </li>
+
+                <li>
+                  <a href="#vega.TmEvent"><span class="badge">M</span>TmEvent</a>
+                </li>
+
+                <li>
+                  <a href="#vega.Validator"><span class="badge">M</span>Validator</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ValidatorParams"><span class="badge">M</span>ValidatorParams</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ValidatorUpdate"><span class="badge">M</span>ValidatorUpdate</a>
+                </li>
+
+                <li>
+                  <a href="#vega.VersionParams"><span class="badge">M</span>VersionParams</a>
+                </li>
+
+                <li>
+                  <a href="#vega.VoteInfo"><span class="badge">M</span>VoteInfo</a>
+                </li>
+
+
+                <li>
+                  <a href="#vega.EvidenceType"><span class="badge">E</span>EvidenceType</a>
+                </li>
+
+
+
+            </ul>
+          </li>
+
+
+          <li>
             <a href="#proto%2fvega.proto">proto/vega.proto</a>
             <ul>
 
@@ -9174,6 +9273,840 @@ For example: <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
 
 
 
+
+
+
+
+
+
+
+      <div class="file-heading">
+        <h2 id="proto/tm/replay.proto">proto/tm/replay.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+
+        <h3 id="vega.BlockParams">BlockParams</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>maxBytes</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>maxGas</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ConsensusParams">ConsensusParams</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>block</td>
+                  <td><a href="#vega.BlockParams">BlockParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>evidence</td>
+                  <td><a href="#vega.EvidenceParams">EvidenceParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>validator</td>
+                  <td><a href="#vega.ValidatorParams">ValidatorParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>version</td>
+                  <td><a href="#vega.VersionParams">VersionParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Event">Event</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>attributes</td>
+                  <td><a href="#vega.EventAttribute">EventAttribute</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.EventAttribute">EventAttribute</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>key</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>value</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>index</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>nondeterministic </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Evidence">Evidence</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>type</td>
+                  <td><a href="#vega.EvidenceType">EvidenceType</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>validator</td>
+                  <td><a href="#vega.Validator">Validator</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>height</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>time</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>totalVotingPower</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.EvidenceParams">EvidenceParams</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>maxAgeNumBlocks</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>maxAgeDuration</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>max_num</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Header">Header</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>chainId</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>height</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>time</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.LastCommitInfo">LastCommitInfo</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>round</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>votes</td>
+                  <td><a href="#vega.VoteInfo">VoteInfo</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PublicKey">PublicKey</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>ed25519</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.RequestBeginBlock">RequestBeginBlock</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>hash</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>header</td>
+                  <td><a href="#vega.Header">Header</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>lastCommitInfo</td>
+                  <td><a href="#vega.LastCommitInfo">LastCommitInfo</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>byzantineValidators</td>
+                  <td><a href="#vega.Evidence">Evidence</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.RequestDeliverTx">RequestDeliverTx</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>tx</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.RequestInitChain">RequestInitChain</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>time</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>chainID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>consensusParams</td>
+                  <td><a href="#vega.ConsensusParams">ConsensusParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>validators</td>
+                  <td><a href="#vega.ValidatorUpdate">ValidatorUpdate</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>appStateBytes</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>initialHeight</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ResponseBeginBlock">ResponseBeginBlock</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>events</td>
+                  <td><a href="#vega.Event">Event</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ResponseDeliverTx">ResponseDeliverTx</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>code</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>data</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>log</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>nondeterministic </p></td>
+                </tr>
+
+                <tr>
+                  <td>info</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>nondeterministic </p></td>
+                </tr>
+
+                <tr>
+                  <td>gasWanted</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>gasUsed</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>events</td>
+                  <td><a href="#vega.Event">Event</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>codespace</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ResponseInitChain">ResponseInitChain</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>consensusParams</td>
+                  <td><a href="#vega.ConsensusParams">ConsensusParams</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>validators</td>
+                  <td><a href="#vega.ValidatorUpdate">ValidatorUpdate</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>appHash</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.TmEvent">TmEvent</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>reqInitChain</td>
+                  <td><a href="#vega.RequestInitChain">RequestInitChain</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>resInitChain</td>
+                  <td><a href="#vega.ResponseInitChain">ResponseInitChain</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reqDeliverTx</td>
+                  <td><a href="#vega.RequestDeliverTx">RequestDeliverTx</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>resDeliverTx</td>
+                  <td><a href="#vega.ResponseDeliverTx">ResponseDeliverTx</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>reqBeginBlock</td>
+                  <td><a href="#vega.RequestBeginBlock">RequestBeginBlock</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>resBeginBlock</td>
+                  <td><a href="#vega.ResponseBeginBlock">ResponseBeginBlock</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.Validator">Validator</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>address</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>power</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ValidatorParams">ValidatorParams</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>pubKeyTypes</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ValidatorUpdate">ValidatorUpdate</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>pub_key</td>
+                  <td><a href="#vega.PublicKey">PublicKey</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>power</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.VersionParams">VersionParams</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>appVersion</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.VoteInfo">VoteInfo</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>validator</td>
+                  <td><a href="#vega.Validator">Validator</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>signedLastBlock</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+
+
+        <h3 id="vega.EvidenceType">EvidenceType</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>UNKNOWN</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>DUPLICATE_VOTE</td>
+                <td>1</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>LIGHT_CLIENT_ATTACK</td>
+                <td>2</td>
+                <td><p></p></td>
+              </tr>
+
+          </tbody>
+        </table>
 
 
 
