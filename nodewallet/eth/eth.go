@@ -4,7 +4,9 @@ import (
 	"context"
 	"io/ioutil"
 	"math/big"
+	"math/rand"
 	"os"
+	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -36,11 +38,20 @@ func DevInit(path, passphrase string) (string, error) {
 	return acc.URL.Path, nil
 }
 
+func randomFolder() string {
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	b := make([]byte, 10)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
 func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error) {
 	// NewKeyStore always create a new wallet key store file
 	// we create this in tmp as we do not want to impact the original one.
 	ks := keystore.NewKeyStore(
-		os.TempDir(), keystore.StandardScryptN, keystore.StandardScryptP)
+		filepath.Join(os.TempDir(), randomFolder()), keystore.StandardScryptN, keystore.StandardScryptP)
 	jsonBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
