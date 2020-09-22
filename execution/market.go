@@ -240,8 +240,13 @@ func (m *Market) GetMarketData() types.MarketData {
 	var auctionStart, auctionEnd int64
 	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
 		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
-		auctionStart = m.auctionStart.UnixNano()
-		auctionEnd = m.auctionEnd.UnixNano()
+		// Zero time does not equal 0 in UnixNanos, we need to check here before converting
+		if !m.auctionStart.IsZero() {
+			auctionStart = m.auctionStart.UnixNano()
+		}
+		if !m.auctionEnd.IsZero() {
+			auctionEnd = m.auctionEnd.UnixNano()
+		}
 	}
 
 	return types.MarketData{
