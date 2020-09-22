@@ -24,6 +24,7 @@ type brokerTst struct {
 type evt struct {
 	t   events.Type
 	ctx context.Context
+	sid uint64
 	id  string
 }
 
@@ -219,6 +220,23 @@ func testSendBatchChannel(t *testing.T) {
 	assert.Equal(t, events[0], <-cCh)
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
+	// ensure sequence ID's are set and are unique
+	seqIDs := make([]uint64, 0, len(events))
+	for _, e := range events {
+		se, ok := e.(broker.SeqEvent)
+		assert.True(t, ok)
+		sID := se.Sequence()
+		assert.NotZero(t, sID)
+		seqIDs = append(seqIDs, sID)
+	}
+	last := len(seqIDs) - 1
+	for i := 0; i < last-1; i++ {
+		for j := i + 1; j < last; j++ {
+			assert.NotEqual(t, seqIDs[i], seqIDs[j])
+		}
+	}
+	// this one isn't verified in the loop above
+	assert.NotEqual(t, seqIDs[last-1], seqIDs[last])
 }
 
 func testSkipOptional(t *testing.T) {
@@ -394,6 +412,14 @@ func (e evt) Type() events.Type {
 
 func (e evt) Context() context.Context {
 	return e.ctx
+}
+
+func (e *evt) SetSequenceID(s uint64) {
+	e.sid = s
+}
+
+func (e evt) Sequence() uint64 {
+	return e.sid
 }
 
 func (e evt) TraceID() string {

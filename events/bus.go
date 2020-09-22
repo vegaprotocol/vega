@@ -41,7 +41,7 @@ type marketPartyFilterable interface {
 type Base struct {
 	ctx     context.Context
 	traceID string
-	seq     int
+	seq     uint64
 	et      Type
 }
 
@@ -229,8 +229,12 @@ func (b Base) TraceID() string {
 	return b.traceID
 }
 
+func (b *Base) SetSequenceID(s uint64) {
+	b.seq = s
+}
+
 // Sequence returns event sequence number
-func (b Base) Sequence() int {
+func (b Base) Sequence() uint64 {
 	return b.seq
 }
 
