@@ -577,22 +577,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
-	srv := app.Abci().NewServer(l.Log, l.conf.Blockchain)
-	if err := srv.Start(); err != nil {
-		return err
-	}
-	l.abciServer = srv
-
-	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
-	if err != nil {
-		return err
-	}
-	l.blockchainClient = blockchain.NewClient(abciClt)
-	commander.SetChain(l.blockchainClient)
-
-	// get the chain client as well.
-	l.topology.SetChain(l.blockchainClient)
-
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return
