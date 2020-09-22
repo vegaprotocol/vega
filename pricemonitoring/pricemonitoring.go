@@ -48,7 +48,6 @@ type PriceRangeProvider interface {
 }
 
 // PriceMonitoring allows tracking price changes and verifying them against the theoretical levels implied by the risk model.
-// Reset() needs to be called after initialization and after each auction period to assure proper behaviour.
 type PriceMonitoring struct {
 	riskModel                    PriceRangeProvider
 	horizonProbabilityLevelPairs []HorizonProbabilityLevelPair
@@ -64,7 +63,7 @@ type PriceMonitoring struct {
 
 // NewPriceMonitoring return a new instance of PriceMonitoring.
 // Note that horizonProbabilityLevelPairs will get sorte by horizon (ascending) and probabilit level (descending) to aid performance.
-func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPairs []HorizonProbabilityLevelPair, updateFrequency time.Duration) (*PriceMonitoring, error) {
+func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPairs []HorizonProbabilityLevelPair, updateFrequency time.Duration, currentPrice uint64, currentTime time.Time) (*PriceMonitoring, error) {
 	if updateFrequency.Nanoseconds() <= 0 {
 		return nil, errUpdateFrequencyNotPositive
 	}
@@ -72,7 +71,7 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPai
 	sort.Slice(horizonProbabilityLevelPairs,
 		func(i, j int) bool {
 			return horizonProbabilityLevelPairs[i].Horizon < horizonProbabilityLevelPairs[j].Horizon &&
-				horizonProbabilityLevelPairs[i].ProbabilityLevel > horizonProbabilityLevelPairs[j].ProbabilityLevel
+				horizonProbabilityLevelPairs[i].ProbabilityLevel >= horizonProbabilityLevelPairs[j].ProbabilityLevel
 		})
 
 	horizonsAsYearFraction := make(map[time.Duration]float64)
@@ -86,19 +85,24 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPai
 			horizonsAsYearFraction[p.Horizon] = float64(horizonNano) / float64(nanosecondsInAYear)
 		}
 	}
-	return &PriceMonitoring{
+	pm := &PriceMonitoring{
 		riskModel:                    riskModel,
 		horizonProbabilityLevelPairs: horizonProbabilityLevelPairs,
-		horizonsAsYearFraction:       horizonsAsYearFraction}, nil
+		horizonsAsYearFraction:       horizonsAsYearFraction,
+		updateFrequency:              updateFrequency,
+	}
+	pm.Reset(currentPrice, currentTime)
+	return pm, nil
 }
 
 // Reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
-// It should get called as the first method after initialisation for price monitoring to work as expected.
-func (pm *PriceMonitoring) Reset(price uint64, now time.Time) error {
-	pm.currentTime = now
-	pm.pricesPerCurrentTime = []uint64{price}
+func (pm *PriceMonitoring) Reset(currentPrice uint64, currentTime time.Time) {
+	pm.currentTime = currentTime
+	pm.pricesPerCurrentTime = []uint64{currentPrice}
 	pm.averagePriceHistory = []timestampedAveragePrice{}
-	return pm.updateBounds()
+	pm.priceMoveBounds = make(map[HorizonProbabilityLevelPair]priceMoveBound)
+	pm.updateTime = currentTime
+	pm.updateBounds()
 }
 
 // RecordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime
@@ -106,12 +110,12 @@ func (pm *PriceMonitoring) RecordPriceChange(price uint64) {
 	pm.pricesPerCurrentTime = append(pm.pricesPerCurrentTime, price)
 }
 
-// UpdateTime updates the time in the price monitoring module and returns an error otherwise if any problems are encountered.
-func (pm *PriceMonitoring) UpdateTime(now time.Time) error {
-	if now.Before(pm.currentTime) {
+// RecordTimeChange updates the time in the price monitoring module and returns an error if any problems are encountered.
+func (pm *PriceMonitoring) RecordTimeChange(currentTime time.Time) error {
+	if currentTime.Before(pm.currentTime) {
 		return errTimeSequence // This shouldn't happen, but if it does there's something fishy going on
 	}
-	if now.After(pm.currentTime) {
+	if currentTime.After(pm.currentTime) {
 		var sum uint64 = 0
 		for _, x := range pm.pricesPerCurrentTime {
 			sum += x
@@ -122,33 +126,69 @@ func (pm *PriceMonitoring) UpdateTime(now time.Time) error {
 				AveragePrice: float64(sum) / float64(len(pm.pricesPerCurrentTime)),
 			})
 		pm.pricesPerCurrentTime = make([]uint64, 0)
-		pm.currentTime = now
-		if err := pm.updateBounds(); err != nil {
-			return err
-		}
+		pm.currentTime = currentTime
+		pm.updateBounds()
 	}
 	return nil
 }
 
-func (pm *PriceMonitoring) updateBounds() error { //TODO: Think if this really needs to return an error
-	if pm.currentTime.After(pm.updateTime) {
-		pm.updateTime = pm.currentTime.Add(pm.updateFrequency)
-		// Do the update stuffz
-		if len(pm.averagePriceHistory) < 1 {
-			return errPriceHistoryNotAvailable
+// CheckBoundViolations returns a map of horizon and probability level pair to booleans.
+// A true value indicates that a bound corresponding to a given horizon and probability level pair has been violated.
+func (pm *PriceMonitoring) CheckBoundViolations(price uint64) map[HorizonProbabilityLevelPair]bool {
+	fpPrice := float64(price)
+	checks := make(map[HorizonProbabilityLevelPair]bool, len(pm.horizonProbabilityLevelPairs))
+	prevHorizon := 0 * time.Nanosecond
+	var referencePrice float64
+	for _, p := range pm.horizonProbabilityLevelPairs {
+		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
+		if p.Horizon != prevHorizon {
+			referencePrice = pm.getReferencePrice(pm.currentTime.Add(-p.Horizon))
+			prevHorizon = p.Horizon
 		}
-		latestPrice := pm.averagePriceHistory[len(pm.averagePriceHistory)-1].AveragePrice
+
+		priceDiff := fpPrice - referencePrice
+		bounds := pm.priceMoveBounds[p]
+		checks[p] = priceDiff < bounds.MinValidMoveDown || priceDiff > bounds.MaxValidMoveUp
+	}
+	return checks
+}
+
+func (pm *PriceMonitoring) getReferencePrice(referenceTime time.Time) float64 {
+	var referencePrice float64
+	if len(pm.averagePriceHistory) < 1 {
+		referencePrice = float64(pm.pricesPerCurrentTime[0])
+	} else {
+		referencePrice = pm.averagePriceHistory[0].AveragePrice
+	}
+	for _, p := range pm.averagePriceHistory {
+		if p.Time.After(referenceTime) {
+			break
+		}
+		referencePrice = p.AveragePrice
+	}
+	return referencePrice
+}
+
+func (pm *PriceMonitoring) updateBounds() {
+	if !pm.currentTime.Before(pm.updateTime) {
+		pm.updateTime = pm.currentTime.Add(pm.updateFrequency)
+		var latestPrice float64
+		if len(pm.averagePriceHistory) < 1 {
+			latestPrice = float64(pm.pricesPerCurrentTime[len(pm.pricesPerCurrentTime)-1])
+		} else {
+			latestPrice = pm.averagePriceHistory[len(pm.averagePriceHistory)-1].AveragePrice
+		}
 		for _, p := range pm.horizonProbabilityLevelPairs {
 
 			minPrice, maxPrice := pm.riskModel.PriceRange(latestPrice, pm.horizonsAsYearFraction[p.Horizon], p.ProbabilityLevel)
 			pm.priceMoveBounds[p] = priceMoveBound{MinValidMoveDown: minPrice - latestPrice, MaxValidMoveUp: maxPrice - latestPrice}
 		}
-
 		// Remove redundant average prices
-		maxTau := pm.horizonProbabilityLevelPairs[len(pm.horizonProbabilityLevelPairs)].Horizon
+		maxTau := pm.horizonProbabilityLevelPairs[len(pm.horizonProbabilityLevelPairs)-1].Horizon
 		minRequiredHorizon := pm.currentTime.Add(-maxTau)
 		var i int
-		for i = 0; i < len(pm.averagePriceHistory); i++ {
+		// Make sure at least one entry is left hence the "len(..) - 1"
+		for i = 0; i < len(pm.averagePriceHistory)-1; i++ {
 			if !pm.averagePriceHistory[i].Time.Before(minRequiredHorizon) {
 				break
 			}
@@ -157,51 +197,4 @@ func (pm *PriceMonitoring) updateBounds() error { //TODO: Think if this really n
 		pm.averagePriceHistory = pm.averagePriceHistory[i:]
 
 	}
-	return nil
-}
-
-// CheckBoundViolations returns an array of booleans, each corresponding to a given horizon and probability level pair.
-// A true value indicates that a bound corresponding to a given horizon and probability level pair has been violated.
-// It should be called after Reset has been called at least once
-func (pm *PriceMonitoring) CheckBoundViolations(price uint64) ([]bool, error) {
-	fpPrice := float64(price)
-	checks := make([]bool, len(pm.horizonProbabilityLevelPairs))
-	prevHorizon := 0 * time.Nanosecond
-	referencePrice := -1.0
-	var err error
-	for i, p := range pm.horizonProbabilityLevelPairs {
-		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
-		if p.Horizon != prevHorizon {
-			referencePrice, err = pm.getReferencePrice(pm.currentTime.Add(-p.Horizon))
-			if err != nil {
-				return nil, err
-			}
-			prevHorizon = p.Horizon
-		}
-
-		priceDiff := fpPrice - referencePrice
-		bounds := pm.priceMoveBounds[p]
-		checks[i] = priceDiff < bounds.MinValidMoveDown || priceDiff > bounds.MaxValidMoveUp
-	}
-	return checks, nil
-}
-
-//GetHorizonProbablityLevelPairs return horizon and probability level pairs that the module uses
-func (pm *PriceMonitoring) GetHorizonProbablityLevelPairs() []HorizonProbabilityLevelPair {
-	return pm.horizonProbabilityLevelPairs
-}
-
-func (pm *PriceMonitoring) getReferencePrice(referenceTime time.Time) (float64, error) {
-	if len(pm.averagePriceHistory) < 1 {
-		return -1, errPriceHistoryNotAvailable
-	}
-	refPrice := pm.averagePriceHistory[0].AveragePrice
-	for _, p := range pm.averagePriceHistory {
-		if p.Time.After(referenceTime) {
-			break
-		}
-		refPrice = p.AveragePrice
-	}
-	return refPrice, nil
-
 }
