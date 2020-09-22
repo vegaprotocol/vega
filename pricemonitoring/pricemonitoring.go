@@ -6,6 +6,31 @@ import (
 	"time"
 )
 
+var (
+	errProbabilityLevel           = errors.New("Probability level must be in the interval (0,1)")
+	errTimeSequence               = errors.New("Received a time that's before the last received time")
+	errPriceHistoryNotAvailable   = errors.New("Price history not available")
+	errHorizonNotInFuture         = errors.New("Horizon must be represented by a positive duration")
+	errUpdateFrequencyNotPositive = errors.New("Update frequency must be represented by a positive duration")
+)
+
+// HorizonProbabilityLevelPair ties the horizon τ and probability p level.
+// It's used to check if price over τ has exceeded the probability level p implied by the risk model
+// (e.g. τ = 1 hour, p = 95%)
+type HorizonProbabilityLevelPair struct {
+	Horizon          time.Duration
+	ProbabilityLevel float64
+}
+
+// NewHorizonProbabilityLevelPair returns a new instance of HorizonProbabilityLevelPair
+// if probability level is in the range (0,1) and an error otherwise
+func NewHorizonProbabilityLevelPair(horizon time.Duration, probabilityLevel float64) (*HorizonProbabilityLevelPair, error) {
+	if probabilityLevel <= 0 || probabilityLevel >= 1 {
+		return nil, errProbabilityLevel
+	}
+	return &HorizonProbabilityLevelPair{Horizon: horizon, ProbabilityLevel: probabilityLevel}, nil
+}
+
 type priceMoveBound struct {
 	MaxValidMoveUp   float64
 	MinValidMoveDown float64
@@ -16,15 +41,8 @@ type timestampedAveragePrice struct {
 	AveragePrice float64
 }
 
-var (
-	errProbabilityLevel           = errors.New("Probability level must be in the interval (0,1)")
-	errTimeSequence               = errors.New("Received a time that's before the last received time")
-	errPriceHistoryNotAvailable   = errors.New("Price history not available")
-	errHorizonNotInFuture         = errors.New("Horizon must be represented by a positive duration")
-	errUpdateFrequencyNotPositive = errors.New("Update frequency must be represented by a positive duration")
-)
-
-// PriceRangeProvider provides the minimium and maximum price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
+// PriceRangeProvider provides the minimium and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
+//go:generate go run github.com/golang/mock/mockgen -destination pricemonitoring/mocks/price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/pricemonitoring PriceRangeProvider
 type PriceRangeProvider interface {
 	PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64)
 }
@@ -134,6 +152,7 @@ func (pm *PriceMonitoring) updateBounds() error { //TODO: Think if this really n
 			if !pm.averagePriceHistory[i].Time.Before(minRequiredHorizon) {
 				break
 			}
+			pm.averagePriceHistory[i] = timestampedAveragePrice{} //TODO (WG): Confirm if this is needed to reclaim memory
 		}
 		pm.averagePriceHistory = pm.averagePriceHistory[i:]
 
@@ -167,6 +186,11 @@ func (pm *PriceMonitoring) CheckBoundViolations(price uint64) ([]bool, error) {
 	return checks, nil
 }
 
+//GetHorizonProbablityLevelPairs return horizon and probability level pairs that the module uses
+func (pm *PriceMonitoring) GetHorizonProbablityLevelPairs() []HorizonProbabilityLevelPair {
+	return pm.horizonProbabilityLevelPairs
+}
+
 func (pm *PriceMonitoring) getReferencePrice(referenceTime time.Time) (float64, error) {
 	if len(pm.averagePriceHistory) < 1 {
 		return -1, errPriceHistoryNotAvailable
@@ -180,26 +204,4 @@ func (pm *PriceMonitoring) getReferencePrice(referenceTime time.Time) (float64, 
 	}
 	return refPrice, nil
 
-}
-
-//GetHorizonProbablityLevelPairs return horizon and probability level pairs that the module uses
-func (pm *PriceMonitoring) GetHorizonProbablityLevelPairs() []HorizonProbabilityLevelPair {
-	return pm.horizonProbabilityLevelPairs
-}
-
-// HorizonProbabilityLevelPair ties the horizon τ and probability p level.
-// It's used to check if price over τ has exceeded the probability level p implied by the risk model
-// (e.g. τ = 1 hour, p = 95%)
-type HorizonProbabilityLevelPair struct {
-	Horizon          time.Duration
-	ProbabilityLevel float64
-}
-
-// NewHorizonProbabilityLevelPair returns a new instance of HorizonProbabilityLevelPair
-// if probability level is in the range (0,1) and an error otherwise
-func NewHorizonProbabilityLevelPair(horizon time.Duration, probabilityLevel float64) (*HorizonProbabilityLevelPair, error) {
-	if probabilityLevel <= 0 || probabilityLevel >= 1 {
-		return nil, errProbabilityLevel
-	}
-	return &HorizonProbabilityLevelPair{Horizon: horizon, ProbabilityLevel: probabilityLevel}, nil
 }
