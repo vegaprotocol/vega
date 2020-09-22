@@ -40,7 +40,7 @@ func (a Acc) Proto() types.Account {
 
 func (a Acc) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   a.traceID,
+		ID:   a.eventID(),
 		Type: a.et.ToProto(),
 		Event: &types.BusEvent_Account{
 			Account: &a.a,

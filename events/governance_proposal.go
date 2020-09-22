@@ -42,7 +42,7 @@ func (p Proposal) Proto() types.Proposal {
 
 func (p Proposal) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   p.traceID,
+		ID:   p.eventID(),
 		Type: p.et.ToProto(),
 		Event: &types.BusEvent_Proposal{
 			Proposal: &p.p,

@@ -38,6 +38,8 @@ type Broker struct {
 	subs   map[int]subscription
 	keys   []int
 	eChans map[events.Type]chan []events.Event
+
+	seqGen *gen
 }
 
 // New creates a new base broker
@@ -48,6 +50,7 @@ func New(ctx context.Context) *Broker {
 		subs:   map[int]subscription{},
 		keys:   []int{},
 		eChans: map[events.Type]chan []events.Event{},
+		seqGen: newGen(),
 	}
 }
 
@@ -134,12 +137,13 @@ func (b *Broker) SendBatch(events []events.Event) {
 	if len(events) == 0 {
 		return
 	}
-	b.startSending(events[0].Type(), events)
+	evts := b.seqGen.setSequence(events...)
+	b.startSending(events[0].Type(), evts)
 }
 
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	b.startSending(event.Type(), []events.Event{event})
+	b.startSending(event.Type(), b.seqGen.setSequence(event))
 }
 
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {

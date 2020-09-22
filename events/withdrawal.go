@@ -35,7 +35,7 @@ func (w Withdrawal) Proto() types.Withdrawal {
 func (w Withdrawal) StreamMessage() *types.BusEvent {
 	wit := w.w
 	return &types.BusEvent{
-		ID:   w.traceID,
+		ID:   w.eventID(),
 		Type: w.et.ToProto(),
 		Event: &types.BusEvent_Withdrawal{
 			Withdrawal: &wit,
