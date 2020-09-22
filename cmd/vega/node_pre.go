@@ -461,7 +461,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, nil, !l.noStores)
+
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, !l.noStores)
 
 	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
@@ -471,7 +472,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
 	}
+
+	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
 	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
@@ -518,9 +523,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	}
 	l.blockchainClient = blockchain.NewClient(abciClt)
 	commander.SetChain(l.blockchainClient)
-
-	// get the chain client as well.
-	l.topology.SetChain(l.blockchainClient)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
@@ -574,10 +576,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
-	)
-
-	l.genesisHandler.OnGenesisAppStateLoaded(
-		l.UponGenesis,
 	)
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)

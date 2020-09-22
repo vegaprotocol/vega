@@ -26,7 +26,6 @@ type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
-	hasRegistered     bool
 	size              uint64
 	txTotals          []uint64
 	txSizes           []int
@@ -175,9 +174,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 		}
 	}
 
+	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
 		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
-		panic(err)
 	}
 
 	return tmtypes.ResponseInitChain{}
@@ -203,20 +202,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.Respon
 	if app.previousTimestamp, err = app.time.GetTimeLastBatch(); err != nil {
 		app.cancel()
 		return
-	}
-
-	if !app.hasRegistered && app.top.IsValidator() && !app.top.Ready() {
-		if pk := app.top.SelfChainPubKey(); pk != nil {
-			payload := &types.NodeRegistration{
-				ChainPubKey: pk,
-				PubKey:      app.vegaWallet.PubKeyOrAddress(),
-			}
-			if err := app.cmd.Command(blockchain.RegisterNodeCommand, payload); err != nil {
-				app.cancel()
-				return
-			}
-			app.hasRegistered = true
-		}
 	}
 
 	app.log.Debug("ABCI service BEGIN completed",

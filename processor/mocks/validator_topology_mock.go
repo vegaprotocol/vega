@@ -103,30 +103,14 @@ func (mr *MockValidatorTopologyMockRecorder) Len() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockValidatorTopology)(nil).Len))
 }
 
-// Ready mocks base method
-func (m *MockValidatorTopology) Ready() bool {
+// UpdateValidatorSet mocks base method
+func (m *MockValidatorTopology) UpdateValidatorSet(arg0 [][]byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ready")
-	ret0, _ := ret[0].(bool)
-	return ret0
+	m.ctrl.Call(m, "UpdateValidatorSet", arg0)
 }
 
-// Ready indicates an expected call of Ready
-func (mr *MockValidatorTopologyMockRecorder) Ready() *gomock.Call {
+// UpdateValidatorSet indicates an expected call of UpdateValidatorSet
+func (mr *MockValidatorTopologyMockRecorder) UpdateValidatorSet(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockValidatorTopology)(nil).Ready))
-}
-
-// SelfChainPubKey mocks base method
-func (m *MockValidatorTopology) SelfChainPubKey() []byte {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SelfChainPubKey")
-	ret0, _ := ret[0].([]byte)
-	return ret0
-}
-
-// SelfChainPubKey indicates an expected call of SelfChainPubKey
-func (mr *MockValidatorTopologyMockRecorder) SelfChainPubKey() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelfChainPubKey", reflect.TypeOf((*MockValidatorTopology)(nil).SelfChainPubKey))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateValidatorSet", reflect.TypeOf((*MockValidatorTopology)(nil).UpdateValidatorSet), arg0)
 }
