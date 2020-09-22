@@ -62,7 +62,7 @@ func (s SettleDistressed) Proto() types.SettleDistressed {
 func (s SettleDistressed) StreamMessage() *types.BusEvent {
 	p := s.Proto()
 	return &types.BusEvent{
-		ID:   s.traceID,
+		ID:   s.eventID(),
 		Type: s.et.ToProto(),
 		Event: &types.BusEvent_SettleDistressed{
 			SettleDistressed: &p,

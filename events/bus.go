@@ -248,6 +248,10 @@ func (b Base) Type() Type {
 	return b.et
 }
 
+func (b Base) eventID() string {
+	return fmt.Sprintf("%s-%d", b.traceID, b.seq)
+}
+
 // MarketEvents return all the possible market events
 func MarketEvents() []Type {
 	return marketEvents
