@@ -513,11 +513,21 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 
 		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 	}
-	m.matching.LeaveAuction() // TODO (WG 03/09/20): Push out trades, calling this only to be able the test the triggers for now.
+
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction()
 	if err != nil {
 		m.log.Error("Error leaving auction", logging.Error(err))
+	}
+
+	// Process each confirmation
+	for _, uncrossedOrder := range uncrossedOrders {
+		m.handleConfirmation(ctx, uncrossedOrder.Order, uncrossedOrder)
+
+		if uncrossedOrder.Order.Remaining == 0 {
+			uncrossedOrder.Order.Status = types.Order_STATUS_FILLED
+		}
+		m.broker.Send(events.NewOrderEvent(ctx, uncrossedOrder.Order))
 	}
 
 	// Process each order we have to cancel
