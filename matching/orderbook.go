@@ -38,14 +38,6 @@ type OrderBook struct {
 	batchID         uint64
 }
 
-// UncrossedOrder contains the details relating to a single order that
-// has been uncrossed at the end of an auction
-type UncrossedOrder struct {
-	Order          *types.Order
-	AffectedOrders []*types.Order
-	Trades         []*types.Trade
-}
-
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
 type CumulativeVolumeLevel struct {
 	price               uint64
@@ -200,7 +192,7 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
-func (b *OrderBook) LeaveAuction() ([]*UncrossedOrder, []*types.Order, error) {
+func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, error) {
 	// Update batchID
 	b.batchID++
 
@@ -326,7 +318,7 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 }
 
 // Uncrosses the book to generate the maximum volume set of trades
-func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
+func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	// Get the uncrossing price and which side has the most volume at that price
 	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
 
@@ -335,8 +327,8 @@ func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 		return nil, nil
 	}
 
-	var uncrossedOrder *UncrossedOrder
-	var allOrders []*UncrossedOrder
+	var uncrossedOrder *types.OrderConfirmation
+	var allOrders []*types.OrderConfirmation
 
 	// Remove all the orders from that side of the book upto the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
@@ -357,7 +349,13 @@ func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 			for index := 0; index < len(trades); index++ {
 				trades[index].Price = price
 			}
-			uncrossedOrder = &UncrossedOrder{Order: order, AffectedOrders: affectedOrders, Trades: trades}
+			// If the affected order is fully filled set the status
+			for _, affectedOrder := range affectedOrders {
+				if affectedOrder.Remaining == 0 {
+					affectedOrder.Status = types.Order_STATUS_FILLED
+				}
+			}
+			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
 			allOrders = append(allOrders, uncrossedOrder)
 		}
 	} else {
@@ -378,11 +376,16 @@ func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 			for index := 0; index < len(trades); index++ {
 				trades[index].Price = price
 			}
-			uncrossedOrder = &UncrossedOrder{Order: order, AffectedOrders: affectedOrders, Trades: trades}
+			// If the affected order is fully filled set the status
+			for _, affectedOrder := range affectedOrders {
+				if affectedOrder.Remaining == 0 {
+					affectedOrder.Status = types.Order_STATUS_FILLED
+				}
+			}
+			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
 			allOrders = append(allOrders, uncrossedOrder)
 		}
 	}
-
 	return allOrders, nil
 }
 
