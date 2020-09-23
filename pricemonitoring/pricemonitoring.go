@@ -7,10 +7,14 @@ import (
 )
 
 var (
-	errProbabilityLevel           = errors.New("Probability level must be in the interval (0,1)")
-	errTimeSequence               = errors.New("Received a time that's before the last received time")
-	errHorizonNotInFuture         = errors.New("Horizon must be represented by a positive duration")
-	errUpdateFrequencyNotPositive = errors.New("Update frequency must be represented by a positive duration")
+	// ErrProbabilityLevel gets thrown when probability is outside the (0,1)
+	ErrProbabilityLevel = errors.New("probability level must be in the interval (0,1)")
+	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
+	ErrTimeSequence = errors.New("received a time that's before the last received time")
+	// ErrHorizonNotInFuture signals that the time horizon is not positive
+	ErrHorizonNotInFuture = errors.New("horizon must be represented by a positive duration")
+	// ErrUpdateFrequencyNotPositive signals that update frequency isn't positive.
+	ErrUpdateFrequencyNotPositive = errors.New("update frequency must be represented by a positive duration")
 )
 
 // HorizonProbabilityLevelPair ties the horizon τ and probability p level.
@@ -34,10 +38,10 @@ func NewHorizonProbabilityLevelPair(horizon time.Duration, probabilityLevel floa
 // Validate returns an error if probability level is not the range (0,1) or horizon is not in the future and nil otherwise
 func (p HorizonProbabilityLevelPair) Validate() error {
 	if p.ProbabilityLevel <= 0 || p.ProbabilityLevel >= 1 {
-		return errProbabilityLevel
+		return ErrProbabilityLevel
 	}
 	if p.Horizon.Nanoseconds() <= 0 {
-		return errHorizonNotInFuture
+		return ErrHorizonNotInFuture
 	}
 	return nil
 }
@@ -75,7 +79,7 @@ type PriceMonitoring struct {
 // NewPriceMonitoring returns a new instance of PriceMonitoring.
 func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPairs []HorizonProbabilityLevelPair, updateFrequency time.Duration, currentPrice uint64, currentTime time.Time) (*PriceMonitoring, error) {
 	if updateFrequency.Nanoseconds() <= 0 {
-		return nil, errUpdateFrequencyNotPositive
+		return nil, ErrUpdateFrequencyNotPositive
 	}
 
 	// Other functions depend on this sorting
@@ -94,7 +98,7 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPai
 		if _, ok := horizonsAsYearFraction[p.Horizon]; !ok {
 			horizonNano := p.Horizon.Nanoseconds()
 			if horizonNano == 0 {
-				return nil, errHorizonNotInFuture
+				return nil, ErrHorizonNotInFuture
 			}
 			horizonsAsYearFraction[p.Horizon] = float64(horizonNano) / float64(nanosecondsInAYear)
 		}
@@ -127,7 +131,7 @@ func (pm *PriceMonitoring) RecordPriceChange(price uint64) {
 // RecordTimeChange updates the time in the price monitoring module and returns an error if any problems are encountered.
 func (pm *PriceMonitoring) RecordTimeChange(currentTime time.Time) error {
 	if currentTime.Before(pm.currentTime) {
-		return errTimeSequence // This shouldn't happen, but if it does there's something fishy going on
+		return ErrTimeSequence // This shouldn't happen, but if it does there's something fishy going on
 	}
 	if currentTime.After(pm.currentTime) {
 		var sum uint64 = 0
