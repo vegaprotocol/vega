@@ -9,7 +9,6 @@ import (
 var (
 	errProbabilityLevel           = errors.New("Probability level must be in the interval (0,1)")
 	errTimeSequence               = errors.New("Received a time that's before the last received time")
-	errPriceHistoryNotAvailable   = errors.New("Price history not available")
 	errHorizonNotInFuture         = errors.New("Horizon must be represented by a positive duration")
 	errUpdateFrequencyNotPositive = errors.New("Update frequency must be represented by a positive duration")
 )
@@ -23,12 +22,24 @@ type HorizonProbabilityLevelPair struct {
 }
 
 // NewHorizonProbabilityLevelPair returns a new instance of HorizonProbabilityLevelPair
-// if probability level is in the range (0,1) and an error otherwise
+// if probability level is in the range (0,1) and horizon is in the future and an error otherwise
 func NewHorizonProbabilityLevelPair(horizon time.Duration, probabilityLevel float64) (*HorizonProbabilityLevelPair, error) {
-	if probabilityLevel <= 0 || probabilityLevel >= 1 {
-		return nil, errProbabilityLevel
+	p := HorizonProbabilityLevelPair{Horizon: horizon, ProbabilityLevel: probabilityLevel}
+	if err := p.Validate(); err != nil {
+		return nil, err
 	}
-	return &HorizonProbabilityLevelPair{Horizon: horizon, ProbabilityLevel: probabilityLevel}, nil
+	return &p, nil
+}
+
+// Validate returns an error if probability level is not the range (0,1) or horizon is not in the future and nil otherwise
+func (p HorizonProbabilityLevelPair) Validate() error {
+	if p.ProbabilityLevel <= 0 || p.ProbabilityLevel >= 1 {
+		return errProbabilityLevel
+	}
+	if p.Horizon.Nanoseconds() <= 0 {
+		return errHorizonNotInFuture
+	}
+	return nil
 }
 
 type priceMoveBound struct {
@@ -77,6 +88,9 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPai
 	horizonsAsYearFraction := make(map[time.Duration]float64)
 	nanosecondsInAYear := (365.25 * 24 * time.Hour).Nanoseconds()
 	for _, p := range horizonProbabilityLevelPairs {
+		if err := p.Validate(); err != nil {
+			return nil, err
+		}
 		if _, ok := horizonsAsYearFraction[p.Horizon]; !ok {
 			horizonNano := p.Horizon.Nanoseconds()
 			if horizonNano == 0 {
@@ -153,22 +167,6 @@ func (pm *PriceMonitoring) CheckBoundViolations(price uint64) map[HorizonProbabi
 	return checks
 }
 
-func (pm *PriceMonitoring) getReferencePrice(referenceTime time.Time) float64 {
-	var referencePrice float64
-	if len(pm.averagePriceHistory) < 1 {
-		referencePrice = float64(pm.pricesPerCurrentTime[0])
-	} else {
-		referencePrice = pm.averagePriceHistory[0].AveragePrice
-	}
-	for _, p := range pm.averagePriceHistory {
-		if p.Time.After(referenceTime) {
-			break
-		}
-		referencePrice = p.AveragePrice
-	}
-	return referencePrice
-}
-
 func (pm *PriceMonitoring) updateBounds() {
 	if !pm.currentTime.Before(pm.updateTime) {
 		pm.updateTime = pm.currentTime.Add(pm.updateFrequency)
@@ -197,4 +195,20 @@ func (pm *PriceMonitoring) updateBounds() {
 		pm.averagePriceHistory = pm.averagePriceHistory[i:]
 
 	}
+}
+
+func (pm *PriceMonitoring) getReferencePrice(referenceTime time.Time) float64 {
+	var referencePrice float64
+	if len(pm.averagePriceHistory) < 1 {
+		referencePrice = float64(pm.pricesPerCurrentTime[0])
+	} else {
+		referencePrice = pm.averagePriceHistory[0].AveragePrice
+	}
+	for _, p := range pm.averagePriceHistory {
+		if p.Time.After(referenceTime) {
+			break
+		}
+		referencePrice = p.AveragePrice
+	}
+	return referencePrice
 }
