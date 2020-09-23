@@ -49,7 +49,7 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	}
 
 	// first verify the transaction in the bundle is valid + signature is OK
-	_, command, err := txDecode(tx.InputData)
+	_, command, err := TxDecode(tx.InputData)
 	if err != nil {
 		return false, err
 	}

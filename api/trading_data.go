@@ -163,6 +163,13 @@ type WithdrawalService interface {
 	GetByParty(party string, openOnly bool) []types.Withdrawal
 }
 
+// Deposit ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/deposit_service_mock.go -package mocks code.vegaprotocol.io/vega/api  DepositService
+type DepositService interface {
+	GetByID(id string) (types.Deposit, error)
+	GetByParty(party string, openOnly bool) []types.Deposit
+}
+
 // AssetService Provides access to assets approved/pending approval in the current network state
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/asset_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AssetService
 type AssetService interface {
@@ -202,6 +209,7 @@ type tradingDataService struct {
 	eventService            EventService
 	statusChecker           *monitoring.Status
 	WithdrawalService       WithdrawalService
+	DepositService          DepositService
 	ctx                     context.Context
 }
 
@@ -303,6 +311,36 @@ func (t *tradingDataService) Withdrawals(ctx context.Context, req *protoapi.With
 	}
 	return &protoapi.WithdrawalsResponse{
 		Withdrawals: out,
+	}, nil
+}
+
+func (t *tradingDataService) Deposit(ctx context.Context, req *protoapi.DepositRequest) (*protoapi.DepositResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Deposit")()
+	if len(req.ID) <= 0 {
+		return nil, ErrMissingDepositID
+	}
+	deposit, err := t.DepositService.GetByID(req.ID)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	return &protoapi.DepositResponse{
+		Deposit: &deposit,
+	}, nil
+}
+
+func (t *tradingDataService) Deposits(ctx context.Context, req *protoapi.DepositsRequest) (*protoapi.DepositsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Deposits")()
+	if len(req.PartyID) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+	deposits := t.DepositService.GetByParty(req.PartyID, false)
+	out := make([]*types.Deposit, 0, len(deposits))
+	for _, v := range deposits {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.DepositsResponse{
+		Deposits: out,
 	}, nil
 }
 
@@ -1847,6 +1885,7 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 			filters = append(filters, events.GetPartyIDFilter(in.PartyID))
 		}
 	}
+	// number of retries to -1 to have pretty much unlimited retries
 	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
 	for {
 		select {

@@ -116,6 +116,10 @@ type TradingDataClient interface {
 	Withdrawal(ctx context.Context, in *protoapi.WithdrawalRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalResponse, error)
 	Withdrawals(ctx context.Context, in *protoapi.WithdrawalsRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalsResponse, error)
 	ERC20WithdrawalApproval(ctx context.Context, in *protoapi.ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*protoapi.ERC20WithdrawalApprovalResponse, error)
+	Deposit(ctx context.Context, in *protoapi.DepositRequest, opts ...grpc.CallOption) (*protoapi.DepositResponse, error)
+	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
+
+	ObserveEventBus(ctx context.Context, in *protoapi.ObserveEventsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -233,7 +237,56 @@ func (r *VegaResolverRoot) Asset() AssetResolver {
 	return (*myAssetResolver)(r)
 }
 
-// asset resolvet
+// Deposit ...
+func (r *VegaResolverRoot) Deposit() DepositResolver {
+	return (*myDepositResolver)(r)
+}
+
+// deposit resolver
+
+type myDepositResolver VegaResolverRoot
+
+func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*Asset, error) {
+	if len(obj.Asset) <= 0 {
+		return nil, errors.New("missign asset ID")
+	}
+	req := &protoapi.AssetByIDRequest{
+		ID: obj.Asset,
+	}
+	res, err := r.tradingDataClient.AssetByID(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return AssetFromProto(res.Asset)
+}
+
+func (r *myDepositResolver) Party(ctx context.Context, obj *types.Deposit) (*types.Party, error) {
+	if len(obj.PartyID) <= 0 {
+		return nil, errors.New("missing party ID")
+	}
+	return &types.Party{Id: obj.PartyID}, nil
+}
+
+func (r *myDepositResolver) CreatedTimestamp(ctx context.Context, obj *types.Deposit) (string, error) {
+	if obj.CreatedTimestamp == 0 {
+		return "", errors.New("invalid timestamp")
+	}
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedTimestamp)), nil
+}
+
+func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.Deposit) (*string, error) {
+	if obj.CreatedTimestamp == 0 {
+		return nil, nil
+	}
+	t := vegatime.Format(vegatime.UnixNano(obj.CreatedTimestamp))
+	return &t, nil
+}
+
+func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (DepositStatus, error) {
+	return convertDepositStatusFromProto(obj.Status)
+}
+
+// asset resolver
 
 type myAssetResolver VegaResolverRoot
 
@@ -298,6 +351,17 @@ func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*Withdraw
 
 	w.Asset = asset
 	return w, nil
+}
+
+func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Deposit, error) {
+	res, err := r.tradingDataClient.Deposit(
+		ctx, &protoapi.DepositRequest{ID: did},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Deposit, nil
 }
 
 func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party string, price *string, size string, side Side,
@@ -1045,6 +1109,17 @@ func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) (
 	return out, nil
 }
 
+func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*types.Deposit, error) {
+	res, err := r.tradingDataClient.Deposits(
+		ctx, &protoapi.DepositsRequest{PartyID: party.Id},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Deposits, nil
+}
+
 func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*ProposalVote, error) {
 	resp, err := r.tradingDataClient.GetVotesByParty(ctx, &protoapi.GetVotesByPartyRequest{
 		PartyID: party.Id,
@@ -1675,10 +1750,6 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 	return strconv.FormatUint(obj.Price, 10), nil
 }
 
-func (r *myPriceLevelResolver) CumulativeVolume(ctx context.Context, obj *types.PriceLevel) (string, error) {
-	return strconv.FormatUint(obj.CumulativeVolume, 10), nil
-}
-
 // END: Price Level Resolver
 
 // BEGIN: Position Resolver
@@ -1719,6 +1790,10 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	}
 
 	return market, nil
+}
+
+func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
 }
 
 func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
@@ -2493,6 +2568,43 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 		return r.subscribePartyVotes(ctx, *partyID)
 	}
 	return nil, ErrInvalidVotesSubscription
+}
+
+func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string) (<-chan []*BusEvent, error) {
+	t := eventTypeToProto(types...)
+	req := protoapi.ObserveEventsRequest{
+		Type: t,
+	}
+	if marketID != nil {
+		req.MarketID = *marketID
+	}
+	if partyID != nil {
+		req.PartyID = *partyID
+	}
+	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	out := make(chan []*BusEvent)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(out)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				return
+			}
+			if err != nil {
+				r.log.Error("Event bus stream error", logging.Error(err))
+				return
+			}
+			be := busEventFromProto(data.Events...)
+			out <- be
+		}
+	}()
+	return out, nil
 }
 
 // START: Account Resolver

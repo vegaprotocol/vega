@@ -24,6 +24,10 @@ func (m Market) MarketEvent() string {
 	return fmt.Sprintf("Market ID %s created (%s)", m.m.Id, m.m.String())
 }
 
+func (m Market) MarketID() string {
+	return m.m.Id
+}
+
 func (m Market) Market() types.Market {
 	return m.m
 }
@@ -42,10 +46,14 @@ func (m Market) MarketProto() types.MarketEvent {
 func (m Market) StreamMessage() *types.BusEvent {
 	p := m.MarketProto()
 	return &types.BusEvent{
-		ID:   m.traceID,
+		ID:   m.eventID(),
 		Type: m.et.ToProto(),
 		Event: &types.BusEvent_Market{
 			Market: &p,
 		},
 	}
+}
+
+func (m Market) StreamMarketMessage() *types.BusEvent {
+	return m.StreamMessage()
 }

@@ -35,31 +35,31 @@ func (m *MockBanking) EXPECT() *MockBankingMockRecorder {
 }
 
 // DepositBuiltinAsset mocks base method
-func (m *MockBanking) DepositBuiltinAsset(arg0 *proto.BuiltinAssetDeposit, arg1 uint64) error {
+func (m *MockBanking) DepositBuiltinAsset(arg0 context.Context, arg1 *proto.BuiltinAssetDeposit, arg2 uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DepositBuiltinAsset", arg0, arg1)
+	ret := m.ctrl.Call(m, "DepositBuiltinAsset", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DepositBuiltinAsset indicates an expected call of DepositBuiltinAsset
-func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).DepositBuiltinAsset), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).DepositBuiltinAsset), arg0, arg1, arg2)
 }
 
 // DepositERC20 mocks base method
-func (m *MockBanking) DepositERC20(arg0 *proto.ERC20Deposit, arg1, arg2 uint64) error {
+func (m *MockBanking) DepositERC20(arg0 context.Context, arg1 *proto.ERC20Deposit, arg2, arg3 uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DepositERC20", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "DepositERC20", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DepositERC20 indicates an expected call of DepositERC20
-func (mr *MockBankingMockRecorder) DepositERC20(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) DepositERC20(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositERC20", reflect.TypeOf((*MockBanking)(nil).DepositERC20), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositERC20", reflect.TypeOf((*MockBanking)(nil).DepositERC20), arg0, arg1, arg2, arg3)
 }
 
 // EnableBuiltinAsset mocks base method

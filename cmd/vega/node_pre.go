@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -49,7 +50,9 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -146,7 +149,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = stats.New(l.Log, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, l.conf.Stats, l.cli.version, l.cli.versionHash)
 
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
@@ -221,6 +224,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -272,6 +276,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 		func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.stats.ReloadConf(cfg.Stats) },
 	)
 
 	return
@@ -402,6 +407,87 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	return nil
 }
 
+func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
+	if l.record != "" && l.replay != "" {
+		return nil, errors.New("you can't specify both record and replay flags")
+	}
+
+	app, err := processor.NewApp(
+		l.Log,
+		l.conf.Processor,
+		l.cancel,
+		l.assets,
+		l.banking,
+		l.broker,
+		l.erc,
+		l.evtfwd,
+		l.executionEngine,
+		commander,
+		l.genesisHandler,
+		l.governance,
+		l.notary,
+		l.stats.Blockchain,
+		l.timeService,
+		l.topology,
+		l.nodeWallet,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var abciApp tmtypes.Application
+	if l.record != "" {
+		rec, err := recorder.NewRecord(l.record, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		abciApp = recorder.NewApp(app.Abci(), rec)
+	} else {
+		abciApp = app.Abci()
+	}
+
+	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
+	if err := srv.Start(); err != nil {
+		return nil, err
+	}
+	l.abciServer = srv
+
+	if l.replay != "" {
+		rec, err := recorder.NewReplay(l.replay, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		go func() {
+			if err := rec.Replay(abciApp); err != nil {
+				log.Fatalf("replay: %v", err)
+			}
+		}()
+	}
+
+	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
+	if err != nil {
+		return nil, err
+	}
+	l.blockchainClient = blockchain.NewClient(abciClt)
+	commander.SetChain(l.blockchainClient)
+
+	return app, nil
+}
+
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -416,6 +502,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
+	l.depositPlugin = plugins.NewDeposit(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {
@@ -423,7 +510,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	})
 
 	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(l.marketEventSub, l.transferSub, l.orderSub, l.accountSub, l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub, l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin, l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin)
+	l.broker.SubscribeBatch(
+		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
+		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
+		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
+		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
+		l.depositPlugin, l.marketDepthSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -453,7 +545,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, nil, !l.noStores)
+
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, !l.noStores)
 
 	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
@@ -463,7 +556,11 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
 	}
+
+	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
 	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
@@ -475,45 +572,10 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instanciate the blockchain layer
-	app, err := processor.NewApp(
-		l.Log,
-		l.conf.Processor,
-		l.cancel,
-		l.assets,
-		l.banking,
-		l.broker,
-		l.erc,
-		l.evtfwd,
-		l.executionEngine,
-		commander,
-		l.collateral,
-		l.genesisHandler,
-		l.governance,
-		l.notary,
-		l.stats.Blockchain,
-		l.timeService,
-		l.topology,
-		l.nodeWallet,
-	)
+	app, err := l.startABCI(l.ctx, commander)
 	if err != nil {
 		return err
 	}
-
-	srv := app.Abci().NewServer(l.Log, l.conf.Blockchain)
-	if err := srv.Start(); err != nil {
-		return err
-	}
-	l.abciServer = srv
-
-	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
-	if err != nil {
-		return err
-	}
-	l.blockchainClient = blockchain.NewClient(abciClt)
-	commander.SetChain(l.blockchainClient)
-
-	// get the chain client as well.
-	l.topology.SetChain(l.blockchainClient)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
@@ -526,7 +588,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.riskStore, l.settlePlugin); err != nil {
 		return
 	}
-	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore); err != nil {
+	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub); err != nil {
 		return
 	}
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
@@ -552,6 +614,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
+		func(cfg config.Config) { app.ReloadConf(cfg.Processor) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },

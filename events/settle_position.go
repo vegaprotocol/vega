@@ -12,20 +12,26 @@ type SettlePos struct {
 	marketID string
 	price    uint64
 	trades   []TradeSettlement
+	ts       int64
 }
 
-func NewSettlePositionEvent(ctx context.Context, partyID, marketID string, price uint64, trades []TradeSettlement) *SettlePos {
+func NewSettlePositionEvent(ctx context.Context, partyID, marketID string, price uint64, trades []TradeSettlement, ts int64) *SettlePos {
 	return &SettlePos{
 		Base:     newBase(ctx, SettlePositionEvent),
 		partyID:  partyID,
 		marketID: marketID,
 		price:    price,
 		trades:   trades,
+		ts:       ts,
 	}
 }
 
 func (s SettlePos) MarketID() string {
 	return s.marketID
+}
+
+func (s SettlePos) IsParty(id string) bool {
+	return (s.partyID == id)
 }
 
 func (s SettlePos) PartyID() string {
@@ -38,6 +44,10 @@ func (s SettlePos) Price() uint64 {
 
 func (s SettlePos) Trades() []TradeSettlement {
 	return s.trades
+}
+
+func (s SettlePos) Timestamp() int64 {
+	return s.ts
 }
 
 func (s SettlePos) Proto() types.SettlePosition {
@@ -59,7 +69,7 @@ func (s SettlePos) Proto() types.SettlePosition {
 func (s SettlePos) StreamMessage() *types.BusEvent {
 	p := s.Proto()
 	return &types.BusEvent{
-		ID:   s.traceID,
+		ID:   s.eventID(),
 		Type: s.et.ToProto(),
 		Event: &types.BusEvent_SettlePosition{
 			SettlePosition: &p,

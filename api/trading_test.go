@@ -193,8 +193,13 @@ func getTestGRPCServer(
 
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
+	marketDepth := subscribers.NewMarketDepthBuilder(ctx, true)
+	if marketDepth == nil {
+		return
+	}
+
 	// Market Service
-	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore)
+	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create market service")
 		return
@@ -248,11 +253,12 @@ func getTestGRPCServer(
 
 	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
 	withdrawal := plugins.NewWithdrawal(ctx)
+	deposit := plugins.NewDeposit(ctx)
 
 	g = api.NewGRPCServer(
 		logger,
 		conf.API,
-		stats.New(logger, "ver", "hash"),
+		stats.New(logger, conf.Stats, "ver", "hash"),
 		blockchainClient,
 		timeService,
 		marketService,
@@ -270,6 +276,7 @@ func getTestGRPCServer(
 		feeService,
 		eventService,
 		withdrawal,
+		deposit,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

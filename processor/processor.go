@@ -54,7 +54,6 @@ type ExecutionEngine interface {
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
-	Generate() error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
 
@@ -85,6 +84,16 @@ type Stats interface {
 	CurrentTradesInBatch() uint64
 	SetOrdersPerSecond(i uint64)
 	SetTradesPerSecond(i uint64)
+	// blockchain stats
+	IncTotalTxCurrentBatch()
+	IncHeight()
+	Height() uint64
+	SetAverageTxPerBatch(i uint64)
+	SetAverageTxSizeBytes(i uint64)
+	SetTotalTxLastBatch(i uint64)
+	SetTotalTxCurrentBatch(i uint64)
+	TotalTxCurrentBatch() uint64
+	TotalTxLastBatch() uint64
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/processor Wallet
@@ -107,8 +116,7 @@ type Commander interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
 	AddNodeRegistration(nr *types.NodeRegistration) error
-	SelfChainPubKey() []byte
-	Ready() bool
+	UpdateValidatorSet(keys [][]byte)
 	Exists(key []byte) bool
 	Len() int
 	AllPubKeys() [][]byte
@@ -141,23 +149,14 @@ type EvtForwarder interface {
 	Ack(*types.ChainEvent) bool
 }
 
-// Collateral ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/processor Collateral
-type Collateral interface {
-	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
-	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
-	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
-	EnableAsset(ctx context.Context, asset types.Asset) error
-}
-
 // Banking ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
-	DepositBuiltinAsset(*types.BuiltinAssetDeposit, uint64) error
+	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, uint64) error
 	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
-	DepositERC20(*types.ERC20Deposit, uint64, uint64) error
+	DepositERC20(context.Context, *types.ERC20Deposit, uint64, uint64) error
 	LockWithdrawalERC20(context.Context, string, string, uint64, *types.Erc20WithdrawExt) error
 	WithdrawalERC20(*types.ERC20Withdrawal, uint64, uint64) error
 }

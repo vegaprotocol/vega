@@ -825,3 +825,33 @@ func (this *ERC20WithdrawalApprovalRequest) Validate() error {
 func (this *ERC20WithdrawalApprovalResponse) Validate() error {
 	return nil
 }
+func (this *DepositsRequest) Validate() error {
+	if this.PartyID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	}
+	return nil
+}
+func (this *DepositsResponse) Validate() error {
+	for _, item := range this.Deposits {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Deposits", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *DepositRequest) Validate() error {
+	if this.ID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ID", fmt.Errorf(`value '%v' must not be an empty string`, this.ID))
+	}
+	return nil
+}
+func (this *DepositResponse) Validate() error {
+	if this.Deposit != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Deposit); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Deposit", err)
+		}
+	}
+	return nil
+}

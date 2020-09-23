@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -25,20 +26,21 @@ type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
-	hasRegistered     bool
 	size              uint64
+	txTotals          []uint64
+	txSizes           []int
 
-	Config
+	cfg      Config
 	log      *logging.Logger
 	cancelFn func()
 	idGen    *IDgenerator
+	rates    *ratelimit.Rates
 
 	// service injection
 	assets     Assets
 	banking    Banking
 	broker     Broker
 	cmd        Commander
-	col        Collateral
 	erc        ExtResChecker
 	evtfwd     EvtForwarder
 	exec       ExecutionEngine
@@ -62,7 +64,6 @@ func NewApp(
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
 	cmd Commander,
-	col Collateral,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
 	notary Notary,
@@ -71,6 +72,9 @@ func NewApp(
 	top ValidatorTopology,
 	wallet Wallet,
 ) (*App, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
 	vegaWallet, ok := wallet.Get(nodewallet.Vega)
 	if !ok {
 		return nil, ErrVegaWalletRequired
@@ -80,15 +84,18 @@ func NewApp(
 		abci: abci.New(&codec{}),
 
 		log:      log,
-		Config:   config,
+		cfg:      config,
 		cancelFn: cancelFn,
 		idGen:    NewIDGen(),
+		rates: ratelimit.New(
+			config.Ratelimit.Requests,
+			config.Ratelimit.PerNBlocks,
+		),
 
 		assets:     assets,
 		banking:    banking,
 		broker:     broker,
 		cmd:        cmd,
-		col:        col,
 		erc:        erc,
 		evtfwd:     evtfwd,
 		exec:       exec,
@@ -105,6 +112,7 @@ func NewApp(
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
 	app.abci.OnCommit = app.OnCommit
+	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
 
 	app.abci.
@@ -114,6 +122,7 @@ func NewApp(
 	app.abci.
 		HandleDeliverTx(blockchain.SubmitOrderCommand, app.DeliverSubmitOrder).
 		HandleDeliverTx(blockchain.CancelOrderCommand, app.DeliverCancelOrder).
+		HandleDeliverTx(blockchain.AmendOrderCommand, app.DeliverAmendOrder).
 		HandleDeliverTx(blockchain.WithdrawCommand, app.DeliverWithdraw).
 		HandleDeliverTx(blockchain.ProposeCommand, app.DeliverPropose).
 		HandleDeliverTx(blockchain.VoteCommand, app.DeliverVote).
@@ -124,6 +133,20 @@ func NewApp(
 	app.time.NotifyOnTick(app.onTick)
 
 	return app, nil
+}
+
+// ReloadConf updates the internal configuration
+func (a *App) ReloadConf(cfg Config) {
+	a.log.Info("reloading configuration")
+	if a.log.GetLevel() != cfg.Level.Get() {
+		a.log.Info("updating log level",
+			logging.String("old", a.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		a.log.SetLevel(cfg.Level.Get())
+	}
+
+	a.cfg = cfg
 }
 
 func (app *App) Abci() *abci.App {
@@ -151,9 +174,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 		}
 	}
 
+	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
 		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
-		panic(err)
 	}
 
 	return tmtypes.ResponseInitChain{}
@@ -168,6 +191,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.Respon
 	now := req.Header.Time
 	app.time.SetTimeNow(ctx, now)
 
+	app.rates.NextBlock()
+
 	var err error
 	if app.currentTimestamp, err = app.time.GetTimeNow(); err != nil {
 		app.cancel()
@@ -177,20 +202,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.Respon
 	if app.previousTimestamp, err = app.time.GetTimeLastBatch(); err != nil {
 		app.cancel()
 		return
-	}
-
-	if !app.hasRegistered && app.top.IsValidator() && !app.top.Ready() {
-		if pk := app.top.SelfChainPubKey(); pk != nil {
-			payload := &types.NodeRegistration{
-				ChainPubKey: pk,
-				PubKey:      app.vegaWallet.PubKeyOrAddress(),
-			}
-			if err := app.cmd.Command(blockchain.RegisterNodeCommand, payload); err != nil {
-				app.cancel()
-				return
-			}
-			app.hasRegistered = true
-		}
 	}
 
 	app.log.Debug("ABCI service BEGIN completed",
@@ -211,47 +222,44 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	binary.BigEndian.PutUint64(resp.Data, uint64(app.size))
 
 	app.updateStats()
-
-	if err := app.exec.Generate(); err != nil {
-		app.log.Error("failure generating data in execution engine (commit)")
-	}
+	app.setBatchStats()
 
 	return resp
 }
 
-func (app *App) updateStats() {
-	app.stats.IncTotalBatches()
-	avg := app.stats.TotalOrders() / app.stats.TotalBatches()
-	app.stats.SetAverageOrdersPerBatch(avg)
-	duration := time.Duration(app.currentTimestamp.UnixNano() - app.previousTimestamp.UnixNano()).Seconds()
-	var (
-		currentOrders, currentTrades uint64
-	)
-	app.stats.SetBlockDuration(uint64(duration * float64(time.Second.Nanoseconds())))
-	if duration > 0 {
-		currentOrders, currentTrades = uint64(float64(app.stats.CurrentOrdersInBatch())/duration),
-			uint64(float64(app.stats.CurrentTradesInBatch())/duration)
+// OnCheckTxHandler performs validations like ratelimiting
+func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+	resp := tmtypes.ResponseCheckTx{}
+
+	// Check ratelimits
+	if app.limitPubkey(tx.PubKey()) {
+		resp.Code = abci.AbciTxnValidationFailure
 	}
-	app.stats.SetOrdersPerSecond(currentOrders)
-	app.stats.SetTradesPerSecond(currentTrades)
-	// log stats
-	app.log.Debug("Processor batch stats",
-		logging.Int64("previousTimestamp", app.previousTimestamp.UnixNano()),
-		logging.Int64("currentTimestamp", app.currentTimestamp.UnixNano()),
-		logging.Float64("duration", duration),
-		logging.Uint64("currentOrdersInBatch", app.stats.CurrentOrdersInBatch()),
-		logging.Uint64("currentTradesInBatch", app.stats.CurrentTradesInBatch()),
-		logging.Uint64("total-batches", app.stats.TotalBatches()),
-		logging.Uint64("avg-orders-batch", avg),
-		logging.Uint64("orders-per-sec", currentOrders),
-		logging.Uint64("trades-per-sec", currentTrades),
-	)
-	app.stats.NewBatch() // sets previous batch orders/trades to current, zeroes current tally
+
+	return ctx, resp
+}
+
+// limitPubkey returns whether a request should be rate limited or not
+func (app *App) limitPubkey(pk []byte) bool {
+	// Do not rate limit validators nodes.
+	if app.top.Exists(pk) {
+		return false
+	}
+
+	key := ratelimit.Key(pk).String()
+	if !app.rates.Allow(key) {
+		app.log.Error("Rate limit exceeded", logging.String("key", key))
+		return true
+	}
+
+	app.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", app.rates.Count(key)))
+	return false
 }
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
 func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
 	app.size++
+	app.setTxStats(len(req.Tx))
 
 	// update the context with Tracing Info.
 	hash := hex.EncodeToString(tx.Hash())
@@ -318,10 +326,32 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderID), logging.Error(err))
 		return err
 	}
-	if app.LogOrderCancelDebug {
+	if app.cfg.LogOrderCancelDebug {
 		for _, v := range msg {
 			app.log.Debug("Order cancelled", logging.Order(*v.Order))
 		}
+	}
+
+	return nil
+}
+
+func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
+	order := &types.OrderAmendment{}
+	if err := tx.(*Tx).Unmarshal(order); err != nil {
+		return err
+	}
+
+	app.stats.IncTotalAmendOrder()
+	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderID))
+
+	// Submit the cancel new order request to the Vega trading core
+	msg, err := app.exec.AmendOrder(ctx, order)
+	if err != nil {
+		app.log.Error("error on amending order", logging.String("order-id", order.OrderID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderAmendDebug {
+		app.log.Debug("Order amended", logging.Order(*msg.Order))
 	}
 
 	return nil

@@ -27,7 +27,7 @@ type marketFilterable interface {
 // simple interface for event filtering on party ID
 type partyFilterable interface {
 	Event
-	PartyID() string
+	IsParty(id string) bool
 }
 
 // simple interface for event filtering by party and market ID
@@ -41,7 +41,7 @@ type marketPartyFilterable interface {
 type Base struct {
 	ctx     context.Context
 	traceID string
-	seq     int
+	seq     uint64
 	et      Type
 }
 
@@ -76,6 +76,7 @@ const (
 	MarketTickEvent
 	AuctionEvent
 	WithdrawalEvent
+	DepositEvent
 )
 
 var (
@@ -83,6 +84,7 @@ var (
 		PositionResolution,
 		MarketCreatedEvent,
 		MarketTickEvent,
+		AuctionEvent,
 	}
 
 	protoMap = map[types.BusEventType]Type{
@@ -106,6 +108,9 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:      MarketCreatedEvent,
 		types.BusEventType_BUS_EVENT_TYPE_ASSET:               AssetEvent,
 		types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
+		types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:          WithdrawalEvent,
+		types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:             DepositEvent,
+		types.BusEventType_BUS_EVENT_TYPE_AUCTION:             AuctionEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
@@ -128,6 +133,9 @@ var (
 		MarketCreatedEvent:     types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED,
 		AssetEvent:             types.BusEventType_BUS_EVENT_TYPE_ASSET,
 		MarketTickEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
+		WithdrawalEvent:        types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL,
+		DepositEvent:           types.BusEventType_BUS_EVENT_TYPE_DEPOSIT,
+		AuctionEvent:           types.BusEventType_BUS_EVENT_TYPE_AUCTION,
 	}
 
 	eventStrings = map[Type]string{
@@ -153,6 +161,7 @@ var (
 		MarketTickEvent:        "MarketTickEvent",
 		AuctionEvent:           "AuctionEvent",
 		WithdrawalEvent:        "WithdrawalEvent",
+		DepositEvent:           "DepositEvent",
 	}
 )
 
@@ -201,6 +210,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 	case types.Withdrawal:
 		e := NewWithdrawalEvent(ctx, tv)
 		return e, nil
+	case types.Deposit:
+		e := NewDepositEvent(ctx, tv)
+		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
 }
@@ -220,8 +232,12 @@ func (b Base) TraceID() string {
 	return b.traceID
 }
 
+func (b *Base) SetSequenceID(s uint64) {
+	b.seq = s
+}
+
 // Sequence returns event sequence number
-func (b Base) Sequence() int {
+func (b Base) Sequence() uint64 {
 	return b.seq
 }
 
@@ -233,6 +249,10 @@ func (b Base) Context() context.Context {
 // Type returns the event type
 func (b Base) Type() Type {
 	return b.et
+}
+
+func (b Base) eventID() string {
+	return fmt.Sprintf("%s-%d", b.traceID, b.seq)
 }
 
 // MarketEvents return all the possible market events
@@ -288,7 +308,7 @@ func GetPartyIDFilter(pID string) func(Event) bool {
 		if !ok {
 			return false
 		}
-		return (pe.PartyID() == pID)
+		return pe.IsParty(pID)
 	}
 }
 

@@ -55,6 +55,7 @@ type GRPCServer struct {
 	feeService              *fee.Svc
 	eventService            *subscribers.Service
 	withdrawalService       *plugins.Withdrawal
+	depositService          *plugins.Deposit
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -88,6 +89,7 @@ func NewGRPCServer(
 	feeService *fee.Svc,
 	eventService *subscribers.Service,
 	withdrawalService *plugins.Withdrawal,
+	depositService *plugins.Deposit,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -116,6 +118,7 @@ func NewGRPCServer(
 		feeService:              feeService,
 		eventService:            eventService,
 		withdrawalService:       withdrawalService,
+		depositService:          depositService,
 		statusChecker:           statusChecker,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
@@ -236,6 +239,7 @@ func (g *GRPCServer) Start() {
 		eventService:            g.eventService,
 		statusChecker:           g.statusChecker,
 		WithdrawalService:       g.withdrawalService,
+		DepositService:          g.depositService,
 		ctx:                     g.ctx,
 	}
 	g.tradingDataService = tradingDataSvc

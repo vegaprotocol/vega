@@ -57,6 +57,9 @@ func (this *SettleDistressed) Validate() error {
 func (this *MarketTick) Validate() error {
 	return nil
 }
+func (this *AuctionEvent) Validate() error {
+	return nil
+}
 func (this *BusEvent) Validate() error {
 	if oneOfNester, ok := this.GetEvent().(*BusEvent_TimeUpdate); ok {
 		if oneOfNester.TimeUpdate != nil {
@@ -181,6 +184,27 @@ func (this *BusEvent) Validate() error {
 		if oneOfNester.MarketTick != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.MarketTick); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("MarketTick", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_Withdrawal); ok {
+		if oneOfNester.Withdrawal != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Withdrawal); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Withdrawal", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_Deposit); ok {
+		if oneOfNester.Deposit != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Deposit); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Deposit", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_Auction); ok {
+		if oneOfNester.Auction != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Auction); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Auction", err)
 			}
 		}
 	}

@@ -153,8 +153,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 		if err != nil {
 			c.log.Error("Failed to unmarshal candle value from badger in candle store (fetchCandle)",
 				logging.Error(err),
-				logging.String("badger-key", string(item.Key())),
-				logging.String("raw-bytes", string(itemCopy)))
+				logging.String("badger-key", string(item.Key())))
 
 			return nil, errors.Wrap(err, "failed to unmarshal from badger (fetchCandle)")
 		}
@@ -315,8 +314,7 @@ func (c *Candle) GetCandles(ctx context.Context, market string, since time.Time,
 			if err := proto.Unmarshal(value, &newCandle); err != nil {
 				c.log.Error("Failed to unmarshal candle value from badger in candle store (GetCandles)",
 					logging.Error(err),
-					logging.String("badger-key", string(item.Key())),
-					logging.String("raw-bytes", string(value)))
+					logging.String("badger-key", string(item.Key())))
 				continue
 			}
 			candles = append(candles, &newCandle)
@@ -373,8 +371,7 @@ func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*typ
 		if err := proto.Unmarshal(candleBuf, &candle); err != nil {
 			c.log.Error("Failed to unmarshal candle value from badger in candle store (FetchLastCandle)",
 				logging.Error(err),
-				logging.String("badger-key", string(key)),
-				logging.String("raw-bytes", string(candleBuf)))
+				logging.String("badger-key", string(key)))
 			return err
 		}
 		return nil

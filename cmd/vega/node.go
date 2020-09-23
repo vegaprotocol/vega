@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
@@ -65,7 +64,6 @@ type CandleStore interface {
 type OrderStore interface {
 	orders.OrderStore
 	SaveBatch([]types.Order) error
-	GetMarketDepth(context.Context, string, uint64) (*proto.MarketDepth, error)
 	Close() error
 	ReloadConf(storage.Config)
 }
@@ -108,6 +106,7 @@ type NodeCommand struct {
 	marketDataSub  *subscribers.MarketDataSub
 	newMarketSub   *subscribers.Market
 	candleSub      *subscribers.CandleSub
+	marketDepthSub *subscribers.MarketDepthBuilder
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -134,6 +133,8 @@ type NodeCommand struct {
 	withPPROF    bool
 	noChain      bool
 	noStores     bool
+	record       string
+	replay       string
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
@@ -159,6 +160,7 @@ type NodeCommand struct {
 	notaryPlugin     *plugins.Notary
 	assetPlugin      *plugins.Asset
 	withdrawalPlugin *plugins.Withdrawal
+	depositPlugin    *plugins.Deposit
 }
 
 // Init initialises the node command.
@@ -189,6 +191,8 @@ func (l *NodeCommand) addFlags() {
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")
+	flagSet.StringVarP(&l.record, "abci-record", "", "", "If set, it will record ABCI operations into this file")
+	flagSet.StringVarP(&l.replay, "abci-replay", "", "", "If set, it will replay ABCI operations from this file")
 }
 
 // runNode is the entry of node command.
@@ -223,6 +227,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.feeService,
 		l.eventService,
 		l.withdrawalPlugin,
+		l.depositPlugin,
 		statusChecker,
 	)
 
@@ -249,20 +254,6 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	l.Log.Info("Vega startup complete")
-
-	// Start the stats collection client for tendermint
-	tm := stats.NewTendermint(l.blockchainClient, l.stats)
-	go func() {
-		for {
-			select {
-			case <-time.NewTicker(1 * time.Second).C:
-				if err := tm.Collect(l.ctx); err != nil {
-					l.Log.Info("Can't start stats Collection", logging.Error(err))
-				}
-			}
-		}
-	}()
-
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources

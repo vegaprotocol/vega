@@ -56,7 +56,7 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("calculate batch auction trading fee empty trade", testCalcBatchAuctionTradingErrorEmptyTrade)
 	t.Run("calcualte batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
 	t.Run("calcualte batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
-
+	t.Run("calculate position resolution", testCalcPositionResolution)
 }
 
 func testUpdateFeeFactors(t *testing.T) {
@@ -442,8 +442,9 @@ func testCalcPositionResolution(t *testing.T) {
 		fakeMktPos{party: "bad-party4", size: 10},
 	}
 
-	ft, err := eng.CalculateFeeForPositionResolution(trades, positions)
+	ft, partiesFee, err := eng.CalculateFeeForPositionResolution(trades, positions)
 	assert.NotNil(t, ft)
+	assert.NotNil(t, partiesFee)
 	assert.Nil(t, err)
 
 	// get the amounts map
@@ -460,6 +461,12 @@ func testCalcPositionResolution(t *testing.T) {
 	party4Amount, ok := feeAmounts["bad-party4"]
 	assert.True(t, ok)
 	assert.Equal(t, 307, int(party4Amount))
+
+	// check the details of the parties
+	// 307 as expected
+	assert.Equal(t, int(90), int(partiesFee["bad-party1"].InfrastructureFee))
+	assert.Equal(t, int(37), int(partiesFee["bad-party1"].MakerFee))
+	assert.Equal(t, int(180), int(partiesFee["bad-party1"].LiquidityFee))
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()

@@ -194,7 +194,7 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	// Check we have at least one field to update
 	if amendment.Price == nil &&
 		amendment.SizeDelta == 0 &&
-		amendment.ExpiresAt == nil &&
+		(amendment.ExpiresAt == nil || amendment.ExpiresAt.Value == 0) &&
 		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED {
 		return ErrNoParamsInAmendRequest
 	}

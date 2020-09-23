@@ -67,7 +67,7 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
-	time TimeService,
+	ts TimeService,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -84,7 +84,7 @@ func NewEngine(
 		log:        log,
 		Config:     executionConfig,
 		markets:    map[string]*Market{},
-		time:       time,
+		time:       ts,
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
@@ -362,8 +362,14 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 	return conf, nil
 }
 
-func (e *Engine) onChainTimeUpdate(_ context.Context, t time.Time) {
+func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+
+	for _, v := range e.markets {
+		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
+	}
+	evt := events.NewTime(ctx, t)
+	e.broker.Send(evt)
 
 	// update block time on id generator
 	e.idgen.NewBatch()
@@ -433,23 +439,4 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 		return types.MarketData{}, types.ErrInvalidMarketID
 	}
 	return mkt.GetMarketData(), nil
-}
-
-// Generate flushes any data (including storing state changes) to underlying stores (if configured).
-func (e *Engine) Generate() error {
-	ctx := context.TODO()
-
-	// Market data is added to buffer on Generate
-	// do this before the time event -> time event flushes
-	for _, v := range e.markets {
-		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
-	}
-	// Transfers
-	// @TODO this event will be generated with a block context that has the trace ID
-	// this will have the effect of flushing the transfer response buffer
-	now, _ := e.time.GetTimeNow()
-	evt := events.NewTime(ctx, now)
-	e.broker.Send(evt)
-	// Markets
-	return nil
 }

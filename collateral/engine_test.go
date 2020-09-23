@@ -42,6 +42,7 @@ func TestCollateralTransfer(t *testing.T) {
 	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testDistributeWin)
 	t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testProcessBoth)
 	t.Run("test distribution insufficient funds - Transfer losses (partial), distribute wins pro-rate", testProcessBothProRated)
+	t.Run("test releas party margin account", testReleasePartyMarginAccount)
 }
 
 func TestCollateralMarkToMarket(t *testing.T) {
@@ -98,6 +99,36 @@ func testFeesTransferContinuousNoTransfer(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func testReleasePartyMarginAccount(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	gen, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	mar, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), gen, 100)
+	assert.Nil(t, err)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), mar, 500)
+	assert.Nil(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	_, err = eng.ClearPartyMarginAccount(
+		context.Background(), trader, testMarketID, testMarketAsset)
+	assert.NoError(t, err)
+	generalAcc, _ := eng.GetAccountByID(gen)
+	assert.Equal(t, 600, int(generalAcc.Balance))
+	marginAcc, _ := eng.GetAccountByID(mar)
+	assert.Equal(t, 0, int(marginAcc.Balance))
+
+}
+
 func testFeeTransferContinuousNoFunds(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	defer eng.Finish()
@@ -127,6 +158,7 @@ func testFeeTransferContinuousNoFunds(t *testing.T) {
 		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
 	assert.Nil(t, transfers)
 	assert.EqualError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+
 }
 
 func testFeeTransferContinuousNotEnoughFunds(t *testing.T) {

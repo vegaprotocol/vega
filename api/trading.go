@@ -17,7 +17,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc/codes"
 )
 
@@ -83,7 +82,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
-	if raw, err = txEncode(raw, blockchain.SubmitOrderCommand); err != nil {
+	if raw, err = blockchain.TxEncode(raw, blockchain.SubmitOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
@@ -103,7 +102,7 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
-	if raw, err = txEncode(raw, blockchain.CancelOrderCommand); err != nil {
+	if raw, err = blockchain.TxEncode(raw, blockchain.CancelOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
 	return &protoapi.PrepareCancelOrderResponse{
@@ -114,21 +113,20 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
-	return nil, apiError(codes.Unimplemented, errors.New("not implemented"))
-	// err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
-	// if err != nil {
-	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	// }
-	// raw, err := proto.Marshal(req.Amendment)
-	// if err != nil {
-	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	// }
-	// if raw, err = txEncode(raw, blockchain.AmendOrderCommand); err != nil {
-	// 	return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	// }
-	// return &protoapi.PrepareAmendOrderResponse{
-	// 	Blob: raw,
-	// }, nil
+	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	}
+	raw, err := proto.Marshal(req.Amendment)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	}
+	if raw, err = blockchain.TxEncode(raw, blockchain.AmendOrderCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrAmendOrder, err)
+	}
+	return &protoapi.PrepareAmendOrderResponse{
+		Blob: raw,
+	}, nil
 }
 
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
@@ -161,7 +159,7 @@ func (s *tradingService) PrepareWithdraw(
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
 	}
-	if raw, err = txEncode(raw, blockchain.WithdrawCommand); err != nil {
+	if raw, err = blockchain.TxEncode(raw, blockchain.WithdrawCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
 	}
 	return &protoapi.PrepareWithdrawResponse{
@@ -187,7 +185,7 @@ func (s *tradingService) PrepareProposal(
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 
-	if raw, err = txEncode(raw, blockchain.ProposeCommand); err != nil {
+	if raw, err = blockchain.TxEncode(raw, blockchain.ProposeCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 	return &protoapi.PrepareProposalResponse{
@@ -216,7 +214,7 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
-	if raw, err = txEncode(raw, blockchain.VoteCommand); err != nil {
+	if raw, err = blockchain.TxEncode(raw, blockchain.VoteCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
 	return &protoapi.PrepareVoteResponse{
@@ -244,6 +242,7 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 		}
 		if err = verifySignature(s.log, msg, req.Signature, req.PubKey); err != nil {
+			s.log.Debug("invalid tx signature", logging.String("pubkey", req.PubKey))
 			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 		}
 	}
@@ -263,13 +262,6 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	return &protoapi.PropagateChainEventResponse{
 		Success: ok,
 	}, nil
-}
-
-func txEncode(input []byte, cmd blockchain.Command) (proto []byte, err error) {
-	prefix := uuid.NewV4().String()
-	prefixBytes := []byte(prefix)
-	commandInput := append([]byte{byte(cmd)}, input...)
-	return append(prefixBytes, commandInput...), nil
 }
 
 func verifySignature(
@@ -301,9 +293,6 @@ func verifySignature(
 		return err
 	}
 	if !ok {
-		if log != nil {
-			log.Error("invalid tx signature", logging.String("pubkey", pubKey))
-		}
 		return ErrInvalidSignature
 	}
 	return nil

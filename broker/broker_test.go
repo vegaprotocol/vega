@@ -5,10 +5,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/broker/mocks"
+	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -24,6 +27,7 @@ type brokerTst struct {
 type evt struct {
 	t   events.Type
 	ctx context.Context
+	sid uint64
 	id  string
 }
 
@@ -55,6 +59,11 @@ func (b *brokerTst) Finish() {
 	b.ctrl.Finish()
 }
 
+func TestSequenceIDGen(t *testing.T) {
+	t.Run("Sequence ID is correctly - events dispatched per block (ordered)", testSequenceIDGenSeveralBlocksOrdered)
+	t.Run("Sequence ID is correctly - events dispatched for several blocks at the same time", testSequenceIDGenSeveralBlocksUnordered)
+}
+
 func TestSubscribe(t *testing.T) {
 	t.Run("Subscribe and unsubscribe required - success", testSubUnsubSuccess)
 	t.Run("Subscribe reuses keys", testSubReuseKey)
@@ -68,6 +77,109 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Stop sending if context is cancelled", testStopCtx)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
 	t.Run("Send only to typed subscriber", testEventTypeSubscription)
+}
+
+func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
+	tstBroker := getBroker(t)
+	defer tstBroker.Finish()
+	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
+	dataH1 := []events.Event{
+		events.NewTime(ctxH1, time.Now()),
+		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
+	}
+	dataH2 := []events.Event{
+		events.NewTime(ctxH2, time.Now()),
+		events.NewPartyEvent(ctxH2, types.Party{Id: "test-party-h2"}),
+	}
+	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
+	done := make(chan struct{})
+	mu := sync.Mutex{}
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	sub.EXPECT().Types().Times(2).Return(nil)
+	sub.EXPECT().Ack().Times(1).Return(true)
+	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
+		// race detector complains about appending here, because data comes from
+		// different go routines, so we'll use a quick & dirty fix: mutex the slice
+		mu.Lock()
+		defer mu.Unlock()
+		allData = append(allData, evts...)
+		if len(allData) >= cap(allData) {
+			close(done)
+		}
+	})
+	k := tstBroker.Subscribe(sub)
+	// send batches for both events - hash 2 after hash 1
+	tstBroker.SendBatch(dataH1)
+	tstBroker.SendBatch(dataH2)
+	seqH1 := []uint64{}
+	seqH2 := []uint64{}
+	for i := range dataH1 {
+		e1, ok := dataH1[i].(broker.SeqEvent)
+		assert.True(t, ok)
+		seqH1 = append(seqH1, e1.Sequence())
+		e2, ok := dataH2[i].(broker.SeqEvent)
+		assert.True(t, ok)
+		seqH2 = append(seqH2, e2.Sequence())
+	}
+	assert.Equal(t, seqH1, seqH2)
+	<-done
+	tstBroker.Unsubscribe(k)
+	assert.NotEqual(t, seqH1[0], seqH2[1]) // the two are equal, we can compare X-slice
+	assert.Equal(t, len(allData), len(dataH1)+len(dataH2))
+}
+
+func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
+	tstBroker := getBroker(t)
+	defer tstBroker.Finish()
+	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
+	dataH1 := []events.Event{
+		events.NewTime(ctxH1, time.Now()),
+		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
+	}
+	dataH2 := []events.Event{
+		events.NewTime(ctxH2, time.Now()),
+		events.NewPartyEvent(ctxH2, types.Party{Id: "test-party-h2"}),
+	}
+	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
+	mu := sync.Mutex{}
+	done := make(chan struct{})
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	sub.EXPECT().Types().Times(2).Return(nil)
+	sub.EXPECT().Ack().Times(1).Return(true)
+	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
+		mu.Lock()
+		defer mu.Unlock()
+		allData = append(allData, evts...)
+		if len(allData) >= cap(allData) {
+			close(done)
+		}
+	})
+	k := tstBroker.Subscribe(sub)
+	// We can't use sendBatch here: we use the traceID of the fisrt event in the batch to determine
+	// the hash (batch-sending events can only happen within a single block)
+	for i := range dataH1 {
+		tstBroker.Send(dataH1[i])
+		tstBroker.Send(dataH2[i])
+	}
+	seqH1 := []uint64{}
+	seqH2 := []uint64{}
+	for i := range dataH1 {
+		e1, ok := dataH1[i].(broker.SeqEvent)
+		assert.True(t, ok)
+		seqH1 = append(seqH1, e1.Sequence())
+		e2, ok := dataH2[i].(broker.SeqEvent)
+		assert.True(t, ok)
+		seqH2 = append(seqH2, e2.Sequence())
+	}
+	assert.Equal(t, seqH1, seqH2)
+	<-done
+	tstBroker.Unsubscribe(k)
+	assert.NotEqual(t, seqH1[0], seqH2[1]) // the two are equal, we can compare X-slice
+	assert.Equal(t, len(allData), len(dataH1)+len(dataH2))
 }
 
 func testSubUnsubSuccess(t *testing.T) {
@@ -219,6 +331,23 @@ func testSendBatchChannel(t *testing.T) {
 	assert.Equal(t, events[0], <-cCh)
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
+	// ensure sequence ID's are set and are unique
+	seqIDs := make([]uint64, 0, len(events))
+	for _, e := range events {
+		se, ok := e.(broker.SeqEvent)
+		assert.True(t, ok)
+		sID := se.Sequence()
+		assert.NotZero(t, sID)
+		seqIDs = append(seqIDs, sID)
+	}
+	last := len(seqIDs) - 1
+	for i := 0; i < last-1; i++ {
+		for j := i + 1; j < last; j++ {
+			assert.NotEqual(t, seqIDs[i], seqIDs[j])
+		}
+	}
+	// this one isn't verified in the loop above
+	assert.NotEqual(t, seqIDs[last-1], seqIDs[last])
 }
 
 func testSkipOptional(t *testing.T) {
@@ -394,6 +523,14 @@ func (e evt) Type() events.Type {
 
 func (e evt) Context() context.Context {
 	return e.ctx
+}
+
+func (e *evt) SetSequenceID(s uint64) {
+	e.sid = s
+}
+
+func (e evt) Sequence() uint64 {
+	return e.sid
 }
 
 func (e evt) TraceID() string {
