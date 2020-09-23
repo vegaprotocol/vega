@@ -58,7 +58,7 @@ type PriceRangeProvider interface {
 	PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64)
 }
 
-// PriceMonitoring allows tracking price changes and verifying them against the theoretical levels implied by the risk model.
+// PriceMonitoring allows tracking price changes and verifying them against the theoretical levels implied by the PriceRangeProvider (risk model).
 type PriceMonitoring struct {
 	riskModel                    PriceRangeProvider
 	horizonProbabilityLevelPairs []HorizonProbabilityLevelPair
@@ -72,13 +72,13 @@ type PriceMonitoring struct {
 	priceMoveBounds        map[HorizonProbabilityLevelPair]priceMoveBound
 }
 
-// NewPriceMonitoring return a new instance of PriceMonitoring.
-// Note that horizonProbabilityLevelPairs will get sorte by horizon (ascending) and probabilit level (descending) to aid performance.
+// NewPriceMonitoring returns a new instance of PriceMonitoring.
 func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPairs []HorizonProbabilityLevelPair, updateFrequency time.Duration, currentPrice uint64, currentTime time.Time) (*PriceMonitoring, error) {
 	if updateFrequency.Nanoseconds() <= 0 {
 		return nil, errUpdateFrequencyNotPositive
 	}
 
+	// Other functions depend on this sorting
 	sort.Slice(horizonProbabilityLevelPairs,
 		func(i, j int) bool {
 			return horizonProbabilityLevelPairs[i].Horizon < horizonProbabilityLevelPairs[j].Horizon &&
@@ -146,7 +146,7 @@ func (pm *PriceMonitoring) RecordTimeChange(currentTime time.Time) error {
 	return nil
 }
 
-// CheckBoundViolations returns a map of horizon and probability level pair to booleans.
+// CheckBoundViolations returns a map of horizon and probability level pair to boolean.
 // A true value indicates that a bound corresponding to a given horizon and probability level pair has been violated.
 func (pm *PriceMonitoring) CheckBoundViolations(price uint64) map[HorizonProbabilityLevelPair]bool {
 	fpPrice := float64(price)
