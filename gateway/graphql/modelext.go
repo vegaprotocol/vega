@@ -1251,6 +1251,19 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 	return gql
 }
 
+func auctionEventFromProto(ae *types.AuctionEvent) *AuctionEvent {
+	r := &AuctionEvent{
+		MarketID:       ae.MarketID,
+		Leave:          ae.Leave,
+		OpeningAuction: ae.OpeningAuction,
+		AuctionStart:   nanoTSToDatetime(ae.Start),
+	}
+	if ae.End != 0 {
+		r.AuctionEnd = nanoTSToDatetime(ae.End)
+	}
+	return r
+}
+
 func eventFromProto(e *types.BusEvent) Event {
 	switch e.Type {
 	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
@@ -1360,6 +1373,8 @@ func eventFromProto(e *types.BusEvent) Event {
 			MarketID: me.GetMarketID(),
 			Payload:  me.GetPayload(),
 		}
+	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
+		return auctionEventFromProto(e.GetAuction())
 	}
 	return nil
 }
@@ -1410,6 +1425,8 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK)
 		case BusEventTypeMarket:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET)
+		case BusEventTypeAuction:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_AUCTION)
 		}
 	}
 	return r
@@ -1457,6 +1474,8 @@ func eventTypeFromProto(t types.BusEventType) BusEventType {
 		return BusEventTypeMarketTick
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
 		return BusEventTypeMarket
+	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
+		return BusEventTypeAuction
 	}
 	// @TODO this should be an error, but no event should ever be returned with this value anyway
 	return BusEventTypeAll

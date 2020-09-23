@@ -148,6 +148,7 @@
     - [ValidatorEvent](#vega.ValidatorEvent)
 
 - [proto/events.proto](#proto/events.proto)
+    - [AuctionEvent](#vega.AuctionEvent)
     - [BusEvent](#vega.BusEvent)
     - [LossSocialization](#vega.LossSocialization)
     - [MarketEvent](#vega.MarketEvent)
@@ -2567,6 +2568,25 @@ An event related to validator management with foreign networks.
 
 
 
+<a name="vega.AuctionEvent"></a>
+
+### AuctionEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| openingAuction | [bool](#bool) |  |  |
+| leave | [bool](#bool) |  |  |
+| start | [int64](#int64) |  |  |
+| end | [int64](#int64) |  |  |
+
+
+
+
+
+
 <a name="vega.BusEvent"></a>
 
 ### BusEvent
@@ -2598,6 +2618,7 @@ the actual data is set as a oneof field
 | marketTick | [MarketTick](#vega.MarketTick) |  |  |
 | withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
 | deposit | [Deposit](#vega.Deposit) |  |  |
+| auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2787,6 +2808,7 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
 | BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
 | BUS_EVENT_TYPE_DEPOSIT | 21 |  |
+| BUS_EVENT_TYPE_AUCTION | 22 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 

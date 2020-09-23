@@ -1998,6 +1998,19 @@ type MarketTick {
   time: String!
 }
 
+type AuctionEvent {
+  "the market ID"
+  marketID: String!
+  "event fired because of auction end"
+  leave: Boolean!
+  "event related to opening auction"
+  openingAuction: Boolean!
+  "start time of auction"
+  auctionStart: String!
+  "optional end time of auction"
+  auctionEnd: String!
+}
+
 enum BusEventType {
   "all events"
   All
@@ -2037,13 +2050,15 @@ enum BusEventType {
   Asset
   "market tick event"
   MarketTick
+  "auction event"
+  Auction
 
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent
 
 type BusEvent {
   "the id for this event"

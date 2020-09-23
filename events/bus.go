@@ -84,6 +84,7 @@ var (
 		PositionResolution,
 		MarketCreatedEvent,
 		MarketTickEvent,
+		AuctionEvent,
 	}
 
 	protoMap = map[types.BusEventType]Type{
@@ -109,6 +110,7 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
 		types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:          WithdrawalEvent,
 		types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:             DepositEvent,
+		types.BusEventType_BUS_EVENT_TYPE_AUCTION:             AuctionEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
@@ -133,6 +135,7 @@ var (
 		MarketTickEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
 		WithdrawalEvent:        types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL,
 		DepositEvent:           types.BusEventType_BUS_EVENT_TYPE_DEPOSIT,
+		AuctionEvent:           types.BusEventType_BUS_EVENT_TYPE_AUCTION,
 	}
 
 	eventStrings = map[Type]string{

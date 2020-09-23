@@ -72,3 +72,14 @@ func (p PosRes) StreamMessage() *types.BusEvent {
 		},
 	}
 }
+
+func (p PosRes) StreamMarketMessage() *types.BusEvent {
+	msg := p.MarketProto()
+	return &types.BusEvent{
+		ID:   p.eventID(),
+		Type: types.BusEventType_BUS_EVENT_TYPE_MARKET,
+		Event: &types.BusEvent_Market{
+			Market: &msg,
+		},
+	}
+}

@@ -79,6 +79,14 @@ type ComplexityRoot struct {
 		TotalSupply              func(childComplexity int) int
 	}
 
+	AuctionEvent struct {
+		AuctionEnd     func(childComplexity int) int
+		AuctionStart   func(childComplexity int) int
+		Leave          func(childComplexity int) int
+		MarketID       func(childComplexity int) int
+		OpeningAuction func(childComplexity int) int
+	}
+
 	BuiltinAsset struct {
 		Decimals            func(childComplexity int) int
 		ID                  func(childComplexity int) int
@@ -909,6 +917,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Asset.TotalSupply(childComplexity), true
+
+	case "AuctionEvent.auctionEnd":
+		if e.complexity.AuctionEvent.AuctionEnd == nil {
+			break
+		}
+
+		return e.complexity.AuctionEvent.AuctionEnd(childComplexity), true
+
+	case "AuctionEvent.auctionStart":
+		if e.complexity.AuctionEvent.AuctionStart == nil {
+			break
+		}
+
+		return e.complexity.AuctionEvent.AuctionStart(childComplexity), true
+
+	case "AuctionEvent.leave":
+		if e.complexity.AuctionEvent.Leave == nil {
+			break
+		}
+
+		return e.complexity.AuctionEvent.Leave(childComplexity), true
+
+	case "AuctionEvent.marketID":
+		if e.complexity.AuctionEvent.MarketID == nil {
+			break
+		}
+
+		return e.complexity.AuctionEvent.MarketID(childComplexity), true
+
+	case "AuctionEvent.openingAuction":
+		if e.complexity.AuctionEvent.OpeningAuction == nil {
+			break
+		}
+
+		return e.complexity.AuctionEvent.OpeningAuction(childComplexity), true
 
 	case "BuiltinAsset.decimals":
 		if e.complexity.BuiltinAsset.Decimals == nil {
@@ -5501,6 +5544,19 @@ type MarketTick {
   time: String!
 }
 
+type AuctionEvent {
+  "the market ID"
+  marketID: String!
+  "event fired because of auction end"
+  leave: Boolean!
+  "event related to opening auction"
+  openingAuction: Boolean!
+  "start time of auction"
+  auctionStart: String!
+  "optional end time of auction"
+  auctionEnd: String!
+}
+
 enum BusEventType {
   "all events"
   All
@@ -5540,13 +5596,15 @@ enum BusEventType {
   Asset
   "market tick event"
   MarketTick
+  "auction event"
+  Auction
 
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent
 
 type BusEvent {
   "the id for this event"
@@ -7105,6 +7163,176 @@ func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context,
 	res := resTmp.(*proto.Account)
 	fc.Result = res
 	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AuctionEvent_marketID(ctx context.Context, field graphql.CollectedField, obj *AuctionEvent) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AuctionEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AuctionEvent_leave(ctx context.Context, field graphql.CollectedField, obj *AuctionEvent) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AuctionEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Leave, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AuctionEvent_openingAuction(ctx context.Context, field graphql.CollectedField, obj *AuctionEvent) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AuctionEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpeningAuction, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AuctionEvent_auctionStart(ctx context.Context, field graphql.CollectedField, obj *AuctionEvent) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AuctionEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionStart, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AuctionEvent_auctionEnd(ctx context.Context, field graphql.CollectedField, obj *AuctionEvent) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AuctionEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionEnd, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_id(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -20199,6 +20427,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._SettleDistressed(ctx, sel, obj)
+	case AuctionEvent:
+		return ec._AuctionEvent(ctx, sel, &obj)
+	case *AuctionEvent:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AuctionEvent(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -20469,6 +20704,53 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var auctionEventImplementors = []string{"AuctionEvent", "Event"}
+
+func (ec *executionContext) _AuctionEvent(ctx context.Context, sel ast.SelectionSet, obj *AuctionEvent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, auctionEventImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AuctionEvent")
+		case "marketID":
+			out.Values[i] = ec._AuctionEvent_marketID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "leave":
+			out.Values[i] = ec._AuctionEvent_leave(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "openingAuction":
+			out.Values[i] = ec._AuctionEvent_openingAuction(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auctionStart":
+			out.Values[i] = ec._AuctionEvent_auctionStart(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auctionEnd":
+			out.Values[i] = ec._AuctionEvent_auctionEnd(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

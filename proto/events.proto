@@ -69,6 +69,14 @@ message MarketTick {
   int64 time = 2;
 }
 
+message AuctionEvent {
+  string marketID = 1;
+  bool openingAuction = 2;
+  bool leave = 3;
+  int64 start = 4;
+  int64 end = 5;
+}
+
 // event types, 2 groups: actual single values, and then some events that capture a group of events
 enum BusEventType {
     BUS_EVENT_TYPE_UNSPECIFIED = 0;
@@ -93,6 +101,7 @@ enum BusEventType {
     BUS_EVENT_TYPE_MARKET_TICK = 19;
     BUS_EVENT_TYPE_WITHDRAWAL = 20;
     BUS_EVENT_TYPE_DEPOSIT = 21;
+    BUS_EVENT_TYPE_AUCTION = 22;
 
     BUS_EVENT_TYPE_MARKET = 101; // special event for all events implementing a specific interface
 }
@@ -123,6 +132,7 @@ message BusEvent {
     MarketTick marketTick = 118;
     Withdrawal withdrawal = 119;
     Deposit deposit = 120;
+    AuctionEvent auction = 121;
     MarketEvent market = 1001;
   }
 }
