@@ -144,7 +144,7 @@ Each main test function contains a number of `t.Run("brief description of the sp
 
 It's also easier on reviewers to look at a PR and find a new test group when a new feature is added. If no such group is found, then it's pretty obvious no new tests were added. If a new group is added, we can see in a single function what scenario's have a unit test covering them.
 
-When changes to specs, or internal implementations of existing features happen, these groups aid in refactoring. If the `MarkToMarket` transfers change in whatever way, we should be able to get the tests to pass simply by updating the `TestCollateralMarkToMarket` group.
+When changes to specs, or internal implementations of existing features happen, these groups aid in refactoring. If the MarkToMarket transfers change in whatever way, we should be able to get the tests to pass simply by updating the `TestCollateralMarkToMarket` group.
 
 ## Protobuf
 
