@@ -1842,6 +1842,17 @@ func (m *Market) validateOrderAmendment(
 		amendment.TimeInForce == types.Order_TIF_IOC {
 		// IOC and FOK are not acceptable for amend order
 		return errors.New("amend order, TIF FOK and IOC are not allowed")
+	} else if (amendment.TimeInForce == types.Order_TIF_GFN ||
+		amendment.TimeInForce == types.Order_TIF_GFA) &&
+		amendment.TimeInForce != order.TimeInForce {
+		// We cannot amend to a GFA/GFN orders
+		return errors.New("amend order, cannot amend to a GFA/GFN order")
+	} else if (order.TimeInForce == types.Order_TIF_GFN ||
+		order.TimeInForce == types.Order_TIF_GFA) &&
+		(amendment.TimeInForce != order.TimeInForce &&
+			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED) {
+		// We cannot amend from a GFA/GFN orders
+		return errors.New("amend order, cannot amend from a GFA/GFN order")
 	}
 	return nil
 }
