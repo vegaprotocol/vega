@@ -100,6 +100,51 @@ func switchMap(assignTo T, oneOf Tb) {
 
 The latter not only looks cleaner, it results in fewer function calls (the `if` equivalent will call all getters until a non-nil value is returned), it's easier to maintain (adding another value is a 2 line change), and clearly communicates what this function does. Instantly, anyone looking at this code can tell that there's no business logic involved.
 
+6. Return early whenever possible.
+
+## Unit tests
+
+Whenever implementing a new feature, new unit tests will have to be written. Unit tests, by definition, should use mocks rather than actual dependencies. We generate mocks for interfaces per package with a simple `//go:generate` command:
+
+```go
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/some_dependency_mock.go -package mocks code.vegaprotocol.io/vega/pkg SomeDependency
+type SomeDependency interface {
+    DoFoo() error
+    DoBar(ctx context.Context, ids []string) ([]*Bar, error)
+}
+```
+
+From this, it ought to be clear that mocks are generated per-package (including in cases where several packages depend on a single object implementing the interface they need). Mock files are written to a sub-package/directory of the package we're testing: `mocks`. Generated files have the `_mock` suffix in their name.
+
+The unit tests themselves sit next to the package files they cover, preferably with the same name + `_test` suffix (so `engine.go` tests in `engine_test.go`).
+The test file itself also adds the `_test` suffix to the package name, effectively running tests in a different package. This ensures we're testing only the exported API. Covering unexported functions shouldn't be a problem. If an unexported function cannot be covered through calls made to the exported API, then it's dead code and can be removed.
+
+Tests should be grouped in terms of what they cover. Each group ideally contains a simple scenario (happy path), a failure, and a couple more complex scenario's. Taking the collateral engine as an example, we see test grouping like this:
+
+
+```go
+func TestCollateralTransfer(t *testing.T) {}
+
+func TestCollateralMarkToMarket(t *testing.T) {}
+
+func TestAddTraderToMarket(t *testing.T) {}
+
+func TestRemoveDistressed(t *testing.T) {}
+
+func TestMarginUpdateOnOrder(t *testing.T) {}
+
+func TestTokenAccounts(t *testing.T) {}
+
+func TestEnableAssets(t *testing.T) {}
+
+func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {}
+```
+
+Each main test function contains a number of `t.Run("brief description of the specific test", testSpecificCaseFunc)` statements. The advantage is that running `go test -v ./collateral/...` groups the output per functionality, listing each specific test case, and whether or not it succeeded. Opening the file, jumping to a test group and locating the specific test case is faster to do than to filter through the same number of tests in a single file without any grouping applied to them.
+
+It's also easier on reviewers to look at a PR and find a new test group when a new feature is added. If no such group is found, then it's pretty obvious no new tests were added. If a new group is added, we can see in a single function what scenario's have a unit test covering them.
+
+When changes to specs, or internal implementations of existing features happen, these groups aid in refactoring. If the MarkToMarket transfers change in whatever way, we should be able to get the tests to pass simply by updating the `TestCollateralMarkToMarket` group.
 
 ## Protobuf
 

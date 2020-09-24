@@ -19,6 +19,20 @@ func NewNodeSignatureEvent(ctx context.Context, e types.NodeSignature) *NodeSign
 	}
 }
 
-func (m NodeSignature) NodeSignature() types.NodeSignature {
-	return m.e
+func (n NodeSignature) NodeSignature() types.NodeSignature {
+	return n.e
+}
+
+func (n NodeSignature) Proto() types.NodeSignature {
+	return n.e
+}
+
+func (n NodeSignature) StreamMessage() *types.BusEvent {
+	return &types.BusEvent{
+		ID:   n.eventID(),
+		Type: n.et.ToProto(),
+		Event: &types.BusEvent_NodeSignature{
+			NodeSignature: &n.e,
+		},
+	}
 }

@@ -223,8 +223,7 @@ func (a *Account) getAccountsForPrefix(prefix, validFor []byte, byReference bool
 		if err = proto.Unmarshal(accountBuf, &acc); err != nil {
 			a.log.Error("Failed to unmarshal account value from badger in account store",
 				logging.Error(err),
-				logging.String("badger-key", string(it.Item().Key())),
-				logging.String("raw-bytes", string(accountBuf)))
+				logging.String("badger-key", string(it.Item().Key())))
 			return nil, err
 		}
 

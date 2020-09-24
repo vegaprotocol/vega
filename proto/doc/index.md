@@ -14,6 +14,12 @@
     - [CandlesRequest](#api.CandlesRequest)
     - [CandlesResponse](#api.CandlesResponse)
     - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
+    - [DepositRequest](#api.DepositRequest)
+    - [DepositResponse](#api.DepositResponse)
+    - [DepositsRequest](#api.DepositsRequest)
+    - [DepositsResponse](#api.DepositsResponse)
+    - [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest)
+    - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
     - [EstimateFeeRequest](#api.EstimateFeeRequest)
     - [EstimateFeeResponse](#api.EstimateFeeResponse)
     - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
@@ -55,6 +61,8 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [ObserveEventsRequest](#api.ObserveEventsRequest)
+    - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
     - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
     - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
@@ -104,6 +112,10 @@
     - [TradesStream](#api.TradesStream)
     - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
     - [VegaTimeResponse](#api.VegaTimeResponse)
+    - [WithdrawalRequest](#api.WithdrawalRequest)
+    - [WithdrawalResponse](#api.WithdrawalResponse)
+    - [WithdrawalsRequest](#api.WithdrawalsRequest)
+    - [WithdrawalsResponse](#api.WithdrawalsResponse)
 
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
@@ -134,6 +146,21 @@
     - [Identifier](#vega.Identifier)
     - [RemoveValidator](#vega.RemoveValidator)
     - [ValidatorEvent](#vega.ValidatorEvent)
+
+- [proto/events.proto](#proto/events.proto)
+    - [AuctionEvent](#vega.AuctionEvent)
+    - [BusEvent](#vega.BusEvent)
+    - [LossSocialization](#vega.LossSocialization)
+    - [MarketEvent](#vega.MarketEvent)
+    - [MarketTick](#vega.MarketTick)
+    - [PositionResolution](#vega.PositionResolution)
+    - [SettleDistressed](#vega.SettleDistressed)
+    - [SettlePosition](#vega.SettlePosition)
+    - [TimeUpdate](#vega.TimeUpdate)
+    - [TradeSettlement](#vega.TradeSettlement)
+    - [TransferResponses](#vega.TransferResponses)
+
+    - [BusEventType](#vega.BusEventType)
 
 - [proto/governance.proto](#proto/governance.proto)
     - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
@@ -177,10 +204,37 @@
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
 
+- [proto/tm/replay.proto](#proto/tm/replay.proto)
+    - [BlockParams](#vega.BlockParams)
+    - [ConsensusParams](#vega.ConsensusParams)
+    - [Event](#vega.Event)
+    - [EventAttribute](#vega.EventAttribute)
+    - [Evidence](#vega.Evidence)
+    - [EvidenceParams](#vega.EvidenceParams)
+    - [Header](#vega.Header)
+    - [LastCommitInfo](#vega.LastCommitInfo)
+    - [PublicKey](#vega.PublicKey)
+    - [RequestBeginBlock](#vega.RequestBeginBlock)
+    - [RequestDeliverTx](#vega.RequestDeliverTx)
+    - [RequestInitChain](#vega.RequestInitChain)
+    - [ResponseBeginBlock](#vega.ResponseBeginBlock)
+    - [ResponseDeliverTx](#vega.ResponseDeliverTx)
+    - [ResponseInitChain](#vega.ResponseInitChain)
+    - [TmEvent](#vega.TmEvent)
+    - [Validator](#vega.Validator)
+    - [ValidatorParams](#vega.ValidatorParams)
+    - [ValidatorUpdate](#vega.ValidatorUpdate)
+    - [VersionParams](#vega.VersionParams)
+    - [VoteInfo](#vega.VoteInfo)
+
+    - [EvidenceType](#vega.EvidenceType)
+
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
     - [AuctionIndicativeState](#vega.AuctionIndicativeState)
     - [Candle](#vega.Candle)
+    - [Deposit](#vega.Deposit)
+    - [Erc20WithdrawExt](#vega.Erc20WithdrawExt)
     - [ErrorDetail](#vega.ErrorDetail)
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
@@ -188,6 +242,7 @@
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
+    - [MarketDepthUpdate](#vega.MarketDepthUpdate)
     - [NodeRegistration](#vega.NodeRegistration)
     - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
@@ -217,10 +272,13 @@
     - [TransferBalance](#vega.TransferBalance)
     - [TransferRequest](#vega.TransferRequest)
     - [TransferResponse](#vega.TransferResponse)
-    - [Withdraw](#vega.Withdraw)
+    - [WithdrawExt](#vega.WithdrawExt)
+    - [WithdrawSubmission](#vega.WithdrawSubmission)
+    - [Withdrawal](#vega.Withdrawal)
 
     - [AccountType](#vega.AccountType)
     - [ChainStatus](#vega.ChainStatus)
+    - [Deposit.Status](#vega.Deposit.Status)
     - [Interval](#vega.Interval)
     - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
@@ -231,6 +289,7 @@
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
+    - [Withdrawal.Status](#vega.Withdrawal.Status)
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -388,6 +447,103 @@ Request to subscribe to a stream of (Candles)[#vega.Candle].
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier. Required field. |
 | interval | [vega.Interval](#vega.Interval) |  | Time interval for the candles. Required field. |
+
+
+
+
+
+
+<a name="api.DepositRequest"></a>
+
+### DepositRequest
+A request to get a specific deposit by ID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The id of the withdrawal |
+
+
+
+
+
+
+<a name="api.DepositResponse"></a>
+
+### DepositResponse
+A response for a deposit
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposit | [vega.Deposit](#vega.Deposit) |  | The deposit matching the ID from the request |
+
+
+
+
+
+
+<a name="api.DepositsRequest"></a>
+
+### DepositsRequest
+A request to get a list of deposit from a given party
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  | The party to get the deposits for |
+
+
+
+
+
+
+<a name="api.DepositsResponse"></a>
+
+### DepositsResponse
+The response for a list of deposits
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deposits | [vega.Deposit](#vega.Deposit) | repeated | The list of deposits for the specified party |
+
+
+
+
+
+
+<a name="api.ERC20WithdrawalApprovalRequest"></a>
+
+### ERC20WithdrawalApprovalRequest
+The request to get all information required to bundle the call
+to finalize the withdrawal on the erc20 bridge
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdrawalID | [string](#string) |  | The ID of the withdrawal |
+
+
+
+
+
+
+<a name="api.ERC20WithdrawalApprovalResponse"></a>
+
+### ERC20WithdrawalApprovalResponse
+The response with all information required to bundle the call
+to finalize the withdrawal on the erc20 bridge
+function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| assetSource | [string](#string) |  | The address of asset on ethereum |
+| amount | [string](#string) |  | The amount to be withdrawn |
+| expiry | [int64](#int64) |  | The expiry / until what time the request is valid |
+| nonce | [string](#string) |  | The nonce, which is actually the internal reference for the withdrawal |
+| signatures | [string](#string) |  | The signatures bundle as hex encoded data, forward by 0x e.g: 0x &#43; sig1 &#43; sig2 &#43; ... &#43; sixN |
 
 
 
@@ -1021,6 +1177,38 @@ Response for a list of markets on Vega.
 
 
 
+<a name="api.ObserveEventsRequest"></a>
+
+### ObserveEventsRequest
+Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [vega.BusEventType](#vega.BusEventType) | repeated |  |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="api.ObserveEventsResponse"></a>
+
+### ObserveEventsResponse
+Response type streamed back when observing events. Slice of wrapped events
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| events | [vega.BusEvent](#vega.BusEvent) | repeated |  |
+
+
+
+
+
+
 <a name="api.ObservePartyProposalsRequest"></a>
 
 ### ObservePartyProposalsRequest
@@ -1549,7 +1737,7 @@ Request for preparing a withdrawal.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| withdraw | [vega.Withdraw](#vega.Withdraw) |  | An asset withdrawal. |
+| withdraw | [vega.WithdrawSubmission](#vega.WithdrawSubmission) |  | An asset withdrawal. |
 
 
 
@@ -1804,6 +1992,66 @@ Response for the current consensus coordinated time on the Vega network, referre
 
 
 
+<a name="api.WithdrawalRequest"></a>
+
+### WithdrawalRequest
+A request to get a specific withdrawal by ID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  | The id of the withdrawal |
+
+
+
+
+
+
+<a name="api.WithdrawalResponse"></a>
+
+### WithdrawalResponse
+A response for a withdrawal
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdrawal | [vega.Withdrawal](#vega.Withdrawal) |  | The withdrawal matching the ID from the request |
+
+
+
+
+
+
+<a name="api.WithdrawalsRequest"></a>
+
+### WithdrawalsRequest
+A request to get a list of withdrawal from a given party
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  | The party to get the withdrawals for |
+
+
+
+
+
+
+<a name="api.WithdrawalsResponse"></a>
+
+### WithdrawalsResponse
+The response for a list of withdrawals
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| withdrawals | [vega.Withdrawal](#vega.Withdrawal) | repeated | The list of withdrawals for the specified party |
+
+
+
+
+
+
 
 
 
@@ -1870,6 +2118,7 @@ Response for the current consensus coordinated time on the Vega network, referre
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
+| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
@@ -1885,6 +2134,11 @@ Response for the current consensus coordinated time on the Vega network, referre
 | AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier. |
 | Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
 | EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
+| ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
+| Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
+| Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
+| Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
+| Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
 
 
 
@@ -2227,7 +2481,6 @@ An asset withdrawal for an ERC20 token.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
-| sourcePartyId | [string](#string) |  | The party identifier (pub-key) initiating the withdrawal. |
 | targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address. |
 | referenceNonce | [string](#string) |  | The reference nonce used for the transaction. |
 
@@ -2298,6 +2551,265 @@ An event related to validator management with foreign networks.
 
 
 
+
+
+
+
+
+
+
+
+
+
+<a name="proto/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/events.proto
+
+
+
+<a name="vega.AuctionEvent"></a>
+
+### AuctionEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| openingAuction | [bool](#bool) |  |  |
+| leave | [bool](#bool) |  |  |
+| start | [int64](#int64) |  |  |
+| end | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.BusEvent"></a>
+
+### BusEvent
+BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
+the actual data is set as a oneof field
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| type | [BusEventType](#vega.BusEventType) |  |  |
+| timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
+| transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
+| positionResolution | [PositionResolution](#vega.PositionResolution) |  |  |
+| order | [Order](#vega.Order) |  |  |
+| account | [Account](#vega.Account) |  |  |
+| party | [Party](#vega.Party) |  |  |
+| trade | [Trade](#vega.Trade) |  |  |
+| marginLevels | [MarginLevels](#vega.MarginLevels) |  |  |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| vote | [Vote](#vega.Vote) |  |  |
+| marketData | [MarketData](#vega.MarketData) |  |  |
+| nodeSignature | [NodeSignature](#vega.NodeSignature) |  |  |
+| lossSocialization | [LossSocialization](#vega.LossSocialization) |  |  |
+| settlePosition | [SettlePosition](#vega.SettlePosition) |  |  |
+| settleDistressed | [SettleDistressed](#vega.SettleDistressed) |  |  |
+| marketCreated | [Market](#vega.Market) |  |  |
+| asset | [Asset](#vega.Asset) |  |  |
+| marketTick | [MarketTick](#vega.MarketTick) |  |  |
+| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
+| deposit | [Deposit](#vega.Deposit) |  |  |
+| auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
+| market | [MarketEvent](#vega.MarketEvent) |  |  |
+
+
+
+
+
+
+<a name="vega.LossSocialization"></a>
+
+### LossSocialization
+LossSocialization event amount of wins unable to be distributed
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| amount | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.MarketEvent"></a>
+
+### MarketEvent
+MarketEvent - the common denominator for all market events
+interface has a method to return a string for logging
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| payload | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.MarketTick"></a>
+
+### MarketTick
+Time update for each market, can be used to see when new markets actually started in terms of block-time
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ID | [string](#string) |  |  |
+| time | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.PositionResolution"></a>
+
+### PositionResolution
+PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| distressed | [int64](#int64) |  |  |
+| closed | [int64](#int64) |  |  |
+| markPrice | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.SettleDistressed"></a>
+
+### SettleDistressed
+SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
+be followed by a number of these events
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| margin | [uint64](#uint64) |  |  |
+| price | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.SettlePosition"></a>
+
+### SettlePosition
+SettlePosition data for party: position settlements (part of trader position information)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| partyID | [string](#string) |  |  |
+| price | [uint64](#uint64) |  |  |
+| tradeSettlements | [TradeSettlement](#vega.TradeSettlement) | repeated |  |
+
+
+
+
+
+
+<a name="vega.TimeUpdate"></a>
+
+### TimeUpdate
+TimeUpdate - event containing the latest block time
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| timestamp | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.TradeSettlement"></a>
+
+### TradeSettlement
+TradeSettlement data, part of settle position event
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| size | [int64](#int64) |  |  |
+| price | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.TransferResponses"></a>
+
+### TransferResponses
+TransferResponses - a slice of transfer response objects
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| responses | [TransferResponse](#vega.TransferResponse) | repeated |  |
+
+
+
+
+
+
+
+
+<a name="vega.BusEventType"></a>
+
+### BusEventType
+event types, 2 groups: actual single values, and then some events that capture a group of events
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| BUS_EVENT_TYPE_UNSPECIFIED | 0 |  |
+| BUS_EVENT_TYPE_ALL | 1 |  |
+| BUS_EVENT_TYPE_TIME_UPDATE | 2 |  |
+| BUS_EVENT_TYPE_TRANSFER_RESPONSES | 3 |  |
+| BUS_EVENT_TYPE_POSITION_RESOLUTION | 4 |  |
+| BUS_EVENT_TYPE_ORDER | 5 |  |
+| BUS_EVENT_TYPE_ACCOUNT | 6 |  |
+| BUS_EVENT_TYPE_PARTY | 7 |  |
+| BUS_EVENT_TYPE_TRADE | 8 |  |
+| BUS_EVENT_TYPE_MARGIN_LEVELS | 9 |  |
+| BUS_EVENT_TYPE_PROPOSAL | 10 |  |
+| BUS_EVENT_TYPE_VOTE | 11 |  |
+| BUS_EVENT_TYPE_MARKET_DATA | 12 |  |
+| BUS_EVENT_TYPE_NODE_SIGNATURE | 13 |  |
+| BUS_EVENT_TYPE_LOSS_SOCIALIZATION | 14 |  |
+| BUS_EVENT_TYPE_SETTLE_POSITION | 15 |  |
+| BUS_EVENT_TYPE_SETTLE_DISTRESSED | 16 |  |
+| BUS_EVENT_TYPE_MARKET_CREATED | 17 |  |
+| BUS_EVENT_TYPE_ASSET | 18 |  |
+| BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
+| BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
+| BUS_EVENT_TYPE_DEPOSIT | 21 |  |
+| BUS_EVENT_TYPE_AUCTION | 22 |  |
+| BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
 
@@ -2996,6 +3508,391 @@ Tradable Instrument definition.
 
 
 
+<a name="proto/tm/replay.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/tm/replay.proto
+
+
+
+<a name="vega.BlockParams"></a>
+
+### BlockParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maxBytes | [int64](#int64) |  |  |
+| maxGas | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.ConsensusParams"></a>
+
+### ConsensusParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| block | [BlockParams](#vega.BlockParams) |  |  |
+| evidence | [EvidenceParams](#vega.EvidenceParams) |  |  |
+| validator | [ValidatorParams](#vega.ValidatorParams) |  |  |
+| version | [VersionParams](#vega.VersionParams) |  |  |
+
+
+
+
+
+
+<a name="vega.Event"></a>
+
+### Event
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| attributes | [EventAttribute](#vega.EventAttribute) | repeated |  |
+
+
+
+
+
+
+<a name="vega.EventAttribute"></a>
+
+### EventAttribute
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [bytes](#bytes) |  |  |
+| value | [bytes](#bytes) |  |  |
+| index | [bool](#bool) |  | nondeterministic |
+
+
+
+
+
+
+<a name="vega.Evidence"></a>
+
+### Evidence
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [EvidenceType](#vega.EvidenceType) |  |  |
+| validator | [Validator](#vega.Validator) |  |  |
+| height | [int64](#int64) |  |  |
+| time | [int64](#int64) |  |  |
+| totalVotingPower | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.EvidenceParams"></a>
+
+### EvidenceParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maxAgeNumBlocks | [int64](#int64) |  |  |
+| maxAgeDuration | [int64](#int64) |  |  |
+| max_num | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="vega.Header"></a>
+
+### Header
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chainId | [string](#string) |  |  |
+| height | [int64](#int64) |  |  |
+| time | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LastCommitInfo"></a>
+
+### LastCommitInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| round | [int32](#int32) |  |  |
+| votes | [VoteInfo](#vega.VoteInfo) | repeated |  |
+
+
+
+
+
+
+<a name="vega.PublicKey"></a>
+
+### PublicKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ed25519 | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="vega.RequestBeginBlock"></a>
+
+### RequestBeginBlock
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| hash | [bytes](#bytes) |  |  |
+| header | [Header](#vega.Header) |  |  |
+| lastCommitInfo | [LastCommitInfo](#vega.LastCommitInfo) |  |  |
+| byzantineValidators | [Evidence](#vega.Evidence) | repeated |  |
+
+
+
+
+
+
+<a name="vega.RequestDeliverTx"></a>
+
+### RequestDeliverTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tx | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="vega.RequestInitChain"></a>
+
+### RequestInitChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| time | [int64](#int64) |  |  |
+| chainID | [string](#string) |  |  |
+| consensusParams | [ConsensusParams](#vega.ConsensusParams) |  |  |
+| validators | [ValidatorUpdate](#vega.ValidatorUpdate) | repeated |  |
+| appStateBytes | [bytes](#bytes) |  |  |
+| initialHeight | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.ResponseBeginBlock"></a>
+
+### ResponseBeginBlock
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| events | [Event](#vega.Event) | repeated |  |
+
+
+
+
+
+
+<a name="vega.ResponseDeliverTx"></a>
+
+### ResponseDeliverTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| code | [uint32](#uint32) |  |  |
+| data | [bytes](#bytes) |  |  |
+| log | [string](#string) |  | nondeterministic |
+| info | [string](#string) |  | nondeterministic |
+| gasWanted | [int64](#int64) |  |  |
+| gasUsed | [int64](#int64) |  |  |
+| events | [Event](#vega.Event) | repeated |  |
+| codespace | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.ResponseInitChain"></a>
+
+### ResponseInitChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| consensusParams | [ConsensusParams](#vega.ConsensusParams) |  |  |
+| validators | [ValidatorUpdate](#vega.ValidatorUpdate) | repeated |  |
+| appHash | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="vega.TmEvent"></a>
+
+### TmEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reqInitChain | [RequestInitChain](#vega.RequestInitChain) |  |  |
+| resInitChain | [ResponseInitChain](#vega.ResponseInitChain) |  |  |
+| reqDeliverTx | [RequestDeliverTx](#vega.RequestDeliverTx) |  |  |
+| resDeliverTx | [ResponseDeliverTx](#vega.ResponseDeliverTx) |  |  |
+| reqBeginBlock | [RequestBeginBlock](#vega.RequestBeginBlock) |  |  |
+| resBeginBlock | [ResponseBeginBlock](#vega.ResponseBeginBlock) |  |  |
+
+
+
+
+
+
+<a name="vega.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [bytes](#bytes) |  |  |
+| power | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.ValidatorParams"></a>
+
+### ValidatorParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pubKeyTypes | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="vega.ValidatorUpdate"></a>
+
+### ValidatorUpdate
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pub_key | [PublicKey](#vega.PublicKey) |  |  |
+| power | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.VersionParams"></a>
+
+### VersionParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| appVersion | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.VoteInfo"></a>
+
+### VoteInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| validator | [Validator](#vega.Validator) |  |  |
+| signedLastBlock | [bool](#bool) |  |  |
+
+
+
+
+
+
+
+
+<a name="vega.EvidenceType"></a>
+
+### EvidenceType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 |  |
+| DUPLICATE_VOTE | 1 |  |
+| LIGHT_CLIENT_ATTACK | 2 |  |
+
+
+
+
+
+
+
+
+
+
 <a name="proto/vega.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -3059,6 +3956,43 @@ referred to commonly as a candlestick or candle.
 | close | [uint64](#uint64) |  | Closing trade price. |
 | volume | [uint64](#uint64) |  | Total trading volume during the candle interval. |
 | interval | [Interval](#vega.Interval) |  | Time interval for the candle. See [`Interval`](#vega.Interval). |
+
+
+
+
+
+
+<a name="vega.Deposit"></a>
+
+### Deposit
+The representation of a deposit in the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | The ID of the deposit |
+| status | [Deposit.Status](#vega.Deposit.Status) |  | Status of the deposit |
+| partyID | [string](#string) |  | The party initiating the deposit |
+| asset | [string](#string) |  | The vega asset targeted by this deposit |
+| amount | [string](#string) |  | The amount to be deposited |
+| txHash | [string](#string) |  | The hash of the transaction from the foreign chain |
+| creditedTimestamp | [int64](#int64) |  | The time where the vega account got updated with the deposit |
+| createdTimestamp | [int64](#int64) |  | The time the deposit has been created in the vega network |
+
+
+
+
+
+
+<a name="vega.Erc20WithdrawExt"></a>
+
+### Erc20WithdrawExt
+An extension of data required for the withdraw submissions
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| receiverAddress | [string](#string) |  | The address into which the bridge will release the funds |
 
 
 
@@ -3176,6 +4110,9 @@ Represents data generated by a market when open.
 | openInterest | [uint64](#uint64) |  | The sum of the size of all positions greater than 0 on the market. |
 | auctionEnd | [int64](#int64) |  | Time in seconds until the end of the auction (0 if currently not in auction period). |
 | auctionStart | [int64](#int64) |  | Time until next auction (used in FBA&#39;s) - currently always 0. |
+| indicativePrice | [uint64](#uint64) |  | indicative price (zero if not in auction) |
+| indicativeVolume | [uint64](#uint64) |  | indicative volume (zero if not in auction) |
+| marketState | [MarketState](#vega.MarketState) |  | the current state of the market |
 
 
 
@@ -3193,6 +4130,25 @@ Represents market depth or order book data for the specified market on Vega.
 | marketID | [string](#string) |  | Market identifier. |
 | buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of price levels for the buy side of the book. |
 | sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of price levels for the sell side of the book. |
+| sequenceNumber | [uint64](#uint64) |  | Sequence number for the market depth dump |
+
+
+
+
+
+
+<a name="vega.MarketDepthUpdate"></a>
+
+### MarketDepthUpdate
+Represents the changed market depth since the last update
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier. |
+| buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the buy side of the book. |
+| sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the sell side of the book. |
+| sequenceNumber | [uint64](#uint64) |  | Sequence number for the market depth update |
 
 
 
@@ -3407,6 +4363,7 @@ Represents position data for a party on the specified market on Vega.
 | realisedPNL | [int64](#int64) |  | Realised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. |
 | unrealisedPNL | [int64](#int64) |  | Unrealised profit and loss for the position. Value is signed &#43;ve for long and -ve for short. |
 | averageEntryPrice | [uint64](#uint64) |  | Average entry price for the position, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| updatedAt | [int64](#int64) |  | last time the position was updated |
 
 
 
@@ -3455,7 +4412,6 @@ Represents a price level from market depth or order book data.
 | price | [uint64](#uint64) |  | Price for the price level, the price is an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places. |
 | numberOfOrders | [uint64](#uint64) |  | Number of orders at the price level. |
 | volume | [uint64](#uint64) |  | Volume at the price level. |
-| cumulativeVolume | [uint64](#uint64) |  | Cumulative volume at the price level. |
 
 
 
@@ -3756,17 +4712,58 @@ Represents the response from a transfer.
 
 
 
-<a name="vega.Withdraw"></a>
+<a name="vega.WithdrawExt"></a>
 
-### Withdraw
-Represents a withdrawal of an asset by a party on Vega.
+### WithdrawExt
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | Unique party identifier affecting the withdrawal. |
-| amount | [uint64](#uint64) |  | Total amount to withdraw. |
-| asset | [string](#string) |  | Asset identifier. |
+| erc20 | [Erc20WithdrawExt](#vega.Erc20WithdrawExt) |  |  |
+
+
+
+
+
+
+<a name="vega.WithdrawSubmission"></a>
+
+### WithdrawSubmission
+A request for withdrawing funds from a trader
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| partyID | [string](#string) |  | The party which wants to withdraw funds |
+| amount | [uint64](#uint64) |  | The amount to be withdrawn |
+| asset | [string](#string) |  | The asset we want to withdraw |
+| ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifics |
+
+
+
+
+
+
+<a name="vega.Withdrawal"></a>
+
+### Withdrawal
+The representation of a withdrawal in the vega network
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | The id of the withdrawal |
+| partyID | [string](#string) |  | The party initiating the withdrawal |
+| amount | [uint64](#uint64) |  | The amount to be withdrawn |
+| asset | [string](#string) |  | The asset we want to withdraw funds from |
+| status | [Withdrawal.Status](#vega.Withdrawal.Status) |  | The status of this withdrawal |
+| ref | [string](#string) |  | The reference which is used by the foreign chain to refer to this withdrawal |
+| expiry | [int64](#int64) |  | The time until when the withdrawal is valid |
+| txHash | [string](#string) |  | The hash of the foreign chain for this transaction |
+| createdTimestamp | [int64](#int64) |  | The time at which the network started to process this withdrawal |
+| withdrawnTimestamp | [int64](#int64) |  | The time at which the withdrawal was finalized by the network |
+| ext | [WithdrawExt](#vega.WithdrawExt) |  | foreign chain specifis |
 
 
 
@@ -3809,6 +4806,20 @@ The Vega blockchain status as reported by the node the caller is connected to.
 | CHAIN_STATUS_DISCONNECTED | 1 | Blockchain is disconnected. |
 | CHAIN_STATUS_REPLAYING | 2 | Blockchain is replaying historic transactions. |
 | CHAIN_STATUS_CONNECTED | 3 | Blockchain is connected and receiving transactions. |
+
+
+
+<a name="vega.Deposit.Status"></a>
+
+### Deposit.Status
+The status of the deposit
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| DEPOSIT_STATUS_UNSPECIFIED | 0 | Default value, always invalid. |
+| DEPOSIT_STATUS_OPEN | 1 | The deposit is being processed by the network |
+| DEPOSIT_STATUS_CANCELLED | 2 | The deposit has been cancelled by the network |
+| DEPOSIT_STATUS_FINALIZED | 3 | The deposit has been finalized and accounts have been updated |
 
 
 
@@ -3937,6 +4948,7 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_SELF_TRADING | 20 | Order was stopped as it would have traded with another order submitted from the same party. |
 | ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order. |
 | ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 | Order was submitted with an incorrect or invalid market type. |
+| ORDER_ERROR_INVALID_TIME_IN_FORCE | 23 | Order was submitted with invalid time in force |
 
 
 
@@ -3987,6 +4999,20 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 | TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 | Receive maker fee. |
 | TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 | Pay infrastructure fee. |
 | TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
+
+
+
+<a name="vega.Withdrawal.Status"></a>
+
+### Withdrawal.Status
+The status of the withdrawal
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| WITHDRAWAL_STATUS_UNSPECIFIED | 0 | The default value |
+| WITHDRAWAL_STATUS_OPEN | 1 | The withdrawal is open and being processed by the network |
+| WITHDRAWAL_STATUS_CANCELLED | 2 | The withdrawal have been cancelled |
+| WITHDRAWAL_STATUS_FINALIZED | 3 | The withdrawal went through and is fully finalized (funds remove from the vega network, and unlocked from the foreign chain bridge) |
 
 
 

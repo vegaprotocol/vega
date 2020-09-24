@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
@@ -57,7 +56,7 @@ func (c *Commander) Command(cmd blockchain.Command, payload proto.Message) error
 	if err != nil {
 		return err
 	}
-	encodedCmd, err := txEncode(raw, cmd)
+	encodedCmd, err := blockchain.TxEncode(raw, cmd)
 	if err != nil {
 		return err
 	}
@@ -90,13 +89,6 @@ func (c *Commander) Command(cmd blockchain.Command, payload proto.Message) error
 	}
 	_, err = c.bc.SubmitTransaction(c.ctx, wrapped)
 	return err
-}
-
-func txEncode(input []byte, cmd blockchain.Command) ([]byte, error) {
-	prefix := uuid.NewV4().String()
-	prefixBytes := []byte(prefix)
-	commandInput := append([]byte{byte(cmd)}, input...)
-	return append(prefixBytes, commandInput...), nil
 }
 
 func makeNonce() uint64 {

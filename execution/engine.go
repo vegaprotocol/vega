@@ -41,6 +41,14 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
+// AuctionTrigger can be checked with time or price to see if argument should trigger entry to or exit from the auction mode
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_trigger_mock.go -package mocks code.vegaprotocol.io/vega/execution AuctionTrigger
+type AuctionTrigger interface {
+	EnterPerPrice(price uint64) bool
+	EnterPerTime(time time.Time) bool
+	LeavePerTime(time time.Time) bool
+}
+
 // Engine is the execution engine
 type Engine struct {
 	Config
@@ -59,7 +67,7 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
-	time TimeService,
+	ts TimeService,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -76,7 +84,7 @@ func NewEngine(
 		log:        log,
 		Config:     executionConfig,
 		markets:    map[string]*Market{},
-		time:       time,
+		time:       ts,
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
@@ -161,6 +169,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	mkt, err := NewMarket(
+		ctx,
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
@@ -172,6 +181,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
+		nil,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
@@ -261,6 +271,11 @@ func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
 
+	// ensure that if orderID is specified marketId is as well
+	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+		return nil, ErrInvalidOrderCancellation
+	}
+
 	if len(order.PartyID) > 0 {
 		if len(order.MarketID) > 0 {
 			if len(order.OrderID) > 0 {
@@ -347,8 +362,14 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 	return conf, nil
 }
 
-func (e *Engine) onChainTimeUpdate(_ context.Context, t time.Time) {
+func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+
+	for _, v := range e.markets {
+		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
+	}
+	evt := events.NewTime(ctx, t)
+	e.broker.Send(evt)
 
 	// update block time on id generator
 	e.idgen.NewBatch()
@@ -418,23 +439,4 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 		return types.MarketData{}, types.ErrInvalidMarketID
 	}
 	return mkt.GetMarketData(), nil
-}
-
-// Generate flushes any data (including storing state changes) to underlying stores (if configured).
-func (e *Engine) Generate() error {
-	ctx := context.TODO()
-
-	// Market data is added to buffer on Generate
-	// do this before the time event -> time event flushes
-	for _, v := range e.markets {
-		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
-	}
-	// Transfers
-	// @TODO this event will be generated with a block context that has the trace ID
-	// this will have the effect of flushing the transfer response buffer
-	now, _ := e.time.GetTimeNow()
-	evt := events.NewTime(ctx, now)
-	e.broker.Send(evt)
-	// Markets
-	return nil
 }

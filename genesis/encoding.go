@@ -4,22 +4,32 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/validators"
 )
 
 type GenesisState struct {
 	Governance governance.GenesisState `json:"governance"`
+	Assets     assets.GenesisState     `json:"assets"`
+	Validators validators.GenesisState `json:"validators"`
 }
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Governance: governance.DefaultGenesisState(),
+		Assets:     assets.DefaultGenesisState(),
+		Validators: validators.DefaultGenesisState(),
 	}
 }
 
 func DumpDefault() (string, error) {
 	gstate := DefaultGenesisState()
-	bytes, err := json.MarshalIndent(&gstate, "  ", "  ")
+	return Dump(&gstate)
+}
+
+func Dump(s *GenesisState) (string, error) {
+	bytes, err := json.MarshalIndent(s, "  ", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -27,6 +37,11 @@ func DumpDefault() (string, error) {
 }
 
 func UpdateInPlaceDefault(tmCfgPath string) error {
+	gs := DefaultGenesisState()
+	return UpdateInPlace(&gs, tmCfgPath)
+}
+
+func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
 	tmCfgBytes, err := ioutil.ReadFile(tmCfgPath)
 	if err != nil {
 		return err
@@ -39,7 +54,7 @@ func UpdateInPlaceDefault(tmCfgPath string) error {
 	}
 
 	// make our raw message from the vega genesis state
-	rawState, err := json.Marshal(DefaultGenesisState())
+	rawState, err := json.Marshal(gs)
 	if err != nil {
 		return err
 	}

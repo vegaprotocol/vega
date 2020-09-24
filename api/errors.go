@@ -103,6 +103,10 @@ var (
 	ErrMissingProposalID = errors.New("missing proposal id")
 	// ErrMissingProposalReference returned if proposal with this reference is not found
 	ErrMissingProposalReference = errors.New("failed to find proposal with the reference")
+	// ErrMissingWithdrawalID is returned when the ID is missing from the request
+	ErrMissingWithdrawalID = errors.New("missing withdrawal ID")
+	// ErrMissingDepositID is returned when the ID is missing from the request
+	ErrMissingDepositID = errors.New("missing deposit ID")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
@@ -152,6 +156,8 @@ var errorMap = map[error]int32{
 	// Accounts
 	ErrAccountServiceGetMarketAccounts: 80001,
 	ErrAccountServiceGetPartyAccounts:  80002,
+	ErrMissingWithdrawalID:             80003,
+	ErrMissingDepositID:                80004,
 	// Blockchain client
 	ErrBlockchainBacklogLength: 90001,
 	ErrBlockchainNetworkInfo:   90002,

@@ -74,6 +74,18 @@ do
 		"$protofile"
 done
 
+# Generate *pb.go
+find proto/tm -maxdepth 1 -name '*.proto' | sort | while read -r protofile
+do
+	protoc \
+		-I. \
+		-Iproto \
+		-Ivendor \
+		-Ivendor/github.com/google/protobuf/src \
+		--go_out="plugins=grpc,$paths:." \
+		"$protofile"
+done
+
 # Make *.validator.pb.go files deterministic.
 find proto -name '*.validator.pb.go' | sort | while read -r pbfile
 do

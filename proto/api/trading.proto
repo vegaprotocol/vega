@@ -7,6 +7,7 @@ import "proto/markets.proto";
 import "proto/governance.proto";
 import "proto/chain_events.proto";
 import "proto/assets.proto";
+import "proto/events.proto";
 
 package api;
 
@@ -85,9 +86,8 @@ message SubmitTransactionResponse {
 
 // Request for preparing a withdrawal.
 message PrepareWithdrawRequest {
-
   // An asset withdrawal.
-  vega.Withdraw withdraw = 1;
+  vega.WithdrawSubmission withdraw = 1;
 }
 
 // Response for preparing a withdrawal.
@@ -269,6 +269,9 @@ service trading_data {
   // Subscribe to a stream of proposal votes
   rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
 
+  // Subscribe to a stream of events from the core
+  rpc ObserveEventBus(ObserveEventsRequest) returns (stream ObserveEventsResponse);
+
   // -- Misc --
 
   // Get Statistics
@@ -315,6 +318,22 @@ service trading_data {
 
   // Get an estimate for the fee to be paid for a given order
   rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
+
+  // Get the bundle approval for an ERC20 withdrawal
+  // these data are being used to bundle the call to the smart contract on the ethereum bridge
+  rpc ERC20WithdrawalApproval(ERC20WithdrawalApprovalRequest) returns (ERC20WithdrawalApprovalResponse);
+
+  // Get a withdrawal by its ID
+  rpc Withdrawal(WithdrawalRequest) returns (WithdrawalResponse);
+
+  // Get withdrawals for a party
+  rpc Withdrawals(WithdrawalsRequest) returns (WithdrawalsResponse);
+
+  // Get a deposit by its ID
+  rpc Deposit(DepositRequest) returns (DepositResponse);
+
+  // Get withdrawals for a party
+  rpc Deposits(DepositsRequest) returns (DepositsResponse);
 }
 
 // Request for a list of all assets enabled on Vega.
@@ -1018,4 +1037,88 @@ message EstimateFeeRequest {
 message EstimateFeeResponse {
   // Summary of the estimated fees for this order if it were to trade now
   vega.Fee fee = 2;
+}
+
+// Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+message ObserveEventsRequest {
+  repeated vega.BusEventType type = 1;
+  string marketID = 2;
+  string partyID = 3;
+}
+
+// Response type streamed back when observing events. Slice of wrapped events
+message ObserveEventsResponse {
+  repeated vega.BusEvent events = 1;
+}
+
+// A request to get a list of withdrawal from a given party
+message WithdrawalsRequest {
+  // The party to get the withdrawals for
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+// The response for a list of withdrawals
+message WithdrawalsResponse {
+  // The list of withdrawals for the specified party
+  repeated vega.Withdrawal withdrawals = 1;
+}
+
+// A request to get a specific withdrawal by ID
+message WithdrawalRequest {
+  // The id of the withdrawal
+  string ID = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+// A response for a withdrawal
+message WithdrawalResponse {
+  // The withdrawal matching the ID from the request
+  vega.Withdrawal withdrawal = 1 ;
+}
+
+// The request to get all information required to bundle the call
+// to finalize the withdrawal on the erc20 bridge
+message ERC20WithdrawalApprovalRequest {
+  // The ID of the withdrawal
+  string withdrawalID = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+// The response with all information required to bundle the call
+// to finalize the withdrawal on the erc20 bridge
+// function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
+message ERC20WithdrawalApprovalResponse {
+  // The address of asset on ethereum
+  string assetSource = 1;
+  // The amount to be withdrawn
+  string amount = 2;
+  // The expiry / until what time the request is valid
+  int64 expiry = 3;
+  // The nonce, which is actually the internal reference for the withdrawal
+  string nonce = 4;
+  // The signatures bundle as hex encoded data, forward by 0x
+  // e.g: 0x + sig1 + sig2 + ... + sixN
+  string signatures = 5;
+}
+
+// A request to get a list of deposit from a given party
+message DepositsRequest {
+  // The party to get the deposits for
+  string partyID = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+// The response for a list of deposits
+message DepositsResponse {
+  // The list of deposits for the specified party
+  repeated vega.Deposit deposits = 1;
+}
+
+// A request to get a specific deposit by ID
+message DepositRequest {
+  // The id of the withdrawal
+  string ID = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+// A response for a deposit
+message DepositResponse {
+  // The deposit matching the ID from the request
+  vega.Deposit deposit = 1 ;
 }

@@ -9,6 +9,7 @@ import (
 // Stats ties together all other package level application stats types.
 type Stats struct {
 	log          *logging.Logger
+	cfg          Config
 	Blockchain   *Blockchain
 	version      string
 	versionHash  string
@@ -17,14 +18,31 @@ type Stats struct {
 }
 
 // New instantiates a new Stats
-func New(logger *logging.Logger, version string, versionHash string) *Stats {
+func New(log *logging.Logger, cfg Config, version string, versionHash string) *Stats {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 	return &Stats{
-		log:         logger,
+		log:         log,
+		cfg:         cfg,
 		Blockchain:  &Blockchain{},
 		version:     version,
 		versionHash: versionHash,
 		uptime:      time.Now(),
 	}
+}
+
+// ReloadConf updates the internal configuration
+func (s *Stats) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.cfg = cfg
 }
 
 // SetChainVersion sets the version of the chain in use by vega

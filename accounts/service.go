@@ -63,7 +63,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-func (s *Svc) PrepareWithdraw(ctx context.Context, w *types.Withdraw) error {
+func (s *Svc) PrepareWithdraw(ctx context.Context, w *types.WithdrawSubmission) error {
 	if len(w.PartyID) <= 0 {
 		return ErrMissingPartyID
 	}

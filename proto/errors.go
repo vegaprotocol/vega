@@ -17,6 +17,7 @@ var (
 	ErrInvalidPersistence         = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
 	ErrInvalidType                = OrderError_ORDER_ERROR_INVALID_TYPE
 	ErrInsufficientFundsToPayFees = OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
+	ErrInvalidTimeInForce         = OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
 )
 
 func IsOrderError(err error) (OrderError, bool) {

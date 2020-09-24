@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
@@ -31,7 +32,6 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
-	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -64,7 +64,6 @@ type CandleStore interface {
 type OrderStore interface {
 	orders.OrderStore
 	SaveBatch([]types.Order) error
-	GetMarketDepth(context.Context, string, uint64) (*proto.MarketDepth, error)
 	Close() error
 	ReloadConf(storage.Config)
 }
@@ -107,6 +106,7 @@ type NodeCommand struct {
 	marketDataSub  *subscribers.MarketDataSub
 	newMarketSub   *subscribers.Market
 	candleSub      *subscribers.CandleSub
+	marketDepthSub *subscribers.MarketDepthBuilder
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -121,8 +121,9 @@ type NodeCommand struct {
 	notaryService     *notary.Svc
 	assetService      *assets.Svc
 	feeService        *fee.Svc
+	eventService      *subscribers.Service
 
-	blockchain       *blockchain.Blockchain
+	abciServer       *abci.Server
 	blockchainClient *blockchain.Client
 
 	pproffhandlr *pprof.Pprofhandler
@@ -132,11 +133,12 @@ type NodeCommand struct {
 	withPPROF    bool
 	noChain      bool
 	noStores     bool
+	record       string
+	replay       string
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
 	executionEngine *execution.Engine
-	processor       *processor.Processor
 	governance      *governance.Engine
 	collateral      *collateral.Engine
 
@@ -154,9 +156,11 @@ type NodeCommand struct {
 	genesisHandler *genesis.Handler
 
 	// plugins
-	settlePlugin *plugins.Positions
-	notaryPlugin *plugins.Notary
-	assetPlugin  *plugins.Asset
+	settlePlugin     *plugins.Positions
+	notaryPlugin     *plugins.Notary
+	assetPlugin      *plugins.Asset
+	withdrawalPlugin *plugins.Withdrawal
+	depositPlugin    *plugins.Deposit
 }
 
 // Init initialises the node command.
@@ -187,6 +191,8 @@ func (l *NodeCommand) addFlags() {
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")
+	flagSet.StringVarP(&l.record, "abci-record", "", "", "If set, it will record ABCI operations into this file")
+	flagSet.StringVarP(&l.replay, "abci-replay", "", "", "If set, it will replay ABCI operations from this file")
 }
 
 // runNode is the entry of node command.
@@ -194,13 +200,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) })
 	statusChecker.OnChainDisconnect(l.cancel)
-	statusChecker.OnChainVersionObtained(func(v string) {
-		l.stats.SetChainVersion(v)
-	})
-
-	var err error
+	statusChecker.OnChainVersionObtained(
+		func(v string) { l.stats.SetChainVersion(v) },
+	)
 
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
@@ -222,15 +225,27 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.evtfwd,
 		l.assetService,
 		l.feeService,
+		l.eventService,
+		l.withdrawalPlugin,
+		l.depositPlugin,
 		statusChecker,
 	)
-	l.cfgwatchr.OnConfigUpdate(func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) })
+
+	// watch configs
+	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
+		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
+	)
+
+	// start the grpc server
 	go grpcServer.Start()
 	metrics.Start(l.conf.Metrics)
 
 	// start gateway
-	var gty *Gateway
-
+	var (
+		gty *Gateway
+		err error
+	)
 	if l.conf.GatewayEnabled {
 		gty, err = startGateway(l.Log, l.conf.Gateway)
 		if err != nil {
@@ -239,12 +254,11 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	l.Log.Info("Vega startup complete")
-
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	l.blockchain.Stop()
+	l.abciServer.Stop()
 	statusChecker.Stop()
 
 	// cleanup gateway

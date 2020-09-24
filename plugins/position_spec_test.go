@@ -35,7 +35,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  25,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				AverageEntryPrice: 60,
 				OpenVolume:        125,
@@ -54,7 +54,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -25,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				AverageEntryPrice: 50,
 				OpenVolume:        75,
@@ -73,7 +73,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -100,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: 0,
@@ -92,7 +92,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -125,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        -25,
 				AverageEntryPrice: 100,
@@ -111,7 +111,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -25,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        -125,
 				AverageEntryPrice: 60,
@@ -130,7 +130,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  25,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        -75,
 				AverageEntryPrice: 50,
@@ -149,7 +149,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  100,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: 0,
@@ -168,7 +168,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  125,
 					price: 100,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        25,
 				AverageEntryPrice: 100,
@@ -195,7 +195,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -100,
 					price: 75,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        25,
 				AverageEntryPrice: 80,
@@ -218,7 +218,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  50,
 					price: 25,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: 0,
@@ -241,7 +241,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -50,
 					price: 50,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: 0,
@@ -264,7 +264,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  50,
 					price: 250,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: 0,
@@ -287,7 +287,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -50,
 					price: 25,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: 0,
@@ -342,7 +342,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  6,
 					price: 1010,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        2,
 				AverageEntryPrice: 1010,
@@ -409,7 +409,7 @@ func TestPositionSpecSuite(t *testing.T) {
 					size:  -2,
 					price: 1926,
 				},
-			}),
+			}, 1),
 			expect: expect{
 				OpenVolume:        0,
 				AverageEntryPrice: 0,

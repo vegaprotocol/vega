@@ -32,6 +32,11 @@ type MarketDataStore interface {
 type OrderStore interface {
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
+}
+
+// MarketDepth ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/vega/markets MarketDepth
+type MarketDepth interface {
 	GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error)
 }
 
@@ -42,6 +47,7 @@ type Svc struct {
 	marketStore     MarketStore
 	orderStore      OrderStore
 	marketDataStore MarketDataStore
+	marketDepth     MarketDepth
 
 	subscribersCnt           int32
 	marketDataSubscribersCnt int32
@@ -54,6 +60,7 @@ func NewService(
 	marketStore MarketStore,
 	orderStore OrderStore,
 	marketDataStore MarketDataStore,
+	marketDepth MarketDepth,
 ) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -65,6 +72,7 @@ func NewService(
 		marketStore:     marketStore,
 		orderStore:      orderStore,
 		marketDataStore: marketDataStore,
+		marketDepth:     marketDepth,
 	}, nil
 }
 
@@ -106,7 +114,7 @@ func (s *Svc) GetDepth(ctx context.Context, marketID string, limit uint64) (mark
 		return nil, err
 	}
 
-	return s.orderStore.GetMarketDepth(ctx, m.Id, limit)
+	return s.marketDepth.GetMarketDepth(ctx, m.Id, limit)
 }
 
 // GetMarketDataByID return the market data for a given market
@@ -158,7 +166,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 				close(depth)
 				return
 			case <-internal: // we don't need the orders, we just need to know there was a change
-				d, err := s.orderStore.GetMarketDepth(ctx, market, 0)
+				d, err := s.marketDepth.GetMarketDepth(ctx, market, 0)
 				if err != nil {
 					s.log.Debug(
 						"Failure calculating market depth for subscriber",

@@ -47,7 +47,7 @@ func TestMarketObserveDepthRetryLimit(t *testing.T) {
 	})
 
 	// at least == to number of retries
-	svc.order.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).MinTimes(1).Return(&depth, nil)
+	svc.marketDepth.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).MinTimes(1).Return(&depth, nil)
 	// waitgroup here ensures that unsubscribe was indeed called
 	svc.order.EXPECT().Unsubscribe(ref).Times(1).DoAndReturn(func(id uint64) error {
 		svc.cfunc() // cancel writeToChannel
