@@ -432,12 +432,18 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
 	case OrderRejectionReasonInvalidTimeInForce:
 		return types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE, nil
-	case OrderRejectionReasonInvalidMarketType:
-		return types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE, nil
-	case OrderRejectionReasonGFAOrderDuringAuction:
-		return types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING, nil
-	case OrderRejectionReasonGFNOrderDuringContinuousTrading:
-		return types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION, nil
+	case OrderRejectionReasonAmendToGTTWithoutExpiryAt:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT, nil
+	case OrderRejectionReasonExpiryAtBeforeCreatedAt:
+		return types.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT, nil
+	case OrderRejectionReasonGTCWithExpiryAtNotValid:
+		return types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT, nil
+	case OrderRejectionReasonCannotAmendToFOKOrIoc:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC, nil
+	case OrderRejectionReasonCannotAmendToGFAOrGfn:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN, nil
+	case OrderRejectionReasonCannotAmendFromGFAOrGfn:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
@@ -481,12 +487,18 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonInsufficientFundsToPayFees, nil
 	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
 		return OrderRejectionReasonInternalError, nil
-	case types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE:
-		return OrderRejectionReasonInvalidMarketType, nil
-	case types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING:
-		return OrderRejectionReasonGFAOrderDuringAuction, nil
-	case types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION:
-		return OrderRejectionReasonGFNOrderDuringContinuousTrading, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT:
+		return OrderRejectionReasonAmendToGTTWithoutExpiryAt, nil
+	case types.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT:
+		return OrderRejectionReasonExpiryAtBeforeCreatedAt, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT:
+		return OrderRejectionReasonGTCWithExpiryAtNotValid, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC:
+		return OrderRejectionReasonCannotAmendToFOKOrIoc, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN:
+		return OrderRejectionReasonCannotAmendToGFAOrGfn, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN:
+		return OrderRejectionReasonCannotAmendFromGFAOrGfn, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err

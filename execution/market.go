@@ -1820,22 +1820,33 @@ func (m *Market) validateOrderAmendment(
 	// check TIF and expiracy
 	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
-			return errors.New("cannot amend to order type GTT without an expiryAt value")
+			return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
 		}
 		// if expiresAt is before or equal to created at
 		// we return an error
 		if amendment.ExpiresAt.Value <= order.CreatedAt {
-			return fmt.Errorf("amend order, ExpiresAt(%v) can't be <= CreatedAt(%v)", amendment.ExpiresAt, order.CreatedAt)
+			return types.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT
 		}
 	} else if amendment.TimeInForce == types.Order_TIF_GTC {
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != nil {
-			return errors.New("amend order, TIF GTC cannot have ExpiresAt set")
+			return types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
 		}
 	} else if amendment.TimeInForce == types.Order_TIF_FOK ||
 		amendment.TimeInForce == types.Order_TIF_IOC {
 		// IOC and FOK are not acceptable for amend order
-		return errors.New("amend order, TIF FOK and IOC are not allowed")
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
+	} else if (amendment.TimeInForce == types.Order_TIF_GFN ||
+		amendment.TimeInForce == types.Order_TIF_GFA) &&
+		amendment.TimeInForce != order.TimeInForce {
+		// We cannot amend to a GFA/GFN orders
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN
+	} else if (order.TimeInForce == types.Order_TIF_GFN ||
+		order.TimeInForce == types.Order_TIF_GFA) &&
+		(amendment.TimeInForce != order.TimeInForce &&
+			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED) {
+		// We cannot amend from a GFA/GFN orders
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
 	}
 	return nil
 }
