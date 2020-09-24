@@ -150,8 +150,8 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	var totalVolume uint64
 
 	if s.side == types.Side_SIDE_BUY {
-		for index := len(s.levels) - 1; index >= 0; index-- {
-			pricelevel := s.levels[index]
+		for i := len(s.levels) - 1; i >= 0; i-- {
+			pricelevel := s.levels[i]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price >= price && totalVolume+order.Remaining <= volume {
@@ -168,7 +168,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 				}
 			}
 			// Erase this price level which will be at the end of the slice
-			s.levels[index] = nil
+			s.levels[i] = nil
 			s.levels = s.levels[:len(s.levels)-1]
 
 			// Check if we have done enough
@@ -177,8 +177,8 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 			}
 		}
 	} else {
-		for len(s.levels) > 0 {
-			pricelevel := s.levels[0]
+		for i := len(s.levels) - 1; i >= 0; i-- {
+			pricelevel := s.levels[i]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price <= price && totalVolume+order.Remaining <= volume {
@@ -193,9 +193,9 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 					return nil, ErrInvalidVolume
 				}
 			}
-			// Erase this price level which will be the start of the slice
-			s.levels[0] = nil
-			s.levels = s.levels[1:len(s.levels)]
+			// Erase this price level which will be the end of the slice
+			s.levels[i] = nil
+			s.levels = s.levels[:len(s.levels)-1]
 
 			// Check if we have done enough
 			if totalVolume == volume {
