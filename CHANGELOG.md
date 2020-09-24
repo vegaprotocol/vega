@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.25.0
+
+*2020-09-24*
+
+This release adds the event bus API, allowing for much greater introspection in to the operation of a node. We've also re-enabled the order amends API, as well as a long list of fixes.
+
+### New
+- [#2281](https://github.com/vegaprotocol/vega/pull/2281) Enable opening auctions
+- [#2205](https://github.com/vegaprotocol/vega/pull/2205) Add GraphQL event stream API
+- [#2219](https://github.com/vegaprotocol/vega/pull/2219) Add deposits API
+- [#2222](https://github.com/vegaprotocol/vega/pull/2222) Initial asset list is now loaded from genesis configuration, not external configuration
+- [#2238](https://github.com/vegaprotocol/vega/pull/2238) Re-enable order amend API
+- [#2249](https://github.com/vegaprotocol/vega/pull/2249) Re-enable TX rate limit by party ID
+- [#2240](https://github.com/vegaprotocol/vega/pull/2240) Add time to position responses
+
+### Improvements
+- [#2211](https://github.com/vegaprotocol/vega/pull/2211) 🔥 GraphQL: Field case change `proposalId` -> `proposalID`
+- [#2218](https://github.com/vegaprotocol/vega/pull/2218) 🔥 GraphQL: Withdrawals now return a `Party`, not a party ID
+- [#2202](https://github.com/vegaprotocol/vega/pull/2202) Fix time validation for proposals when all times are the same
+- [#2206](https://github.com/vegaprotocol/vega/pull/2206) Reduce log noise from statistics endpoint
+- [#2207](https://github.com/vegaprotocol/vega/pull/2207) Automatically reload node configuration
+- [#2209](https://github.com/vegaprotocol/vega/pull/2209) GraphQL: fix proposal rejection enum
+- [#2210](https://github.com/vegaprotocol/vega/pull/2210) Refactor order service to not require blockchain client
+- [#2213](https://github.com/vegaprotocol/vega/pull/2213) Improve error clarity for invalid proposals
+- [#2216](https://github.com/vegaprotocol/vega/pulls/2216) Ensure all GRPC endpoints use real time, not Vega time
+- [#2231](https://github.com/vegaprotocol/vega/pull/2231) Refactor processor to no longer require collateral
+- [#2232](https://github.com/vegaprotocol/vega/pull/2232) Clean up logs that dumped raw bytes
+- [#2233](https://github.com/vegaprotocol/vega/pull/2233) Remove generate method from execution engine
+- [#2234](https://github.com/vegaprotocol/vega/pull/2234) Remove `authEnabled` setting
+- [#2236](https://github.com/vegaprotocol/vega/pull/2236) Simply order amendment logging
+- [#2237](https://github.com/vegaprotocol/vega/pull/2237) Clarify fees attribution in transfers
+- [#2239](https://github.com/vegaprotocol/vega/pull/2239) Ensure margin is released immediately, not on next mark to market
+- [#2241](https://github.com/vegaprotocol/vega/pull/2241) Load log level in processor app
+- [#2245](https://github.com/vegaprotocol/vega/pull/2245) Fix a concurrent map access in positions API
+- [#2247](https://github.com/vegaprotocol/vega/pull/2247) Improve logging on a TX with an invalid signature
+- [#2252](https://github.com/vegaprotocol/vega/pull/2252) Fix incorrect order count in Market Depth API
+- [#2254](https://github.com/vegaprotocol/vega/pull/2254) Fix concurrent map access in Market Depth API
+- [#2269](https://github.com/vegaprotocol/vega/pull/2269) GraphQL: Fix party filtering for event bus API
+- [#2266](https://github.com/vegaprotocol/vega/pull/2266) Refactor transaction codec
+- [#2275](https://github.com/vegaprotocol/vega/pull/2275) Prevent opening auctions from closing early
+- [#2262](https://github.com/vegaprotocol/vega/pull/2262) Clear potential position properly when an order is cancelled for self trading
+- [#2286](https://github.com/vegaprotocol/vega/pull/2286) Add sequence ID to event bus events
+- [#2288](https://github.com/vegaprotocol/vega/pull/2288) Fix auction events not appearing in GraphQL event bus
+- [#2294](https://github.com/vegaprotocol/vega/pull/2294) Fixing incorrect order iteration in auctions
+- [#2285](https://github.com/vegaprotocol/vega/pull/2285) Check auction times
+- [#2283](https://github.com/vegaprotocol/vega/pull/2283) Better handling of 0 `expiresAt`
+
 ## 0.24.0
 
 *2020-09-04*
