@@ -40,7 +40,7 @@ func (p HorizonProbabilityLevelPair) Validate() error {
 	if p.ProbabilityLevel <= 0 || p.ProbabilityLevel >= 1 {
 		return ErrProbabilityLevel
 	}
-	if p.Horizon.Nanoseconds() <= 0 {
+	if p.Horizon <= 0 {
 		return ErrHorizonNotInFuture
 	}
 	return nil
@@ -62,8 +62,8 @@ type PriceRangeProvider interface {
 	PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64)
 }
 
-// PriceMonitoring allows tracking price changes and verifying them against the theoretical levels implied by the PriceRangeProvider (risk model).
-type PriceMonitoring struct {
+// Engine allows tracking price changes and verifying them against the theoretical levels implied by the PriceRangeProvider (risk model).
+type Engine struct {
 	riskModel                    PriceRangeProvider
 	horizonProbabilityLevelPairs []HorizonProbabilityLevelPair
 	updateFrequency              time.Duration
@@ -77,8 +77,8 @@ type PriceMonitoring struct {
 }
 
 // NewPriceMonitoring returns a new instance of PriceMonitoring.
-func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPairs []HorizonProbabilityLevelPair, updateFrequency time.Duration, currentPrice uint64, currentTime time.Time) (*PriceMonitoring, error) {
-	if updateFrequency.Nanoseconds() <= 0 {
+func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPairs []HorizonProbabilityLevelPair, updateFrequency time.Duration, currentPrice uint64, currentTime time.Time) (*Engine, error) {
+	if updateFrequency <= 0 {
 		return nil, ErrUpdateFrequencyNotPositive
 	}
 
@@ -89,126 +89,126 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPai
 				horizonProbabilityLevelPairs[i].ProbabilityLevel >= horizonProbabilityLevelPairs[j].ProbabilityLevel
 		})
 
-	horizonsAsYearFraction := make(map[time.Duration]float64)
-	nanosecondsInAYear := (365.25 * 24 * time.Hour).Nanoseconds()
+	h := make(map[time.Duration]float64)
+	nanosecondsInAYear := 365.25 * 24 * time.Hour
 	for _, p := range horizonProbabilityLevelPairs {
 		if err := p.Validate(); err != nil {
 			return nil, err
 		}
-		if _, ok := horizonsAsYearFraction[p.Horizon]; !ok {
-			horizonNano := p.Horizon.Nanoseconds()
-			if horizonNano == 0 {
+		if _, ok := h[p.Horizon]; !ok {
+			if p.Horizon == 0 {
 				return nil, ErrHorizonNotInFuture
 			}
-			horizonsAsYearFraction[p.Horizon] = float64(horizonNano) / float64(nanosecondsInAYear)
+			h[p.Horizon] = float64(p.Horizon) / float64(nanosecondsInAYear)
 		}
 	}
-	pm := &PriceMonitoring{
+	e := &Engine{
 		riskModel:                    riskModel,
 		horizonProbabilityLevelPairs: horizonProbabilityLevelPairs,
-		horizonsAsYearFraction:       horizonsAsYearFraction,
+		horizonsAsYearFraction:       h,
 		updateFrequency:              updateFrequency,
 	}
-	pm.Reset(currentPrice, currentTime)
-	return pm, nil
+	e.Reset(currentPrice, currentTime)
+	return e, nil
 }
 
 // Reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
-func (pm *PriceMonitoring) Reset(currentPrice uint64, currentTime time.Time) {
-	pm.currentTime = currentTime
-	pm.pricesPerCurrentTime = []uint64{currentPrice}
-	pm.averagePriceHistory = []timestampedAveragePrice{}
-	pm.priceMoveBounds = make(map[HorizonProbabilityLevelPair]priceMoveBound)
-	pm.updateTime = currentTime
-	pm.updateBounds()
+func (e *Engine) Reset(currentPrice uint64, currentTime time.Time) {
+	e.currentTime = currentTime
+	e.pricesPerCurrentTime = []uint64{currentPrice}
+	e.averagePriceHistory = []timestampedAveragePrice{}
+	e.priceMoveBounds = map[HorizonProbabilityLevelPair]priceMoveBound{}
+	e.updateTime = currentTime
+	e.updateBounds()
 }
 
 // RecordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime
-func (pm *PriceMonitoring) RecordPriceChange(price uint64) {
-	pm.pricesPerCurrentTime = append(pm.pricesPerCurrentTime, price)
+func (e *Engine) RecordPriceChange(price uint64) {
+	e.pricesPerCurrentTime = append(e.pricesPerCurrentTime, price)
 }
 
 // RecordTimeChange updates the time in the price monitoring module and returns an error if any problems are encountered.
-func (pm *PriceMonitoring) RecordTimeChange(currentTime time.Time) error {
-	if currentTime.Before(pm.currentTime) {
+func (e *Engine) RecordTimeChange(currentTime time.Time) error {
+	if currentTime.Before(e.currentTime) {
 		return ErrTimeSequence // This shouldn't happen, but if it does there's something fishy going on
 	}
-	if currentTime.After(pm.currentTime) {
+	if currentTime.After(e.currentTime) {
 		var sum uint64 = 0
-		for _, x := range pm.pricesPerCurrentTime {
+		for _, x := range e.pricesPerCurrentTime {
 			sum += x
 		}
-		pm.averagePriceHistory = append(pm.averagePriceHistory,
+		e.averagePriceHistory = append(e.averagePriceHistory,
 			timestampedAveragePrice{
-				Time:         pm.currentTime,
-				AveragePrice: float64(sum) / float64(len(pm.pricesPerCurrentTime)),
+				Time:         e.currentTime,
+				AveragePrice: float64(sum) / float64(len(e.pricesPerCurrentTime)),
 			})
-		pm.pricesPerCurrentTime = make([]uint64, 0)
-		pm.currentTime = currentTime
-		pm.updateBounds()
+		e.pricesPerCurrentTime = make([]uint64, 0, cap(e.pricesPerCurrentTime))
+		e.currentTime = currentTime
+		e.updateBounds()
 	}
 	return nil
 }
 
 // CheckBoundViolations returns a map of horizon and probability level pair to boolean.
 // A true value indicates that a bound corresponding to a given horizon and probability level pair has been violated.
-func (pm *PriceMonitoring) CheckBoundViolations(price uint64) map[HorizonProbabilityLevelPair]bool {
+func (e *Engine) CheckBoundViolations(price uint64) map[HorizonProbabilityLevelPair]bool {
 	fpPrice := float64(price)
-	checks := make(map[HorizonProbabilityLevelPair]bool, len(pm.horizonProbabilityLevelPairs))
+	checks := make(map[HorizonProbabilityLevelPair]bool, len(e.horizonProbabilityLevelPairs))
 	prevHorizon := 0 * time.Nanosecond
 	var referencePrice float64
-	for _, p := range pm.horizonProbabilityLevelPairs {
+	for _, p := range e.horizonProbabilityLevelPairs {
 		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
 		if p.Horizon != prevHorizon {
-			referencePrice = pm.getReferencePrice(pm.currentTime.Add(-p.Horizon))
+			referencePrice = e.getReferencePrice(e.currentTime.Add(-p.Horizon))
 			prevHorizon = p.Horizon
 		}
 
 		priceDiff := fpPrice - referencePrice
-		bounds := pm.priceMoveBounds[p]
+		bounds := e.priceMoveBounds[p]
 		checks[p] = priceDiff < bounds.MinValidMoveDown || priceDiff > bounds.MaxValidMoveUp
 	}
 	return checks
 }
 
-func (pm *PriceMonitoring) updateBounds() {
-	if !pm.currentTime.Before(pm.updateTime) {
-		pm.updateTime = pm.currentTime.Add(pm.updateFrequency)
-		var latestPrice float64
-		if len(pm.averagePriceHistory) < 1 {
-			latestPrice = float64(pm.pricesPerCurrentTime[len(pm.pricesPerCurrentTime)-1])
-		} else {
-			latestPrice = pm.averagePriceHistory[len(pm.averagePriceHistory)-1].AveragePrice
-		}
-		for _, p := range pm.horizonProbabilityLevelPairs {
-
-			minPrice, maxPrice := pm.riskModel.PriceRange(latestPrice, pm.horizonsAsYearFraction[p.Horizon], p.ProbabilityLevel)
-			pm.priceMoveBounds[p] = priceMoveBound{MinValidMoveDown: minPrice - latestPrice, MaxValidMoveUp: maxPrice - latestPrice}
-		}
-		// Remove redundant average prices
-		maxTau := pm.horizonProbabilityLevelPairs[len(pm.horizonProbabilityLevelPairs)-1].Horizon
-		minRequiredHorizon := pm.currentTime.Add(-maxTau)
-		var i int
-		// Make sure at least one entry is left hence the "len(..) - 1"
-		for i = 0; i < len(pm.averagePriceHistory)-1; i++ {
-			if !pm.averagePriceHistory[i].Time.Before(minRequiredHorizon) {
-				break
-			}
-			pm.averagePriceHistory[i] = timestampedAveragePrice{} //TODO (WG): Confirm if this is needed to reclaim memory
-		}
-		pm.averagePriceHistory = pm.averagePriceHistory[i:]
-
+func (e *Engine) updateBounds() {
+	if e.currentTime.Before(e.updateTime) {
+		return
 	}
+
+	e.updateTime = e.currentTime.Add(e.updateFrequency)
+	var latestPrice float64
+	if len(e.averagePriceHistory) == 0 {
+		latestPrice = float64(e.pricesPerCurrentTime[len(e.pricesPerCurrentTime)-1])
+	} else {
+		latestPrice = e.averagePriceHistory[len(e.averagePriceHistory)-1].AveragePrice
+	}
+	for _, p := range e.horizonProbabilityLevelPairs {
+
+		minPrice, maxPrice := e.riskModel.PriceRange(latestPrice, e.horizonsAsYearFraction[p.Horizon], p.ProbabilityLevel)
+		e.priceMoveBounds[p] = priceMoveBound{MinValidMoveDown: minPrice - latestPrice, MaxValidMoveUp: maxPrice - latestPrice}
+	}
+	// Remove redundant average prices
+	maxTau := e.horizonProbabilityLevelPairs[len(e.horizonProbabilityLevelPairs)-1].Horizon
+	minRequiredHorizon := e.currentTime.Add(-maxTau)
+	var i int
+	// Make sure at least one entry is left hence the "len(..) - 1"
+	for i = 0; i < len(e.averagePriceHistory)-1; i++ {
+		if !e.averagePriceHistory[i].Time.Before(minRequiredHorizon) {
+			break
+		}
+		e.averagePriceHistory[i] = timestampedAveragePrice{} //TODO (WG): Confirm if this is needed to reclaim memory
+	}
+	e.averagePriceHistory = e.averagePriceHistory[i:]
 }
 
-func (pm *PriceMonitoring) getReferencePrice(referenceTime time.Time) float64 {
+func (e *Engine) getReferencePrice(referenceTime time.Time) float64 {
 	var referencePrice float64
-	if len(pm.averagePriceHistory) < 1 {
-		referencePrice = float64(pm.pricesPerCurrentTime[0])
+	if len(e.averagePriceHistory) < 1 {
+		referencePrice = float64(e.pricesPerCurrentTime[0])
 	} else {
-		referencePrice = pm.averagePriceHistory[0].AveragePrice
+		referencePrice = e.averagePriceHistory[0].AveragePrice
 	}
-	for _, p := range pm.averagePriceHistory {
+	for _, p := range e.averagePriceHistory {
 		if p.Time.After(referenceTime) {
 			break
 		}
