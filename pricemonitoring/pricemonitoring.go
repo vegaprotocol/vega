@@ -90,7 +90,7 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPai
 		})
 
 	h := make(map[time.Duration]float64)
-	nanosecondsInAYear := 365.25 * 24 * time.Hour
+	year := 365.25 * 24 * time.Hour
 	for _, p := range horizonProbabilityLevelPairs {
 		if err := p.Validate(); err != nil {
 			return nil, err
@@ -99,7 +99,7 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, horizonProbabilityLevelPai
 			if p.Horizon == 0 {
 				return nil, ErrHorizonNotInFuture
 			}
-			h[p.Horizon] = float64(p.Horizon) / float64(nanosecondsInAYear)
+			h[p.Horizon] = float64(p.Horizon) / float64(year)
 		}
 	}
 	e := &Engine{
