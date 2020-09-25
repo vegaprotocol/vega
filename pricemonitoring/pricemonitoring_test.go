@@ -16,11 +16,11 @@ func TestConstructor(t *testing.T) {
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
 	var currentPrice uint64 = 123
 	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewHorizonProbabilityLevelPair(time.Hour, 0.99)
+	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
 	require.NoError(t, err)
-	horizon2, err := pricemonitoring.NewHorizonProbabilityLevelPair(2*time.Hour, 0.95)
+	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
 	require.NoError(t, err)
-	horizonProbabilityPairs := []pricemonitoring.HorizonProbabilityLevelPair{*horizon1, *horizon2}
+	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
 	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(2)
 
 	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
@@ -32,18 +32,18 @@ func TestConstructor(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, pm)
 
-	negativeHorizon := pricemonitoring.HorizonProbabilityLevelPair{Horizon: -time.Microsecond, ProbabilityLevel: 0.5}
-	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.HorizonProbabilityLevelPair{negativeHorizon}, 10*time.Minute, currentPrice, currentTime)
+	negativeHorizon := pricemonitoring.PriceProjection{Horizon: -time.Microsecond, Probability: 0.5}
+	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.PriceProjection{negativeHorizon}, 10*time.Minute, currentPrice, currentTime)
 	require.Error(t, err)
 	require.Nil(t, pm)
 
-	invalidProbability := pricemonitoring.HorizonProbabilityLevelPair{Horizon: time.Microsecond, ProbabilityLevel: 1.1}
-	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.HorizonProbabilityLevelPair{invalidProbability}, 10*time.Minute, currentPrice, currentTime)
+	invalidProbability := pricemonitoring.PriceProjection{Horizon: time.Microsecond, Probability: 1.1}
+	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.PriceProjection{invalidProbability}, 10*time.Minute, currentPrice, currentTime)
 	require.Error(t, err)
 	require.Nil(t, pm)
 
-	invalidProbability = pricemonitoring.HorizonProbabilityLevelPair{Horizon: time.Microsecond, ProbabilityLevel: -0.1}
-	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.HorizonProbabilityLevelPair{invalidProbability}, 10*time.Minute, currentPrice, currentTime)
+	invalidProbability = pricemonitoring.PriceProjection{Horizon: time.Microsecond, Probability: -0.1}
+	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.PriceProjection{invalidProbability}, 10*time.Minute, currentPrice, currentTime)
 	require.Error(t, err)
 	require.Nil(t, pm)
 
@@ -54,18 +54,18 @@ func TestHorizonProbablityLevelPairsSorted(t *testing.T) {
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
 	var currentPrice uint64 = 123
 	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewHorizonProbabilityLevelPair(time.Hour, 0.99)
+	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
 	require.NoError(t, err)
-	horizon2, err := pricemonitoring.NewHorizonProbabilityLevelPair(2*time.Hour, 0.99)
+	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.99)
 	require.NoError(t, err)
-	horizon3, err := pricemonitoring.NewHorizonProbabilityLevelPair(2*time.Hour, 0.95)
+	horizon3, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
 	require.NoError(t, err)
-	horizon4, err := pricemonitoring.NewHorizonProbabilityLevelPair(10*time.Hour, 0.95)
+	horizon4, err := pricemonitoring.NewPriceProjection(10*time.Hour, 0.95)
 	require.NoError(t, err)
 	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(4)
 
-	expectedHorizonProbabilityPairs := []pricemonitoring.HorizonProbabilityLevelPair{*horizon1, *horizon2, *horizon3, *horizon4}
-	horizonProbabilityPairs := []pricemonitoring.HorizonProbabilityLevelPair{*horizon4, *horizon2, *horizon3, *horizon1}
+	expectedHorizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2, *horizon3, *horizon4}
+	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon4, *horizon2, *horizon3, *horizon1}
 
 	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
 
@@ -85,11 +85,11 @@ func TestUpdateTime(t *testing.T) {
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
 	var currentPrice uint64 = 123
 	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewHorizonProbabilityLevelPair(time.Hour, 0.99)
+	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
 	require.Nil(t, err)
-	horizon2, err := pricemonitoring.NewHorizonProbabilityLevelPair(2*time.Hour, 0.95)
+	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
 	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.HorizonProbabilityLevelPair{*horizon1, *horizon2}
+	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
 	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(2)
 
 	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
@@ -110,11 +110,11 @@ func TestRecordPriceChange(t *testing.T) {
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
 	var currentPrice uint64 = 123
 	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewHorizonProbabilityLevelPair(time.Hour, 0.99)
+	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
 	require.Nil(t, err)
-	horizon2, err := pricemonitoring.NewHorizonProbabilityLevelPair(2*time.Hour, 0.95)
+	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
 	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.HorizonProbabilityLevelPair{*horizon1, *horizon2}
+	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
 	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(2)
 
 	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
@@ -131,19 +131,19 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
 	var currentPrice uint64 = 123
 	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewHorizonProbabilityLevelPair(time.Hour, 0.99)
+	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
 	require.Nil(t, err)
-	horizon2, err := pricemonitoring.NewHorizonProbabilityLevelPair(2*time.Hour, 0.95)
+	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
 	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.HorizonProbabilityLevelPair{*horizon1, *horizon2}
+	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
 	var maxMoveDownHorizon1 uint64 = 1
 	var maxMoveUpHorizon1 uint64 = 2
 	var maxMoveDownHorizon2 uint64 = 3
 	var maxMoveUpHorizon2 uint64 = 4
 	require.True(t, maxMoveDownHorizon2 > maxMoveDownHorizon1)
 	require.True(t, maxMoveUpHorizon2 > maxMoveUpHorizon1)
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(horizon1.Horizon), horizon1.ProbabilityLevel).Return(float64(currentPrice-maxMoveDownHorizon1), float64(currentPrice+maxMoveUpHorizon1))
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(horizon2.Horizon), horizon2.ProbabilityLevel).Return(float64(currentPrice-maxMoveDownHorizon2), float64(currentPrice+maxMoveUpHorizon2))
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(horizon1.Horizon), horizon1.Probability).Return(float64(currentPrice-maxMoveDownHorizon1), float64(currentPrice+maxMoveUpHorizon1))
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(horizon2.Horizon), horizon2.Probability).Return(float64(currentPrice-maxMoveDownHorizon2), float64(currentPrice+maxMoveUpHorizon2))
 
 	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
 	require.NoError(t, err)
@@ -186,13 +186,13 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
 	var price1 uint64 = 123
 	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon, err := pricemonitoring.NewHorizonProbabilityLevelPair(10*time.Minute, 0.99)
+	horizon, err := pricemonitoring.NewPriceProjection(10*time.Minute, 0.99)
 	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.HorizonProbabilityLevelPair{*horizon}
+	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon}
 	var maxMoveDown1 uint64 = 1
 	var maxMoveUp1 uint64 = 2
 	boundUpdateFrequency := 2 * time.Minute
-	riskModelMock.EXPECT().PriceRange(float64(price1), horizonToYearFraction(horizon.Horizon), horizon.ProbabilityLevel).Return(float64(price1-maxMoveDown1), float64(price1+maxMoveUp1))
+	riskModelMock.EXPECT().PriceRange(float64(price1), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(float64(price1-maxMoveDown1), float64(price1+maxMoveUp1))
 
 	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, boundUpdateFrequency, price1, currentTime)
 	require.NoError(t, err)
@@ -228,7 +228,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	pm.RecordPriceChange(price2Intermediate1)
 	pm.RecordPriceChange(price2Intermediate2)
 	price2Average := float64(price2Intermediate1+price2Intermediate2) / 2.0
-	riskModelMock.EXPECT().PriceRange(float64(price2Average), horizonToYearFraction(horizon.Horizon), horizon.ProbabilityLevel).Return(price2Average-float64(maxMoveDown2), price2Average+float64(maxMoveUp2))
+	riskModelMock.EXPECT().PriceRange(float64(price2Average), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(price2Average-float64(maxMoveDown2), price2Average+float64(maxMoveUp2))
 	pm.RecordTimeChange(updateTime)
 	referencePrice := price1
 	violations = pm.CheckBoundViolations(referencePrice + maxMoveUp2)
@@ -248,7 +248,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	pm.RecordPriceChange(price3Intermediate1)
 	pm.RecordPriceChange(price3Intermediate2)
 	price3Average := float64(price3Intermediate1+price3Intermediate2) / 2.0
-	riskModelMock.EXPECT().PriceRange(float64(price3Average), horizonToYearFraction(horizon.Horizon), horizon.ProbabilityLevel).Return(price3Average-float64(maxMoveDown3), price3Average+float64(maxMoveUp3))
+	riskModelMock.EXPECT().PriceRange(float64(price3Average), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(price3Average-float64(maxMoveDown3), price3Average+float64(maxMoveUp3))
 	pm.RecordTimeChange(updateTime.Add(-time.Nanosecond).Add(horizon.Horizon))
 	referencePrice = uint64(price2Average)
 	violations = pm.CheckBoundViolations(referencePrice + maxMoveUp3)
@@ -276,7 +276,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	var resetPrice uint64 = 20
 	var maxMoveDown4 uint64 = 5
 	var maxMoveUp4 uint64 = 120
-	riskModelMock.EXPECT().PriceRange(float64(resetPrice), horizonToYearFraction(horizon.Horizon), horizon.ProbabilityLevel).Return(float64(resetPrice-maxMoveDown4), float64(resetPrice+maxMoveUp4))
+	riskModelMock.EXPECT().PriceRange(float64(resetPrice), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(float64(resetPrice-maxMoveDown4), float64(resetPrice+maxMoveUp4))
 
 	pm.Reset(resetPrice, updateTime.Add(horizon.Horizon).Add(time.Second))
 	violations = pm.CheckBoundViolations(resetPrice + maxMoveUp4)
