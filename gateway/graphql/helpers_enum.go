@@ -432,6 +432,12 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
 	case OrderRejectionReasonInvalidTimeInForce:
 		return types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE, nil
+	case OrderRejectionReasonInvalidMarketType:
+		return types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE, nil
+	case OrderRejectionReasonGFAOrderDuringAuction:
+		return types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING, nil
+	case OrderRejectionReasonGFNOrderDuringContinuousTrading:
+		return types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
@@ -475,6 +481,12 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonInsufficientFundsToPayFees, nil
 	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
 		return OrderRejectionReasonInternalError, nil
+	case types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE:
+		return OrderRejectionReasonInvalidMarketType, nil
+	case types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING:
+		return OrderRejectionReasonGFAOrderDuringAuction, nil
+	case types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION:
+		return OrderRejectionReasonGFNOrderDuringContinuousTrading, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err

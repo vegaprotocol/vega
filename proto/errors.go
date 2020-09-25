@@ -1,23 +1,26 @@
 package proto
 
 var (
-	ErrInvalidMarketID            = OrderError_ORDER_ERROR_INVALID_MARKET_ID
-	ErrInvalidOrderID             = OrderError_ORDER_ERROR_INVALID_ORDER_ID
-	ErrOrderOutOfSequence         = OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
-	ErrInvalidRemainingSize       = OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
-	ErrVegaTimeFailure            = OrderError_ORDER_ERROR_TIME_FAILURE
-	ErrOrderRemovalFailure        = OrderError_ORDER_ERROR_REMOVAL_FAILURE
-	ErrInvalidExpirationDatetime  = OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
-	ErrInvalidOrderReference      = OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE
-	ErrEditNotAllowed             = OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
-	ErrOrderAmendFailure          = OrderError_ORDER_ERROR_AMEND_FAILURE
-	ErrOrderNotFound              = OrderError_ORDER_ERROR_NOT_FOUND
-	ErrInvalidPartyID             = OrderError_ORDER_ERROR_INVALID_PARTY_ID
-	ErrInvalidSize                = OrderError_ORDER_ERROR_INVALID_SIZE
-	ErrInvalidPersistence         = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
-	ErrInvalidType                = OrderError_ORDER_ERROR_INVALID_TYPE
-	ErrInsufficientFundsToPayFees = OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
-	ErrInvalidTimeInForce         = OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
+	ErrInvalidMarketID             = OrderError_ORDER_ERROR_INVALID_MARKET_ID
+	ErrInvalidOrderID              = OrderError_ORDER_ERROR_INVALID_ORDER_ID
+	ErrOrderOutOfSequence          = OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
+	ErrInvalidRemainingSize        = OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
+	ErrVegaTimeFailure             = OrderError_ORDER_ERROR_TIME_FAILURE
+	ErrOrderRemovalFailure         = OrderError_ORDER_ERROR_REMOVAL_FAILURE
+	ErrInvalidExpirationDatetime   = OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
+	ErrInvalidOrderReference       = OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE
+	ErrEditNotAllowed              = OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
+	ErrOrderAmendFailure           = OrderError_ORDER_ERROR_AMEND_FAILURE
+	ErrOrderNotFound               = OrderError_ORDER_ERROR_NOT_FOUND
+	ErrInvalidPartyID              = OrderError_ORDER_ERROR_INVALID_PARTY_ID
+	ErrInvalidSize                 = OrderError_ORDER_ERROR_INVALID_SIZE
+	ErrInvalidPersistence          = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
+	ErrInvalidType                 = OrderError_ORDER_ERROR_INVALID_TYPE
+	ErrInsufficientFundsToPayFees  = OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
+	ErrIncorrectMarketType         = OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
+	ErrInvalidTimeInForce          = OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
+	ErrGFNOrderInAuction           = OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
+	ErrGFAOrderInContinuousTrading = OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -71,6 +74,12 @@ func (err OrderError) Error() string {
 		return "OrderError: Self trading"
 	case OrderError_ORDER_ERROR_INVALID_TYPE:
 		return "OrderError: Invalid Type"
+	case OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE:
+		return "OrderError: Invalid Market Type"
+	case OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION:
+		return "OrderError: GFN Order Received During An Auction"
+	case OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING:
+		return "OrderError: GFA Order Received During Continuous Trading"
 	default:
 		return "invalid OrderError"
 	}
