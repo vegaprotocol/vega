@@ -65,10 +65,21 @@ func (p PosRes) MarketProto() types.MarketEvent {
 func (p PosRes) StreamMessage() *types.BusEvent {
 	pr := p.Proto()
 	return &types.BusEvent{
-		ID:   p.traceID,
+		ID:   p.eventID(),
 		Type: p.et.ToProto(),
 		Event: &types.BusEvent_PositionResolution{
 			PositionResolution: &pr,
+		},
+	}
+}
+
+func (p PosRes) StreamMarketMessage() *types.BusEvent {
+	msg := p.MarketProto()
+	return &types.BusEvent{
+		ID:   p.eventID(),
+		Type: types.BusEventType_BUS_EVENT_TYPE_MARKET,
+		Event: &types.BusEvent_Market{
+			Market: &msg,
 		},
 	}
 }

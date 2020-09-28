@@ -2,6 +2,7 @@ package collateral_test
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -42,6 +44,7 @@ func TestCollateralTransfer(t *testing.T) {
 	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testDistributeWin)
 	t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testProcessBoth)
 	t.Run("test distribution insufficient funds - Transfer losses (partial), distribute wins pro-rate", testProcessBothProRated)
+	t.Run("test releas party margin account", testReleasePartyMarginAccount)
 }
 
 func TestCollateralMarkToMarket(t *testing.T) {
@@ -98,6 +101,36 @@ func testFeesTransferContinuousNoTransfer(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func testReleasePartyMarginAccount(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	gen, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	mar, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), gen, 100)
+	assert.Nil(t, err)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), mar, 500)
+	assert.Nil(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	_, err = eng.ClearPartyMarginAccount(
+		context.Background(), trader, testMarketID, testMarketAsset)
+	assert.NoError(t, err)
+	generalAcc, _ := eng.GetAccountByID(gen)
+	assert.Equal(t, 600, int(generalAcc.Balance))
+	marginAcc, _ := eng.GetAccountByID(mar)
+	assert.Equal(t, 0, int(marginAcc.Balance))
+
+}
+
 func testFeeTransferContinuousNoFunds(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	defer eng.Finish()
@@ -127,6 +160,7 @@ func testFeeTransferContinuousNoFunds(t *testing.T) {
 		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
 	assert.Nil(t, transfers)
 	assert.EqualError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+
 }
 
 func testFeeTransferContinuousNotEnoughFunds(t *testing.T) {
@@ -2014,3 +2048,41 @@ type transferFees struct {
 
 func (t transferFees) Transfers() []*types.Transfer               { return t.tfs }
 func (t transferFees) TotalFeesAmountPerParty() map[string]uint64 { return t.tfa }
+
+func TestHash(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+
+	// Create the accounts
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	id1, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t1", testMarketAsset)
+	require.NoError(t, err)
+
+	id2, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t2", testMarketAsset)
+	require.NoError(t, err)
+
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), "t1", testMarketID, testMarketAsset)
+	require.NoError(t, err)
+
+	// Add balances
+	require.NoError(t,
+		eng.Engine.UpdateBalance(context.Background(), id1, 100),
+	)
+
+	require.NoError(t,
+		eng.Engine.UpdateBalance(context.Background(), id2, 500),
+	)
+
+	hash := eng.Hash()
+	require.Equal(t,
+		"4ed85cf7a65724ec9239022a4e1472583df3919fd3933e7c797c1d8a34f168d1",
+		hex.EncodeToString(hash),
+		"It should match against the known hash",
+	)
+	// compute the hash 100 times for determinism verification
+	for i := 0; i < 100; i++ {
+		got := eng.Hash()
+		require.Equal(t, hash, got)
+	}
+
+}

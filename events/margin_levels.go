@@ -23,6 +23,10 @@ func (m MarginLevels) MarginLevels() types.MarginLevels {
 	return m.l
 }
 
+func (m MarginLevels) IsParty(id string) bool {
+	return (m.l.PartyID == id)
+}
+
 func (m MarginLevels) PartyID() string {
 	return m.l.PartyID
 }
@@ -41,7 +45,7 @@ func (m MarginLevels) Proto() types.MarginLevels {
 
 func (m MarginLevels) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   m.traceID,
+		ID:   m.eventID(),
 		Type: m.et.ToProto(),
 		Event: &types.BusEvent_MarginLevels{
 			MarginLevels: &m.l,

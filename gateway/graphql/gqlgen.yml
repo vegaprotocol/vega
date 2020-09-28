@@ -28,6 +28,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.MarginLevels
   NodeSignature:
     model: code.vegaprotocol.io/vega/proto.NodeSignature
+  ProposalEvent:
+    model: code.vegaprotocol.io/vega/proto.Proposal
   Market:
     fields:
       orders:

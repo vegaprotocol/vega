@@ -57,6 +57,9 @@ func (this *SettleDistressed) Validate() error {
 func (this *MarketTick) Validate() error {
 	return nil
 }
+func (this *AuctionEvent) Validate() error {
+	return nil
+}
 func (this *BusEvent) Validate() error {
 	if oneOfNester, ok := this.GetEvent().(*BusEvent_TimeUpdate); ok {
 		if oneOfNester.TimeUpdate != nil {
@@ -195,6 +198,13 @@ func (this *BusEvent) Validate() error {
 		if oneOfNester.Deposit != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Deposit); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Deposit", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_Auction); ok {
+		if oneOfNester.Auction != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Auction); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Auction", err)
 			}
 		}
 	}

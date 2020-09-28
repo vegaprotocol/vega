@@ -2,10 +2,13 @@ package collateral
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -109,6 +112,23 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 // in order to be called when the chain time is updated (basically EndBlock)
 func (e *Engine) OnChainTimeUpdate(t time.Time) {
 	e.currentTime = t.UnixNano()
+}
+
+func (e *Engine) Hash() []byte {
+	keys := make([]string, 0, len(e.accs))
+	for k := range e.accs {
+		keys = append(keys, k)
+	}
+
+	output := make([]byte, 0, len(keys)*8)
+	sort.Strings(keys)
+	i := [8]byte{}
+	for _, k := range keys {
+		binary.BigEndian.PutUint64(i[0:], e.accs[k].Balance)
+		output = append(output, i[0:]...)
+	}
+
+	return crypto.Hash(output)
 }
 
 // ReloadConf updates the internal configuration of the collateral engine
@@ -1314,6 +1334,39 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			return nil, err
 		}
 
+	}
+	return &resp, nil
+}
+
+func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.TransferResponse, error) {
+	acc, err := e.GetAccountByID(e.accountID(market, party, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		return nil, err
+	}
+	resp := types.TransferResponse{
+		Transfers: []*types.LedgerEntry{},
+	}
+
+	if acc.Balance > 0 {
+		genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+		if err != nil {
+			return nil, err
+		}
+
+		resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
+			FromAccount: acc.Id,
+			ToAccount:   genAcc.Id,
+			Amount:      acc.Balance,
+			Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_HIGH.String(),
+			Type:        types.TransferType_TRANSFER_TYPE_MARGIN_HIGH.String(),
+			Timestamp:   e.currentTime,
+		})
+		if err := e.IncrementBalance(ctx, genAcc.Id, acc.Balance); err != nil {
+			return nil, err
+		}
+		if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
+			return nil, err
+		}
 	}
 	return &resp, nil
 }

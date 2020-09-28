@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -25,13 +25,15 @@ type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
-	hasRegistered     bool
 	size              uint64
+	txTotals          []uint64
+	txSizes           []int
 
 	cfg      Config
 	log      *logging.Logger
 	cancelFn func()
 	idGen    *IDgenerator
+	rates    *ratelimit.Rates
 
 	// service injection
 	assets     Assets
@@ -84,6 +86,10 @@ func NewApp(
 		cfg:      config,
 		cancelFn: cancelFn,
 		idGen:    NewIDGen(),
+		rates: ratelimit.New(
+			config.Ratelimit.Requests,
+			config.Ratelimit.PerNBlocks,
+		),
 
 		assets:     assets,
 		banking:    banking,
@@ -105,6 +111,7 @@ func NewApp(
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
 	app.abci.OnCommit = app.OnCommit
+	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
 
 	app.abci.
@@ -166,9 +173,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 		}
 	}
 
+	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
 		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
-		panic(err)
 	}
 
 	return tmtypes.ResponseInitChain{}
@@ -183,6 +190,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.Respon
 	now := req.Header.Time
 	app.time.SetTimeNow(ctx, now)
 
+	app.rates.NextBlock()
+
 	var err error
 	if app.currentTimestamp, err = app.time.GetTimeNow(); err != nil {
 		app.cancel()
@@ -192,20 +201,6 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.Respon
 	if app.previousTimestamp, err = app.time.GetTimeLastBatch(); err != nil {
 		app.cancel()
 		return
-	}
-
-	if !app.hasRegistered && app.top.IsValidator() && !app.top.Ready() {
-		if pk := app.top.SelfChainPubKey(); pk != nil {
-			payload := &types.NodeRegistration{
-				ChainPubKey: pk,
-				PubKey:      app.vegaWallet.PubKeyOrAddress(),
-			}
-			if err := app.cmd.Command(blockchain.RegisterNodeCommand, payload); err != nil {
-				app.cancel()
-				return
-			}
-			app.hasRegistered = true
-		}
 	}
 
 	app.log.Debug("ABCI service BEGIN completed",
@@ -222,47 +217,47 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	defer app.log.Debug("Processor COMMIT completed")
 
 	// Compute the AppHash and update the response
-	resp.Data = make([]byte, 8)
-	binary.BigEndian.PutUint64(resp.Data, uint64(app.size))
+	resp.Data = app.exec.Hash()
 
 	app.updateStats()
+	app.setBatchStats()
 
 	return resp
 }
 
-func (app *App) updateStats() {
-	app.stats.IncTotalBatches()
-	avg := app.stats.TotalOrders() / app.stats.TotalBatches()
-	app.stats.SetAverageOrdersPerBatch(avg)
-	duration := time.Duration(app.currentTimestamp.UnixNano() - app.previousTimestamp.UnixNano()).Seconds()
-	var (
-		currentOrders, currentTrades uint64
-	)
-	app.stats.SetBlockDuration(uint64(duration * float64(time.Second.Nanoseconds())))
-	if duration > 0 {
-		currentOrders, currentTrades = uint64(float64(app.stats.CurrentOrdersInBatch())/duration),
-			uint64(float64(app.stats.CurrentTradesInBatch())/duration)
+// OnCheckTxHandler performs validations like ratelimiting
+func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+	resp := tmtypes.ResponseCheckTx{}
+
+	// Check ratelimits
+	if app.limitPubkey(tx.PubKey()) {
+		resp.Code = abci.AbciTxnValidationFailure
 	}
-	app.stats.SetOrdersPerSecond(currentOrders)
-	app.stats.SetTradesPerSecond(currentTrades)
-	// log stats
-	app.log.Debug("Processor batch stats",
-		logging.Int64("previousTimestamp", app.previousTimestamp.UnixNano()),
-		logging.Int64("currentTimestamp", app.currentTimestamp.UnixNano()),
-		logging.Float64("duration", duration),
-		logging.Uint64("currentOrdersInBatch", app.stats.CurrentOrdersInBatch()),
-		logging.Uint64("currentTradesInBatch", app.stats.CurrentTradesInBatch()),
-		logging.Uint64("total-batches", app.stats.TotalBatches()),
-		logging.Uint64("avg-orders-batch", avg),
-		logging.Uint64("orders-per-sec", currentOrders),
-		logging.Uint64("trades-per-sec", currentTrades),
-	)
-	app.stats.NewBatch() // sets previous batch orders/trades to current, zeroes current tally
+
+	return ctx, resp
+}
+
+// limitPubkey returns whether a request should be rate limited or not
+func (app *App) limitPubkey(pk []byte) bool {
+	// Do not rate limit validators nodes.
+	if app.top.Exists(pk) {
+		return false
+	}
+
+	key := ratelimit.Key(pk).String()
+	if !app.rates.Allow(key) {
+		app.log.Error("Rate limit exceeded", logging.String("key", key))
+		return true
+	}
+
+	app.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", app.rates.Count(key)))
+	return false
 }
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
 func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
 	app.size++
+	app.setTxStats(len(req.Tx))
 
 	// update the context with Tracing Info.
 	hash := hex.EncodeToString(tx.Hash())

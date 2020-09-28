@@ -149,6 +149,7 @@
     - [ValidatorEvent](#vega.ValidatorEvent)
 
 - [proto/events.proto](#proto/events.proto)
+    - [AuctionEvent](#vega.AuctionEvent)
     - [BusEvent](#vega.BusEvent)
     - [LossSocialization](#vega.LossSocialization)
     - [MarketEvent](#vega.MarketEvent)
@@ -203,6 +204,31 @@
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
     - [TradableInstrument](#vega.TradableInstrument)
+
+- [proto/tm/replay.proto](#proto/tm/replay.proto)
+    - [BlockParams](#vega.BlockParams)
+    - [ConsensusParams](#vega.ConsensusParams)
+    - [Event](#vega.Event)
+    - [EventAttribute](#vega.EventAttribute)
+    - [Evidence](#vega.Evidence)
+    - [EvidenceParams](#vega.EvidenceParams)
+    - [Header](#vega.Header)
+    - [LastCommitInfo](#vega.LastCommitInfo)
+    - [PublicKey](#vega.PublicKey)
+    - [RequestBeginBlock](#vega.RequestBeginBlock)
+    - [RequestDeliverTx](#vega.RequestDeliverTx)
+    - [RequestInitChain](#vega.RequestInitChain)
+    - [ResponseBeginBlock](#vega.ResponseBeginBlock)
+    - [ResponseDeliverTx](#vega.ResponseDeliverTx)
+    - [ResponseInitChain](#vega.ResponseInitChain)
+    - [TmEvent](#vega.TmEvent)
+    - [Validator](#vega.Validator)
+    - [ValidatorParams](#vega.ValidatorParams)
+    - [ValidatorUpdate](#vega.ValidatorUpdate)
+    - [VersionParams](#vega.VersionParams)
+    - [VoteInfo](#vega.VoteInfo)
+
+    - [EvidenceType](#vega.EvidenceType)
 
 - [proto/vega.proto](#proto/vega.proto)
     - [Account](#vega.Account)
@@ -2559,6 +2585,25 @@ An event related to validator management with foreign networks.
 
 
 
+<a name="vega.AuctionEvent"></a>
+
+### AuctionEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  |  |
+| openingAuction | [bool](#bool) |  |  |
+| leave | [bool](#bool) |  |  |
+| start | [int64](#int64) |  |  |
+| end | [int64](#int64) |  |  |
+
+
+
+
+
+
 <a name="vega.BusEvent"></a>
 
 ### BusEvent
@@ -2590,6 +2635,7 @@ the actual data is set as a oneof field
 | marketTick | [MarketTick](#vega.MarketTick) |  |  |
 | withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
 | deposit | [Deposit](#vega.Deposit) |  |  |
+| auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2779,6 +2825,7 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
 | BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
 | BUS_EVENT_TYPE_DEPOSIT | 21 |  |
+| BUS_EVENT_TYPE_AUCTION | 22 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
@@ -3468,6 +3515,391 @@ Tradable Instrument definition.
 
 
 
+
+
+
+
+
+
+
+
+
+
+<a name="proto/tm/replay.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## proto/tm/replay.proto
+
+
+
+<a name="vega.BlockParams"></a>
+
+### BlockParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maxBytes | [int64](#int64) |  |  |
+| maxGas | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.ConsensusParams"></a>
+
+### ConsensusParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| block | [BlockParams](#vega.BlockParams) |  |  |
+| evidence | [EvidenceParams](#vega.EvidenceParams) |  |  |
+| validator | [ValidatorParams](#vega.ValidatorParams) |  |  |
+| version | [VersionParams](#vega.VersionParams) |  |  |
+
+
+
+
+
+
+<a name="vega.Event"></a>
+
+### Event
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| attributes | [EventAttribute](#vega.EventAttribute) | repeated |  |
+
+
+
+
+
+
+<a name="vega.EventAttribute"></a>
+
+### EventAttribute
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [bytes](#bytes) |  |  |
+| value | [bytes](#bytes) |  |  |
+| index | [bool](#bool) |  | nondeterministic |
+
+
+
+
+
+
+<a name="vega.Evidence"></a>
+
+### Evidence
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [EvidenceType](#vega.EvidenceType) |  |  |
+| validator | [Validator](#vega.Validator) |  |  |
+| height | [int64](#int64) |  |  |
+| time | [int64](#int64) |  |  |
+| totalVotingPower | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.EvidenceParams"></a>
+
+### EvidenceParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maxAgeNumBlocks | [int64](#int64) |  |  |
+| maxAgeDuration | [int64](#int64) |  |  |
+| max_num | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="vega.Header"></a>
+
+### Header
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chainId | [string](#string) |  |  |
+| height | [int64](#int64) |  |  |
+| time | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LastCommitInfo"></a>
+
+### LastCommitInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| round | [int32](#int32) |  |  |
+| votes | [VoteInfo](#vega.VoteInfo) | repeated |  |
+
+
+
+
+
+
+<a name="vega.PublicKey"></a>
+
+### PublicKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ed25519 | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="vega.RequestBeginBlock"></a>
+
+### RequestBeginBlock
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| hash | [bytes](#bytes) |  |  |
+| header | [Header](#vega.Header) |  |  |
+| lastCommitInfo | [LastCommitInfo](#vega.LastCommitInfo) |  |  |
+| byzantineValidators | [Evidence](#vega.Evidence) | repeated |  |
+
+
+
+
+
+
+<a name="vega.RequestDeliverTx"></a>
+
+### RequestDeliverTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tx | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="vega.RequestInitChain"></a>
+
+### RequestInitChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| time | [int64](#int64) |  |  |
+| chainID | [string](#string) |  |  |
+| consensusParams | [ConsensusParams](#vega.ConsensusParams) |  |  |
+| validators | [ValidatorUpdate](#vega.ValidatorUpdate) | repeated |  |
+| appStateBytes | [bytes](#bytes) |  |  |
+| initialHeight | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.ResponseBeginBlock"></a>
+
+### ResponseBeginBlock
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| events | [Event](#vega.Event) | repeated |  |
+
+
+
+
+
+
+<a name="vega.ResponseDeliverTx"></a>
+
+### ResponseDeliverTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| code | [uint32](#uint32) |  |  |
+| data | [bytes](#bytes) |  |  |
+| log | [string](#string) |  | nondeterministic |
+| info | [string](#string) |  | nondeterministic |
+| gasWanted | [int64](#int64) |  |  |
+| gasUsed | [int64](#int64) |  |  |
+| events | [Event](#vega.Event) | repeated |  |
+| codespace | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="vega.ResponseInitChain"></a>
+
+### ResponseInitChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| consensusParams | [ConsensusParams](#vega.ConsensusParams) |  |  |
+| validators | [ValidatorUpdate](#vega.ValidatorUpdate) | repeated |  |
+| appHash | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="vega.TmEvent"></a>
+
+### TmEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reqInitChain | [RequestInitChain](#vega.RequestInitChain) |  |  |
+| resInitChain | [ResponseInitChain](#vega.ResponseInitChain) |  |  |
+| reqDeliverTx | [RequestDeliverTx](#vega.RequestDeliverTx) |  |  |
+| resDeliverTx | [ResponseDeliverTx](#vega.ResponseDeliverTx) |  |  |
+| reqBeginBlock | [RequestBeginBlock](#vega.RequestBeginBlock) |  |  |
+| resBeginBlock | [ResponseBeginBlock](#vega.ResponseBeginBlock) |  |  |
+
+
+
+
+
+
+<a name="vega.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [bytes](#bytes) |  |  |
+| power | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.ValidatorParams"></a>
+
+### ValidatorParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pubKeyTypes | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="vega.ValidatorUpdate"></a>
+
+### ValidatorUpdate
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pub_key | [PublicKey](#vega.PublicKey) |  |  |
+| power | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.VersionParams"></a>
+
+### VersionParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| appVersion | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="vega.VoteInfo"></a>
+
+### VoteInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| validator | [Validator](#vega.Validator) |  |  |
+| signedLastBlock | [bool](#bool) |  |  |
+
+
+
+
+
+
+
+
+<a name="vega.EvidenceType"></a>
+
+### EvidenceType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 |  |
+| DUPLICATE_VOTE | 1 |  |
+| LIGHT_CLIENT_ATTACK | 2 |  |
 
 
 
@@ -4534,6 +4966,8 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order. |
 | ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 | Order was submitted with an incorrect or invalid market type. |
 | ORDER_ERROR_INVALID_TIME_IN_FORCE | 23 | Order was submitted with invalid time in force |
+| ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION | 24 | A GFN order has got to the market when it is in auction mode |
+| ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING | 25 | A GFA order has got to the market when it is in continuous trading mode |
 
 
 

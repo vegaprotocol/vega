@@ -3,7 +3,6 @@ package processor_test
 import (
 	"crypto"
 	"encoding/hex"
-	"errors"
 	"log"
 	"testing"
 	"time"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmprototypes "github.com/tendermint/tendermint/proto/types"
@@ -93,6 +91,11 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	zero := uint64(0)
 
 	// proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
+	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
+	proc.stat.EXPECT().Height().AnyTimes()
+	proc.stat.EXPECT().SetAverageTxSizeBytes(gomock.Any()).AnyTimes()
+	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
+
 	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
 	// creating an order, should be no trades
@@ -135,17 +138,17 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	now := time.Now()
 	prev := now.Add(-time.Second)
 
-	proc.top.EXPECT().Ready().AnyTimes().Return(false)
-	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
+	// stats
+	proc.stat.EXPECT().SetAverageTxPerBatch(gomock.Any())
+	proc.stat.EXPECT().SetTotalTxCurrentBatch(gomock.Any())
+	proc.stat.EXPECT().SetTotalTxLastBatch(gomock.Any())
+	proc.stat.EXPECT().TotalTxCurrentBatch()
+	proc.stat.EXPECT().TotalTxLastBatch()
+	proc.stat.EXPECT().IncHeight()
 
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), now).Times(1)
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ blockchain.Command, payload proto.Message) {
-		// check if the type is ok
-		_, ok := payload.(*types.NodeRegistration)
-		assert.True(t, ok)
-	}).Return(nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
 		Header: tmprototypes.Header{
 			Time: now,
@@ -172,44 +175,17 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	proc.stat.EXPECT().SetOrdersPerSecond(zero).Times(1)
 	proc.stat.EXPECT().SetTradesPerSecond(zero).Times(1)
 	proc.stat.EXPECT().NewBatch().Times(1)
+	proc.eng.EXPECT().Hash().Times(1)
 
 	app.OnCommit()
-}
-
-func (s *AbciTestSuite) testBeginRegisterError(t *testing.T, app *processor.App, proc *procTest) {
-	now := time.Now()
-	prev := now.Add(-time.Second)
-	expErr := errors.New("test error")
-	proc.top.EXPECT().Ready().AnyTimes().Return(false)
-	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
-	proc.ts.EXPECT().SetTimeNow(gomock.Any(), now).Times(1)
-	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ blockchain.Command, payload proto.Message) {
-		_, ok := payload.(*types.NodeRegistration)
-		assert.True(t, ok)
-	}).Return(expErr)
-
-	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmprototypes.Header{
-			Time: now,
-		},
-	})
 }
 
 func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor.App, proc *procTest) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
-	proc.top.EXPECT().Ready().AnyTimes().Return(false)
-	proc.top.EXPECT().SelfChainPubKey().AnyTimes().Return([]byte("tmpubkey"))
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(2)
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
-	proc.cmd.EXPECT().Command(blockchain.RegisterNodeCommand, gomock.Any()).Times(1).Do(func(_ blockchain.Command, payload proto.Message) {
-		// check if the type is ok
-		_, ok := payload.(*types.NodeRegistration)
-		assert.True(t, ok)
-	}).Return(nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
 		Header: tmprototypes.Header{
 			Time: now,
@@ -240,7 +216,6 @@ func TestAbci(t *testing.T) {
 		{"Test all basic process commands - Success", s.testProcessCommandSucess},
 
 		{"Call Begin and Commit - success", s.testBeginCommitSuccess},
-		{"Call Begin, register node error - fail", s.testBeginRegisterError},
 		{"Call Begin twice, only calls commander once", s.testBeginCallsCommanderOnce},
 	}
 

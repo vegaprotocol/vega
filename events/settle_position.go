@@ -30,6 +30,10 @@ func (s SettlePos) MarketID() string {
 	return s.marketID
 }
 
+func (s SettlePos) IsParty(id string) bool {
+	return (s.partyID == id)
+}
+
 func (s SettlePos) PartyID() string {
 	return s.partyID
 }
@@ -65,7 +69,7 @@ func (s SettlePos) Proto() types.SettlePosition {
 func (s SettlePos) StreamMessage() *types.BusEvent {
 	p := s.Proto()
 	return &types.BusEvent{
-		ID:   s.traceID,
+		ID:   s.eventID(),
 		Type: s.et.ToProto(),
 		Event: &types.BusEvent_SettlePosition{
 			SettlePosition: &p,

@@ -55,6 +55,7 @@ type ExecutionEngine interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
@@ -84,6 +85,16 @@ type Stats interface {
 	CurrentTradesInBatch() uint64
 	SetOrdersPerSecond(i uint64)
 	SetTradesPerSecond(i uint64)
+	// blockchain stats
+	IncTotalTxCurrentBatch()
+	IncHeight()
+	Height() uint64
+	SetAverageTxPerBatch(i uint64)
+	SetAverageTxSizeBytes(i uint64)
+	SetTotalTxLastBatch(i uint64)
+	SetTotalTxCurrentBatch(i uint64)
+	TotalTxCurrentBatch() uint64
+	TotalTxLastBatch() uint64
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/processor Wallet
@@ -106,8 +117,7 @@ type Commander interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
 	AddNodeRegistration(nr *types.NodeRegistration) error
-	SelfChainPubKey() []byte
-	Ready() bool
+	UpdateValidatorSet(keys [][]byte)
 	Exists(key []byte) bool
 	Len() int
 	AllPubKeys() [][]byte

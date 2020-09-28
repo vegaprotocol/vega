@@ -4,6 +4,7 @@ import (
 	"sort"
 	"sync"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -38,14 +39,6 @@ type OrderBook struct {
 	batchID         uint64
 }
 
-// UncrossedOrder contains the details relating to a single order that
-// has been uncrossed at the end of an auction
-type UncrossedOrder struct {
-	Order          *types.Order
-	AffectedOrders []*types.Order
-	Trades         []*types.Trade
-}
-
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
 type CumulativeVolumeLevel struct {
 	price               uint64
@@ -54,6 +47,10 @@ type CumulativeVolumeLevel struct {
 	cumulativeBidVolume uint64
 	cumulativeAskVolume uint64
 	maxTradableAmount   uint64
+}
+
+func (b *OrderBook) Hash() []byte {
+	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
 // GetMarketState returns the current state of the orderbook/market
@@ -200,7 +197,7 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
-func (b *OrderBook) LeaveAuction() ([]*UncrossedOrder, []*types.Order, error) {
+func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, error) {
 	// Update batchID
 	b.batchID++
 
@@ -326,7 +323,7 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 }
 
 // Uncrosses the book to generate the maximum volume set of trades
-func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
+func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	// Get the uncrossing price and which side has the most volume at that price
 	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
 
@@ -335,8 +332,8 @@ func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 		return nil, nil
 	}
 
-	var uncrossedOrder *UncrossedOrder
-	var allOrders []*UncrossedOrder
+	var uncrossedOrder *types.OrderConfirmation
+	var allOrders []*types.OrderConfirmation
 
 	// Remove all the orders from that side of the book upto the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
@@ -357,7 +354,13 @@ func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 			for index := 0; index < len(trades); index++ {
 				trades[index].Price = price
 			}
-			uncrossedOrder = &UncrossedOrder{Order: order, AffectedOrders: affectedOrders, Trades: trades}
+			// If the affected order is fully filled set the status
+			for _, affectedOrder := range affectedOrders {
+				if affectedOrder.Remaining == 0 {
+					affectedOrder.Status = types.Order_STATUS_FILLED
+				}
+			}
+			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
 			allOrders = append(allOrders, uncrossedOrder)
 		}
 	} else {
@@ -378,11 +381,16 @@ func (b *OrderBook) uncrossBook() ([]*UncrossedOrder, error) {
 			for index := 0; index < len(trades); index++ {
 				trades[index].Price = price
 			}
-			uncrossedOrder = &UncrossedOrder{Order: order, AffectedOrders: affectedOrders, Trades: trades}
+			// If the affected order is fully filled set the status
+			for _, affectedOrder := range affectedOrders {
+				if affectedOrder.Remaining == 0 {
+					affectedOrder.Status = types.Order_STATUS_FILLED
+				}
+			}
+			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
 			allOrders = append(allOrders, uncrossedOrder)
 		}
 	}
-
 	return allOrders, nil
 }
 
@@ -538,8 +546,8 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 
 	if err != nil {
 		if err == ErrWashTrade {
-			// we still want to submit this order, but know there will be no trades coming out of it
-			return nil, nil
+			// we still want to submit this order, there might be trades coming out of it
+			return trades, nil
 		}
 		// some random error happened, return both trades and error
 		// this is a case that isn't covered by the current SubmitOrder call

@@ -1952,6 +1952,7 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 			filters = append(filters, events.GetPartyIDFilter(in.PartyID))
 		}
 	}
+	// number of retries to -1 to have pretty much unlimited retries
 	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
 	for {
 		select {

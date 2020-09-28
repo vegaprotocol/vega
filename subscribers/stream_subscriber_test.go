@@ -55,6 +55,10 @@ func TestFilteredSubscription(t *testing.T) {
 	t.Run("Stream subscriber with filter - some valid events", testFilteredSomeValidEvents)
 }
 
+func TestSubscriberTypes(t *testing.T) {
+	t.Run("Stream subscriber for all event types", testFilterAll)
+}
+
 func testUnfilteredNoEvents(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent})
 	wg := sync.WaitGroup{}
@@ -143,4 +147,9 @@ func testFilteredSomeValidEvents(t *testing.T) {
 	data := sub.GetData()
 	// we expect to see no events
 	assert.Equal(t, 1, len(data))
+}
+
+func testFilterAll(t *testing.T) {
+	sub := getTestStreamSub([]events.Type{events.All})
+	assert.Nil(t, sub.Types())
 }

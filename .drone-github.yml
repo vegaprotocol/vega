@@ -42,8 +42,16 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      # Build normal executable
-      - ./script/build.sh -a build -t linux/amd64
+      # Get a list of files that changed in this PR, in order to limit CI to only test things that
+      # changed in this PR.
+      - git diff --name-only "$$DRONE_COMMIT_BEFORE...$$DRONE_COMMIT_AFTER" >git_diff.txt
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$$' git_diff.txt)" -gt 0 ; then
+          echo "Building executable" ;
+          ./script/build.sh -a build -t linux/amd64 || exit 1;
+        else
+          echo "No Go files changed. Skipping building of binary." ;
+          rm -f cmd/vega/vega-* ;
+        fi
     depends_on:
       - fetch
     when:
@@ -55,8 +63,11 @@ steps:
     pull: always
     environment: {}
     commands:
-      # Make sure the mdspell command matches the one in Makefile.
-      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -c '\.md$$' git_diff.txt)" -gt 0 ; then
+          mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md' || exit 1 ;
+        else
+          echo "No md files changed. Skipping mdspell." ;
+        fi
     depends_on:
       - build-PR
     when:
@@ -77,16 +88,26 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - make retest
-      # More small checks. Run all, instead of exiting after first failure.
       - failed=""
-      - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
-          echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
+          make retest || exit 1 ;
+          for target in gqlgen_check print_check proto_check race vet ;
+          do
+            echo "$$COL_CYAN$$target$$COL_RESET" ;
+            make "$$target" || failed="$$failed $$target" ;
+          done ;
+        else
+          echo "No Go files changed. Skipping go tests" ;
+        fi
+      - for target in codeowners_check ; do
+          echo "$$COL_CYAN$$target$$COL_RESET" ;
+          make "$$target" || failed="$$failed $$target" ;
+        done
       - /usr/local/bin/check-rest-endpoints.py
           --bindings gateway/rest/grpc-rest-bindings.yml
           --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
-      - /usr/local/bin/multilint || failed="$$failed multilint"
-      - make staticcheck || true  # Ignore failures until they're all fixed.
+      - difflint "$$DRONE_COMMIT_BEFORE" "$$DRONE_COMMIT_AFTER" || failed="$$failed multilint"
+      # - make staticcheck  # No point running this until warnings are fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
       - build-PR
@@ -104,7 +125,11 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       # https://github.com/vegaprotocol/system-tests/blob/master/ci.sh
-      - /usr/local/bin/ci.sh
+      - if test -x cmd/vega/vega-linux-amd64 ; then
+          /usr/local/bin/ci.sh ;
+        else
+          echo "No vega binary. Skipping system-tests." ;
+        fi
     depends_on:
       - test-PR
     when:
@@ -151,6 +176,8 @@ steps:
     volumes:
       - name: gopkg
         path: /go/pkg
+      - name: mutex
+        path: /mutex
     environment:
       DEVNET_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: DEVNET_DEPLOY_SSH_PRIVATE_KEY
@@ -178,15 +205,20 @@ steps:
       # - DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       # - DEVNET_DEPLOY_SSH_PRIVATE_KEY
       # - SLACK_HOOK_URL
-      - cp -a cmd/vega/vega-linux-amd64 cmd/vega/vega
-      - /usr/local/bin/deploy-trading-core.sh devnet vega
-      # Set up wallets, keypairs and free money.
-      - /usr/local/bin/init-wallets-tokenbalances.py
+      - (
+          if ! flock -n 9 ; then
+            echo "Another devnet deployment is in progress." ;
+            exit 1 ;
+          fi ;
+          cp -a cmd/vega/vega-linux-amd64 cmd/vega/vega &&
+          /usr/local/bin/deploy-trading-core.sh devnet vega &&
+          /usr/local/bin/init-wallets-tokenbalances.py
             --faucetserver "$$DEVNET_FAUCET_SERVER"
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
             --walletserver "$$DEVNET_WALLET_SERVER"
             --passphrase "$$DEVNET_WALLET_PASSPHRASE"
             --veganode "$$DEVNET_VEGA_GRPCNODE"
+       ) 9>/mutex/devnet_deploy
     depends_on:
       - build-branch
     when:
@@ -298,6 +330,9 @@ volumes:
   - name: gopkg
     host:
       path: /var/lib/drone/volumes/vega/gopkg
+  - name: mutex
+    host:
+      path: /var/lib/drone/volumes/vega/mutex
 
 image_pull_secrets:
   - dockerconfig

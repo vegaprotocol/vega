@@ -1,10 +1,12 @@
 package positions
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -101,6 +103,27 @@ func New(log *logging.Logger, config Config) *Engine {
 		positions:    map[string]*MarketPosition{},
 		positionsCpy: []events.MarketPosition{},
 	}
+}
+
+func (e *Engine) Hash() []byte {
+	output := make([]byte, 0, len(e.positionsCpy)*8*5)
+	i := [8]byte{}
+	for _, p := range e.positionsCpy {
+		values := []uint64{
+			uint64(p.Size()),
+			uint64(p.Buy()),
+			uint64(p.Sell()),
+			p.VWBuy(),
+			p.VWSell(),
+		}
+
+		for _, v := range values {
+			binary.BigEndian.PutUint64(i[0:], v)
+			output = append(output, i[0:]...)
+		}
+	}
+
+	return crypto.Hash(output)
 }
 
 // ReloadConf update the internal configuration of the positions engine

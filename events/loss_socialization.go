@@ -24,6 +24,10 @@ func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, am
 	}
 }
 
+func (l LossSoc) IsParty(id string) bool {
+	return (l.partyID == id)
+}
+
 func (l LossSoc) PartyID() string {
 	return l.partyID
 }
@@ -55,7 +59,7 @@ func (l LossSoc) Proto() types.LossSocialization {
 func (l LossSoc) StreamMessage() *types.BusEvent {
 	p := l.Proto()
 	return &types.BusEvent{
-		ID:   l.traceID,
+		ID:   l.eventID(),
 		Type: l.et.ToProto(),
 		Event: &types.BusEvent_LossSocialization{
 			LossSocialization: &p,

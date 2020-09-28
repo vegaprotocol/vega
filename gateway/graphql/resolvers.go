@@ -119,6 +119,8 @@ type TradingDataClient interface {
 	ERC20WithdrawalApproval(ctx context.Context, in *protoapi.ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*protoapi.ERC20WithdrawalApprovalResponse, error)
 	Deposit(ctx context.Context, in *protoapi.DepositRequest, opts ...grpc.CallOption) (*protoapi.DepositResponse, error)
 	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
+
+	ObserveEventBus(ctx context.Context, in *protoapi.ObserveEventsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -2567,6 +2569,43 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 		return r.subscribePartyVotes(ctx, *partyID)
 	}
 	return nil, ErrInvalidVotesSubscription
+}
+
+func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string) (<-chan []*BusEvent, error) {
+	t := eventTypeToProto(types...)
+	req := protoapi.ObserveEventsRequest{
+		Type: t,
+	}
+	if marketID != nil {
+		req.MarketID = *marketID
+	}
+	if partyID != nil {
+		req.PartyID = *partyID
+	}
+	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	out := make(chan []*BusEvent)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(out)
+		}()
+		for {
+			data, err := stream.Recv()
+			if isStreamClosed(err, r.log) {
+				return
+			}
+			if err != nil {
+				r.log.Error("Event bus stream error", logging.Error(err))
+				return
+			}
+			be := busEventFromProto(data.Events...)
+			out <- be
+		}
+	}()
+	return out, nil
 }
 
 // START: Account Resolver

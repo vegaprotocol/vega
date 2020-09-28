@@ -2114,6 +2114,30 @@
       },
       "description": "An auction duration is used to configure 3 auction periods:\n1. `duration \u003e 0`, `volume == 0`:\n  The auction will last for at least N seconds.\n2. `duration == 0`, `volume \u003e 0`:\n  The auction will end once we can close with given traded volume.\n3. `duration \u003e 0`, `volume \u003e 0`:\n  The auction will take at least N seconds, but can end sooner if we can trade a certain volume."
     },
+    "vegaAuctionEvent": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string"
+        },
+        "openingAuction": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "leave": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "start": {
+          "type": "string",
+          "format": "int64"
+        },
+        "end": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
     "vegaBTCDeposit": {
       "type": "object",
       "properties": {
@@ -2336,6 +2360,9 @@
         "deposit": {
           "$ref": "#/definitions/vegaDeposit"
         },
+        "auction": {
+          "$ref": "#/definitions/vegaAuctionEvent"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2367,6 +2394,7 @@
         "BUS_EVENT_TYPE_MARKET_TICK",
         "BUS_EVENT_TYPE_WITHDRAWAL",
         "BUS_EVENT_TYPE_DEPOSIT",
+        "BUS_EVENT_TYPE_AUCTION",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -3587,10 +3615,12 @@
         "ORDER_ERROR_SELF_TRADING",
         "ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES",
         "ORDER_ERROR_INCORRECT_MARKET_TYPE",
-        "ORDER_ERROR_INVALID_TIME_IN_FORCE"
+        "ORDER_ERROR_INVALID_TIME_IN_FORCE",
+        "ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION",
+        "ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING"
       ],
       "default": "ORDER_ERROR_NONE",
-      "description": "OrderError codes are returned in the `[Order](#vega.Order).reason` field.\nIf there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.\n\n - ORDER_ERROR_NONE: Default value, no error reported.\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist.\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid identifier.\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1.\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size).\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time.\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book.\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: An order with `TimeInForce.TIF_GTT` was submitted or amended\nwith an expiration that was badly formatted or otherwise invalid.\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field.\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order identifier).\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order.\n - ORDER_ERROR_NOT_FOUND: Order not found in an order book or store.\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party identifier.\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed.\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order.\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset.\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error.\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0).\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type.\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field.\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order submitted from the same party.\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order.\n - ORDER_ERROR_INCORRECT_MARKET_TYPE: Order was submitted with an incorrect or invalid market type.\n - ORDER_ERROR_INVALID_TIME_IN_FORCE: Order was submitted with invalid time in force"
+      "description": "OrderError codes are returned in the `[Order](#vega.Order).reason` field.\nIf there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.\n\n - ORDER_ERROR_NONE: Default value, no error reported.\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist.\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid identifier.\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1.\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size).\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time.\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book.\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: An order with `TimeInForce.TIF_GTT` was submitted or amended\nwith an expiration that was badly formatted or otherwise invalid.\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field.\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order identifier).\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order.\n - ORDER_ERROR_NOT_FOUND: Order not found in an order book or store.\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party identifier.\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed.\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order.\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset.\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error.\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0).\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type.\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field.\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order submitted from the same party.\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order.\n - ORDER_ERROR_INCORRECT_MARKET_TYPE: Order was submitted with an incorrect or invalid market type.\n - ORDER_ERROR_INVALID_TIME_IN_FORCE: Order was submitted with invalid time in force\n - ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION: A GFN order has got to the market when it is in auction mode\n - ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING: A GFA order has got to the market when it is in continuous trading mode"
     },
     "vegaOrderStatus": {
       "type": "string",
