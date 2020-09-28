@@ -48,6 +48,10 @@ type CumulativeVolumeLevel struct {
 	maxTradableAmount   uint64
 }
 
+func (b *OrderBook) Hash() []byte {
+	return hash(append(b.buy.Hash(), b.sell.Hash()...))
+}
+
 // GetMarketState returns the current state of the orderbook/market
 func (b *OrderBook) GetMarketState() types.MarketState {
 	return b.marketState

@@ -1,11 +1,18 @@
 package logging
 
 import (
+	"encoding/hex"
+
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"go.uber.org/zap"
 )
+
+func Hash(h []byte) zap.Field {
+	hs := hex.EncodeToString(h)
+	return zap.String("hash", hs)
+}
 
 // Binary constructs a field that carries an opaque binary blob.
 //
