@@ -1,12 +1,15 @@
 package matching
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
 )
 
@@ -24,6 +27,17 @@ type OrderBookSide struct {
 	// Config
 	levels       []*PriceLevel
 	parkedOrders []*types.Order
+}
+
+func (s *OrderBookSide) Hash() []byte {
+	output := make([]byte, 0, len(s.levels)*16)
+	var i [16]byte
+	for _, l := range s.levels {
+		binary.BigEndian.PutUint64(i[0:], l.price)
+		binary.BigEndian.PutUint64(i[8:], l.volume)
+		output = append(output, i[0:]...)
+	}
+	return crypto.Hash(output)
 }
 
 // When we enter an auction we have to park all pegged orders

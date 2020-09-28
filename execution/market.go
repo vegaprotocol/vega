@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
@@ -229,6 +230,30 @@ func NewMarket(
 		market.EnterAuction(ctx)
 	}
 	return market, nil
+}
+
+func appendBytes(bz ...[]byte) []byte {
+	var out []byte
+	for _, b := range bz {
+		out = append(out, b...)
+	}
+	return out
+}
+
+func (m *Market) Hash() []byte {
+	mId := logging.String("market-id", m.GetID())
+	matchingHash := m.matching.Hash()
+	m.log.Debug("orderbook state hash", logging.Hash(matchingHash), mId)
+
+	positionHash := m.position.Hash()
+	m.log.Debug("positions state hash", logging.Hash(positionHash), mId)
+
+	accountsHash := m.collateral.Hash()
+	m.log.Debug("accounts state hash", logging.Hash(accountsHash), mId)
+
+	return crypto.Hash(appendBytes(
+		matchingHash, positionHash, accountsHash,
+	))
 }
 
 func (m *Market) GetMarketData() types.MarketData {

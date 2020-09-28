@@ -4,6 +4,7 @@ import (
 	"sort"
 	"sync"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -46,6 +47,10 @@ type CumulativeVolumeLevel struct {
 	cumulativeBidVolume uint64
 	cumulativeAskVolume uint64
 	maxTradableAmount   uint64
+}
+
+func (b *OrderBook) Hash() []byte {
+	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
 // GetMarketState returns the current state of the orderbook/market

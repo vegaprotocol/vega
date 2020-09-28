@@ -2,6 +2,7 @@ package collateral_test
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -2046,3 +2048,41 @@ type transferFees struct {
 
 func (t transferFees) Transfers() []*types.Transfer               { return t.tfs }
 func (t transferFees) TotalFeesAmountPerParty() map[string]uint64 { return t.tfa }
+
+func TestHash(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	defer eng.Finish()
+
+	// Create the accounts
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	id1, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t1", testMarketAsset)
+	require.NoError(t, err)
+
+	id2, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t2", testMarketAsset)
+	require.NoError(t, err)
+
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), "t1", testMarketID, testMarketAsset)
+	require.NoError(t, err)
+
+	// Add balances
+	require.NoError(t,
+		eng.Engine.UpdateBalance(context.Background(), id1, 100),
+	)
+
+	require.NoError(t,
+		eng.Engine.UpdateBalance(context.Background(), id2, 500),
+	)
+
+	hash := eng.Hash()
+	require.Equal(t,
+		"4ed85cf7a65724ec9239022a4e1472583df3919fd3933e7c797c1d8a34f168d1",
+		hex.EncodeToString(hash),
+		"It should match against the known hash",
+	)
+	// compute the hash 100 times for determinism verification
+	for i := 0; i < 100; i++ {
+		got := eng.Hash()
+		require.Equal(t, hash, got)
+	}
+
+}
