@@ -9,15 +9,12 @@ import (
 
 type remoteIPAddrKey int
 type traceIDT int
-type commandID int
-
 type blockHeight int
 
 var (
 	clientRemoteIPAddrKey remoteIPAddrKey
 	traceIDKey            traceIDT
 	blockHeightKey        blockHeight
-	commandIDKey          commandID
 
 	ErrBlockHeightMissing = errors.New("no or invalid block height set on context")
 )
@@ -73,13 +70,4 @@ func WithTraceID(ctx context.Context, tID string) context.Context {
 
 func WithBlockHeight(ctx context.Context, h int64) context.Context {
 	return context.WithValue(ctx, blockHeightKey, h)
-}
-
-func WithCommandID(ctx context.Context, cID string) context.Context {
-	return context.WithValue(ctx, commandIDKey, cID)
-}
-
-func CommandIDFromContext(ctx context.Context) (string, bool) {
-	u, ok := ctx.Value(commandIDKey).(string)
-	return u, ok
 }
