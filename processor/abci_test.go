@@ -175,6 +175,7 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	proc.stat.EXPECT().SetOrdersPerSecond(zero).Times(1)
 	proc.stat.EXPECT().SetTradesPerSecond(zero).Times(1)
 	proc.stat.EXPECT().NewBatch().Times(1)
+	proc.eng.EXPECT().Hash().Times(1)
 
 	app.OnCommit()
 }
