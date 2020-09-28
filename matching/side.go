@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sort"
 
@@ -8,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -24,6 +26,24 @@ type OrderBookSide struct {
 	// Config
 	levels       []*PriceLevel
 	parkedOrders []*types.Order
+}
+
+func (s *OrderBookSide) Hash() []byte {
+	output := make([]byte, 0, len(s.levels)*8*8)
+	var i [8]byte
+	for _, l := range s.levels {
+		binary.BigEndian.PutUint64(i[0:], l.price)
+		output = append(output, i[0:]...)
+		binary.BigEndian.PutUint64(i[0:], l.volume)
+		output = append(output, i[0:]...)
+	}
+	return hash(output)
+}
+
+func hash(key []byte) []byte {
+	hasher := sha3.New256()
+	hasher.Write([]byte(key))
+	return hasher.Sum(nil)
 }
 
 // When we enter an auction we have to park all pegged orders

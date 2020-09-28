@@ -240,6 +240,13 @@ func NewMarket(
 	return market, nil
 }
 
+func (m *Market) Hash() []byte {
+	matchingHash := m.matching.Hash()
+	m.log.Debug("orderbook state hash", logging.Hash(matchingHash))
+
+	return matchingHash
+}
+
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume := m.matching.BestOfferPriceAndVolume()
