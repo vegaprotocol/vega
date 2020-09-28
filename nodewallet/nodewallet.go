@@ -67,6 +67,21 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 	}, nil
 }
 
+// ReloadConf is used in order to reload the internal configuration of
+// the of the fee engine
+func (s *Service) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		s.log.SetLevel(cfg.Level.Get())
+	}
+
+	s.cfg = cfg
+}
+
 func (s *Service) EnsureRequireWallets() error {
 	return ensureRequiredWallets(s.wallets)
 }

@@ -6,6 +6,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/pkg/errors"
 )
 
@@ -74,6 +75,11 @@ var (
 	// ErrNilFees is raised when the fees are missing from the market
 	ErrNilFees = errors.New("nil fees")
 )
+
+type MarketLogEvent interface {
+	GetMarketID() string
+	GetPayload() string
+}
 
 // IntoProto ...
 func (c *ContinuousTrading) IntoProto() (*types.Market_Continuous, error) {
@@ -356,7 +362,7 @@ func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
 // NewMarketTradingModeFromProto ...
 func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	if ptm == nil {
-		return nil, ErrNilTradingMode
+		ptm = defaultTradingMode()
 	}
 	switch ptmimpl := ptm.(type) {
 	case *types.NewMarketConfiguration_Continuous:
@@ -602,6 +608,9 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 }
 
 func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
+	if instrument == nil {
+		instrument = defaultInstrumentConfiguration()
+	}
 	if future := instrument.GetFuture(); future != nil {
 		i.FutureProduct = &FutureProduct{
 			Asset:    &Asset{ID: future.Asset},
@@ -615,6 +624,9 @@ func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.Instr
 
 // RiskConfigurationFromProto ...
 func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskModel, error) {
+	if newMarket.RiskParameters == nil {
+		newMarket.RiskParameters = defaultRiskParameters()
+	}
 	switch params := newMarket.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_Simple:
 		return &SimpleRiskModel{
@@ -641,7 +653,7 @@ func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskMo
 // NewMarketFromProto ...
 func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, error) {
 	if newMarket == nil {
-		return nil, ErrNilMarket
+		newMarket = defaultNewMarket()
 	}
 	risk, err := RiskConfigurationFromProto(newMarket)
 	if err != nil {
@@ -662,7 +674,9 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 		DecimalPlaces:  int(newMarket.DecimalPlaces),
 		RiskParameters: risk,
 		TradingMode:    mode,
+		Metadata:       newMarket.Metadata,
 	}
+
 	result.Instrument.assignProductFromProto(newMarket.Instrument)
 	return result, nil
 }
@@ -832,17 +846,21 @@ func (b *BuiltinAssetInput) IntoProto() (*types.BuiltinAsset, error) {
 		return nil, errors.New("BuiltinAssetInput.Symbol: cannot be empty")
 	}
 	if len(b.TotalSupply) <= 0 {
-		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be empty")
+		return nil, errors.New("BuiltinAssetInput.TotalSupply: cannot be empty")
+	}
+	if len(b.MaxFaucetAmountMint) <= 0 {
+		return nil, errors.New("BuiltinAssetInput.MaxFaucetAmountMint: cannot be empty")
 	}
 	if b.Decimals <= 0 {
 		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be <= 0")
 	}
 
 	return &types.BuiltinAsset{
-		Name:        b.Name,
-		Symbol:      b.Symbol,
-		TotalSupply: b.TotalSupply,
-		Decimals:    uint64(b.Decimals),
+		Name:                b.Name,
+		Symbol:              b.Symbol,
+		TotalSupply:         b.TotalSupply,
+		Decimals:            uint64(b.Decimals),
+		MaxFaucetAmountMint: b.MaxFaucetAmountMint,
 	}, nil
 }
 
@@ -1033,10 +1051,11 @@ func (a AccountType) IntoProto() types.AccountType {
 
 func BuiltinAssetFromProto(ba *types.BuiltinAsset) *BuiltinAsset {
 	return &BuiltinAsset{
-		Name:        ba.Name,
-		Symbol:      ba.Symbol,
-		TotalSupply: ba.TotalSupply,
-		Decimals:    int(ba.Decimals),
+		Name:                ba.Name,
+		Symbol:              ba.Symbol,
+		TotalSupply:         ba.TotalSupply,
+		Decimals:            int(ba.Decimals),
+		MaxFaucetAmountMint: ba.MaxFaucetAmountMint,
 	}
 }
 
@@ -1084,4 +1103,380 @@ func NewAssetFromProto(newAsset *types.NewAsset) (*NewAsset, error) {
 	return &NewAsset{
 		Source: source,
 	}, nil
+}
+
+func defaultFutureProductConfiguration() *types.InstrumentConfiguration_Future {
+	return &types.InstrumentConfiguration_Future{
+		Future: &types.FutureProduct{
+			Asset:    "",
+			Maturity: "",
+		},
+	}
+}
+
+func defaultInstrumentConfiguration() *types.InstrumentConfiguration {
+	return &types.InstrumentConfiguration{
+		Name:      "",
+		Code:      "",
+		BaseName:  "",
+		QuoteName: "",
+		Product:   defaultFutureProductConfiguration(),
+	}
+}
+
+func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
+	return &types.NewMarketConfiguration_LogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0,
+			Tau:                   0,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0,
+				Sigma: 0,
+			},
+		},
+	}
+}
+
+func (e *Erc20WithdrawalDetailsInput) IntoProtoExt() *types.WithdrawExt {
+	return &types.WithdrawExt{
+		Ext: &types.WithdrawExt_Erc20{
+			Erc20: &types.Erc20WithdrawExt{
+				ReceiverAddress: e.ReceiverAddress,
+			},
+		},
+	}
+}
+
+func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
+	return &types.NewMarketConfiguration_Continuous{
+		Continuous: &types.ContinuousTrading{
+			TickSize: "0",
+		},
+	}
+}
+
+func defaultNewMarket() *types.NewMarketConfiguration {
+	return &types.NewMarketConfiguration{
+		Instrument:     defaultInstrumentConfiguration(),
+		RiskParameters: defaultRiskParameters(),
+		Metadata:       []string{},
+		DecimalPlaces:  0,
+		TradingMode:    defaultTradingMode(),
+	}
+}
+
+func WithdrawDetailsFromProto(w *types.WithdrawExt) WithdrawalDetails {
+	if w == nil {
+		return nil
+	}
+	switch ex := w.Ext.(type) {
+	case *types.WithdrawExt_Erc20:
+		return &Erc20WithdrawalDetails{ReceiverAddress: ex.Erc20.ReceiverAddress}
+	default:
+		return nil
+	}
+}
+
+func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
+	status, err := convertWithdrawalStatusFromProto(w.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	var withdrawnTs, txHash *string
+	if w.WithdrawnTimestamp != 0 {
+		*withdrawnTs = vegatime.Format(vegatime.UnixNano(w.WithdrawnTimestamp))
+	}
+	if len(w.TxHash) > 0 {
+		*txHash = w.TxHash
+	}
+
+	return &Withdrawal{
+		ID:                 w.Id,
+		Party:              &types.Party{Id: w.PartyID},
+		Amount:             fmt.Sprintf("%v", w.Amount),
+		Status:             status,
+		Ref:                w.Ref,
+		Expiry:             vegatime.Format(vegatime.UnixNano(w.Expiry)),
+		CreatedTimestamp:   vegatime.Format(vegatime.UnixNano(w.CreatedTimestamp)),
+		WithdrawnTimestamp: withdrawnTs,
+		TxHash:             txHash,
+		Details:            WithdrawDetailsFromProto(w.Ext),
+	}, nil
+}
+
+func busEventFromProto(events ...*types.BusEvent) []*BusEvent {
+	r := make([]*BusEvent, 0, len(events))
+	for _, e := range events {
+		evt := eventFromProto(e)
+		if evt == nil {
+			// @TODO for now just skip unmapped event types, probably better to handle some kind of error
+			// in the future though
+			continue
+		}
+		be := BusEvent{
+			EventID: e.ID,
+			Type:    eventTypeFromProto(e.Type),
+			Event:   evt,
+		}
+		r = append(r, &be)
+	}
+	return r
+}
+
+func balancesFromProto(balances []*types.TransferBalance) []*TransferBalance {
+	gql := make([]*TransferBalance, 0, len(balances))
+	for _, b := range balances {
+		gql = append(gql, &TransferBalance{
+			Account: b.Account,
+			Balance: int(b.Balance),
+		})
+	}
+	return gql
+}
+
+func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
+	gql := make([]*LedgerEntry, 0, len(transfers))
+	for _, t := range transfers {
+		gql = append(gql, &LedgerEntry{
+			FromAccount: t.FromAccount,
+			ToAccount:   t.ToAccount,
+			Amount:      int(t.Amount),
+			Reference:   t.Reference,
+			Type:        t.Type,
+			Timestamp:   nanoTSToDatetime(t.Timestamp),
+		})
+	}
+	return gql
+}
+
+func auctionEventFromProto(ae *types.AuctionEvent) *AuctionEvent {
+	r := &AuctionEvent{
+		MarketID:       ae.MarketID,
+		Leave:          ae.Leave,
+		OpeningAuction: ae.OpeningAuction,
+		AuctionStart:   nanoTSToDatetime(ae.Start),
+	}
+	if ae.End != 0 {
+		r.AuctionEnd = nanoTSToDatetime(ae.End)
+	}
+	return r
+}
+
+func eventFromProto(e *types.BusEvent) Event {
+	switch e.Type {
+	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
+		return &TimeUpdate{
+			Timestamp: secondsTSToDatetime(e.GetTimeUpdate().Timestamp),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
+		tr := e.GetTransferResponses()
+		responses := make([]*TransferResponse, 0, len(tr.Responses))
+		for _, r := range tr.Responses {
+			responses = append(responses, &TransferResponse{
+				Transfers: transfersFromProto(r.Transfers),
+				Balances:  balancesFromProto(r.Balances),
+			})
+		}
+		return &TransferResponses{
+			Responses: responses,
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
+		pr := e.GetPositionResolution()
+		return &PositionResolution{
+			MarketID:   pr.MarketID,
+			Distressed: int(pr.Distressed),
+			Closed:     int(pr.Closed),
+			MarkPrice:  int(pr.MarkPrice),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_ORDER:
+		return e.GetOrder()
+	case types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
+		return e.GetAccount()
+	case types.BusEventType_BUS_EVENT_TYPE_PARTY:
+		return e.GetParty()
+	case types.BusEventType_BUS_EVENT_TYPE_TRADE:
+		return e.GetTrade()
+	case types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
+		return e.GetMarginLevels()
+	case types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
+		return &types.GovernanceData{
+			Proposal: e.GetProposal(),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_VOTE:
+		v := e.GetVote()
+		val, _ := convertVoteValueFromProto(v.Value)
+		return &Vote{
+			Value: val,
+			Party: &types.Party{
+				Id: v.PartyID,
+			},
+			Datetime: nanoTSToDatetime(v.Timestamp),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
+		return e.GetMarketData()
+	case types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
+		return e.GetNodeSignature()
+	case types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
+		ls := e.GetLossSocialization()
+		return &LossSocialization{
+			MarketID: ls.MarketID,
+			PartyID:  ls.PartyID,
+			Amount:   int(ls.Amount),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
+		dp := e.GetSettlePosition()
+		settlements := make([]*TradeSettlement, 0, len(dp.TradeSettlements))
+		for _, ts := range dp.TradeSettlements {
+			settlements = append(settlements, &TradeSettlement{
+				Size:  int(ts.Size),
+				Price: int(ts.Price),
+			})
+		}
+		return &SettlePosition{
+			MarketID:         dp.MarketID,
+			PartyID:          dp.PartyID,
+			Price:            int(dp.Price),
+			TradeSettlements: settlements,
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
+		de := e.GetSettleDistressed()
+		return &SettleDistressed{
+			MarketID: de.MarketID,
+			PartyID:  de.PartyID,
+			Margin:   int(de.Margin),
+			Price:    int(de.Price),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
+		m, _ := MarketFromProto(e.GetMarketCreated())
+		return m
+	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
+		a, _ := AssetFromProto(e.GetAsset())
+		return a
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
+		mt := e.GetMarketTick()
+		return &MarketTick{
+			MarketID: mt.ID,
+			Time:     secondsTSToDatetime(mt.Time),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
+		pe := e.GetEvent()
+		if pe == nil {
+			return nil
+		}
+		me, ok := pe.(MarketLogEvent)
+		if !ok {
+			return nil
+		}
+		return &MarketEvent{
+			MarketID: me.GetMarketID(),
+			Payload:  me.GetPayload(),
+		}
+	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
+		return auctionEventFromProto(e.GetAuction())
+	}
+	return nil
+}
+
+// func (_ GovernanceData) IsEvent() {}
+
+func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
+	r := make([]types.BusEventType, 0, len(btypes))
+	for _, t := range btypes {
+		switch t {
+		case BusEventTypeAll:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ALL)
+		case BusEventTypeTimeUpdate:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
+		case BusEventTypeTransferResponses:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES)
+		case BusEventTypePositionResolution:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION)
+		case BusEventTypeOrder:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ORDER)
+		case BusEventTypeAccount:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ACCOUNT)
+		case BusEventTypeParty:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_PARTY)
+		case BusEventTypeTrade:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TRADE)
+		case BusEventTypeMarginLevels:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS)
+		case BusEventTypeProposal:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_PROPOSAL)
+		case BusEventTypeVote:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_VOTE)
+		case BusEventTypeMarketData:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA)
+		case BusEventTypeNodeSignature:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE)
+		case BusEventTypeLossSocialization:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION)
+		case BusEventTypeSettlePosition:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION)
+		case BusEventTypeSettleDistressed:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED)
+		case BusEventTypeMarketCreated:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED)
+		case BusEventTypeAsset:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ASSET)
+		case BusEventTypeMarketTick:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK)
+		case BusEventTypeMarket:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET)
+		case BusEventTypeAuction:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_AUCTION)
+		}
+	}
+	return r
+}
+
+func eventTypeFromProto(t types.BusEventType) BusEventType {
+	switch t {
+	case types.BusEventType_BUS_EVENT_TYPE_ALL:
+		return BusEventTypeAll
+	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
+		return BusEventTypeTimeUpdate
+	case types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
+		return BusEventTypeTransferResponses
+	case types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
+		return BusEventTypePositionResolution
+	case types.BusEventType_BUS_EVENT_TYPE_ORDER:
+		return BusEventTypeOrder
+	case types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
+		return BusEventTypeAccount
+	case types.BusEventType_BUS_EVENT_TYPE_PARTY:
+		return BusEventTypeParty
+	case types.BusEventType_BUS_EVENT_TYPE_TRADE:
+		return BusEventTypeTrade
+	case types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
+		return BusEventTypeMarginLevels
+	case types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
+		return BusEventTypeProposal
+	case types.BusEventType_BUS_EVENT_TYPE_VOTE:
+		return BusEventTypeVote
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
+		return BusEventTypeMarketData
+	case types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
+		return BusEventTypeNodeSignature
+	case types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
+		return BusEventTypeLossSocialization
+	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
+		return BusEventTypeSettlePosition
+	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
+		return BusEventTypeSettleDistressed
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
+		return BusEventTypeMarketCreated
+	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
+		return BusEventTypeAsset
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
+		return BusEventTypeMarketTick
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
+		return BusEventTypeMarket
+	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
+		return BusEventTypeAuction
+	}
+	// @TODO this should be an error, but no event should ever be returned with this value anyway
+	return BusEventTypeAll
 }

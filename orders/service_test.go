@@ -35,7 +35,6 @@ type testService struct {
 	ctrl       *gomock.Controller
 	orderStore *mocks.MockOrderStore
 	timeSvc    *mocks.MockTimeService
-	block      *mocks.MockBlockchain
 	svc        *orders.Svc
 }
 
@@ -102,7 +101,6 @@ func testPrepareOrderSuccess(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	// ensure the blockchain client is not called
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
 }
@@ -118,7 +116,6 @@ func testPrepareOrderRefSuccess(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	// ensure the blockchain client is not called
 	err := svc.svc.PrepareSubmitOrder(context.Background(), &order)
 	assert.NoError(t, err)
 	assert.NotEqual(t, "", order.Reference)
@@ -177,7 +174,6 @@ func testPrepareCancelOrderSuccess(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
-	// ensure the blockchain client is not called
 	err := svc.svc.PrepareCancelOrder(context.Background(), &cancel)
 	assert.NoError(t, err)
 }
@@ -235,9 +231,8 @@ func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	orderStore := mocks.NewMockOrderStore(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)
-	block := mocks.NewMockBlockchain(ctrl)
 	conf := orders.NewDefaultConfig()
-	svc, err := orders.NewService(log, conf, orderStore, timeSvc, block)
+	svc, err := orders.NewService(log, conf, orderStore, timeSvc)
 	if err != nil {
 		t.Fatalf("Failed to get test service: %+v", err)
 	}
@@ -245,7 +240,6 @@ func getTestService(t *testing.T) *testService {
 		ctrl:       ctrl,
 		orderStore: orderStore,
 		timeSvc:    timeSvc,
-		block:      block,
 		svc:        svc,
 	}
 }

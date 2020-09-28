@@ -18,6 +18,24 @@ func NewPartyEvent(ctx context.Context, p types.Party) *Party {
 	}
 }
 
+func (p Party) IsParty(id string) bool {
+	return (p.p.Id == id)
+}
+
 func (p *Party) Party() types.Party {
 	return p.p
+}
+
+func (p Party) Proto() types.Party {
+	return p.p
+}
+
+func (p Party) StreamMessage() *types.BusEvent {
+	return &types.BusEvent{
+		ID:   p.eventID(),
+		Type: p.et.ToProto(),
+		Event: &types.BusEvent_Party{
+			Party: &p.p,
+		},
+	}
 }

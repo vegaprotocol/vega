@@ -2,9 +2,11 @@ package execution
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -23,6 +25,9 @@ var (
 
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
 	ErrNoMarketID = errors.New("no valid market id was supplied")
+
+	// ErrInvalidOrderCancellation is returned when an incomplete order cancellation request is used
+	ErrInvalidOrderCancellation = errors.New("invalid order cancellation")
 )
 
 // TimeService ...
@@ -36,6 +41,14 @@ type TimeService interface {
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
+}
+
+// AuctionTrigger can be checked with time or price to see if argument should trigger entry to or exit from the auction mode
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_trigger_mock.go -package mocks code.vegaprotocol.io/vega/execution AuctionTrigger
+type AuctionTrigger interface {
+	EnterPerPrice(price uint64) bool
+	EnterPerTime(time time.Time) bool
+	LeavePerTime(time time.Time) bool
 }
 
 // Engine is the execution engine
@@ -56,7 +69,7 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
-	time TimeService,
+	ts TimeService,
 	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
@@ -73,7 +86,7 @@ func NewEngine(
 		log:        log,
 		Config:     executionConfig,
 		markets:    map[string]*Market{},
-		time:       time,
+		time:       ts,
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
@@ -117,6 +130,22 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 }
 
+func (e *Engine) Hash() []byte {
+	hashes := make([]string, 0, len(e.markets))
+	for _, m := range e.markets {
+		hash := m.Hash()
+		e.log.Debug("market app state hash", logging.Hash(hash), logging.String("market-id", m.GetID()))
+		hashes = append(hashes, string(hash))
+	}
+
+	sort.Strings(hashes)
+	bytes := []byte{}
+	for _, h := range hashes {
+		bytes = append(bytes, []byte(h)...)
+	}
+	return crypto.Hash(bytes)
+}
+
 func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
 	var tickSize string = "0."
 	for decimalPlaces > 1 {
@@ -158,6 +187,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	mkt, err := NewMarket(
+		ctx,
 		e.log,
 		e.Config.Risk,
 		e.Config.Position,
@@ -169,6 +199,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
+		nil,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
@@ -253,23 +284,81 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) (*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
-	mkt, ok := e.markets[order.MarketID]
+
+	// ensure that if orderID is specified marketId is as well
+	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+		return nil, ErrInvalidOrderCancellation
+	}
+
+	if len(order.PartyID) > 0 {
+		if len(order.MarketID) > 0 {
+			if len(order.OrderID) > 0 {
+				return e.cancelOrder(ctx, order.PartyID, order.MarketID, order.OrderID)
+			}
+			return e.cancelOrderByMarket(ctx, order.PartyID, order.MarketID)
+		}
+		return e.cancelAllPartyOrders(ctx, order.PartyID)
+	}
+
+	return nil, ErrInvalidOrderCancellation
+}
+
+func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string) ([]*types.OrderCancellationConfirmation, error) {
+	mkt, ok := e.markets[market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
-
-	conf, err := mkt.CancelOrder(ctx, order)
+	conf, err := mkt.CancelOrder(ctx, party, orderID)
 	if err != nil {
 		return nil, err
 	}
 	if conf.Order.Status == types.Order_STATUS_CANCELLED {
-		metrics.OrderGaugeAdd(-1, order.MarketID)
+		metrics.OrderGaugeAdd(-1, market)
 	}
-	return conf, nil
+	return []*types.OrderCancellationConfirmation{conf}, nil
+}
+
+func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) ([]*types.OrderCancellationConfirmation, error) {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
+	confs, err := mkt.CancelAllOrders(ctx, party)
+	if err != nil {
+		return nil, err
+	}
+	var confirmed int
+	for _, conf := range confs {
+		if conf.Order.Status == types.Order_STATUS_CANCELLED {
+			confirmed += 1
+		}
+	}
+	metrics.OrderGaugeAdd(-confirmed, market)
+	return confs, nil
+}
+
+func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*types.OrderCancellationConfirmation, error) {
+	confirmations := []*types.OrderCancellationConfirmation{}
+
+	for _, mkt := range e.markets {
+		confs, err := mkt.CancelAllOrders(ctx, party)
+		if err != nil {
+			return nil, err
+		}
+		confirmations = append(confirmations, confs...)
+		var confirmed int
+		for _, conf := range confs {
+			if conf.Order.Status == types.Order_STATUS_CANCELLED {
+				confirmed += 1
+			}
+		}
+		metrics.OrderGaugeAdd(-confirmed, mkt.GetID())
+	}
+	return confirmations, nil
 }
 
 // CancelOrderByID attempts to locate order by its Id and cancel it if exists.
@@ -291,8 +380,14 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 	return conf, nil
 }
 
-func (e *Engine) onChainTimeUpdate(_ context.Context, t time.Time) {
+func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
+
+	for _, v := range e.markets {
+		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
+	}
+	evt := events.NewTime(ctx, t)
+	e.broker.Send(evt)
 
 	// update block time on id generator
 	e.idgen.NewBatch()
@@ -362,23 +457,4 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 		return types.MarketData{}, types.ErrInvalidMarketID
 	}
 	return mkt.GetMarketData(), nil
-}
-
-// Generate flushes any data (including storing state changes) to underlying stores (if configured).
-func (e *Engine) Generate() error {
-	ctx := context.TODO()
-
-	// Market data is added to buffer on Generate
-	// do this before the time event -> time event flushes
-	for _, v := range e.markets {
-		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
-	}
-	// Transfers
-	// @TODO this event will be generated with a block context that has the trace ID
-	// this will have the effect of flushing the transfer response buffer
-	now, _ := e.time.GetTimeNow()
-	evt := events.NewTime(ctx, now)
-	e.broker.Send(evt)
-	// Markets
-	return nil
 }

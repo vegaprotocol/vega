@@ -2,7 +2,6 @@ package governance
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -72,7 +71,6 @@ type ExtResChecker interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	mu                     sync.Mutex
 	log                    *logging.Logger
 	accs                   Accounts
 	currentTime            time.Time
@@ -91,6 +89,7 @@ type proposalData struct {
 
 func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
 	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Level)
 	// ensure params are set
 	nodeValidation, err := NewNodeValidation(log, assets, now, erc)
 	if err != nil {
@@ -121,9 +120,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 		e.log.SetLevel(cfg.Level.Get())
 	}
 
-	e.mu.Lock()
 	e.Config = cfg
-	e.mu.Unlock()
 }
 
 func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.ProposalError, err error) {
@@ -151,6 +148,20 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 		te.a = asset.ProtoAsset()
 	}
 	return
+}
+
+// InitState load the genesis configuration into the governance engine
+func (e *Engine) InitState(rawState []byte) error {
+	e.log.Debug("loading genesis configuration")
+	state, err := LoadGenesisState(rawState)
+	if err != nil {
+		e.log.Error("unable to load genesis state",
+			logging.Error(err))
+		return err
+	}
+	params := NetworkParametersFromGenesisState(e.log, *state)
+	e.networkParams = *params
+	return nil
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
@@ -253,7 +264,7 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	// FIXME(): we should not have networkf params per proposal type..
-	return &e.networkParams.NewMarkets, nil
+	return &e.networkParams.Proposals, nil
 }
 
 // validates proposals read from the chain
@@ -294,8 +305,8 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, ErrProposalEnactTimeTooLate
 	}
 
-	if proposal.Terms.ClosingTimestamp < proposal.Terms.ValidationTimestamp {
-		e.log.Debug("proposal closing time can't be smaller than validation time",
+	if proposal.Terms.ClosingTimestamp <= proposal.Terms.ValidationTimestamp {
+		e.log.Debug("proposal closing time can't be smaller or equal than validation time",
 			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
 			logging.Int64("validation-time", proposal.Terms.ValidationTimestamp),
 			logging.String("id", proposal.ID))

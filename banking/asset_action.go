@@ -2,6 +2,7 @@ package banking
 
 import (
 	"errors"
+	"math/big"
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
@@ -18,6 +19,10 @@ type deposit struct {
 	amount  uint64
 	assetID string
 	partyID string
+}
+
+type withdrawal struct {
+	nonce *big.Int
 }
 
 type txRef struct {
@@ -44,7 +49,11 @@ type assetAction struct {
 	erc20D   *types.ERC20Deposit
 
 	// all asset list related types
-	erc20AL *types.ERC20AssetList
+	withdrawal *withdrawal
+	erc20AL    *types.ERC20AssetList
+
+	// all withdrawal related types
+	erc20W *types.ERC20Withdrawal
 }
 
 func (t *assetAction) GetID() string {
@@ -59,6 +68,10 @@ func (t *assetAction) IsERC20Deposit() bool {
 	return t.erc20D != nil
 }
 
+func (t *assetAction) IsERC20Withdrawal() bool {
+	return t.erc20W != nil
+}
+
 func (t *assetAction) IsERC20AssetList() bool {
 	return t.erc20AL != nil
 }
@@ -69,6 +82,10 @@ func (t *assetAction) BuiltinAssetDesposit() *types.BuiltinAssetDeposit {
 
 func (t *assetAction) ERC20Deposit() *types.ERC20Deposit {
 	return t.erc20D
+}
+
+func (t *assetAction) ERC20Withdrawal() *types.ERC20Withdrawal {
+	return t.erc20W
 }
 
 func (t *assetAction) ERC20AssetList() *types.ERC20AssetList {
@@ -83,6 +100,8 @@ func (t *assetAction) String() string {
 		return t.erc20D.String()
 	case t.IsERC20AssetList():
 		return t.erc20AL.String()
+	case t.IsERC20Withdrawal():
+		return t.erc20W.String()
 	default:
 		return ""
 	}
@@ -96,6 +115,8 @@ func (t *assetAction) Check() error {
 		return t.checkERC20Deposit()
 	case t.IsERC20AssetList():
 		return t.checkERC20AssetList()
+	case t.IsERC20Withdrawal():
+		return t.checkERC20Withdrawal()
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -124,6 +145,19 @@ func (t *assetAction) checkERC20Deposit() error {
 		amount:  amount,
 		partyID: partyID,
 		assetID: assetID,
+	}
+	t.ref = txRef{asset.GetAssetClass(), hash}
+	return nil
+}
+
+func (t *assetAction) checkERC20Withdrawal() error {
+	asset, _ := t.asset.ERC20()
+	nonce, hash, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
+	if err != nil {
+		return err
+	}
+	t.withdrawal = &withdrawal{
+		nonce: nonce,
 	}
 	t.ref = txRef{asset.GetAssetClass(), hash}
 	return nil

@@ -9,15 +9,18 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/contextutil"
+	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
+	"code.vegaprotocol.io/vega/plugins"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -49,6 +52,10 @@ type GRPCServer struct {
 	notaryService           *notary.Svc
 	evtfwd                  EvtForwarder
 	assetService            *assets.Svc
+	feeService              *fee.Svc
+	eventService            *subscribers.Service
+	withdrawalService       *plugins.Withdrawal
+	depositService          *plugins.Deposit
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -79,6 +86,10 @@ func NewGRPCServer(
 	notaryService *notary.Svc,
 	evtfwd EvtForwarder,
 	assetService *assets.Svc,
+	feeService *fee.Svc,
+	eventService *subscribers.Service,
+	withdrawalService *plugins.Withdrawal,
+	depositService *plugins.Deposit,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -104,6 +115,10 @@ func NewGRPCServer(
 		notaryService:           notaryService,
 		evtfwd:                  evtfwd,
 		assetService:            assetService,
+		feeService:              feeService,
+		eventService:            eventService,
+		withdrawalService:       withdrawalService,
+		depositService:          depositService,
 		statusChecker:           statusChecker,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
@@ -192,6 +207,7 @@ func (g *GRPCServer) Start() {
 
 	tradingSvc := &tradingService{
 		log:               g.log,
+		blockchain:        g.client,
 		tradeOrderService: g.orderService,
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
@@ -219,7 +235,11 @@ func (g *GRPCServer) Start() {
 		NotaryService:           g.notaryService,
 		governanceService:       g.governanceService,
 		AssetService:            g.assetService,
+		FeeService:              g.feeService,
+		eventService:            g.eventService,
 		statusChecker:           g.statusChecker,
+		WithdrawalService:       g.withdrawalService,
+		DepositService:          g.depositService,
 		ctx:                     g.ctx,
 	}
 	g.tradingDataService = tradingDataSvc

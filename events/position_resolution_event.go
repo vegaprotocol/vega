@@ -3,6 +3,8 @@ package events
 import (
 	"context"
 	"fmt"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type PosRes struct {
@@ -42,4 +44,42 @@ func (p PosRes) Distressed() int {
 
 func (p PosRes) Closed() int {
 	return p.closed
+}
+
+func (p PosRes) Proto() types.PositionResolution {
+	return types.PositionResolution{
+		MarketID:   p.marketID,
+		Closed:     int64(p.closed),
+		Distressed: int64(p.distressed),
+		MarkPrice:  p.markPrice,
+	}
+}
+
+func (p PosRes) MarketProto() types.MarketEvent {
+	return types.MarketEvent{
+		MarketID: p.marketID,
+		Payload:  p.MarketEvent(),
+	}
+}
+
+func (p PosRes) StreamMessage() *types.BusEvent {
+	pr := p.Proto()
+	return &types.BusEvent{
+		ID:   p.eventID(),
+		Type: p.et.ToProto(),
+		Event: &types.BusEvent_PositionResolution{
+			PositionResolution: &pr,
+		},
+	}
+}
+
+func (p PosRes) StreamMarketMessage() *types.BusEvent {
+	msg := p.MarketProto()
+	return &types.BusEvent{
+		ID:   p.eventID(),
+		Type: types.BusEventType_BUS_EVENT_TYPE_MARKET,
+		Event: &types.BusEvent_Market{
+			Market: &msg,
+		},
+	}
 }

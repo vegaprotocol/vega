@@ -28,6 +28,11 @@ func (v *Vote) ProposalID() string {
 	return v.v.ProposalID
 }
 
+// IsParty - used in event stream API filter
+func (v Vote) IsParty(id string) bool {
+	return (v.v.PartyID == id)
+}
+
 // PartyID - return the PartyID for subscribers' convenience
 func (v *Vote) PartyID() string {
 	return v.v.PartyID
@@ -36,4 +41,18 @@ func (v *Vote) PartyID() string {
 // Value - return a Y/N value, makes subscribers easier to implement
 func (v *Vote) Value() types.Vote_Value {
 	return v.v.Value
+}
+
+func (v Vote) Proto() types.Vote {
+	return v.v
+}
+
+func (v Vote) StreamMessage() *types.BusEvent {
+	return &types.BusEvent{
+		ID:   v.eventID(),
+		Type: v.et.ToProto(),
+		Event: &types.BusEvent_Vote{
+			Vote: &v.v,
+		},
+	}
 }

@@ -7,12 +7,14 @@ import (
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
+	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -28,10 +30,12 @@ import (
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/zannen/toml"
@@ -67,6 +71,10 @@ type Config struct {
 	Notary      notary.Config
 	EvtForward  evtforward.Config
 	Subscribers subscribers.Config
+	Genesis     genesis.Config
+	Validators  validators.Config
+	Banking     banking.Config
+	Stats       stats.Config
 
 	Pprof          pprof.Config
 	GatewayEnabled bool
@@ -106,6 +114,10 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Assets:         assets.NewDefaultConfig(defaultStoreDirPath),
 		Notary:         notary.NewDefaultConfig(),
 		EvtForward:     evtforward.NewDefaultConfig(),
+		Genesis:        genesis.NewDefaultConfig(),
+		Validators:     validators.NewDefaultConfig(),
+		Banking:        banking.NewDefaultConfig(),
+		Stats:          stats.NewDefaultConfig(),
 		Subscribers:    subscribers.NewDefaultConfig(),
 		GatewayEnabled: true,
 		StoresEnabled:  true,

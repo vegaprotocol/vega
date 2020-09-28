@@ -199,7 +199,12 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
 
-	err := execsetup.collateral.Withdraw(
+	err := execsetup.collateral.LockFundsForWithdraw(
+		context.Background(), trader, asset, amount)
+	if err != nil {
+		return err
+	}
+	err = execsetup.collateral.Withdraw(
 		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
@@ -224,6 +229,11 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
+		var expiresAt int64
+		if oty != types.Order_TYPE_MARKET {
+			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
+		}
+
 		order := proto.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
@@ -233,7 +243,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
@@ -265,6 +275,11 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			return err
 		}
 
+		var expiresAt int64
+		if oty != types.Order_TYPE_MARKET {
+			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
+		}
+
 		order := proto.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
@@ -274,7 +289,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
@@ -302,6 +317,11 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			return err
 		}
 
+		var expiresAt int64
+		if oty != types.Order_TYPE_MARKET {
+			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
+		}
+
 		order := proto.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
@@ -311,7 +331,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
+			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),

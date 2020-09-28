@@ -3,6 +3,7 @@ package processor
 import (
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/processor/ratelimit"
 )
 
 const (
@@ -19,6 +20,7 @@ type Config struct {
 	LogOrderSubmitDebug bool
 	LogOrderAmendDebug  bool
 	LogOrderCancelDebug bool
+	Ratelimit           ratelimit.Config
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -27,5 +29,6 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		LogOrderSubmitDebug: true,
+		Ratelimit:           ratelimit.NewDefaultConfig(),
 	}
 }

@@ -157,7 +157,7 @@ func (e *Engine) CalculateForContinuousMode(
 		Owner: aggressor,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
-			Amount: int64(totalInfrastructureFeeAmount),
+			Amount: int64(totalLiquidityFeeAmount),
 		},
 		Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 	})
@@ -294,9 +294,10 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	trades []*types.Trade,
 	// the positions of the traders being closed out.
 	closedMPs []events.MarketPosition,
-) (events.FeesTransfer, error) {
+) (events.FeesTransfer, map[string]*types.Fee, error) {
 	var (
 		totalFeesAmounts = map[string]uint64{}
+		partiesFees      = map[string]*types.Fee{}
 		// this is the share of each party to be paid
 		partiesShare     = map[string]*feeShare{}
 		totalAbsolutePos uint64
@@ -311,6 +312,9 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		}
 		totalAbsolutePos += uint64(size)
 		partiesShare[v.Party()] = &feeShare{pos: uint64(size)}
+
+		// while we are at it, we initial the map of all fees per party
+		partiesFees[v.Party()] = &types.Fee{}
 	}
 
 	// no we accumulated all the absolute position, we
@@ -338,7 +342,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		// now we iterate over all parties,
 		// and create a pay for each distressed parties
 		for _, v := range closedMPs {
-			partyTransfers, feesAmount := e.getPositionResolutionFeesTransfers(
+			partyTransfers, fees, feesAmount := e.getPositionResolutionFeesTransfers(
 				v.Party(), partiesShare[v.Party()].share, fees)
 
 			if prevTotalFee, ok := totalFeesAmounts[v.Party()]; !ok {
@@ -347,6 +351,14 @@ func (e *Engine) CalculateFeeForPositionResolution(
 				totalFeesAmounts[v.Party()] = prevTotalFee + feesAmount
 			}
 			transfers = append(transfers, partyTransfers...)
+
+			// increase the party full fees
+			pf := partiesFees[v.Party()]
+			pf.MakerFee += fees.MakerFee
+			pf.InfrastructureFee += fees.InfrastructureFee
+			pf.LiquidityFee += fees.LiquidityFee
+			partiesFees[v.Party()] = pf
+
 		}
 
 		// then 1 receive transfer for the good party
@@ -365,44 +377,49 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	return &feesTransfer{
 		totalFeesAmountsPerParty: totalFeesAmounts,
 		transfers:                transfers,
-	}, nil
+	}, partiesFees, nil
 }
 
 // this will calculate the transfer the distressed party needs
 // to do
 func (e *Engine) getPositionResolutionFeesTransfers(
 	party string, share float64, fees *types.Fee,
-) ([]*types.Transfer, uint64) {
+) ([]*types.Transfer, *types.Fee, uint64) {
 	makerFee := int64(math.Ceil(share * float64(fees.MakerFee)))
 	infraFee := int64(math.Ceil(share * float64(fees.InfrastructureFee)))
 	liquiFee := int64(math.Ceil(share * float64(fees.LiquidityFee)))
 
 	return []*types.Transfer{
-		&types.Transfer{
-			Owner: party,
-			Amount: &types.FinancialAmount{
-				Asset:  e.asset,
-				Amount: makerFee,
+			&types.Transfer{
+				Owner: party,
+				Amount: &types.FinancialAmount{
+					Asset:  e.asset,
+					Amount: makerFee,
+				},
+				Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
-		},
-		&types.Transfer{
-			Owner: party,
-			Amount: &types.FinancialAmount{
-				Asset:  e.asset,
-				Amount: infraFee,
+			&types.Transfer{
+				Owner: party,
+				Amount: &types.FinancialAmount{
+					Asset:  e.asset,
+					Amount: infraFee,
+				},
+				Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
-		},
-		&types.Transfer{
-			Owner: party,
-			Amount: &types.FinancialAmount{
-				Asset:  e.asset,
-				Amount: liquiFee,
+			&types.Transfer{
+				Owner: party,
+				Amount: &types.FinancialAmount{
+					Asset:  e.asset,
+					Amount: liquiFee,
+				},
+				Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 		},
-	}, uint64(makerFee + infraFee + liquiFee)
+		&types.Fee{
+			MakerFee:          uint64(makerFee),
+			InfrastructureFee: uint64(infraFee),
+			LiquidityFee:      uint64(liquiFee),
+		}, uint64(makerFee + infraFee + liquiFee)
 }
 
 type feeShare struct {

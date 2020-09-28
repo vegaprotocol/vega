@@ -34,21 +34,6 @@ func (m *MockChain) EXPECT() *MockChainMockRecorder {
 	return m.recorder
 }
 
-// SubmitNodeRegistration mocks base method
-func (m *MockChain) SubmitNodeRegistration(arg0 context.Context, arg1 *proto.NodeRegistration) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitNodeRegistration", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SubmitNodeRegistration indicates an expected call of SubmitNodeRegistration
-func (mr *MockChainMockRecorder) SubmitNodeRegistration(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitNodeRegistration", reflect.TypeOf((*MockChain)(nil).SubmitNodeRegistration), arg0, arg1)
-}
-
 // SubmitTransaction mocks base method
 func (m *MockChain) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle) (bool, error) {
 	m.ctrl.T.Helper()

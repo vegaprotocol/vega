@@ -25,15 +25,17 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// The request for a new event sent by the blockchain queue to be propagated into vega
+// Request for a new event sent by the blockchain queue to be propagated on Vega.
 type PropagateChainEventRequest struct {
-	// The event
-	Evt                  *proto1.ChainEvent `protobuf:"bytes,1,opt,name=evt,proto3" json:"evt,omitempty"`
-	PubKey               string             `protobuf:"bytes,2,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
-	Signature            []byte             `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	// Chain event.
+	Evt *proto1.ChainEvent `protobuf:"bytes,1,opt,name=evt,proto3" json:"evt,omitempty"`
+	// Public key.
+	PubKey string `protobuf:"bytes,2,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
+	// Signature.
+	Signature            []byte   `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *PropagateChainEventRequest) Reset()         { *m = PropagateChainEventRequest{} }
@@ -82,9 +84,10 @@ func (m *PropagateChainEventRequest) GetSignature() []byte {
 	return nil
 }
 
-// The response for a new event sent to vega
+// Response for a new event sent by the blockchain queue to be propagated on Vega.
 type PropagateChainEventResponse struct {
-	// Did the event get accepted by the node successfully
+	// Success will be true if the event was accepted by the node.
+	// Important - success does not mean that the event is confirmed by consensus.
 	Success              bool     `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -123,7 +126,9 @@ func (m *PropagateChainEventResponse) GetSuccess() bool {
 	return false
 }
 
+// Request for submitting a transaction on Vega.
 type SubmitTransactionRequest struct {
+	// A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain.
 	Tx                   *proto1.SignedBundle `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
@@ -162,7 +167,10 @@ func (m *SubmitTransactionRequest) GetTx() *proto1.SignedBundle {
 	return nil
 }
 
+// Response for submitting a transaction on Vega.
 type SubmitTransactionResponse struct {
+	// Success will be true if the transaction was accepted by the node.
+	// Important - success does not mean that the transaction is confirmed by consensus.
 	Success              bool     `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -201,11 +209,13 @@ func (m *SubmitTransactionResponse) GetSuccess() bool {
 	return false
 }
 
+// Request for preparing a withdrawal.
 type PrepareWithdrawRequest struct {
-	Withdraw             *proto1.Withdraw `protobuf:"bytes,1,opt,name=withdraw,proto3" json:"withdraw,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// An asset withdrawal.
+	Withdraw             *proto1.WithdrawSubmission `protobuf:"bytes,1,opt,name=withdraw,proto3" json:"withdraw,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
 func (m *PrepareWithdrawRequest) Reset()         { *m = PrepareWithdrawRequest{} }
@@ -233,14 +243,16 @@ func (m *PrepareWithdrawRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_PrepareWithdrawRequest proto.InternalMessageInfo
 
-func (m *PrepareWithdrawRequest) GetWithdraw() *proto1.Withdraw {
+func (m *PrepareWithdrawRequest) GetWithdraw() *proto1.WithdrawSubmission {
 	if m != nil {
 		return m.Withdraw
 	}
 	return nil
 }
 
+// Response for preparing a withdrawal.
 type PrepareWithdrawResponse struct {
+	// blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction.
 	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -279,8 +291,11 @@ func (m *PrepareWithdrawResponse) GetBlob() []byte {
 	return nil
 }
 
+// Response for preparing an order submission.
 type PrepareSubmitOrderResponse struct {
-	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
+	// blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction.
+	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
+	// Submission identifier (order reference).
 	SubmitID             string   `protobuf:"bytes,2,opt,name=submitID,proto3" json:"submitID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -326,7 +341,9 @@ func (m *PrepareSubmitOrderResponse) GetSubmitID() string {
 	return ""
 }
 
+// Response for preparing an order cancellation.
 type PrepareCancelOrderResponse struct {
+	// blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction.
 	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -365,7 +382,9 @@ func (m *PrepareCancelOrderResponse) GetBlob() []byte {
 	return nil
 }
 
+// Response for preparing an order amendment.
 type PrepareAmendOrderResponse struct {
+	// blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction.
 	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -404,8 +423,9 @@ func (m *PrepareAmendOrderResponse) GetBlob() []byte {
 	return nil
 }
 
+// Request to submit a new order.
 type SubmitOrderRequest struct {
-	// the bulk of the Order, including market, party, price, size, side, time in force, etc.
+	// An order submission.
 	Submission           *proto1.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
@@ -444,7 +464,9 @@ func (m *SubmitOrderRequest) GetSubmission() *proto1.OrderSubmission {
 	return nil
 }
 
+// Request to cancel an existing order.
 type CancelOrderRequest struct {
+	// An order cancellation.
 	Cancellation         *proto1.OrderCancellation `protobuf:"bytes,1,opt,name=cancellation,proto3" json:"cancellation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
 	XXX_unrecognized     []byte                    `json:"-"`
@@ -483,7 +505,9 @@ func (m *CancelOrderRequest) GetCancellation() *proto1.OrderCancellation {
 	return nil
 }
 
+// Request to amend an existing order.
 type AmendOrderRequest struct {
+	// An order amendment.
 	Amendment            *proto1.OrderAmendment `protobuf:"bytes,1,opt,name=amendment,proto3" json:"amendment,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -522,7 +546,7 @@ func (m *AmendOrderRequest) GetAmendment() *proto1.OrderAmendment {
 	return nil
 }
 
-// The request to get the lit of all assets in vega
+// Request for a list of all assets enabled on Vega.
 type AssetsRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -554,9 +578,9 @@ func (m *AssetsRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AssetsRequest proto.InternalMessageInfo
 
-// The response containing the list of all assets enabled in vega
+// Response for a list of all assets enabled on Vega.
 type AssetsResponse struct {
-	// The list of assets
+	// A list of 0 or more assets.
 	Assets               []*proto1.Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -595,9 +619,9 @@ func (m *AssetsResponse) GetAssets() []*proto1.Asset {
 	return nil
 }
 
-// The request message to get an AssetByID
+// Request for an asset given an asset identifier.
 type AssetByIDRequest struct {
-	// ID of the asset to get
+	// Asset identifier. Required field.
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -636,9 +660,9 @@ func (m *AssetByIDRequest) GetID() string {
 	return ""
 }
 
-// The response message to get an AssetByID
+// Response for an asset given an asset identifier.
 type AssetByIDResponse struct {
-	// The asset corresponding to the requested ID
+	// An asset record, if found.
 	Asset                *proto1.Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -677,10 +701,9 @@ func (m *AssetByIDResponse) GetAsset() *proto1.Asset {
 	return nil
 }
 
-// The request message to specify the ID of the resource we want to retrieve
-// the aggregated signatures for
+// Request to specify the identifier of the resource we want to retrieve aggregated signatures for.
 type GetNodeSignaturesAggregateRequest struct {
-	// The ID of the resource
+	// Resource identifier. Required field.
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -719,9 +742,9 @@ func (m *GetNodeSignaturesAggregateRequest) GetID() string {
 	return ""
 }
 
-// The response of the GetNodeSIgnatureAggregate rpc
+// Response to specify the identifier of the resource we want to retrieve aggregated signatures for.
 type GetNodeSignaturesAggregateResponse struct {
-	// The list of signatures
+	// A list of 0 or more signatures.
 	Signatures           []*proto1.NodeSignature `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
@@ -760,7 +783,9 @@ func (m *GetNodeSignaturesAggregateResponse) GetSignatures() []*proto1.NodeSigna
 	return nil
 }
 
+// Optional proposal state.
 type OptionalProposalState struct {
+	// Proposal state value.
 	Value                proto1.Proposal_State `protobuf:"varint,1,opt,name=value,proto3,enum=vega.Proposal_State" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
@@ -799,7 +824,9 @@ func (m *OptionalProposalState) GetValue() proto1.Proposal_State {
 	return proto1.Proposal_STATE_UNSPECIFIED
 }
 
+// Request for a list of proposals.
 type GetProposalsRequest struct {
+	// Optional proposal state.
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -838,7 +865,9 @@ func (m *GetProposalsRequest) GetSelectInState() *OptionalProposalState {
 	return nil
 }
 
+// Response for a list of proposals.
 type GetProposalsResponse struct {
+	// A list of 0 or more governance data.
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -877,8 +906,11 @@ func (m *GetProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
+// Request for a list of proposals for a party.
 type GetProposalsByPartyRequest struct {
-	PartyID              string                 `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Party identifier. Required field.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Optional proposal state.
 	SelectInState        *OptionalProposalState `protobuf:"bytes,2,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -924,7 +956,9 @@ func (m *GetProposalsByPartyRequest) GetSelectInState() *OptionalProposalState {
 	return nil
 }
 
+// Response for a list of proposals for a party.
 type GetProposalsByPartyResponse struct {
+	// A list of 0 or more governance data.
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -963,7 +997,9 @@ func (m *GetProposalsByPartyResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
+// Request for a list of votes for a party.
 type GetVotesByPartyRequest struct {
+	// Party identifier. Required field.
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1002,7 +1038,9 @@ func (m *GetVotesByPartyRequest) GetPartyID() string {
 	return ""
 }
 
+// Response for a list of votes for a party.
 type GetVotesByPartyResponse struct {
+	// A list of 0 or more votes.
 	Votes                []*proto1.Vote `protobuf:"bytes,1,rep,name=votes,proto3" json:"votes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
@@ -1041,7 +1079,9 @@ func (m *GetVotesByPartyResponse) GetVotes() []*proto1.Vote {
 	return nil
 }
 
+// Request for a list of new market proposals.
 type GetNewMarketProposalsRequest struct {
+	// Optional proposal state.
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1080,7 +1120,9 @@ func (m *GetNewMarketProposalsRequest) GetSelectInState() *OptionalProposalState
 	return nil
 }
 
+// Response for a list of new market proposals.
 type GetNewMarketProposalsResponse struct {
+	// A list of 0 or more governance data.
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1119,8 +1161,11 @@ func (m *GetNewMarketProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
+// Request for a list of update market proposals.
 type GetUpdateMarketProposalsRequest struct {
-	MarketID             string                 `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier. Required field.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Proposal state.
 	SelectInState        *OptionalProposalState `protobuf:"bytes,2,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1166,7 +1211,9 @@ func (m *GetUpdateMarketProposalsRequest) GetSelectInState() *OptionalProposalSt
 	return nil
 }
 
+// Response for a list of update market proposals.
 type GetUpdateMarketProposalsResponse struct {
+	// A list of 0 or more governance data.
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1205,7 +1252,9 @@ func (m *GetUpdateMarketProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
+// Request for a list of network parameter proposals.
 type GetNetworkParametersProposalsRequest struct {
+	// Optional proposal state.
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1244,7 +1293,9 @@ func (m *GetNetworkParametersProposalsRequest) GetSelectInState() *OptionalPropo
 	return nil
 }
 
+// Response for a list of network parameter proposals.
 type GetNetworkParametersProposalsResponse struct {
+	// A list of 0 or more governance data.
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1283,7 +1334,9 @@ func (m *GetNetworkParametersProposalsResponse) GetData() []*proto1.GovernanceDa
 	return nil
 }
 
+// Request for a list of new asset proposals.
 type GetNewAssetProposalsRequest struct {
+	// Optional proposal state.
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1322,7 +1375,9 @@ func (m *GetNewAssetProposalsRequest) GetSelectInState() *OptionalProposalState 
 	return nil
 }
 
+// Response for a list of new asset proposals.
 type GetNewAssetProposalsResponse struct {
+	// A list of 0 or more governance data.
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1361,7 +1416,9 @@ func (m *GetNewAssetProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
+// Request for a governance proposal given a proposal identifier.
 type GetProposalByIDRequest struct {
+	// Proposal identifier. Required field.
 	ProposalID           string   `protobuf:"bytes,1,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1400,7 +1457,9 @@ func (m *GetProposalByIDRequest) GetProposalID() string {
 	return ""
 }
 
+// Response for a governance proposal given a proposal identifier.
 type GetProposalByIDResponse struct {
+	// Governance data, if found.
 	Data                 *proto1.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1439,7 +1498,9 @@ func (m *GetProposalByIDResponse) GetData() *proto1.GovernanceData {
 	return nil
 }
 
+// Request for a governance proposal given a proposal reference.
 type GetProposalByReferenceRequest struct {
+	// Proposal reference. Required field.
 	Reference            string   `protobuf:"bytes,1,opt,name=Reference,proto3" json:"Reference,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1478,7 +1539,9 @@ func (m *GetProposalByReferenceRequest) GetReference() string {
 	return ""
 }
 
+// Response for a governance proposal given a proposal reference.
 type GetProposalByReferenceResponse struct {
+	// Governance data, if found.
 	Data                 *proto1.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1517,7 +1580,9 @@ func (m *GetProposalByReferenceResponse) GetData() *proto1.GovernanceData {
 	return nil
 }
 
+// Request to subscribe to a stream of governance proposals for a party.
 type ObservePartyProposalsRequest struct {
+	// Party identifier. Required field.
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1556,7 +1621,9 @@ func (m *ObservePartyProposalsRequest) GetPartyID() string {
 	return ""
 }
 
+// Request to subscribe to a stream of governance votes for a proposal.
 type ObserveProposalVotesRequest struct {
+	// Proposal identifier. Required field.
 	ProposalID           string   `protobuf:"bytes,1,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1595,7 +1662,9 @@ func (m *ObserveProposalVotesRequest) GetProposalID() string {
 	return ""
 }
 
+// Request to subscribe to a stream of governance votes for a party.
 type ObservePartyVotesRequest struct {
+	// Party identifier. Required field.
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1634,8 +1703,12 @@ func (m *ObservePartyVotesRequest) GetPartyID() string {
 	return ""
 }
 
+// Request to subscribe to a stream of MarginLevels data matching the given party identifier.
+// Optionally, the list can be additionally filtered by market.
 type MarginLevelsSubscribeRequest struct {
-	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Party identifier. Required field.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier.
 	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1681,8 +1754,11 @@ func (m *MarginLevelsSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
+// Request for margin levels for a party.
 type MarginLevelsRequest struct {
-	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Party identifier. Required field.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier.
 	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1728,7 +1804,9 @@ func (m *MarginLevelsRequest) GetMarketID() string {
 	return ""
 }
 
+// Response for margin levels for a party.
 type MarginLevelsResponse struct {
+	// A list of 0 or more margin levels.
 	MarginLevels         []*proto1.MarginLevels `protobuf:"bytes,1,rep,name=marginLevels,proto3" json:"marginLevels,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1767,7 +1845,10 @@ func (m *MarginLevelsResponse) GetMarginLevels() []*proto1.MarginLevels {
 	return nil
 }
 
+// Request to subscribe to a stream of MarketsData.
+// Optionally, the list can be additionally filtered by market.
 type MarketsDataSubscribeRequest struct {
+	// Market identifier.
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1806,7 +1887,9 @@ func (m *MarketsDataSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
+// Request for market data for a market.
 type MarketDataByIDRequest struct {
+	// Market identifier.
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1845,7 +1928,9 @@ func (m *MarketDataByIDRequest) GetMarketID() string {
 	return ""
 }
 
+// Response for market data for a market.
 type MarketDataByIDResponse struct {
+	// Market data, if found.
 	MarketData           *proto1.MarketData `protobuf:"bytes,1,opt,name=marketData,proto3" json:"marketData,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -1884,7 +1969,9 @@ func (m *MarketDataByIDResponse) GetMarketData() *proto1.MarketData {
 	return nil
 }
 
+// Response for market data.
 type MarketsDataResponse struct {
+	// A list of 0 or more market data.
 	MarketsData          []*proto1.MarketData `protobuf:"bytes,1,rep,name=marketsData,proto3" json:"marketsData,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
@@ -1923,7 +2010,9 @@ func (m *MarketsDataResponse) GetMarketsData() []*proto1.MarketData {
 	return nil
 }
 
+// Request for the latest trade that occurred on Vega for a given market.
 type LastTradeRequest struct {
+	// Market identifier. Required field.
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1962,7 +2051,9 @@ func (m *LastTradeRequest) GetMarketID() string {
 	return ""
 }
 
+// Response for the latest trade that occurred on Vega for a given market.
 type LastTradeResponse struct {
+	// A trade, if found.
 	Trade                *proto1.Trade `protobuf:"bytes,1,opt,name=trade,proto3" json:"trade,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -2001,7 +2092,9 @@ func (m *LastTradeResponse) GetTrade() *proto1.Trade {
 	return nil
 }
 
+// Request for a market given a market identifier.
 type MarketByIDRequest struct {
+	// Market identifier. Required field.
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2040,7 +2133,9 @@ func (m *MarketByIDRequest) GetMarketID() string {
 	return ""
 }
 
+// Response for a market given a market identifier.
 type MarketByIDResponse struct {
+	// A market, if found.
 	Market               *proto1.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
@@ -2079,7 +2174,9 @@ func (m *MarketByIDResponse) GetMarket() *proto1.Market {
 	return nil
 }
 
+// Request for a party given a party identifier.
 type PartyByIDRequest struct {
+	// Party identifier. Required field.
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2118,7 +2215,9 @@ func (m *PartyByIDRequest) GetPartyID() string {
 	return ""
 }
 
+// Response for a party given a party identifier.
 type PartyByIDResponse struct {
+	// A party, if found.
 	Party                *proto1.Party `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -2157,7 +2256,9 @@ func (m *PartyByIDResponse) GetParty() *proto1.Party {
 	return nil
 }
 
+// Response to a request for a list of parties.
 type PartiesResponse struct {
+	// A list of 0 or more parties.
 	Parties              []*proto1.Party `protobuf:"bytes,1,rep,name=parties,proto3" json:"parties,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2196,9 +2297,14 @@ func (m *PartiesResponse) GetParties() []*proto1.Party {
 	return nil
 }
 
+// Request for a list of trades relating to the given party.
+// Optionally, the list can be additionally filtered for trades by market.
 type TradesByPartyRequest struct {
-	PartyID              string      `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	MarketID             string      `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier. Required field.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Pagination controls.
 	Pagination           *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -2251,7 +2357,9 @@ func (m *TradesByPartyRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// Response for a list of trades relating to a party.
 type TradesByPartyResponse struct {
+	// A list of 0 or more trades.
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2290,7 +2398,9 @@ func (m *TradesByPartyResponse) GetTrades() []*proto1.Trade {
 	return nil
 }
 
+// Request for a list of trades related to an order.
 type TradesByOrderRequest struct {
+	// Order identifier. Required field.
 	OrderID              string   `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2329,7 +2439,9 @@ func (m *TradesByOrderRequest) GetOrderID() string {
 	return ""
 }
 
+// Response for a list of trades related to an order.
 type TradesByOrderResponse struct {
+	// A list of 0 or more trades.
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2368,10 +2480,15 @@ func (m *TradesByOrderResponse) GetTrades() []*proto1.Trade {
 	return nil
 }
 
+// Request to subscribe to a stream of (Accounts)[#vega.Account].
 type AccountsSubscribeRequest struct {
-	MarketID             string             `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string             `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Asset                string             `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier.
+	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Asset identifier.
+	Asset string `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
+	// Account type to subscribe to. Required field.
 	Type                 proto1.AccountType `protobuf:"varint,4,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -2431,8 +2548,11 @@ func (m *AccountsSubscribeRequest) GetType() proto1.AccountType {
 	return proto1.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
+// Request to subscribe to a stream of (Orders)[#vega.Order].
 type OrdersSubscribeRequest struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier.
 	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2478,8 +2598,11 @@ func (m *OrdersSubscribeRequest) GetPartyID() string {
 	return ""
 }
 
+// Request to subscribe to a stream of (Trades)[#vega.Trade].
 type TradesSubscribeRequest struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier.
 	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2525,8 +2648,11 @@ func (m *TradesSubscribeRequest) GetPartyID() string {
 	return ""
 }
 
+// Request to subscribe to a stream of (Candles)[#vega.Candle].
 type CandlesSubscribeRequest struct {
-	MarketID             string          `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier. Required field.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Time interval for the candles. Required field.
 	Interval             proto1.Interval `protobuf:"varint,2,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2572,7 +2698,9 @@ func (m *CandlesSubscribeRequest) GetInterval() proto1.Interval {
 	return proto1.Interval_INTERVAL_UNSPECIFIED
 }
 
+// Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
 type MarketDepthSubscribeRequest struct {
+	// Market identifier. Required field.
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2611,7 +2739,9 @@ func (m *MarketDepthSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
+// Request to subscribe to a stream of (Positions)[#vega.Position].
 type PositionsSubscribeRequest struct {
+	// Party identifier. Required field.
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2650,8 +2780,11 @@ func (m *PositionsSubscribeRequest) GetPartyID() string {
 	return ""
 }
 
+// Request for a list of orders for a market.
 type OrdersByMarketRequest struct {
-	MarketID             string      `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier. Required field.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Optional pagination controls.
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -2697,7 +2830,9 @@ func (m *OrdersByMarketRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// Response for a list of orders for a market.
 type OrdersByMarketResponse struct {
+	// A list of 0 or more orders.
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2736,8 +2871,11 @@ func (m *OrdersByMarketResponse) GetOrders() []*proto1.Order {
 	return nil
 }
 
+// Request for a list of orders for a party.
 type OrdersByPartyRequest struct {
-	PartyID              string      `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Party identifier. Required field.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Pagination controls.
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -2783,7 +2921,9 @@ func (m *OrdersByPartyRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// Response for a list of orders for a party.
 type OrdersByPartyResponse struct {
+	// A list of 0 or more orders.
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2822,8 +2962,11 @@ func (m *OrdersByPartyResponse) GetOrders() []*proto1.Order {
 	return nil
 }
 
+// Request for an order on a market given an order identifier.
 type OrderByMarketAndIdRequest struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier. Required field.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Order identifier. Required field.
 	OrderID              string   `protobuf:"bytes,2,opt,name=orderID,proto3" json:"orderID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2869,7 +3012,9 @@ func (m *OrderByMarketAndIdRequest) GetOrderID() string {
 	return ""
 }
 
+// Response for an order on a market given an order identifier.
 type OrderByMarketAndIdResponse struct {
+	// An order, if found.
 	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -2908,7 +3053,9 @@ func (m *OrderByMarketAndIdResponse) GetOrder() *proto1.Order {
 	return nil
 }
 
+// Request for an order given an order reference.
 type OrderByReferenceRequest struct {
+	// Unique reference. Required field.
 	Reference            string   `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2947,7 +3094,9 @@ func (m *OrderByReferenceRequest) GetReference() string {
 	return ""
 }
 
+// Response for an order given an order reference.
 type OrderByReferenceResponse struct {
+	// An order, if found.
 	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -2986,8 +3135,9 @@ func (m *OrderByReferenceResponse) GetOrder() *proto1.Order {
 	return nil
 }
 
+// Response for a list of markets on Vega.
 type MarketsResponse struct {
-	// a list of Markets
+	// A list of 0 or more markets.
 	Markets              []*proto1.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -3026,10 +3176,14 @@ func (m *MarketsResponse) GetMarkets() []*proto1.Market {
 	return nil
 }
 
+// Request for a list of candles for a market at an interval.
 type CandlesRequest struct {
+	// Market identifier. Required field.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-	SinceTimestamp       int64           `protobuf:"varint,2,opt,name=sinceTimestamp,proto3" json:"sinceTimestamp,omitempty"`
+	// Timestamp to retrieve candles since, in nanoseconds since the epoch.
+	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field.
+	SinceTimestamp int64 `protobuf:"varint,2,opt,name=sinceTimestamp,proto3" json:"sinceTimestamp,omitempty"`
+	// Time interval for the candles. Required field.
 	Interval             proto1.Interval `protobuf:"varint,3,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3082,7 +3236,9 @@ func (m *CandlesRequest) GetInterval() proto1.Interval {
 	return proto1.Interval_INTERVAL_UNSPECIFIED
 }
 
+// Response for a list of candles for a market at an interval.
 type CandlesResponse struct {
+	// A list of 0 or more candles.
 	Candles              []*proto1.Candle `protobuf:"bytes,1,rep,name=candles,proto3" json:"candles,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -3121,8 +3277,12 @@ func (m *CandlesResponse) GetCandles() []*proto1.Candle {
 	return nil
 }
 
+// Request for the market depth/order book price levels on a market.
+// Optionally, a maximum depth can be set to limit the number of levels returned.
 type MarketDepthRequest struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier. Required field.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Max depth limits the number of levels returned. Default is 0, which returns all levels.
 	MaxDepth             uint64   `protobuf:"varint,2,opt,name=maxDepth,proto3" json:"maxDepth,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3168,14 +3328,19 @@ func (m *MarketDepthRequest) GetMaxDepth() uint64 {
 	return 0
 }
 
+// Response for the market depth/order book price levels on a market.
 type MarketDepthResponse struct {
-	MarketID             string               `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	Buy                  []*proto1.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
-	Sell                 []*proto1.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
-	LastTrade            *proto1.Trade        `protobuf:"bytes,4,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Zero or more price levels for the buy side of the market depth data.
+	Buy []*proto1.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
+	// Zero or more price levels for the sell side of the market depth data.
+	Sell []*proto1.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
+	// Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
+	LastTrade            *proto1.Trade `protobuf:"bytes,4,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *MarketDepthResponse) Reset()         { *m = MarketDepthResponse{} }
@@ -3231,8 +3396,11 @@ func (m *MarketDepthResponse) GetLastTrade() *proto1.Trade {
 	return nil
 }
 
+// Request for a list of trades on a market.
 type TradesByMarketRequest struct {
-	MarketID             string      `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier. Required field.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Pagination controls.
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -3278,7 +3446,9 @@ func (m *TradesByMarketRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// Response for a list of trades on a market.
 type TradesByMarketResponse struct {
+	// A list of 0 or more trades.
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3317,8 +3487,12 @@ func (m *TradesByMarketResponse) GetTrades() []*proto1.Trade {
 	return nil
 }
 
+// Request for a list of positions for a party.
+// Optionally, if a market identifier is set, the results will be filtered for that market only.
 type PositionsByPartyRequest struct {
-	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Party identifier. Required field.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier.
 	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3364,7 +3538,9 @@ func (m *PositionsByPartyRequest) GetMarketID() string {
 	return ""
 }
 
+// Response for a list of positions for a party.
 type PositionsByPartyResponse struct {
+	// A list of 0 or more positions.
 	Positions            []*proto1.Position `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -3403,8 +3579,10 @@ func (m *PositionsByPartyResponse) GetPositions() []*proto1.Position {
 	return nil
 }
 
+// Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime".
 type VegaTimeResponse struct {
-	// nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
+	// Timestamp representation of current VegaTime.
+	// Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
 	Timestamp            int64    `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3443,9 +3621,14 @@ func (m *VegaTimeResponse) GetTimestamp() int64 {
 	return 0
 }
 
+// Pagination controls.
 type Pagination struct {
-	Skip                 uint64   `protobuf:"varint,1,opt,name=skip,proto3" json:"skip,omitempty"`
-	Limit                uint64   `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Skip the number of records specified. Default is 0.
+	Skip uint64 `protobuf:"varint,1,opt,name=skip,proto3" json:"skip,omitempty"`
+	// Limit the number of returned records to the value specified. Default is 50.
+	Limit uint64 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Descending reverses the order of the records returned.
+	// Default is true, if false the results will be returned in ascending order.
 	Descending           bool     `protobuf:"varint,3,opt,name=descending,proto3" json:"descending,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3498,7 +3681,9 @@ func (m *Pagination) GetDescending() bool {
 	return false
 }
 
+// A stream of orders.
 type OrdersStream struct {
+	// A list of 0 or more orders.
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3537,7 +3722,9 @@ func (m *OrdersStream) GetOrders() []*proto1.Order {
 	return nil
 }
 
+// A stream of trades.
 type TradesStream struct {
+	// A list of 0 or more trades.
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3576,14 +3763,19 @@ func (m *TradesStream) GetTrades() []*proto1.Trade {
 	return nil
 }
 
+// Request for a list of accounts for a party.
 type PartyAccountsRequest struct {
-	PartyID              string             `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	MarketID             string             `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	Type                 proto1.AccountType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
-	Asset                string             `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+	// Party identifier.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Account type. Required field.
+	Type proto1.AccountType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
+	// Asset identifier.
+	Asset                string   `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *PartyAccountsRequest) Reset()         { *m = PartyAccountsRequest{} }
@@ -3639,7 +3831,9 @@ func (m *PartyAccountsRequest) GetAsset() string {
 	return ""
 }
 
+// Response for a list of accounts for a party.
 type PartyAccountsResponse struct {
+	// A list of 0 or more accounts.
 	Accounts             []*proto1.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -3678,8 +3872,11 @@ func (m *PartyAccountsResponse) GetAccounts() []*proto1.Account {
 	return nil
 }
 
+// Request for a list of accounts for a market.
 type MarketAccountsRequest struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier.
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Asset identifier.
 	Asset                string   `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3725,7 +3922,9 @@ func (m *MarketAccountsRequest) GetAsset() string {
 	return ""
 }
 
+// Response for a list of accounts for a market.
 type MarketAccountsResponse struct {
+	// A list of 0 or more accounts.
 	Accounts             []*proto1.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -3764,11 +3963,11 @@ func (m *MarketAccountsResponse) GetAccounts() []*proto1.Account {
 	return nil
 }
 
-// Request for the infrastructure fees accounts
+// Request for a list of infrastructure fee accounts.
 type FeeInfrastructureAccountsRequest struct {
-	// an empty string to return all accounts
-	// an asset ID to return a single infrastructure fee
-	// fee account for a given asset
+	// Asset identifier. Required field.
+	// Set to an empty string to return all accounts.
+	// Set to an asset ID to return a single infrastructure fee account for a given asset.
 	Asset                string   `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3807,10 +4006,9 @@ func (m *FeeInfrastructureAccountsRequest) GetAsset() string {
 	return ""
 }
 
-// Response for the infrastructure fees accounts
+// Response for a list of infrastructure fee accounts.
 type FeeInfrastructureAccountsResponse struct {
-	// A list of infrastructure fee accounts for all
-	// or a specific asset
+	// A list of 0 or more infrastructure fee accounts.
 	Accounts             []*proto1.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -3849,9 +4047,13 @@ func (m *FeeInfrastructureAccountsResponse) GetAccounts() []*proto1.Account {
 	return nil
 }
 
+// Request to prepare a governance proposal.
 type PrepareProposalRequest struct {
-	PartyID              string                `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Reference            string                `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Party identifier. Required field.
+	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Unique reference.
+	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Proposal terms. Required field.
 	Proposal             *proto1.ProposalTerms `protobuf:"bytes,3,opt,name=proposal,proto3" json:"proposal,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
@@ -3904,8 +4106,11 @@ func (m *PrepareProposalRequest) GetProposal() *proto1.ProposalTerms {
 	return nil
 }
 
+// Response to prepare a governance proposal.
 type PrepareProposalResponse struct {
-	Blob                 []byte           `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
+	// blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction.
+	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
+	// A copy of the prepared proposal.
 	PendingProposal      *proto1.Proposal `protobuf:"bytes,2,opt,name=pendingProposal,proto3" json:"pendingProposal,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -3951,7 +4156,9 @@ func (m *PrepareProposalResponse) GetPendingProposal() *proto1.Proposal {
 	return nil
 }
 
+// Request to prepare a governance vote.
 type PrepareVoteRequest struct {
+	// Vote. Required field.
 	Vote                 *proto1.Vote `protobuf:"bytes,1,opt,name=vote,proto3" json:"vote,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
@@ -3990,8 +4197,11 @@ func (m *PrepareVoteRequest) GetVote() *proto1.Vote {
 	return nil
 }
 
+// Response to prepare a governance vote.
 type PrepareVoteResponse struct {
-	Blob                 []byte       `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
+	// blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction.
+	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
+	// A copy of the prepared vote.
 	Vote                 *proto1.Vote `protobuf:"bytes,2,opt,name=vote,proto3" json:"vote,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
@@ -4037,9 +4247,15 @@ func (m *PrepareVoteResponse) GetVote() *proto1.Vote {
 	return nil
 }
 
+// Request for an order with the specified order identifier.
+// Optionally, return a specific version of the order with the `version` field.
 type OrderByIDRequest struct {
+	// Order identifier. Required field.
 	OrderID string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
-	// version of the order (0 for most recent; 1 for original; 2 for first amendment, etc)
+	// Version of the order.
+	// Set `version` to 0 for most recent version of the order.
+	// Set `1` for original version of the order.
+	// Set `2` for first amendment, `3` for second amendment, etc.
 	Version              uint64   `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4085,8 +4301,11 @@ func (m *OrderByIDRequest) GetVersion() uint64 {
 	return 0
 }
 
+// Request for a list of all versions of an order given the specified order identifier.
 type OrderVersionsByIDRequest struct {
-	OrderID              string      `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
+	// Order identifier. Required field.
+	OrderID string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
+	// Pagination controls.
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -4132,7 +4351,9 @@ func (m *OrderVersionsByIDRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// Response to a request for a list of all versions of an order.
 type OrderVersionsResponse struct {
+	// A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended).
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -4167,6 +4388,634 @@ var xxx_messageInfo_OrderVersionsResponse proto.InternalMessageInfo
 func (m *OrderVersionsResponse) GetOrders() []*proto1.Order {
 	if m != nil {
 		return m.Orders
+	}
+	return nil
+}
+
+// Request to fetch the estimated fee if an order were to trade immediately
+type EstimateFeeRequest struct {
+	// Order to estimate fees for
+	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *EstimateFeeRequest) Reset()         { *m = EstimateFeeRequest{} }
+func (m *EstimateFeeRequest) String() string { return proto.CompactTextString(m) }
+func (*EstimateFeeRequest) ProtoMessage()    {}
+func (*EstimateFeeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{98}
+}
+
+func (m *EstimateFeeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EstimateFeeRequest.Unmarshal(m, b)
+}
+func (m *EstimateFeeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EstimateFeeRequest.Marshal(b, m, deterministic)
+}
+func (m *EstimateFeeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EstimateFeeRequest.Merge(m, src)
+}
+func (m *EstimateFeeRequest) XXX_Size() int {
+	return xxx_messageInfo_EstimateFeeRequest.Size(m)
+}
+func (m *EstimateFeeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_EstimateFeeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EstimateFeeRequest proto.InternalMessageInfo
+
+func (m *EstimateFeeRequest) GetOrder() *proto1.Order {
+	if m != nil {
+		return m.Order
+	}
+	return nil
+}
+
+// Response to a EstimateFeeRequest, containing the estimated fees for a given order
+type EstimateFeeResponse struct {
+	// Summary of the estimated fees for this order if it were to trade now
+	Fee                  *proto1.Fee `protobuf:"bytes,2,opt,name=fee,proto3" json:"fee,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *EstimateFeeResponse) Reset()         { *m = EstimateFeeResponse{} }
+func (m *EstimateFeeResponse) String() string { return proto.CompactTextString(m) }
+func (*EstimateFeeResponse) ProtoMessage()    {}
+func (*EstimateFeeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{99}
+}
+
+func (m *EstimateFeeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EstimateFeeResponse.Unmarshal(m, b)
+}
+func (m *EstimateFeeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EstimateFeeResponse.Marshal(b, m, deterministic)
+}
+func (m *EstimateFeeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EstimateFeeResponse.Merge(m, src)
+}
+func (m *EstimateFeeResponse) XXX_Size() int {
+	return xxx_messageInfo_EstimateFeeResponse.Size(m)
+}
+func (m *EstimateFeeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_EstimateFeeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EstimateFeeResponse proto.InternalMessageInfo
+
+func (m *EstimateFeeResponse) GetFee() *proto1.Fee {
+	if m != nil {
+		return m.Fee
+	}
+	return nil
+}
+
+// Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+type ObserveEventsRequest struct {
+	Type                 []proto1.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
+	MarketID             string                `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	PartyID              string                `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *ObserveEventsRequest) Reset()         { *m = ObserveEventsRequest{} }
+func (m *ObserveEventsRequest) String() string { return proto.CompactTextString(m) }
+func (*ObserveEventsRequest) ProtoMessage()    {}
+func (*ObserveEventsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{100}
+}
+
+func (m *ObserveEventsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ObserveEventsRequest.Unmarshal(m, b)
+}
+func (m *ObserveEventsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ObserveEventsRequest.Marshal(b, m, deterministic)
+}
+func (m *ObserveEventsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObserveEventsRequest.Merge(m, src)
+}
+func (m *ObserveEventsRequest) XXX_Size() int {
+	return xxx_messageInfo_ObserveEventsRequest.Size(m)
+}
+func (m *ObserveEventsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ObserveEventsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ObserveEventsRequest proto.InternalMessageInfo
+
+func (m *ObserveEventsRequest) GetType() []proto1.BusEventType {
+	if m != nil {
+		return m.Type
+	}
+	return nil
+}
+
+func (m *ObserveEventsRequest) GetMarketID() string {
+	if m != nil {
+		return m.MarketID
+	}
+	return ""
+}
+
+func (m *ObserveEventsRequest) GetPartyID() string {
+	if m != nil {
+		return m.PartyID
+	}
+	return ""
+}
+
+// Response type streamed back when observing events. Slice of wrapped events
+type ObserveEventsResponse struct {
+	Events               []*proto1.BusEvent `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *ObserveEventsResponse) Reset()         { *m = ObserveEventsResponse{} }
+func (m *ObserveEventsResponse) String() string { return proto.CompactTextString(m) }
+func (*ObserveEventsResponse) ProtoMessage()    {}
+func (*ObserveEventsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{101}
+}
+
+func (m *ObserveEventsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ObserveEventsResponse.Unmarshal(m, b)
+}
+func (m *ObserveEventsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ObserveEventsResponse.Marshal(b, m, deterministic)
+}
+func (m *ObserveEventsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObserveEventsResponse.Merge(m, src)
+}
+func (m *ObserveEventsResponse) XXX_Size() int {
+	return xxx_messageInfo_ObserveEventsResponse.Size(m)
+}
+func (m *ObserveEventsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ObserveEventsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ObserveEventsResponse proto.InternalMessageInfo
+
+func (m *ObserveEventsResponse) GetEvents() []*proto1.BusEvent {
+	if m != nil {
+		return m.Events
+	}
+	return nil
+}
+
+// A request to get a list of withdrawal from a given party
+type WithdrawalsRequest struct {
+	// The party to get the withdrawals for
+	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *WithdrawalsRequest) Reset()         { *m = WithdrawalsRequest{} }
+func (m *WithdrawalsRequest) String() string { return proto.CompactTextString(m) }
+func (*WithdrawalsRequest) ProtoMessage()    {}
+func (*WithdrawalsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{102}
+}
+
+func (m *WithdrawalsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WithdrawalsRequest.Unmarshal(m, b)
+}
+func (m *WithdrawalsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WithdrawalsRequest.Marshal(b, m, deterministic)
+}
+func (m *WithdrawalsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WithdrawalsRequest.Merge(m, src)
+}
+func (m *WithdrawalsRequest) XXX_Size() int {
+	return xxx_messageInfo_WithdrawalsRequest.Size(m)
+}
+func (m *WithdrawalsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_WithdrawalsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WithdrawalsRequest proto.InternalMessageInfo
+
+func (m *WithdrawalsRequest) GetPartyID() string {
+	if m != nil {
+		return m.PartyID
+	}
+	return ""
+}
+
+// The response for a list of withdrawals
+type WithdrawalsResponse struct {
+	// The list of withdrawals for the specified party
+	Withdrawals          []*proto1.Withdrawal `protobuf:"bytes,1,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *WithdrawalsResponse) Reset()         { *m = WithdrawalsResponse{} }
+func (m *WithdrawalsResponse) String() string { return proto.CompactTextString(m) }
+func (*WithdrawalsResponse) ProtoMessage()    {}
+func (*WithdrawalsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{103}
+}
+
+func (m *WithdrawalsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WithdrawalsResponse.Unmarshal(m, b)
+}
+func (m *WithdrawalsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WithdrawalsResponse.Marshal(b, m, deterministic)
+}
+func (m *WithdrawalsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WithdrawalsResponse.Merge(m, src)
+}
+func (m *WithdrawalsResponse) XXX_Size() int {
+	return xxx_messageInfo_WithdrawalsResponse.Size(m)
+}
+func (m *WithdrawalsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_WithdrawalsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WithdrawalsResponse proto.InternalMessageInfo
+
+func (m *WithdrawalsResponse) GetWithdrawals() []*proto1.Withdrawal {
+	if m != nil {
+		return m.Withdrawals
+	}
+	return nil
+}
+
+// A request to get a specific withdrawal by ID
+type WithdrawalRequest struct {
+	// The id of the withdrawal
+	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *WithdrawalRequest) Reset()         { *m = WithdrawalRequest{} }
+func (m *WithdrawalRequest) String() string { return proto.CompactTextString(m) }
+func (*WithdrawalRequest) ProtoMessage()    {}
+func (*WithdrawalRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{104}
+}
+
+func (m *WithdrawalRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WithdrawalRequest.Unmarshal(m, b)
+}
+func (m *WithdrawalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WithdrawalRequest.Marshal(b, m, deterministic)
+}
+func (m *WithdrawalRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WithdrawalRequest.Merge(m, src)
+}
+func (m *WithdrawalRequest) XXX_Size() int {
+	return xxx_messageInfo_WithdrawalRequest.Size(m)
+}
+func (m *WithdrawalRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_WithdrawalRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WithdrawalRequest proto.InternalMessageInfo
+
+func (m *WithdrawalRequest) GetID() string {
+	if m != nil {
+		return m.ID
+	}
+	return ""
+}
+
+// A response for a withdrawal
+type WithdrawalResponse struct {
+	// The withdrawal matching the ID from the request
+	Withdrawal           *proto1.Withdrawal `protobuf:"bytes,1,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *WithdrawalResponse) Reset()         { *m = WithdrawalResponse{} }
+func (m *WithdrawalResponse) String() string { return proto.CompactTextString(m) }
+func (*WithdrawalResponse) ProtoMessage()    {}
+func (*WithdrawalResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{105}
+}
+
+func (m *WithdrawalResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WithdrawalResponse.Unmarshal(m, b)
+}
+func (m *WithdrawalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WithdrawalResponse.Marshal(b, m, deterministic)
+}
+func (m *WithdrawalResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WithdrawalResponse.Merge(m, src)
+}
+func (m *WithdrawalResponse) XXX_Size() int {
+	return xxx_messageInfo_WithdrawalResponse.Size(m)
+}
+func (m *WithdrawalResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_WithdrawalResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WithdrawalResponse proto.InternalMessageInfo
+
+func (m *WithdrawalResponse) GetWithdrawal() *proto1.Withdrawal {
+	if m != nil {
+		return m.Withdrawal
+	}
+	return nil
+}
+
+// The request to get all information required to bundle the call
+// to finalize the withdrawal on the erc20 bridge
+type ERC20WithdrawalApprovalRequest struct {
+	// The ID of the withdrawal
+	WithdrawalID         string   `protobuf:"bytes,1,opt,name=withdrawalID,proto3" json:"withdrawalID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ERC20WithdrawalApprovalRequest) Reset()         { *m = ERC20WithdrawalApprovalRequest{} }
+func (m *ERC20WithdrawalApprovalRequest) String() string { return proto.CompactTextString(m) }
+func (*ERC20WithdrawalApprovalRequest) ProtoMessage()    {}
+func (*ERC20WithdrawalApprovalRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{106}
+}
+
+func (m *ERC20WithdrawalApprovalRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ERC20WithdrawalApprovalRequest.Unmarshal(m, b)
+}
+func (m *ERC20WithdrawalApprovalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ERC20WithdrawalApprovalRequest.Marshal(b, m, deterministic)
+}
+func (m *ERC20WithdrawalApprovalRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ERC20WithdrawalApprovalRequest.Merge(m, src)
+}
+func (m *ERC20WithdrawalApprovalRequest) XXX_Size() int {
+	return xxx_messageInfo_ERC20WithdrawalApprovalRequest.Size(m)
+}
+func (m *ERC20WithdrawalApprovalRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ERC20WithdrawalApprovalRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ERC20WithdrawalApprovalRequest proto.InternalMessageInfo
+
+func (m *ERC20WithdrawalApprovalRequest) GetWithdrawalID() string {
+	if m != nil {
+		return m.WithdrawalID
+	}
+	return ""
+}
+
+// The response with all information required to bundle the call
+// to finalize the withdrawal on the erc20 bridge
+// function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
+type ERC20WithdrawalApprovalResponse struct {
+	// The address of asset on ethereum
+	AssetSource string `protobuf:"bytes,1,opt,name=assetSource,proto3" json:"assetSource,omitempty"`
+	// The amount to be withdrawn
+	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	// The expiry / until what time the request is valid
+	Expiry int64 `protobuf:"varint,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	// The nonce, which is actually the internal reference for the withdrawal
+	Nonce string `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// The signatures bundle as hex encoded data, forward by 0x
+	// e.g: 0x + sig1 + sig2 + ... + sixN
+	Signatures           string   `protobuf:"bytes,5,opt,name=signatures,proto3" json:"signatures,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ERC20WithdrawalApprovalResponse) Reset()         { *m = ERC20WithdrawalApprovalResponse{} }
+func (m *ERC20WithdrawalApprovalResponse) String() string { return proto.CompactTextString(m) }
+func (*ERC20WithdrawalApprovalResponse) ProtoMessage()    {}
+func (*ERC20WithdrawalApprovalResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{107}
+}
+
+func (m *ERC20WithdrawalApprovalResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ERC20WithdrawalApprovalResponse.Unmarshal(m, b)
+}
+func (m *ERC20WithdrawalApprovalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ERC20WithdrawalApprovalResponse.Marshal(b, m, deterministic)
+}
+func (m *ERC20WithdrawalApprovalResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ERC20WithdrawalApprovalResponse.Merge(m, src)
+}
+func (m *ERC20WithdrawalApprovalResponse) XXX_Size() int {
+	return xxx_messageInfo_ERC20WithdrawalApprovalResponse.Size(m)
+}
+func (m *ERC20WithdrawalApprovalResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ERC20WithdrawalApprovalResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ERC20WithdrawalApprovalResponse proto.InternalMessageInfo
+
+func (m *ERC20WithdrawalApprovalResponse) GetAssetSource() string {
+	if m != nil {
+		return m.AssetSource
+	}
+	return ""
+}
+
+func (m *ERC20WithdrawalApprovalResponse) GetAmount() string {
+	if m != nil {
+		return m.Amount
+	}
+	return ""
+}
+
+func (m *ERC20WithdrawalApprovalResponse) GetExpiry() int64 {
+	if m != nil {
+		return m.Expiry
+	}
+	return 0
+}
+
+func (m *ERC20WithdrawalApprovalResponse) GetNonce() string {
+	if m != nil {
+		return m.Nonce
+	}
+	return ""
+}
+
+func (m *ERC20WithdrawalApprovalResponse) GetSignatures() string {
+	if m != nil {
+		return m.Signatures
+	}
+	return ""
+}
+
+// A request to get a list of deposit from a given party
+type DepositsRequest struct {
+	// The party to get the deposits for
+	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DepositsRequest) Reset()         { *m = DepositsRequest{} }
+func (m *DepositsRequest) String() string { return proto.CompactTextString(m) }
+func (*DepositsRequest) ProtoMessage()    {}
+func (*DepositsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{108}
+}
+
+func (m *DepositsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DepositsRequest.Unmarshal(m, b)
+}
+func (m *DepositsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DepositsRequest.Marshal(b, m, deterministic)
+}
+func (m *DepositsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DepositsRequest.Merge(m, src)
+}
+func (m *DepositsRequest) XXX_Size() int {
+	return xxx_messageInfo_DepositsRequest.Size(m)
+}
+func (m *DepositsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DepositsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DepositsRequest proto.InternalMessageInfo
+
+func (m *DepositsRequest) GetPartyID() string {
+	if m != nil {
+		return m.PartyID
+	}
+	return ""
+}
+
+// The response for a list of deposits
+type DepositsResponse struct {
+	// The list of deposits for the specified party
+	Deposits             []*proto1.Deposit `protobuf:"bytes,1,rep,name=deposits,proto3" json:"deposits,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *DepositsResponse) Reset()         { *m = DepositsResponse{} }
+func (m *DepositsResponse) String() string { return proto.CompactTextString(m) }
+func (*DepositsResponse) ProtoMessage()    {}
+func (*DepositsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{109}
+}
+
+func (m *DepositsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DepositsResponse.Unmarshal(m, b)
+}
+func (m *DepositsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DepositsResponse.Marshal(b, m, deterministic)
+}
+func (m *DepositsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DepositsResponse.Merge(m, src)
+}
+func (m *DepositsResponse) XXX_Size() int {
+	return xxx_messageInfo_DepositsResponse.Size(m)
+}
+func (m *DepositsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DepositsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DepositsResponse proto.InternalMessageInfo
+
+func (m *DepositsResponse) GetDeposits() []*proto1.Deposit {
+	if m != nil {
+		return m.Deposits
+	}
+	return nil
+}
+
+// A request to get a specific deposit by ID
+type DepositRequest struct {
+	// The id of the withdrawal
+	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DepositRequest) Reset()         { *m = DepositRequest{} }
+func (m *DepositRequest) String() string { return proto.CompactTextString(m) }
+func (*DepositRequest) ProtoMessage()    {}
+func (*DepositRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{110}
+}
+
+func (m *DepositRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DepositRequest.Unmarshal(m, b)
+}
+func (m *DepositRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DepositRequest.Marshal(b, m, deterministic)
+}
+func (m *DepositRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DepositRequest.Merge(m, src)
+}
+func (m *DepositRequest) XXX_Size() int {
+	return xxx_messageInfo_DepositRequest.Size(m)
+}
+func (m *DepositRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DepositRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DepositRequest proto.InternalMessageInfo
+
+func (m *DepositRequest) GetID() string {
+	if m != nil {
+		return m.ID
+	}
+	return ""
+}
+
+// A response for a deposit
+type DepositResponse struct {
+	// The deposit matching the ID from the request
+	Deposit              *proto1.Deposit `protobuf:"bytes,1,opt,name=deposit,proto3" json:"deposit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *DepositResponse) Reset()         { *m = DepositResponse{} }
+func (m *DepositResponse) String() string { return proto.CompactTextString(m) }
+func (*DepositResponse) ProtoMessage()    {}
+func (*DepositResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{111}
+}
+
+func (m *DepositResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DepositResponse.Unmarshal(m, b)
+}
+func (m *DepositResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DepositResponse.Marshal(b, m, deterministic)
+}
+func (m *DepositResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DepositResponse.Merge(m, src)
+}
+func (m *DepositResponse) XXX_Size() int {
+	return xxx_messageInfo_DepositResponse.Size(m)
+}
+func (m *DepositResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DepositResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DepositResponse proto.InternalMessageInfo
+
+func (m *DepositResponse) GetDeposit() *proto1.Deposit {
+	if m != nil {
+		return m.Deposit
 	}
 	return nil
 }
@@ -4270,200 +5119,238 @@ func init() {
 	proto.RegisterType((*OrderByIDRequest)(nil), "api.OrderByIDRequest")
 	proto.RegisterType((*OrderVersionsByIDRequest)(nil), "api.OrderVersionsByIDRequest")
 	proto.RegisterType((*OrderVersionsResponse)(nil), "api.OrderVersionsResponse")
+	proto.RegisterType((*EstimateFeeRequest)(nil), "api.EstimateFeeRequest")
+	proto.RegisterType((*EstimateFeeResponse)(nil), "api.EstimateFeeResponse")
+	proto.RegisterType((*ObserveEventsRequest)(nil), "api.ObserveEventsRequest")
+	proto.RegisterType((*ObserveEventsResponse)(nil), "api.ObserveEventsResponse")
+	proto.RegisterType((*WithdrawalsRequest)(nil), "api.WithdrawalsRequest")
+	proto.RegisterType((*WithdrawalsResponse)(nil), "api.WithdrawalsResponse")
+	proto.RegisterType((*WithdrawalRequest)(nil), "api.WithdrawalRequest")
+	proto.RegisterType((*WithdrawalResponse)(nil), "api.WithdrawalResponse")
+	proto.RegisterType((*ERC20WithdrawalApprovalRequest)(nil), "api.ERC20WithdrawalApprovalRequest")
+	proto.RegisterType((*ERC20WithdrawalApprovalResponse)(nil), "api.ERC20WithdrawalApprovalResponse")
+	proto.RegisterType((*DepositsRequest)(nil), "api.DepositsRequest")
+	proto.RegisterType((*DepositsResponse)(nil), "api.DepositsResponse")
+	proto.RegisterType((*DepositRequest)(nil), "api.DepositRequest")
+	proto.RegisterType((*DepositResponse)(nil), "api.DepositResponse")
 }
 
 func init() { proto.RegisterFile("proto/api/trading.proto", fileDescriptor_efb848134bda36f4) }
 
 var fileDescriptor_efb848134bda36f4 = []byte{
-	// 2999 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x5a, 0xeb, 0x72, 0x1b, 0xb7,
-	0xf5, 0xff, 0x93, 0x92, 0x2d, 0xe9, 0x48, 0xd6, 0x05, 0xba, 0x51, 0x2b, 0xd9, 0xa6, 0x11, 0xdb,
-	0x7f, 0xc7, 0xd3, 0x48, 0xac, 0x1d, 0xcb, 0x89, 0xe3, 0x34, 0xd6, 0xc5, 0x56, 0x98, 0x28, 0xb2,
-	0xb2, 0x72, 0x9c, 0xf4, 0x32, 0x4d, 0x57, 0x24, 0x4c, 0x6f, 0x4d, 0xee, 0xb2, 0xbb, 0x4b, 0x2a,
-	0xfa, 0xd0, 0x99, 0x4e, 0xbf, 0x74, 0xfa, 0xa1, 0x33, 0xed, 0x4b, 0xf4, 0x01, 0xfa, 0x42, 0x9d,
-	0xe9, 0x93, 0x74, 0x16, 0x38, 0xc0, 0x02, 0x7b, 0x21, 0xc5, 0xc4, 0xee, 0xb7, 0x5d, 0x9c, 0x0b,
-	0x7e, 0x38, 0xc0, 0xc1, 0x01, 0xce, 0x01, 0xac, 0x76, 0x03, 0x3f, 0xf2, 0xb7, 0x9c, 0xae, 0xbb,
-	0x15, 0x05, 0x4e, 0xd3, 0xf5, 0x5a, 0x9b, 0xbc, 0x85, 0x8c, 0x39, 0x5d, 0xd7, 0x9a, 0x17, 0xd4,
-	0x3e, 0x6b, 0x39, 0xa2, 0xd9, 0x5a, 0x14, 0x2d, 0x1d, 0x27, 0x78, 0xc3, 0xa2, 0x10, 0x1b, 0x57,
-	0x44, 0x63, 0xcb, 0xef, 0xb3, 0xc0, 0x73, 0xbc, 0x06, 0xc3, 0xf6, 0x8a, 0x68, 0x6f, 0xbc, 0x76,
-	0x5c, 0xef, 0x7b, 0xd6, 0x67, 0x9e, 0x92, 0x20, 0xd8, 0x6d, 0x18, 0x26, 0x5a, 0xd6, 0x5b, 0xbe,
-	0xdf, 0x6a, 0xb3, 0x2d, 0xfe, 0x77, 0xda, 0x7b, 0xb5, 0xc5, 0x3a, 0xdd, 0xe8, 0x1c, 0x89, 0xdb,
-	0x2d, 0x37, 0x7a, 0xdd, 0x3b, 0xdd, 0x6c, 0xf8, 0x9d, 0xad, 0xce, 0x99, 0x1b, 0xbd, 0xf1, 0xcf,
-	0xb6, 0x5a, 0xfe, 0x07, 0x9c, 0xf8, 0x41, 0xdf, 0x69, 0xbb, 0x4d, 0x27, 0xf2, 0x83, 0x70, 0x4b,
-	0x7d, 0x0a, 0x39, 0xda, 0x07, 0xeb, 0x38, 0xf0, 0xbb, 0x4e, 0xcb, 0x89, 0xd8, 0x5e, 0x8c, 0xe3,
-	0x69, 0x0c, 0xc3, 0x66, 0x7f, 0xe8, 0xb1, 0x30, 0x22, 0x14, 0xc6, 0x58, 0x3f, 0xaa, 0x94, 0xaa,
-	0xa5, 0x3b, 0xd3, 0xf7, 0xe6, 0x37, 0xf9, 0x38, 0x35, 0xae, 0x98, 0x48, 0x56, 0xe0, 0x72, 0xb7,
-	0x77, 0xfa, 0x25, 0x3b, 0xaf, 0x94, 0xab, 0xa5, 0x3b, 0x53, 0x36, 0xfe, 0x91, 0x0d, 0x98, 0x0a,
-	0xdd, 0x96, 0xe7, 0x44, 0xbd, 0x80, 0x55, 0xc6, 0xaa, 0xa5, 0x3b, 0x33, 0x76, 0xd2, 0x40, 0x1f,
-	0xc2, 0x7a, 0x6e, 0xbf, 0x61, 0xd7, 0xf7, 0x42, 0x46, 0x2a, 0x30, 0x11, 0xf6, 0x1a, 0x0d, 0x16,
-	0x86, 0xbc, 0xf3, 0x49, 0x5b, 0xfe, 0xd2, 0x5f, 0x40, 0xe5, 0xa4, 0x77, 0xda, 0x71, 0xa3, 0x17,
-	0x81, 0xe3, 0x85, 0x4e, 0x23, 0x72, 0x7d, 0x2f, 0x81, 0x5b, 0x8e, 0x7e, 0x40, 0xb4, 0x44, 0xa0,
-	0x3d, 0x71, 0x5b, 0x1e, 0x6b, 0xee, 0xf6, 0xbc, 0x66, 0x9b, 0xd9, 0xe5, 0xe8, 0x07, 0xfa, 0x00,
-	0xd6, 0x72, 0xe4, 0x87, 0x76, 0xbb, 0x0f, 0x2b, 0xc7, 0x01, 0xeb, 0x3a, 0x01, 0xfb, 0xd6, 0x8d,
-	0x5e, 0x37, 0x03, 0xe7, 0x4c, 0x76, 0x7a, 0x17, 0x26, 0xcf, 0xb0, 0x09, 0xbb, 0x9e, 0x15, 0x5d,
-	0x2b, 0x46, 0x45, 0xa7, 0x1f, 0xc0, 0x6a, 0x46, 0x0b, 0x76, 0x4d, 0x60, 0xfc, 0xb4, 0xed, 0x9f,
-	0x72, 0x15, 0x33, 0x36, 0xff, 0xa6, 0x87, 0xf1, 0xe4, 0x70, 0x76, 0x01, 0xf9, 0x79, 0xd0, 0x64,
-	0xc1, 0x20, 0x09, 0x62, 0xc1, 0x64, 0xc8, 0x59, 0xeb, 0xfb, 0x38, 0x1d, 0xea, 0x9f, 0xd6, 0x94,
-	0xb6, 0xbd, 0x78, 0x0d, 0xb6, 0x87, 0x6a, 0xa3, 0x5b, 0xb0, 0x86, 0x12, 0x3b, 0x1d, 0xe6, 0x35,
-	0x87, 0x0b, 0x7c, 0x09, 0xc4, 0x40, 0x2a, 0x2c, 0xf4, 0x00, 0x80, 0x83, 0x08, 0x43, 0xd7, 0xf7,
-	0xd0, 0x46, 0xcb, 0xc2, 0x46, 0x9c, 0xef, 0x44, 0x11, 0x6d, 0x8d, 0x91, 0x7e, 0x0d, 0xc4, 0x00,
-	0x2a, 0x94, 0x7d, 0x02, 0x33, 0x0d, 0xde, 0xda, 0x76, 0xa2, 0x44, 0xdd, 0xaa, 0xa6, 0x6e, 0x4f,
-	0x23, 0xdb, 0x06, 0x33, 0x3d, 0x80, 0x05, 0x7d, 0x24, 0x42, 0xe3, 0x3d, 0x98, 0x72, 0xe2, 0xc6,
-	0x0e, 0xf3, 0xe4, 0x52, 0x5f, 0xd2, 0xd4, 0xed, 0x48, 0x9a, 0x9d, 0xb0, 0xd1, 0x39, 0xb8, 0xb2,
-	0xc3, 0x7d, 0x13, 0x95, 0xd0, 0x07, 0x30, 0x2b, 0x1b, 0xd0, 0x3e, 0xef, 0xc1, 0x65, 0xe1, 0xbe,
-	0x95, 0x52, 0x75, 0xec, 0xce, 0xf4, 0xbd, 0x69, 0xa1, 0x93, 0x73, 0xd9, 0x48, 0xa2, 0x14, 0xe6,
-	0x79, 0xc3, 0xee, 0x79, 0x7d, 0x5f, 0xe2, 0x99, 0x85, 0x72, 0x7d, 0x9f, 0x03, 0x99, 0xb2, 0xcb,
-	0xf5, 0x7d, 0xba, 0x0d, 0x0b, 0x1a, 0x0f, 0x6a, 0xbf, 0x01, 0x97, 0xb8, 0x0a, 0x04, 0x6c, 0x28,
-	0x17, 0x14, 0x7a, 0x1f, 0x6e, 0x1c, 0xb0, 0xe8, 0xc8, 0x6f, 0xb2, 0x13, 0xe9, 0x76, 0xe1, 0x4e,
-	0xab, 0x15, 0xb0, 0xd8, 0xe7, 0x8a, 0x3a, 0xfb, 0x25, 0xd0, 0x41, 0x42, 0xd8, 0xfb, 0x7d, 0x00,
-	0xe5, 0xca, 0x72, 0x7c, 0x8b, 0x02, 0x82, 0x21, 0x6a, 0x6b, 0x6c, 0x74, 0x0f, 0x96, 0x9f, 0x77,
-	0xe3, 0x69, 0x70, 0xda, 0xb1, 0xeb, 0xfb, 0xa1, 0xd3, 0x3e, 0x89, 0x9c, 0x88, 0x91, 0xbb, 0x70,
-	0xa9, 0xef, 0xb4, 0x7b, 0x8c, 0xc3, 0x98, 0x95, 0xc6, 0x97, 0x3c, 0x9b, 0x9c, 0xc9, 0x16, 0x2c,
-	0xf4, 0x5b, 0x58, 0x3c, 0x60, 0x91, 0xa4, 0x49, 0xf3, 0x93, 0x27, 0x70, 0x25, 0x64, 0x6d, 0xd6,
-	0x88, 0xea, 0x1e, 0x67, 0x47, 0xb3, 0x58, 0x9b, 0x4e, 0xd7, 0xdd, 0xcc, 0xed, 0xd5, 0x36, 0x05,
-	0xe8, 0x13, 0x58, 0x32, 0x15, 0xe3, 0x50, 0xef, 0xc0, 0x78, 0xd3, 0x89, 0x1c, 0x1c, 0x24, 0x62,
-	0x3b, 0x50, 0x3b, 0xf9, 0xbe, 0x13, 0x39, 0x36, 0xe7, 0xa0, 0x7f, 0x2a, 0x81, 0xa5, 0xab, 0xd8,
-	0x3d, 0x3f, 0x76, 0x82, 0xe8, 0x5c, 0x42, 0xac, 0xc2, 0x44, 0x37, 0xfe, 0x97, 0xe6, 0xde, 0xbd,
-	0xfc, 0x9f, 0x7f, 0x5f, 0x2f, 0x7f, 0x57, 0xb2, 0x65, 0x73, 0x76, 0x10, 0xe5, 0x51, 0x07, 0x71,
-	0x00, 0xeb, 0xb9, 0x08, 0x46, 0x1e, 0xcb, 0x23, 0x58, 0x39, 0x60, 0xd1, 0x4b, 0x3f, 0x62, 0x23,
-	0x0f, 0x83, 0x7e, 0x02, 0xab, 0x19, 0x59, 0x04, 0x50, 0x85, 0x4b, 0xfd, 0xb8, 0x1d, 0x11, 0x80,
-	0x40, 0x10, 0xb3, 0xda, 0x82, 0x40, 0x7f, 0x07, 0x1b, 0xf1, 0xfa, 0x63, 0x67, 0x5f, 0xf1, 0x08,
-	0xfa, 0x0e, 0x26, 0xba, 0x0e, 0x57, 0x0b, 0x7a, 0x18, 0xd9, 0x4a, 0x7f, 0x29, 0xc1, 0xf5, 0x03,
-	0x16, 0x7d, 0xd3, 0x6d, 0x3a, 0x11, 0x2b, 0x00, 0x4c, 0x61, 0x52, 0x1c, 0x06, 0x32, 0x06, 0x53,
-	0xed, 0x6f, 0x61, 0xe2, 0x0f, 0xa1, 0x5a, 0x0c, 0x64, 0xe4, 0x71, 0xbd, 0x86, 0x9b, 0xdc, 0x44,
-	0xd1, 0x99, 0x1f, 0xbc, 0x39, 0x76, 0x02, 0xa7, 0xc3, 0x22, 0x16, 0x84, 0xef, 0x60, 0x32, 0xbe,
-	0x86, 0x5b, 0x43, 0x7a, 0x1a, 0x19, 0xfc, 0xf7, 0xdc, 0x07, 0x8e, 0xd8, 0x19, 0xdf, 0x0c, 0xdf,
-	0x01, 0xe6, 0xcf, 0xe5, 0x12, 0x4d, 0x77, 0x30, 0x32, 0xd4, 0x27, 0xdc, 0xcb, 0xa4, 0x06, 0x3d,
-	0x06, 0xdc, 0x06, 0xe8, 0x62, 0x73, 0x66, 0xdd, 0x68, 0x14, 0xba, 0xc7, 0x7d, 0xcd, 0xd4, 0x90,
-	0x81, 0x51, 0x1a, 0x02, 0xe3, 0x29, 0xf7, 0x88, 0x44, 0x89, 0xcd, 0x5e, 0xb1, 0x80, 0x79, 0x0d,
-	0x15, 0x24, 0x6e, 0xc2, 0x94, 0x6a, 0x4b, 0x81, 0x49, 0x08, 0xf4, 0x0b, 0xb8, 0x56, 0xa4, 0x66,
-	0x64, 0x48, 0x4f, 0x60, 0xe3, 0xf9, 0x69, 0xc8, 0x82, 0x3e, 0xe3, 0x1b, 0x48, 0x66, 0x16, 0x87,
-	0xef, 0x42, 0x4f, 0x61, 0x5d, 0x6a, 0x40, 0x61, 0xbe, 0x23, 0x8d, 0x6a, 0xe0, 0xc7, 0x50, 0xd1,
-	0x81, 0x18, 0x3a, 0x86, 0x83, 0xf8, 0x0d, 0x6c, 0x7c, 0xe5, 0x04, 0x2d, 0xd7, 0x3b, 0x64, 0x7d,
-	0xd6, 0x0e, 0x4f, 0x7a, 0xa7, 0x61, 0x23, 0x70, 0x4f, 0xd9, 0xc5, 0x63, 0x82, 0xa5, 0x6d, 0x1f,
-	0x78, 0xa0, 0x93, 0xff, 0xf4, 0x04, 0x16, 0x75, 0xed, 0x6f, 0x47, 0xe9, 0x11, 0x2c, 0x99, 0x4a,
-	0x71, 0xee, 0xb6, 0x61, 0xa6, 0xa3, 0xb5, 0xe3, 0xea, 0xc6, 0x53, 0xb6, 0x21, 0x61, 0xf0, 0xd1,
-	0x8f, 0x61, 0x5d, 0x6c, 0x48, 0x61, 0x3c, 0xbd, 0x19, 0x0b, 0x58, 0xe9, 0xed, 0x51, 0x83, 0xf2,
-	0x09, 0x2c, 0x0b, 0xd1, 0x58, 0x52, 0xf7, 0x8e, 0x0b, 0xec, 0xa9, 0xf4, 0x0b, 0x58, 0x49, 0x0b,
-	0xe3, 0x48, 0x6a, 0x00, 0x1d, 0x45, 0x31, 0xef, 0x36, 0x89, 0x84, 0xad, 0xf1, 0xd0, 0x3a, 0x37,
-	0xb4, 0x1c, 0x83, 0x52, 0x74, 0x0f, 0xa6, 0x3b, 0x49, 0x33, 0x5a, 0x24, 0xab, 0x49, 0x67, 0xa2,
-	0xdb, 0x30, 0x7f, 0xe8, 0x84, 0xf1, 0xe5, 0xa3, 0xc9, 0x46, 0x19, 0xce, 0x36, 0x2c, 0x68, 0x72,
-	0xc9, 0x21, 0x30, 0xbe, 0x94, 0x32, 0xf3, 0x10, 0x28, 0x78, 0x04, 0x85, 0x3e, 0x84, 0x05, 0x01,
-	0x65, 0x54, 0xfb, 0x3d, 0x02, 0xa2, 0x0b, 0x62, 0x8f, 0x37, 0xe1, 0xb2, 0xe0, 0xc0, 0x2e, 0x67,
-	0xf4, 0xd1, 0xda, 0x48, 0xa3, 0x1f, 0xc2, 0x3c, 0xf7, 0x16, 0xbd, 0xcf, 0xe1, 0xce, 0xb2, 0x0d,
-	0x0b, 0x9a, 0x54, 0x32, 0x44, 0x4e, 0x37, 0x87, 0x28, 0x4e, 0x15, 0x82, 0x42, 0x3f, 0x82, 0xb9,
-	0xf8, 0xdf, 0x65, 0xc9, 0x62, 0xbd, 0x25, 0x3a, 0x73, 0x59, 0xea, 0xf0, 0x2d, 0xe4, 0x24, 0x8d,
-	0xfe, 0x11, 0x96, 0xb8, 0xb1, 0xd2, 0x67, 0x9c, 0x4a, 0x0a, 0xeb, 0x85, 0x3c, 0x87, 0x6c, 0x01,
-	0x74, 0x9d, 0x96, 0xeb, 0x89, 0x7b, 0xc9, 0x18, 0xc7, 0x3b, 0xc7, 0xc3, 0xca, 0xb1, 0x6a, 0xb6,
-	0x35, 0x16, 0xfa, 0x18, 0x96, 0x53, 0xdd, 0x27, 0x57, 0x07, 0x3e, 0x7b, 0x29, 0xf4, 0x62, 0x62,
-	0x91, 0x44, 0x6b, 0x09, 0x78, 0xe3, 0x3a, 0x53, 0x81, 0x09, 0x3f, 0xfe, 0x4f, 0xc0, 0xe3, 0xaf,
-	0xde, 0x9f, 0x79, 0x95, 0xbb, 0x50, 0x7f, 0x7f, 0x2b, 0x41, 0x65, 0xa7, 0xd1, 0xf0, 0x7b, 0x5e,
-	0x14, 0x8e, 0xe2, 0xc6, 0xba, 0x35, 0xcb, 0xa6, 0x35, 0x97, 0xe4, 0x25, 0x66, 0x8c, 0xb7, 0x8b,
-	0x1f, 0x72, 0x0b, 0xc6, 0xa3, 0xf3, 0x2e, 0xab, 0x8c, 0xf3, 0xdb, 0xc0, 0x02, 0xde, 0x6c, 0x44,
-	0xcf, 0x2f, 0xce, 0xbb, 0xcc, 0xe6, 0x64, 0x7a, 0x04, 0x2b, 0x7c, 0x14, 0x6f, 0x09, 0x4c, 0xac,
-	0x4f, 0x58, 0xe7, 0x2d, 0xe9, 0x73, 0x61, 0x75, 0xcf, 0xf1, 0x9a, 0xed, 0x1c, 0x85, 0x17, 0x39,
-	0x13, 0xde, 0x85, 0x49, 0xd7, 0x8b, 0x58, 0xd0, 0x77, 0xda, 0x5c, 0xf3, 0xac, 0x4c, 0x2b, 0xd4,
-	0xb1, 0xd5, 0x56, 0x74, 0xba, 0x23, 0xf7, 0xd8, 0x7d, 0xd6, 0x8d, 0x5e, 0xff, 0x98, 0xee, 0xe8,
-	0x03, 0x58, 0x3b, 0xf6, 0x43, 0x37, 0x5e, 0x97, 0x59, 0xbc, 0x85, 0xfe, 0x40, 0xdb, 0xb0, 0x2c,
-	0x26, 0x61, 0xf7, 0x1c, 0xf7, 0x80, 0x11, 0x86, 0x68, 0x3a, 0x4c, 0x79, 0xb8, 0xc3, 0x7c, 0x2a,
-	0xa7, 0x3c, 0xe9, 0x2d, 0x59, 0xc1, 0x7c, 0x95, 0xa7, 0x56, 0xb0, 0x58, 0xe6, 0x48, 0xa2, 0x2e,
-	0x2c, 0x49, 0xf1, 0x11, 0x6f, 0x66, 0x23, 0x23, 0x7d, 0x9c, 0xd8, 0x25, 0xe3, 0xda, 0xc3, 0x81,
-	0x3a, 0xb0, 0xc6, 0x1b, 0xe4, 0x30, 0x77, 0xbc, 0x66, 0xbd, 0x39, 0x8a, 0x65, 0xab, 0xc9, 0x1e,
-	0x50, 0x36, 0x47, 0x24, 0xf7, 0x82, 0xcf, 0xc0, 0xca, 0xeb, 0x22, 0xd9, 0x75, 0x39, 0xa3, 0xb9,
-	0xeb, 0x0a, 0x90, 0x82, 0x42, 0x3f, 0x83, 0x55, 0x54, 0x90, 0x77, 0x5c, 0x0c, 0x8a, 0x8e, 0x8b,
-	0x8a, 0x40, 0x3f, 0x85, 0x4a, 0x56, 0xc1, 0xc5, 0xfb, 0xff, 0x18, 0xe6, 0x30, 0x26, 0x2b, 0xa9,
-	0xdb, 0x30, 0x81, 0xa1, 0x16, 0x8d, 0x6b, 0x46, 0x27, 0x49, 0xa4, 0x7f, 0x2f, 0xc1, 0x2c, 0xba,
-	0xe6, 0x28, 0x46, 0xdd, 0x84, 0xd9, 0xd0, 0xf5, 0x1a, 0xec, 0x85, 0xdb, 0x61, 0x61, 0xe4, 0x74,
-	0xba, 0xdc, 0xb6, 0x63, 0x82, 0x73, 0xfe, 0xff, 0xec, 0x14, 0xd5, 0xf0, 0xe0, 0xb1, 0x21, 0x1e,
-	0xfc, 0x31, 0xcc, 0x29, 0x44, 0xc9, 0x68, 0x1a, 0xa2, 0xc9, 0x1c, 0x8d, 0xe0, 0xb3, 0x25, 0x91,
-	0xbe, 0x90, 0x81, 0x9a, 0x3b, 0xff, 0x28, 0x03, 0xe2, 0xfb, 0xda, 0x0f, 0x5c, 0x8c, 0x0f, 0x65,
-	0xdc, 0x56, 0xff, 0xf4, 0x9f, 0x25, 0x79, 0xe6, 0x41, 0xb5, 0x88, 0x6a, 0xd0, 0x5e, 0x48, 0x61,
-	0xec, 0xb4, 0x77, 0x5e, 0x29, 0xeb, 0xe7, 0xa0, 0xe3, 0xc0, 0x6d, 0x30, 0x7e, 0x14, 0xb4, 0x63,
-	0x22, 0xb9, 0x09, 0xe3, 0x21, 0x6b, 0xc7, 0x06, 0xc9, 0x67, 0xe2, 0x54, 0xf2, 0x3e, 0x4c, 0xb5,
-	0xe5, 0x69, 0x87, 0xc7, 0x81, 0x54, 0x4c, 0x4a, 0xa8, 0xf1, 0x0e, 0x24, 0x83, 0xda, 0xff, 0x66,
-	0x07, 0x4a, 0xf7, 0x36, 0x4a, 0x0c, 0xfd, 0x16, 0x56, 0xd5, 0x2e, 0x3b, 0xf2, 0x26, 0x34, 0xe8,
-	0xd4, 0xfe, 0x39, 0x54, 0xb2, 0x8a, 0x11, 0xd9, 0xcf, 0x60, 0xaa, 0x2b, 0x69, 0x08, 0x0e, 0x17,
-	0xa2, 0x14, 0xb1, 0x13, 0x06, 0x5a, 0x83, 0xf9, 0x97, 0xac, 0xe5, 0xc4, 0xcb, 0x58, 0x69, 0xd8,
-	0x80, 0xa9, 0x48, 0x2d, 0xfa, 0x18, 0xdd, 0x98, 0x9d, 0x34, 0xd0, 0x97, 0x00, 0x89, 0xb5, 0x08,
-	0x81, 0xf1, 0xf0, 0x8d, 0x2b, 0xd8, 0xc6, 0x6d, 0xfe, 0x1d, 0xc7, 0xf9, 0xb6, 0xdb, 0x71, 0x23,
-	0x5c, 0x65, 0xe2, 0x87, 0x5c, 0x03, 0x68, 0xb2, 0xb0, 0xc1, 0xbc, 0xa6, 0xeb, 0xb5, 0xb8, 0x87,
-	0x4c, 0xda, 0x5a, 0x0b, 0xbd, 0x0f, 0x33, 0x18, 0xe0, 0xa3, 0x80, 0x39, 0x9d, 0x8b, 0x6d, 0x9d,
-	0xf7, 0x61, 0x06, 0xa3, 0xb8, 0x12, 0x1a, 0x3e, 0x2d, 0x7f, 0x2d, 0xc1, 0x12, 0xb7, 0x99, 0x3c,
-	0xdf, 0xfc, 0xb4, 0x83, 0xa0, 0x3c, 0xc0, 0x8c, 0x0d, 0x3c, 0xc0, 0x24, 0xa7, 0x9f, 0x71, 0xed,
-	0xf4, 0x43, 0x77, 0x61, 0x39, 0x05, 0x05, 0x27, 0xe1, 0x7d, 0x98, 0x74, 0xb0, 0x0d, 0xc7, 0x72,
-	0xc5, 0xd0, 0x6c, 0x2b, 0x32, 0xad, 0xcb, 0x8b, 0x53, 0x7a, 0x3c, 0x83, 0xbc, 0x57, 0xc1, 0x29,
-	0xeb, 0x70, 0xf6, 0xe4, 0x35, 0xea, 0xa7, 0xe0, 0xf9, 0x08, 0xaa, 0xcf, 0x18, 0xab, 0x7b, 0xaf,
-	0x02, 0x27, 0x8c, 0x82, 0x5e, 0x23, 0xea, 0x05, 0x2c, 0x0d, 0x6d, 0x49, 0x4f, 0x68, 0xab, 0xee,
-	0x8f, 0xe0, 0xc6, 0x00, 0xc9, 0xd1, 0x91, 0xfc, 0xa3, 0xa4, 0xea, 0x38, 0x32, 0x2d, 0x70, 0x71,
-	0x07, 0xdc, 0xd0, 0xe3, 0x9a, 0xb0, 0x52, 0xd2, 0x40, 0x1e, 0xc2, 0xa4, 0xcc, 0x1b, 0xe0, 0xe1,
-	0x7f, 0xd1, 0x4c, 0x64, 0xbf, 0x60, 0x41, 0x27, 0x14, 0x5a, 0xab, 0x25, 0x5b, 0x31, 0xd3, 0x96,
-	0x2a, 0x0a, 0x25, 0x90, 0x06, 0x94, 0x78, 0x3e, 0x82, 0xb9, 0xae, 0xf0, 0x10, 0xc9, 0x8e, 0x1b,
-	0xd7, 0xac, 0xd9, 0x9d, 0x9d, 0x66, 0xa3, 0x8f, 0x81, 0x60, 0x47, 0x3c, 0xe3, 0xaa, 0x32, 0x21,
-	0xe3, 0x7d, 0x5f, 0xe5, 0xc1, 0xb4, 0x94, 0xac, 0x82, 0xca, 0xe9, 0xf1, 0x25, 0xd8, 0x90, 0x1e,
-	0x00, 0xf1, 0x1a, 0xaa, 0x2c, 0xa7, 0x55, 0xa2, 0xaa, 0x23, 0x98, 0xc7, 0xd0, 0x6f, 0xdc, 0x0f,
-	0x8d, 0x6b, 0x8b, 0xea, 0x5d, 0x36, 0xc7, 0xce, 0xd8, 0x67, 0x41, 0x28, 0x77, 0xea, 0x71, 0x5b,
-	0xfe, 0xd2, 0x0e, 0x1e, 0x25, 0x5e, 0x8a, 0xff, 0x70, 0x34, 0xbd, 0x3f, 0xfa, 0x70, 0x27, 0xbb,
-	0x1b, 0xe9, 0x70, 0x77, 0xef, 0xcf, 0x97, 0x60, 0x02, 0x4b, 0xc9, 0xe4, 0x48, 0xcd, 0x88, 0x56,
-	0x36, 0x23, 0xab, 0xbc, 0xf3, 0x6c, 0x21, 0xcd, 0xba, 0x2e, 0x50, 0x15, 0x97, 0x04, 0x13, 0x7d,
-	0x5a, 0xe5, 0x0c, 0xf5, 0x65, 0x6b, 0x69, 0xa6, 0xbe, 0xbc, 0xa2, 0xe0, 0x97, 0xb0, 0x90, 0x29,
-	0x00, 0x92, 0x15, 0x2e, 0x95, 0xa9, 0xa3, 0x59, 0xd7, 0x74, 0x6d, 0x39, 0x05, 0xc3, 0x43, 0x98,
-	0x4b, 0x15, 0x3f, 0xc9, 0xba, 0x2e, 0x92, 0x2a, 0xac, 0x5a, 0x1b, 0xf9, 0x44, 0xd4, 0x66, 0xc3,
-	0x42, 0xa6, 0x8e, 0x4b, 0xae, 0x6a, 0x96, 0xcb, 0xd6, 0x87, 0x11, 0x61, 0x71, 0xf9, 0x37, 0x41,
-	0x28, 0x7d, 0xc6, 0x44, 0x98, 0xda, 0x32, 0x4c, 0x84, 0x19, 0xe7, 0x7d, 0x02, 0xd3, 0x9a, 0xc3,
-	0xe0, 0x2c, 0x64, 0x1d, 0xd0, 0xaa, 0x64, 0x09, 0xa8, 0xe1, 0xbb, 0xd8, 0xe5, 0x32, 0x45, 0x72,
-	0x22, 0xa7, 0xad, 0xa8, 0x6c, 0x6f, 0x55, 0x8b, 0x19, 0x84, 0xe6, 0x7b, 0xff, 0xba, 0x0a, 0x33,
-	0xb8, 0x08, 0xbf, 0x6f, 0x3a, 0x91, 0x43, 0xea, 0x30, 0x6b, 0xee, 0xf3, 0x44, 0x64, 0xc4, 0x73,
-	0xe3, 0x88, 0xb5, 0x9e, 0x4b, 0x43, 0xd4, 0xcf, 0xe0, 0x8a, 0x11, 0xc1, 0xc8, 0x1a, 0x3a, 0x53,
-	0x36, 0xc0, 0x5a, 0x56, 0x1e, 0x09, 0xf5, 0xfc, 0x1e, 0xd6, 0x0a, 0xf7, 0x7e, 0x72, 0x8b, 0x0b,
-	0x0e, 0x8b, 0x2a, 0xd6, 0xed, 0x61, 0x6c, 0xd8, 0xd7, 0x87, 0x30, 0x81, 0xe7, 0x6f, 0xb2, 0x28,
-	0xbd, 0x45, 0xbb, 0x1f, 0x58, 0x4b, 0x66, 0x23, 0x4a, 0x29, 0xa3, 0xc9, 0x1c, 0xa3, 0x61, 0xb4,
-	0x54, 0xd6, 0xd2, 0x30, 0x5a, 0x26, 0x29, 0xf9, 0x19, 0x4c, 0x6b, 0x29, 0x46, 0xb2, 0xb2, 0x29,
-	0x1e, 0x7b, 0x6c, 0xca, 0xc7, 0x1e, 0x9b, 0x4f, 0x3b, 0xdd, 0xe8, 0x1c, 0xd7, 0x4a, 0x5e, 0x32,
-	0xf2, 0x53, 0x80, 0x24, 0x5f, 0x87, 0x3e, 0x9a, 0xc9, 0xfc, 0x59, 0xab, 0x99, 0xf6, 0x64, 0xb1,
-	0x6a, 0xc7, 0x7d, 0xa2, 0xf3, 0xe9, 0xf7, 0x0a, 0x03, 0x80, 0x79, 0x33, 0x78, 0x08, 0x13, 0x88,
-	0xab, 0x10, 0xfd, 0x92, 0x8e, 0x5e, 0x09, 0x7e, 0x03, 0x24, 0x73, 0x15, 0xdd, 0x27, 0xc2, 0x57,
-	0x0b, 0xaf, 0xc1, 0xb8, 0x77, 0x0d, 0xb8, 0xc3, 0x3e, 0x57, 0x41, 0x46, 0xdd, 0x2f, 0xc9, 0x86,
-	0x2e, 0x94, 0xbe, 0xb7, 0x5a, 0x57, 0x0b, 0xa8, 0xc9, 0x6c, 0x9b, 0xd9, 0x07, 0x9c, 0xed, 0xdc,
-	0x04, 0x08, 0xce, 0x76, 0x41, 0xba, 0xe2, 0x19, 0x5c, 0x31, 0xd2, 0x03, 0xe8, 0x22, 0x79, 0xd9,
-	0x09, 0xcb, 0xca, 0x23, 0xa1, 0x9e, 0x2d, 0x98, 0x52, 0x81, 0x94, 0x2c, 0xeb, 0xf0, 0x93, 0x29,
-	0xd7, 0x83, 0x10, 0x39, 0x82, 0x85, 0x4c, 0xa4, 0x24, 0xda, 0xb8, 0x73, 0x22, 0xa8, 0x0e, 0x20,
-	0x13, 0xf1, 0xf6, 0x60, 0x46, 0xcf, 0xfd, 0x13, 0xb5, 0x3c, 0xd2, 0x55, 0x09, 0x6b, 0x2d, 0x87,
-	0x92, 0xac, 0x1c, 0x4c, 0xe0, 0x0e, 0x59, 0x39, 0xe9, 0x34, 0xef, 0x23, 0x98, 0x52, 0x19, 0x63,
-	0x1c, 0x7e, 0x3a, 0xef, 0x6c, 0xad, 0xa4, 0x9b, 0x93, 0xe5, 0x91, 0xbe, 0x31, 0xe1, 0xf2, 0x28,
-	0xb8, 0xa1, 0xe1, 0xf2, 0x28, 0xbc, 0x66, 0x3d, 0x82, 0x29, 0x95, 0xa1, 0x47, 0x30, 0xe9, 0x4c,
-	0x3f, 0x82, 0xc9, 0x26, 0xf2, 0xeb, 0x30, 0x6b, 0x5e, 0x2b, 0x71, 0x69, 0xe5, 0xde, 0x6c, 0x71,
-	0x69, 0x15, 0xdc, 0x43, 0x9f, 0xc1, 0x15, 0x23, 0xc9, 0x8b, 0x4b, 0x2b, 0x2f, 0x55, 0x6c, 0x59,
-	0x79, 0xa4, 0xac, 0x1e, 0x7d, 0x89, 0xe6, 0xe5, 0xcb, 0x53, 0x7a, 0x4c, 0xb3, 0xec, 0xc1, 0x8c,
-	0xfe, 0x24, 0x01, 0x57, 0x48, 0xce, 0x1b, 0x0e, 0x5c, 0x21, 0xb9, 0x8f, 0x30, 0xbe, 0x33, 0x5f,
-	0x7d, 0x48, 0x48, 0xd7, 0x33, 0x12, 0x29, 0x60, 0xd5, 0x62, 0x86, 0x24, 0xe4, 0xa7, 0x1e, 0x2b,
-	0x60, 0xc8, 0xcf, 0x7f, 0xfe, 0x80, 0x21, 0xbf, 0xe8, 0x7d, 0xc3, 0x6f, 0x61, 0x39, 0xf7, 0x6d,
-	0x01, 0xb9, 0x21, 0xc5, 0x0a, 0x5f, 0x36, 0x58, 0x74, 0x10, 0x0b, 0xea, 0x6f, 0x41, 0xa5, 0xa8,
-	0xcc, 0x4f, 0x6e, 0x4a, 0xf9, 0x41, 0xcf, 0x11, 0xac, 0x5b, 0x43, 0xb8, 0xb0, 0xa3, 0x3e, 0x3e,
-	0x92, 0x28, 0xaa, 0xcb, 0x93, 0xf7, 0x13, 0xb4, 0x43, 0x5e, 0x09, 0x58, 0x77, 0x2f, 0xc2, 0x8a,
-	0xfd, 0xfe, 0x9a, 0xbf, 0xc2, 0xc9, 0xd4, 0xd6, 0x49, 0x55, 0x33, 0x4e, 0x6e, 0x5d, 0xdf, 0xba,
-	0x31, 0x80, 0xc3, 0x98, 0x6b, 0xbd, 0x58, 0x9e, 0xcc, 0x75, 0x4e, 0x11, 0x3e, 0x99, 0xeb, 0xdc,
-	0xfa, 0xba, 0x93, 0x2a, 0xde, 0x27, 0x51, 0x86, 0x66, 0xe5, 0x32, 0xb1, 0xe6, 0xbd, 0x81, 0x3c,
-	0xca, 0x77, 0x16, 0xb0, 0xf8, 0x9c, 0x14, 0xc9, 0x07, 0x6c, 0x91, 0x39, 0xe5, 0xf4, 0x5a, 0x89,
-	0xd8, 0xb0, 0x9c, 0x5b, 0x4a, 0xc7, 0x35, 0x39, 0xa8, 0xcc, 0x5e, 0xa8, 0xf3, 0x89, 0x02, 0x96,
-	0x54, 0xc5, 0x65, 0x18, 0x29, 0xa8, 0x96, 0x5b, 0xda, 0x35, 0xb0, 0x56, 0x22, 0xcf, 0x60, 0x29,
-	0xaf, 0x3c, 0x8f, 0x13, 0x3d, 0xa0, 0x72, 0x9f, 0xd2, 0xb3, 0x0d, 0x70, 0x12, 0x39, 0x91, 0x1b,
-	0x46, 0x6e, 0xa3, 0x38, 0x7c, 0x60, 0x9e, 0x51, 0xe3, 0x7c, 0x0c, 0xd3, 0xb1, 0x13, 0x63, 0xa6,
-	0xab, 0x50, 0x50, 0xec, 0xe3, 0x99, 0x84, 0xd8, 0x1e, 0x2c, 0x64, 0x4a, 0x61, 0x38, 0xfe, 0xa2,
-	0x12, 0x99, 0x65, 0xe6, 0x24, 0xb8, 0x11, 0xe7, 0xd3, 0x05, 0x22, 0x8c, 0x40, 0x05, 0x75, 0x23,
-	0xcb, 0xc8, 0x00, 0xd7, 0x4a, 0xe4, 0x98, 0xe7, 0x79, 0xb2, 0xcf, 0x0b, 0x70, 0x6a, 0x07, 0x3d,
-	0x3d, 0xb0, 0x72, 0x2a, 0xf7, 0xb5, 0x12, 0xf9, 0x8a, 0x57, 0xff, 0x33, 0x95, 0x24, 0x9c, 0x96,
-	0x01, 0x45, 0x26, 0x6b, 0xc1, 0xa8, 0x7b, 0xc7, 0x2c, 0xb5, 0x12, 0x39, 0x94, 0xea, 0xcc, 0xe2,
-	0xbf, 0xa1, 0x2e, 0xf7, 0x5d, 0x80, 0x95, 0x29, 0xa3, 0xd7, 0x4a, 0x64, 0x0f, 0xe6, 0x52, 0x15,
-	0x3f, 0xa2, 0x9f, 0xb2, 0x72, 0x20, 0x69, 0x44, 0x9e, 0x0e, 0xe4, 0x0b, 0x8f, 0x64, 0x0b, 0x5d,
-	0x78, 0xda, 0x2c, 0xac, 0x80, 0x59, 0xa9, 0x84, 0xa9, 0x00, 0x93, 0x2a, 0x17, 0x12, 0x3d, 0x2e,
-	0x17, 0x80, 0xd1, 0x73, 0x93, 0xb5, 0x12, 0x39, 0x02, 0x8b, 0xdf, 0x43, 0x5f, 0x25, 0x81, 0x57,
-	0xd3, 0x57, 0xb4, 0x28, 0x57, 0x54, 0x0e, 0xd3, 0x90, 0xac, 0x95, 0x48, 0x87, 0xbf, 0x40, 0x2c,
-	0x78, 0xbd, 0x49, 0x6e, 0xab, 0x2d, 0x72, 0xe0, 0x9b, 0x50, 0xeb, 0xff, 0x87, 0xf2, 0x25, 0x47,
-	0x1e, 0xf5, 0x32, 0x15, 0x8f, 0x3c, 0xe9, 0xd7, 0xac, 0x78, 0xe4, 0xc9, 0x3e, 0x60, 0xfd, 0x39,
-	0x5c, 0x16, 0x0f, 0x66, 0x09, 0x49, 0x38, 0x94, 0x93, 0x2f, 0x1a, 0x6d, 0x42, 0x64, 0xf7, 0xd6,
-	0xaf, 0xde, 0x6b, 0xf8, 0x4d, 0xc6, 0x47, 0xcf, 0x4d, 0xd2, 0xf0, 0xdb, 0x9b, 0xae, 0x78, 0x7e,
-	0xbf, 0xa5, 0xde, 0xe9, 0x9f, 0x5e, 0xe6, 0x9f, 0xf7, 0xff, 0x1b, 0x00, 0x00, 0xff, 0xff, 0x92,
-	0xba, 0x81, 0x82, 0xbb, 0x2f, 0x00, 0x00,
+	// 3386 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x3b, 0x59, 0x73, 0x1b, 0xc7,
+	0xd1, 0x1f, 0x08, 0x8a, 0x47, 0x93, 0xe2, 0x31, 0xbc, 0xa0, 0x25, 0x2d, 0x51, 0x63, 0x49, 0x96,
+	0xf5, 0x7d, 0x26, 0xf1, 0x51, 0x12, 0x65, 0xeb, 0x88, 0xc4, 0x43, 0x92, 0x61, 0xd3, 0x14, 0xbd,
+	0x94, 0x65, 0xe7, 0xa8, 0x38, 0x4b, 0x60, 0x04, 0x6d, 0x84, 0x2b, 0xbb, 0x0b, 0x50, 0x7c, 0x48,
+	0x55, 0x2a, 0x2f, 0xa9, 0x3c, 0xa4, 0x2a, 0x79, 0xc9, 0x4f, 0x48, 0x55, 0x7e, 0x55, 0xaa, 0xf2,
+	0x4b, 0x52, 0x3b, 0xd3, 0x73, 0xed, 0x01, 0x10, 0xb6, 0x9c, 0x37, 0x6c, 0xdf, 0x73, 0x76, 0x4f,
+	0x77, 0x03, 0x56, 0x3a, 0x41, 0x3b, 0x6a, 0x6f, 0x7a, 0x1d, 0x7f, 0x33, 0x0a, 0xbc, 0x9a, 0xdf,
+	0xaa, 0x6f, 0x70, 0x08, 0x29, 0x7a, 0x1d, 0xdf, 0x99, 0x13, 0xd8, 0x1e, 0xab, 0x7b, 0x02, 0xec,
+	0x2c, 0x08, 0x48, 0xd3, 0x0b, 0xde, 0xb2, 0x28, 0x44, 0xe0, 0xb2, 0x00, 0xd6, 0xdb, 0x3d, 0x16,
+	0xb4, 0xbc, 0x56, 0x95, 0x21, 0xbc, 0x24, 0xe0, 0xd5, 0x37, 0x9e, 0xdf, 0xfa, 0x9e, 0xf5, 0x58,
+	0x4b, 0x71, 0x10, 0x54, 0x1b, 0x86, 0x2c, 0x09, 0xb3, 0xe8, 0x56, 0xeb, 0xed, 0x76, 0xbd, 0xc1,
+	0x36, 0xf9, 0xd7, 0x49, 0xf7, 0xf5, 0x26, 0x6b, 0x76, 0xa2, 0x33, 0x44, 0x6e, 0xd7, 0xfd, 0xe8,
+	0x4d, 0xf7, 0x64, 0xa3, 0xda, 0x6e, 0x6e, 0x36, 0x4f, 0xfd, 0xe8, 0x6d, 0xfb, 0x74, 0xb3, 0xde,
+	0xfe, 0x84, 0x23, 0x3f, 0xe9, 0x79, 0x0d, 0xbf, 0xe6, 0x45, 0xed, 0x20, 0xdc, 0x54, 0x3f, 0x05,
+	0x1f, 0xed, 0x81, 0x73, 0x14, 0xb4, 0x3b, 0x5e, 0xdd, 0x8b, 0xd8, 0x5e, 0x6c, 0xdb, 0xd3, 0x58,
+	0xa5, 0xcb, 0x7e, 0xd7, 0x65, 0x61, 0x44, 0x28, 0x14, 0x59, 0x2f, 0x2a, 0x15, 0xd6, 0x0b, 0x37,
+	0xa7, 0xb6, 0xe6, 0x36, 0xf8, 0xd8, 0x0d, 0xaa, 0x18, 0x49, 0x96, 0x61, 0xac, 0xd3, 0x3d, 0xf9,
+	0x92, 0x9d, 0x95, 0x46, 0xd6, 0x0b, 0x37, 0x27, 0x5d, 0xfc, 0x22, 0x6b, 0x30, 0x19, 0xfa, 0xf5,
+	0x96, 0x17, 0x75, 0x03, 0x56, 0x2a, 0xae, 0x17, 0x6e, 0x4e, 0xbb, 0x1a, 0x40, 0xef, 0xc1, 0x6a,
+	0xa6, 0xde, 0xb0, 0xd3, 0x6e, 0x85, 0x8c, 0x94, 0x60, 0x3c, 0xec, 0x56, 0xab, 0x2c, 0x0c, 0xb9,
+	0xf2, 0x09, 0x57, 0x7e, 0xd2, 0x9f, 0x41, 0xe9, 0xb8, 0x7b, 0xd2, 0xf4, 0xa3, 0x97, 0x81, 0xd7,
+	0x0a, 0xbd, 0x6a, 0xe4, 0xb7, 0x5b, 0xda, 0xdc, 0x91, 0xe8, 0x1d, 0x5a, 0x4b, 0x84, 0xb5, 0xc7,
+	0x7e, 0xbd, 0xc5, 0x6a, 0xbb, 0xdd, 0x56, 0xad, 0xc1, 0xdc, 0x91, 0xe8, 0x1d, 0xbd, 0x0b, 0x97,
+	0x32, 0xf8, 0x07, 0xaa, 0x3d, 0x84, 0xe5, 0xa3, 0x80, 0x75, 0xbc, 0x80, 0x7d, 0xeb, 0x47, 0x6f,
+	0x6a, 0x81, 0x77, 0x2a, 0x95, 0xde, 0x81, 0x89, 0x53, 0x04, 0xa1, 0xea, 0x92, 0x50, 0x2d, 0x09,
+	0xb9, 0xba, 0x30, 0x8c, 0xf5, 0x28, 0x4a, 0xfa, 0x09, 0xac, 0xa4, 0xe4, 0xa1, 0x11, 0x04, 0x46,
+	0x4f, 0x1a, 0xed, 0x13, 0x2e, 0x6c, 0xda, 0xe5, 0xbf, 0xe9, 0x41, 0xbc, 0x4c, 0x9c, 0x5c, 0x18,
+	0xff, 0x22, 0xa8, 0xb1, 0xa0, 0x1f, 0x07, 0x71, 0x60, 0x22, 0xe4, 0xa4, 0x95, 0x7d, 0x5c, 0x18,
+	0xf5, 0x4d, 0xcb, 0x4a, 0xda, 0x5e, 0xbc, 0x43, 0x1b, 0x03, 0xa5, 0xd1, 0x4d, 0xb8, 0x84, 0x1c,
+	0x3b, 0x4d, 0xd6, 0xaa, 0x0d, 0x66, 0xf8, 0x12, 0x88, 0x65, 0xa9, 0x98, 0xab, 0xbb, 0x00, 0xa1,
+	0x9a, 0x0d, 0x9c, 0xad, 0x25, 0x31, 0x5b, 0x9c, 0xce, 0x98, 0x2a, 0x83, 0x90, 0x7e, 0x0d, 0xc4,
+	0x32, 0x54, 0x08, 0x7b, 0x00, 0xd3, 0x55, 0x0e, 0x6d, 0x78, 0x91, 0x16, 0xb7, 0x62, 0x88, 0xdb,
+	0x33, 0xd0, 0xae, 0x45, 0x4c, 0x9f, 0xc3, 0xbc, 0x39, 0x12, 0x21, 0x71, 0x0b, 0x26, 0xbd, 0x18,
+	0xd8, 0x64, 0x2d, 0xb9, 0xe9, 0x17, 0x0d, 0x71, 0x3b, 0x12, 0xe7, 0x6a, 0x32, 0x3a, 0x0b, 0x17,
+	0x77, 0xf8, 0xc9, 0x45, 0x21, 0xf4, 0x2e, 0xcc, 0x48, 0x00, 0xce, 0xcf, 0x87, 0x30, 0x26, 0x0e,
+	0x77, 0xa9, 0xb0, 0x5e, 0xbc, 0x39, 0xb5, 0x35, 0x25, 0x64, 0x72, 0x2a, 0x17, 0x51, 0xf4, 0x16,
+	0xcc, 0x71, 0xc0, 0xee, 0x59, 0x65, 0x5f, 0xda, 0xb3, 0x0c, 0x23, 0x95, 0x7d, 0x6e, 0xc8, 0xe4,
+	0xee, 0xd8, 0xbf, 0xff, 0x75, 0x65, 0xe4, 0xbb, 0x82, 0x3b, 0x52, 0xd9, 0xa7, 0xdb, 0x30, 0x6f,
+	0xd0, 0xa2, 0x96, 0xab, 0x70, 0x81, 0x8b, 0x42, 0xc3, 0x2d, 0x25, 0x02, 0x43, 0x1f, 0xc0, 0xd5,
+	0xe7, 0x2c, 0x3a, 0x6c, 0xd7, 0xd8, 0xb1, 0x3c, 0x88, 0xe1, 0x4e, 0xbd, 0x1e, 0xb0, 0xf8, 0x14,
+	0x0e, 0x52, 0xfa, 0x73, 0xa0, 0xfd, 0x98, 0xd1, 0x8a, 0xdb, 0x00, 0xea, 0x90, 0xcb, 0xf1, 0x2e,
+	0x08, 0x53, 0x2c, 0x56, 0xd7, 0x20, 0xa3, 0x7b, 0xb0, 0xf4, 0xa2, 0x13, 0x2f, 0x8b, 0xd7, 0x88,
+	0x2f, 0x85, 0x76, 0xe8, 0x35, 0x8e, 0x23, 0x2f, 0x62, 0xe4, 0x16, 0x5c, 0xe8, 0x79, 0x8d, 0x2e,
+	0xe3, 0xe6, 0xcc, 0xc8, 0xc5, 0x90, 0x34, 0x1b, 0x9c, 0xc8, 0x15, 0x24, 0xf4, 0x5b, 0x58, 0x78,
+	0xce, 0x22, 0x89, 0x93, 0xcb, 0x41, 0x9e, 0xc0, 0xc5, 0x90, 0x35, 0x58, 0x35, 0xaa, 0xb4, 0x38,
+	0x39, 0x4e, 0x8f, 0xb3, 0xe1, 0x75, 0xfc, 0x8d, 0x4c, 0xad, 0xae, 0xcd, 0x40, 0x9f, 0xc0, 0xa2,
+	0x2d, 0x18, 0x87, 0x7a, 0x13, 0x46, 0x6b, 0x5e, 0xe4, 0xe1, 0x20, 0xd1, 0xb6, 0xe7, 0xea, 0xde,
+	0xdf, 0xf7, 0x22, 0xcf, 0xe5, 0x14, 0xf4, 0x0f, 0x05, 0x70, 0x4c, 0x11, 0xbb, 0x67, 0x47, 0x5e,
+	0x10, 0x9d, 0x49, 0x13, 0xd7, 0x61, 0xbc, 0x13, 0x7f, 0xa7, 0xa6, 0x5d, 0x82, 0xd3, 0x83, 0x18,
+	0x19, 0x76, 0x10, 0xcf, 0x61, 0x35, 0xd3, 0x82, 0xa1, 0xc7, 0x72, 0x1f, 0x96, 0x9f, 0xb3, 0xe8,
+	0x55, 0x3b, 0x62, 0x43, 0x0f, 0x83, 0x3e, 0x80, 0x95, 0x14, 0x2f, 0x1a, 0xb0, 0x0e, 0x17, 0x7a,
+	0x31, 0x1c, 0x2d, 0x00, 0x61, 0x41, 0x4c, 0xea, 0x0a, 0x04, 0xfd, 0x0d, 0xac, 0xc5, 0xfb, 0x8f,
+	0x9d, 0x7e, 0xc5, 0xfd, 0xed, 0x4f, 0xb0, 0xd0, 0x15, 0xf8, 0x20, 0x47, 0xc3, 0xd0, 0xb3, 0xf4,
+	0xa7, 0x02, 0x5c, 0x79, 0xce, 0xa2, 0x6f, 0x3a, 0x35, 0x2f, 0x62, 0x39, 0x06, 0x53, 0x98, 0x10,
+	0xa1, 0x43, 0x6a, 0xc2, 0x14, 0xfc, 0x3d, 0x2c, 0xfc, 0x01, 0xac, 0xe7, 0x1b, 0x32, 0xf4, 0xb8,
+	0xde, 0xc0, 0x35, 0x3e, 0x45, 0xd1, 0x69, 0x3b, 0x78, 0x7b, 0xe4, 0x05, 0x5e, 0x93, 0x45, 0x2c,
+	0x08, 0x7f, 0x82, 0xc5, 0xf8, 0x1a, 0xae, 0x0f, 0xd0, 0x34, 0xb4, 0xf1, 0xdf, 0xf3, 0x33, 0x70,
+	0xc8, 0x4e, 0xf9, 0xa5, 0xf8, 0x13, 0xd8, 0xfc, 0xb9, 0xdc, 0xa2, 0x49, 0x05, 0x43, 0x9b, 0xfa,
+	0x84, 0x9f, 0x32, 0x29, 0xc1, 0xf4, 0x09, 0x37, 0x00, 0x3a, 0x08, 0x4e, 0xed, 0x1b, 0x03, 0x43,
+	0xf7, 0xf8, 0x59, 0xb3, 0x25, 0xa4, 0xcc, 0x28, 0x0c, 0x30, 0xe3, 0x29, 0x3f, 0x11, 0x5a, 0x88,
+	0xcb, 0x5e, 0xb3, 0x80, 0xb5, 0xaa, 0xca, 0x59, 0x5c, 0x83, 0x49, 0x05, 0x4b, 0x18, 0xa3, 0x11,
+	0xf4, 0x0b, 0xb8, 0x9c, 0x27, 0x66, 0x68, 0x93, 0x9e, 0xc0, 0xda, 0x8b, 0x93, 0x90, 0x05, 0x3d,
+	0xc6, 0x2f, 0x90, 0xd4, 0x2a, 0x0e, 0xbe, 0x85, 0x9e, 0xc2, 0xaa, 0x94, 0x80, 0xcc, 0xfc, 0x46,
+	0x1a, 0x76, 0x82, 0x1f, 0x42, 0xc9, 0x34, 0xc4, 0x92, 0x31, 0xd8, 0x88, 0x5f, 0xc1, 0xda, 0x57,
+	0x5e, 0x50, 0xf7, 0x5b, 0x07, 0xac, 0xc7, 0x1a, 0xe1, 0x71, 0xf7, 0x24, 0xac, 0x06, 0xfe, 0x09,
+	0x3b, 0xbf, 0x4f, 0x70, 0x8c, 0xeb, 0x03, 0x03, 0x3c, 0xf9, 0x4d, 0x8f, 0x61, 0xc1, 0x94, 0xfe,
+	0x7e, 0x84, 0x1e, 0xc2, 0xa2, 0x2d, 0x14, 0xd7, 0x6e, 0x1b, 0xa6, 0x9b, 0x06, 0x1c, 0x77, 0x37,
+	0xc6, 0xdf, 0x16, 0x87, 0x45, 0x47, 0x3f, 0x83, 0x55, 0x71, 0x21, 0x85, 0xf1, 0xf2, 0xa6, 0x66,
+	0xc0, 0x49, 0x5e, 0x8f, 0x86, 0x29, 0x0f, 0x60, 0x49, 0xb0, 0xc6, 0x9c, 0xe6, 0xe9, 0x38, 0xc7,
+	0x9d, 0x4a, 0xbf, 0x80, 0xe5, 0x24, 0x33, 0x8e, 0xa4, 0x0c, 0xd0, 0x54, 0x18, 0xfb, 0xd5, 0xa3,
+	0x39, 0x5c, 0x83, 0x86, 0x56, 0xf8, 0x44, 0xcb, 0x31, 0x28, 0x41, 0x5b, 0x30, 0xd5, 0xd4, 0x60,
+	0x9c, 0x91, 0xb4, 0x24, 0x93, 0x88, 0x6e, 0xc3, 0xdc, 0x81, 0x17, 0xc6, 0xcf, 0x92, 0x1a, 0x1b,
+	0x66, 0x38, 0xdb, 0x30, 0x6f, 0xf0, 0xe9, 0x60, 0x30, 0x7e, 0xc2, 0x32, 0x3b, 0x18, 0x14, 0x34,
+	0x02, 0x43, 0xef, 0xc1, 0xbc, 0x30, 0x65, 0xd8, 0xf9, 0xbb, 0x0f, 0xc4, 0x64, 0x44, 0x8d, 0xd7,
+	0x60, 0x4c, 0x50, 0xa0, 0xca, 0x69, 0x73, 0xb4, 0x2e, 0xe2, 0xe8, 0x1d, 0x98, 0xe3, 0xa7, 0xc5,
+	0xd4, 0x39, 0xf8, 0xb0, 0x6c, 0xc3, 0xbc, 0xc1, 0xa5, 0x87, 0xc8, 0xf1, 0xf6, 0x10, 0x45, 0x54,
+	0x21, 0x30, 0xf4, 0x53, 0x98, 0x8d, 0xbf, 0x7d, 0xa6, 0x37, 0xeb, 0x75, 0xa1, 0xcc, 0x67, 0x89,
+	0x60, 0x5c, 0xf0, 0x49, 0x1c, 0xfd, 0x3d, 0x2c, 0xf2, 0xc9, 0x4a, 0xc6, 0x38, 0xa5, 0x84, 0xad,
+	0xe7, 0x3a, 0x39, 0x64, 0x13, 0xa0, 0xe3, 0xd5, 0xfd, 0x96, 0x78, 0xa7, 0x14, 0xb9, 0xbd, 0xb3,
+	0xdc, 0xad, 0x1c, 0x29, 0xb0, 0x6b, 0x90, 0xd0, 0x87, 0xb0, 0x94, 0x50, 0xaf, 0x9f, 0x12, 0x7c,
+	0xf5, 0x12, 0xd6, 0x8b, 0x85, 0x45, 0x14, 0x2d, 0x6b, 0xe3, 0xad, 0xe7, 0x4d, 0x09, 0xc6, 0xdb,
+	0xf1, 0xb7, 0x36, 0x1e, 0x3f, 0x4d, 0x7d, 0xf6, 0xd3, 0xee, 0x5c, 0xfa, 0xfe, 0x52, 0x80, 0xd2,
+	0x4e, 0xb5, 0xda, 0xee, 0xb6, 0xa2, 0x70, 0x98, 0x63, 0x6c, 0xce, 0xe6, 0x88, 0x3d, 0x9b, 0x8b,
+	0xf2, 0x31, 0x53, 0xe4, 0x70, 0xf1, 0x41, 0xae, 0xc3, 0x68, 0x74, 0xd6, 0x61, 0xa5, 0x51, 0xfe,
+	0x1a, 0x98, 0xc7, 0x17, 0x8e, 0xd0, 0xfc, 0xf2, 0xac, 0xc3, 0x5c, 0x8e, 0x8e, 0xdf, 0xea, 0x7c,
+	0x14, 0xef, 0xc9, 0x98, 0x58, 0x9e, 0x98, 0x9d, 0xf7, 0x24, 0xcf, 0x87, 0x95, 0x3d, 0xaf, 0x55,
+	0x6b, 0x64, 0x08, 0x3c, 0x4f, 0x4c, 0x78, 0x0b, 0x26, 0xfc, 0x56, 0xc4, 0x82, 0x9e, 0xd7, 0xe0,
+	0x92, 0x67, 0xb6, 0x66, 0xc4, 0x4c, 0x54, 0x10, 0xea, 0x2a, 0x3c, 0xdd, 0x91, 0x77, 0xec, 0x3e,
+	0xeb, 0x44, 0x6f, 0x7e, 0x88, 0x3a, 0x7a, 0x17, 0x2e, 0x1d, 0xb5, 0x43, 0x3f, 0xde, 0x97, 0x69,
+	0x7b, 0x73, 0xcf, 0x03, 0x6d, 0xc0, 0x92, 0x58, 0x84, 0xdd, 0x33, 0xbc, 0x03, 0x86, 0x18, 0xa2,
+	0x7d, 0x60, 0x46, 0x06, 0x1f, 0x98, 0x47, 0x72, 0xc9, 0xb5, 0x36, 0xbd, 0x83, 0xf9, 0x2e, 0x4f,
+	0xec, 0x60, 0xb1, 0xcd, 0x11, 0x45, 0x7d, 0x58, 0x94, 0xec, 0x43, 0xbe, 0xcc, 0x86, 0xb6, 0xf4,
+	0xa1, 0x9e, 0x97, 0xd4, 0xd1, 0x1e, 0x6c, 0xa8, 0x07, 0x97, 0x38, 0x40, 0x0e, 0x73, 0xa7, 0x55,
+	0xab, 0xd4, 0x86, 0x99, 0xd9, 0x75, 0x7d, 0x07, 0x8c, 0xd8, 0x23, 0x92, 0x77, 0xc1, 0x63, 0x70,
+	0xb2, 0x54, 0xe8, 0x5b, 0x97, 0x13, 0xda, 0xb7, 0xae, 0x30, 0x52, 0x60, 0xe8, 0x63, 0x58, 0x41,
+	0x01, 0x59, 0xe1, 0x62, 0x90, 0x17, 0x2e, 0x2a, 0x04, 0x7d, 0x04, 0xa5, 0xb4, 0x80, 0xf3, 0xeb,
+	0xff, 0x0c, 0x66, 0xd1, 0x27, 0x2b, 0xae, 0x1b, 0x30, 0x8e, 0xae, 0x16, 0x27, 0xd7, 0xf6, 0x4e,
+	0x12, 0x49, 0xff, 0x5a, 0x80, 0x19, 0x3c, 0x9a, 0xc3, 0x4c, 0xea, 0x06, 0xcc, 0x84, 0x7e, 0xab,
+	0xca, 0x5e, 0xfa, 0x4d, 0x16, 0x46, 0x5e, 0xb3, 0xc3, 0xe7, 0xb6, 0x28, 0x28, 0xe7, 0xfe, 0xc7,
+	0x4d, 0x60, 0xad, 0x13, 0x5c, 0x1c, 0x70, 0x82, 0x3f, 0x83, 0x59, 0x65, 0x91, 0x1e, 0x4d, 0x55,
+	0x80, 0xec, 0xd1, 0x08, 0x3a, 0x57, 0x22, 0xe9, 0x4b, 0xe9, 0xa8, 0xf9, 0xe1, 0x1f, 0x66, 0x40,
+	0xfc, 0x5e, 0x7b, 0xc7, 0xd9, 0xf8, 0x50, 0x46, 0x5d, 0xf5, 0x4d, 0xff, 0x51, 0x90, 0x31, 0x0f,
+	0x8a, 0x45, 0xab, 0xfa, 0xdd, 0x85, 0x14, 0x8a, 0x27, 0xdd, 0xb3, 0xd2, 0x88, 0x19, 0x07, 0x1d,
+	0x05, 0x7e, 0x95, 0xf1, 0x50, 0xd0, 0x8d, 0x91, 0xe4, 0x1a, 0x8c, 0x86, 0xac, 0x11, 0x4f, 0x48,
+	0x36, 0x11, 0xc7, 0x92, 0x8f, 0x61, 0xb2, 0x21, 0xa3, 0x1d, 0xee, 0x07, 0x12, 0x3e, 0x49, 0x63,
+	0xe3, 0x1b, 0x48, 0x3a, 0xb5, 0xff, 0xce, 0x0d, 0x94, 0xd4, 0x36, 0x8c, 0x0f, 0xfd, 0x16, 0x56,
+	0xd4, 0x2d, 0x3b, 0xf4, 0x25, 0xd4, 0x2f, 0x6a, 0xff, 0x1c, 0x4a, 0x69, 0xc1, 0x68, 0xd9, 0xff,
+	0xc1, 0x64, 0x47, 0xe2, 0xd0, 0x38, 0xdc, 0x88, 0x92, 0xc5, 0xd5, 0x04, 0xb4, 0x0c, 0x73, 0xaf,
+	0x58, 0xdd, 0x8b, 0xb7, 0xb1, 0x92, 0xb0, 0x06, 0x93, 0x91, 0xda, 0xf4, 0xb1, 0x75, 0x45, 0x57,
+	0x03, 0xe8, 0x2b, 0x00, 0x3d, 0x5b, 0x84, 0xc0, 0x68, 0xf8, 0xd6, 0x17, 0x64, 0xa3, 0x2e, 0xff,
+	0x1d, 0xfb, 0xf9, 0x86, 0xdf, 0xf4, 0x23, 0xdc, 0x65, 0xe2, 0x83, 0x5c, 0x06, 0xa8, 0xb1, 0xb0,
+	0xca, 0x5a, 0x35, 0xbf, 0x55, 0xe7, 0x27, 0x64, 0xc2, 0x35, 0x20, 0xf4, 0x36, 0x4c, 0xa3, 0x83,
+	0x8f, 0x02, 0xe6, 0x35, 0xcf, 0x77, 0x75, 0xde, 0x86, 0x69, 0xf4, 0xe2, 0x8a, 0x69, 0xf0, 0xb2,
+	0xfc, 0xb9, 0x00, 0x8b, 0x7c, 0xce, 0x64, 0x7c, 0xf3, 0xe3, 0x02, 0x41, 0x19, 0xc0, 0x14, 0xfb,
+	0x06, 0x30, 0x3a, 0xfa, 0x19, 0x35, 0xa2, 0x1f, 0xba, 0x0b, 0x4b, 0x09, 0x53, 0x70, 0x11, 0x3e,
+	0x86, 0x09, 0x0f, 0x61, 0x38, 0x96, 0x8b, 0x96, 0x64, 0x57, 0xa1, 0x69, 0x45, 0x3e, 0x9c, 0x92,
+	0xe3, 0xe9, 0x77, 0x7a, 0x95, 0x39, 0x23, 0xa6, 0x39, 0x7b, 0xf2, 0x19, 0xf5, 0x63, 0xec, 0xf9,
+	0x14, 0xd6, 0x9f, 0x31, 0x56, 0x69, 0xbd, 0x0e, 0xbc, 0x30, 0x0a, 0xba, 0xd5, 0xa8, 0x1b, 0xb0,
+	0xa4, 0x69, 0x8b, 0x66, 0x62, 0x5b, 0xa9, 0x3f, 0x84, 0xab, 0x7d, 0x38, 0x87, 0xb7, 0xe4, 0x6f,
+	0x05, 0x55, 0xe1, 0x91, 0x69, 0x81, 0xf3, 0x1f, 0xc0, 0x35, 0xd3, 0xaf, 0x89, 0x59, 0xd2, 0x00,
+	0x72, 0x0f, 0x26, 0x64, 0xde, 0x00, 0x83, 0xff, 0x05, 0x3b, 0x91, 0xfd, 0x92, 0x05, 0xcd, 0x50,
+	0x48, 0x5d, 0x2f, 0xb8, 0x8a, 0x98, 0xd6, 0x55, 0x91, 0x48, 0x9b, 0xd4, 0xa7, 0xe4, 0xf3, 0x29,
+	0xcc, 0x76, 0xc4, 0x09, 0x91, 0xe4, 0x78, 0x71, 0xcd, 0xd8, 0xea, 0xdc, 0x24, 0x19, 0x7d, 0x08,
+	0x04, 0x15, 0xf1, 0x8c, 0xab, 0xca, 0x84, 0x8c, 0xf6, 0xda, 0x2a, 0x0f, 0x66, 0xa4, 0x64, 0x95,
+	0xa9, 0x1c, 0x1f, 0x3f, 0x82, 0x2d, 0xee, 0x3e, 0x26, 0x5e, 0x46, 0x91, 0x23, 0x49, 0x91, 0x28,
+	0xea, 0x10, 0xe6, 0xd0, 0xf5, 0x5b, 0xef, 0x43, 0xeb, 0xd9, 0xa2, 0xb4, 0x4b, 0x70, 0x7c, 0x18,
+	0x7b, 0x2c, 0x08, 0xe5, 0x4d, 0x3d, 0xea, 0xca, 0x4f, 0xda, 0xc4, 0x50, 0xe2, 0x95, 0xf8, 0x0e,
+	0x87, 0x93, 0xfb, 0x83, 0x83, 0x3b, 0xa9, 0x6e, 0xb8, 0xe0, 0xee, 0x1e, 0x90, 0xa7, 0x61, 0xe4,
+	0x37, 0xbd, 0x88, 0x3d, 0x63, 0x6a, 0x15, 0xce, 0x11, 0xf1, 0x6c, 0xc1, 0x82, 0xc5, 0x88, 0x4a,
+	0x57, 0xa1, 0xf8, 0x9a, 0xc9, 0xb9, 0x9e, 0x14, 0x7c, 0x31, 0x3e, 0x86, 0xd2, 0x08, 0x16, 0x31,
+	0x7d, 0xc5, 0x2b, 0xaf, 0x46, 0xfa, 0x4b, 0x5c, 0x51, 0xb1, 0x9d, 0x33, 0x32, 0x8b, 0xb3, 0xdb,
+	0x0d, 0x39, 0x95, 0x71, 0x47, 0xf5, 0xbb, 0xe6, 0x8c, 0xcb, 0xb1, 0x68, 0xbf, 0x0a, 0x1e, 0xc3,
+	0x52, 0x42, 0xab, 0x8a, 0x69, 0xc6, 0x44, 0xb1, 0xdb, 0xf6, 0x43, 0x52, 0xb1, 0x8b, 0x58, 0xba,
+	0x0d, 0x44, 0x16, 0x4c, 0x87, 0x4a, 0xfa, 0x55, 0x60, 0xc1, 0xe2, 0xd3, 0x89, 0x9a, 0x53, 0x0d,
+	0xb6, 0x13, 0x35, 0x9a, 0xde, 0x35, 0x89, 0xe8, 0xff, 0xc2, 0xbc, 0x81, 0x1a, 0x50, 0x35, 0x7b,
+	0x66, 0xda, 0x6b, 0x26, 0x9a, 0xb4, 0x44, 0x3b, 0xd1, 0x64, 0x50, 0x1b, 0x34, 0xf4, 0x00, 0x2e,
+	0x3f, 0x75, 0xf7, 0xb6, 0xca, 0x1a, 0xbd, 0xd3, 0xe9, 0x04, 0xed, 0x9e, 0xb6, 0xe0, 0x16, 0x4c,
+	0x6b, 0xfa, 0x94, 0x2d, 0x16, 0x8e, 0xfe, 0xb3, 0x00, 0x57, 0x72, 0xc5, 0xa9, 0x8a, 0xcc, 0x14,
+	0xbf, 0x69, 0x8f, 0xdb, 0xdd, 0x40, 0x46, 0xeb, 0xae, 0x09, 0x22, 0xcb, 0x30, 0xe6, 0x35, 0xe3,
+	0xdb, 0x53, 0x56, 0xfe, 0xc5, 0x57, 0x0c, 0x67, 0xef, 0x3a, 0x7e, 0x70, 0xc6, 0x57, 0xbf, 0xe8,
+	0xe2, 0x57, 0x7c, 0x91, 0xb7, 0xda, 0xf1, 0x0d, 0x89, 0x6e, 0x8d, 0x7f, 0xc4, 0xce, 0xde, 0xa8,
+	0x18, 0x5e, 0xe0, 0x28, 0xb3, 0x38, 0x78, 0x1b, 0x66, 0xf7, 0x19, 0x8f, 0x42, 0x86, 0x58, 0xee,
+	0x47, 0x30, 0xa7, 0x99, 0xb4, 0x33, 0xa8, 0x21, 0xcc, 0x76, 0x06, 0x48, 0xe9, 0x2a, 0x34, 0xbd,
+	0x09, 0x33, 0x12, 0x38, 0x60, 0x7d, 0xef, 0x2b, 0xeb, 0x94, 0x9e, 0x8f, 0x60, 0x1c, 0x05, 0xe1,
+	0xca, 0x26, 0xd4, 0x48, 0xec, 0xd6, 0x1f, 0x2f, 0xc0, 0x38, 0x36, 0x9a, 0x90, 0x43, 0x75, 0x03,
+	0x1b, 0x65, 0x73, 0xb2, 0xc2, 0x2f, 0x9b, 0x74, 0x21, 0xdd, 0xb9, 0x22, 0x6e, 0xa1, 0xfc, 0x96,
+	0x00, 0x2d, 0xcf, 0xa8, 0x9c, 0xa3, 0xbc, 0x74, 0x2d, 0xdd, 0x96, 0x97, 0xd5, 0x14, 0xf0, 0x25,
+	0xcc, 0xa7, 0x1a, 0x00, 0xc8, 0x32, 0xe7, 0x4a, 0xd5, 0xd1, 0x9d, 0xcb, 0xa6, 0xb4, 0x8c, 0x86,
+	0x81, 0x03, 0x98, 0x4d, 0x34, 0x3f, 0x90, 0x55, 0x93, 0x25, 0xd1, 0x62, 0xe1, 0xac, 0x65, 0x23,
+	0x51, 0x9a, 0x0b, 0xf3, 0xa9, 0x8e, 0x0e, 0xf2, 0x81, 0x31, 0x73, 0xe9, 0x4e, 0x11, 0xb4, 0x30,
+	0xbf, 0x11, 0x44, 0x5b, 0x28, 0x7d, 0xa4, 0x6d, 0x61, 0x22, 0x44, 0xb0, 0x2d, 0x4c, 0x39, 0xeb,
+	0x27, 0x30, 0x65, 0x38, 0x48, 0x5c, 0x85, 0xb4, 0xc3, 0x75, 0x4a, 0x69, 0x04, 0x4a, 0xf8, 0x2e,
+	0x76, 0xb1, 0xa9, 0x76, 0x19, 0x22, 0x97, 0x2d, 0xaf, 0x81, 0xc7, 0x59, 0xcf, 0x27, 0x10, 0x92,
+	0xb7, 0xfe, 0x7e, 0x15, 0xa6, 0x71, 0x13, 0x7e, 0x5f, 0xf3, 0x22, 0x8f, 0x54, 0x60, 0xc6, 0x8e,
+	0xeb, 0x88, 0xa8, 0x80, 0x65, 0xc6, 0x8d, 0xce, 0x6a, 0x26, 0x0e, 0xad, 0x7e, 0x06, 0x17, 0xad,
+	0x88, 0x95, 0x5c, 0x42, 0xe7, 0x99, 0x0e, 0xa8, 0x1d, 0x27, 0x0b, 0x85, 0x72, 0x7e, 0x0b, 0x97,
+	0x72, 0x63, 0x3d, 0x72, 0x9d, 0x33, 0x0e, 0x8a, 0x22, 0x9d, 0x1b, 0x83, 0xc8, 0x50, 0xd7, 0x1d,
+	0x18, 0xc7, 0xf7, 0x36, 0x59, 0x90, 0xa7, 0xc5, 0xc8, 0x07, 0x38, 0x8b, 0x36, 0x10, 0xb9, 0xd4,
+	0xa4, 0xc9, 0x9a, 0x82, 0x35, 0x69, 0x89, 0x2a, 0x85, 0x35, 0x69, 0xa9, 0x22, 0xc4, 0x63, 0x98,
+	0x32, 0x4a, 0x0a, 0x64, 0x79, 0x43, 0xb4, 0x7d, 0x6d, 0xc8, 0xb6, 0xaf, 0x8d, 0xa7, 0xcd, 0x4e,
+	0x74, 0x86, 0x7b, 0x25, 0xab, 0xf8, 0xf0, 0x08, 0x40, 0xe7, 0xe7, 0xf1, 0x8c, 0xa6, 0x32, 0xfd,
+	0xce, 0x4a, 0x0a, 0xae, 0x37, 0xab, 0xf1, 0xbc, 0x27, 0x26, 0x9d, 0x99, 0x47, 0xb0, 0x0c, 0xb0,
+	0x33, 0x01, 0xf7, 0x60, 0x1c, 0xed, 0xca, 0xb5, 0x7e, 0xd1, 0xb4, 0x5e, 0x31, 0x7e, 0x03, 0x24,
+	0x95, 0x7a, 0xda, 0x27, 0xe2, 0xac, 0xe6, 0xa6, 0xbd, 0xf0, 0xee, 0xea, 0x93, 0xb3, 0x7a, 0xa1,
+	0x82, 0x4a, 0x95, 0x4f, 0x22, 0x6b, 0x26, 0x53, 0x32, 0x4f, 0xe5, 0x7c, 0x90, 0x83, 0xd5, 0xab,
+	0x6d, 0x67, 0x1b, 0x71, 0xb5, 0x33, 0x13, 0x9e, 0xb8, 0xda, 0x39, 0xe9, 0xc9, 0x67, 0x70, 0xd1,
+	0x4a, 0x07, 0xe2, 0x11, 0xc9, 0xca, 0x46, 0x3a, 0x4e, 0x16, 0x0a, 0xe5, 0x6c, 0xc2, 0xa4, 0x0a,
+	0x9c, 0xc9, 0x92, 0x69, 0xbe, 0x5e, 0x72, 0x33, 0x74, 0x24, 0x87, 0x30, 0x9f, 0x8a, 0x8c, 0x89,
+	0x31, 0xee, 0x8c, 0x88, 0xd9, 0x34, 0x20, 0x15, 0xe1, 0xee, 0xc1, 0xb4, 0x59, 0xeb, 0x23, 0x6a,
+	0x7b, 0x24, 0xab, 0x90, 0xce, 0xa5, 0x0c, 0x8c, 0xde, 0x39, 0x58, 0xb0, 0x19, 0xb0, 0x73, 0x92,
+	0x65, 0x9d, 0xfb, 0x30, 0xa9, 0x2a, 0x44, 0x38, 0xfc, 0x64, 0x9d, 0xc9, 0x59, 0x4e, 0x82, 0xf5,
+	0xf6, 0x48, 0x66, 0x48, 0x70, 0x7b, 0xe4, 0x64, 0x64, 0x70, 0x7b, 0xe4, 0xa6, 0x55, 0xee, 0xc3,
+	0xa4, 0xaa, 0xc8, 0xa1, 0x31, 0xc9, 0xca, 0x1e, 0x1a, 0x93, 0x2e, 0xdc, 0x55, 0x60, 0xc6, 0x4e,
+	0x23, 0xe1, 0xd6, 0xca, 0xcc, 0x64, 0xe1, 0xd6, 0xca, 0xc9, 0x3b, 0x3d, 0x83, 0x8b, 0x56, 0x51,
+	0x07, 0xb7, 0x56, 0x56, 0x69, 0xc8, 0x71, 0xb2, 0x50, 0x69, 0x39, 0xe6, 0x16, 0xcd, 0xaa, 0x8f,
+	0x25, 0xe4, 0xd8, 0xd3, 0xb2, 0x07, 0xd3, 0x66, 0x0b, 0x12, 0xee, 0x90, 0x8c, 0x9e, 0x2d, 0xdc,
+	0x21, 0x99, 0x4d, 0x57, 0xdf, 0xd9, 0x5d, 0x5e, 0xd2, 0xa4, 0x2b, 0x29, 0x8e, 0x84, 0x61, 0xeb,
+	0xf9, 0x04, 0xda, 0xe5, 0x27, 0x9a, 0x93, 0xd0, 0xe5, 0x67, 0xb7, 0x3b, 0xa1, 0xcb, 0xcf, 0xeb,
+	0x67, 0xfa, 0x35, 0x2c, 0x65, 0xf6, 0x12, 0x91, 0xab, 0x92, 0x2d, 0xb7, 0x93, 0xc9, 0xa1, 0xfd,
+	0x48, 0x50, 0x7e, 0x1d, 0x4a, 0x79, 0x6d, 0x3d, 0xe4, 0x9a, 0xe4, 0xef, 0xd7, 0x7e, 0xe4, 0x5c,
+	0x1f, 0x40, 0x85, 0x8a, 0x7a, 0xd8, 0x14, 0x95, 0xd7, 0x87, 0x43, 0x3e, 0xd6, 0xd6, 0x0e, 0xe8,
+	0x0a, 0x72, 0x6e, 0x9d, 0x87, 0x14, 0xf5, 0xfe, 0x92, 0x77, 0xdd, 0xa5, 0x7a, 0x69, 0xc8, 0xba,
+	0x31, 0x39, 0x99, 0x7d, 0x3c, 0xce, 0xd5, 0x3e, 0x14, 0xd6, 0x5a, 0x9b, 0xcd, 0x31, 0x7a, 0xad,
+	0x33, 0x9a, 0x6e, 0xf4, 0x5a, 0x67, 0xf6, 0xd3, 0x78, 0x89, 0x66, 0x1d, 0xed, 0x65, 0x68, 0x9a,
+	0x2f, 0xe5, 0x6b, 0x3e, 0xec, 0x4b, 0xa3, 0xce, 0xce, 0x3c, 0xbe, 0x9b, 0x75, 0x53, 0x4c, 0x9f,
+	0x2b, 0x32, 0xa3, 0x7d, 0xa6, 0x5c, 0x20, 0xae, 0x7a, 0x7c, 0xdb, 0xad, 0x33, 0xb8, 0x27, 0xfb,
+	0xb5, 0xd5, 0xe4, 0xca, 0x7c, 0xa2, 0x0c, 0xd3, 0x5d, 0x30, 0xd2, 0x8d, 0xe4, 0x74, 0xc7, 0x38,
+	0x46, 0xda, 0xa7, 0x5c, 0x20, 0xcf, 0x54, 0x22, 0xc2, 0x6a, 0xc7, 0xc1, 0x85, 0xee, 0xd3, 0xa9,
+	0x93, 0x90, 0xf3, 0x05, 0xcc, 0x9a, 0xa9, 0x85, 0xdd, 0xae, 0x0c, 0x37, 0xb3, 0xd2, 0x1c, 0xd2,
+	0x95, 0x65, 0xe5, 0x22, 0xca, 0x05, 0xb2, 0x0d, 0x70, 0x1c, 0x79, 0x91, 0x1f, 0x46, 0x7e, 0x35,
+	0xdf, 0x15, 0xe1, 0x8b, 0xdd, 0xa0, 0x7c, 0x08, 0x53, 0xf1, 0x85, 0x80, 0x59, 0xf2, 0x5c, 0x46,
+	0xe1, 0x13, 0x52, 0xc9, 0xf4, 0x3d, 0x98, 0x4f, 0x95, 0xd1, 0x71, 0x2e, 0xf3, 0xca, 0xeb, 0x8e,
+	0x9d, 0xcf, 0xe4, 0x0b, 0x32, 0x97, 0x2c, 0x2e, 0xa3, 0x37, 0xcb, 0xa9, 0x39, 0x3b, 0x56, 0xf5,
+	0xa8, 0x5c, 0x20, 0x47, 0x3c, 0x47, 0x9c, 0x6e, 0x4d, 0xc2, 0x6d, 0xd2, 0xaf, 0x6d, 0xc9, 0xc9,
+	0xe8, 0xfa, 0x29, 0x17, 0xc8, 0x57, 0xbc, 0x73, 0x28, 0x55, 0x85, 0xc6, 0x25, 0xee, 0x53, 0xa0,
+	0x76, 0xe6, 0xad, 0x9e, 0x99, 0x98, 0xa4, 0x5c, 0x20, 0x07, 0x52, 0x9c, 0xdd, 0x38, 0x64, 0x89,
+	0xcb, 0xec, 0x29, 0x72, 0x52, 0x2d, 0x38, 0xe5, 0x02, 0xd9, 0x83, 0xd9, 0x44, 0xb7, 0x00, 0x31,
+	0x23, 0xb6, 0x0c, 0x93, 0x0c, 0x24, 0x2f, 0x25, 0xf0, 0x4d, 0x4c, 0xd2, 0x45, 0x72, 0x8c, 0x5c,
+	0x73, 0xab, 0xe7, 0x4e, 0xa2, 0xd8, 0x22, 0x8c, 0x49, 0xb4, 0x1a, 0x10, 0xd3, 0xc7, 0xe7, 0x18,
+	0x63, 0xd6, 0x35, 0xca, 0x05, 0x72, 0x08, 0x0e, 0x7f, 0xd3, 0xbe, 0xd6, 0x4e, 0xdc, 0x90, 0x97,
+	0xb7, 0x29, 0x97, 0x55, 0xfd, 0xc3, 0xe2, 0x2c, 0x17, 0x48, 0x93, 0x77, 0x2f, 0xe7, 0x74, 0x7e,
+	0x93, 0x1b, 0xea, 0xba, 0xed, 0xdb, 0x57, 0xee, 0x7c, 0x34, 0x90, 0x4e, 0x87, 0x4f, 0xaa, 0xbb,
+	0x1d, 0xc3, 0xa7, 0x64, 0x67, 0x3c, 0x86, 0x4f, 0xe9, 0x26, 0xf8, 0xff, 0x87, 0x31, 0xd1, 0x7c,
+	0x4f, 0x88, 0xa6, 0x50, 0x87, 0x7e, 0xc1, 0x82, 0xe9, 0xf7, 0x8e, 0x91, 0x3c, 0xc5, 0xf7, 0x4e,
+	0x3a, 0x0f, 0x8b, 0xef, 0x9d, 0xac, 0x3c, 0x6b, 0x0d, 0x56, 0x72, 0x92, 0x69, 0x44, 0x5c, 0xee,
+	0xfd, 0x33, 0x77, 0xce, 0xb5, 0xfe, 0x44, 0xfa, 0x59, 0xa7, 0xb1, 0xf8, 0xac, 0x4b, 0xe5, 0x21,
+	0xf1, 0x59, 0x97, 0x91, 0x72, 0x7c, 0x02, 0x53, 0x46, 0x02, 0x94, 0x24, 0xe9, 0x42, 0x7b, 0x98,
+	0x59, 0xb9, 0xd2, 0x3b, 0x30, 0x8e, 0x29, 0x2c, 0x7c, 0x19, 0xdb, 0x29, 0x32, 0x8c, 0xcc, 0x93,
+	0xd9, 0xb0, 0x7b, 0x30, 0x21, 0x33, 0x71, 0xc4, 0xa2, 0x50, 0x1a, 0x97, 0x12, 0x50, 0xc1, 0xb8,
+	0x7b, 0xfd, 0x17, 0x1f, 0x56, 0xdb, 0x35, 0xc6, 0x77, 0x25, 0xdf, 0xaa, 0xd5, 0x76, 0x63, 0xc3,
+	0x17, 0x7f, 0xc0, 0xda, 0x54, 0xff, 0xd4, 0x3a, 0x19, 0xe3, 0x3f, 0x6f, 0xff, 0x27, 0x00, 0x00,
+	0xff, 0xff, 0xe7, 0x42, 0xfa, 0xaa, 0xbd, 0x35, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -4480,19 +5367,19 @@ const _ = grpc.SupportPackageIsVersion4
 type TradingClient interface {
 	// Prepare a submit order request
 	PrepareSubmitOrder(ctx context.Context, in *SubmitOrderRequest, opts ...grpc.CallOption) (*PrepareSubmitOrderResponse, error)
-	// Cancel an Order
+	// Prepare a cancel order request
 	PrepareCancelOrder(ctx context.Context, in *CancelOrderRequest, opts ...grpc.CallOption) (*PrepareCancelOrderResponse, error)
-	// Amend an Order
+	// Prepare an amend order request
 	PrepareAmendOrder(ctx context.Context, in *AmendOrderRequest, opts ...grpc.CallOption) (*PrepareAmendOrderResponse, error)
-	// Request withdrawal
+	// Request a withdrawal
 	PrepareWithdraw(ctx context.Context, in *PrepareWithdrawRequest, opts ...grpc.CallOption) (*PrepareWithdrawResponse, error)
 	// Submit a signed transaction
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
-	// Prepare proposal that can be sent out to the chain (via SubmitTransaction)
+	// Prepare a governance proposal
 	PrepareProposal(ctx context.Context, in *PrepareProposalRequest, opts ...grpc.CallOption) (*PrepareProposalResponse, error)
-	// Prepare a vote to be put on the chain (via SubmitTransaction)
+	// Prepare a governance vote
 	PrepareVote(ctx context.Context, in *PrepareVoteRequest, opts ...grpc.CallOption) (*PrepareVoteResponse, error)
-	// chain events
+	// Propagate a chain event
 	PropagateChainEvent(ctx context.Context, in *PropagateChainEventRequest, opts ...grpc.CallOption) (*PropagateChainEventResponse, error)
 }
 
@@ -4580,19 +5467,19 @@ func (c *tradingClient) PropagateChainEvent(ctx context.Context, in *PropagateCh
 type TradingServer interface {
 	// Prepare a submit order request
 	PrepareSubmitOrder(context.Context, *SubmitOrderRequest) (*PrepareSubmitOrderResponse, error)
-	// Cancel an Order
+	// Prepare a cancel order request
 	PrepareCancelOrder(context.Context, *CancelOrderRequest) (*PrepareCancelOrderResponse, error)
-	// Amend an Order
+	// Prepare an amend order request
 	PrepareAmendOrder(context.Context, *AmendOrderRequest) (*PrepareAmendOrderResponse, error)
-	// Request withdrawal
+	// Request a withdrawal
 	PrepareWithdraw(context.Context, *PrepareWithdrawRequest) (*PrepareWithdrawResponse, error)
 	// Submit a signed transaction
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
-	// Prepare proposal that can be sent out to the chain (via SubmitTransaction)
+	// Prepare a governance proposal
 	PrepareProposal(context.Context, *PrepareProposalRequest) (*PrepareProposalResponse, error)
-	// Prepare a vote to be put on the chain (via SubmitTransaction)
+	// Prepare a governance vote
 	PrepareVote(context.Context, *PrepareVoteRequest) (*PrepareVoteResponse, error)
-	// chain events
+	// Propagate a chain event
 	PropagateChainEvent(context.Context, *PropagateChainEventRequest) (*PropagateChainEventResponse, error)
 }
 
@@ -4861,6 +5748,8 @@ type TradingDataClient interface {
 	ObservePartyVotes(ctx context.Context, in *ObservePartyVotesRequest, opts ...grpc.CallOption) (TradingData_ObservePartyVotesClient, error)
 	// Subscribe to a stream of proposal votes
 	ObserveProposalVotes(ctx context.Context, in *ObserveProposalVotesRequest, opts ...grpc.CallOption) (TradingData_ObserveProposalVotesClient, error)
+	// Subscribe to a stream of events from the core
+	ObserveEventBus(ctx context.Context, in *ObserveEventsRequest, opts ...grpc.CallOption) (TradingData_ObserveEventBusClient, error)
 	// Get Statistics
 	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error)
 	// Get Time
@@ -4883,12 +5772,25 @@ type TradingDataClient interface {
 	TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error)
 	// Subscribe to a stream of Transfer Responses
 	TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error)
-	// Get an aggregate of signature from all the node of the network
+	// Get an aggregate of signatures from all the nodes of the network.
 	GetNodeSignaturesAggregate(ctx context.Context, in *GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*GetNodeSignaturesAggregateResponse, error)
-	// Get an asset by its ID
+	// Get an asset by its identifier.
 	AssetByID(ctx context.Context, in *AssetByIDRequest, opts ...grpc.CallOption) (*AssetByIDResponse, error)
-	// Get the list of all assets in vega
+	// Get a list of all assets on Vega.
 	Assets(ctx context.Context, in *AssetsRequest, opts ...grpc.CallOption) (*AssetsResponse, error)
+	// Get an estimate for the fee to be paid for a given order
+	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	// Get the bundle approval for an ERC20 withdrawal
+	// these data are being used to bundle the call to the smart contract on the ethereum bridge
+	ERC20WithdrawalApproval(ctx context.Context, in *ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*ERC20WithdrawalApprovalResponse, error)
+	// Get a withdrawal by its ID
+	Withdrawal(ctx context.Context, in *WithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalResponse, error)
+	// Get withdrawals for a party
+	Withdrawals(ctx context.Context, in *WithdrawalsRequest, opts ...grpc.CallOption) (*WithdrawalsResponse, error)
+	// Get a deposit by its ID
+	Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
+	// Get withdrawals for a party
+	Deposits(ctx context.Context, in *DepositsRequest, opts ...grpc.CallOption) (*DepositsResponse, error)
 }
 
 type tradingDataClient struct {
@@ -5315,6 +6217,38 @@ func (x *tradingDataObserveProposalVotesClient) Recv() (*proto1.Vote, error) {
 	return m, nil
 }
 
+func (c *tradingDataClient) ObserveEventBus(ctx context.Context, in *ObserveEventsRequest, opts ...grpc.CallOption) (TradingData_ObserveEventBusClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[4], "/api.trading_data/ObserveEventBus", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataObserveEventBusClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingData_ObserveEventBusClient interface {
+	Recv() (*ObserveEventsResponse, error)
+	grpc.ClientStream
+}
+
+type tradingDataObserveEventBusClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataObserveEventBusClient) Recv() (*ObserveEventsResponse, error) {
+	m := new(ObserveEventsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *tradingDataClient) Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error) {
 	out := new(proto1.Statistics)
 	err := c.cc.Invoke(ctx, "/api.trading_data/Statistics", in, out, opts...)
@@ -5334,7 +6268,7 @@ func (c *tradingDataClient) GetVegaTime(ctx context.Context, in *empty.Empty, op
 }
 
 func (c *tradingDataClient) AccountsSubscribe(ctx context.Context, in *AccountsSubscribeRequest, opts ...grpc.CallOption) (TradingData_AccountsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[4], "/api.trading_data/AccountsSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[5], "/api.trading_data/AccountsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5366,7 +6300,7 @@ func (x *tradingDataAccountsSubscribeClient) Recv() (*proto1.Account, error) {
 }
 
 func (c *tradingDataClient) CandlesSubscribe(ctx context.Context, in *CandlesSubscribeRequest, opts ...grpc.CallOption) (TradingData_CandlesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[5], "/api.trading_data/CandlesSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[6], "/api.trading_data/CandlesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5398,7 +6332,7 @@ func (x *tradingDataCandlesSubscribeClient) Recv() (*proto1.Candle, error) {
 }
 
 func (c *tradingDataClient) MarginLevelsSubscribe(ctx context.Context, in *MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarginLevelsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[6], "/api.trading_data/MarginLevelsSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[7], "/api.trading_data/MarginLevelsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5430,7 +6364,7 @@ func (x *tradingDataMarginLevelsSubscribeClient) Recv() (*proto1.MarginLevels, e
 }
 
 func (c *tradingDataClient) MarketDepthSubscribe(ctx context.Context, in *MarketDepthSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketDepthSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[7], "/api.trading_data/MarketDepthSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[8], "/api.trading_data/MarketDepthSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5462,7 +6396,7 @@ func (x *tradingDataMarketDepthSubscribeClient) Recv() (*proto1.MarketDepth, err
 }
 
 func (c *tradingDataClient) MarketsDataSubscribe(ctx context.Context, in *MarketsDataSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketsDataSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[8], "/api.trading_data/MarketsDataSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[9], "/api.trading_data/MarketsDataSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5494,7 +6428,7 @@ func (x *tradingDataMarketsDataSubscribeClient) Recv() (*proto1.MarketData, erro
 }
 
 func (c *tradingDataClient) OrdersSubscribe(ctx context.Context, in *OrdersSubscribeRequest, opts ...grpc.CallOption) (TradingData_OrdersSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[9], "/api.trading_data/OrdersSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[10], "/api.trading_data/OrdersSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5526,7 +6460,7 @@ func (x *tradingDataOrdersSubscribeClient) Recv() (*OrdersStream, error) {
 }
 
 func (c *tradingDataClient) PositionsSubscribe(ctx context.Context, in *PositionsSubscribeRequest, opts ...grpc.CallOption) (TradingData_PositionsSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[10], "/api.trading_data/PositionsSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[11], "/api.trading_data/PositionsSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5558,7 +6492,7 @@ func (x *tradingDataPositionsSubscribeClient) Recv() (*proto1.Position, error) {
 }
 
 func (c *tradingDataClient) TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[11], "/api.trading_data/TradesSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[12], "/api.trading_data/TradesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5590,7 +6524,7 @@ func (x *tradingDataTradesSubscribeClient) Recv() (*TradesStream, error) {
 }
 
 func (c *tradingDataClient) TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[12], "/api.trading_data/TransferResponsesSubscribe", opts...)
+	stream, err := c.cc.NewStream(ctx, &_TradingData_serviceDesc.Streams[13], "/api.trading_data/TransferResponsesSubscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5642,6 +6576,60 @@ func (c *tradingDataClient) AssetByID(ctx context.Context, in *AssetByIDRequest,
 func (c *tradingDataClient) Assets(ctx context.Context, in *AssetsRequest, opts ...grpc.CallOption) (*AssetsResponse, error) {
 	out := new(AssetsResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/Assets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error) {
+	out := new(EstimateFeeResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/EstimateFee", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) ERC20WithdrawalApproval(ctx context.Context, in *ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*ERC20WithdrawalApprovalResponse, error) {
+	out := new(ERC20WithdrawalApprovalResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/ERC20WithdrawalApproval", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) Withdrawal(ctx context.Context, in *WithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalResponse, error) {
+	out := new(WithdrawalResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/Withdrawal", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) Withdrawals(ctx context.Context, in *WithdrawalsRequest, opts ...grpc.CallOption) (*WithdrawalsResponse, error) {
+	out := new(WithdrawalsResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/Withdrawals", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error) {
+	out := new(DepositResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/Deposit", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) Deposits(ctx context.Context, in *DepositsRequest, opts ...grpc.CallOption) (*DepositsResponse, error) {
+	out := new(DepositsResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/Deposits", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5722,6 +6710,8 @@ type TradingDataServer interface {
 	ObservePartyVotes(*ObservePartyVotesRequest, TradingData_ObservePartyVotesServer) error
 	// Subscribe to a stream of proposal votes
 	ObserveProposalVotes(*ObserveProposalVotesRequest, TradingData_ObserveProposalVotesServer) error
+	// Subscribe to a stream of events from the core
+	ObserveEventBus(*ObserveEventsRequest, TradingData_ObserveEventBusServer) error
 	// Get Statistics
 	Statistics(context.Context, *empty.Empty) (*proto1.Statistics, error)
 	// Get Time
@@ -5744,12 +6734,25 @@ type TradingDataServer interface {
 	TradesSubscribe(*TradesSubscribeRequest, TradingData_TradesSubscribeServer) error
 	// Subscribe to a stream of Transfer Responses
 	TransferResponsesSubscribe(*empty.Empty, TradingData_TransferResponsesSubscribeServer) error
-	// Get an aggregate of signature from all the node of the network
+	// Get an aggregate of signatures from all the nodes of the network.
 	GetNodeSignaturesAggregate(context.Context, *GetNodeSignaturesAggregateRequest) (*GetNodeSignaturesAggregateResponse, error)
-	// Get an asset by its ID
+	// Get an asset by its identifier.
 	AssetByID(context.Context, *AssetByIDRequest) (*AssetByIDResponse, error)
-	// Get the list of all assets in vega
+	// Get a list of all assets on Vega.
 	Assets(context.Context, *AssetsRequest) (*AssetsResponse, error)
+	// Get an estimate for the fee to be paid for a given order
+	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	// Get the bundle approval for an ERC20 withdrawal
+	// these data are being used to bundle the call to the smart contract on the ethereum bridge
+	ERC20WithdrawalApproval(context.Context, *ERC20WithdrawalApprovalRequest) (*ERC20WithdrawalApprovalResponse, error)
+	// Get a withdrawal by its ID
+	Withdrawal(context.Context, *WithdrawalRequest) (*WithdrawalResponse, error)
+	// Get withdrawals for a party
+	Withdrawals(context.Context, *WithdrawalsRequest) (*WithdrawalsResponse, error)
+	// Get a deposit by its ID
+	Deposit(context.Context, *DepositRequest) (*DepositResponse, error)
+	// Get withdrawals for a party
+	Deposits(context.Context, *DepositsRequest) (*DepositsResponse, error)
 }
 
 func RegisterTradingDataServer(s *grpc.Server, srv TradingDataServer) {
@@ -6416,6 +7419,27 @@ func (x *tradingDataObserveProposalVotesServer) Send(m *proto1.Vote) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _TradingData_ObserveEventBus_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveEventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServer).ObserveEventBus(m, &tradingDataObserveEventBusServer{stream})
+}
+
+type TradingData_ObserveEventBusServer interface {
+	Send(*ObserveEventsResponse) error
+	grpc.ServerStream
+}
+
+type tradingDataObserveEventBusServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataObserveEventBusServer) Send(m *ObserveEventsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _TradingData_Statistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(empty.Empty)
 	if err := dec(in); err != nil {
@@ -6695,6 +7719,114 @@ func _TradingData_Assets_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingData_EstimateFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimateFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).EstimateFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/EstimateFee",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).EstimateFee(ctx, req.(*EstimateFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_ERC20WithdrawalApproval_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ERC20WithdrawalApprovalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).ERC20WithdrawalApproval(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/ERC20WithdrawalApproval",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).ERC20WithdrawalApproval(ctx, req.(*ERC20WithdrawalApprovalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_Withdrawal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WithdrawalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).Withdrawal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/Withdrawal",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).Withdrawal(ctx, req.(*WithdrawalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_Withdrawals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WithdrawalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).Withdrawals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/Withdrawals",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).Withdrawals(ctx, req.(*WithdrawalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_Deposit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DepositRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).Deposit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/Deposit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).Deposit(ctx, req.(*DepositRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_Deposits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DepositsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).Deposits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/Deposits",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).Deposits(ctx, req.(*DepositsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _TradingData_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.trading_data",
 	HandlerType: (*TradingDataServer)(nil),
@@ -6847,6 +7979,30 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 			MethodName: "Assets",
 			Handler:    _TradingData_Assets_Handler,
 		},
+		{
+			MethodName: "EstimateFee",
+			Handler:    _TradingData_EstimateFee_Handler,
+		},
+		{
+			MethodName: "ERC20WithdrawalApproval",
+			Handler:    _TradingData_ERC20WithdrawalApproval_Handler,
+		},
+		{
+			MethodName: "Withdrawal",
+			Handler:    _TradingData_Withdrawal_Handler,
+		},
+		{
+			MethodName: "Withdrawals",
+			Handler:    _TradingData_Withdrawals_Handler,
+		},
+		{
+			MethodName: "Deposit",
+			Handler:    _TradingData_Deposit_Handler,
+		},
+		{
+			MethodName: "Deposits",
+			Handler:    _TradingData_Deposits_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -6867,6 +8023,11 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ObserveProposalVotes",
 			Handler:       _TradingData_ObserveProposalVotes_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObserveEventBus",
+			Handler:       _TradingData_ObserveEventBus_Handler,
 			ServerStreams: true,
 		},
 		{

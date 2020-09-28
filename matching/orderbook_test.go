@@ -1,6 +1,7 @@
 package matching_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -41,7 +43,9 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice)
+	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice,
+		types.MarketState_MARKET_STATE_CONTINUOUS)
+
 	tob.OrderBook.LogRemovedOrdersDebug = true
 	return &tob
 }
@@ -53,6 +57,300 @@ func TestOrderBook_GetClosePNL(t *testing.T) {
 	t.Run("Get Incomplete close-out-pnl (check error) - Sell", getClosePNLIncompleteSell)
 	t.Run("Get Best bid price and volume", testBestBidPriceAndVolume)
 	t.Run("Get Best offer price and volume", testBestOfferPriceAndVolume)
+}
+
+func TestOrderBook_CancelBulk(t *testing.T) {
+	t.Run("Cancel all order for a party", cancelAllOrderForAParty)
+	t.Run("Get all order for a party", getAllOrderForAParty)
+	t.Run("Party with no order cancel nothing", partyWithNoOrderCancelNothing)
+}
+
+func TestHash(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       10,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       30,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_SELL,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_SELL,
+			Price:       400,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+
+	for _, o := range orders {
+		_, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+
+	hash := book.Hash()
+	require.Equal(t,
+		"ff7190c637406cf6907a73f8eab20c0465e3ee0f471ca95f739aa5f4e4192a8e",
+		hex.EncodeToString(hash),
+		"It should match against the known hash",
+	)
+	// compute the hash 100 times for determinism verification
+	for i := 0; i < 100; i++ {
+		got := book.Hash()
+		require.Equal(t, hash, got)
+	}
+}
+
+func cancelAllOrderForAParty(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_BUY,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	confs, err := book.CancelAllOrders("A")
+	assert.NoError(t, err)
+	assert.Len(t, confs, 3)
+	expectedIDs := map[string]struct{}{
+		"1111111111111111111111": {},
+		"2222222222222222222222": {},
+		"4444444444444444444444": {},
+	}
+	for _, conf := range confs {
+		if _, ok := expectedIDs[conf.Order.Id]; ok {
+			delete(expectedIDs, conf.Order.Id)
+		} else {
+			t.Fatalf("unexpected order has been cancelled %v", conf.Order)
+		}
+	}
+}
+
+func getAllOrderForAParty(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_BUY,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	ordersLs := book.GetOrdersPerParty("A")
+	assert.Len(t, ordersLs, 3)
+	expectedIDs := map[string]struct{}{
+		"1111111111111111111111": {},
+		"2222222222222222222222": {},
+		"4444444444444444444444": {},
+	}
+	for _, o := range ordersLs {
+		if _, ok := expectedIDs[o.Id]; ok {
+			delete(expectedIDs, o.Id)
+		} else {
+			t.Fatalf("unexpected order has been cancelled %v", o)
+		}
+	}
+}
+
+func partyWithNoOrderCancelNothing(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       100,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_BUY,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       300,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+	for _, o := range orders {
+		confirm, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(confirm.Trades))
+	}
+	ordersLs := book.GetOrdersPerParty("X")
+	assert.Len(t, ordersLs, 0)
 }
 
 func testBestBidPriceAndVolume(t *testing.T) {
@@ -1752,11 +2050,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
+	iocOrderId := "1000000000000000000000" //Must be 22 characters
 	iocOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
-		Id:          "100001",
+		Id:          iocOrderId,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		PartyID:     "B",
@@ -1771,17 +2070,23 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, "100001", confirmation.Order.Id)
+	assert.Equal(t, iocOrderId, confirmation.Order.Id)
 	assert.Equal(t, 1, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	// Check to see if the order still exists (it should not)
-	nonorder, err := book.GetOrderByID("100001")
-	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, err)
-	assert.Equal(t, (*types.Order)(nil), nonorder)
+	nonorder, err := book.GetOrderByID(iocOrderId)
+	assert.Equal(t, matching.ErrOrderDoesNotExist, err)
+	assert.Nil(t, nonorder)
 }
 
 func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
+	order := getOrder(t, orderbook, market, id, side, price, partyid, size)
+	_, err := orderbook.SubmitOrder(order)
+	assert.Equal(t, err, nil)
+}
+
+func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
 	order := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
@@ -1795,13 +2100,223 @@ func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side ty
 		TimeInForce: types.Order_TIF_GTC,
 		CreatedAt:   10,
 	}
-	_, err := orderbook.SubmitOrder(order)
-	assert.Equal(t, err, nil)
+	return order
+}
+
+/*****************************************************************************/
+/*                             GFN/GFA TESTING                               */
+/*****************************************************************************/
+
+func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Enter a GFN market order with no expiration time
+	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	buyOrder.TimeInForce = types.Order_TIF_GFN
+	buyOrder.Type = types.Order_TYPE_MARKET
+	buyOrder.ExpiresAt = 0
+	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, buyOrderConf)
+
+	// Enter a GFN market order with no expiration time
+	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
+	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.Type = types.Order_TYPE_MARKET
+	sellOrder.ExpiresAt = 0
+	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, sellOrderConf)
+}
+
+func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Enter a GFN market order with an expiration time (which is invalid)
+	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	buyOrder.TimeInForce = types.Order_TIF_GFN
+	buyOrder.Type = types.Order_TYPE_MARKET
+	buyOrder.ExpiresAt = 100
+	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	assert.Error(t, err, types.ErrInvalidExpirationDatetime)
+	assert.Nil(t, buyOrderConf)
+
+	// Enter a GFN market order with an expiration time (which is invalid)
+	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
+	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.Type = types.Order_TYPE_MARKET
+	sellOrder.ExpiresAt = 100
+	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	assert.Error(t, err, types.ErrInvalidExpirationDatetime)
+	assert.Nil(t, sellOrderConf)
+}
+
+func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Normal limit buy order to match against
+	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, buyOrderConf)
+
+	// Enter a GFN market order with an expiration time (which is invalid)
+	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 10)
+	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.Type = types.Order_TYPE_LIMIT
+	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	assert.NoError(t, err)
+	assert.NotNil(t, sellOrderConf)
 }
 
 /*****************************************************************************/
 /*                             AUCTION TESTING                               */
 /*****************************************************************************/
+func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_AUCTION)
+
+	// Try to add an order of type GFN which should be rejected
+	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	order.TimeInForce = types.Order_TIF_GFN
+	orderConf, err := book.SubmitOrder(order)
+	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
+	assert.Nil(t, orderConf)
+}
+
+func TestOrderBook_ContinuousGFAAreRejected(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// We start in continuous mode
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
+
+	// Try to add an order of type GFA which should be rejected
+	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	order.TimeInForce = types.Order_TIF_GFA
+	orderConf, err := book.SubmitOrder(order)
+	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
+	assert.Nil(t, orderConf)
+}
+
+func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// We start in continuous mode
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
+
+	// Add a GFN order
+	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	order.TimeInForce = types.Order_TIF_GFN
+	orderConf, err := book.SubmitOrder(order)
+	assert.NoError(t, err)
+	assert.NotNil(t, orderConf)
+
+	// Switch to auction and makes sure the order is cancelled
+	orders, err := book.EnterAuction()
+	assert.NoError(t, err)
+	assert.Equal(t, len(orders), 1)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(1))
+}
+
+func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Flip straight to auction mode
+	_, err := book.EnterAuction()
+	assert.NoError(t, err)
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_AUCTION)
+
+	// Add a GFA order
+	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
+	order.TimeInForce = types.Order_TIF_GFA
+	orderConf, err := book.SubmitOrder(order)
+	assert.NoError(t, err)
+	assert.NotNil(t, orderConf)
+
+	// Switch to continuous mode and makes sure the order is cancelled
+	uncrossedOrders, cancels, err := book.LeaveAuction()
+	assert.NoError(t, err)
+	assert.Equal(t, len(uncrossedOrders), 0)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(1))
+	assert.Equal(t, len(cancels), 1)
+}
+
+func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// We start in continuous trading mode
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+
+	// Get indicative auction price and volume which should be zero as we are out of auction
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Switch to auction mode
+	book.EnterAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_AUCTION)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+
+	// Get indicative auction price and volume
+	price, volume, side = book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, volume, uint64(0))
+	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+
+	// Leave auction and uncross the book
+	uncrossedOrders, cancels, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+	assert.Equal(t, len(uncrossedOrders), 0)
+	assert.Equal(t, len(cancels), 0)
+}
+
 func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -1812,6 +2327,7 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 
 	// Switch to auction mode
 	book.EnterAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_AUCTION)
 
 	// No trades!
 
@@ -1822,10 +2338,11 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
+	assert.Equal(t, book.GetMarketState(), types.MarketState_MARKET_STATE_CONTINUOUS)
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 0)
-	assert.Equal(t, len(trades), 0)
+	assert.Equal(t, len(uncrossedOrders), 0)
+	assert.Equal(t, len(cancels), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
@@ -1851,10 +2368,13 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 0)
-	assert.Equal(t, len(trades), 0)
+	assert.Equal(t, len(uncrossedOrders), 0)
+	assert.Equal(t, len(cancels), 0)
+
+	// All of the orders should remain on the book
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(3))
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
@@ -1880,10 +2400,13 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 0)
-	assert.Equal(t, len(trades), 0)
+	assert.Equal(t, len(uncrossedOrders), 0)
+	assert.Equal(t, len(cancels), 0)
+
+	// All of the orders should remain on the book
+	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(3))
 }
 
 func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
@@ -1916,10 +2439,10 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 2)
-	assert.Equal(t, len(trades), 2)
+	assert.Equal(t, len(uncrossedOrders), 1)
+	assert.Equal(t, len(cancels), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
@@ -1953,10 +2476,10 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 1)
-	assert.Equal(t, len(trades), 1)
+	assert.Equal(t, len(uncrossedOrders), 1)
+	assert.Equal(t, len(cancels), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
@@ -1987,10 +2510,10 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 5)
-	assert.Equal(t, len(trades), 5)
+	assert.Equal(t, len(uncrossedOrders), 3)
+	assert.Equal(t, len(cancels), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
@@ -2021,10 +2544,10 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 0)
-	assert.Equal(t, len(trades), 0)
+	assert.Equal(t, len(uncrossedOrders), 0)
+	assert.Equal(t, len(cancels), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
@@ -2069,10 +2592,10 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 4)
-	assert.Equal(t, len(trades), 4)
+	assert.Equal(t, len(uncrossedOrders), 4)
+	assert.Equal(t, len(cancels), 0)
 }
 
 // Set up an auction so that the sell side is processed when we uncross
@@ -2106,10 +2629,10 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_SELL)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 4)
-	assert.Equal(t, len(trades), 4)
+	assert.Equal(t, len(uncrossedOrders), 4)
+	assert.Equal(t, len(cancels), 0)
 }
 
 // Check that multiple orders per price level work
@@ -2147,10 +2670,10 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_SELL)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 7)
-	assert.Equal(t, len(trades), 7)
+	assert.Equal(t, len(uncrossedOrders), 4)
+	assert.Equal(t, len(cancels), 0)
 }
 
 func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
@@ -2187,10 +2710,50 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	impactedOrders, trades, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction()
 	assert.Nil(t, err)
-	assert.Equal(t, len(impactedOrders), 10)
-	assert.Equal(t, len(trades), 10)
+	assert.Equal(t, len(uncrossedOrders), 8)
+	assert.Equal(t, len(cancels), 0)
+}
+
+func TestOrderBook_UncrossTest1(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	bo1 := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 5)
+	bo1.TimeInForce = types.Order_TIF_GFA
+	book.SubmitOrder(bo1)
+
+	so1 := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 5)
+	so1.TimeInForce = types.Order_TIF_GFA
+	book.SubmitOrder(so1)
+
+	bo2 := getOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 100, "party01", 5)
+	bo2.TimeInForce = types.Order_TIF_GFA
+	book.SubmitOrder(bo2)
+
+	so2 := getOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 101, "party02", 5)
+	so2.TimeInForce = types.Order_TIF_GFA
+	book.SubmitOrder(so2)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(5))
+	assert.Equal(t, side, types.Side_SIDE_SELL)
+
+	// Leave auction and uncross the book
+	uncrossedOrders, cancels, err := book.LeaveAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(uncrossedOrders), 1)
+	assert.Equal(t, len(cancels), 2)
 }
 
 // this is a test for issue 2060 to ensure we process FOK orders properly
@@ -2256,4 +2819,71 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 	assert.Equal(t, 50, int(netorder.Price))
 	assert.Equal(t, 0, int(netorder.Remaining))
 	_ = cnfm
+}
+
+func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+
+	orders, err := book.EnterAuction()
+
+	assert.Equal(t, 0, len(orders))
+	assert.Nil(t, err)
+	order1Id := "1000000000000000000000" //Must be 22 characters
+	order2Id := "1000000000000000000001" //Must be 22 characters
+
+	order1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		MarketID:    market,
+		Id:          order1Id,
+		Side:        types.Side_SIDE_SELL,
+		Price:       100,
+		PartyID:     "A",
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_TIF_GTC,
+		CreatedAt:   10,
+	}
+
+	trades, getErr := book.GetTrades(order1)
+	assert.NoError(t, getErr)
+	confirmation, err := book.SubmitOrder(order1)
+
+	assert.Equal(t, nil, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, order1Id, confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
+	assert.Equal(t, len(trades), len(confirmation.Trades))
+
+	order2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		MarketID:    market,
+		Id:          order2Id,
+		Side:        types.Side_SIDE_BUY,
+		Price:       100,
+		PartyID:     "B",
+		Size:        20,
+		Remaining:   20,
+		TimeInForce: types.Order_TIF_GTC,
+		CreatedAt:   10,
+	}
+	trades, getErr = book.GetTrades(order2)
+	assert.NoError(t, getErr)
+	confirmation, err = book.SubmitOrder(order2)
+
+	assert.Equal(t, nil, err)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, order2Id, confirmation.Order.Id)
+	assert.Equal(t, 0, len(confirmation.Trades))
+	assert.Equal(t, len(trades), len(confirmation.Trades))
+
+	// Confirm both orders still on the book
+	order, err := book.GetOrderByID(order1Id)
+	assert.NotNil(t, order)
+	assert.Nil(t, err)
+	order, err = book.GetOrderByID(order2Id)
+	assert.NotNil(t, order)
+	assert.Nil(t, err)
 }

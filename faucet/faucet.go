@@ -32,6 +32,9 @@ const (
 var (
 	// ErrNotABuiltinAsset is raised when a party try to top up for a non builtin asset
 	ErrNotABuiltinAsset = errors.New("asset is not a builtin asset")
+
+	// ErrAssetNotFound is raised when an asset id is not found
+	ErrAssetNotFound = errors.New("asset was not found")
 )
 
 type Faucet struct {
@@ -117,6 +120,10 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 
 	if err := f.getAllowedAmount(r.Context(), req.Amount, req.Asset); err != nil {
+		if errors.Is(err, ErrAssetNotFound) {
+			writeError(w, newError(err.Error()), http.StatusBadRequest)
+			return
+		}
 		writeError(w, newError(err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -192,6 +199,9 @@ func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset stri
 	}
 	resp, err := f.cltdata.AssetByID(ctx, req)
 	if err != nil {
+		if resp == nil {
+			return ErrAssetNotFound
+		}
 		return err
 	}
 	source := resp.Asset.Source.GetBuiltinAsset()

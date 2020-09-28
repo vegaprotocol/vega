@@ -42,16 +42,16 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      # Build normal executable
-      - ./script/build.sh -a build -t linux/amd64
-      # Build executable for sytstem-tests, with custom Governance parameters. 8760h is 24*365 hours.
-      - env
-          VEGA_GOVERNANCE_MIN_CLOSE=5s
-          VEGA_GOVERNANCE_MAX_CLOSE=8760h
-          VEGA_GOVERNANCE_MIN_ENACT=5s
-          VEGA_GOVERNANCE_MAX_ENACT=8760h
-          VEGA_GOVERNANCE_MIN_PARTICIPATION_STAKE=1
-          ./script/build.sh -a build -t linux/amd64 -s "-systemtests"
+      # Get a list of files that changed in this PR, in order to limit CI to only test things that
+      # changed in this PR.
+      - git diff --name-only "$$DRONE_COMMIT_BEFORE...$$DRONE_COMMIT_AFTER" >git_diff.txt
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$$' git_diff.txt)" -gt 0 ; then
+          echo "Building executable" ;
+          ./script/build.sh -a build -t linux/amd64 || exit 1;
+        else
+          echo "No Go files changed. Skipping building of binary." ;
+          rm -f cmd/vega/vega-* ;
+        fi
     depends_on:
       - fetch
     when:
@@ -63,8 +63,11 @@ steps:
     pull: always
     environment: {}
     commands:
-      # Make sure the mdspell command matches the one in Makefile.
-      - mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md'
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -c '\.md$$' git_diff.txt)" -gt 0 ; then
+          mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md' || exit 1 ;
+        else
+          echo "No md files changed. Skipping mdspell." ;
+        fi
     depends_on:
       - build-PR
     when:
@@ -85,16 +88,26 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      - make retest
-      # More small checks. Run all, instead of exiting after first failure.
       - failed=""
-      - for target in codeowners_check gqlgen_check print_check proto_check race vet ; do
-          echo "$$COL_CYAN$$target$$COL_RESET" ; make "$$target" || failed="$$failed $$target" ; done
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
+          make retest || exit 1 ;
+          for target in gqlgen_check print_check proto_check race vet ;
+          do
+            echo "$$COL_CYAN$$target$$COL_RESET" ;
+            make "$$target" || failed="$$failed $$target" ;
+          done ;
+        else
+          echo "No Go files changed. Skipping go tests" ;
+        fi
+      - for target in codeowners_check ; do
+          echo "$$COL_CYAN$$target$$COL_RESET" ;
+          make "$$target" || failed="$$failed $$target" ;
+        done
       - /usr/local/bin/check-rest-endpoints.py
           --bindings gateway/rest/grpc-rest-bindings.yml
           --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
-      - /usr/local/bin/multilint || failed="$$failed multilint"
-      - make staticcheck || true  # Ignore failures until they're all fixed.
+      - difflint "$$DRONE_COMMIT_BEFORE" "$$DRONE_COMMIT_AFTER" || failed="$$failed multilint"
+      # - make staticcheck  # No point running this until warnings are fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
       - build-PR
@@ -111,45 +124,12 @@ steps:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
     commands:
-      # https://github.com/vegaprotocol/system-tests/blob/master/systemtests.sh
-      - codefile="$$(mktemp)" ; logfile="$$(mktemp)"
-      # Run system-tests, using previously built executable with custom Governance parameters.
-      - (
-          /usr/local/bin/systemtests.sh -x "$$PWD/cmd/vega/vega-linux-amd64-systemtests" -v all ;
-          echo "$$?" >"$$codefile"
-        ) 2>&1 | tee "$$logfile"
-      - test "$$(cat "$$codefile")" = 0 && exit 0
-      # system-tests failed
-      - msgprefix="system-tests failed for PR#$$DRONE_PULL_REQUEST (\`$$DRONE_SOURCE_BRANCH\` -> \`$$DRONE_TARGET_BRANCH\`)"
-      # Failure is fatal only while attempting to merge to master.
-      - if test "$$DRONE_TARGET_BRANCH" = master ; then
-          exitcode=1 ;
-          msg="$$msgprefix *pipeline failed* :cry:" ;
+      # https://github.com/vegaprotocol/system-tests/blob/master/ci.sh
+      - if test -x cmd/vega/vega-linux-amd64 ; then
+          /usr/local/bin/ci.sh ;
         else
-          exitcode=0 ;
-          msg="$$msgprefix (pipeline continues)" ;
+          echo "No vega binary. Skipping system-tests." ;
         fi
-      # Notify Slack
-      - msg="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$msg")"
-      - 'curl -s -XPOST
-          -d "{\"channel\": \"#tradingcore-notify\", \"icon_emoji\": \":robot:\", \"text\": $$msg, \"username\": \"nagbot\" }"
-          "$$SLACK_HOOK_URL"'
-      # Make Github PR comment
-      - commentfile="$$(mktemp)"
-      - (
-          echo "system-tests failed." ;
-          echo ;
-          echo "\`\`\`" ;
-          grep --text -A1000 "=== Test summary ===" "$$logfile" || echo "No test summary found" ;
-          echo "\`\`\`"
-        ) >"$$commentfile"
-      - body="$$(python3 -c "import json,sys;print(json.dumps(sys.argv[1]))" "$$(cat "$$commentfile")")"
-      - 'curl -s -XPOST
-          -H "Accept: application/vnd.github.v3+json"
-          -H "Authorization: token $$GITHUB_API_TOKEN"
-          -d "{\"body\": $$body}"
-          "https://api.github.com/repos/vegaprotocol/vega/issues/$$DRONE_PULL_REQUEST/comments"'
-      - exit "$$exitcode"
     depends_on:
       - test-PR
     when:
@@ -196,6 +176,8 @@ steps:
     volumes:
       - name: gopkg
         path: /go/pkg
+      - name: mutex
+        path: /mutex
     environment:
       DEVNET_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: DEVNET_DEPLOY_SSH_PRIVATE_KEY
@@ -223,15 +205,20 @@ steps:
       # - DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       # - DEVNET_DEPLOY_SSH_PRIVATE_KEY
       # - SLACK_HOOK_URL
-      - cp -a cmd/vega/vega-linux-amd64 cmd/vega/vega
-      - /usr/local/bin/deploy-trading-core.sh devnet vega
-      # Set up wallets, keypairs and free money.
-      - /usr/local/bin/init-wallets-tokenbalances.py
+      - (
+          if ! flock -n 9 ; then
+            echo "Another devnet deployment is in progress." ;
+            exit 1 ;
+          fi ;
+          cp -a cmd/vega/vega-linux-amd64 cmd/vega/vega &&
+          /usr/local/bin/deploy-trading-core.sh devnet vega &&
+          /usr/local/bin/init-wallets-tokenbalances.py
             --faucetserver "$$DEVNET_FAUCET_SERVER"
             --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
             --walletserver "$$DEVNET_WALLET_SERVER"
             --passphrase "$$DEVNET_WALLET_PASSPHRASE"
             --veganode "$$DEVNET_VEGA_GRPCNODE"
+       ) 9>/mutex/devnet_deploy
     depends_on:
       - build-branch
     when:
@@ -249,17 +236,25 @@ steps:
       DOCKER_HOST: unix:///run/docker.sock
       DOCKER_CONFIG_JSON:
         from_secret: dockerconfig
-    # shell: /bin/bash
     commands:
-      - find cmd -name "*-linux-amd64" -print | while read -r binary ; do cp -a "$$binary" "$${binary//-linux-amd64/}" ; done
-      - make docker
+      - mkdir -p docker/bin
+      - find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+          cp -a "cmd/$$app/$$app-linux-amd64" "docker/bin/$$app" || exit 1 ;
+        done
+      - tmptag="$$(openssl rand -hex 10)"
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" docker/
+      - rm -rf docker/bin
       - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
-      - tag="$$(bash -c 'source script/build.sh && set_version && echo "$$version"')"
-      - docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag"
-      - if test -n "$$DRONE_BRANCH" ; then
-          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_BRANCH" ;
-          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_BRANCH" ;
+      - if test -n "$$DRONE_TAG" ; then
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
         fi
+      - if test -n "$$DRONE_BRANCH" ; then
+          sanitised_branch="$$(echo -n "$$DRONE_BRANCH" | tr -c 'A-Za-z0-9._' '-')" ;
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+        fi
+      - docker rmi "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag"
     depends_on:
       - build-branch
     when:
@@ -292,7 +287,7 @@ steps:
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
       - ./script/build.sh -a build -T
     depends_on:
-      - build-branch
+      - build_docker_image
     when:
       event: tag
 
@@ -335,6 +330,9 @@ volumes:
   - name: gopkg
     host:
       path: /var/lib/drone/volumes/vega/gopkg
+  - name: mutex
+    host:
+      path: /var/lib/drone/volumes/vega/mutex
 
 image_pull_secrets:
   - dockerconfig

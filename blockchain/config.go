@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"code.vegaprotocol.io/vega/blockchain/noop"
-	"code.vegaprotocol.io/vega/blockchain/tm"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -20,7 +19,7 @@ type Config struct {
 	LogOrderCancelDebug bool
 	ChainProvider       string
 
-	Tendermint tm.Config
+	Tendermint TendermintConfig
 	Noop       noop.Config
 }
 
@@ -32,7 +31,29 @@ func NewDefaultConfig() Config {
 		LogOrderSubmitDebug: true,
 		LogTimeDebug:        true,
 		ChainProvider:       "tendermint",
-		Tendermint:          tm.NewDefaultConfig(),
+		Tendermint:          NewDefaultTendermintConfig(),
 		Noop:                noop.NewDefaultConfig(),
+	}
+}
+
+type TendermintConfig struct {
+	Level          encoding.LogLevel
+	LogTimeDebug   bool
+	ClientAddr     string
+	ClientEndpoint string
+	ServerPort     int
+	ServerAddr     string
+}
+
+// NewDefaultTendermintConfig creates an instance of the package specific configuration, given a
+// pointer to a logger instance to be used for logging within the package.
+func NewDefaultTendermintConfig() TendermintConfig {
+	return TendermintConfig{
+		Level:          encoding.LogLevel{Level: logging.InfoLevel},
+		ServerPort:     26658,
+		ServerAddr:     "localhost",
+		ClientAddr:     "tcp://0.0.0.0:26657",
+		ClientEndpoint: "/websocket",
+		LogTimeDebug:   true,
 	}
 }

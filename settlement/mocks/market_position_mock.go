@@ -113,3 +113,31 @@ func (mr *MockMarketPositionMockRecorder) Size() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Size", reflect.TypeOf((*MockMarketPosition)(nil).Size))
 }
+
+// VWBuy mocks base method
+func (m *MockMarketPosition) VWBuy() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VWBuy")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// VWBuy indicates an expected call of VWBuy
+func (mr *MockMarketPositionMockRecorder) VWBuy() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VWBuy", reflect.TypeOf((*MockMarketPosition)(nil).VWBuy))
+}
+
+// VWSell mocks base method
+func (m *MockMarketPosition) VWSell() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VWSell")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// VWSell indicates an expected call of VWSell
+func (mr *MockMarketPositionMockRecorder) VWSell() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VWSell", reflect.TypeOf((*MockMarketPosition)(nil).VWSell))
+}

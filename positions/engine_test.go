@@ -1,6 +1,7 @@
 package positions_test
 
 import (
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpdatePosition(t *testing.T) {
@@ -285,3 +287,73 @@ func (m mp) Price() uint64 {
 }
 
 func (m mp) ClearPotentials() {}
+
+func (m mp) VWBuy() uint64 {
+	return 0
+}
+
+func (m mp) VWSell() uint64 {
+	return 0
+}
+
+func TestHash(t *testing.T) {
+	e := getTestEngine(t)
+	orders := []proto.Order{
+		{
+			PartyID:   "test_trader_1",
+			Side:      proto.Side_SIDE_BUY,
+			Size:      uint64(100),
+			Remaining: uint64(100),
+		},
+		{
+			PartyID:   "test_trader_2",
+			Side:      proto.Side_SIDE_BUY,
+			Size:      uint64(200),
+			Remaining: uint64(200),
+		},
+		{
+			PartyID:   "test_trader_3",
+			Side:      proto.Side_SIDE_BUY,
+			Size:      uint64(300),
+			Remaining: uint64(300),
+		},
+		{
+			PartyID:   "test_trader_1",
+			Side:      proto.Side_SIDE_SELL,
+			Size:      uint64(1000),
+			Remaining: uint64(1000),
+		},
+	}
+
+	for _, order := range orders {
+		_, err := e.RegisterOrder(&order)
+		require.NoError(t, err)
+	}
+
+	trade := proto.Trade{
+		Type:      proto.Trade_TYPE_DEFAULT,
+		Id:        "trade_id",
+		MarketID:  "market_id",
+		Price:     10000,
+		Size:      uint64(15),
+		Buyer:     "test_trader_3",
+		Seller:    "test_trader_1",
+		BuyOrder:  "buy_order_id",
+		SellOrder: "sell_order_id",
+		Timestamp: time.Now().Unix(),
+	}
+	e.Update(&trade)
+
+	hash := e.Hash()
+	require.Equal(t,
+		"7cbb54f5ecf8be4378b6380361d3f8f425c6c0ec2c36728eda03a162a3d0d676",
+		hex.EncodeToString(hash),
+		"It should match against the known hash",
+	)
+
+	// compute the hash 100 times for determinism verification
+	for i := 0; i < 100; i++ {
+		got := e.Hash()
+		require.Equal(t, hash, got)
+	}
+}

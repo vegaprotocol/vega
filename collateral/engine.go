@@ -2,10 +2,13 @@ package collateral
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -60,6 +63,8 @@ var (
 	ErrInsufficientFundsToPayFees = errors.New("insufficient funds to pay fees")
 	// ErrInvalidTransferTypeForFeeRequest an invalid transfer type was send to build a fee transfer request
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
+	// ErrNotEnoughFundsToWithdraa a party requested to withdraw more than on its general account
+	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
 )
 
 // Broker send events
@@ -107,6 +112,23 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 // in order to be called when the chain time is updated (basically EndBlock)
 func (e *Engine) OnChainTimeUpdate(t time.Time) {
 	e.currentTime = t.UnixNano()
+}
+
+func (e *Engine) Hash() []byte {
+	keys := make([]string, 0, len(e.accs))
+	for k := range e.accs {
+		keys = append(keys, k)
+	}
+
+	output := make([]byte, 0, len(keys)*8)
+	sort.Strings(keys)
+	i := [8]byte{}
+	for _, k := range keys {
+		binary.BigEndian.PutUint64(i[0:], e.accs[k].Balance)
+		output = append(output, i[0:]...)
+	}
+
+	return crypto.Hash(output)
 }
 
 // ReloadConf updates the internal configuration of the collateral engine
@@ -494,7 +516,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("market-id", lsevt.market))
 
 			brokerEvts = append(brokerEvts,
-				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount)))
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount), e.currentTime))
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -549,6 +571,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		expectCollected: expectCollected,
 		collected:       int64(settle.Balance),
 		requests:        []request{},
+		ts:              e.currentTime,
 	}
 
 	if distr.LossSocializationEnabled() {
@@ -1241,6 +1264,33 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	return generalID, nil
 }
 
+// CreatePartyLockWithdrawAccount create an account to lock funds to be withrawn by a party
+func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyID, asset string) (*types.Account, error) {
+	if !e.AssetExists(asset) {
+		return nil, ErrInvalidAssetID
+	}
+
+	id := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW)
+	var (
+		acc *types.Account
+		ok  bool
+	)
+	if acc, ok = e.accs[id]; !ok {
+		acc = &types.Account{
+			Id:       id,
+			Asset:    asset,
+			MarketID: noMarket,
+			Balance:  0,
+			Owner:    partyID,
+			Type:     types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
+		}
+		e.accs[id] = acc
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	}
+
+	return acc, nil
+}
+
 // RemoveDistressed will remove all distressed trader in the event positions
 // for a given market and asset
 func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
@@ -1284,6 +1334,39 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			return nil, err
 		}
 
+	}
+	return &resp, nil
+}
+
+func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.TransferResponse, error) {
+	acc, err := e.GetAccountByID(e.accountID(market, party, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		return nil, err
+	}
+	resp := types.TransferResponse{
+		Transfers: []*types.LedgerEntry{},
+	}
+
+	if acc.Balance > 0 {
+		genAcc, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+		if err != nil {
+			return nil, err
+		}
+
+		resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
+			FromAccount: acc.Id,
+			ToAccount:   genAcc.Id,
+			Amount:      acc.Balance,
+			Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_HIGH.String(),
+			Type:        types.TransferType_TRANSFER_TYPE_MARGIN_HIGH.String(),
+			Timestamp:   e.currentTime,
+		})
+		if err := e.IncrementBalance(ctx, genAcc.Id, acc.Balance); err != nil {
+			return nil, err
+		}
+		if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
+			return nil, err
+		}
 	}
 	return &resp, nil
 }
@@ -1363,24 +1446,45 @@ func (e *Engine) HasGeneralAccount(party, asset string) bool {
 	return err == nil
 }
 
+// LockFundsForWithdraw will lock funds in a separate account to be withdrawn later on by the party
+func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error {
+	if !e.AssetExists(asset) {
+		return ErrInvalidAssetID
+	}
+	genacc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	if err != nil {
+		return ErrAccountDoesNotExist
+	}
+	if amount > genacc.Balance {
+		return ErrNotEnoughFundsToWithdraw
+	}
+	lockacc, err := e.GetOrCreatePartyLockWithdrawAccount(ctx, partyID, asset)
+	if err != nil {
+		return ErrAccountDoesNotExist
+	}
+	if err := e.IncrementBalance(ctx, lockacc.Id, amount); err != nil {
+		return err
+	}
+	if err := e.DecrementBalance(ctx, genacc.Id, amount); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Withdraw will remove the specified amount from the trader
 // general account
 func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uint64) error {
 	if !e.AssetExists(asset) {
 		return ErrInvalidAssetID
 	}
-	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW))
 	if err != nil {
 		return ErrAccountDoesNotExist
 	}
 
 	// check we have more money than required to withdraw
 	if uint64(acc.Balance) < amount {
-		// if we have less balance than required to withdraw, just set it to 0
-		// and return an error
-		if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
-			return err
-		}
 		return fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
 	}
 

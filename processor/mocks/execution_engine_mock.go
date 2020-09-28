@@ -50,10 +50,10 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1 interface{}) *g
 }
 
 // CancelOrder mocks base method
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) (*proto.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) ([]*proto.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
-	ret0, _ := ret[0].(*proto.OrderCancellationConfirmation)
+	ret0, _ := ret[0].([]*proto.OrderCancellationConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,18 +64,18 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1)
 }
 
-// Generate mocks base method
-func (m *MockExecutionEngine) Generate() error {
+// Hash mocks base method
+func (m *MockExecutionEngine) Hash() []byte {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Generate")
-	ret0, _ := ret[0].(error)
+	ret := m.ctrl.Call(m, "Hash")
+	ret0, _ := ret[0].([]byte)
 	return ret0
 }
 
-// Generate indicates an expected call of Generate
-func (mr *MockExecutionEngineMockRecorder) Generate() *gomock.Call {
+// Hash indicates an expected call of Hash
+func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockExecutionEngine)(nil).Generate))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockExecutionEngine)(nil).Hash))
 }
 
 // SubmitMarket mocks base method

@@ -15,6 +15,11 @@ type AssetSource interface {
 	IsAssetSource()
 }
 
+// union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind
+type Event interface {
+	IsEvent()
+}
+
 type Oracle interface {
 	IsOracle()
 }
@@ -35,6 +40,10 @@ type TradingMode interface {
 	IsTradingMode()
 }
 
+type WithdrawalDetails interface {
+	IsWithdrawalDetails()
+}
+
 // Represents an asset in vega
 type Asset struct {
 	// The id of the asset
@@ -53,6 +62,23 @@ type Asset struct {
 	InfrastructureFeeAccount *proto.Account `json:"infrastructureFeeAccount"`
 }
 
+func (Asset) IsEvent() {}
+
+type AuctionEvent struct {
+	// the market ID
+	MarketID string `json:"marketID"`
+	// event fired because of auction end
+	Leave bool `json:"leave"`
+	// event related to opening auction
+	OpeningAuction bool `json:"openingAuction"`
+	// start time of auction
+	AuctionStart string `json:"auctionStart"`
+	// optional end time of auction
+	AuctionEnd string `json:"auctionEnd"`
+}
+
+func (AuctionEvent) IsEvent() {}
+
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
 	// The id of the asset
@@ -65,6 +91,8 @@ type BuiltinAsset struct {
 	TotalSupply string `json:"totalSupply"`
 	// The precision of the asset
 	Decimals int `json:"decimals"`
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
+	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
 }
 
 func (BuiltinAsset) IsAssetSource() {}
@@ -79,6 +107,17 @@ type BuiltinAssetInput struct {
 	TotalSupply string `json:"totalSupply"`
 	// The precision of the asset
 	Decimals int `json:"decimals"`
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
+	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
+}
+
+type BusEvent struct {
+	// the id for this event
+	EventID string `json:"eventID"`
+	// the type of event we're dealing with
+	Type BusEventType `json:"type"`
+	// the payload - the wrapped event
+	Event Event `json:"event"`
 }
 
 // A mode where Vega try to execute order as soon as they are received
@@ -125,6 +164,35 @@ func (Erc20) IsAssetSource() {}
 type ERC20Input struct {
 	// The address of the erc20 contract
 	ContractAddress string `json:"contractAddress"`
+}
+
+// All the data related to the approval of a withdrawal from the network
+type Erc20WithdrawalApproval struct {
+	// The source asset in the ethereum network
+	AssetSource string `json:"assetSource"`
+	// The amount to be withdrawan
+	Amount string `json:"amount"`
+	// The expiry of the approval (RFC3339Nano)
+	Expiry string `json:"expiry"`
+	// The nonce to be used in the request
+	Nonce string `json:"nonce"`
+	// Signature aggregate from the nodes, in the following format:
+	// 0x + sig1 + sig2 + ... + sigN
+	Signatures string `json:"signatures"`
+}
+
+// Specific details for an erc20 withdrawal
+type Erc20WithdrawalDetails struct {
+	// The ethereum address of the receiver of the asset funds
+	ReceiverAddress string `json:"receiverAddress"`
+}
+
+func (Erc20WithdrawalDetails) IsWithdrawalDetails() {}
+
+// ERC20 specific details to start a withdrawal
+type Erc20WithdrawalDetailsInput struct {
+	// The ethereum address to which the withdrawn funds will be send to
+	ReceiverAddress string `json:"receiverAddress"`
 }
 
 // An Ethereum oracle
@@ -230,6 +298,21 @@ type InstrumentMetadata struct {
 	Tags []string `json:"tags"`
 }
 
+type LedgerEntry struct {
+	// account from which the asset was taken
+	FromAccount string `json:"fromAccount"`
+	// account to which the balance was transferred
+	ToAccount string `json:"toAccount"`
+	// the amount transferred
+	Amount int `json:"amount"`
+	// The transfer reference
+	Reference string `json:"reference"`
+	// Type of ledger entry
+	Type string `json:"type"`
+	// The time at which the transfer was made
+	Timestamp string `json:"timestamp"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
@@ -269,6 +352,17 @@ type LogNormalRiskModelInput struct {
 	// Params for the log normal risk model
 	Params *LogNormalModelParamsInput `json:"params"`
 }
+
+type LossSocialization struct {
+	// the market ID where loss socialization happened
+	MarketID string `json:"marketID"`
+	// the party that was part of the loss socialization
+	PartyID string `json:"partyID"`
+	// the amount lost
+	Amount int `json:"amount"`
+}
+
+func (LossSocialization) IsEvent() {}
 
 type MarginCalculator struct {
 	// The scaling factors that will be used for margin calculation
@@ -315,6 +409,26 @@ type Market struct {
 	// marketData for the given market
 	Data *proto.MarketData `json:"data"`
 }
+
+func (Market) IsEvent() {}
+
+type MarketEvent struct {
+	// the market ID
+	MarketID string `json:"marketID"`
+	// the message - market events are used for logging
+	Payload string `json:"payload"`
+}
+
+func (MarketEvent) IsEvent() {}
+
+type MarketTick struct {
+	// the market ID
+	MarketID string `json:"marketID"`
+	// the block time
+	Time string `json:"time"`
+}
+
+func (MarketTick) IsEvent() {}
 
 // A new asset proposal change
 type NewAsset struct {
@@ -365,13 +479,34 @@ type NewMarketInput struct {
 	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
 }
 
+// An estimate of the fee to be paid by the order
+type OrderFeeEstimate struct {
+	// The estimated fee if the order was to trade
+	Fee *TradeFee `json:"fee"`
+	// The total estimated amount of fee if the order was to trade
+	TotalFeeAmount string `json:"totalFeeAmount"`
+}
+
+type PositionResolution struct {
+	// the market ID where position resolution happened
+	MarketID string `json:"marketID"`
+	// number of distressed traders on market
+	Distressed int `json:"distressed"`
+	// number of traders closed out
+	Closed int `json:"closed"`
+	// the mark price at which traders were distressed/closed out
+	MarkPrice int `json:"markPrice"`
+}
+
+func (PositionResolution) IsEvent() {}
+
 type PreparedAmendOrder struct {
-	// blob: the raw transaction to sign & submit
+	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
 }
 
 type PreparedCancelOrder struct {
-	// blob: the raw transaction to sign & submit
+	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
 }
 
@@ -383,7 +518,7 @@ type PreparedProposal struct {
 }
 
 type PreparedSubmitOrder struct {
-	// blob: the raw transaction to sign & submit
+	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
 }
 
@@ -392,6 +527,11 @@ type PreparedVote struct {
 	Blob string `json:"blob"`
 	// The vote serialised in the blob field
 	Vote *ProposalVote `json:"vote"`
+}
+
+type PreparedWithdrawal struct {
+	// the raw transaction to sign & submit
+	Blob string `json:"blob"`
 }
 
 type ProposalTerms struct {
@@ -433,7 +573,7 @@ type ProposalVote struct {
 	// Cast vote
 	Vote *Vote `json:"vote"`
 	// Proposal casting the vote on
-	ProposalID string `json:"proposalID"`
+	ProposalID string `json:"proposalId"`
 }
 
 type RiskParametersInput struct {
@@ -451,6 +591,32 @@ type ScalingFactors struct {
 	// The scaling factor that determines the overflow margin level
 	CollateralRelease float64 `json:"collateralRelease"`
 }
+
+type SettleDistressed struct {
+	// the market in which a position was closed out
+	MarketID string `json:"marketID"`
+	// the party who closed out
+	PartyID string `json:"partyID"`
+	// the margin taken from distressed trader
+	Margin int `json:"margin"`
+	// the price at which position was closed out
+	Price int `json:"price"`
+}
+
+func (SettleDistressed) IsEvent() {}
+
+type SettlePosition struct {
+	// the market in which a position was settled
+	MarketID string `json:"marketID"`
+	// the party who settled a position
+	PartyID string `json:"partyID"`
+	// the settle price
+	Price int `json:"price"`
+	// the trades that were settled to close the overall position
+	TradeSettlements []*TradeSettlement `json:"tradeSettlements"`
+}
+
+func (SettlePosition) IsEvent() {}
 
 // A signature to be bundled with a transaction
 type SignatureInput struct {
@@ -485,6 +651,13 @@ type SimpleRiskModelParamsInput struct {
 	FactorShort float64 `json:"factorShort"`
 }
 
+type TimeUpdate struct {
+	// timestamp - new block time
+	Timestamp string `json:"timestamp"`
+}
+
+func (TimeUpdate) IsEvent() {}
+
 // A tradable instrument is a combination of an instrument and a risk model
 type TradableInstrument struct {
 	// An instance of or reference to a fully specified instrument.
@@ -505,9 +678,37 @@ type TradeFee struct {
 	LiquidityFee string `json:"liquidityFee"`
 }
 
+type TradeSettlement struct {
+	// the size of the trade
+	Size int `json:"size"`
+	// the price of the trade
+	Price int `json:"price"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }
+
+type TransferBalance struct {
+	// Account involved in transfer
+	Account *proto.Account `json:"account"`
+	// The new balance of the account
+	Balance int `json:"balance"`
+}
+
+type TransferResponse struct {
+	// the ledger entries and balances resulting from a transfer request
+	Transfers []*LedgerEntry `json:"transfers"`
+	// the balances of accounts involved in the transfer
+	Balances []*TransferBalance `json:"balances"`
+}
+
+type TransferResponses struct {
+	// a group of transfer responses - events from core
+	Responses []*TransferResponse `json:"responses"`
+}
+
+func (TransferResponses) IsEvent() {}
 
 // Incomplete change definition for governance proposal terms
 // TODO: complete the type
@@ -592,6 +793,34 @@ type Vote struct {
 	Datetime string `json:"datetime"`
 }
 
+func (Vote) IsEvent() {}
+
+// The details of a withdrawal processed by vega
+type Withdrawal struct {
+	// The Vega internal id of the withdrawal
+	ID string `json:"id"`
+	// The PartyID initiating the witndrawal
+	Party *proto.Party `json:"party"`
+	// The amount to be withdrawn
+	Amount string `json:"amount"`
+	// The asset to be withdrawn
+	Asset *Asset `json:"asset"`
+	// The current status of the withdrawal
+	Status WithdrawalStatus `json:"status"`
+	// A reference the foreign chain can use to refere to when processing the withdrawal
+	Ref string `json:"ref"`
+	// The time until when the withdrawal will be valid (RFC3339Nano)
+	Expiry string `json:"expiry"`
+	// Time at which the withdrawal was created (RFC3339Nano)
+	CreatedTimestamp string `json:"createdTimestamp"`
+	// Time at which the withdrawal was finalized (RFC3339Nano)
+	WithdrawnTimestamp *string `json:"withdrawnTimestamp"`
+	// Hash of the transaction on the foreign chain
+	TxHash *string `json:"txHash"`
+	// Foreign chain specific details about the withdrawal
+	Details WithdrawalDetails `json:"details"`
+}
+
 // The various account types we have (used by collateral)
 type AccountType string
 
@@ -608,6 +837,8 @@ const (
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
 	// Liquidity fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
+	// LockWithdraw - and account use for party in the process of withdrawing funds
+	AccountTypeLockWithdraw AccountType = "LockWithdraw"
 )
 
 var AllAccountType = []AccountType{
@@ -617,11 +848,12 @@ var AllAccountType = []AccountType{
 	AccountTypeGeneral,
 	AccountTypeFeeInfrastructure,
 	AccountTypeFeeLiquidity,
+	AccountTypeLockWithdraw,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw:
 		return true
 	}
 	return false
@@ -645,6 +877,153 @@ func (e *AccountType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e AccountType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type BusEventType string
+
+const (
+	// all events
+	BusEventTypeAll BusEventType = "All"
+	// event type indicating TimeUpdate
+	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
+	// transfer response event
+	BusEventTypeTransferResponses BusEventType = "TransferResponses"
+	// position resolution event
+	BusEventTypePositionResolution BusEventType = "PositionResolution"
+	// order event
+	BusEventTypeOrder BusEventType = "Order"
+	// account event
+	BusEventTypeAccount BusEventType = "Account"
+	// party event
+	BusEventTypeParty BusEventType = "Party"
+	// trade event
+	BusEventTypeTrade BusEventType = "Trade"
+	// margin levels event
+	BusEventTypeMarginLevels BusEventType = "MarginLevels"
+	// proposal event
+	BusEventTypeProposal BusEventType = "Proposal"
+	// vote event
+	BusEventTypeVote BusEventType = "Vote"
+	// market data event
+	BusEventTypeMarketData BusEventType = "MarketData"
+	// node signature event
+	BusEventTypeNodeSignature BusEventType = "NodeSignature"
+	// loss socialization event
+	BusEventTypeLossSocialization BusEventType = "LossSocialization"
+	// settle position event
+	BusEventTypeSettlePosition BusEventType = "SettlePosition"
+	// settle distressed event
+	BusEventTypeSettleDistressed BusEventType = "SettleDistressed"
+	// market created event
+	BusEventTypeMarketCreated BusEventType = "MarketCreated"
+	// asset event
+	BusEventTypeAsset BusEventType = "Asset"
+	// market tick event
+	BusEventTypeMarketTick BusEventType = "MarketTick"
+	// auction event
+	BusEventTypeAuction BusEventType = "Auction"
+	// constant for market events - mainly used for logging
+	BusEventTypeMarket BusEventType = "Market"
+)
+
+var AllBusEventType = []BusEventType{
+	BusEventTypeAll,
+	BusEventTypeTimeUpdate,
+	BusEventTypeTransferResponses,
+	BusEventTypePositionResolution,
+	BusEventTypeOrder,
+	BusEventTypeAccount,
+	BusEventTypeParty,
+	BusEventTypeTrade,
+	BusEventTypeMarginLevels,
+	BusEventTypeProposal,
+	BusEventTypeVote,
+	BusEventTypeMarketData,
+	BusEventTypeNodeSignature,
+	BusEventTypeLossSocialization,
+	BusEventTypeSettlePosition,
+	BusEventTypeSettleDistressed,
+	BusEventTypeMarketCreated,
+	BusEventTypeAsset,
+	BusEventTypeMarketTick,
+	BusEventTypeAuction,
+	BusEventTypeMarket,
+}
+
+func (e BusEventType) IsValid() bool {
+	switch e {
+	case BusEventTypeAll, BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeMarket:
+		return true
+	}
+	return false
+}
+
+func (e BusEventType) String() string {
+	return string(e)
+}
+
+func (e *BusEventType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BusEventType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BusEventType", str)
+	}
+	return nil
+}
+
+func (e BusEventType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The status of a deposit
+type DepositStatus string
+
+const (
+	// The deposit is open and being processed by the network
+	DepositStatusOpen DepositStatus = "Open"
+	// The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
+	DepositStatusCancelled DepositStatus = "Cancelled"
+	// The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	DepositStatusFinalized DepositStatus = "Finalized"
+)
+
+var AllDepositStatus = []DepositStatus{
+	DepositStatusOpen,
+	DepositStatusCancelled,
+	DepositStatusFinalized,
+}
+
+func (e DepositStatus) IsValid() bool {
+	switch e {
+	case DepositStatusOpen, DepositStatusCancelled, DepositStatusFinalized:
+		return true
+	}
+	return false
+}
+
+func (e DepositStatus) String() string {
+	return string(e)
+}
+
+func (e *DepositStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DepositStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DepositStatus", str)
+	}
+	return nil
+}
+
+func (e DepositStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -838,6 +1217,14 @@ const (
 	OrderRejectionReasonSelfTrading OrderRejectionReason = "SelfTrading"
 	// Insufficient funds to pay fees
 	OrderRejectionReasonInsufficientFundsToPayFees OrderRejectionReason = "InsufficientFundsToPayFees"
+	// Invalid Time In Force
+	OrderRejectionReasonInvalidTimeInForce OrderRejectionReason = "InvalidTimeInForce"
+	// Invalid Market Type
+	OrderRejectionReasonInvalidMarketType OrderRejectionReason = "InvalidMarketType"
+	// Good for normal order received during an auction
+	OrderRejectionReasonGFAOrderDuringAuction OrderRejectionReason = "GFAOrderDuringAuction"
+	// Good for auction order received during continuous trading
+	OrderRejectionReasonGFNOrderDuringContinuousTrading OrderRejectionReason = "GFNOrderDuringContinuousTrading"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -862,11 +1249,15 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonInvalidType,
 	OrderRejectionReasonSelfTrading,
 	OrderRejectionReasonInsufficientFundsToPayFees,
+	OrderRejectionReasonInvalidTimeInForce,
+	OrderRejectionReasonInvalidMarketType,
+	OrderRejectionReasonGFAOrderDuringAuction,
+	OrderRejectionReasonGFNOrderDuringContinuousTrading,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading:
 		return true
 	}
 	return false
@@ -1076,7 +1467,7 @@ const (
 	// The proposal has no product specified
 	ProposalRejectionReasonNoProduct ProposalRejectionReason = "NoProduct"
 	// The specified product is not supported
-	ProposalRejectionReasonUnuspportedProduct ProposalRejectionReason = "UnuspportedProduct"
+	ProposalRejectionReasonUnsupportedProduct ProposalRejectionReason = "UnsupportedProduct"
 	// Invalid future maturity timestamp (expect RFC3339)
 	ProposalRejectionReasonInvalidFutureMaturityTimestamp ProposalRejectionReason = "InvalidFutureMaturityTimestamp"
 	// The product maturity is already in the past
@@ -1091,6 +1482,8 @@ const (
 	ProposalRejectionReasonMissingBuiltinAssetField ProposalRejectionReason = "MissingBuiltinAssetField"
 	// The ERC20 contract address is missing from an ERC20 asset proposal
 	ProposalRejectionReasonMissingERC20ContractAddress ProposalRejectionReason = "MissingERC20ContractAddress"
+	// The specified asset for the market proposal is invalid
+	ProposalRejectionReasonInvalidAsset ProposalRejectionReason = "InvalidAsset"
 	// proposal terms timestamps are not compatible (Validation < Closing < Enactment)
 	ProposalRejectionReasonIncompatibleTimestamps ProposalRejectionReason = "IncompatibleTimestamps"
 )
@@ -1103,7 +1496,7 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInsufficientTokens,
 	ProposalRejectionReasonInvalidInstrumentSecurity,
 	ProposalRejectionReasonNoProduct,
-	ProposalRejectionReasonUnuspportedProduct,
+	ProposalRejectionReasonUnsupportedProduct,
 	ProposalRejectionReasonInvalidFutureMaturityTimestamp,
 	ProposalRejectionReasonProductMaturityIsPassed,
 	ProposalRejectionReasonNoTradingMode,
@@ -1111,12 +1504,13 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonNodeValidationFailed,
 	ProposalRejectionReasonMissingBuiltinAssetField,
 	ProposalRejectionReasonMissingERC20ContractAddress,
+	ProposalRejectionReasonInvalidAsset,
 	ProposalRejectionReasonIncompatibleTimestamps,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnuspportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonIncompatibleTimestamps:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps:
 		return true
 	}
 	return false
@@ -1337,5 +1731,52 @@ func (e *VoteValue) UnmarshalGQL(v interface{}) error {
 }
 
 func (e VoteValue) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The status of a withdrawal
+type WithdrawalStatus string
+
+const (
+	// The withdrawal is open and being processed by the network
+	WithdrawalStatusOpen WithdrawalStatus = "Open"
+	// The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
+	WithdrawalStatusCancelled WithdrawalStatus = "Cancelled"
+	// The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	WithdrawalStatusFinalized WithdrawalStatus = "Finalized"
+)
+
+var AllWithdrawalStatus = []WithdrawalStatus{
+	WithdrawalStatusOpen,
+	WithdrawalStatusCancelled,
+	WithdrawalStatusFinalized,
+}
+
+func (e WithdrawalStatus) IsValid() bool {
+	switch e {
+	case WithdrawalStatusOpen, WithdrawalStatusCancelled, WithdrawalStatusFinalized:
+		return true
+	}
+	return false
+}
+
+func (e WithdrawalStatus) String() string {
+	return string(e)
+}
+
+func (e *WithdrawalStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WithdrawalStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WithdrawalStatus", str)
+	}
+	return nil
+}
+
+func (e WithdrawalStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

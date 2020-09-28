@@ -1,14 +1,18 @@
 package logging
 
 import (
-	"bytes"
-	"fmt"
+	"encoding/hex"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"go.uber.org/zap"
 )
+
+func Hash(h []byte) zap.Field {
+	hs := hex.EncodeToString(h)
+	return zap.String("hash", hs)
+}
 
 // Binary constructs a field that carries an opaque binary blob.
 //
@@ -166,23 +170,7 @@ func Account(a types.Account) zap.Field {
 
 // OrderAmendment constructs a single string field to contain all the object information
 func OrderAmendment(oa *types.OrderAmendment) zap.Field {
-	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("order-id:%s ", oa.GetOrderID()))
-	buffer.WriteString(fmt.Sprintf("party-id:%s ", oa.GetPartyID()))
-	buffer.WriteString(fmt.Sprintf("market-id:%s ", oa.GetMarketID()))
-	if oa.Price == nil {
-		buffer.WriteString(fmt.Sprintf("price:nil "))
-	} else {
-		buffer.WriteString(fmt.Sprintf("price:%d ", oa.GetPrice().GetValue()))
-	}
-	buffer.WriteString(fmt.Sprintf("sizeDelta:%d ", oa.GetSizeDelta()))
-	buffer.WriteString(fmt.Sprintf("tif:%d ", oa.GetTimeInForce()))
-	if oa.ExpiresAt == nil {
-		buffer.WriteString(fmt.Sprintf("expires-at:nil "))
-	} else {
-		buffer.WriteString(fmt.Sprintf("expires-at:%d ", oa.GetExpiresAt().GetValue()))
-	}
-	return String("OrderAmend", buffer.String())
+	return zap.String("order-amendment", oa.String())
 }
 
 // Reflect constructs a field by running reflection over all the

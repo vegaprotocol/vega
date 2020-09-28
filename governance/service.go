@@ -408,8 +408,8 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	}
 
 	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
-	if terms.EnactmentTimestamp < terms.ClosingTimestamp || (terms.ValidationTimestamp > 0 && terms.ValidationTimestamp > terms.ClosingTimestamp) {
-		return ErrInvalidProposalTerms
+	if terms.EnactmentTimestamp < terms.ClosingTimestamp || (terms.ValidationTimestamp > 0 && terms.ValidationTimestamp >= terms.ClosingTimestamp) {
+		return ErrIncompatibleTimestamps
 	}
 
 	return nil

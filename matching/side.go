@@ -1,12 +1,15 @@
 package matching
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
 )
 
@@ -26,19 +29,44 @@ type OrderBookSide struct {
 	parkedOrders []*types.Order
 }
 
+func (s *OrderBookSide) Hash() []byte {
+	output := make([]byte, 0, len(s.levels)*16)
+	var i [16]byte
+	for _, l := range s.levels {
+		binary.BigEndian.PutUint64(i[0:], l.price)
+		binary.BigEndian.PutUint64(i[8:], l.volume)
+		output = append(output, i[0:]...)
+	}
+	return crypto.Hash(output)
+}
+
 // When we enter an auction we have to park all pegged orders
-// and cancel all orders that are not good for auction
+// and cancel all orders that are GFN
 func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
 	ordersToCancel := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
-			// Find orders to cancel
-			if order.TimeInForce == types.Order_TIF_GFN {
-				ordersToCancel = append(ordersToCancel, order)
-			}
-
+			// Place holder for when pegged orders are added
 			if order.Id == "PeggedOrder" {
 				s.parkedOrders = append(s.parkedOrders, order)
+			}
+		}
+	}
+	return ordersToCancel, nil
+}
+
+// When we leave an auction we need to remove any orders marked as GFA
+func (s *OrderBookSide) getOrdersToCancel(newState types.MarketState) ([]*types.Order, error) {
+	ordersToCancel := make([]*types.Order, 0)
+	for _, pricelevel := range s.levels {
+		for _, order := range pricelevel.orders {
+			// Find orders to cancel
+			if (order.TimeInForce == types.Order_TIF_GFA &&
+				newState == types.MarketState_MARKET_STATE_CONTINUOUS) ||
+				(order.TimeInForce == types.Order_TIF_GFN &&
+					newState == types.MarketState_MARKET_STATE_AUCTION) {
+				// Save order to send back to client
+				ordersToCancel = append(ordersToCancel, order)
 			}
 		}
 	}
@@ -136,8 +164,8 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	var totalVolume uint64
 
 	if s.side == types.Side_SIDE_BUY {
-		for index := len(s.levels) - 1; index >= 0; index-- {
-			pricelevel := s.levels[index]
+		for i := len(s.levels) - 1; i >= 0; i-- {
+			pricelevel := s.levels[i]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price >= price && totalVolume+order.Remaining <= volume {
@@ -154,7 +182,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 				}
 			}
 			// Erase this price level which will be at the end of the slice
-			s.levels[index] = nil
+			s.levels[i] = nil
 			s.levels = s.levels[:len(s.levels)-1]
 
 			// Check if we have done enough
@@ -163,8 +191,8 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 			}
 		}
 	} else {
-		for len(s.levels) > 0 {
-			pricelevel := s.levels[0]
+		for i := len(s.levels) - 1; i >= 0; i-- {
+			pricelevel := s.levels[i]
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price <= price && totalVolume+order.Remaining <= volume {
@@ -179,9 +207,9 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 					return nil, ErrInvalidVolume
 				}
 			}
-			// Erase this price level which will be the start of the slice
-			s.levels[0] = nil
-			s.levels = s.levels[1:len(s.levels)]
+			// Erase this price level which will be the end of the slice
+			s.levels[i] = nil
+			s.levels = s.levels[:len(s.levels)-1]
 
 			// Check if we have done enough
 			if totalVolume == volume {
@@ -546,4 +574,12 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 
 func (s *OrderBookSide) getLevels() []*PriceLevel {
 	return s.levels
+}
+
+func (s *OrderBookSide) getOrderCount() int64 {
+	var orderCount int64
+	for _, level := range s.levels {
+		orderCount = orderCount + int64(len(level.orders))
+	}
+	return orderCount
 }

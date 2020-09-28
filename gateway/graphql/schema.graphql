@@ -40,11 +40,11 @@ type Mutation {
   """
   prepareOrderCancel(
     "ID of the order to cancel"
-    id: ID!
+    id: ID
     "ID of the party placing the order"
     partyId: String!
     "ID of the market where to find the order"
-    marketId: String!
+    marketId: String
   ): PreparedCancelOrder!
 
   """
@@ -95,6 +95,25 @@ type Mutation {
   ): PreparedVote!
 
   """
+  Prepare a withdrawal so it can be signed and submitted.
+  Returns a pending withdrawSubmission with a transaction blob for signing.
+  """
+  prepareWithdrawal(
+    "The party which wants to withdraw funds"
+    partyID: String!
+    "The amount to be withdrawn"
+    amount: String!
+    "The asset from which we want to withdraw funds"
+    asset: String!
+
+    """
+    ERC20 specific details to process the withdrawal
+    nullable as not required by all kind of withdrawals
+    """
+    erc20Details: Erc20WithdrawalDetailsInput
+  ): PreparedWithdrawal!
+
+  """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
   """
@@ -105,6 +124,12 @@ type Mutation {
     sig: SignatureInput!
   ): TransactionSubmitted!
 
+}
+
+"ERC20 specific details to start a withdrawal"
+input Erc20WithdrawalDetailsInput {
+  "The ethereum address to which the withdrawn funds will be send to"
+  receiverAddress: String!
 }
 
 "A signature to be bundled with a transaction"
@@ -190,10 +215,20 @@ type Subscription {
   "Subscribe to votes, either by proposal id or pary id"
   votes(
     "Optional proposal id which votes are to be streamed"
-    proposalID: String
+    proposalId: String
     "Optional party id whose votes are to be streamed"
     partyID: String
   ): ProposalVote!
+
+  "Subscribe to event data from the event bus"
+  busEvents(
+    "the types to subscribe to has to be an array"
+    types: [BusEventType!]!
+    "optional filter by market ID"
+    marketID: String
+    "optional filter by party ID"
+    partyID: String
+  ): [BusEvent!]
 }
 
 "Margins for a given a trader"
@@ -245,20 +280,31 @@ type MarketData {
   auctionEnd: Int
   "time in seconds until the start of the next auction (0 if no new auction scheduled)"
   auctionStart: Int
+  "indicative price if the auction ended now, 0 if not in auction mode"
+  indicativePrice: String!
+  "indicative volume if the auction ended now, 0 if not in auction mode"
+  indicativeVolume: String!
+  "what state the market is in (auction, continuous etc)"
+  marketState: MarketState!
+}
+
+type PreparedWithdrawal {
+  "the raw transaction to sign & submit"
+  blob: String!
 }
 
 type PreparedSubmitOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
 type PreparedCancelOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
 type PreparedAmendOrder {
-  "blob: the raw transaction to sign & submit"
+  "the raw transaction to sign & submit"
   blob: String!
 }
 
@@ -376,6 +422,44 @@ type Query {
 
   "The list of all assets in use in the vega network"
   assets: [Asset!]
+
+  "return an estiamation of fee it the order was to trade"
+  estimateFeeForOrder(
+    "ID of the market to place the order"
+    marketId: String!
+    "ID of the party placing the order"
+    partyId: String!
+    "Price of the asset"
+    price: String
+    "Size of the order"
+    size: String!
+    "Side of the order (Buy or Sell)"
+    side: Side!
+    "TimeInForce of the order"
+    timeInForce: OrderTimeInForce!
+    "exiration of the the order"
+    expiration: String
+    "type of the order"
+    type: OrderType!
+  ): OrderFeeEstimate!
+
+  "find a withdrawal using its id"
+  withdrawal(
+    "id of the withdrawal"
+    id: String!
+  ): Withdrawal
+
+  "find a erc20 withdrawal approval using it a withdrawal id"
+  erc20WithdrawalApproval(
+    "id of the withdrawal"
+    withdrawalId: String!
+  ): Erc20WithdrawalApproval
+
+  "find a deposit using its id"
+  deposit(
+    "id of the Deposit"
+    id: String!
+  ): Deposit
 }
 
 "Represents an asset in vega"
@@ -427,6 +511,9 @@ type BuiltinAsset {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 "Represents a signature for the approval of a resource from a validator"
@@ -801,9 +888,6 @@ type PriceLevel {
 
     "The number of orders at this price level (uint64)"
     numberOfOrders: String!
-
-    "The cumulative total volume to this price level (uint64)"
-    cumulativeVolume: String!
 }
 
 "Candle stick representation of trading"
@@ -884,6 +968,12 @@ type Party {
   ): [Proposal]
 
   votes: [ProposalVote]
+
+  "The list of all withdrawals initiated by the party"
+  withdrawals: [Withdrawal!]
+
+  "The list of all deposits for a party by the party"
+  deposits: [Deposit!]
 }
 
 """
@@ -911,6 +1001,9 @@ type Position {
 
   "margins of the party for the given position"
   margins: [MarginLevels!]
+
+  "last time the position was updated (RFC3339Nano)"
+  updatedAt: String!
 }
 
 "An order in Vega, if active it will be on the OrderBook for the market"
@@ -966,6 +1059,15 @@ type Order {
 
   "UpdatedAt is the last time the order was altered"
   updatedAt: String!
+}
+
+"An estimate of the fee to be paid by the order"
+type OrderFeeEstimate {
+  "The estimated fee if the order was to trade"
+  fee: TradeFee!
+
+  "The total estimated amount of fee if the order was to trade"
+  totalFeeAmount: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -1055,6 +1157,97 @@ type Account {
   market: Market
 }
 
+"All the data related to the approval of a withdrawal from the network"
+type Erc20WithdrawalApproval {
+  "The source asset in the ethereum network"
+  assetSource: String!
+  "The amount to be withdrawan"
+  amount: String!
+  "The expiry of the approval (RFC3339Nano)"
+  expiry: String!
+  "The nonce to be used in the request"
+  nonce: String!
+  """
+  Signature aggregate from the nodes, in the following format:
+  0x + sig1 + sig2 + ... + sigN
+  """
+  signatures: String!
+}
+
+"The details of a withdrawal processed by vega"
+type Withdrawal {
+  "The Vega internal id of the withdrawal"
+  id: String!
+  "The PartyID initiating the witndrawal"
+  party: Party!
+  "The amount to be withdrawn"
+  amount: String!
+  "The asset to be withdrawn"
+  asset: Asset!
+  "The current status of the withdrawal"
+  status: WithdrawalStatus!
+  "A reference the foreign chain can use to refere to when processing the withdrawal"
+  ref: String!
+  "The time until when the withdrawal will be valid (RFC3339Nano)"
+  expiry: String!
+  "Time at which the withdrawal was created (RFC3339Nano)"
+  createdTimestamp: String!
+  "Time at which the withdrawal was finalized (RFC3339Nano)"
+  withdrawnTimestamp: String
+  "Hash of the transaction on the foreign chain"
+  txHash: String
+  "Foreign chain specific details about the withdrawal"
+  details: WithdrawalDetails
+}
+
+union WithdrawalDetails = Erc20WithdrawalDetails
+
+"Specific details for an erc20 withdrawal"
+type Erc20WithdrawalDetails {
+  "The ethereum address of the receiver of the asset funds"
+  receiverAddress: String!
+}
+
+"The status of a withdrawal"
+enum WithdrawalStatus {
+  "The withdrawal is open and being processed by the network"
+  Open
+  "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  Cancelled
+  "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  Finalized
+}
+
+"The details of a deposit processed by vega"
+type Deposit {
+  "The Vega internal id of the deposit"
+  id: String!
+  "The PartyID initiating the deposit"
+  party: Party!
+  "The amount to be withdrawn"
+  amount: String!
+  "The asset to be withdrawn"
+  asset: Asset!
+  "The current status of the deposit"
+  status: DepositStatus!
+  "Time at which the deposit was created (RFC3339Nano)"
+  createdTimestamp: String!
+  "Time at which the deposit was finalized (RFC3339Nano)"
+  creditedTimestamp: String
+  "Hash of the transaction on the foreign chain"
+  txHash: String
+}
+
+"The status of a deposit"
+enum DepositStatus {
+  "The deposit is open and being processed by the network"
+  Open
+  "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
+  Cancelled
+  "The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  Finalized
+}
+
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
 
@@ -1125,7 +1318,7 @@ enum ProposalRejectionReason {
   "The proposal has no product specified"
   NoProduct
   "The specified product is not supported"
-  UnuspportedProduct
+  UnsupportedProduct
   "Invalid future maturity timestamp (expect RFC3339)"
   InvalidFutureMaturityTimestamp
   "The product maturity is already in the past"
@@ -1140,6 +1333,8 @@ enum ProposalRejectionReason {
   MissingBuiltinAssetField
   "The ERC20 contract address is missing from an ERC20 asset proposal"
   MissingERC20ContractAddress
+  "The specified asset for the market proposal is invalid"
+  InvalidAsset
   "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
   IncompatibleTimestamps
 }
@@ -1209,6 +1404,18 @@ enum OrderRejectionReason {
 
   "Insufficient funds to pay fees"
   InsufficientFundsToPayFees
+
+  "Invalid Time In Force"
+  InvalidTimeInForce
+
+  "Invalid Market Type"
+  InvalidMarketType
+
+  "Good for normal order received during an auction"
+  GFAOrderDuringAuction
+
+  "Good for auction order received during continuous trading"
+  GFNOrderDuringContinuousTrading
 }
 
 enum OrderType {
@@ -1278,6 +1485,8 @@ enum AccountType {
   FeeInfrastructure
   "Liquidity fee account - the account where all infrastructure fees are collected"
   FeeLiquidity
+  "LockWithdraw - and account use for party in the process of withdrawing funds"
+  LockWithdraw
 }
 
 input SimpleRiskModelParamsInput {
@@ -1604,6 +1813,9 @@ input BuiltinAssetInput {
 
   "The precision of the asset"
   decimals: Int!
+
+  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
+  maxFaucetAmountMint: String!
 }
 
 """
@@ -1683,7 +1895,7 @@ type ProposalVote {
   vote: Vote!
 
   "Proposal casting the vote on"
-  proposalID: ID!
+  proposalId: ID!
 }
 
 type PreparedVote {
@@ -1691,4 +1903,177 @@ type PreparedVote {
   blob: String!
   "The vote serialised in the blob field"
   vote: ProposalVote!
+}
+
+type TimeUpdate {
+  "timestamp - new block time"
+  timestamp: String!
+}
+
+type MarketEvent {
+  "the market ID"
+  marketID: String!
+  "the message - market events are used for logging"
+  payload: String!
+}
+
+type TransferBalance {
+  "Account involved in transfer"
+  account: Account!
+  "The new balance of the account"
+  balance: Int!
+}
+
+type LedgerEntry {
+  "account from which the asset was taken"
+  fromAccount: String!
+  "account to which the balance was transferred"
+  toAccount: String!
+  "the amount transferred"
+  amount: Int!
+  "The transfer reference"
+  reference: String!
+  "Type of ledger entry"
+  type: String!
+  "The time at which the transfer was made"
+  timestamp: String!
+}
+
+type TransferResponse {
+  "the ledger entries and balances resulting from a transfer request"
+  transfers: [LedgerEntry!]
+  "the balances of accounts involved in the transfer"
+  balances: [TransferBalance!]
+}
+
+type TransferResponses {
+  "a group of transfer responses - events from core"
+  responses: [TransferResponse!]
+}
+
+type PositionResolution {
+  "the market ID where position resolution happened"
+  marketID: String!
+  "number of distressed traders on market"
+  distressed: Int!
+  "number of traders closed out"
+  closed: Int!
+  "the mark price at which traders were distressed/closed out"
+  markPrice: Int!
+}
+
+type LossSocialization {
+  "the market ID where loss socialization happened"
+  marketID: String!
+  "the party that was part of the loss socialization"
+  partyID: String!
+  "the amount lost"
+  amount: Int!
+}
+
+type TradeSettlement {
+  "the size of the trade"
+  size: Int!
+  "the price of the trade"
+  price: Int!
+}
+
+type SettlePosition {
+  "the market in which a position was settled"
+  marketID: String!
+  "the party who settled a position"
+  partyID: String!
+  "the settle price"
+  price: Int!
+  "the trades that were settled to close the overall position"
+  tradeSettlements: [TradeSettlement!]
+}
+
+type SettleDistressed {
+  "the market in which a position was closed out"
+  marketID: String!
+  "the party who closed out"
+  partyID: String!
+  "the margin taken from distressed trader"
+  margin: Int!
+  "the price at which position was closed out"
+  price: Int!
+}
+
+type MarketTick {
+  "the market ID"
+  marketID: String!
+  "the block time"
+  time: String!
+}
+
+type AuctionEvent {
+  "the market ID"
+  marketID: String!
+  "event fired because of auction end"
+  leave: Boolean!
+  "event related to opening auction"
+  openingAuction: Boolean!
+  "start time of auction"
+  auctionStart: String!
+  "optional end time of auction"
+  auctionEnd: String!
+}
+
+enum BusEventType {
+  "all events"
+  All
+  "event type indicating TimeUpdate"
+  TimeUpdate
+  "transfer response event"
+  TransferResponses
+  "position resolution event"
+  PositionResolution
+  "order event"
+  Order
+  "account event"
+  Account
+  "party event"
+  Party
+  "trade event"
+  Trade
+  "margin levels event"
+  MarginLevels
+  "proposal event"
+  Proposal
+  "vote event"
+  Vote
+  "market data event"
+  MarketData
+  "node signature event"
+  NodeSignature
+  "loss socialization event"
+  LossSocialization
+  "settle position event"
+  SettlePosition
+  "settle distressed event"
+  SettleDistressed
+  "market created event"
+  MarketCreated
+  "asset event"
+  Asset
+  "market tick event"
+  MarketTick
+  "auction event"
+  Auction
+
+  "constant for market events - mainly used for logging"
+  Market
+}
+
+"union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent
+
+type BusEvent {
+  "the id for this event"
+  eventID: String!
+  "the type of event we're dealing with"
+  type: BusEventType!
+  "the payload - the wrapped event"
+  event: Event!
 }
