@@ -55,6 +55,10 @@ var (
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
 	// ErrInvalidMarketType is returned if the order is not valid for the current market type (auction/continuous)
 	ErrInvalidMarketType = errors.New("invalid market type")
+	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continous trading state
+	ErrGFAOrderReceivedDuringContinuousTrading = errors.New("gfa order received during continuous trading")
+	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state
+	ErrGFNOrderReceivedAuctionTrading = errors.New("gfn order received during auction trading")
 
 	networkPartyID = "network"
 )
@@ -591,12 +595,18 @@ func (m *Market) GetTradingMode() types.MarketState {
 
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
-	if (m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN) ||
-		(m.tradeMode == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA) {
+	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN {
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
+		order.Reason = types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return ErrInvalidMarketType
+		return ErrGFAOrderReceivedDuringContinuousTrading
+	}
+
+	if m.tradeMode == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return ErrGFAOrderReceivedDuringContinuousTrading
 	}
 
 	// Check the expiry time is valid

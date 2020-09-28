@@ -292,6 +292,10 @@ enum OrderError {
   ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
 	// Order was submitted with invalid time in force
 	ORDER_ERROR_INVALID_TIME_IN_FORCE = 23;
+  // A GFN order has got to the market when it is in auction mode
+  ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION = 24;
+  // A GFA order has got to the market when it is in continuous trading mode
+  ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING = 25;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
