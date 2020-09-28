@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -218,8 +217,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	defer app.log.Debug("Processor COMMIT completed")
 
 	// Compute the AppHash and update the response
-	resp.Data = make([]byte, 8)
-	binary.BigEndian.PutUint64(resp.Data, uint64(app.size))
+	resp.Data = app.exec.Hash()
 
 	app.updateStats()
 	app.setBatchStats()

@@ -1,6 +1,7 @@
 package matching_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -61,6 +63,80 @@ func TestOrderBook_CancelBulk(t *testing.T) {
 	t.Run("Cancel all order for a party", cancelAllOrderForAParty)
 	t.Run("Get all order for a party", getAllOrderForAParty)
 	t.Run("Party with no order cancel nothing", partyWithNoOrderCancelNothing)
+}
+
+func TestHash(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	orders := []*types.Order{
+		{
+			Id:          "1111111111111111111111",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       10,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "2222222222222222222222",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_BUY,
+			Price:       30,
+			Size:        5,
+			Remaining:   5,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "3333333333333333333333",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "B",
+			Side:        types.Side_SIDE_SELL,
+			Price:       200,
+			Size:        1,
+			Remaining:   1,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+		{
+			Id:          "4444444444444444444444",
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			MarketID:    market,
+			PartyID:     "A",
+			Side:        types.Side_SIDE_SELL,
+			Price:       400,
+			Size:        10,
+			Remaining:   10,
+			TimeInForce: types.Order_TIF_GTC,
+		},
+	}
+
+	for _, o := range orders {
+		_, err := book.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+
+	hash := book.Hash()
+	require.Equal(t,
+		"ff7190c637406cf6907a73f8eab20c0465e3ee0f471ca95f739aa5f4e4192a8e",
+		hex.EncodeToString(hash),
+		"It should match against the known hash",
+	)
+	// compute the hash 100 times for determinism verification
+	for i := 0; i < 100; i++ {
+		got := book.Hash()
+		require.Equal(t, hash, got)
+	}
 }
 
 func cancelAllOrderForAParty(t *testing.T) {

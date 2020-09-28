@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -29,21 +30,14 @@ type OrderBookSide struct {
 }
 
 func (s *OrderBookSide) Hash() []byte {
-	output := make([]byte, 0, len(s.levels)*8*8)
-	var i [8]byte
+	output := make([]byte, 0, len(s.levels)*16)
+	var i [16]byte
 	for _, l := range s.levels {
 		binary.BigEndian.PutUint64(i[0:], l.price)
-		output = append(output, i[0:]...)
-		binary.BigEndian.PutUint64(i[0:], l.volume)
+		binary.BigEndian.PutUint64(i[8:], l.volume)
 		output = append(output, i[0:]...)
 	}
-	return hash(output)
-}
-
-func hash(key []byte) []byte {
-	hasher := sha3.New256()
-	hasher.Write([]byte(key))
-	return hasher.Sum(nil)
+	return crypto.Hash(output)
 }
 
 // When we enter an auction we have to park all pegged orders
