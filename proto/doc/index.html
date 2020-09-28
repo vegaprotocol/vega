@@ -13436,6 +13436,42 @@ with an expiration that was badly formatted or otherwise invalid.</p></td>
                 <td><p>Order was submitted with invalid time in force</p></td>
               </tr>
 
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT</td>
+                <td>27</td>
+                <td><p>Attemp to amend order to GTT without ExpiryAt</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT</td>
+                <td>28</td>
+                <td><p>Attempt to amend ExpiryAt to a vlaue before CreatedAt</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT</td>
+                <td>29</td>
+                <td><p>Attempt to amend to GTC without an ExpiryAt value</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC</td>
+                <td>30</td>
+                <td><p>Amending to FOK or IOC is invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN</td>
+                <td>31</td>
+                <td><p>Amending to GFA or GFN is invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN</td>
+                <td>32</td>
+                <td><p>Amending from GFA or GFN is invalid</p></td>
+              </tr>
+
           </tbody>
         </table>
 
