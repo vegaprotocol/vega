@@ -342,7 +342,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch change := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets)
+		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true)
 	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
 	}

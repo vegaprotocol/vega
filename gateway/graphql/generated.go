@@ -4883,6 +4883,8 @@ enum ProposalRejectionReason {
   InvalidAsset
   "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
   IncompatibleTimestamps
+  "Risk parameters are missing from the market proposal"
+  NoRiskParameters
 }
 
 "Reason for the order beeing rejected by the core node"
