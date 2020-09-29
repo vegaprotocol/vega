@@ -2758,7 +2758,7 @@ func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *type
 
 func getParty(ctx context.Context, log *logging.Logger, client TradingDataClient, id string) (*types.Party, error) {
 	if len(id) == 0 {
-		return nil, errors.New("invalid party id")
+		return nil, nil
 	}
 	res, err := client.PartyByID(ctx, &protoapi.PartyByIDRequest{PartyID: id})
 	if err != nil {

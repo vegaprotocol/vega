@@ -1466,9 +1466,9 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 func validateParty(ctx context.Context, log *logging.Logger, partyID string, partyService PartyService) (*types.Party, error) {
 	var pty *types.Party
 	var err error
-	if len(partyID) == 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
-	}
+	// if len(partyID) == 0 {
+	// 	return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	// }
 	pty, err = partyService.GetByID(ctx, partyID)
 	if err != nil {
 		// we just log the error here, then return an nil error.
