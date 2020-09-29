@@ -815,9 +815,10 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *Market, maxDepth *
 	}
 
 	return &types.MarketDepth{
-		MarketID: res.MarketID,
-		Buy:      res.Buy,
-		Sell:     res.Sell,
+		MarketID:       res.MarketID,
+		Buy:            res.Buy,
+		Sell:           res.Sell,
+		SequenceNumber: res.SequenceNumber,
 	}, nil
 }
 
@@ -1440,8 +1441,11 @@ func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-
 	return res.Trade, nil
+}
+
+func (r *myMarketDepthResolver) SequenceNumber(ctx context.Context, md *types.MarketDepth) (string, error) {
+	return strconv.FormatUint(md.SequenceNumber, 10), nil
 }
 
 func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDepth) (*Market, error) {

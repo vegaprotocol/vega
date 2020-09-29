@@ -875,6 +875,9 @@ type MarketDepth {
 
     "Last trade for the given market (if available)"
     lastTrade: Trade
+
+    "Sequence number for the current snapshot of the market depth"
+    sequenceNumber: String!
 }
 
 "Represents a price on either the buy or sell side and all the orders at that price"

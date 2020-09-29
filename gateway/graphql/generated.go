@@ -272,10 +272,11 @@ type ComplexityRoot struct {
 	}
 
 	MarketDepth struct {
-		Buy       func(childComplexity int) int
-		LastTrade func(childComplexity int) int
-		Market    func(childComplexity int) int
-		Sell      func(childComplexity int) int
+		Buy            func(childComplexity int) int
+		LastTrade      func(childComplexity int) int
+		Market         func(childComplexity int) int
+		Sell           func(childComplexity int) int
+		SequenceNumber func(childComplexity int) int
 	}
 
 	MarketEvent struct {
@@ -681,6 +682,7 @@ type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepth) (*Market, error)
 
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
+	SequenceNumber(ctx context.Context, obj *proto.MarketDepth) (string, error)
 }
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) (*PreparedSubmitOrder, error)
@@ -1768,6 +1770,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketDepth.Sell(childComplexity), true
+
+	case "MarketDepth.sequenceNumber":
+		if e.complexity.MarketDepth.SequenceNumber == nil {
+			break
+		}
+
+		return e.complexity.MarketDepth.SequenceNumber(childComplexity), true
 
 	case "MarketEvent.marketID":
 		if e.complexity.MarketEvent.MarketID == nil {
@@ -4421,6 +4430,9 @@ type MarketDepth {
 
     "Last trade for the given market (if available)"
     lastTrade: Trade
+
+    "Sequence number for the current snapshot of the market depth"
+    sequenceNumber: String!
 }
 
 "Represents a price on either the buy or sell side and all the orders at that price"
@@ -11180,6 +11192,40 @@ func (ec *executionContext) _MarketDepth_lastTrade(ctx context.Context, field gr
 	res := resTmp.(*proto.Trade)
 	fc.Result = res
 	return ec.marshalOTrade2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketDepth_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepth) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketDepth",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketDepth().SequenceNumber(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketEvent_marketID(ctx context.Context, field graphql.CollectedField, obj *MarketEvent) (ret graphql.Marshaler) {
@@ -22216,6 +22262,20 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._MarketDepth_lastTrade(ctx, field, obj)
+				return res
+			})
+		case "sequenceNumber":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketDepth_sequenceNumber(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		default:
