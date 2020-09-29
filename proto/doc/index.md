@@ -558,7 +558,7 @@ Request to fetch the estimated fee if an order were to trade immediately
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [vega.Order](#vega.Order) |  | Order to estimate fees for |
+| order | [vega.Order](#vega.Order) |  | Order to estimate fees for the following fields in the order are required: MarketID (used to specify the fee factors) Price (the price at which the order could trade) Size (the size at which the order could eventually trade) |
 
 
 

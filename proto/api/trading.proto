@@ -152,7 +152,7 @@ service trading_data {
   rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
 
   // Get the list of infrastructure fees accounts filter eventually by assets
- rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
+  rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
 
   // -- Candles --
 
@@ -1030,6 +1030,10 @@ message OrderVersionsResponse {
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
   // Order to estimate fees for
+  // the following fields in the order are required:
+  // MarketID (used to specify the fee factors)
+  // Price (the price at which the order could trade)
+  // Size (the size at which the order could eventually trade)
   vega.Order order = 1;
 }
 
