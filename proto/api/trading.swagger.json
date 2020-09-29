@@ -4192,6 +4192,11 @@
         "chainID": {
           "type": "string",
           "description": "Unique identifier for the underlying Vega blockchain."
+        },
+        "marketDepthUpdatesSubscriptions": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Current number of stream subscribers to market depth update data."
         }
       },
       "description": "Vega domain specific statistics as reported by the node the caller is connected to."

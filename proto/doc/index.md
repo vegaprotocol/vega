@@ -4576,6 +4576,7 @@ Vega domain specific statistics as reported by the node the caller is connected 
 | blockDuration | [uint64](#uint64) |  | Current block duration, in nanoseconds. |
 | uptime | [string](#string) |  | Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision. |
 | chainID | [string](#string) |  | Unique identifier for the underlying Vega blockchain. |
+| marketDepthUpdatesSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to market depth update data. |
 
 
 

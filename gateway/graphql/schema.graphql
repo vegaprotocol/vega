@@ -180,6 +180,12 @@ type Subscription {
     marketId: String!
   ): MarketDepth!
 
+  "Subscribe to price level market depth updates"
+  marketDepthUpdate(
+    "ID of the market we want to receive market depth pricelevel updates for"
+    marketId: String!
+  ): MarketDepthUpdate!
+
   "Subscribe to the accounts updates"
   accounts(
     "ID of the market from which we want accounts updates"
@@ -620,6 +626,9 @@ type Statistics {
   "Number of market depth subscriptions"
   marketDepthSubscriptions: Int!
 
+  "Number of market depth update subscriptions"
+  marketDepthUpdateSubscriptions: Int!
+
   "Number of positions subscriptions"
   positionsSubscriptions: Int!
 }
@@ -875,6 +884,25 @@ type MarketDepth {
 
     "Last trade for the given market (if available)"
     lastTrade: Trade
+
+    "Sequence number for the current snapshot of the market depth"
+    sequenceNumber: String!
+}
+
+"""
+Market Depth Update is a delta to the current market depth which can be used to update the 
+market depth structure to keep it correct
+"""
+type MarketDepthUpdate {
+
+    "Market id"
+    market: Market!
+
+    "Buy side price levels (if available)"
+    buy: [PriceLevel!]
+
+    "Sell side price levels (if available)"
+    sell: [PriceLevel!]
 
     "Sequence number for the current snapshot of the market depth"
     sequenceNumber: String!

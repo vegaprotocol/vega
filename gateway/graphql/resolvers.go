@@ -2412,6 +2412,38 @@ func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	return c, nil
 }
 
+func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market string) (<-chan *types.MarketDepthUpdate, error) {
+	req := &protoapi.MarketDepthUpdatesSubscribeRequest{
+		MarketID: market,
+	}
+	stream, err := r.tradingDataClient.MarketDepthUpdatesSubscribe(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	c := make(chan *types.MarketDepthUpdate)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
+		for {
+			md, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("marketDepthUpdates: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("marketDepthUpdates: stream closed", logging.Error(err))
+				break
+			}
+			c <- md
+		}
+	}()
+
+	return c, nil
+}
+
 func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
 
 	pinterval, err := convertIntervalToProto(interval)
@@ -2747,6 +2779,10 @@ func (r *myStatisticsResolver) CandleSubscriptions(ctx context.Context, obj *typ
 
 func (r *myStatisticsResolver) MarketDepthSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.MarketDepthSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) MarketDepthUpdateSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.MarketDepthUpdatesSubscriptions), nil
 }
 
 func (r *myStatisticsResolver) OrderSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
