@@ -225,6 +225,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, true)
+	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -585,13 +586,13 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
 		return
 	}
-	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.riskStore, l.settlePlugin); err != nil {
+	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin); err != nil {
 		return
 	}
 	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub); err != nil {
 		return
 	}
-	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore)
+	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
 	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it

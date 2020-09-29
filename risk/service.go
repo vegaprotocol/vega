@@ -16,8 +16,21 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/risk RiskStore
 type RiskStore interface {
 	GetMarginLevelsByID(partyID string, marketID string) ([]types.MarginLevels, error)
+	GetMarketRiskFactors(marketID string) (types.RiskFactor, error)
 	Subscribe(c chan []types.MarginLevels) uint64
 	Unsubscribe(id uint64) error
+}
+
+// MarketDataStore ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/vega/risk MarketDataStore
+type MarketDataStore interface {
+	GetByID(string) (types.MarketData, error)
+}
+
+// MarketStore ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/risk MarketStore
+type MarketStore interface {
+	GetByID(string) (*types.Market, error)
 }
 
 // Svc represent the market service
@@ -25,17 +38,27 @@ type Svc struct {
 	Config
 	log           *logging.Logger
 	store         RiskStore
+	mktDataStore  MarketDataStore
+	mktStore      MarketStore
 	subscriberCnt int32
 }
 
-func NewService(log *logging.Logger, c Config, store RiskStore) *Svc {
+func NewService(
+	log *logging.Logger,
+	c Config,
+	store RiskStore,
+	mktStore MarketStore,
+	mktDataStore MarketDataStore,
+) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
 	return &Svc{
-		Config: c,
-		log:    log,
-		store:  store,
+		Config:       c,
+		log:          log,
+		store:        store,
+		mktStore:     mktStore,
+		mktDataStore: mktDataStore,
 	}
 }
 
@@ -63,6 +86,36 @@ func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevel
 	} else {
 		return marginLevels, nil
 	}
+}
+
+func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.MarginLevels, error) {
+	// first get the risk factors and market data (marketdata->markprice)
+	rf, err := s.store.GetMarketRiskFactors(order.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	mktData, err := s.mktDataStore.GetByID(order.MarketID)
+	if err != nil {
+		return nil, err
+	}
+	mkt, err := s.mktStore.GetByID(order.MarketID)
+	if err != nil {
+		return nil, err
+	}
+
+	f := rf.Short
+	if order.Side == types.Side_SIDE_BUY {
+		f = rf.Long
+	}
+	// now calculate margin maintenance
+	maintenanceMargin := uint64(float64(order.Size) * f * float64(mktData.MarkPrice))
+	// now we use the risk factors
+	return &types.MarginLevels{
+		MaintenanceMargin:      maintenanceMargin,
+		SearchLevel:            uint64(float64(maintenanceMargin) * mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel),
+		InitialMargin:          uint64(float64(maintenanceMargin) * mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin),
+		CollateralReleaseLevel: uint64(float64(maintenanceMargin) * mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease),
+	}, nil
 }
 
 func (s *Svc) ObserveMarginLevels(

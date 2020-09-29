@@ -13,6 +13,7 @@ import (
 var (
 	ErrNoMarginLevelsForParty  = errors.New("no margin levels for party")
 	ErrNoMarginLevelsForMarket = errors.New("party have no margin levels for the market")
+	ErrNoRiskFactorsForMarket  = errors.New("no risk factors for market")
 )
 
 // Risk is used for memory/RAM based risk storage.
@@ -22,6 +23,9 @@ type Risk struct {
 	// party to market to margin levels
 	margins   map[string]map[string]types.MarginLevels
 	marginsMu sync.RWMutex
+
+	riskFactors map[string]types.RiskFactor
+	riskFMu     sync.RWMutex
 
 	subscribers  map[uint64]chan []types.MarginLevels
 	subscriberID uint64
@@ -37,6 +41,7 @@ func NewRisks(log *logging.Logger, c Config) *Risk {
 		Config:      c,
 		log:         log,
 		margins:     map[string]map[string]types.MarginLevels{},
+		riskFactors: map[string]types.RiskFactor{},
 		subscribers: map[uint64]chan []types.MarginLevels{},
 	}
 }
@@ -46,14 +51,14 @@ func (r *Risk) ReloadConf(config Config) {
 	// nothing to do for now
 }
 
-// Post saves a given risk factor to the mem-store.
-func (r *Risk) Post(risk *types.RiskFactor) error {
-	return nil
-}
-
-// Put updates a given risk factor to the mem-store.
-func (r *Risk) Put(risk *types.RiskFactor) error {
-	return nil
+func (r *Risk) GetMarketRiskFactors(marketID string) (types.RiskFactor, error) {
+	r.riskFMu.RLock()
+	defer r.riskFMu.RUnlock()
+	rf, ok := r.riskFactors[marketID]
+	if !ok {
+		return types.RiskFactor{}, ErrNoRiskFactorsForMarket
+	}
+	return rf, nil
 }
 
 func (r *Risk) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error) {
@@ -100,15 +105,6 @@ func (r *Risk) getMarginLevelsByParty(partyID string) ([]types.MarginLevels, err
 	return out, nil
 }
 
-// GetByMarket searches for the risk factors relating to the market param in the mem-store.
-func (r *Risk) GetByMarket(name string) (*types.RiskFactor, error) {
-	return &types.RiskFactor{
-		Market: name,
-		Long:   1,
-		Short:  1,
-	}, nil
-}
-
 // Commit typically saves any operations that are queued to underlying storage,
 // if supported by underlying storage implementation.
 func (r *Risk) Commit() error {
@@ -121,6 +117,20 @@ func (r *Risk) Commit() error {
 func (r *Risk) Close() error {
 	// No work required with a mem-store implementation.
 	return nil
+}
+
+// SaveMarginLevelsBatch writes a slice of account changes to the underlying store.
+func (r *Risk) SaveRiskFactorBatch(batch []types.RiskFactor) {
+	if len(batch) == 0 {
+		return
+	}
+
+	r.riskFMu.Lock()
+	for _, v := range batch {
+		v := v
+		r.riskFactors[v.Market] = v
+	}
+	r.riskFMu.Unlock()
 }
 
 // SaveMarginLevelsBatch writes a slice of account changes to the underlying store.

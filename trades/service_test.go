@@ -39,7 +39,6 @@ func getTestService(t *testing.T) *testService {
 		log,
 		trades.NewDefaultConfig(),
 		trade,
-		risk,
 		pos,
 	)
 	assert.NoError(t, err)
