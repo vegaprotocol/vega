@@ -3179,6 +3179,7 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | The contract address is missing in the ERC20 asset source. |
 | PROPOSAL_ERROR_INVALID_ASSET | 16 | The asset id refer to no assets in vega. |
 | PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment). |
+| PROPOSAL_ERROR_NO_RISK_PARAMETERS | 18 | No risk parameteres were specified |
 
 
 

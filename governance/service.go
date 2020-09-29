@@ -412,5 +412,20 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return ErrIncompatibleTimestamps
 	}
 
-	return nil
+	return s.validateProposalChanges(terms.Change)
+}
+
+func (s *Svc) validateProposalChanges(changes interface{}) error {
+	switch c := changes.(type) {
+	case *types.ProposalTerms_NewMarket:
+		return s.validateNewMarketChanges(c.NewMarket)
+	default:
+		return nil
+	}
+}
+
+func (s *Svc) validateNewMarketChanges(nm *types.NewMarket) (err error) {
+	// just validate things which cannot be done straigh with
+	_, err = validateNewMarket(time.Time{}, nm.Changes, nil, false)
+	return
 }

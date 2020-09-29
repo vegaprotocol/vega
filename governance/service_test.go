@@ -158,7 +158,26 @@ func testPrepareProposalEmpty(t *testing.T) {
 func TestPrepareProposal(t *testing.T) {
 	t.Run("Prepare a normal proposal", testPrepareProposalNormal)
 	t.Run("Prepare an empty proposal", testPrepareProposalEmpty)
+	t.Run("Prepare proposal - missing risk", testPrepareProposalNewMarketMissingRisk)
 	t.Run("Prepare a proposal - fail same timestamps", testPrepareProposalWithAllSameTimestamps)
+}
+
+func testPrepareProposalNewMarketMissingRisk(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	newMarket := newValidMarketTerms()
+	newMarket.NewMarket.GetChanges().RiskParameters = nil
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change:             newMarket,
+	}
+
+	testAuthor := "test-author"
+	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, governance.ErrMissingRiskParameters.Error())
 }
 
 func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
