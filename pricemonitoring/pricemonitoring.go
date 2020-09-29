@@ -1,9 +1,12 @@
 package pricemonitoring
 
 import (
+	"context"
 	"errors"
 	"sort"
 	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -16,6 +19,27 @@ var (
 	// ErrUpdateFrequencyNotPositive signals that update frequency isn't positive.
 	ErrUpdateFrequencyNotPositive = errors.New("update frequency must be represented by a positive duration")
 )
+
+type AuctionState interface {
+	// What is the current trading mode of the market, is it in auction
+	Mode() types.MarketState
+	InAuction() bool
+	// What type of auction are we dealing with
+	IsOpeningAuction() bool
+	IsLiquidityAuction() bool
+	IsPriceAuction() bool
+	IsFBA() bool
+	// is it the start/end of the auction
+	AuctionEnd() bool
+	ActionStart() bool
+	// start a price-related auction, extend a current auction, or end it
+	StartPriceAuction(t time.Time, d *types.AuctionDuration)
+	ExtendAuction(delta types.AuctionDuration)
+	EndAuction()
+	// get parameters for current auction
+	Start() time.Time
+	Duration() types.AuctionDuration
+}
 
 // PriceProjection ties the horizon τ and probability p level.
 // It's used to check if price over τ has exceeded the probability level p implied by the risk model
@@ -112,6 +136,66 @@ func NewPriceMonitoring(riskModel PriceRangeProvider, projections []PriceProject
 	return e, nil
 }
 
+func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now time.Time) error {
+	// market is not in auction, or in batch auction
+	if fba := as.IsFBA(); !as.InAuction() || fba {
+		if err := e.RecordTimeChange(now); err != nil {
+			return err
+		}
+		bounds := e.checkBounds(ctx, p)
+		// no bounds violations - update price, and we're done
+		if len(bounds) == 0 {
+			e.RecordPriceChange(p)
+			return nil
+		}
+		// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
+		// @TODO placeholder - this data comes from market def, but let's just say 5 min per bound here:
+		end := types.AuctionDuration{
+			Duration: int64(len(bounds)) * 5 * int64(time.Minute),
+		}
+		// we're dealing with a batch auction that's about to end -> extend it?
+		if fba && as.AuctionEnd() {
+			as.ExtendAuction(end)
+			return nil // we could return an error here to indicate the batch auction was altered?
+		}
+		// setup auction
+		as.StartPriceAuction(now, &end)
+		return nil
+	}
+	// market is in auction
+	// opening auction -> ignore
+	if as.IsOpeningAuction() {
+		return nil
+	}
+	// current auction is price monitoring
+	// check for end of auction, reset monitoring, and end auction
+	if as.IsPriceAuction() {
+		start, dur := as.Start(), as.Duration()
+		// auction still hasn't ended yet
+		if end := start.Add(time.Duration(dur.Duration)); end.After(now) {
+			return nil
+		}
+		// auction can be terminated
+		as.EndAuction()
+		// reset the engine
+		e.Reset(p, now)
+		return nil
+	}
+	// market is in auction mode, liquidity
+	if err := e.RecordTimeChange(now); err != nil {
+		return err
+	}
+	bounds := e.checkBounds(ctx, p)
+	if len(bounds) == 0 {
+		return nil
+	}
+	// let's say we need to extend this auction (in reality, liquidity can extend price, but not the other way around IIRC)
+	as.ExtendAuction(types.AuctionDuration{
+		Duration: int64(len(bounds)) * int64(time.Minute),
+	})
+	return nil
+}
+
 // Reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
 func (e *Engine) Reset(price uint64, now time.Time) {
 	e.now = now
@@ -149,12 +233,34 @@ func (e *Engine) RecordTimeChange(now time.Time) error {
 	return nil
 }
 
+func (e *Engine) checkBounds(ctx context.Context, p uint64) []PriceProjection {
+	fp := float64(p)
+	ret := []PriceProjection{} // returned price projections, empty if all good
+	var (
+		ph  time.Duration // previous horizon
+		ref float64       // reference price
+	)
+	for _, p := range e.projections {
+		if p.Horizon != ph {
+			ph = p.Horizon
+			ref = e.getReferencePrice(e.now.Add(-ph))
+		}
+
+		diff := fp - ref
+		b := e.bounds[p]
+		if diff < b.MinMoveDown || diff > b.MaxMoveUp {
+			ret = append(ret, p)
+		}
+	}
+	return ret
+}
+
 // CheckBoundViolations returns a map of horizon and probability level pair to boolean.
 // A true value indicates that a bound corresponding to a given horizon and probability level pair has been violated.
 func (e *Engine) CheckBoundViolations(price uint64) map[PriceProjection]bool {
 	fpPrice := float64(price)
 	checks := make(map[PriceProjection]bool, len(e.projections))
-	prevHorizon := 0 * time.Nanosecond
+	var prevHorizon time.Duration
 	var ref float64
 	for _, p := range e.projections {
 		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
