@@ -2908,8 +2908,8 @@ Governance data.
 | proposal | [Proposal](#vega.Proposal) |  | Proposal. |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
-| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique). |
-| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique). |
+| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique). key (string) is the party ID (publickey) value (Vote) is the vote casted by the given party |
+| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique). key (string) is the party ID (publickey) value (Vote) is the vote casted by the given party |
 
 
 
