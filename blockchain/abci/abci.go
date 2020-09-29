@@ -1,19 +1,23 @@
 package abci
 
 import (
+	"context"
+	"errors"
+
 	"github.com/tendermint/tendermint/abci/types"
 )
 
 const (
 	// AbciTxnValidationFailure ...
 	AbciTxnValidationFailure uint32 = 51
+
 	// AbciTxnDecodingFailure code is returned when CheckTx or DeliverTx fail to decode the Txn.
 	AbciTxnDecodingFailure uint32 = 60
 
 	// AbciTxnInternalError code is returned when CheckTx or DeliverTx fail to process the Txn.
 	AbciTxnInternalError uint32 = 70
 
-	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command
+	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
 	AbciUnknownCommandError uint32 = 80
 )
 
@@ -25,6 +29,8 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 }
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
+	app.height = uint64(req.Header.Height)
+
 	if fn := app.OnBeginBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
@@ -42,6 +48,10 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	tx, code, err := app.decodeAndValidateTx(req.GetTx())
 	if err != nil {
 		return NewResponseCheckTx(code, err.Error())
+	}
+
+	if err := app.replayProtection(tx, app.replayMaxDistance); err != nil {
+		return NewResponseCheckTx(AbciTxnValidationFailure, err.Error())
 	}
 
 	ctx := app.ctx
@@ -63,6 +73,19 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// the cache to be consumed by DeliveryTx
 	app.cacheTx(&req, tx)
 	return resp
+}
+
+// replayProtection returns an error when the Tx's BlockHeight distance to the chain is >= than a given threshold.
+func (app *App) replayProtection(tx Tx, thres uint64) error {
+	if thres == 0 {
+		return nil
+	}
+
+	if app.height < (tx.BlockHeight() + thres) {
+		return nil
+	}
+
+	return errors.New("replay protection")
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {

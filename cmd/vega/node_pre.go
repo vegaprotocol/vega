@@ -436,6 +436,12 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		return nil, err
 	}
 
+	app.Abci().With(
+		abci.ReplayProtection(
+			l.conf.Blockchain.ReplayProtectionDistance,
+		),
+	)
+
 	var abciApp tmtypes.Application
 	if l.record != "" {
 		path := filepath.Join(l.record, fmt.Sprintf("abci-record-%s", time.Now().Format("2006-01-02-15-04-05")))

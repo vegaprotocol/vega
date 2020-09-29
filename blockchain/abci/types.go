@@ -14,6 +14,7 @@ type Tx interface {
 	PubKey() []byte
 	Hash() []byte
 	Validate() error
+	BlockHeight() uint64
 }
 
 type Codec interface {

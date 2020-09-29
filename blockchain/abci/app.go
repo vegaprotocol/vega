@@ -16,6 +16,10 @@ type App struct {
 	abci.BaseApplication
 	codec Codec
 
+	// options
+	replayMaxDistance uint64
+
+	// handlers
 	OnInitChain  OnInitChainHandler
 	OnBeginBlock OnBeginBlockHandler
 	OnCheckTx    OnCheckTxHandler
@@ -34,14 +38,23 @@ type App struct {
 	ctx context.Context
 }
 
-func New(codec Codec) *App {
-	return &App{
+func New(codec Codec, opts ...Option) *App {
+	app := &App{
 		codec:      codec,
 		checkTxs:   map[blockchain.Command]TxHandler{},
 		deliverTxs: map[blockchain.Command]TxHandler{},
 		checkedTxs: map[string]Tx{},
 	}
+
+	for _, fn := range opts {
+		app.With(fn)
+	}
+
+	return app
 }
+
+// With applies an option
+func (app *App) With(fn Option) { fn(app) }
 
 func (app *App) HandleCheckTx(cmd blockchain.Command, fn TxHandler) *App {
 	app.checkTxs[cmd] = fn

@@ -12660,6 +12660,15 @@ against replay attack. </p></td>
                 </tr>
 
                 <tr>
+                  <td>blockHeight</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The block height associated to the transaction.
+This should always be current height of the node at the time of sending the Tx.
+BlockHeight is used as a mechanism for replay protection. </p></td>
+                </tr>
+
+                <tr>
                   <td>address</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
