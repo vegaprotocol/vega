@@ -1324,6 +1324,16 @@
       },
       "title": "Response to a EstimateFeeRequest, containing the estimated fees for a given order"
     },
+    "apiEstimateMarginResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "$ref": "#/definitions/vegaMarginLevels",
+          "title": "Summary of the estimated margins for this order if it were to trade now"
+        }
+      },
+      "title": "Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order"
+    },
     "apiFeeInfrastructureAccountsResponse": {
       "type": "object",
       "properties": {
@@ -2363,6 +2373,9 @@
         "auction": {
           "$ref": "#/definitions/vegaAuctionEvent"
         },
+        "riskFactor": {
+          "$ref": "#/definitions/vegaRiskFactor"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2395,6 +2408,7 @@
         "BUS_EVENT_TYPE_WITHDRAWAL",
         "BUS_EVENT_TYPE_DEPOSIT",
         "BUS_EVENT_TYPE_AUCTION",
+        "BUS_EVENT_TYPE_RISK_FACTOR",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -3923,6 +3937,26 @@
         }
       },
       "description": "A message to notify when a validator is being removed from the Vega network."
+    },
+    "vegaRiskFactor": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "type": "string",
+          "description": "Market ID that relates to this risk factor."
+        },
+        "short": {
+          "type": "number",
+          "format": "double",
+          "description": "Short Risk factor value."
+        },
+        "long": {
+          "type": "number",
+          "format": "double",
+          "description": "Long Risk factor value."
+        }
+      },
+      "description": "Risk factors are used to calculate the current risk associated with orders trading on a given market."
     },
     "vegaScalingFactors": {
       "type": "object",
