@@ -277,6 +277,7 @@ func getTestGRPCServer(
 		eventService,
 		withdrawal,
 		deposit,
+		marketDepth,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
