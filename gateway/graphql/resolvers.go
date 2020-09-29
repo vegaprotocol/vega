@@ -512,6 +512,9 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, e
 		if err != nil {
 			return nil, err
 		}
+		if mkt == nil {
+			return []*Market{}, nil
+		}
 		return []*Market{mkt}, nil
 	}
 	res, err := r.tradingDataClient.Markets(ctx, &empty.Empty{})
@@ -554,6 +557,10 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+	// no error / no market = we did not find it
+	if res.Market == nil {
+		return nil, nil
 	}
 	market, err := MarketFromProto(res.Market)
 	if err != nil {
