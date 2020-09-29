@@ -1111,6 +1111,7 @@ Response for the market depth/order book price levels on a market.
 | buy | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the buy side of the market depth data. |
 | sell | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the sell side of the market depth data. |
 | lastTrade | [vega.Trade](#vega.Trade) |  | Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`. |
+| sequenceNumber | [uint64](#uint64) |  | Sequence number incremented after each update |
 
 
 

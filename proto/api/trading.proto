@@ -853,6 +853,8 @@ message MarketDepthResponse {
   repeated vega.PriceLevel sell = 3;
   // Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
   vega.Trade lastTrade = 4;
+  // Sequence number incremented after each update
+  uint64 sequenceNumber = 5;
 }
 
 // Request for a list of trades on a market.

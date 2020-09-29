@@ -1541,6 +1541,11 @@
         "lastTrade": {
           "$ref": "#/definitions/vegaTrade",
           "description": "Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`."
+        },
+        "sequenceNumber": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Sequence number incremented after each update"
         }
       },
       "description": "Response for the market depth/order book price levels on a market."

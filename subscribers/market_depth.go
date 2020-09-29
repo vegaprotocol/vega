@@ -267,6 +267,8 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		mdb.marketDepths[order.MarketID] = md
 	}
 
+	md.sequenceNumber++
+
 	// Initialise changes slice ready for new items
 	md.changes = []*priceLevel{}
 
@@ -320,8 +322,6 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 
 	// Clear the list of changes
 	md.changes = make([]*priceLevel, 0, len(md.changes))
-
-	md.sequenceNumber++
 }
 
 // Returns the min of 2 uint64s

@@ -556,9 +556,10 @@ func (t *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 
 	// Build market depth response, including last trade (if available)
 	resp := &protoapi.MarketDepthResponse{
-		Buy:      depth.Buy,
-		MarketID: depth.MarketID,
-		Sell:     depth.Sell,
+		Buy:            depth.Buy,
+		MarketID:       depth.MarketID,
+		Sell:           depth.Sell,
+		SequenceNumber: depth.SequenceNumber,
 	}
 	if len(ts) > 0 && ts[0] != nil {
 		resp.LastTrade = ts[0]
