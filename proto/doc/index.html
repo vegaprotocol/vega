@@ -7525,14 +7525,18 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>yesParty</td>
                   <td><a href="#vega.GovernanceData.YesPartyEntry">GovernanceData.YesPartyEntry</a></td>
                   <td>repeated</td>
-                  <td><p>All latest YES votes by party (guaranteed to be unique). </p></td>
+                  <td><p>All latest YES votes by party (guaranteed to be unique).
+key (string) is the party ID (publickey)
+value (Vote) is the vote casted by the given party </p></td>
                 </tr>
 
                 <tr>
                   <td>noParty</td>
                   <td><a href="#vega.GovernanceData.NoPartyEntry">GovernanceData.NoPartyEntry</a></td>
                   <td>repeated</td>
-                  <td><p>All latest NO votes by party (unique). </p></td>
+                  <td><p>All latest NO votes by party (unique).
+key (string) is the party ID (publickey)
+value (Vote) is the vote casted by the given party </p></td>
                 </tr>
 
             </tbody>
