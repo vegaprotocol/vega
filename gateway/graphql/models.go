@@ -412,19 +412,6 @@ type Market struct {
 
 func (Market) IsEvent() {}
 
-// Market Depth Update is a delta to the current market depth which can be used to update the
-// market depth structure to keep it correct
-type MarketDepthUpdate struct {
-	// Market id
-	Market *Market `json:"market"`
-	// Buy side price levels (if available)
-	Buy []*proto.PriceLevel `json:"buy"`
-	// Sell side price levels (if available)
-	Sell []*proto.PriceLevel `json:"sell"`
-	// Sequence number for the current snapshot of the market depth
-	SequenceNumber string `json:"sequenceNumber"`
-}
-
 type MarketEvent struct {
 	// the market ID
 	MarketID string `json:"marketID"`

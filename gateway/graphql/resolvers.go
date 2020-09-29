@@ -168,6 +168,11 @@ func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
 }
 
+// MarketDepth returns the market depth update resolver
+func (r *VegaResolverRoot) MarketDepthUpdate() MarketDepthUpdateResolver {
+	return (*myMarketDepthUpdateResolver)(r)
+}
+
 // MarketData returns the market data resolver
 func (r *VegaResolverRoot) MarketData() MarketDataResolver {
 	return (*myMarketDataResolver)(r)
@@ -1475,6 +1480,57 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 }
 
 // END: Market Depth Resolver
+
+// BEGIN: Market Depth Update Resolver
+
+type myMarketDepthUpdateResolver VegaResolverRoot
+
+func (r *myMarketDepthUpdateResolver) Buy(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
+	valBuyLevels := make([]types.PriceLevel, 0)
+	for _, v := range obj.Buy {
+		valBuyLevels = append(valBuyLevels, *v)
+	}
+	return valBuyLevels, nil
+}
+func (r *myMarketDepthUpdateResolver) Sell(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
+	valBuyLevels := make([]types.PriceLevel, 0)
+	for _, v := range obj.Sell {
+		valBuyLevels = append(valBuyLevels, *v)
+	}
+	return valBuyLevels, nil
+}
+
+func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
+	return strconv.FormatUint(md.SequenceNumber, 10), nil
+}
+
+func (r *myMarketDepthUpdateResolver) Market(ctx context.Context, md *types.MarketDepthUpdate) (*Market, error) {
+	if md == nil {
+		return nil, errors.New("invalid market depth update")
+	}
+
+	req := protoapi.MarketByIDRequest{MarketID: md.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+	market, err := MarketFromProto(res.Market)
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		if err != nil {
+			r.log.Error("tradingData client", logging.Error(err))
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+	return market, err
+}
+
+// END: Market Depth Update Resolver
 
 // BEGIN: Order Resolver
 

@@ -45,6 +45,7 @@ type ResolverRoot interface {
 	Market() MarketResolver
 	MarketData() MarketDataResolver
 	MarketDepth() MarketDepthResolver
+	MarketDepthUpdate() MarketDepthUpdateResolver
 	Mutation() MutationResolver
 	NodeSignature() NodeSignatureResolver
 	Order() OrderResolver
@@ -693,6 +694,11 @@ type MarketDepthResolver interface {
 	LastTrade(ctx context.Context, obj *proto.MarketDepth) (*proto.Trade, error)
 	SequenceNumber(ctx context.Context, obj *proto.MarketDepth) (string, error)
 }
+type MarketDepthUpdateResolver interface {
+	Market(ctx context.Context, obj *proto.MarketDepthUpdate) (*Market, error)
+
+	SequenceNumber(ctx context.Context, obj *proto.MarketDepthUpdate) (string, error)
+}
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id *string, partyID string, marketID *string) (*PreparedCancelOrder, error)
@@ -815,7 +821,7 @@ type SubscriptionResolver interface {
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*proto.Trade, error)
 	Positions(ctx context.Context, partyID string) (<-chan *proto.Position, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *proto.MarketDepth, error)
-	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *MarketDepthUpdate, error)
+	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *proto.MarketDepthUpdate, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
 	MarketData(ctx context.Context, marketID *string) (<-chan *proto.MarketData, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
@@ -11328,7 +11334,7 @@ func (ec *executionContext) _MarketDepth_sequenceNumber(ctx context.Context, fie
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketDepthUpdate_market(ctx context.Context, field graphql.CollectedField, obj *MarketDepthUpdate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketDepthUpdate_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepthUpdate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11339,13 +11345,13 @@ func (ec *executionContext) _MarketDepthUpdate_market(ctx context.Context, field
 		Object:   "MarketDepthUpdate",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Market, nil
+		return ec.resolvers.MarketDepthUpdate().Market(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11362,7 +11368,7 @@ func (ec *executionContext) _MarketDepthUpdate_market(ctx context.Context, field
 	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketDepthUpdate_buy(ctx context.Context, field graphql.CollectedField, obj *MarketDepthUpdate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketDepthUpdate_buy(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepthUpdate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11393,7 +11399,7 @@ func (ec *executionContext) _MarketDepthUpdate_buy(ctx context.Context, field gr
 	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketDepthUpdate_sell(ctx context.Context, field graphql.CollectedField, obj *MarketDepthUpdate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketDepthUpdate_sell(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepthUpdate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11424,7 +11430,7 @@ func (ec *executionContext) _MarketDepthUpdate_sell(ctx context.Context, field g
 	return ec.marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevelᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketDepthUpdate_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *MarketDepthUpdate) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketDepthUpdate_sequenceNumber(ctx context.Context, field graphql.CollectedField, obj *proto.MarketDepthUpdate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11435,13 +11441,13 @@ func (ec *executionContext) _MarketDepthUpdate_sequenceNumber(ctx context.Contex
 		Object:   "MarketDepthUpdate",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SequenceNumber, nil
+		return ec.resolvers.MarketDepthUpdate().SequenceNumber(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16982,7 +16988,7 @@ func (ec *executionContext) _Subscription_marketDepthUpdate(ctx context.Context,
 		return nil
 	}
 	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *MarketDepthUpdate)
+		res, ok := <-resTmp.(<-chan *proto.MarketDepthUpdate)
 		if !ok {
 			return nil
 		}
@@ -16990,7 +16996,7 @@ func (ec *executionContext) _Subscription_marketDepthUpdate(ctx context.Context,
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketDepthUpdate(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketDepthUpdate(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -22606,7 +22612,7 @@ func (ec *executionContext) _MarketDepth(ctx context.Context, sel ast.SelectionS
 
 var marketDepthUpdateImplementors = []string{"MarketDepthUpdate"}
 
-func (ec *executionContext) _MarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, obj *MarketDepthUpdate) graphql.Marshaler {
+func (ec *executionContext) _MarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, obj *proto.MarketDepthUpdate) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketDepthUpdateImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -22616,19 +22622,37 @@ func (ec *executionContext) _MarketDepthUpdate(ctx context.Context, sel ast.Sele
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketDepthUpdate")
 		case "market":
-			out.Values[i] = ec._MarketDepthUpdate_market(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketDepthUpdate_market(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "buy":
 			out.Values[i] = ec._MarketDepthUpdate_buy(ctx, field, obj)
 		case "sell":
 			out.Values[i] = ec._MarketDepthUpdate_sell(ctx, field, obj)
 		case "sequenceNumber":
-			out.Values[i] = ec._MarketDepthUpdate_sequenceNumber(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketDepthUpdate_sequenceNumber(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26003,11 +26027,11 @@ func (ec *executionContext) marshalNMarketDepth2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return ec._MarketDepth(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMarketDepthUpdate2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v MarketDepthUpdate) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDepthUpdate2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v proto.MarketDepthUpdate) graphql.Marshaler {
 	return ec._MarketDepthUpdate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *MarketDepthUpdate) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketDepthUpdate(ctx context.Context, sel ast.SelectionSet, v *proto.MarketDepthUpdate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
