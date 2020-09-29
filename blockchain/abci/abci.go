@@ -81,6 +81,11 @@ func (app *App) replayProtection(tx Tx, thres uint64) error {
 		return nil
 	}
 
+	// skip replay protection if the Tx didn't specify the block height
+	if tx.BlockHeight() == 0 {
+		return nil
+	}
+
 	if app.height < (tx.BlockHeight() + thres) {
 		return nil
 	}
