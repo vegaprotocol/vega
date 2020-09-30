@@ -1,7 +1,6 @@
 package abci
 
 import (
-	"encoding/hex"
 	"errors"
 )
 
@@ -72,7 +71,7 @@ func (rp *ReplayProtector) CheckTx(tx Tx) error {
 
 	// We perform 2 verifications:
 	// First we make sure that the Tx is not on the ring buffer.
-	key := hex.EncodeToString(tx.Hash())
+	key := string(tx.Hash())
 	if !rp.Add(key) {
 		return ErrTxAlreadyInCache
 	}
