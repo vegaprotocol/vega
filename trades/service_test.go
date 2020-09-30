@@ -24,7 +24,6 @@ type testService struct {
 	log   *logging.Logger
 	ctrl  *gomock.Controller
 	trade *mocks.MockTradeStore
-	risk  *mocks.MockRiskStore
 	pos   *mocks.MockPositionsPlugin
 }
 
@@ -32,7 +31,6 @@ func getTestService(t *testing.T) *testService {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	trade := mocks.NewMockTradeStore(ctrl)
-	risk := mocks.NewMockRiskStore(ctrl)
 	pos := mocks.NewMockPositionsPlugin(ctrl)
 	log := logging.NewTestLogger()
 	svc, err := trades.NewService(
@@ -49,7 +47,6 @@ func getTestService(t *testing.T) *testService {
 		log:   log,
 		ctrl:  ctrl,
 		trade: trade,
-		risk:  risk,
 	}
 }
 
