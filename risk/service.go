@@ -2,6 +2,7 @@ package risk
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"time"
 
@@ -10,6 +11,10 @@ import (
 	"code.vegaprotocol.io/vega/storage"
 
 	types "code.vegaprotocol.io/vega/proto"
+)
+
+var (
+	ErrInvalidOrderSide = errors.New("invalid order side")
 )
 
 // RiskStore ...
@@ -101,6 +106,10 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 	mkt, err := s.mktStore.GetByID(order.MarketID)
 	if err != nil {
 		return nil, err
+	}
+
+	if order.Side == types.Side_SIDE_UNSPECIFIED {
+		return nil, ErrInvalidOrderSide
 	}
 
 	f := rf.Short
