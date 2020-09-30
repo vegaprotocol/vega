@@ -99,11 +99,11 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 	if err != nil {
 		return nil, err
 	}
-	mktData, err := s.mktDataStore.GetByID(order.MarketID)
+	mkt, err := s.mktStore.GetByID(order.MarketID)
 	if err != nil {
 		return nil, err
 	}
-	mkt, err := s.mktStore.GetByID(order.MarketID)
+	mktData, err := s.mktDataStore.GetByID(order.MarketID)
 	if err != nil {
 		return nil, err
 	}
@@ -117,13 +117,13 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 		f = rf.Long
 	}
 	// now calculate margin maintenance
-	maintenanceMargin := uint64(float64(order.Size) * f * float64(mktData.MarkPrice))
+	maintenanceMargin := float64(order.Size) * f * float64(mktData.MarkPrice)
 	// now we use the risk factors
 	return &types.MarginLevels{
-		MaintenanceMargin:      maintenanceMargin,
-		SearchLevel:            uint64(float64(maintenanceMargin) * mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel),
-		InitialMargin:          uint64(float64(maintenanceMargin) * mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin),
-		CollateralReleaseLevel: uint64(float64(maintenanceMargin) * mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease),
+		MaintenanceMargin:      uint64(maintenanceMargin),
+		SearchLevel:            uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel),
+		InitialMargin:          uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin),
+		CollateralReleaseLevel: uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease),
 	}, nil
 }
 
