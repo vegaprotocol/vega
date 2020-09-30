@@ -17,7 +17,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-	tmprototypes "github.com/tendermint/tendermint/proto/types"
 )
 
 type AbciTestSuite struct {
@@ -150,7 +149,7 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmprototypes.Header{
+		Header: tmtypes.Header{
 			Time: now,
 		},
 	})
@@ -187,7 +186,7 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmprototypes.Header{
+		Header: tmtypes.Header{
 			Time: now,
 		},
 	})
@@ -197,7 +196,7 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmprototypes.Header{
+		Header: tmtypes.Header{
 			Time: now,
 		},
 	})

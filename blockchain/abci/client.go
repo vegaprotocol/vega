@@ -97,8 +97,9 @@ func (c *Client) Health() (*tmctypes.ResultHealth, error) {
 }
 
 func (c *Client) Validators() ([]*tmtypes.Validator, error) {
+	page := 0
 	perPage := 100
-	res, err := c.tmclt.Validators(nil, nil, &perPage)
+	res, err := c.tmclt.Validators(nil, page, perPage)
 	if err != nil {
 		return nil, err
 	}
