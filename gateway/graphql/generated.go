@@ -4971,6 +4971,15 @@ enum OrderRejectionReason {
   
   "Amending from GFA or GFN is invalid"
   CannotAmendFromGFAOrGFN
+  
+  "Invalid Market Type"
+  InvalidMarketType
+
+  "Good for normal order received during an auction"
+  GFAOrderDuringAuction
+
+  "Good for auction order received during continuous trading"
+  GFNOrderDuringContinuousTrading
 }
 
 enum OrderType {
