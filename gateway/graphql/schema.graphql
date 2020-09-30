@@ -1408,6 +1408,24 @@ enum OrderRejectionReason {
   "Invalid Time In Force"
   InvalidTimeInForce
 
+  "Attempt to amend order to GTT without ExpiryAt"
+  AmendToGTTWithoutExpiryAt
+
+  "Attempt to amend ExpiryAt to a value before CreatedAt"
+  ExpiryAtBeforeCreatedAt
+
+  "Attempt to amend to GTC without an ExpiryAt value"
+  GTCWithExpiryAtNotValid
+
+  "Amending to FOK or IOC is invalid"
+  CannotAmendToFOKOrIOC
+
+  "Amending to GFA or GFN is invalid"
+  CannotAmendToGFAOrGFN
+  
+  "Amending from GFA or GFN is invalid"
+  CannotAmendFromGFAOrGFN
+  
   "Invalid Market Type"
   InvalidMarketType
 

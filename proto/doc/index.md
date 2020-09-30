@@ -4951,6 +4951,12 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_INVALID_TIME_IN_FORCE | 23 | Order was submitted with invalid time in force |
 | ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION | 24 | A GFN order has got to the market when it is in auction mode |
 | ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING | 25 | A GFA order has got to the market when it is in continuous trading mode |
+| ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT | 26 | Attempt to amend order to GTT without ExpiryAt |
+| ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT | 27 | Attempt to amend ExpiryAt to a value before CreatedAt |
+| ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT | 28 | Attempt to amend to GTC without an ExpiryAt value |
+| ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 29 | Amending to FOK or IOC is invalid |
+| ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 30 | Amending to GFA or GFN is invalid |
+| ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
 
 
 

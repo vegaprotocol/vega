@@ -1219,6 +1219,18 @@ const (
 	OrderRejectionReasonInsufficientFundsToPayFees OrderRejectionReason = "InsufficientFundsToPayFees"
 	// Invalid Time In Force
 	OrderRejectionReasonInvalidTimeInForce OrderRejectionReason = "InvalidTimeInForce"
+	// Attempt to amend order to GTT without ExpiryAt
+	OrderRejectionReasonAmendToGTTWithoutExpiryAt OrderRejectionReason = "AmendToGTTWithoutExpiryAt"
+	// Attempt to amend ExpiryAt to a value before CreatedAt
+	OrderRejectionReasonExpiryAtBeforeCreatedAt OrderRejectionReason = "ExpiryAtBeforeCreatedAt"
+	// Attempt to amend to GTC without an ExpiryAt value
+	OrderRejectionReasonGTCWithExpiryAtNotValid OrderRejectionReason = "GTCWithExpiryAtNotValid"
+	// Amending to FOK or IOC is invalid
+	OrderRejectionReasonCannotAmendToFOKOrIoc OrderRejectionReason = "CannotAmendToFOKOrIOC"
+	// Amending to GFA or GFN is invalid
+	OrderRejectionReasonCannotAmendToGFAOrGfn OrderRejectionReason = "CannotAmendToGFAOrGFN"
+	// Amending from GFA or GFN is invalid
+	OrderRejectionReasonCannotAmendFromGFAOrGfn OrderRejectionReason = "CannotAmendFromGFAOrGFN"
 	// Invalid Market Type
 	OrderRejectionReasonInvalidMarketType OrderRejectionReason = "InvalidMarketType"
 	// Good for normal order received during an auction
@@ -1250,6 +1262,12 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonSelfTrading,
 	OrderRejectionReasonInsufficientFundsToPayFees,
 	OrderRejectionReasonInvalidTimeInForce,
+	OrderRejectionReasonAmendToGTTWithoutExpiryAt,
+	OrderRejectionReasonExpiryAtBeforeCreatedAt,
+	OrderRejectionReasonGTCWithExpiryAtNotValid,
+	OrderRejectionReasonCannotAmendToFOKOrIoc,
+	OrderRejectionReasonCannotAmendToGFAOrGfn,
+	OrderRejectionReasonCannotAmendFromGFAOrGfn,
 	OrderRejectionReasonInvalidMarketType,
 	OrderRejectionReasonGFAOrderDuringAuction,
 	OrderRejectionReasonGFNOrderDuringContinuousTrading,
@@ -1257,7 +1275,7 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading:
 		return true
 	}
 	return false
