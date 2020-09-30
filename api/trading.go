@@ -52,7 +52,7 @@ type EvtForwarder interface {
 }
 
 // Blockchain ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/orders  Blockchain
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/api  Blockchain
 type Blockchain interface {
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
 }
