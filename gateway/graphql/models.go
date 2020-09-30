@@ -1231,6 +1231,12 @@ const (
 	OrderRejectionReasonCannotAmendToGFAOrGfn OrderRejectionReason = "CannotAmendToGFAOrGFN"
 	// Amending from GFA or GFN is invalid
 	OrderRejectionReasonCannotAmendFromGFAOrGfn OrderRejectionReason = "CannotAmendFromGFAOrGFN"
+	// Invalid Market Type
+	OrderRejectionReasonInvalidMarketType OrderRejectionReason = "InvalidMarketType"
+	// Good for normal order received during an auction
+	OrderRejectionReasonGFAOrderDuringAuction OrderRejectionReason = "GFAOrderDuringAuction"
+	// Good for auction order received during continuous trading
+	OrderRejectionReasonGFNOrderDuringContinuousTrading OrderRejectionReason = "GFNOrderDuringContinuousTrading"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1262,6 +1268,9 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonCannotAmendToFOKOrIoc,
 	OrderRejectionReasonCannotAmendToGFAOrGfn,
 	OrderRejectionReasonCannotAmendFromGFAOrGfn,
+	OrderRejectionReasonInvalidMarketType,
+	OrderRejectionReasonGFAOrderDuringAuction,
+	OrderRejectionReasonGFNOrderDuringContinuousTrading,
 }
 
 func (e OrderRejectionReason) IsValid() bool {

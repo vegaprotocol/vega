@@ -2,10 +2,13 @@ package collateral
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -109,6 +112,23 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 // in order to be called when the chain time is updated (basically EndBlock)
 func (e *Engine) OnChainTimeUpdate(t time.Time) {
 	e.currentTime = t.UnixNano()
+}
+
+func (e *Engine) Hash() []byte {
+	keys := make([]string, 0, len(e.accs))
+	for k := range e.accs {
+		keys = append(keys, k)
+	}
+
+	output := make([]byte, 0, len(keys)*8)
+	sort.Strings(keys)
+	i := [8]byte{}
+	for _, k := range keys {
+		binary.BigEndian.PutUint64(i[0:], e.accs[k].Balance)
+		output = append(output, i[0:]...)
+	}
+
+	return crypto.Hash(output)
 }
 
 // ReloadConf updates the internal configuration of the collateral engine

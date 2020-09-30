@@ -64,6 +64,20 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1)
 }
 
+// Hash mocks base method
+func (m *MockExecutionEngine) Hash() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Hash")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// Hash indicates an expected call of Hash
+func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockExecutionEngine)(nil).Hash))
+}
+
 // SubmitMarket mocks base method
 func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
 	m.ctrl.T.Helper()

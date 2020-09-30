@@ -2,9 +2,11 @@ package execution
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -126,6 +128,22 @@ func (e *Engine) ReloadConf(cfg Config) {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Position, e.Config.Settlement, e.Config.Fee)
 	}
+}
+
+func (e *Engine) Hash() []byte {
+	hashes := make([]string, 0, len(e.markets))
+	for _, m := range e.markets {
+		hash := m.Hash()
+		e.log.Debug("market app state hash", logging.Hash(hash), logging.String("market-id", m.GetID()))
+		hashes = append(hashes, string(hash))
+	}
+
+	sort.Strings(hashes)
+	bytes := []byte{}
+	for _, h := range hashes {
+		bytes = append(bytes, []byte(h)...)
+	}
+	return crypto.Hash(bytes)
 }
 
 func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {

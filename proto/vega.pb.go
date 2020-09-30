@@ -199,6 +199,10 @@ const (
 	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN OrderError = 31
 	// Amending from GFA or GFN is invalid
 	OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN OrderError = 32
+	// A GFN order has got to the market when it is in auction mode
+	OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION OrderError = 24
+	// A GFA order has got to the market when it is in continuous trading mode
+	OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING OrderError = 25
 )
 
 var OrderError_name = map[int32]string{

@@ -4955,6 +4955,8 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 30 | Amending to FOK or IOC is invalid |
 | ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 31 | Amending to GFA or GFN is invalid |
 | ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 32 | Amending from GFA or GFN is invalid |
+| ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION | 24 | A GFN order has got to the market when it is in auction mode |
+| ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING | 25 | A GFA order has got to the market when it is in continuous trading mode |
 
 
 
