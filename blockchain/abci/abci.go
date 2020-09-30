@@ -2,6 +2,7 @@ package abci
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 
 	"github.com/tendermint/tendermint/abci/types"
@@ -30,6 +31,9 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
 	app.height = uint64(req.Header.Height)
+	if app.replayProtector != nil {
+		app.replayProtector.SetHeight(app.height)
+	}
 
 	if fn := app.OnBeginBlock; fn != nil {
 		app.ctx, resp = fn(req)
@@ -50,7 +54,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		return NewResponseCheckTx(code, err.Error())
 	}
 
-	if err := app.replayProtection(tx, app.replayMaxDistance); err != nil {
+	if err := app.replayProtection(tx); err != nil {
 		return NewResponseCheckTx(AbciTxnValidationFailure, err.Error())
 	}
 
@@ -76,21 +80,38 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 }
 
 // replayProtection returns an error when the Tx's BlockHeight distance to the chain is >= than a given threshold.
-func (app *App) replayProtection(tx Tx, thres uint64) error {
-	if thres == 0 {
-		return nil
-	}
-
-	// skip replay protection if the Tx didn't specify the block height
+func (app *App) replayProtection(tx Tx) error {
+	// skip replay protection if the Tx didn't specify the block height.
 	if tx.BlockHeight() == 0 {
 		return nil
 	}
 
-	if app.height < (tx.BlockHeight() + thres) {
+	// if this is zero, we assume that the replay protection has not been enabled.
+	if app.replayMaxDistance == 0 {
 		return nil
 	}
 
-	return errors.New("replay protection")
+	// We perform 2 verifications:
+
+	// First we make sure that the Tx is not on the ring buffer.
+	key := hex.EncodeToString(tx.Hash())
+	if err := app.replayProtector.Add(key); err != nil {
+		return errors.New("tx cached")
+	}
+
+	// Then we verify the block distance:
+
+	// If the tx is on a future block, we accept.
+	if tx.BlockHeight() > app.height {
+		return nil
+	}
+
+	// Calculate the distance
+	if app.height-tx.BlockHeight() >= uint64(app.replayMaxDistance) {
+		return errors.New("tx staled")
+	}
+
+	return nil
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {

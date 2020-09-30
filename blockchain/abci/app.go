@@ -17,7 +17,8 @@ type App struct {
 	codec Codec
 
 	// options
-	replayMaxDistance uint64
+	replayProtector   *ReplayProtector
+	replayMaxDistance uint
 
 	// handlers
 	OnInitChain  OnInitChainHandler

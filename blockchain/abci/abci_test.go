@@ -127,7 +127,16 @@ func TestABCICheckTx(t *testing.T) {
 	})
 }
 
-func TestReplayProtection(t *testing.T) {
+// beginBlockN is a helper function that will move the blockchain to a given
+// block number by calling BeginBlock with the right parameter.
+func beginBlockN(app *abci.App, n int) {
+	header := proto.Header{Height: int64(n)}
+	app.BeginBlock(types.RequestBeginBlock{
+		Header: header,
+	})
+}
+
+func TestReplayProtectionByDistance(t *testing.T) {
 	cdc := newTestCodec()
 	tx := []byte("tx")
 	cdc.addTx(tx, &testTx{
@@ -135,30 +144,28 @@ func TestReplayProtection(t *testing.T) {
 		command:     testCommandA,
 	})
 
-	app := abci.New(cdc,
-		// reject Txs with blockHeight further away than 10 blocks.
-		abci.ReplayProtection(10),
-	)
-
 	tests := []struct {
 		name        string
-		height      int64
+		height      int
 		expectError bool
 	}{
-		{"block height 0", 0, false},
-		{"lower block height", 90, false},
-		{"same heightis", 100, false},
-		{"height within distance", 109, false},
-		{"equal block height distance", 110, true},
-		{"bigger block height distance", 200, true},
+		{"within distance: low", 91, false},
+		{"within distance: high", 109, false},
+
+		{"same heights", 100, false},
+
+		{"higher distance - short", 110, true},
+		{"higher distance - long", 200, true},
 	}
 
 	for _, test := range tests {
+		app := abci.New(cdc,
+			// reject Txs with blockHeight further away than 10 blocks.
+			abci.ReplayProtection(10),
+		)
+
 		// forward to a given block
-		header := proto.Header{Height: test.height}
-		app.BeginBlock(types.RequestBeginBlock{
-			Header: header,
-		})
+		beginBlockN(app, test.height)
 
 		// perform the request (all of them uses blockHeight 100)
 		req := types.RequestCheckTx{Tx: tx}
@@ -173,4 +180,35 @@ func TestReplayProtection(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReplayProtectionByCache(t *testing.T) {
+	cdc := newTestCodec()
+	tx := []byte("tx")
+	cdc.addTx(tx, &testTx{
+		blockHeight: 1,
+		command:     testCommandA,
+	})
+
+	app := abci.New(cdc,
+		// reject Txs with blockHeight further away than 10 blocks.
+		abci.ReplayProtection(2),
+	)
+
+	// forward to a given block
+	beginBlockN(app, 0)
+	req := types.RequestCheckTx{Tx: tx}
+	resp1 := app.CheckTx(req)
+	resp2 := app.CheckTx(req)
+
+	require.True(t, resp1.IsOK())
+	require.True(t, resp2.IsErr())
+	require.Equal(t, "tx cached", resp2.Info)
+
+	beginBlockN(app, 1)
+	beginBlockN(app, 2)
+	beginBlockN(app, 3)
+	resp3 := app.CheckTx(req)
+	require.True(t, resp3.IsErr())
+	require.Equal(t, "tx staled", resp3.Info)
 }
