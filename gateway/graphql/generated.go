@@ -450,6 +450,12 @@ type ComplexityRoot struct {
 		Withdrawal                 func(childComplexity int, id string) int
 	}
 
+	RiskFactor struct {
+		Long   func(childComplexity int) int
+		Market func(childComplexity int) int
+		Short  func(childComplexity int) int
+	}
+
 	ScalingFactors struct {
 		CollateralRelease func(childComplexity int) int
 		InitialMargin     func(childComplexity int) int
@@ -2665,6 +2671,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Withdrawal(childComplexity, args["id"].(string)), true
+
+	case "RiskFactor.long":
+		if e.complexity.RiskFactor.Long == nil {
+			break
+		}
+
+		return e.complexity.RiskFactor.Long(childComplexity), true
+
+	case "RiskFactor.market":
+		if e.complexity.RiskFactor.Market == nil {
+			break
+		}
+
+		return e.complexity.RiskFactor.Market(childComplexity), true
+
+	case "RiskFactor.short":
+		if e.complexity.RiskFactor.Short == nil {
+			break
+		}
+
+		return e.complexity.RiskFactor.Short(childComplexity), true
 
 	case "ScalingFactors.collateralRelease":
 		if e.complexity.ScalingFactors.CollateralRelease == nil {
@@ -5607,13 +5634,15 @@ enum BusEventType {
   MarketTick
   "auction event"
   Auction
+  "risk factor event"
+  RiskFactor
 
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor
 
 type BusEvent {
   "the id for this event"
@@ -5623,7 +5652,16 @@ type BusEvent {
   "the payload - the wrapped event"
   event: Event!
 }
-`, BuiltIn: false},
+
+"A risk factor emitted by the risk model for a given market"
+type RiskFactor {
+  "market the risk factor was emitted for"
+  market: String!
+  "short factor"
+  short: Float!
+  "long factor"
+  long: Float!
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -14961,6 +14999,108 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _RiskFactor_market(ctx context.Context, field graphql.CollectedField, obj *proto.RiskFactor) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "RiskFactor",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Market, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RiskFactor_short(ctx context.Context, field graphql.CollectedField, obj *proto.RiskFactor) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "RiskFactor",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Short, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RiskFactor_long(ctx context.Context, field graphql.CollectedField, obj *proto.RiskFactor) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "RiskFactor",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Long, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ScalingFactors_searchLevel(ctx context.Context, field graphql.CollectedField, obj *ScalingFactors) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -20443,6 +20583,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._AuctionEvent(ctx, sel, obj)
+	case proto.RiskFactor:
+		return ec._RiskFactor(ctx, sel, &obj)
+	case *proto.RiskFactor:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RiskFactor(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -23727,6 +23874,43 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var riskFactorImplementors = []string{"RiskFactor", "Event"}
+
+func (ec *executionContext) _RiskFactor(ctx context.Context, sel ast.SelectionSet, obj *proto.RiskFactor) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, riskFactorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RiskFactor")
+		case "market":
+			out.Values[i] = ec._RiskFactor_market(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "short":
+			out.Values[i] = ec._RiskFactor_short(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "long":
+			out.Values[i] = ec._RiskFactor_long(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

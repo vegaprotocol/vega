@@ -1375,6 +1375,8 @@ func eventFromProto(e *types.BusEvent) Event {
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
 		return auctionEventFromProto(e.GetAuction())
+	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
+		return e.GetRiskFactor()
 	}
 	return nil
 }
