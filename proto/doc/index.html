@@ -1975,7 +1975,11 @@ e.g: 0x &#43; sig1 &#43; sig2 &#43; ... &#43; sixN </p></td>
                   <td>order</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td></td>
-                  <td><p>Order to estimate fees for </p></td>
+                  <td><p>Order to estimate fees for
+the following fields in the order are required:
+MarketID (used to specify the fee factors)
+Price (the price at which the order could trade)
+Size (the size at which the order could eventually trade) </p></td>
                 </tr>
 
             </tbody>
