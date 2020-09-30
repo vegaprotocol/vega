@@ -250,6 +250,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_ASSET = 16;
   // Proposal terms timestamps are not compatible (Validation < Closing < Enactment).
   PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS = 17;
+  // No risk parameteres were specified
+  PROPOSAL_ERROR_NO_RISK_PARAMETERS = 18;
 }
 
 // Governance vote.
