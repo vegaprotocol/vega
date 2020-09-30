@@ -41,6 +41,7 @@ type marketPartyFilterable interface {
 type Base struct {
 	ctx     context.Context
 	traceID string
+	blockNr int64
 	seq     uint64
 	et      Type
 }
@@ -227,9 +228,11 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 // A base event holds no data, so the constructor will not be called directly
 func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := contextutil.TraceIDFromContext(ctx)
+	h, _ := contextutil.BlockHeightFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
+		blockNr: h,
 		et:      t,
 	}
 }
@@ -259,7 +262,7 @@ func (b Base) Type() Type {
 }
 
 func (b Base) eventID() string {
-	return fmt.Sprintf("%s-%d", b.traceID, b.seq)
+	return fmt.Sprintf("%d-%d", b.blockNr, b.seq)
 }
 
 // MarketEvents return all the possible market events
