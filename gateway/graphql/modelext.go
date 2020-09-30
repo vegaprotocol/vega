@@ -1429,6 +1429,8 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET)
 		case BusEventTypeAuction:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_AUCTION)
+		case BusEventTypeRiskFactor:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR)
 		}
 	}
 	return r
@@ -1478,6 +1480,8 @@ func eventTypeFromProto(t types.BusEventType) BusEventType {
 		return BusEventTypeMarket
 	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
 		return BusEventTypeAuction
+	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
+		return BusEventTypeRiskFactor
 	}
 	// @TODO this should be an error, but no event should ever be returned with this value anyway
 	return BusEventTypeAll
