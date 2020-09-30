@@ -1475,8 +1475,9 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	}
 	mkt, err = marketService.GetByID(ctx, marketID)
 	if err != nil {
-		// here we just did not found the market
-		// we can return a NotFound error
+		// We return nil for error as we do not want
+		// to return an error when a market is not found
+		// but just a nil value.
 		return nil, nil
 	}
 	return mkt, nil
