@@ -39,6 +39,13 @@ func newAuctionState(mkt *types.Market, now time.Time) *auctionState {
 	if mkt.GetContinuous() == nil {
 		s.defMode = types.MarketState_MARKET_STATE_AUCTION
 	}
+	// no opening auction
+	if mkt.OpeningAuction == nil {
+		s.mode = s.defMode
+		s.begin = nil
+		s.start = false
+		s.trigger = Trigger_None
+	}
 	return &s
 }
 

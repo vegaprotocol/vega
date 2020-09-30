@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/positions"
+	"code.vegaprotocol.io/vega/pricemonitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
@@ -58,6 +59,12 @@ var (
 	networkPartyID = "network"
 )
 
+// PriceMonitor interface to handle price monitoring/auction triggers
+// @TODO the interface shouldn't be imported here
+type PriceMonitor interface {
+	CheckPrice(ctx context.Context, as pricemonitoring.AuctionState, p uint64, now time.Time) error
+}
+
 // Market represents an instance of a market in vega and is in charge of calling
 // the engines in order to process all transctiona
 type Market struct {
@@ -89,13 +96,14 @@ type Market struct {
 	// deps engines
 	collateral *collateral.Engine
 
-	// auction triggers
-	auctionTriggers []AuctionTrigger
-
 	broker Broker
 	closed bool
 
 	parties map[string]struct{}
+
+	pMonitor PriceMonitor // @TODO initialise and assign
+
+	auctionState *auctionState // @TODO this should be an interface
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -199,10 +207,6 @@ func NewMarket(
 		auctionClose = now.Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
 	}
 
-	if auctionTriggers == nil {
-		auctionTriggers = make([]AuctionTrigger, 0)
-	}
-
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -222,7 +226,7 @@ func NewMarket(
 		auctionStart:       now,
 		auctionEnd:         auctionClose,
 		tradeMode:          mode,
-		auctionTriggers:    auctionTriggers,
+		auctionState:       newAuctionState(mkt, now),
 	}
 
 	if mkt.OpeningAuction != nil {
@@ -292,7 +296,7 @@ func (m *Market) GetID() string {
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
-	ctx := context.TODO()
+	ctx := context.TODO() // @TODO this has to be changed to be a context with block height and hash
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
@@ -316,6 +320,12 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	// TODO(): handle market start time
 
+	// @TODO ensure this is set:
+	if m.pMonitor != nil {
+		if err := m.pMonitor.CheckPrice(ctx, m.auctionState, m.markPrice, t); err != nil {
+			m.log.Error("Could not check price", logging.Error(err))
+		}
+	}
 	if !m.isOpeningAuction() {
 		m.auctionModeTimeBasedSemaphore(ctx, t)
 	}
@@ -451,33 +461,15 @@ func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time)
 }
 
 func (m *Market) shouldEnterAuctionPerTime(t time.Time) bool {
-	b := false
-	for _, trigger := range m.auctionTriggers {
-		if trigger.EnterPerTime(t) {
-			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
-		}
-	}
-	return b
+	return false
 }
 
 func (m *Market) shouldLeaveAuctionPerTime(t time.Time) bool {
-	b := true
-	for _, trigger := range m.auctionTriggers {
-		if !trigger.LeavePerTime(t) {
-			b = false // Don't exit early in case multiple triggers hit and internal stage changes relevant
-		}
-	}
-	return b
+	return false
 }
 
 func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
-	b := false
-	for _, trigger := range m.auctionTriggers {
-		if trigger.EnterPerPrice(price) {
-			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
-		}
-	}
-	return b
+	return false
 }
 
 // EnterAuction : Prepare the order book to be run as an auction

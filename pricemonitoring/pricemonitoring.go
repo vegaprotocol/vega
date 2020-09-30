@@ -31,7 +31,7 @@ type AuctionState interface {
 	IsFBA() bool
 	// is it the start/end of the auction
 	AuctionEnd() bool
-	ActionStart() bool
+	AuctionStart() bool
 	// start a price-related auction, extend a current auction, or end it
 	StartPriceAuction(t time.Time, d *types.AuctionDuration)
 	ExtendAuction(delta types.AuctionDuration)
