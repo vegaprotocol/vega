@@ -116,10 +116,20 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 	if order.Side == types.Side_SIDE_BUY {
 		f = rf.Long
 	}
+
+	asset, err := mkt.GetAsset()
+	if err != nil {
+		return nil, err
+	}
+
 	// now calculate margin maintenance
 	maintenanceMargin := float64(order.Size) * f * float64(mktData.MarkPrice)
 	// now we use the risk factors
 	return &types.MarginLevels{
+		PartyID:                order.PartyID,
+		MarketID:               mkt.GetId(),
+		Asset:                  asset,
+		Timestamp:              0,
 		MaintenanceMargin:      uint64(maintenanceMargin),
 		SearchLevel:            uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel),
 		InitialMargin:          uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin),

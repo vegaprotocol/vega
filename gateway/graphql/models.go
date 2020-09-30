@@ -480,11 +480,13 @@ type NewMarketInput struct {
 }
 
 // An estimate of the fee to be paid by the order
-type OrderFeeEstimate struct {
+type OrderEstimate struct {
 	// The estimated fee if the order was to trade
 	Fee *TradeFee `json:"fee"`
 	// The total estimated amount of fee if the order was to trade
 	TotalFeeAmount string `json:"totalFeeAmount"`
+	// The margin requirement for this order
+	MarginLevels *proto.MarginLevels `json:"marginLevels"`
 }
 
 type PositionResolution struct {
