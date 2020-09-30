@@ -31,12 +31,11 @@ func (r RiskFactor) Proto() types.RiskFactor {
 }
 
 func (r RiskFactor) StreamMessage() types.BusEvent {
-	cpy := r.r
 	return types.BusEvent{
 		ID:   r.eventID(),
 		Type: r.et.ToProto(),
 		Event: &types.BusEvent_RiskFactor{
-			RiskFactor: &cpy,
+			RiskFactor: &r.r,
 		},
 	}
 }
