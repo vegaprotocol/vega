@@ -22,7 +22,7 @@ type Codec interface {
 
 // ABCI hooks
 type OnInitChainHandler func(types.RequestInitChain) types.ResponseInitChain
-type OnBeginBlockHandler func(types.RequestBeginBlock) types.ResponseBeginBlock
+type OnBeginBlockHandler func(types.RequestBeginBlock) (context.Context, types.ResponseBeginBlock)
 type OnCheckTxHandler func(context.Context, types.RequestCheckTx, Tx) (context.Context, types.ResponseCheckTx)
 type OnDeliverTxHandler func(context.Context, types.RequestDeliverTx, Tx) (context.Context, types.ResponseDeliverTx)
 type OnCommitHandler func() types.ResponseCommit

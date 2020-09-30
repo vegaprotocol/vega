@@ -1,8 +1,6 @@
 package abci
 
 import (
-	"context"
-
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -28,7 +26,7 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
 	if fn := app.OnBeginBlock; fn != nil {
-		return fn(req)
+		app.ctx, resp = fn(req)
 	}
 	return
 }
@@ -46,7 +44,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		return NewResponseCheckTx(code, err.Error())
 	}
 
-	ctx := context.Background()
+	ctx := app.ctx
 	if fn := app.OnCheckTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
@@ -81,7 +79,7 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here
-	ctx := context.Background()
+	ctx := app.ctx
 	if fn := app.OnDeliverTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
