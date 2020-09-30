@@ -62,7 +62,15 @@ func testMarginEstimateSuccess(t *testing.T) {
 	)
 	svc.mktstore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
 		&types.Market{
+			Id: "mktid",
 			TradableInstrument: &types.TradableInstrument{
+				Instrument: &types.Instrument{
+					Product: &types.Instrument_Future{
+						Future: &types.Future{
+							Asset: "assetid",
+						},
+					},
+				},
 				MarginCalculator: &types.MarginCalculator{
 					ScalingFactors: &types.ScalingFactors{
 						SearchLevel:       1.1,
