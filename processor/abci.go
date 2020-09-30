@@ -183,9 +183,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block
-func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.ResponseBeginBlock) {
+func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
-	ctx := contextutil.WithTraceID(context.Background(), hash)
+	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
 
 	now := req.Header.Time
 	app.time.SetTimeNow(ctx, now)
@@ -259,10 +259,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	app.size++
 	app.setTxStats(len(req.Tx))
 
-	// update the context with Tracing Info.
-	hash := hex.EncodeToString(tx.Hash())
-	ctx = contextutil.WithTraceID(ctx, hash)
-
+	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
 	return ctx, tmtypes.ResponseDeliverTx{}
 }
 

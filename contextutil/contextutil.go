@@ -2,6 +2,7 @@ package contextutil
 
 import (
 	"context"
+	"errors"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -10,9 +11,14 @@ type remoteIPAddrKey int
 
 type traceIDT int
 
+type blockHeight int
+
 var (
 	clientRemoteIPAddrKey remoteIPAddrKey
 	traceIDKey            traceIDT
+	blockHeightKey        blockHeight
+
+	ErrBlockHeightMissing = errors.New("no or invalid block height set on context")
 )
 
 // WithRemoteIPAddr wrap the context into a new context
@@ -43,7 +49,23 @@ func TraceIDFromContext(ctx context.Context) (context.Context, string) {
 	return ctx, stID
 }
 
+func BlockHeightFromContext(ctx context.Context) (int64, error) {
+	hv := ctx.Value(blockHeightKey)
+	if hv == nil {
+		return 0, ErrBlockHeightMissing
+	}
+	h, ok := hv.(int64)
+	if !ok {
+		return 0, ErrBlockHeightMissing
+	}
+	return h, nil
+}
+
 // WithTraceID returns a context with a traceID value
 func WithTraceID(ctx context.Context, tID string) context.Context {
 	return context.WithValue(ctx, traceIDKey, tID)
+}
+
+func WithBlockHeight(ctx context.Context, h int64) context.Context {
+	return context.WithValue(ctx, blockHeightKey, h)
 }

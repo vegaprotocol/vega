@@ -29,6 +29,9 @@ type App struct {
 	// checkedTxs holds a map of valid transactions (validated by CheckTx)
 	// They are consumed by DeliverTx to avoid double validation.
 	checkedTxs map[string]Tx
+
+	// the current block context
+	ctx context.Context
 }
 
 func New(codec Codec) *App {
