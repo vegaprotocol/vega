@@ -516,7 +516,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin, l.marketDepthSub)
+		l.depositPlugin, l.marketDepthSub, l.riskFactorSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
