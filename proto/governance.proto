@@ -153,12 +153,12 @@ message GovernanceData {
   // All "no" votes against the proposal above.
   repeated Vote no = 3;
   // All latest YES votes by party (guaranteed to be unique).
-  // key (string) is the party ID (publickey)
-  // value (Vote) is the vote casted by the given party
+  // key (string) is the party ID (public key)
+  // value (Vote) is the vote cast by the given party
   map<string, Vote> yesParty = 4;
-  // All latest NO votes by party (unique).
-  // key (string) is the party ID (publickey)
-  // value (Vote) is the vote casted by the given party
+  // All latest NO votes by party (guaranteed to be unique).
+  // key (string) is the party ID (public key)
+  // value (Vote) is the vote cast by the given party
   map<string, Vote> noParty = 5;
 }
 
