@@ -2,8 +2,6 @@ package abci
 
 import (
 	"context"
-	"encoding/hex"
-	"errors"
 
 	"github.com/tendermint/tendermint/abci/types"
 )
@@ -54,7 +52,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		return NewResponseCheckTx(code, err.Error())
 	}
 
-	if err := app.replayProtection(tx); err != nil {
+	if err := app.replayProtector.CheckTx(tx); err != nil {
 		return NewResponseCheckTx(AbciTxnValidationFailure, err.Error())
 	}
 
@@ -77,41 +75,6 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// the cache to be consumed by DeliveryTx
 	app.cacheTx(&req, tx)
 	return resp
-}
-
-// replayProtection returns an error when the Tx's BlockHeight distance to the chain is >= than a given threshold.
-func (app *App) replayProtection(tx Tx) error {
-	// skip replay protection if the Tx didn't specify the block height.
-	if tx.BlockHeight() == 0 {
-		return nil
-	}
-
-	// if this is zero, we assume that the replay protection has not been enabled.
-	if app.replayMaxDistance == 0 {
-		return nil
-	}
-
-	// We perform 2 verifications:
-
-	// First we make sure that the Tx is not on the ring buffer.
-	key := hex.EncodeToString(tx.Hash())
-	if err := app.replayProtector.Add(key); err != nil {
-		return errors.New("tx cached")
-	}
-
-	// Then we verify the block distance:
-
-	// If the tx is on a future block, we accept.
-	if tx.BlockHeight() > app.height {
-		return nil
-	}
-
-	// Calculate the distance
-	if app.height-tx.BlockHeight() >= uint64(app.replayMaxDistance) {
-		return errors.New("tx staled")
-	}
-
-	return nil
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {

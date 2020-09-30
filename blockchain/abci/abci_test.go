@@ -203,12 +203,12 @@ func TestReplayProtectionByCache(t *testing.T) {
 
 	require.True(t, resp1.IsOK())
 	require.True(t, resp2.IsErr())
-	require.Equal(t, "tx cached", resp2.Info)
+	require.Equal(t, abci.ErrTxAlreadyInCache.Error(), resp2.Info)
 
 	beginBlockN(app, 1)
 	beginBlockN(app, 2)
 	beginBlockN(app, 3)
 	resp3 := app.CheckTx(req)
 	require.True(t, resp3.IsErr())
-	require.Equal(t, "tx staled", resp3.Info)
+	require.Equal(t, abci.ErrTxStaled.Error(), resp3.Info)
 }

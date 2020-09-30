@@ -18,7 +18,7 @@ type Config struct {
 	LogOrderAmendDebug       bool
 	LogOrderCancelDebug      bool
 	ChainProvider            string
-	ReplayProtectionDistance uint64
+	ReplayProtectionDistance uint
 
 	Tendermint TendermintConfig
 	Noop       noop.Config

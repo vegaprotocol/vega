@@ -16,29 +16,29 @@ func TestReplayProtector(t *testing.T) {
 
 func testOnDuplicatedKeyOnTheSameblock(t *testing.T) {
 	rp := abci.NewReplayProtector(1)
-	require.NoError(t, rp.Add("k1"))
-	require.Error(t, rp.Add("k1"))
+	require.True(t, rp.Add("k1"))
+	require.False(t, rp.Add("k1"))
 }
 
 func testOnDuplicatedKeyOnTheDifferentblock(t *testing.T) {
 	rp := abci.NewReplayProtector(2)
 	rp.SetHeight(0)
-	require.NoError(t, rp.Add("k1"))
+	require.True(t, rp.Add("k1"))
 
 	rp.SetHeight(1)
-	require.Error(t, rp.Add("k1"))
+	require.False(t, rp.Add("k1"))
 }
 
 func testCacheEviction(t *testing.T) {
 	rp := abci.NewReplayProtector(2)
 	rp.SetHeight(0)
-	require.NoError(t, rp.Add("k1"))
+	require.True(t, rp.Add("k1"))
 
 	rp.SetHeight(1)
-	require.Error(t, rp.Add("k1"))
+	require.False(t, rp.Add("k1"))
 
 	rp.SetHeight(2)
-	require.NoError(t, rp.Add("k1"))
+	require.True(t, rp.Add("k1"))
 }
 
 // newPopulatedRP will create a ReplayProtector with `nBlocks`

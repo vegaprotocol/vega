@@ -17,8 +17,10 @@ type App struct {
 	codec Codec
 
 	// options
-	replayProtector   *ReplayProtector
-	replayMaxDistance uint
+	replayProtector interface {
+		SetHeight(uint64)
+		CheckTx(Tx) error
+	}
 
 	// handlers
 	OnInitChain  OnInitChainHandler
@@ -41,10 +43,10 @@ type App struct {
 
 func New(codec Codec, opts ...Option) *App {
 	app := &App{
-		codec:      codec,
-		checkTxs:   map[blockchain.Command]TxHandler{},
-		deliverTxs: map[blockchain.Command]TxHandler{},
-		checkedTxs: map[string]Tx{},
+		codec:           codec,
+		checkTxs:        map[blockchain.Command]TxHandler{},
+		deliverTxs:      map[blockchain.Command]TxHandler{},
+		replayProtector: &replayProtectorNoop{},
 	}
 
 	for _, fn := range opts {
