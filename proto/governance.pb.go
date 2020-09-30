@@ -1008,8 +1008,12 @@ type GovernanceData struct {
 	// All "no" votes against the proposal above.
 	No []*Vote `protobuf:"bytes,3,rep,name=no,proto3" json:"no,omitempty"`
 	// All latest YES votes by party (guaranteed to be unique).
+	// key (string) is the party ID (public key)
+	// value (Vote) is the vote cast by the given party
 	YesParty map[string]*Vote `protobuf:"bytes,4,rep,name=yesParty,proto3" json:"yesParty,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// All latest NO votes by party (unique).
+	// All latest NO votes by party (guaranteed to be unique).
+	// key (string) is the party ID (public key)
+	// value (Vote) is the vote cast by the given party
 	NoParty              map[string]*Vote `protobuf:"bytes,5,rep,name=noParty,proto3" json:"noParty,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`

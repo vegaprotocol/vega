@@ -2934,14 +2934,14 @@
           "additionalProperties": {
             "$ref": "#/definitions/vegaVote"
           },
-          "description": "All latest YES votes by party (guaranteed to be unique)."
+          "title": "All latest YES votes by party (guaranteed to be unique).\nkey (string) is the party ID (public key)\nvalue (Vote) is the vote cast by the given party"
         },
         "noParty": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/vegaVote"
           },
-          "description": "All latest NO votes by party (unique)."
+          "title": "All latest NO votes by party (guaranteed to be unique).\nkey (string) is the party ID (public key)\nvalue (Vote) is the vote cast by the given party"
         }
       },
       "description": "Governance data."
