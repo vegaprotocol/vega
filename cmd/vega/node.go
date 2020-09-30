@@ -106,6 +106,7 @@ type NodeCommand struct {
 	marketDataSub  *subscribers.MarketDataSub
 	newMarketSub   *subscribers.Market
 	candleSub      *subscribers.CandleSub
+	riskFactorSub  *subscribers.RiskFactorSub
 	marketDepthSub *subscribers.MarketDepthBuilder
 
 	candleService     *candles.Svc

@@ -22,6 +22,8 @@
     - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
     - [EstimateFeeRequest](#api.EstimateFeeRequest)
     - [EstimateFeeResponse](#api.EstimateFeeResponse)
+    - [EstimateMarginRequest](#api.EstimateMarginRequest)
+    - [EstimateMarginResponse](#api.EstimateMarginResponse)
     - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
     - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
@@ -574,6 +576,36 @@ Response to a EstimateFeeRequest, containing the estimated fees for a given orde
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | fee | [vega.Fee](#vega.Fee) |  | Summary of the estimated fees for this order if it were to trade now |
+
+
+
+
+
+
+<a name="api.EstimateMarginRequest"></a>
+
+### EstimateMarginRequest
+Request to fetch the estimated MarginLevels if an order were to trade immediately
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| order | [vega.Order](#vega.Order) |  | Order to estimate fees for |
+
+
+
+
+
+
+<a name="api.EstimateMarginResponse"></a>
+
+### EstimateMarginResponse
+Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marginLevels | [vega.MarginLevels](#vega.MarginLevels) |  | Summary of the estimated margins for this order if it were to trade now |
 
 
 
@@ -2134,6 +2166,7 @@ The response for a list of withdrawals
 | AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier. |
 | Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
 | EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
+| EstimateMargin | [EstimateMarginRequest](#api.EstimateMarginRequest) | [EstimateMarginResponse](#api.EstimateMarginResponse) | Get an estimate for the margin required for a new order |
 | ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
 | Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
@@ -2619,6 +2652,7 @@ the actual data is set as a oneof field
 | withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
 | deposit | [Deposit](#vega.Deposit) |  |  |
 | auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
+| riskFactor | [RiskFactor](#vega.RiskFactor) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2809,6 +2843,7 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
 | BUS_EVENT_TYPE_DEPOSIT | 21 |  |
 | BUS_EVENT_TYPE_AUCTION | 22 |  |
+| BUS_EVENT_TYPE_RISK_FACTOR | 23 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 

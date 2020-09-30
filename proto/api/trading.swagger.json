@@ -526,6 +526,60 @@
         ]
       }
     },
+    "/orders/fee/estimate": {
+      "post": {
+        "summary": "Get an estimate for the fee to be paid for a given order",
+        "operationId": "EstimateFee",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiEstimateFeeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiEstimateFeeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/orders/margins/estimate": {
+      "post": {
+        "summary": "Get an estimate for the margin required for a new order",
+        "operationId": "EstimateMargin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiEstimateMarginResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiEstimateMarginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orders/prepare/amend": {
       "post": {
         "summary": "Prepare an amend order request",
@@ -1314,6 +1368,16 @@
       },
       "title": "The response with all information required to bundle the call\nto finalize the withdrawal on the erc20 bridge\nfunction withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)"
     },
+    "apiEstimateFeeRequest": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "Order to estimate fees for"
+        }
+      },
+      "title": "Request to fetch the estimated fee if an order were to trade immediately"
+    },
     "apiEstimateFeeResponse": {
       "type": "object",
       "properties": {
@@ -1323,6 +1387,26 @@
         }
       },
       "title": "Response to a EstimateFeeRequest, containing the estimated fees for a given order"
+    },
+    "apiEstimateMarginRequest": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "Order to estimate fees for"
+        }
+      },
+      "title": "Request to fetch the estimated MarginLevels if an order were to trade immediately"
+    },
+    "apiEstimateMarginResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "$ref": "#/definitions/vegaMarginLevels",
+          "title": "Summary of the estimated margins for this order if it were to trade now"
+        }
+      },
+      "title": "Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order"
     },
     "apiFeeInfrastructureAccountsResponse": {
       "type": "object",
@@ -2363,6 +2447,9 @@
         "auction": {
           "$ref": "#/definitions/vegaAuctionEvent"
         },
+        "riskFactor": {
+          "$ref": "#/definitions/vegaRiskFactor"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2395,6 +2482,7 @@
         "BUS_EVENT_TYPE_WITHDRAWAL",
         "BUS_EVENT_TYPE_DEPOSIT",
         "BUS_EVENT_TYPE_AUCTION",
+        "BUS_EVENT_TYPE_RISK_FACTOR",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -3881,6 +3969,26 @@
         }
       },
       "description": "A message to notify when a validator is being removed from the Vega network."
+    },
+    "vegaRiskFactor": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "type": "string",
+          "description": "Market ID that relates to this risk factor."
+        },
+        "short": {
+          "type": "number",
+          "format": "double",
+          "description": "Short Risk factor value."
+        },
+        "long": {
+          "type": "number",
+          "format": "double",
+          "description": "Long Risk factor value."
+        }
+      },
+      "description": "Risk factors are used to calculate the current risk associated with orders trading on a given market."
     },
     "vegaScalingFactors": {
       "type": "object",

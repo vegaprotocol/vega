@@ -773,6 +773,22 @@ func (this *EstimateFeeResponse) Validate() error {
 	}
 	return nil
 }
+func (this *EstimateMarginRequest) Validate() error {
+	if this.Order != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
+		}
+	}
+	return nil
+}
+func (this *EstimateMarginResponse) Validate() error {
+	if this.MarginLevels != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginLevels); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarginLevels", err)
+		}
+	}
+	return nil
+}
 func (this *ObserveEventsRequest) Validate() error {
 	return nil
 }

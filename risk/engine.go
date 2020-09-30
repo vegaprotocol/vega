@@ -111,7 +111,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // CalculateFactors trigger the calculation of the risk factors
-func (e *Engine) CalculateFactors(now time.Time) {
+func (e *Engine) CalculateFactors(ctx context.Context, now time.Time) {
 	// don't calculate risk factors if we are before or at the next update time (calcs are before
 	// processing and we calc factors after the time so we wait for time > nextUpdateTime) OR if we are
 	// already waiting on risk calcs
@@ -127,6 +127,16 @@ func (e *Engine) CalculateFactors(now time.Time) {
 			result.NextUpdateTimestamp = now.Add(e.model.CalculationInterval()).UnixNano()
 		}
 		e.factors = result
+		// FIXME(jeremy): here we are iterating over the risk factors map
+		// although we know there's only one asset in the map, we should probably
+		// refactor the returned values from the model.
+		var rf types.RiskFactor
+		for _, v := range result.RiskFactors {
+			rf = *v
+		}
+		rf.Market = e.mktID
+		// then we can send in the broker
+		e.broker.Send(events.NewRiskFactorEvent(ctx, rf))
 	} else {
 		e.waiting = true
 	}

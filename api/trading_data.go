@@ -148,6 +148,7 @@ type RiskService interface {
 	) (<-chan []types.MarginLevels, uint64)
 	GetMarginLevelsSubscribersCount() int32
 	GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error)
+	EstimateMargin(ctx context.Context, order *types.Order) (*types.MarginLevels, error)
 }
 
 // Notary ...
@@ -211,6 +212,22 @@ type tradingDataService struct {
 	WithdrawalService       WithdrawalService
 	DepositService          DepositService
 	ctx                     context.Context
+}
+
+func (t *tradingDataService) EstimateMargin(ctx context.Context, req *protoapi.EstimateMarginRequest) (*protoapi.EstimateMarginResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin")()
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	margin, err := t.RiskService.EstimateMargin(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateMarginResponse{
+		MarginLevels: margin,
+	}, nil
 }
 
 func (t *tradingDataService) EstimateFee(ctx context.Context, req *protoapi.EstimateFeeRequest) (*protoapi.EstimateFeeResponse, error) {

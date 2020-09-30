@@ -319,6 +319,9 @@ service trading_data {
   // Get an estimate for the fee to be paid for a given order
   rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
 
+  // Get an estimate for the margin required for a new order
+  rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse);
+
   // Get the bundle approval for an ERC20 withdrawal
   // these data are being used to bundle the call to the smart contract on the ethereum bridge
   rpc ERC20WithdrawalApproval(ERC20WithdrawalApprovalRequest) returns (ERC20WithdrawalApprovalResponse);
@@ -1037,6 +1040,18 @@ message EstimateFeeRequest {
 message EstimateFeeResponse {
   // Summary of the estimated fees for this order if it were to trade now
   vega.Fee fee = 2;
+}
+
+// Request to fetch the estimated MarginLevels if an order were to trade immediately
+message EstimateMarginRequest {
+  // Order to estimate fees for
+  vega.Order order = 1;
+}
+
+// Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+message EstimateMarginResponse {
+  // Summary of the estimated margins for this order if it were to trade now
+  vega.MarginLevels marginLevels = 2;
 }
 
 // Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)

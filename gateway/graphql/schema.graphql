@@ -2079,13 +2079,15 @@ enum BusEventType {
   MarketTick
   "auction event"
   Auction
+  "risk factor event"
+  RiskFactor
 
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor
 
 type BusEvent {
   "the id for this event"
@@ -2094,4 +2096,14 @@ type BusEvent {
   type: BusEventType!
   "the payload - the wrapped event"
   event: Event!
+}
+
+"A risk factor emitted by the risk model for a given market"
+type RiskFactor {
+  "market the risk factor was emitted for"
+  market: String!
+  "short factor"
+  short: Float!
+  "long factor"
+  long: Float!
 }
