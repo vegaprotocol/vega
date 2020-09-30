@@ -12,13 +12,12 @@ const namedLogger = "blockchain"
 
 // Config represent the configuration of the blockchain package
 type Config struct {
-	Level                    encoding.LogLevel
-	LogTimeDebug             bool
-	LogOrderSubmitDebug      bool
-	LogOrderAmendDebug       bool
-	LogOrderCancelDebug      bool
-	ChainProvider            string
-	ReplayProtectionDistance uint
+	Level               encoding.LogLevel
+	LogTimeDebug        bool
+	LogOrderSubmitDebug bool
+	LogOrderAmendDebug  bool
+	LogOrderCancelDebug bool
+	ChainProvider       string
 
 	Tendermint TendermintConfig
 	Noop       noop.Config
@@ -28,13 +27,12 @@ type Config struct {
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() Config {
 	return Config{
-		Level:                    encoding.LogLevel{Level: logging.InfoLevel},
-		LogOrderSubmitDebug:      true,
-		LogTimeDebug:             true,
-		ChainProvider:            "tendermint",
-		ReplayProtectionDistance: 100,
-		Tendermint:               NewDefaultTendermintConfig(),
-		Noop:                     noop.NewDefaultConfig(),
+		Level:               encoding.LogLevel{Level: logging.InfoLevel},
+		LogOrderSubmitDebug: true,
+		LogTimeDebug:        true,
+		ChainProvider:       "tendermint",
+		Tendermint:          NewDefaultTendermintConfig(),
+		Noop:                noop.NewDefaultConfig(),
 	}
 }
 

@@ -62,8 +62,8 @@ func (rp *ReplayProtector) Add(key string) bool {
 	return true
 }
 
-// CheckTx excercises both strategies (cache and tolerance) to determine if a Tx should be allowed or not.
-func (rp *ReplayProtector) CheckTx(tx Tx) error {
+// DeliverTx excercises both strategies (cache and tolerance) to determine if a Tx should be allowed or not.
+func (rp *ReplayProtector) DeliverTx(tx Tx) error {
 	// skip replay protection if the Tx didn't specify the block height.
 	if tx.BlockHeight() == 0 {
 		return nil
@@ -94,5 +94,5 @@ func (rp *ReplayProtector) CheckTx(tx Tx) error {
 
 type replayProtectorNoop struct{}
 
-func (_ *replayProtectorNoop) SetHeight(uint64) {}
-func (_ *replayProtectorNoop) CheckTx(Tx) error { return nil }
+func (_ *replayProtectorNoop) SetHeight(uint64)   {}
+func (_ *replayProtectorNoop) DeliverTx(Tx) error { return nil }

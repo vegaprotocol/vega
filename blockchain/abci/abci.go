@@ -21,6 +21,15 @@ const (
 )
 
 func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
+	state, err := LoadGenesisState(req.AppStateBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	if t := state.ReplayAttackThreshold; t != 0 {
+		app.replayProtector = NewReplayProtector(t)
+	}
+
 	if fn := app.OnInitChain; fn != nil {
 		return fn(req)
 	}
@@ -88,6 +97,10 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 		if err != nil {
 			return NewResponseDeliverTx(code, err.Error())
 		}
+	}
+
+	if err := app.replayProtector.DeliverTx(tx); err != nil {
+		return NewResponseDeliverTx(AbciTxnValidationFailure, err.Error())
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here

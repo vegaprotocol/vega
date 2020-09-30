@@ -19,7 +19,7 @@ type App struct {
 	// options
 	replayProtector interface {
 		SetHeight(uint64)
-		CheckTx(Tx) error
+		DeliverTx(Tx) error
 	}
 
 	// handlers

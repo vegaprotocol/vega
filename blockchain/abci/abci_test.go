@@ -2,6 +2,7 @@ package abci_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -136,6 +137,21 @@ func beginBlockN(app *abci.App, n int) {
 	})
 }
 
+// setGenesisState sets the network section of the genesis.
+func setGenesisState(app *abci.App, state *abci.GenesisState) {
+	bz, err := json.Marshal(struct {
+		Network abci.GenesisState
+	}{Network: *state})
+
+	if err != nil {
+		panic(err)
+	}
+
+	app.InitChain(types.RequestInitChain{
+		AppStateBytes: bz,
+	})
+}
+
 func TestReplayProtectionByDistance(t *testing.T) {
 	cdc := newTestCodec()
 	tx := []byte("tx")
@@ -159,24 +175,29 @@ func TestReplayProtectionByDistance(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		app := abci.New(cdc,
-			// reject Txs with blockHeight further away than 10 blocks.
-			abci.ReplayProtection(10),
-		)
+		app := abci.New(cdc).
+			HandleDeliverTx(
+				testCommandA,
+				func(ctx context.Context, tx abci.Tx) error { return nil },
+			)
+
+		setGenesisState(app, &abci.GenesisState{
+			ReplayAttackThreshold: 10,
+		})
 
 		// forward to a given block
 		beginBlockN(app, test.height)
 
 		// perform the request (all of them uses blockHeight 100)
-		req := types.RequestCheckTx{Tx: tx}
-		resp := app.CheckTx(req)
+		req := types.RequestDeliverTx{Tx: tx}
+		resp := app.DeliverTx(req)
 		t.Run(test.name, func(t *testing.T) {
 			if test.expectError {
-				require.True(t, resp.IsErr())
+				require.True(t, resp.IsErr(), resp)
 				require.Equal(t, abci.AbciTxnValidationFailure, resp.Code)
 				require.NotEmpty(t, resp.Info)
 			} else {
-				require.True(t, resp.IsOK())
+				require.True(t, resp.IsOK(), resp)
 			}
 		})
 	}
@@ -190,16 +211,20 @@ func TestReplayProtectionByCache(t *testing.T) {
 		command:     testCommandA,
 	})
 
-	app := abci.New(cdc,
-		// reject Txs with blockHeight further away than 10 blocks.
-		abci.ReplayProtection(2),
+	app := abci.New(cdc).HandleDeliverTx(
+		testCommandA,
+		func(ctx context.Context, tx abci.Tx) error { return nil },
 	)
+
+	setGenesisState(app, &abci.GenesisState{
+		ReplayAttackThreshold: 2,
+	})
 
 	// forward to a given block
 	beginBlockN(app, 0)
-	req := types.RequestCheckTx{Tx: tx}
-	resp1 := app.CheckTx(req)
-	resp2 := app.CheckTx(req)
+	req := types.RequestDeliverTx{Tx: tx}
+	resp1 := app.DeliverTx(req)
+	resp2 := app.DeliverTx(req)
 
 	require.True(t, resp1.IsOK())
 	require.True(t, resp2.IsErr())
@@ -208,7 +233,7 @@ func TestReplayProtectionByCache(t *testing.T) {
 	beginBlockN(app, 1)
 	beginBlockN(app, 2)
 	beginBlockN(app, 3)
-	resp3 := app.CheckTx(req)
+	resp3 := app.DeliverTx(req)
 	require.True(t, resp3.IsErr())
 	require.Equal(t, abci.ErrTxStaled.Error(), resp3.Info)
 }
