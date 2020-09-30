@@ -336,8 +336,9 @@ type ComplexityRoot struct {
 		Version         func(childComplexity int) int
 	}
 
-	OrderFeeEstimate struct {
+	OrderEstimate struct {
 		Fee            func(childComplexity int) int
+		MarginLevels   func(childComplexity int) int
 		TotalFeeAmount func(childComplexity int) int
 	}
 
@@ -431,7 +432,7 @@ type ComplexityRoot struct {
 		Assets                     func(childComplexity int) int
 		Deposit                    func(childComplexity int, id string) int
 		Erc20WithdrawalApproval    func(childComplexity int, withdrawalID string) int
-		EstimateFeeForOrder        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		EstimateOrder              func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
 		Market                     func(childComplexity int, id string) int
 		Markets                    func(childComplexity int, id *string) int
 		NetworkParametersProposals func(childComplexity int, inState *ProposalState) int
@@ -773,7 +774,7 @@ type QueryResolver interface {
 	NodeSignatures(ctx context.Context, resourceID string) ([]*proto.NodeSignature, error)
 	Asset(ctx context.Context, assetID string) (*Asset, error)
 	Assets(ctx context.Context) ([]*Asset, error)
-	EstimateFeeForOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*OrderFeeEstimate, error)
+	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*OrderEstimate, error)
 	Withdrawal(ctx context.Context, id string) (*Withdrawal, error)
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
 	Deposit(ctx context.Context, id string) (*proto.Deposit, error)
@@ -2069,19 +2070,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.Version(childComplexity), true
 
-	case "OrderFeeEstimate.fee":
-		if e.complexity.OrderFeeEstimate.Fee == nil {
+	case "OrderEstimate.fee":
+		if e.complexity.OrderEstimate.Fee == nil {
 			break
 		}
 
-		return e.complexity.OrderFeeEstimate.Fee(childComplexity), true
+		return e.complexity.OrderEstimate.Fee(childComplexity), true
 
-	case "OrderFeeEstimate.totalFeeAmount":
-		if e.complexity.OrderFeeEstimate.TotalFeeAmount == nil {
+	case "OrderEstimate.marginLevels":
+		if e.complexity.OrderEstimate.MarginLevels == nil {
 			break
 		}
 
-		return e.complexity.OrderFeeEstimate.TotalFeeAmount(childComplexity), true
+		return e.complexity.OrderEstimate.MarginLevels(childComplexity), true
+
+	case "OrderEstimate.totalFeeAmount":
+		if e.complexity.OrderEstimate.TotalFeeAmount == nil {
+			break
+		}
+
+		return e.complexity.OrderEstimate.TotalFeeAmount(childComplexity), true
 
 	case "Party.accounts":
 		if e.complexity.Party.Accounts == nil {
@@ -2473,17 +2481,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Erc20WithdrawalApproval(childComplexity, args["withdrawalId"].(string)), true
 
-	case "Query.estimateFeeForOrder":
-		if e.complexity.Query.EstimateFeeForOrder == nil {
+	case "Query.estimateOrder":
+		if e.complexity.Query.EstimateOrder == nil {
 			break
 		}
 
-		args, err := ec.field_Query_estimateFeeForOrder_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_estimateOrder_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.EstimateFeeForOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
+		return e.complexity.Query.EstimateOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
 
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
@@ -3996,8 +4004,8 @@ type Query {
   "The list of all assets in use in the vega network"
   assets: [Asset!]
 
-  "return an estiamation of fee it the order was to trade"
-  estimateFeeForOrder(
+  "return an estiamation of the potential cost for a new order"
+  estimateOrder(
     "ID of the market to place the order"
     marketId: String!
     "ID of the party placing the order"
@@ -4014,7 +4022,7 @@ type Query {
     expiration: String
     "type of the order"
     type: OrderType!
-  ): OrderFeeEstimate!
+  ): OrderEstimate!
 
   "find a withdrawal using its id"
   withdrawal(
@@ -4635,12 +4643,15 @@ type Order {
 }
 
 "An estimate of the fee to be paid by the order"
-type OrderFeeEstimate {
+type OrderEstimate {
   "The estimated fee if the order was to trade"
   fee: TradeFee!
 
   "The total estimated amount of fee if the order was to trade"
   totalFeeAmount: String!
+
+  "The margin requirement for this order"
+  marginLevels: MarginLevels!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -4995,10 +5006,10 @@ enum OrderRejectionReason {
 
   "Amending to GFA or GFN is invalid"
   CannotAmendToGFAOrGFN
-  
+
   "Amending from GFA or GFN is invalid"
   CannotAmendFromGFAOrGFN
-  
+
   "Invalid Market Type"
   InvalidMarketType
 
@@ -6261,7 +6272,7 @@ func (ec *executionContext) field_Query_erc20WithdrawalApproval_args(ctx context
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_estimateFeeForOrder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_estimateOrder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -12524,7 +12535,7 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OrderFeeEstimate_fee(ctx context.Context, field graphql.CollectedField, obj *OrderFeeEstimate) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderEstimate_fee(ctx context.Context, field graphql.CollectedField, obj *OrderEstimate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12532,7 +12543,7 @@ func (ec *executionContext) _OrderFeeEstimate_fee(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "OrderFeeEstimate",
+		Object:   "OrderEstimate",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -12558,7 +12569,7 @@ func (ec *executionContext) _OrderFeeEstimate_fee(ctx context.Context, field gra
 	return ec.marshalNTradeFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradeFee(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OrderFeeEstimate_totalFeeAmount(ctx context.Context, field graphql.CollectedField, obj *OrderFeeEstimate) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrderEstimate_totalFeeAmount(ctx context.Context, field graphql.CollectedField, obj *OrderEstimate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12566,7 +12577,7 @@ func (ec *executionContext) _OrderFeeEstimate_totalFeeAmount(ctx context.Context
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "OrderFeeEstimate",
+		Object:   "OrderEstimate",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -12590,6 +12601,40 @@ func (ec *executionContext) _OrderFeeEstimate_totalFeeAmount(ctx context.Context
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OrderEstimate_marginLevels(ctx context.Context, field graphql.CollectedField, obj *OrderEstimate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OrderEstimate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginLevels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.MarginLevels)
+	fc.Result = res
+	return ec.marshalNMarginLevels2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarginLevels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_id(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
@@ -14793,7 +14838,7 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_estimateFeeForOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_estimateOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -14809,7 +14854,7 @@ func (ec *executionContext) _Query_estimateFeeForOrder(ctx context.Context, fiel
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_estimateFeeForOrder_args(ctx, rawArgs)
+	args, err := ec.field_Query_estimateOrder_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -14817,7 +14862,7 @@ func (ec *executionContext) _Query_estimateFeeForOrder(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EstimateFeeForOrder(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
+		return ec.resolvers.Query().EstimateOrder(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14829,9 +14874,9 @@ func (ec *executionContext) _Query_estimateFeeForOrder(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*OrderFeeEstimate)
+	res := resTmp.(*OrderEstimate)
 	fc.Result = res
-	return ec.marshalNOrderFeeEstimate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderFeeEstimate(ctx, field.Selections, res)
+	return ec.marshalNOrderEstimate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderEstimate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_withdrawal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -22869,24 +22914,29 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var orderFeeEstimateImplementors = []string{"OrderFeeEstimate"}
+var orderEstimateImplementors = []string{"OrderEstimate"}
 
-func (ec *executionContext) _OrderFeeEstimate(ctx context.Context, sel ast.SelectionSet, obj *OrderFeeEstimate) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, orderFeeEstimateImplementors)
+func (ec *executionContext) _OrderEstimate(ctx context.Context, sel ast.SelectionSet, obj *OrderEstimate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderEstimateImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("OrderFeeEstimate")
+			out.Values[i] = graphql.MarshalString("OrderEstimate")
 		case "fee":
-			out.Values[i] = ec._OrderFeeEstimate_fee(ctx, field, obj)
+			out.Values[i] = ec._OrderEstimate_fee(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "totalFeeAmount":
-			out.Values[i] = ec._OrderFeeEstimate_totalFeeAmount(ctx, field, obj)
+			out.Values[i] = ec._OrderEstimate_totalFeeAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "marginLevels":
+			out.Values[i] = ec._OrderEstimate_marginLevels(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -23841,7 +23891,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_assets(ctx, field)
 				return res
 			})
-		case "estimateFeeForOrder":
+		case "estimateOrder":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -23849,7 +23899,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_estimateFeeForOrder(ctx, field)
+				res = ec._Query_estimateOrder(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -25825,18 +25875,18 @@ func (ec *executionContext) marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ec._Order(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNOrderFeeEstimate2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderFeeEstimate(ctx context.Context, sel ast.SelectionSet, v OrderFeeEstimate) graphql.Marshaler {
-	return ec._OrderFeeEstimate(ctx, sel, &v)
+func (ec *executionContext) marshalNOrderEstimate2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderEstimate(ctx context.Context, sel ast.SelectionSet, v OrderEstimate) graphql.Marshaler {
+	return ec._OrderEstimate(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOrderFeeEstimate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderFeeEstimate(ctx context.Context, sel ast.SelectionSet, v *OrderFeeEstimate) graphql.Marshaler {
+func (ec *executionContext) marshalNOrderEstimate2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderEstimate(ctx context.Context, sel ast.SelectionSet, v *OrderEstimate) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._OrderFeeEstimate(ctx, sel, v)
+	return ec._OrderEstimate(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNOrderStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderStatus(ctx context.Context, v interface{}) (OrderStatus, error) {

@@ -113,6 +113,7 @@ type TradingDataClient interface {
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
 	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
 	EstimateFee(ctx context.Context, in *protoapi.EstimateFeeRequest, opts ...grpc.CallOption) (*protoapi.EstimateFeeResponse, error)
+	EstimateMargin(ctx context.Context, in *protoapi.EstimateMarginRequest, opts ...grpc.CallOption) (*protoapi.EstimateMarginResponse, error)
 	Withdrawal(ctx context.Context, in *protoapi.WithdrawalRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalResponse, error)
 	Withdrawals(ctx context.Context, in *protoapi.WithdrawalsRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalsResponse, error)
 	ERC20WithdrawalApproval(ctx context.Context, in *protoapi.ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*protoapi.ERC20WithdrawalApprovalResponse, error)
@@ -364,8 +365,8 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 	return res.Deposit, nil
 }
 
-func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderFeeEstimate, error) {
+func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side Side,
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderEstimate, error) {
 	order := &types.Order{}
 
 	var (
@@ -424,7 +425,7 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	resp, err := r.tradingDataClient.EstimateFee(ctx, &req)
 	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		r.log.Error("Failed to get fee estimates using rpc client in graphQL resolver", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
 
@@ -437,9 +438,22 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 		LiquidityFee:      fmt.Sprintf("%d", resp.Fee.LiquidityFee),
 	}
 
-	return &OrderFeeEstimate{
+	// now we calculate the margins
+	reqm := protoapi.EstimateMarginRequest{
+		Order: order,
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	respm, err := r.tradingDataClient.EstimateMargin(ctx, &reqm)
+	if err != nil {
+		r.log.Error("Failed to get margin estimates using rpc client in graphQL resolver", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return &OrderEstimate{
 		Fee:            &fee,
 		TotalFeeAmount: fmt.Sprintf("%d", ttf),
+		MarginLevels:   respm.MarginLevels,
 	}, nil
 
 }
