@@ -4949,14 +4949,14 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order. |
 | ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 | Order was submitted with an incorrect or invalid market type. |
 | ORDER_ERROR_INVALID_TIME_IN_FORCE | 23 | Order was submitted with invalid time in force |
-| ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT | 27 | Attempt to amend order to GTT without ExpiryAt |
-| ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT | 28 | Attempt to amend ExpiryAt to a value before CreatedAt |
-| ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT | 29 | Attempt to amend to GTC without an ExpiryAt value |
-| ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 30 | Amending to FOK or IOC is invalid |
-| ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 31 | Amending to GFA or GFN is invalid |
-| ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 32 | Amending from GFA or GFN is invalid |
 | ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION | 24 | A GFN order has got to the market when it is in auction mode |
 | ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING | 25 | A GFA order has got to the market when it is in continuous trading mode |
+| ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT | 26 | Attempt to amend order to GTT without ExpiryAt |
+| ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT | 27 | Attempt to amend ExpiryAt to a value before CreatedAt |
+| ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT | 28 | Attempt to amend to GTC without an ExpiryAt value |
+| ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 29 | Amending to FOK or IOC is invalid |
+| ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 30 | Amending to GFA or GFN is invalid |
+| ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
 
 
 
