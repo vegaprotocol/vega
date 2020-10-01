@@ -1152,6 +1152,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.NetworkParameter"><span class="badge">M</span>NetworkParameter</a>
+                </li>
+
+                <li>
                   <a href="#vega.NodeRegistration"><span class="badge">M</span>NodeRegistration</a>
                 </li>
 
@@ -7003,6 +7007,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>networkParameter</td>
+                  <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
                   <td>market</td>
                   <td><a href="#vega.MarketEvent">MarketEvent</a></td>
                   <td></td>
@@ -7481,6 +7492,12 @@ these data are being used to bundle the call to the smart contract on the ethere
               <tr>
                 <td>BUS_EVENT_TYPE_RISK_FACTOR</td>
                 <td>23</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_NETWORK_PARAMETER</td>
+                <td>24</td>
                 <td><p></p></td>
               </tr>
 
@@ -11047,6 +11064,37 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Sequence number for the market depth update </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.NetworkParameter">NetworkParameter</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>Key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>Value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>

@@ -246,6 +246,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [MarketDepthUpdate](#vega.MarketDepthUpdate)
+    - [NetworkParameter](#vega.NetworkParameter)
     - [NodeRegistration](#vega.NodeRegistration)
     - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
@@ -2671,6 +2672,7 @@ the actual data is set as a oneof field
 | deposit | [Deposit](#vega.Deposit) |  |  |
 | auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
 | riskFactor | [RiskFactor](#vega.RiskFactor) |  |  |
+| networkParameter | [NetworkParameter](#vega.NetworkParameter) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2862,6 +2864,7 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_DEPOSIT | 21 |  |
 | BUS_EVENT_TYPE_AUCTION | 22 |  |
 | BUS_EVENT_TYPE_RISK_FACTOR | 23 |  |
+| BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
@@ -4203,6 +4206,22 @@ Represents the changed market depth since the last update
 | buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the buy side of the book. |
 | sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the sell side of the book. |
 | sequenceNumber | [uint64](#uint64) |  | Sequence number for the market depth update |
+
+
+
+
+
+
+<a name="vega.NetworkParameter"></a>
+
+### NetworkParameter
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| Key | [string](#string) |  |  |
+| Value | [string](#string) |  |  |
 
 
 

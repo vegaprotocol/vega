@@ -1,6 +1,7 @@
 package netparams
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -8,9 +9,10 @@ import (
 type FloatRule func(float64) error
 
 type Float struct {
-	value  float64
-	rawval string
-	rules  []FloatRule
+	value   float64
+	rawval  string
+	rules   []FloatRule
+	mutable bool
 }
 
 func NewFloat(rules ...FloatRule) *Float {
@@ -38,6 +40,9 @@ func (f *Float) Validate(value string) error {
 }
 
 func (f *Float) Update(value string) error {
+	if !f.mutable {
+		return errors.New("value is not mutable")
+	}
 	valf, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		return err
@@ -59,6 +64,11 @@ func (f *Float) Update(value string) error {
 	}
 
 	return err
+}
+
+func (f *Float) Mutable(b bool) *Float {
+	f.mutable = b
+	return f
 }
 
 func (f *Float) MustUpdate(value string) *Float {

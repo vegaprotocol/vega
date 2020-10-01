@@ -317,3 +317,6 @@ func (this *SignedBundle) Validate() error {
 func (this *NodeSignature) Validate() error {
 	return nil
 }
+func (this *NetworkParameter) Validate() error {
+	return nil
+}

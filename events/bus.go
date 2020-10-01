@@ -79,6 +79,7 @@ const (
 	WithdrawalEvent
 	DepositEvent
 	RiskFactorEvent
+	NetworkParameterEvent
 )
 
 var (
@@ -114,6 +115,7 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:             DepositEvent,
 		types.BusEventType_BUS_EVENT_TYPE_AUCTION:             AuctionEvent,
 		types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:         RiskFactorEvent,
+		types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:   NetworkParameterEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
@@ -140,6 +142,7 @@ var (
 		DepositEvent:           types.BusEventType_BUS_EVENT_TYPE_DEPOSIT,
 		AuctionEvent:           types.BusEventType_BUS_EVENT_TYPE_AUCTION,
 		RiskFactorEvent:        types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR,
+		NetworkParameterEvent:  types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER,
 	}
 
 	eventStrings = map[Type]string{
@@ -167,6 +170,7 @@ var (
 		WithdrawalEvent:        "WithdrawalEvent",
 		DepositEvent:           "DepositEvent",
 		RiskFactorEvent:        "RiskFactorEvent",
+		NetworkParameterEvent:  "NetworkParameterEvent",
 	}
 )
 

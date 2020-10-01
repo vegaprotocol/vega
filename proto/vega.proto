@@ -1016,3 +1016,8 @@ message NodeSignature {
   // The kind of resource being signed.
   NodeSignatureKind kind = 3;
 }
+
+message NetworkParameter {
+  string Key = 1;
+  string Value = 2;
+}

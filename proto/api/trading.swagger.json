@@ -2453,6 +2453,9 @@
         "riskFactor": {
           "$ref": "#/definitions/vegaRiskFactor"
         },
+        "networkParameter": {
+          "$ref": "#/definitions/vegaNetworkParameter"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2486,6 +2489,7 @@
         "BUS_EVENT_TYPE_DEPOSIT",
         "BUS_EVENT_TYPE_AUCTION",
         "BUS_EVENT_TYPE_RISK_FACTOR",
+        "BUS_EVENT_TYPE_NETWORK_PARAMETER",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -3423,6 +3427,17 @@
         }
       },
       "description": "Network configuration options."
+    },
+    "vegaNetworkParameter": {
+      "type": "object",
+      "properties": {
+        "Key": {
+          "type": "string"
+        },
+        "Value": {
+          "type": "string"
+        }
+      }
     },
     "vegaNewAsset": {
       "type": "object",
