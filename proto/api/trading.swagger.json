@@ -3139,7 +3139,8 @@
           "description": "Discrete."
         },
         "priceMonitoringSettings": {
-          "$ref": "#/definitions/vegaPriceMonitoringSettings"
+          "$ref": "#/definitions/vegaPriceMonitoringSettings",
+          "description": "PriceMonitoringSettings for the market."
         }
       },
       "description": "Market definition."
@@ -3775,25 +3776,26 @@
       "properties": {
         "horizon": {
           "type": "string",
-          "format": "uint64",
-          "title": "Price monitoring projection horizon"
+          "format": "int64",
+          "description": "Price monitoring projection horizon τ in seconds."
         },
         "probability": {
           "type": "number",
           "format": "double",
-          "title": "Price monitoirng probability level"
+          "description": "Price monitoirng probability level p."
         },
         "auctionExtension": {
           "type": "string",
-          "format": "uint64",
-          "title": "Price monitoring auction extension duration in seconds should the price\nbreach it's theoretical level over the specified horizon at the specified\nprobability level"
+          "format": "int64",
+          "description": "Price monitoring auction extension duration in seconds should the price\nbreach it's theoretical level over the specified horizon at the specified\nprobability level."
         }
-      }
+      },
+      "title": "PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration"
     },
     "vegaPriceMonitoringSettings": {
       "type": "object",
       "properties": {
-        "priceMonitoringSettings": {
+        "priceMonitoringParameters": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaPriceMonitoringParameters"
@@ -3802,7 +3804,7 @@
         },
         "updateFrequency": {
           "type": "string",
-          "format": "uint64",
+          "format": "int64",
           "description": "Specifies how often (expressed in seconds) the price monitoring bounds should be updated."
         }
       }
@@ -4034,6 +4036,16 @@
           "type": "number",
           "format": "double",
           "description": "Pre-defined risk factor value for short."
+        },
+        "maxMoveUp": {
+          "type": "number",
+          "format": "double",
+          "description": "Pre-defined maximum price move up that the model considers as valid."
+        },
+        "minMoveDown": {
+          "type": "number",
+          "format": "double",
+          "description": "Pre-defined minimum price move down that the model considers as valid."
         }
       },
       "description": "Risk model parameters for simple modelling."

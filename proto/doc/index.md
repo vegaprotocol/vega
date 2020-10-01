@@ -3428,7 +3428,7 @@ Market definition.
 | openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
-| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  |  |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | PriceMonitoringSettings for the market. |
 
 
 
@@ -3438,14 +3438,14 @@ Market definition.
 <a name="vega.PriceMonitoringParameters"></a>
 
 ### PriceMonitoringParameters
-
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| horizon | [uint64](#uint64) |  | Price monitoring projection horizon |
-| probability | [double](#double) |  | Price monitoirng probability level |
-| auctionExtension | [uint64](#uint64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level |
+| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
+| probability | [double](#double) |  | Price monitoirng probability level p. |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
 
 
 
@@ -3460,8 +3460,8 @@ Market definition.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| priceMonitoringSettings | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
-| updateFrequency | [uint64](#uint64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
+| priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| updateFrequency | [int64](#int64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
 
 
 
@@ -3495,6 +3495,8 @@ Risk model parameters for simple modelling.
 | ----- | ---- | ----- | ----------- |
 | factorLong | [double](#double) |  | Pre-defined risk factor value for long. |
 | factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
+| maxMoveUp | [double](#double) |  | Pre-defined maximum price move up that the model considers as valid. |
+| minMoveDown | [double](#double) |  | Pre-defined minimum price move down that the model considers as valid. |
 
 
 

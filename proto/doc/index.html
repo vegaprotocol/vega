@@ -9203,7 +9203,7 @@ duration and optionally a minimum traded volume). </p></td>
                   <td>priceMonitoringSettings</td>
                   <td><a href="#vega.PriceMonitoringSettings">PriceMonitoringSettings</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>PriceMonitoringSettings for the market. </p></td>
                 </tr>
 
             </tbody>
@@ -9214,7 +9214,7 @@ duration and optionally a minimum traded volume). </p></td>
 
 
         <h3 id="vega.PriceMonitoringParameters">PriceMonitoringParameters</h3>
-        <p></p>
+        <p>PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration</p>
 
 
           <table class="field-table">
@@ -9225,29 +9225,80 @@ duration and optionally a minimum traded volume). </p></td>
 
                 <tr>
                   <td>horizon</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Price monitoring projection horizon </p></td>
+                  <td><p>Price monitoring projection horizon τ in seconds. </p></td>
                 </tr>
 
                 <tr>
                   <td>probability</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
-                  <td><p>Price monitoirng probability level </p></td>
+                  <td><p>Price monitoirng probability level p. </p></td>
                 </tr>
 
                 <tr>
                   <td>auctionExtension</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Price monitoring auction extension duration in seconds should the price
 breach it&#39;s theoretical level over the specified horizon at the specified
-probability level </p></td>
+probability level. </p></td>
                 </tr>
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>horizon</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>probability</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gt: 0</li>
+
+                      <li>float_lt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>auctionExtension</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -9264,7 +9315,7 @@ probability level </p></td>
             <tbody>
 
                 <tr>
-                  <td>priceMonitoringSettings</td>
+                  <td>priceMonitoringParameters</td>
                   <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
                   <td>repeated</td>
                   <td><p>Specifies a set of PriceMonitoringParameters to be used for price
@@ -9273,13 +9324,40 @@ monitoring purposes </p></td>
 
                 <tr>
                   <td>updateFrequency</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Specifies how often (expressed in seconds) the price monitoring bounds should be updated. </p></td>
                 </tr>
 
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>updateFrequency</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -9347,8 +9425,60 @@ monitoring purposes </p></td>
                   <td><p>Pre-defined risk factor value for short. </p></td>
                 </tr>
 
+                <tr>
+                  <td>maxMoveUp</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Pre-defined maximum price move up that the model considers as valid. </p></td>
+                </tr>
+
+                <tr>
+                  <td>minMoveDown</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Pre-defined minimum price move down that the model considers as valid. </p></td>
+                </tr>
+
             </tbody>
           </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>maxMoveUp</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gte: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>minMoveDown</td>
+                  <td>
+                    <ul>
+
+                      <li>float_lte: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 

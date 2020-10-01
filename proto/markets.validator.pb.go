@@ -83,6 +83,12 @@ func (this *SimpleRiskModel) Validate() error {
 	return nil
 }
 func (this *SimpleModelParams) Validate() error {
+	if !(this.MaxMoveUp >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MaxMoveUp", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.MaxMoveUp))
+	}
+	if !(this.MinMoveDown <= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("MinMoveDown", fmt.Errorf(`value '%v' must be lower than or equal to '0'`, this.MinMoveDown))
+	}
 	return nil
 }
 func (this *ExternalRiskModel) Validate() error {
@@ -146,15 +152,30 @@ func (this *Fees) Validate() error {
 	return nil
 }
 func (this *PriceMonitoringParameters) Validate() error {
+	if !(this.Horizon > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Horizon", fmt.Errorf(`value '%v' must be greater than '0'`, this.Horizon))
+	}
+	if !(this.Probability > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Probability", fmt.Errorf(`value '%v' must be strictly greater than '0'`, this.Probability))
+	}
+	if !(this.Probability < 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Probability", fmt.Errorf(`value '%v' must be strictly lower than '0'`, this.Probability))
+	}
+	if !(this.AuctionExtension > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("AuctionExtension", fmt.Errorf(`value '%v' must be greater than '0'`, this.AuctionExtension))
+	}
 	return nil
 }
 func (this *PriceMonitoringSettings) Validate() error {
-	for _, item := range this.PriceMonitoringSettings {
+	for _, item := range this.PriceMonitoringParameters {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
+				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringParameters", err)
 			}
 		}
+	}
+	if !(this.UpdateFrequency > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("UpdateFrequency", fmt.Errorf(`value '%v' must be greater than '0'`, this.UpdateFrequency))
 	}
 	return nil
 }
