@@ -199,6 +199,7 @@
     - [LogNormalRiskModel](#vega.LogNormalRiskModel)
     - [MarginCalculator](#vega.MarginCalculator)
     - [Market](#vega.Market)
+    - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -3426,6 +3427,24 @@ Market definition.
 | openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
+| priceMonitoringSettings | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringParameters"></a>
+
+### PriceMonitoringParameters
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| horizon | [uint64](#uint64) |  | Price monitoring horizon |
+| probability | [double](#double) |  | Price monitoirng probability level |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level |
 
 
 

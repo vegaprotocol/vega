@@ -962,6 +962,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.PriceMonitoringParameters"><span class="badge">M</span>PriceMonitoringParameters</a>
+                </li>
+
+                <li>
                   <a href="#vega.ScalingFactors"><span class="badge">M</span>ScalingFactors</a>
                 </li>
 
@@ -9157,8 +9161,9 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td>decimalPlaces</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the market.
-For example: <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
+                  <td><p>Number of decimal places that a price must be shifted by in order to get a
+correct price denominated in the currency of the market. For example:
+<tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
                 </tr>
 
                 <tr>
@@ -9172,7 +9177,8 @@ For example: <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
                   <td>openingAuction</td>
                   <td><a href="#vega.AuctionDuration">AuctionDuration</a></td>
                   <td></td>
-                  <td><p>Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). </p></td>
+                  <td><p>Auction duration specifies how long the opening auction will run (minimum
+duration and optionally a minimum traded volume). </p></td>
                 </tr>
 
                 <tr>
@@ -9187,6 +9193,54 @@ For example: <tt>realPrice = price / 10^decimalPlaces</tt> </p></td>
                   <td><a href="#vega.DiscreteTrading">DiscreteTrading</a></td>
                   <td></td>
                   <td><p>Discrete. </p></td>
+                </tr>
+
+                <tr>
+                  <td>priceMonitoringSettings</td>
+                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
+                  <td>repeated</td>
+                  <td><p>Specifies a set of PriceMonitoringParameters to be used for price
+monitoring purposes </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringParameters">PriceMonitoringParameters</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>horizon</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Price monitoring horizon </p></td>
+                </tr>
+
+                <tr>
+                  <td>probability</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Price monitoirng probability level </p></td>
+                </tr>
+
+                <tr>
+                  <td>auctionExtension</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Price monitoring auction extension duration in seconds should the price
+breach it&#39;s theoretical level over the specified horizon at the specified
+probability level </p></td>
                 </tr>
 
             </tbody>

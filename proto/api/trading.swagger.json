@@ -3120,7 +3120,7 @@
         "decimalPlaces": {
           "type": "string",
           "format": "uint64",
-          "title": "Number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the market.\nFor example: `realPrice = price / 10^decimalPlaces`"
+          "title": "Number of decimal places that a price must be shifted by in order to get a\ncorrect price denominated in the currency of the market. For example:\n`realPrice = price / 10^decimalPlaces`"
         },
         "fees": {
           "$ref": "#/definitions/vegaFees",
@@ -3128,7 +3128,7 @@
         },
         "openingAuction": {
           "$ref": "#/definitions/vegaAuctionDuration",
-          "description": "Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume)."
+          "description": "Auction duration specifies how long the opening auction will run (minimum\nduration and optionally a minimum traded volume)."
         },
         "continuous": {
           "$ref": "#/definitions/vegaContinuousTrading",
@@ -3137,6 +3137,13 @@
         "discrete": {
           "$ref": "#/definitions/vegaDiscreteTrading",
           "description": "Discrete."
+        },
+        "priceMonitoringSettings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceMonitoringParameters"
+          },
+          "title": "Specifies a set of PriceMonitoringParameters to be used for price\nmonitoring purposes"
         }
       },
       "description": "Market definition."
@@ -3766,6 +3773,26 @@
         }
       },
       "description": "Represents a price level from market depth or order book data."
+    },
+    "vegaPriceMonitoringParameters": {
+      "type": "object",
+      "properties": {
+        "horizon": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Price monitoring horizon"
+        },
+        "probability": {
+          "type": "number",
+          "format": "double",
+          "title": "Price monitoirng probability level"
+        },
+        "auctionExtension": {
+          "type": "string",
+          "format": "int64",
+          "title": "Price monitoring auction extension duration in seconds should the price\nbreach it's theoretical level over the specified horizon at the specified\nprobability level"
+        }
+      }
     },
     "vegaProposal": {
       "type": "object",

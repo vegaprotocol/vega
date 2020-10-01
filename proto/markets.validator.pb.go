@@ -145,6 +145,9 @@ func (this *Fees) Validate() error {
 	}
 	return nil
 }
+func (this *PriceMonitoringParameters) Validate() error {
+	return nil
+}
 func (this *Market) Validate() error {
 	if this.TradableInstrument != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TradableInstrument); err != nil {
@@ -172,6 +175,13 @@ func (this *Market) Validate() error {
 		if oneOfNester.Discrete != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Discrete); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Discrete", err)
+			}
+		}
+	}
+	for _, item := range this.PriceMonitoringSettings {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
 			}
 		}
 	}
