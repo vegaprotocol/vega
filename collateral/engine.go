@@ -110,7 +110,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 
 // OnChainTimeUpdate is used to be specified as a callback in over services
 // in order to be called when the chain time is updated (basically EndBlock)
-func (e *Engine) OnChainTimeUpdate(t time.Time) {
+func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 	e.currentTime = t.UnixNano()
 }
 

@@ -395,7 +395,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	e.log.Debug("updating engine on new time update")
 
 	// update collateral
-	e.collateral.OnChainTimeUpdate(t)
+	e.collateral.OnChainTimeUpdate(ctx, t)
 
 	// remove expired orders
 	// TODO(FIXME): this should be remove, and handled inside the market directly
@@ -405,7 +405,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	// notify markets of the time expiration
 	for mktID, mkt := range e.markets {
 		mkt := mkt
-		closing := mkt.OnChainTimeUpdate(t)
+		closing := mkt.OnChainTimeUpdate(ctx, t)
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.String("market-id", mktID))
