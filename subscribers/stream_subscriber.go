@@ -80,16 +80,21 @@ func (s *StreamSub) Halt() {
 		close(s.updated)
 	}
 	s.mu.Unlock()
-	s.Base.Halt()
+	s.Base.Halt() // close channel outside of the lock. to avoid race
 }
 
 func (s *StreamSub) loop(ctx context.Context) {
+	s.running = true // allow for Pause to work (ensures the pause channel can, and will be closed)
 	for {
 		select {
 		case <-ctx.Done():
 			s.Halt()
 			return
-		case e := <-s.ch:
+		case e, ok := <-s.ch:
+			// just return if closed, don't call Halt, because that would try to close s.ch a second time
+			if !ok {
+				return
+			}
 			s.Push(e)
 		}
 	}
