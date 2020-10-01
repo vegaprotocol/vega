@@ -885,8 +885,6 @@ func (e AccountType) MarshalGQL(w io.Writer) {
 type BusEventType string
 
 const (
-	// all events
-	BusEventTypeAll BusEventType = "All"
 	// event type indicating TimeUpdate
 	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
 	// transfer response event
@@ -932,7 +930,6 @@ const (
 )
 
 var AllBusEventType = []BusEventType{
-	BusEventTypeAll,
 	BusEventTypeTimeUpdate,
 	BusEventTypeTransferResponses,
 	BusEventTypePositionResolution,
@@ -958,7 +955,7 @@ var AllBusEventType = []BusEventType{
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeAll, BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeMarket:
 		return true
 	}
 	return false

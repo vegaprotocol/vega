@@ -2592,6 +2592,12 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 }
 
 func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string) (<-chan []*BusEvent, error) {
+	if len(types) > 1 {
+		return nil, errors.New("busEvents subscription support streaming 1 event at a time for now")
+	}
+	if len(types) <= 0 {
+		return nil, errors.New("busEvents subscription requires 1 event type")
+	}
 	t := eventTypeToProto(types...)
 	req := protoapi.ObserveEventsRequest{
 		Type: t,
