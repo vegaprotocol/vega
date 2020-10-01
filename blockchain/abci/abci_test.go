@@ -13,14 +13,13 @@ import (
 )
 
 type testTx struct {
-	payload    []byte
 	pubkey     []byte
 	hash       []byte
 	command    blockchain.Command
 	validateFn func() error
 }
 
-func (tx *testTx) Payload() []byte             { return tx.payload }
+func (tx *testTx) Unmarshal(interface{}) error { return nil }
 func (tx *testTx) PubKey() []byte              { return tx.pubkey }
 func (tx *testTx) Hash() []byte                { return tx.hash }
 func (tx *testTx) Command() blockchain.Command { return tx.command }

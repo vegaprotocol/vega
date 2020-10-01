@@ -10,7 +10,7 @@ import (
 
 type Tx interface {
 	Command() blockchain.Command
-	Payload() []byte
+	Unmarshal(interface{}) error
 	PubKey() []byte
 	Hash() []byte
 	Validate() error

@@ -37,10 +37,6 @@ func NewTx(tx *types.Transaction) (*Tx, error) {
 // The hash is the first TxHeaderLen bytes.
 func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHashLen] }
 
-// Payload returns the payload of the transaction, this is all the bytes,
-// excluding the prefix and the command.
-func (tx *Tx) Payload() []byte { return tx.tx.InputData[TxHeaderLen:] }
-
 func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
 
 // Command returns the Command of the Tx
@@ -49,9 +45,13 @@ func (tx *Tx) Command() blockchain.Command {
 	return blockchain.Command(cmd)
 }
 
+// payload returns the payload of the transaction, this is all the bytes,
+// excluding the prefix and the command.
+func (tx *Tx) payload() []byte { return tx.tx.InputData[TxHeaderLen:] }
+
 func (tx *Tx) Unmarshal(i interface{}) error {
 	if t, ok := i.(proto.Message); ok {
-		return proto.Unmarshal(tx.Payload(), t)
+		return proto.Unmarshal(tx.payload(), t)
 	}
 	return nil
 }
@@ -109,7 +109,7 @@ func (tx *Tx) Validate() error {
 
 func (tx *Tx) asOrderSubmission() (*types.Order, error) {
 	submission := &types.OrderSubmission{}
-	err := proto.Unmarshal(tx.Payload(), submission)
+	err := proto.Unmarshal(tx.payload(), submission)
 	if err != nil {
 		return nil, err
 	}
