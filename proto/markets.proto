@@ -194,15 +194,26 @@ message Fees {
 }
 
 message PriceMonitoringParameters {
-  // Price monitoring horizon
+  // Price monitoring projection horizon
   uint64 horizon = 1;
   // Price monitoirng probability level
   double probability = 2;
   // Price monitoring auction extension duration in seconds should the price
   // breach it's theoretical level over the specified horizon at the specified
   // probability level
-  int64 auctionExtension = 3;
+  uint64 auctionExtension = 3;
 }
+
+message PriceMonitoringSettings {
+  // Specifies a set of PriceMonitoringParameters to be used for price
+  // monitoring purposes
+  repeated PriceMonitoringParameters priceMonitoringSettings = 1;
+
+  // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
+  uint64 updateFrequency = 2;
+}
+
+
 
 // Market definition.
 message Market {
@@ -228,7 +239,5 @@ message Market {
     DiscreteTrading discrete = 101;
   }
 
-  // Specifies a set of PriceMonitoringParameters to be used for price
-  // monitoring purposes
-  repeated PriceMonitoringParameters priceMonitoringSettings = 6;
+  PriceMonitoringSettings priceMonitoringSettings = 6;
 }
