@@ -14,7 +14,7 @@ type GenesisState struct {
 	Governance governance.GenesisState `json:"governance"`
 	Assets     assets.GenesisState     `json:"assets"`
 	Validators validators.GenesisState `json:"validators"`
-	Network    abci.GenesisState       `json:"genesis"`
+	Network    abci.GenesisState       `json:"network"`
 }
 
 func DefaultGenesisState() GenesisState {
