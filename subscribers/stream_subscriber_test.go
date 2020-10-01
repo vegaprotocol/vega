@@ -205,28 +205,23 @@ func testCloseChannelWrite(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		first := false
-		defer func() {
-			if !first {
-				close(started)
-			}
-			wg.Done()
-		}()
+		defer wg.Done()
 		// keep iterating until the context was closed, ensuring
 		// the context is cancelled mid-send
 		for {
-			for i, e := range set {
-				ch := sub.C()
+			for _, e := range set {
+				// ch := sub.C()
 				select {
 				case <-sub.Closed():
 					return
 				case <-sub.Skip():
 					return
-				case ch <- e:
+				case sub.C() <- e:
+					// case ch <- e:
 					if !first {
 						first = true
 						close(started)
 					}
-					t.Logf("pushed event %d", i+1)
 				}
 			}
 		}
@@ -236,5 +231,7 @@ func testCloseChannelWrite(t *testing.T) {
 	// wait for sub to be confirmed closed down
 	wg.Wait()
 	data := sub.GetData()
+	// we received at least the first event, which is valid (filtered)
+	// so this slice ought not to be empty
 	assert.NotEmpty(t, data)
 }

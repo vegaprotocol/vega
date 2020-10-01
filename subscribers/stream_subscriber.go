@@ -84,6 +84,7 @@ func (s *StreamSub) Halt() {
 }
 
 func (s *StreamSub) loop(ctx context.Context) {
+	s.running = true // allow for Pause to work (ensures the pause channel can, and will be closed)
 	for {
 		select {
 		case <-ctx.Done():
