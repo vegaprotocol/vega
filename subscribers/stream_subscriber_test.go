@@ -59,6 +59,10 @@ func TestSubscriberTypes(t *testing.T) {
 	t.Run("Stream subscriber for all event types", testFilterAll)
 }
 
+func TestMidChannelDone(t *testing.T) {
+	t.Run("Stream subscriber stops mid event stream", testCloseChannelWrite)
+}
+
 func testUnfilteredNoEvents(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent})
 	wg := sync.WaitGroup{}
@@ -152,4 +156,85 @@ func testFilteredSomeValidEvents(t *testing.T) {
 func testFilterAll(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.All})
 	assert.Nil(t, sub.Types())
+}
+
+// this test aims to replicate the crash when trying to write to a closed channel
+func testCloseChannelWrite(t *testing.T) {
+	mID := "tstMarket"
+	sub := getTestStreamSub([]events.Type{events.AccountEvent}, accMarketIDFilter(mID))
+	set := []events.Event{
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc1",
+			MarketID: mID,
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc2",
+			MarketID: mID,
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc50",
+			MarketID: "other-market",
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc3",
+			MarketID: mID,
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc4",
+			MarketID: mID,
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc51",
+			MarketID: "other-market",
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc5",
+			MarketID: "other-market",
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc6",
+			MarketID: mID,
+		}),
+		events.NewAccountEvent(sub.ctx, types.Account{
+			Id:       "acc7",
+			MarketID: mID,
+		}),
+	}
+	started := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		first := false
+		defer func() {
+			if !first {
+				close(started)
+			}
+			wg.Done()
+		}()
+		// keep iterating until the context was closed, ensuring
+		// the context is cancelled mid-send
+		for {
+			for i, e := range set {
+				ch := sub.C()
+				select {
+				case <-sub.Closed():
+					return
+				case <-sub.Skip():
+					return
+				case ch <- e:
+					if !first {
+						first = true
+						close(started)
+					}
+					t.Logf("pushed event %d", i+1)
+				}
+			}
+		}
+	}()
+	<-started
+	sub.cfunc()
+	// wait for sub to be confirmed closed down
+	wg.Wait()
+	data := sub.GetData()
+	assert.NotEmpty(t, data)
 }
