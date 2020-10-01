@@ -85,7 +85,7 @@ func (b *Base) Halt() {
 	// allow attempted writes during shutdown, unless this is an acking sub, with a potential blocking channel
 	defer func() {
 		if !b.ack {
-			time.Sleep(20 * time.Millisecond) // add sleep to avoid race (send on closed channel), 50ms should be plenty
+			time.Sleep(20 * time.Millisecond) // add sleep to avoid race (send on closed channel), 20ms should be plenty
 		}
 		close(b.ch) // close the event channel after pause (skip) and cfunc (closed) are toggled
 	}()

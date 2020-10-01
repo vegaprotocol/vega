@@ -80,7 +80,7 @@ func (s *StreamSub) Halt() {
 		close(s.updated)
 	}
 	s.mu.Unlock()
-	s.Base.Halt() // close channel inside lock, just in case this is a problem
+	s.Base.Halt() // close channel outside of the lock. to avoid race
 }
 
 func (s *StreamSub) loop(ctx context.Context) {
