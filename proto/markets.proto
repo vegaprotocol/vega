@@ -193,6 +193,17 @@ message Fees {
   FeeFactors factors = 1;
 }
 
+message PriceMonitoringParameters {
+  // Price monitoring horizon
+  uint64 horizon = 1;
+  // Price monitoirng probability level
+  double probability = 2;
+  // Price monitoring auction extension duration in seconds should the price
+  // breach it's theoretical level over the specified horizon at the specified
+  // probability level
+  int64 auctionExtension = 3;
+}
+
 // Market definition.
 message Market {
 
@@ -200,12 +211,14 @@ message Market {
   string id = 1;
   // Tradable instrument configuration.
   TradableInstrument tradableInstrument = 2;
-  // Number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the market.
-  // For example: `realPrice = price / 10^decimalPlaces`
+  // Number of decimal places that a price must be shifted by in order to get a
+  // correct price denominated in the currency of the market. For example:
+  // `realPrice = price / 10^decimalPlaces`
   uint64 decimalPlaces = 3;
   // Fees configuration.
   Fees fees = 4;
-  // Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume).
+  // Auction duration specifies how long the opening auction will run (minimum
+  // duration and optionally a minimum traded volume).
   AuctionDuration openingAuction = 5;
   // Trading mode for the market.
   oneof tradingMode {
@@ -214,4 +227,8 @@ message Market {
     // Discrete.
     DiscreteTrading discrete = 101;
   }
+
+  // Specifies a set of PriceMonitoringParameters to be used for price
+  // monitoring purposes
+  repeated PriceMonitoringParameters priceMonitoringSettings = 6;
 }
