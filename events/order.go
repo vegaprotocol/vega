@@ -41,8 +41,9 @@ func (o Order) Proto() types.Order {
 func (o Order) StreamMessage() *types.BusEvent {
 	cpy := *o.o
 	return &types.BusEvent{
-		ID:   o.eventID(),
-		Type: o.et.ToProto(),
+		ID:    o.eventID(),
+		Block: o.TraceID(),
+		Type:  o.et.ToProto(),
 		Event: &types.BusEvent_Order{
 			Order: &cpy,
 		},

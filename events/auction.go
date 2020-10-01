@@ -84,8 +84,9 @@ func (a Auction) Proto() types.AuctionEvent {
 func (a Auction) StreamMessage() *types.BusEvent {
 	p := a.Proto()
 	return &types.BusEvent{
-		ID:   a.eventID(),
-		Type: a.et.ToProto(),
+		ID:    a.eventID(),
+		Block: a.TraceID(),
+		Type:  a.et.ToProto(),
 		Event: &types.BusEvent_Auction{
 			Auction: &p,
 		},
@@ -96,8 +97,9 @@ func (a Auction) StreamMessage() *types.BusEvent {
 // containing just market ID and a string akin to a log message
 func (a Auction) StreamMarketMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   a.eventID(),
-		Type: types.BusEventType_BUS_EVENT_TYPE_MARKET,
+		ID:    a.eventID(),
+		Block: a.TraceID(),
+		Type:  types.BusEventType_BUS_EVENT_TYPE_MARKET,
 		Event: &types.BusEvent_Market{
 			Market: &types.MarketEvent{
 				MarketID: a.marketID,

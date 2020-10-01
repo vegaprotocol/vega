@@ -114,6 +114,8 @@ type BuiltinAssetInput struct {
 type BusEvent struct {
 	// the id for this event
 	EventID string `json:"eventID"`
+	// the block hash
+	Block string `json:"block"`
 	// the type of event we're dealing with
 	Type BusEventType `json:"type"`
 	// the payload - the wrapped event

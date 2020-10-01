@@ -36,8 +36,9 @@ func (t Trade) Proto() types.Trade {
 
 func (t Trade) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   t.eventID(),
-		Type: t.et.ToProto(),
+		ID:    t.eventID(),
+		Block: t.TraceID(),
+		Type:  t.et.ToProto(),
 		Event: &types.BusEvent_Trade{
 			Trade: &t.t,
 		},

@@ -111,7 +111,8 @@ enum BusEventType {
 // the actual data is set as a oneof field
 message BusEvent {
   string ID = 1;
-  BusEventType type = 2;
+  string block = 2;
+  BusEventType type = 3;
   oneof event {
     TimeUpdate timeUpdate = 101;
     TransferResponses transferResponses = 102;
