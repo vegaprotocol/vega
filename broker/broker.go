@@ -56,6 +56,9 @@ func New(ctx context.Context) *Broker {
 
 func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
 	for _, e := range evts {
+		// assign before select to remove overhead of call in select (it's implicit anyway)
+		// but this way we ensure that more recent states of ctx, Skip and Closed are checked
+		ch := sub.C()
 		select {
 		case <-b.ctx.Done():
 			return
@@ -64,7 +67,7 @@ func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
 		case <-sub.Closed():
 			unsub = true
 			return
-		case sub.C() <- e:
+		case ch <- e:
 			continue
 		default:
 			continue
