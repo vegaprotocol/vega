@@ -128,6 +128,10 @@ message SimpleModelParams {
   double factorLong = 1;
   // Pre-defined risk factor value for short.
   double factorShort = 2;
+  // Pre-defined maximum price move up that the model considers as valid.
+  double maxMoveUp = 3 [(validator.field) = {float_gte: 0}];
+  // Pre-defined minimum price move down that the model considers as valid.
+  double minMoveDown = 4 [(validator.field) = {float_lte: 0}];
 }
 
 // Risk model for external modelling.
@@ -195,25 +199,23 @@ message Fees {
 
 message PriceMonitoringParameters {
   // Price monitoring projection horizon
-  uint64 horizon = 1;
+  int64 horizon = 1 [(validator.field) = {int_gt: 0}];
   // Price monitoirng probability level
-  double probability = 2;
+  double probability = 2 [(validator.field) = {int_gt: 0, int_lt: 0}];
   // Price monitoring auction extension duration in seconds should the price
   // breach it's theoretical level over the specified horizon at the specified
   // probability level
-  uint64 auctionExtension = 3;
+  int64 auctionExtension = 3 [(validator.field) = {int_gte: 0}];
 }
 
 message PriceMonitoringSettings {
   // Specifies a set of PriceMonitoringParameters to be used for price
   // monitoring purposes
-  repeated PriceMonitoringParameters priceMonitoringSettings = 1;
+  repeated PriceMonitoringParameters priceMonitoringParameters = 1;
 
   // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
-  uint64 updateFrequency = 2;
+  int64 updateFrequency = 2 [(validator.field) = {int_gt: 0}];
 }
-
-
 
 // Market definition.
 message Market {
@@ -238,6 +240,6 @@ message Market {
     // Discrete.
     DiscreteTrading discrete = 101;
   }
-
+  // PriceMonitoringSettings for the market.
   PriceMonitoringSettings priceMonitoringSettings = 6;
 }
