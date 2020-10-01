@@ -1244,7 +1244,7 @@ func (t *tradingDataService) MarketDepthSubscribe(
 			err = srv.Send(depth)
 			if err != nil {
 				if t.log.GetLevel() == logging.DebugLevel {
-					t.log.Error("Depth subscriber - rpc stream error",
+					t.log.Debug("Depth subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
 					)
@@ -1309,7 +1309,7 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 			err = srv.Send(depth)
 			if err != nil {
 				if t.log.GetLevel() == logging.DebugLevel {
-					t.log.Error("Depth updates subscriber - rpc stream error",
+					t.log.Debug("Depth updates subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
 					)
