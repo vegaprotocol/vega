@@ -97,6 +97,7 @@ type ComplexityRoot struct {
 	}
 
 	BusEvent struct {
+		Block   func(childComplexity int) int
 		Event   func(childComplexity int) int
 		EventID func(childComplexity int) int
 		Type    func(childComplexity int) int
@@ -1001,6 +1002,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BuiltinAsset.TotalSupply(childComplexity), true
+
+	case "BusEvent.block":
+		if e.complexity.BusEvent.Block == nil {
+			break
+		}
+
+		return e.complexity.BusEvent.Block(childComplexity), true
 
 	case "BusEvent.event":
 		if e.complexity.BusEvent.Event == nil {
@@ -5676,6 +5684,8 @@ union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution 
 type BusEvent {
   "the id for this event"
   eventID: String!
+  "the block hash"
+  block: String!
   "the type of event we're dealing with"
   type: BusEventType!
   "the payload - the wrapped event"
@@ -5690,7 +5700,8 @@ type RiskFactor {
   short: Float!
   "long factor"
   long: Float!
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -7633,6 +7644,40 @@ func (ec *executionContext) _BusEvent_eventID(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.EventID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BusEvent_block(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BusEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Block, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21046,6 +21091,11 @@ func (ec *executionContext) _BusEvent(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("BusEvent")
 		case "eventID":
 			out.Values[i] = ec._BusEvent_eventID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "block":
+			out.Values[i] = ec._BusEvent_block(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
