@@ -290,7 +290,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Move the current time forward
-	tm.market.OnChainTimeUpdate(time.Unix(10, 100))
+	tm.market.OnChainTimeUpdate(context.Background(), time.Unix(10, 100))
 
 	amend := &types.OrderAmendment{
 		OrderID:     buyConfirmation.GetOrder().GetId(),

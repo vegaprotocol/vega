@@ -186,7 +186,7 @@ func TestMarketClosing(t *testing.T) {
 	addAccount(tm, party2)
 
 	// check account gets updated
-	closed := tm.market.OnChainTimeUpdate(closingAt.Add(1 * time.Second))
+	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
 	assert.True(t, closed)
 }
 
@@ -255,8 +255,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	// update collateral time first, normally done by execution engin
 	futureTime := closingAt.Add(1 * time.Second)
-	tm.collateraEngine.OnChainTimeUpdate(futureTime)
-	closed := tm.market.OnChainTimeUpdate(futureTime)
+	tm.collateraEngine.OnChainTimeUpdate(context.Background(), futureTime)
+	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
 	assert.True(t, closed)
 }
 
@@ -610,7 +610,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	require.Equal(t, 0, len(confirmationSell.Trades))
 	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
-	closed := tm.market.OnChainTimeUpdate(stillAuction)
+	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
 	assert.False(t, closed)
 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
@@ -724,7 +724,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 	require.Equal(t, 0, len(confirmationSell.Trades))
 	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
-	closed := tm.market.OnChainTimeUpdate(stillAuction)
+	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
 	assert.False(t, closed)
 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 

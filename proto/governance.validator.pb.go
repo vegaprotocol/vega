@@ -6,6 +6,7 @@ package proto
 import (
 	fmt "fmt"
 	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
@@ -206,8 +207,8 @@ func (this *Proposal) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if _, ok := State_name[int32(this.State)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("State", fmt.Errorf(`value '%v' must be a valid State field`, this.State))
+	if _, ok := Proposal_State_name[int32(this.State)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("State", fmt.Errorf(`value '%v' must be a valid Proposal_State field`, this.State))
 	}
 	if nil == this.Terms {
 		return github_com_mwitkow_go_proto_validators.FieldError("Terms", fmt.Errorf("message must exist"))
@@ -223,8 +224,8 @@ func (this *Vote) Validate() error {
 	if this.PartyID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
 	}
-	if _, ok := Value_name[int32(this.Value)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("Value", fmt.Errorf(`value '%v' must be a valid Value field`, this.Value))
+	if _, ok := Vote_Value_name[int32(this.Value)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("Value", fmt.Errorf(`value '%v' must be a valid Vote_Value field`, this.Value))
 	}
 	if this.ProposalID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("ProposalID", fmt.Errorf(`value '%v' must not be an empty string`, this.ProposalID))

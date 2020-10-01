@@ -329,8 +329,7 @@ func (m *Market) GetID() string {
 
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
-func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
-	ctx := context.TODO() // @TODO this has to be changed to be a context with block height and hash
+func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed bool) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
