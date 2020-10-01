@@ -17,7 +17,7 @@ type NetParamEvent interface {
 type Service struct {
 	*subscribers.Base
 
-	params map[string]string
+	params map[string]types.NetworkParameter
 	mu     sync.RWMutex
 	ch     chan types.NetworkParameter
 }
@@ -25,17 +25,18 @@ type Service struct {
 func NewService(ctx context.Context) *Service {
 	return &Service{
 		Base:   subscribers.NewBase(ctx, 10, true),
-		params: map[string]string{},
+		params: map[string]types.NetworkParameter{},
 	}
 }
 
-func (s *Service) GetAll() map[string]string {
+// GetAll return the list of all current network parameters
+func (s *Service) GetAll() []types.NetworkParameter {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	out := make(map[string]string, len(s.params))
-	for k, v := range s.params {
-		out[k] = v
+	out := make([]types.NetworkParameter, 0, len(s.params))
+	for _, v := range s.params {
+		out = append(out, v)
 	}
 	return out
 }
@@ -62,7 +63,7 @@ func (s *Service) consume() {
 				return
 			}
 			s.mu.Lock()
-			s.params[np.Key] = np.Value
+			s.params[np.Key] = np
 			s.mu.Unlock()
 		}
 	}

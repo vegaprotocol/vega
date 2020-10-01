@@ -337,6 +337,9 @@ service trading_data {
 
   // Get withdrawals for a party
   rpc Deposits(DepositsRequest) returns (DepositsResponse);
+
+  // Get the network parameters
+  rpc NetworkParameters(NetworkParametersRequest) returns (NetworkParametersResponse);
 }
 
 // Request for a list of all assets enabled on Vega.
@@ -1146,4 +1149,14 @@ message DepositRequest {
 message DepositResponse {
   // The deposit matching the ID from the request
   vega.Deposit deposit = 1 ;
+}
+
+// A message requesting for the list
+// of all network parameters
+message NetworkParametersRequest {}
+
+// A response containing all of the
+// vega network parameters
+message NetworkParametersResponse {
+  repeated vega.NetworkParameter networkParameters = 1;
 }

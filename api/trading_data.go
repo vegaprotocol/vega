@@ -184,6 +184,12 @@ type FeeService interface {
 	EstimateFee(context.Context, *types.Order) (*types.Fee, error)
 }
 
+// NetParamsService Provides apis to estimate fees
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/fee_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NetParamsService
+type NetParamsService interface {
+	GetAll() []types.NetworkParameter
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/api EventService
 type EventService interface {
 	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*types.BusEvent, chan<- int)
@@ -211,7 +217,21 @@ type tradingDataService struct {
 	statusChecker           *monitoring.Status
 	WithdrawalService       WithdrawalService
 	DepositService          DepositService
+	NetParamsService        NetParamsService
 	ctx                     context.Context
+}
+
+func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters")()
+	nps := t.NetParamsService.GetAll()
+	out := make([]*types.NetworkParameter, 0, len(nps))
+	for _, v := range nps {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.NetworkParametersResponse{
+		NetworkParameters: out,
+	}, nil
 }
 
 func (t *tradingDataService) EstimateMargin(ctx context.Context, req *protoapi.EstimateMarginRequest) (*protoapi.EstimateMarginResponse, error) {

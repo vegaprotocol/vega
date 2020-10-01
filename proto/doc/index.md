@@ -63,6 +63,8 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [NetworkParametersRequest](#api.NetworkParametersRequest)
+    - [NetworkParametersResponse](#api.NetworkParametersResponse)
     - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
@@ -1211,6 +1213,33 @@ Response for a list of markets on Vega.
 
 
 
+<a name="api.NetworkParametersRequest"></a>
+
+### NetworkParametersRequest
+A message requesting for the list
+of all network parameters
+
+
+
+
+
+
+<a name="api.NetworkParametersResponse"></a>
+
+### NetworkParametersResponse
+A response containing all of the
+vega network parameters
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| networkParameters | [vega.NetworkParameter](#vega.NetworkParameter) | repeated |  |
+
+
+
+
+
+
 <a name="api.ObserveEventBatch"></a>
 
 ### ObserveEventBatch
@@ -2190,6 +2219,7 @@ The response for a list of withdrawals
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
 | Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
 | Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
+| NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
 
 
 

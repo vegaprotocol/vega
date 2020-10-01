@@ -1,6 +1,7 @@
 package netparams
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -137,6 +138,8 @@ func (s *Store) Update(key, value string) error {
 
 	// update was successful we want to notify watchers
 	s.paramUpdates[key] = struct{}{}
+	// and also send it to the broke
+	s.broker.Send(events.NewNetworkParameterEvent(context.Background(), key, value))
 
 	return nil
 }

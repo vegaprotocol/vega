@@ -526,6 +526,33 @@
         ]
       }
     },
+    "/network/parameters": {
+      "post": {
+        "summary": "Get the network parameters",
+        "operationId": "NetworkParameters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiNetworkParametersResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiNetworkParametersRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orders/fee/estimate": {
       "post": {
         "summary": "Get an estimate for the fee to be paid for a given order",
@@ -1654,6 +1681,22 @@
         }
       },
       "description": "Response for a list of markets on Vega."
+    },
+    "apiNetworkParametersRequest": {
+      "type": "object",
+      "title": "A message requesting for the list\nof all network parameters"
+    },
+    "apiNetworkParametersResponse": {
+      "type": "object",
+      "properties": {
+        "networkParameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaNetworkParameter"
+          }
+        }
+      },
+      "title": "A response containing all of the\nvega network parameters"
     },
     "apiObserveEventsResponse": {
       "type": "object",

@@ -415,6 +415,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.NetworkParametersRequest"><span class="badge">M</span>NetworkParametersRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.NetworkParametersResponse"><span class="badge">M</span>NetworkParametersResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.ObserveEventBatch"><span class="badge">M</span>ObserveEventBatch</a>
                 </li>
 
@@ -3421,6 +3429,37 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
 
+        <h3 id="api.NetworkParametersRequest">NetworkParametersRequest</h3>
+        <p>A message requesting for the list</p><p>of all network parameters</p>
+
+
+
+
+
+        <h3 id="api.NetworkParametersResponse">NetworkParametersResponse</h3>
+        <p>A response containing all of the</p><p>vega network parameters</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>networkParameters</td>
+                  <td><a href="#vega.NetworkParameter">vega.NetworkParameter</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.ObserveEventBatch">ObserveEventBatch</h3>
         <p>message to poll current event buffer, and change batch size</p>
 
@@ -5895,6 +5934,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <td><a href="#api.DepositsRequest">DepositsRequest</a></td>
                 <td><a href="#api.DepositsResponse">DepositsResponse</a></td>
                 <td><p>Get withdrawals for a party</p></td>
+              </tr>
+
+              <tr>
+                <td>NetworkParameters</td>
+                <td><a href="#api.NetworkParametersRequest">NetworkParametersRequest</a></td>
+                <td><a href="#api.NetworkParametersResponse">NetworkParametersResponse</a></td>
+                <td><p>Get the network parameters</p></td>
               </tr>
 
           </tbody>
