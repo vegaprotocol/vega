@@ -20,10 +20,15 @@ type Broker interface {
 	Send(e events.Event)
 }
 
-type Value interface {
+type value interface {
 	Validate(value string) error
 	Update(value string) error
 	String() string
+	ToFloat() (float64, error)
+	ToInt() (int64, error)
+	ToUint() (uint64, error)
+	ToBool() (bool, error)
+	ToString() (string, error)
 }
 
 type NetParamWatcher func(string, string)
@@ -36,7 +41,7 @@ type WatchParam struct {
 type Store struct {
 	log    *logging.Logger
 	cfg    Config
-	store  map[string]Value
+	store  map[string]value
 	mu     sync.RWMutex
 	broker Broker
 
@@ -153,4 +158,59 @@ func (s *Store) Get(key string) (string, error) {
 		return "", ErrUnknownKey
 	}
 	return svalue.String(), nil
+}
+
+// GetFloat a value associated to the given key
+func (s *Store) GetFloat(key string) (float64, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svalue, ok := s.store[key]
+	if !ok {
+		return 0, ErrUnknownKey
+	}
+	return svalue.ToFloat()
+}
+
+// GetFloat a value associated to the given key
+func (s *Store) GetInt(key string) (int64, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svalue, ok := s.store[key]
+	if !ok {
+		return 0, ErrUnknownKey
+	}
+	return svalue.ToInt()
+}
+
+// GetUint a value associated to the given key
+func (s *Store) GetUint(key string) (uint64, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svalue, ok := s.store[key]
+	if !ok {
+		return 0, ErrUnknownKey
+	}
+	return svalue.ToUint()
+}
+
+// GetBool a value associated to the given key
+func (s *Store) GetBool(key string) (bool, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svalue, ok := s.store[key]
+	if !ok {
+		return false, ErrUnknownKey
+	}
+	return svalue.ToBool()
+}
+
+// GetString a value associated to the given key
+func (s *Store) GetString(key string) (string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svalue, ok := s.store[key]
+	if !ok {
+		return "", ErrUnknownKey
+	}
+	return svalue.ToString()
 }

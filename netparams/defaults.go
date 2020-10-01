@@ -1,7 +1,7 @@
 package netparams
 
-func defaultNetParams() map[string]Value {
-	return map[string]Value{
+func defaultNetParams() map[string]value {
+	return map[string]value{
 		MarketMarginScalingFactorSearchLevel:       NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.1"),
 		MarketMarginScalingFactorInitialMargin:     NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.2"),
 		MarketMarginScalingFactorCollateralRelease: NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.4"),
