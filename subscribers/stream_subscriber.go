@@ -80,7 +80,7 @@ func (s *StreamSub) Halt() {
 		close(s.updated)
 	}
 	s.mu.Unlock()
-	s.Base.Halt()
+	s.Base.Halt() // close channel inside lock, just in case this is a problem
 }
 
 func (s *StreamSub) loop(ctx context.Context) {
@@ -89,7 +89,11 @@ func (s *StreamSub) loop(ctx context.Context) {
 		case <-ctx.Done():
 			s.Halt()
 			return
-		case e := <-s.ch:
+		case e, ok := <-s.ch:
+			// just return if closed, don't call Halt, because that would try to close s.ch a second time
+			if !ok {
+				return
+			}
 			s.Push(e)
 		}
 	}
