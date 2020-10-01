@@ -966,6 +966,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.PriceMonitoringSettings"><span class="badge">M</span>PriceMonitoringSettings</a>
+                </li>
+
+                <li>
                   <a href="#vega.ScalingFactors"><span class="badge">M</span>ScalingFactors</a>
                 </li>
 
@@ -9197,10 +9201,9 @@ duration and optionally a minimum traded volume). </p></td>
 
                 <tr>
                   <td>priceMonitoringSettings</td>
-                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
-                  <td>repeated</td>
-                  <td><p>Specifies a set of PriceMonitoringParameters to be used for price
-monitoring purposes </p></td>
+                  <td><a href="#vega.PriceMonitoringSettings">PriceMonitoringSettings</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -9224,7 +9227,7 @@ monitoring purposes </p></td>
                   <td>horizon</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Price monitoring horizon </p></td>
+                  <td><p>Price monitoring projection horizon </p></td>
                 </tr>
 
                 <tr>
@@ -9236,11 +9239,43 @@ monitoring purposes </p></td>
 
                 <tr>
                   <td>auctionExtension</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Price monitoring auction extension duration in seconds should the price
 breach it&#39;s theoretical level over the specified horizon at the specified
 probability level </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringSettings">PriceMonitoringSettings</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>priceMonitoringSettings</td>
+                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
+                  <td>repeated</td>
+                  <td><p>Specifies a set of PriceMonitoringParameters to be used for price
+monitoring purposes </p></td>
+                </tr>
+
+                <tr>
+                  <td>updateFrequency</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Specifies how often (expressed in seconds) the price monitoring bounds should be updated. </p></td>
                 </tr>
 
             </tbody>

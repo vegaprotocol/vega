@@ -200,6 +200,7 @@
     - [MarginCalculator](#vega.MarginCalculator)
     - [Market](#vega.Market)
     - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
+    - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -3427,7 +3428,7 @@ Market definition.
 | openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
-| priceMonitoringSettings | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  |  |
 
 
 
@@ -3442,9 +3443,25 @@ Market definition.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| horizon | [uint64](#uint64) |  | Price monitoring horizon |
+| horizon | [uint64](#uint64) |  | Price monitoring projection horizon |
 | probability | [double](#double) |  | Price monitoirng probability level |
-| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level |
+| auctionExtension | [uint64](#uint64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringSettings"></a>
+
+### PriceMonitoringSettings
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| priceMonitoringSettings | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| updateFrequency | [uint64](#uint64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
 
 
 

@@ -3139,11 +3139,7 @@
           "description": "Discrete."
         },
         "priceMonitoringSettings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceMonitoringParameters"
-          },
-          "title": "Specifies a set of PriceMonitoringParameters to be used for price\nmonitoring purposes"
+          "$ref": "#/definitions/vegaPriceMonitoringSettings"
         }
       },
       "description": "Market definition."
@@ -3780,7 +3776,7 @@
         "horizon": {
           "type": "string",
           "format": "uint64",
-          "title": "Price monitoring horizon"
+          "title": "Price monitoring projection horizon"
         },
         "probability": {
           "type": "number",
@@ -3789,8 +3785,25 @@
         },
         "auctionExtension": {
           "type": "string",
-          "format": "int64",
+          "format": "uint64",
           "title": "Price monitoring auction extension duration in seconds should the price\nbreach it's theoretical level over the specified horizon at the specified\nprobability level"
+        }
+      }
+    },
+    "vegaPriceMonitoringSettings": {
+      "type": "object",
+      "properties": {
+        "priceMonitoringSettings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceMonitoringParameters"
+          },
+          "title": "Specifies a set of PriceMonitoringParameters to be used for price\nmonitoring purposes"
+        },
+        "updateFrequency": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Specifies how often (expressed in seconds) the price monitoring bounds should be updated."
         }
       }
     },

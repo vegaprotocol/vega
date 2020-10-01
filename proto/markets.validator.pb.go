@@ -148,6 +148,16 @@ func (this *Fees) Validate() error {
 func (this *PriceMonitoringParameters) Validate() error {
 	return nil
 }
+func (this *PriceMonitoringSettings) Validate() error {
+	for _, item := range this.PriceMonitoringSettings {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *Market) Validate() error {
 	if this.TradableInstrument != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TradableInstrument); err != nil {
@@ -178,11 +188,9 @@ func (this *Market) Validate() error {
 			}
 		}
 	}
-	for _, item := range this.PriceMonitoringSettings {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
-			}
+	if this.PriceMonitoringSettings != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PriceMonitoringSettings); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
 		}
 	}
 	return nil
