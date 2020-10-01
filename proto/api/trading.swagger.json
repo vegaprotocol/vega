@@ -1373,7 +1373,7 @@
       "properties": {
         "order": {
           "$ref": "#/definitions/vegaOrder",
-          "title": "Order to estimate fees for"
+          "title": "Order to estimate fees for\nthe following fields in the order are required:\nMarketID (used to specify the fee factors)\nPrice (the price at which the order could trade)\nSize (the size at which the order could eventually trade)"
         }
       },
       "title": "Request to fetch the estimated fee if an order were to trade immediately"
