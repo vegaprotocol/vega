@@ -164,7 +164,7 @@ func NewMarket(
 
 	marketState := types.MarketState_MARKET_STATE_CONTINUOUS
 	if mkt.OpeningAuction != nil {
-		marketState = types.MarketState_MARKET_STATE_AUCTION
+		marketState = types.MarketState_MARKET_STATE_AUCTION_OPENING
 	}
 
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
@@ -196,7 +196,7 @@ func NewMarket(
 	}
 	mode := types.MarketState_MARKET_STATE_CONTINUOUS
 	if fba := mkt.GetDiscrete(); fba != nil {
-		mode = types.MarketState_MARKET_STATE_AUCTION
+		mode = types.MarketState_MARKET_STATE_AUCTION_FREQUENT_BATCH
 	}
 
 	var auctionClose time.Time
@@ -231,7 +231,7 @@ func NewMarket(
 	}
 
 	if mkt.OpeningAuction != nil {
-		market.EnterAuction(ctx)
+		market.EnterAuction(ctx, types.MarketState_MARKET_STATE_AUCTION_OPENING)
 	}
 	return market, nil
 }
@@ -267,7 +267,7 @@ func (m *Market) GetMarketData() types.MarketData {
 	// Auction related values
 	var indicativePrice, indicativeVolume uint64
 	var auctionStart, auctionEnd int64
-	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
+	if m.isInAuction() {
 		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
 		// Zero time does not equal 0 in UnixNanos, we need to check here before converting
 		if !m.auctionStart.IsZero() {
@@ -292,7 +292,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		IndicativeVolume: indicativeVolume,
 		AuctionStart:     auctionStart,
 		AuctionEnd:       auctionEnd,
-		MarketState:      m.matching.GetMarketState(),
+		MarketState:      m.tradeMode,
 	}
 }
 
@@ -335,7 +335,10 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 	m.currentTime = t
 
 	// Look to see if we are in an auction that needs to finish
-	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
+	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION_OPENING ||
+		m.tradeMode == types.MarketState_MARKET_STATE_AUCTION_PRICE ||
+		m.tradeMode == types.MarketState_MARKET_STATE_AUCTION_LIQUIDITY ||
+		m.tradeMode == types.MarketState_MARKET_STATE_AUCTION_FREQUENT_BATCH {
 		// Have we completed the auction time
 		if !m.auctionEnd.IsZero() && m.auctionEnd.Before(t) {
 			m.LeaveAuction(ctx)
@@ -461,10 +464,20 @@ func (m *Market) isOpeningAuction() bool {
 	return false
 }
 
-func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time) {
-	isMarketCurrentlyInAuction := m.GetTradingMode() == types.MarketState_MARKET_STATE_AUCTION
+func (m *Market) isInAuction() bool {
+	tm := m.GetTradingMode()
 
-	if isMarketCurrentlyInAuction {
+	if tm == types.MarketState_MARKET_STATE_AUCTION_OPENING ||
+		tm == types.MarketState_MARKET_STATE_AUCTION_PRICE ||
+		tm == types.MarketState_MARKET_STATE_AUCTION_LIQUIDITY ||
+		tm == types.MarketState_MARKET_STATE_AUCTION_FREQUENT_BATCH {
+		return true
+	}
+	return false
+}
+
+func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time) {
+	if m.isInAuction() {
 		if m.shouldLeaveAuctionPerTime(t) && !m.shouldEnterAuctionPerTime(t) {
 			indicativeUncrossingPrice, indicativeVolume, _ := m.matching.GetIndicativePriceAndVolume()
 			if indicativeVolume == 0 || !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
@@ -474,7 +487,7 @@ func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time)
 		}
 	} else {
 		if m.shouldEnterAuctionPerTime(t) {
-			m.EnterAuction(ctx)
+			m.EnterAuction(ctx, types.MarketState_MARKET_STATE_AUCTION_PRICE)
 		}
 	}
 }
@@ -510,8 +523,8 @@ func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
 }
 
 // EnterAuction : Prepare the order book to be run as an auction
-func (m *Market) EnterAuction(ctx context.Context) {
-	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
+func (m *Market) EnterAuction(ctx context.Context, marketState types.MarketState) {
+	m.tradeMode = marketState
 
 	m.matching.EnterAuction() // TODO (WG 03/09/20): Cancel orders, calling this only to be able the test the triggers for now.
 	// Change market type to auction
@@ -545,7 +558,7 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
 	if fba := m.mkt.GetDiscrete(); fba != nil {
 
-		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
+		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION_FREQUENT_BATCH
 	}
 
 	// Change market type to continuous trading
@@ -595,7 +608,7 @@ func (m *Market) GetTradingMode() types.MarketState {
 
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
-	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN {
+	if m.isInAuction() && order.TimeInForce == types.Order_TIF_GFN {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -778,7 +791,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	// If we are not in an opening auction, apply fees
 	var trades []*types.Trade
 	if m.mkt.OpeningAuction == nil &&
-		m.matching.GetMarketState() != types.MarketState_MARKET_STATE_AUCTION {
+		!m.isInAuction() {
 
 		// first we call the order book to evaluate auction triggers and get the list of trades
 		trades, err = m.evaluateAuctionTriggersAndGetTrades(ctx, order)
@@ -851,7 +864,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 func (m *Market) evaluateAuctionTriggersAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
 	if err == nil && len(trades) > 0 && m.shouldEnterAuctionPerPrice(trades[len(trades)-1].Price) {
-		m.EnterAuction(ctx)
+		m.EnterAuction(ctx, types.MarketState_MARKET_STATE_AUCTION_PRICE)
 		trades = make([]*types.Trade, 0)
 	}
 	return trades, err
@@ -1405,7 +1418,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 	// @TODO replace markPrice with intidicative uncross price in auction mode if available
 	price := m.markPrice
-	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION {
+	if m.isInAuction() {
 		if ip, _, _ := m.matching.GetIndicativePriceAndVolume(); ip != 0 {
 			price = ip
 		}

@@ -13175,9 +13175,27 @@ These fees reward traders who provide the best priced liquidity that actually al
               </tr>
 
               <tr>
-                <td>MARKET_STATE_AUCTION</td>
+                <td>MARKET_STATE_AUCTION_OPENING</td>
                 <td>2</td>
-                <td><p>Auction trading</p></td>
+                <td><p>Auction at market open</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_STATE_AUCTION_LIQUIDITY</td>
+                <td>3</td>
+                <td><p>Auction seeking more liquidity for the market</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_STATE_AUCTION_PRICE</td>
+                <td>4</td>
+                <td><p>Auction triggered by price monitoring</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_STATE_AUCTION_FREQUENT_BATCH</td>
+                <td>5</td>
+                <td><p>Frequent Batch Auction mode</p></td>
               </tr>
 
           </tbody>

@@ -3349,10 +3349,13 @@
       "enum": [
         "MARKET_STATE_UNSPECIFIED",
         "MARKET_STATE_CONTINUOUS",
-        "MARKET_STATE_AUCTION"
+        "MARKET_STATE_AUCTION_OPENING",
+        "MARKET_STATE_AUCTION_LIQUIDITY",
+        "MARKET_STATE_AUCTION_PRICE",
+        "MARKET_STATE_AUCTION_FREQUENT_BATCH"
       ],
       "default": "MARKET_STATE_UNSPECIFIED",
-      "description": "What mode is the market currently running, also known as market state.\n\n - MARKET_STATE_UNSPECIFIED: Default value, this is invalid\n - MARKET_STATE_CONTINUOUS: Normal trading\n - MARKET_STATE_AUCTION: Auction trading"
+      "description": "What mode is the market currently running, also known as market state.\n\n - MARKET_STATE_UNSPECIFIED: Default value, this is invalid\n - MARKET_STATE_CONTINUOUS: Normal trading\n - MARKET_STATE_AUCTION_OPENING: Auction at market open\n - MARKET_STATE_AUCTION_LIQUIDITY: Auction seeking more liquidity for the market\n - MARKET_STATE_AUCTION_PRICE: Auction triggered by price monitoring\n - MARKET_STATE_AUCTION_FREQUENT_BATCH: Frequent Batch Auction mode"
     },
     "vegaMarketTick": {
       "type": "object",

@@ -5036,11 +5036,20 @@ enum OrderType {
 
 "What market state are we in"
 enum MarketState {
-  "Continuous trading where orders are processed and potentially matched on arrival"
-  CONTINUOUS
+  "Continuous trading where orders are processed and potentially matched on arrival" 
+   CONTINUOUS 
+  
+   "Auction at market open" 
+   AUCTION_OPENING
+  
+   "Auction seeking more liquidity for the market" 
+   AUCTION_LIQUIDITY
+  
+   "Auction triggered by price monitoring" 
+   AUCTION_PRICE
 
-  "Auction trading where orders are uncrossed at the end of the auction period"
-  AUCTION
+   "Frequent Batch Auction mode" 
+   AUCTION_FREQUENT_BATCH  
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"

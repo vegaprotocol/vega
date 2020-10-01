@@ -98,7 +98,7 @@ func testMarginLevelsTS(t *testing.T) {
 			return markPrice, nil
 		})
 
-	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
+	eng.orderbook.EXPECT().IsInContinuousTrading().AnyTimes().Return(true)
 	ts := time.Date(2018, time.January, 23, 0, 0, 0, 0, time.UTC)
 	eng.OnTimeUpdate(ts)
 
@@ -135,7 +135,7 @@ func testMarginTopup(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
+	eng.orderbook.EXPECT().IsInContinuousTrading().AnyTimes().Return(true)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -165,7 +165,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		general: 10,
 		market:  "ETH/DEC19",
 	}
-	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
+	eng.orderbook.EXPECT().IsInContinuousTrading().AnyTimes().Return(true)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -191,7 +191,7 @@ func testMarginNoop(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
+	eng.orderbook.EXPECT().IsInContinuousTrading().AnyTimes().Return(true)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -217,7 +217,7 @@ func testMarginOverflow(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	eng.orderbook.EXPECT().GetMarketState().AnyTimes().Return(types.MarketState_MARKET_STATE_CONTINUOUS)
+	eng.orderbook.EXPECT().IsInContinuousTrading().AnyTimes().Return(true)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil

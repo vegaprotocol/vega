@@ -37,10 +37,10 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	} else if orderMessage.Type == types.Order_TYPE_MARKET &&
 		(orderMessage.TimeInForce == types.Order_TIF_GTT || orderMessage.TimeInForce == types.Order_TIF_GTC) {
 		err = types.ErrInvalidPersistence
-	} else if b.marketState == types.MarketState_MARKET_STATE_AUCTION &&
+	} else if b.mode == Auction &&
 		orderMessage.TimeInForce == types.Order_TIF_GFN {
 		err = types.ErrInvalidTimeInForce
-	} else if b.marketState == types.MarketState_MARKET_STATE_CONTINUOUS &&
+	} else if b.mode == Continuous &&
 		orderMessage.TimeInForce == types.Order_TIF_GFA {
 		err = types.ErrInvalidTimeInForce
 	} else if orderMessage.ExpiresAt > 0 && orderMessage.Type == types.Order_TYPE_MARKET {

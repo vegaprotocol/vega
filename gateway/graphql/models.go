@@ -1094,18 +1094,27 @@ type MarketState string
 const (
 	// Continuous trading where orders are processed and potentially matched on arrival
 	MarketStateContinuous MarketState = "CONTINUOUS"
-	// Auction trading where orders are uncrossed at the end of the auction period
-	MarketStateAuction MarketState = "AUCTION"
+	// Auction at market open
+	MarketStateAuctionOpening MarketState = "AUCTION_OPENING"
+	// Auction seeking more liquidity for the market
+	MarketStateAuctionLiquidity MarketState = "AUCTION_LIQUIDITY"
+	// Auction triggered by price monitoring
+	MarketStateAuctionPrice MarketState = "AUCTION_PRICE"
+	// Frequent Batch Auction mode
+	MarketStateAuctionFrequentBatch MarketState = "AUCTION_FREQUENT_BATCH"
 )
 
 var AllMarketState = []MarketState{
 	MarketStateContinuous,
-	MarketStateAuction,
+	MarketStateAuctionOpening,
+	MarketStateAuctionLiquidity,
+	MarketStateAuctionPrice,
+	MarketStateAuctionFrequentBatch,
 }
 
 func (e MarketState) IsValid() bool {
 	switch e {
-	case MarketStateContinuous, MarketStateAuction:
+	case MarketStateContinuous, MarketStateAuctionOpening, MarketStateAuctionLiquidity, MarketStateAuctionPrice, MarketStateAuctionFrequentBatch:
 		return true
 	}
 	return false

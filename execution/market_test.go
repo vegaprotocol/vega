@@ -526,13 +526,13 @@ func TestTriggerByTime(t *testing.T) {
 
 	closed = tm.market.OnChainTimeUpdate(auctionStartTime)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	tm.auctionTriggers[0].EXPECT().LeavePerTime(stillAuction).Return(false).Times(1)
 
 	closed = tm.market.OnChainTimeUpdate(stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	tm.auctionTriggers[0].EXPECT().LeavePerTime(auctionEndTime).Return(true).Times(1)
 	tm.auctionTriggers[0].EXPECT().EnterPerTime(auctionEndTime).Return(false).Times(1)
@@ -602,10 +602,10 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 
 	tradingMode := tm.market.GetTradingMode()
 	assert.Equal(t, 0, len(confirmation.Trades))
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tradingMode))
 	closed := tm.market.OnChainTimeUpdate(stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
 	assert.False(t, closed)
@@ -673,7 +673,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, 0, len(confirmation.Trades))
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	cancelled, err := tm.market.CancelOrderByID(confirmationBuy.Order.Id)
 	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
@@ -682,7 +682,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 
 	closed := tm.market.OnChainTimeUpdate(stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -795,7 +795,7 @@ func TestTriggerByPriceExitStoppedByOtherTirggerPrice(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, 0, len(confirmation.Trades))
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	cancelled, err := tm.market.CancelOrderByID(confirmationBuy.Order.Id)
 	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
@@ -804,7 +804,7 @@ func TestTriggerByPriceExitStoppedByOtherTirggerPrice(t *testing.T) {
 
 	closed := tm.market.OnChainTimeUpdate(stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -849,7 +849,7 @@ func TestTriggerByPriceExitStoppedByOtherTirggerPrice(t *testing.T) {
 
 	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 }
 
 func TestTriggerByPriceExitStoppedByOtherTirggerTime(t *testing.T) {
@@ -917,7 +917,7 @@ func TestTriggerByPriceExitStoppedByOtherTirggerTime(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, 0, len(confirmation.Trades))
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	cancelled, err := tm.market.CancelOrderByID(confirmationBuy.Order.Id)
 	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
@@ -926,7 +926,7 @@ func TestTriggerByPriceExitStoppedByOtherTirggerTime(t *testing.T) {
 
 	closed := tm.market.OnChainTimeUpdate(stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -971,5 +971,5 @@ func TestTriggerByPriceExitStoppedByOtherTirggerTime(t *testing.T) {
 
 	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION_PRICE), int32(tm.market.GetTradingMode()))
 }

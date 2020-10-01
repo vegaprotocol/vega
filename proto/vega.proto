@@ -88,8 +88,14 @@ enum MarketState {
   MARKET_STATE_UNSPECIFIED = 0;
   // Normal trading
   MARKET_STATE_CONTINUOUS = 1;
-  // Auction trading
-  MARKET_STATE_AUCTION = 2;
+  // Auction at market open
+  MARKET_STATE_AUCTION_OPENING = 2;
+  // Auction seeking more liquidity for the market
+  MARKET_STATE_AUCTION_LIQUIDITY = 3;
+  // Auction triggered by price monitoring
+  MARKET_STATE_AUCTION_PRICE = 4;
+  // Frequent Batch Auction mode
+  MARKET_STATE_AUCTION_FREQUENT_BATCH = 5;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go

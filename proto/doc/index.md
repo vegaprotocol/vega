@@ -4884,7 +4884,10 @@ What mode is the market currently running, also known as market state.
 | ---- | ------ | ----------- |
 | MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
 | MARKET_STATE_CONTINUOUS | 1 | Normal trading |
-| MARKET_STATE_AUCTION | 2 | Auction trading |
+| MARKET_STATE_AUCTION_OPENING | 2 | Auction at market open |
+| MARKET_STATE_AUCTION_LIQUIDITY | 3 | Auction seeking more liquidity for the market |
+| MARKET_STATE_AUCTION_PRICE | 4 | Auction triggered by price monitoring |
+| MARKET_STATE_AUCTION_FREQUENT_BATCH | 5 | Frequent Batch Auction mode |
 
 
 

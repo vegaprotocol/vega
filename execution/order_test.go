@@ -569,7 +569,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GTC, 0, false)
 	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GFA, 0, false)
 
-	tm.market.EnterAuction(context.Background())
+	tm.market.EnterAuction(context.Background(), types.MarketState_MARKET_STATE_AUCTION_PRICE)
 	orderId3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
 	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GTC, 0, false)
 	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GFN, 0, false)

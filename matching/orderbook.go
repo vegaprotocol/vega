@@ -35,7 +35,7 @@ type OrderBook struct {
 	expiringOrders  *ExpiringOrders
 	ordersByID      map[string]*types.Order
 	ordersPerParty  map[string]map[string]struct{}
-	marketState     types.MarketState
+	mode            OrderBookMode
 	batchID         uint64
 }
 
@@ -49,13 +49,24 @@ type CumulativeVolumeLevel struct {
 	maxTradableAmount   uint64
 }
 
+// Mode of the orderbook
+type OrderBookMode int
+
+const (
+	Continuous OrderBookMode = iota
+	Auction
+)
+
 func (b *OrderBook) Hash() []byte {
 	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
-// GetMarketState returns the current state of the orderbook/market
-func (b *OrderBook) GetMarketState() types.MarketState {
-	return b.marketState
+func (b *OrderBook) IsInAuction() bool {
+	return b.mode == Auction
+}
+
+func (b *OrderBook) IsInContinuousTrading() bool {
+	return b.mode == Continuous
 }
 
 func isPersistent(o *types.Order) bool {
@@ -77,6 +88,12 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
+	// Convert market state to order book mode
+	var mode OrderBookMode = Auction
+	if marketState == types.MarketState_MARKET_STATE_CONTINUOUS {
+		mode = Continuous
+	}
+
 	return &OrderBook{
 		log:             log,
 		marketID:        marketID,
@@ -87,7 +104,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),
 		ordersByID:      map[string]*types.Order{},
-		marketState:     marketState,
+		mode:            mode,
 		batchID:         0,
 		ordersPerParty:  map[string]map[string]struct{}{},
 	}
@@ -117,7 +134,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price uint64
 		err   error
 	)
-	if b.marketState == types.MarketState_MARKET_STATE_AUCTION {
+	if b.IsInAuction() {
 		p, _, _ := b.GetIndicativePriceAndVolume()
 		return p, nil
 	}
@@ -177,18 +194,18 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 // EnterAuction Moves the order book into an auction state
 func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Scan existing orders to see which ones can be kept, cancelled and parked
-	buyCancelledOrders, err := b.buy.getOrdersToCancel(types.MarketState_MARKET_STATE_AUCTION)
+	buyCancelledOrders, err := b.buy.getOrdersToCancel(Auction)
 	if err != nil {
 		return nil, err
 	}
 
-	sellCancelledOrders, err := b.sell.getOrdersToCancel(types.MarketState_MARKET_STATE_AUCTION)
+	sellCancelledOrders, err := b.sell.getOrdersToCancel(Auction)
 	if err != nil {
 		return nil, err
 	}
 
 	// Set the market state
-	b.marketState = types.MarketState_MARKET_STATE_AUCTION
+	b.mode = Auction
 
 	// Return all the orders that have been removed from the book and need to be cancelled
 	ordersToCancel := buyCancelledOrders
@@ -208,12 +225,12 @@ func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, 
 	}
 
 	// Remove any orders that will not be valid in continuous trading
-	buyOrdersToCancel, err := b.buy.getOrdersToCancel(types.MarketState_MARKET_STATE_CONTINUOUS)
+	buyOrdersToCancel, err := b.buy.getOrdersToCancel(Continuous)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	sellOrdersToCancel, err := b.sell.getOrdersToCancel(types.MarketState_MARKET_STATE_CONTINUOUS)
+	sellOrdersToCancel, err := b.sell.getOrdersToCancel(Continuous)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -221,7 +238,7 @@ func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, 
 	ordersToCancel := append(buyOrdersToCancel, sellOrdersToCancel...)
 
 	// Flip back to continuous
-	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
+	b.mode = Continuous
 
 	return uncrossedOrders, ordersToCancel, nil
 }
@@ -538,7 +555,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	if b.marketState == types.MarketState_MARKET_STATE_AUCTION {
+	if b.IsInAuction() {
 		return nil, nil
 	}
 
@@ -581,7 +598,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	order.BatchID = b.batchID
 
-	if b.marketState != types.MarketState_MARKET_STATE_AUCTION {
+	if !b.IsInAuction() {
 		// uncross with opposite
 		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order)
 		if lastTradedPrice != 0 {

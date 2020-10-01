@@ -48,16 +48,30 @@ func (mr *MockOrderbookMockRecorder) GetCloseoutPrice(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCloseoutPrice", reflect.TypeOf((*MockOrderbook)(nil).GetCloseoutPrice), arg0, arg1)
 }
 
-// GetMarketState mocks base method
-func (m *MockOrderbook) GetMarketState() proto.MarketState {
+// IsInAuction mocks base method
+func (m *MockOrderbook) IsInAuction() bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMarketState")
-	ret0, _ := ret[0].(proto.MarketState)
+	ret := m.ctrl.Call(m, "IsInAuction")
+	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// GetMarketState indicates an expected call of GetMarketState
-func (mr *MockOrderbookMockRecorder) GetMarketState() *gomock.Call {
+// IsInAuction indicates an expected call of IsInAuction
+func (mr *MockOrderbookMockRecorder) IsInAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketState", reflect.TypeOf((*MockOrderbook)(nil).GetMarketState))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInAuction", reflect.TypeOf((*MockOrderbook)(nil).IsInAuction))
+}
+
+// IsInContinuousTrading mocks base method
+func (m *MockOrderbook) IsInContinuousTrading() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsInContinuousTrading")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsInContinuousTrading indicates an expected call of IsInContinuousTrading
+func (mr *MockOrderbookMockRecorder) IsInContinuousTrading() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInContinuousTrading", reflect.TypeOf((*MockOrderbook)(nil).IsInContinuousTrading))
 }
