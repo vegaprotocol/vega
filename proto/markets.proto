@@ -199,13 +199,13 @@ message Fees {
 
 // PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
 message PriceMonitoringParameters {
-  // Price monitoring projection horizon τ
+  // Price monitoring projection horizon τ in seconds.
   int64 horizon = 1 [(validator.field) = {int_gt: 0}];
-  // Price monitoirng probability level p
+  // Price monitoirng probability level p.
   double probability = 2 [(validator.field) = {float_gt: 0, float_lt: 0}];
   // Price monitoring auction extension duration in seconds should the price
   // breach it's theoretical level over the specified horizon at the specified
-  // probability level
+  // probability level.
   int64 auctionExtension = 3 [(validator.field) = {int_gte: 0}];
 }
 
