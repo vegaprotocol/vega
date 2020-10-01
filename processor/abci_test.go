@@ -3,7 +3,6 @@ package processor_test
 import (
 	"crypto"
 	"encoding/hex"
-	"log"
 	"testing"
 	"time"
 
@@ -65,8 +64,10 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 }
 
 func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.App, proc *procTest) {
-	key := []byte("party-id")
-	party := hex.EncodeToString(key)
+	pub, priv, err := s.sig.GenKey()
+	require.NoError(t, err)
+
+	party := hex.EncodeToString(pub.([]byte))
 	data := map[blockchain.Command]proto.Message{
 		blockchain.SubmitOrderCommand: &types.OrderSubmission{
 			PartyID: party,
@@ -113,9 +114,6 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	for cmd, msg := range data {
-		pub, priv, err := s.sig.GenKey()
-		require.NoError(t, err)
-
 		tx := txEncode(t, cmd, msg)
 		tx.From = &types.Transaction_PubKey{
 			PubKey: pub.([]byte),
@@ -128,8 +126,9 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 		req := tmtypes.RequestDeliverTx{
 			Tx: bz,
 		}
+
 		resp := app.Abci().DeliverTx(req)
-		log.Printf("resp = %+v\n", resp)
+		require.True(t, resp.IsOK())
 	}
 
 }
