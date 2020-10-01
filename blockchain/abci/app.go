@@ -44,9 +44,10 @@ type App struct {
 func New(codec Codec, opts ...Option) *App {
 	app := &App{
 		codec:           codec,
+		replayProtector: &replayProtectorNoop{},
 		checkTxs:        map[blockchain.Command]TxHandler{},
 		deliverTxs:      map[blockchain.Command]TxHandler{},
-		replayProtector: &replayProtectorNoop{},
+		checkedTxs:      map[string]Tx{},
 	}
 
 	for _, fn := range opts {
