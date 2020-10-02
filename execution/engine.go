@@ -181,7 +181,6 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
-		nil,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",

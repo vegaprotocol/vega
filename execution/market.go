@@ -144,7 +144,6 @@ func NewMarket(
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
-	auctionTriggers []AuctionTrigger,
 ) (*Market, error) {
 
 	if len(mkt.Id) == 0 {
@@ -195,7 +194,7 @@ func NewMarket(
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instanciate fee engine")
+		return nil, errors.Wrap(err, "unable to instantiate fee engine")
 	}
 	mode := types.MarketState_MARKET_STATE_CONTINUOUS
 	if fba := mkt.GetDiscrete(); fba != nil {
@@ -205,6 +204,11 @@ func NewMarket(
 	var auctionClose time.Time
 	if mkt.OpeningAuction != nil && mkt.OpeningAuction.Duration > 0 {
 		auctionClose = now.Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
+	}
+
+	pMonitor, err := pricemonitoring.NewPriceMonitoring(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
 	market := &Market{
@@ -227,6 +231,7 @@ func NewMarket(
 		auctionEnd:         auctionClose,
 		tradeMode:          mode,
 		auctionState:       newAuctionState(mkt, now),
+		pMonitor:           pMonitor,
 	}
 
 	if mkt.OpeningAuction != nil {
