@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
@@ -254,6 +255,7 @@ func getTestGRPCServer(
 	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
 	withdrawal := plugins.NewWithdrawal(ctx)
 	deposit := plugins.NewDeposit(ctx)
+	netparams := netparams.NewService(ctx)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -277,6 +279,7 @@ func getTestGRPCServer(
 		eventService,
 		withdrawal,
 		deposit,
+		netparams,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {

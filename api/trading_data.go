@@ -185,7 +185,7 @@ type FeeService interface {
 }
 
 // NetParamsService Provides apis to estimate fees
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/fee_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NetParamsService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/net_params_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NetParamsService
 type NetParamsService interface {
 	GetAll() []types.NetworkParameter
 }
