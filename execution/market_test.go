@@ -66,16 +66,10 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, numberOfTri
 	collateralEngine.EnableAsset(context.Background(), tokAsset)
 
 	mkts := getMarkets(closingAt)
-	mockTriggers := getMockTriggers(numberOfTriggers, ctrl)
-
-	triggers := make([]execution.AuctionTrigger, len(mockTriggers))
-	for i, mt := range mockTriggers {
-		triggers[i] = mt
-	}
 
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), triggers)
+		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen())
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -93,7 +87,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, numberOfTri
 		broker:          broker,
 		now:             now,
 		asset:           asset,
-		auctionTriggers: mockTriggers,
 	}
 }
 
