@@ -273,7 +273,7 @@ func (e *Engine) checkBoundViolations(price uint64) map[*types.PriceMonitoringPa
 }
 
 func (e *Engine) updateBounds() {
-	if e.now.Before(e.update) {
+	if e.now.Before(e.update) || len(e.parameters) == 0 {
 		return
 	}
 
