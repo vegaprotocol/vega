@@ -505,41 +505,41 @@ func TestMarketCancelOrder(t *testing.T) {
 	assert.Error(t, err, "it should be an error to cancel an order that does not exist")
 }
 
-func TestTriggerByTime(t *testing.T) {
-	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	auctionStartTime := now.Add(1 * time.Second)
-	stillAuction := auctionStartTime.Add(1 * time.Second)
-	auctionEndTime := stillAuction.Add(1 * time.Second)
-	tm := getTestMarket(t, now, closingAt, 1)
+// func TestTriggerByTime(t *testing.T) {
+// 	now := time.Unix(10, 0)
+// 	closingAt := time.Unix(10000000000, 0)
+// 	auctionStartTime := now.Add(1 * time.Second)
+// 	stillAuction := auctionStartTime.Add(1 * time.Second)
+// 	auctionEndTime := stillAuction.Add(1 * time.Second)
+// 	tm := getTestMarket(t, now, closingAt, 1)
 
-	tm.auctionTriggers[0].EXPECT().EnterPerTime(now).Return(false).Times(1)
+// 	tm.auctionTriggers[0].EXPECT().EnterPerTime(now).Return(false).Times(1)
 
-	closed := tm.market.OnChainTimeUpdate(now)
-	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+// 	closed := tm.market.OnChainTimeUpdate(now)
+// 	assert.False(t, closed)
+// 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
 
-	tm.auctionTriggers[0].EXPECT().EnterPerTime(auctionStartTime).Return(true).Times(1)
+// 	tm.auctionTriggers[0].EXPECT().EnterPerTime(auctionStartTime).Return(true).Times(1)
 
-	closed = tm.market.OnChainTimeUpdate(auctionStartTime)
-	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+// 	closed = tm.market.OnChainTimeUpdate(auctionStartTime)
+// 	assert.False(t, closed)
+// 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
-	tm.auctionTriggers[0].EXPECT().LeavePerTime(stillAuction).Return(false).Times(1)
+// 	tm.auctionTriggers[0].EXPECT().LeavePerTime(stillAuction).Return(false).Times(1)
 
-	closed = tm.market.OnChainTimeUpdate(stillAuction)
-	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
+// 	closed = tm.market.OnChainTimeUpdate(stillAuction)
+// 	assert.False(t, closed)
+// 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
-	tm.auctionTriggers[0].EXPECT().LeavePerTime(auctionEndTime).Return(true).Times(1)
-	tm.auctionTriggers[0].EXPECT().EnterPerTime(auctionEndTime).Return(false).Times(1)
-	tm.auctionTriggers[0].EXPECT().EnterPerPrice(gomock.Any()).Return(false).Times(1)
+// 	tm.auctionTriggers[0].EXPECT().LeavePerTime(auctionEndTime).Return(true).Times(1)
+// 	tm.auctionTriggers[0].EXPECT().EnterPerTime(auctionEndTime).Return(false).Times(1)
+// 	tm.auctionTriggers[0].EXPECT().EnterPerPrice(gomock.Any()).Return(false).Times(1)
 
-	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
-	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
+// 	closed = tm.market.OnChainTimeUpdate(auctionEndTime)
+// 	assert.False(t, closed)
+// 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
 
-}
+// }
 
 func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	party1 := "party1"
