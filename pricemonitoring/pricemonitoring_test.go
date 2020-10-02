@@ -1,294 +1,353 @@
 package pricemonitoring_test
 
 import (
+	"context"
+	"math"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/pricemonitoring"
 	"code.vegaprotocol.io/vega/pricemonitoring/mocks"
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestConstructor(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
-	var currentPrice uint64 = 123
-	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
-	require.NoError(t, err)
-	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
-	require.NoError(t, err)
-	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(2)
+func TestErrorWithNilRiskModel(t *testing.T) {
+	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	p2 := types.PriceMonitoringParameters{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	settings := types.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
+		UpdateFrequency:           600}
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
-	require.NoError(t, err)
-	require.NotNil(t, pm)
-
-	negativeUpdateFrequency := -time.Minute
-	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, negativeUpdateFrequency, currentPrice, currentTime)
+	pm, err := pricemonitoring.NewPriceMonitoring(nil, settings)
 	require.Error(t, err)
 	require.Nil(t, pm)
-
-	negativeHorizon := pricemonitoring.PriceProjection{Horizon: -time.Microsecond, Probability: 0.5}
-	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.PriceProjection{negativeHorizon}, 10*time.Minute, currentPrice, currentTime)
-	require.Error(t, err)
-	require.Nil(t, pm)
-
-	invalidProbability := pricemonitoring.PriceProjection{Horizon: time.Microsecond, Probability: 1.1}
-	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.PriceProjection{invalidProbability}, 10*time.Minute, currentPrice, currentTime)
-	require.Error(t, err)
-	require.Nil(t, pm)
-
-	invalidProbability = pricemonitoring.PriceProjection{Horizon: time.Microsecond, Probability: -0.1}
-	pm, err = pricemonitoring.NewPriceMonitoring(riskModelMock, []pricemonitoring.PriceProjection{invalidProbability}, 10*time.Minute, currentPrice, currentTime)
-	require.Error(t, err)
-	require.Nil(t, pm)
-
-}
-
-func TestHorizonProbablityLevelPairsSorted(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
-	var currentPrice uint64 = 123
-	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
-	require.NoError(t, err)
-	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.99)
-	require.NoError(t, err)
-	horizon3, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
-	require.NoError(t, err)
-	horizon4, err := pricemonitoring.NewPriceProjection(10*time.Hour, 0.95)
-	require.NoError(t, err)
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(4)
-
-	expectedHorizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2, *horizon3, *horizon4}
-	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon4, *horizon2, *horizon3, *horizon1}
-
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
-
-	require.NoError(t, err)
-	require.NotNil(t, pm)
-
-	boundViolations := pm.CheckBoundViolations(currentPrice)
-	i := 0
-	for key := range boundViolations {
-		require.Equal(t, expectedHorizonProbabilityPairs[i], key)
-		i++
-	}
-}
-
-func TestUpdateTime(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
-	var currentPrice uint64 = 123
-	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
-	require.Nil(t, err)
-	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
-	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(2)
-
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
-	require.NoError(t, err)
-	require.NotNil(t, pm)
-
-	future := currentTime.Add(time.Microsecond)
-	err = pm.RecordTimeChange(future)
-	require.NoError(t, err)
-
-	past := currentTime
-	err = pm.RecordTimeChange(past)
-	require.Error(t, err)
 }
 
 func TestRecordPriceChange(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
-	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
-	require.Nil(t, err)
-	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
-	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-1), float64(currentPrice+1)).Times(2)
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	p2 := types.PriceMonitoringParameters{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	settings := types.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
+		UpdateFrequency:           600}
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-10), float64(currentPrice+10)).Times(2)
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
+	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
+
+	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
-	pm.RecordPriceChange(currentPrice + 2)
-	pm.RecordPriceChange(currentPrice + 1)
-	pm.RecordPriceChange(currentPrice)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+2, now)
+	require.NoError(t, err)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+1, now)
+	require.NoError(t, err)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
 }
 
 func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
-	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon1, err := pricemonitoring.NewPriceProjection(time.Hour, 0.99)
-	require.Nil(t, err)
-	horizon2, err := pricemonitoring.NewPriceProjection(2*time.Hour, 0.95)
-	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon1, *horizon2}
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+	var p1Time int64 = 60
+	var p2Time int64 = 300
+	p1 := types.PriceMonitoringParameters{Horizon: 3600, Probability: 0.99, AuctionExtension: p1Time}
+	p2 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: p2Time}
+	settings := types.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
+		UpdateFrequency:           600}
+
 	var maxMoveDownHorizon1 uint64 = 1
 	var maxMoveUpHorizon1 uint64 = 2
 	var maxMoveDownHorizon2 uint64 = 3
 	var maxMoveUpHorizon2 uint64 = 4
 	require.True(t, maxMoveDownHorizon2 > maxMoveDownHorizon1)
 	require.True(t, maxMoveUpHorizon2 > maxMoveUpHorizon1)
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(horizon1.Horizon), horizon1.Probability).Return(float64(currentPrice-maxMoveDownHorizon1), float64(currentPrice+maxMoveUpHorizon1))
-	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(horizon2.Horizon), horizon2.Probability).Return(float64(currentPrice-maxMoveDownHorizon2), float64(currentPrice+maxMoveUpHorizon2))
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(p1.Horizon), p1.Probability).Return(float64(currentPrice-maxMoveDownHorizon1), float64(currentPrice+maxMoveUpHorizon1))
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(p2.Horizon), p2.Probability).Return(float64(currentPrice-maxMoveDownHorizon2), float64(currentPrice+maxMoveUpHorizon2))
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(11)
+	auctionStateMock.EXPECT().InAuction().Return(false).Times(11)
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, 10*time.Minute, currentPrice, currentTime)
+	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
-	violations := pm.CheckBoundViolations(currentPrice + maxMoveUpHorizon1 - 1)
-	require.False(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice - maxMoveDownHorizon1 + 1)
-	require.False(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice + maxMoveUpHorizon1)
-	require.False(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice - maxMoveDownHorizon1)
-	require.False(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice + (maxMoveUpHorizon1+maxMoveUpHorizon2)/2)
-	require.True(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice - (maxMoveDownHorizon1+maxMoveDownHorizon2)/2)
-	require.True(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice + maxMoveUpHorizon2)
-	require.True(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice - maxMoveDownHorizon2)
-	require.True(t, violations[*horizon1])
-	require.False(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice + 2*maxMoveUpHorizon2)
-	require.True(t, violations[*horizon1])
-	require.True(t, violations[*horizon2])
-	violations = pm.CheckBoundViolations(currentPrice - 2*maxMoveDownHorizon2)
-	require.True(t, violations[*horizon1])
-	require.True(t, violations[*horizon2])
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+maxMoveUpHorizon1-1, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDownHorizon1+1, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+maxMoveUpHorizon1, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDownHorizon1, now)
+	require.NoError(t, err)
+
+	end := types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+(maxMoveUpHorizon1+maxMoveUpHorizon2)/2, now)
+	require.NoError(t, err)
+
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-(maxMoveDownHorizon1+maxMoveDownHorizon2)/2, now)
+	require.NoError(t, err)
+
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+maxMoveUpHorizon2, now)
+	require.NoError(t, err)
+
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDownHorizon2, now)
+	require.NoError(t, err)
+
+	end = types.AuctionDuration{Duration: p1.AuctionExtension + p2.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+2*maxMoveUpHorizon2, now)
+	require.NoError(t, err)
+
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-2*maxMoveDownHorizon2, now)
+	require.NoError(t, err)
 }
 
 func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var price1 uint64 = 123
-	currentTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	horizon, err := pricemonitoring.NewPriceProjection(10*time.Minute, 0.99)
-	require.Nil(t, err)
-	horizonProbabilityPairs := []pricemonitoring.PriceProjection{*horizon}
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+	var p1Time int64 = 60
+	p1 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.99, AuctionExtension: p1Time}
+	var boundUpdateFrequency int64 = 120
+	settings := types.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1},
+		UpdateFrequency:           boundUpdateFrequency}
 	var maxMoveDown1 uint64 = 1
 	var maxMoveUp1 uint64 = 2
-	boundUpdateFrequency := 2 * time.Minute
-	riskModelMock.EXPECT().PriceRange(float64(price1), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(float64(price1-maxMoveDown1), float64(price1+maxMoveUp1))
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, horizonProbabilityPairs, boundUpdateFrequency, price1, currentTime)
+	riskModelMock.EXPECT().PriceRange(float64(price1), horizonToYearFraction(p1.Horizon), p1.Probability).Return(float64(price1-maxMoveDown1), float64(price1+maxMoveUp1))
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(25)
+	auctionStateMock.EXPECT().InAuction().Return(false).Times(25)
+
+	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
+	var priceHistorySum uint64 = 0
+	n := 0
+	referencePrice := float64(price1)
+	validPriceToCheck := uint64(referencePrice)
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
 
-	violations := pm.CheckBoundViolations(price1 + maxMoveUp1)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(price1 - maxMoveDown1)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(price1 + 2*maxMoveUp1)
-	require.True(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(price1 - 2*maxMoveDown1)
-	require.True(t, violations[*horizon])
+	validPriceToCheck = uint64(referencePrice) + maxMoveUp1
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
 
-	updateTime := currentTime.Add(boundUpdateFrequency)
-	//Still before update
-	pm.RecordTimeChange(updateTime.Add(-time.Nanosecond))
+	validPriceToCheck = uint64(referencePrice) - maxMoveDown1
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	end := types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(2)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(referencePrice)+2*maxMoveUp1, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(referencePrice)-2*maxMoveDown1, now)
+	require.NoError(t, err)
+
+	//Still before update (no price change)
+	updateTime := now.Add(time.Duration(boundUpdateFrequency * time.Second.Nanoseconds()))
+	now = updateTime.Add(-time.Nanosecond)
+	averagePrice1 := float64(priceHistorySum) / float64(n)
+	referencePrice = averagePrice1
+	validPriceToCheck = uint64(referencePrice)
+	priceHistorySum = validPriceToCheck
+	n = 1
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
 	//Execting same behaviour as above (per reference price)
-	violations = pm.CheckBoundViolations(price1 + maxMoveUp1)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(price1 - maxMoveDown1)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(price1 + 2*maxMoveUp1)
-	require.True(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(price1 - 2*maxMoveDown1)
-	require.True(t, violations[*horizon])
+	validPriceToCheck = uint64(math.Floor(referencePrice)) + maxMoveUp1
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = uint64(math.Ceil(referencePrice)) - maxMoveDown1
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	end = types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(2)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Floor(referencePrice))+2*maxMoveUp1, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Ceil(referencePrice))-2*maxMoveDown1, now)
+	require.NoError(t, err)
 
 	//Right at update time
-	price2Intermediate1 := 2 * price1
+	now = updateTime
+	averagePrice2 := float64(priceHistorySum) / float64(n)
+	referencePrice = averagePrice2
 	maxMoveDown2 := 4 * maxMoveDown1
 	maxMoveUp2 := 4 * maxMoveUp1
-	price2Intermediate2 := 4 * price1
-	pm.RecordPriceChange(price2Intermediate1)
-	pm.RecordPriceChange(price2Intermediate2)
-	price2Average := float64(price2Intermediate1+price2Intermediate2) / 2.0
-	riskModelMock.EXPECT().PriceRange(float64(price2Average), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(price2Average-float64(maxMoveDown2), price2Average+float64(maxMoveUp2))
-	pm.RecordTimeChange(updateTime)
-	referencePrice := price1
-	violations = pm.CheckBoundViolations(referencePrice + maxMoveUp2)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice - maxMoveDown2)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice + 2*maxMoveUp2)
-	require.True(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice - 2*maxMoveDown2)
-	require.True(t, violations[*horizon])
+	riskModelMock.EXPECT().PriceRange(referencePrice, horizonToYearFraction(p1.Horizon), p1.Probability).Return(averagePrice2-float64(maxMoveDown2), referencePrice+float64(maxMoveUp2))
 
-	//Right before update time (horizon away from price2Average)
-	price3Intermediate1 := 5 * price1
+	validPriceToCheck = uint64(referencePrice)
+	priceHistorySum = validPriceToCheck
+	n = 1
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = uint64(math.Floor(referencePrice)) + maxMoveUp2
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = uint64(math.Ceil(referencePrice)) - maxMoveDown2
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	end = types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(2)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Floor(referencePrice))+2*maxMoveUp2, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Ceil(referencePrice))-2*maxMoveDown2, now)
+	require.NoError(t, err)
+
+	// Right before update time (horizon away from averagePrice3)
+	now = updateTime.Add(-time.Nanosecond).Add(time.Duration(p1.Horizon * time.Second.Nanoseconds()))
+	averagePrice3 := float64(priceHistorySum) / float64(n)
+	referencePrice = averagePrice2
 	maxMoveDown3 := 6 * maxMoveDown1
 	maxMoveUp3 := 6 * maxMoveUp1
-	price3Intermediate2 := 7 * price1
-	pm.RecordPriceChange(price3Intermediate1)
-	pm.RecordPriceChange(price3Intermediate2)
-	price3Average := float64(price3Intermediate1+price3Intermediate2) / 2.0
-	riskModelMock.EXPECT().PriceRange(float64(price3Average), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(price3Average-float64(maxMoveDown3), price3Average+float64(maxMoveUp3))
-	pm.RecordTimeChange(updateTime.Add(-time.Nanosecond).Add(horizon.Horizon))
-	referencePrice = uint64(price2Average)
-	violations = pm.CheckBoundViolations(referencePrice + maxMoveUp3)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice - maxMoveDown3)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice + 2*maxMoveUp3)
-	require.True(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice - 2*maxMoveDown3)
-	require.True(t, violations[*horizon])
+	riskModelMock.EXPECT().PriceRange(averagePrice3, horizonToYearFraction(p1.Horizon), p1.Probability).Return(averagePrice3-float64(maxMoveDown3), averagePrice3+float64(maxMoveUp3))
 
-	//Right at update time (horizon away from price2Average)
-	pm.RecordTimeChange(updateTime.Add(horizon.Horizon))
-	referencePrice = uint64(price3Average)
-	violations = pm.CheckBoundViolations(referencePrice + maxMoveUp3)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice - maxMoveDown3)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice + 2*maxMoveUp3)
-	require.True(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(referencePrice - 2*maxMoveDown3)
-	require.True(t, violations[*horizon])
+	validPriceToCheck = uint64(referencePrice)
+	priceHistorySum = validPriceToCheck
+	n = 1
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = uint64(math.Floor(referencePrice)) + maxMoveUp3
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = uint64(math.Ceil(referencePrice)) - maxMoveDown3
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	end = types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(2)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Floor(referencePrice))+2*maxMoveUp3, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Ceil(referencePrice))-2*maxMoveDown3, now)
+	require.NoError(t, err)
+
+	// Right at update time (horizon away from price2Average)
+	now = updateTime.Add(time.Duration(p1.Horizon * time.Second.Nanoseconds()))
+	averagePrice4 := float64(priceHistorySum) / float64(n)
+	referencePrice = averagePrice3
+	riskModelMock.EXPECT().PriceRange(averagePrice4, horizonToYearFraction(p1.Horizon), p1.Probability).Return(averagePrice4-float64(maxMoveDown3), averagePrice4+float64(maxMoveUp3))
+
+	validPriceToCheck = uint64(referencePrice)
+	priceHistorySum = validPriceToCheck
+	n = 1
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = uint64(math.Floor(referencePrice)) + maxMoveUp3
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = uint64(math.Ceil(referencePrice)) - maxMoveDown3
+	priceHistorySum += validPriceToCheck
+	n++
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	end = types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(2)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Floor(referencePrice))+2*maxMoveUp3, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Ceil(referencePrice))-2*maxMoveDown3, now)
+	require.NoError(t, err)
 
 	//Reset price, the resetting value should become the new reference
+	now = now.Add(time.Hour)
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(5)
 	var resetPrice uint64 = 20
 	var maxMoveDown4 uint64 = 5
 	var maxMoveUp4 uint64 = 120
-	riskModelMock.EXPECT().PriceRange(float64(resetPrice), horizonToYearFraction(horizon.Horizon), horizon.Probability).Return(float64(resetPrice-maxMoveDown4), float64(resetPrice+maxMoveUp4))
+	referencePrice = float64(resetPrice)
+	riskModelMock.EXPECT().PriceRange(referencePrice, horizonToYearFraction(p1.Horizon), p1.Probability).Return(referencePrice-float64(maxMoveDown4), referencePrice+float64(maxMoveUp4))
 
-	pm.Reset(resetPrice, updateTime.Add(horizon.Horizon).Add(time.Second))
-	violations = pm.CheckBoundViolations(resetPrice + maxMoveUp4)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(resetPrice - maxMoveDown4)
-	require.False(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(resetPrice + 2*maxMoveUp4)
-	require.True(t, violations[*horizon])
-	violations = pm.CheckBoundViolations(resetPrice - 2*maxMoveDown4)
-	require.True(t, violations[*horizon])
+	//Assume in auction now
+	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
+	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
+	auctionStateMock.EXPECT().Start().Return(now.Add(time.Duration(-(p1.Horizon + 1) * time.Second.Nanoseconds()))).Times(1)
+	auctionStateMock.EXPECT().Duration().Return(types.AuctionDuration{Duration: p1.Horizon}).Times(1) // So that end=start+duration>now
+	auctionStateMock.EXPECT().EndAuction().Times(1)                                                   // So that end=start+duration>now
+	validPriceToCheck = resetPrice
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	auctionStateMock.EXPECT().InAuction().Return(false).Times(4) // Now assume auction ended
+
+	validPriceToCheck = resetPrice + maxMoveUp4
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	validPriceToCheck = resetPrice - maxMoveDown4
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
+	require.NoError(t, err)
+
+	end = types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(2)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Floor(referencePrice))+2*maxMoveUp4, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Ceil(referencePrice))-2*maxMoveDown4, now)
+	require.NoError(t, err)
 }
 
-func horizonToYearFraction(horizon time.Duration) float64 {
-	return float64(horizon.Nanoseconds()) / float64((365.25 * 24 * time.Hour).Nanoseconds())
+func horizonToYearFraction(horizon int64) float64 {
+	return float64(horizon) / float64(365.25*24*60*60)
 }
