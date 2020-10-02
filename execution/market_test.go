@@ -147,6 +147,10 @@ func getMarkets(closingAt time.Time) []types.Market {
 		TradingMode: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
+		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+			PriceMonitoringParameters: []*types.PriceMonitoringParameters{},
+			UpdateFrequency:           0,
+		},
 	}
 
 	execution.SetMarketID(&mkt, 0)
