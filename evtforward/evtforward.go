@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/tx"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/crypto/sha3"
@@ -32,7 +32,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
 type Commander interface {
-	Command(cmd blockchain.Command, payload proto.Message) error
+	Command(cmd tx.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
@@ -207,7 +207,7 @@ func (e *EvtForwarder) getEvt(key string) (evt *types.ChainEvent, ok bool, acked
 }
 
 func (e *EvtForwarder) send(evt *types.ChainEvent) error {
-	return e.cmd.Command(blockchain.ChainEventCommand, evt)
+	return e.cmd.Command(tx.ChainEventCommand, evt)
 }
 
 func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {

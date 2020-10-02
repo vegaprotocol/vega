@@ -3,13 +3,12 @@ package abci
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/blockchain"
-
+	"code.vegaprotocol.io/vega/tx"
 	"github.com/tendermint/tendermint/abci/types"
 )
 
 type Tx interface {
-	Command() blockchain.Command
+	Command() tx.Command
 	Unmarshal(interface{}) error
 	PubKey() []byte
 	Hash() []byte

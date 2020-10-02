@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
@@ -15,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/tx"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -115,19 +115,19 @@ func NewApp(
 	app.abci.OnDeliverTx = app.OnDeliverTx
 
 	app.abci.
-		HandleCheckTx(blockchain.NodeSignatureCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(blockchain.ChainEventCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(tx.NodeSignatureCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(tx.ChainEventCommand, app.RequireValidatorPubKey)
 
 	app.abci.
-		HandleDeliverTx(blockchain.SubmitOrderCommand, app.DeliverSubmitOrder).
-		HandleDeliverTx(blockchain.CancelOrderCommand, app.DeliverCancelOrder).
-		HandleDeliverTx(blockchain.AmendOrderCommand, app.DeliverAmendOrder).
-		HandleDeliverTx(blockchain.WithdrawCommand, app.DeliverWithdraw).
-		HandleDeliverTx(blockchain.ProposeCommand, app.DeliverPropose).
-		HandleDeliverTx(blockchain.VoteCommand, app.DeliverVote).
-		HandleDeliverTx(blockchain.RegisterNodeCommand, app.DeliverRegisterNode).
-		HandleDeliverTx(blockchain.NodeVoteCommand, app.DeliverNodeVote).
-		HandleDeliverTx(blockchain.ChainEventCommand, app.DeliverChainEvent)
+		HandleDeliverTx(tx.SubmitOrderCommand, app.DeliverSubmitOrder).
+		HandleDeliverTx(tx.CancelOrderCommand, app.DeliverCancelOrder).
+		HandleDeliverTx(tx.AmendOrderCommand, app.DeliverAmendOrder).
+		HandleDeliverTx(tx.WithdrawCommand, app.DeliverWithdraw).
+		HandleDeliverTx(tx.ProposeCommand, app.DeliverPropose).
+		HandleDeliverTx(tx.VoteCommand, app.DeliverVote).
+		HandleDeliverTx(tx.RegisterNodeCommand, app.DeliverRegisterNode).
+		HandleDeliverTx(tx.NodeVoteCommand, app.DeliverNodeVote).
+		HandleDeliverTx(tx.ChainEventCommand, app.DeliverChainEvent)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -523,7 +523,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		Sig:  sig,
 		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
-	if err := app.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
+	if err := app.cmd.Command(tx.NodeSignatureCommand, payload); err != nil {
 		// do nothing for now, we'll need a retry mechanism for this and all command soon
 		app.log.Error("unable to send command for notary",
 			logging.Error(err))

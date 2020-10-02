@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/tx"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -40,9 +40,9 @@ func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHashLen] }
 func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
 
 // Command returns the Command of the Tx
-func (tx *Tx) Command() blockchain.Command {
-	cmd := tx.tx.InputData[TxHashLen]
-	return blockchain.Command(cmd)
+func (t *Tx) Command() tx.Command {
+	cmd := t.tx.InputData[TxHashLen]
+	return tx.Command(cmd)
 }
 
 // payload returns the payload of the transaction, this is all the bytes,
@@ -57,25 +57,25 @@ func (tx *Tx) Unmarshal(i interface{}) error {
 }
 
 // toProto decodes a tx given its command into the respective proto type
-func (tx *Tx) toProto() (interface{}, error) {
-	msgs := map[blockchain.Command]proto.Message{
-		blockchain.SubmitOrderCommand:   &types.OrderSubmission{},
-		blockchain.CancelOrderCommand:   &types.OrderCancellation{},
-		blockchain.AmendOrderCommand:    &types.OrderAmendment{},
-		blockchain.ProposeCommand:       &types.Proposal{},
-		blockchain.VoteCommand:          &types.Vote{},
-		blockchain.NodeVoteCommand:      &types.NodeVote{},
-		blockchain.WithdrawCommand:      &types.WithdrawSubmission{},
-		blockchain.RegisterNodeCommand:  &types.NodeRegistration{},
-		blockchain.NodeSignatureCommand: &types.NodeSignature{},
-		blockchain.ChainEventCommand:    &types.ChainEvent{},
+func (t *Tx) toProto() (interface{}, error) {
+	msgs := map[tx.Command]proto.Message{
+		tx.SubmitOrderCommand:   &types.OrderSubmission{},
+		tx.CancelOrderCommand:   &types.OrderCancellation{},
+		tx.AmendOrderCommand:    &types.OrderAmendment{},
+		tx.ProposeCommand:       &types.Proposal{},
+		tx.VoteCommand:          &types.Vote{},
+		tx.NodeVoteCommand:      &types.NodeVote{},
+		tx.WithdrawCommand:      &types.WithdrawSubmission{},
+		tx.RegisterNodeCommand:  &types.NodeRegistration{},
+		tx.NodeSignatureCommand: &types.NodeSignature{},
+		tx.ChainEventCommand:    &types.ChainEvent{},
 	}
-	msg, ok := msgs[tx.Command()]
+	msg, ok := msgs[t.Command()]
 	if !ok {
-		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", tx.Command().String())
+		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", t.Command().String())
 	}
 
-	if err := tx.Unmarshal(msg); err != nil {
+	if err := t.Unmarshal(msg); err != nil {
 		return nil, err
 	}
 
