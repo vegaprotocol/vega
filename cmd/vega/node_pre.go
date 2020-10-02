@@ -438,7 +438,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 
 	var abciApp tmtypes.Application
 	if l.record != "" {
-		path := filepath.Join(l.record, fmt.Sprintf("abci-record-%d", time.Now().Unix()))
+		path := filepath.Join(l.record, fmt.Sprintf("abci-record-%s", time.Now().Format("2006-01-02-15-04-05")))
 		l.Log.Info("Recording mode", logging.String("path", path))
 		rec, err := recorder.NewRecord(path, afero.NewOsFs())
 		if err != nil {
