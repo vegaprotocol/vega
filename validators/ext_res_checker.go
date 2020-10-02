@@ -9,7 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/tx"
+	"code.vegaprotocol.io/vega/txn"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -29,7 +29,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
-	Command(cmd tx.Command, payload proto.Message) error
+	Command(cmd txn.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -267,7 +267,7 @@ func (e *ExtResChecker) OnTick(_ context.Context, t time.Time) {
 					PubKey:    e.top.SelfVegaPubKey(),
 					Reference: v.res.GetID(),
 				}
-				err := e.cmd.Command(tx.NodeVoteCommand, nv)
+				err := e.cmd.Command(txn.NodeVoteCommand, nv)
 				if err != nil {
 					e.log.Error("unable to send command", logging.Error(err))
 					continue

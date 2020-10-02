@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	tx "code.vegaprotocol.io/vega/tx"
+	txn "code.vegaprotocol.io/vega/txn"
 	gomock "github.com/golang/mock/gomock"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	reflect "reflect"
@@ -35,7 +35,7 @@ func (m *MockCommander) EXPECT() *MockCommanderMockRecorder {
 }
 
 // Command mocks base method
-func (m *MockCommander) Command(arg0 tx.Command, arg1 protoiface.MessageV1) error {
+func (m *MockCommander) Command(arg0 txn.Command, arg1 protoiface.MessageV1) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Command", arg0, arg1)
 	ret0, _ := ret[0].(error)

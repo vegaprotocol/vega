@@ -6,7 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/tx"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -33,7 +33,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(cmd tx.Command, payload proto.Message) error
+	Command(cmd txn.Command, payload proto.Message) error
 }
 
 // Notary will aggregate all signatures of a node for
@@ -154,7 +154,7 @@ func (n *Notary) SendSignature(id string, sig []byte, kind types.NodeSignatureKi
 		Sig:  sig,
 		Kind: kind,
 	}
-	if err := n.cmd.Command(tx.NodeSignatureCommand, nsig); err != nil {
+	if err := n.cmd.Command(txn.NodeSignatureCommand, nsig); err != nil {
 		// do nothing for now, we'll need a retry mechanism for this and all command soon
 		n.log.Error("unable to send command for notary", logging.Error(err))
 	}

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/tx"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
@@ -15,14 +15,14 @@ import (
 type testTx struct {
 	pubkey     []byte
 	hash       []byte
-	command    tx.Command
+	command    txn.Command
 	validateFn func() error
 }
 
 func (tx *testTx) Unmarshal(interface{}) error { return nil }
 func (tx *testTx) PubKey() []byte              { return tx.pubkey }
 func (tx *testTx) Hash() []byte                { return tx.hash }
-func (tx *testTx) Command() tx.Command         { return tx.command }
+func (tx *testTx) Command() txn.Command         { return tx.command }
 func (tx *testTx) Validate() error {
 	if fn := tx.validateFn; fn != nil {
 		return fn()
@@ -54,9 +54,9 @@ func (c *testCodec) Decode(in []byte) (abci.Tx, error) {
 }
 
 const (
-	testCommandA = tx.Command(0x01)
-	testCommandB = tx.Command(0x02)
-	testCommandC = tx.Command(0x03)
+	testCommandA = txn.Command(0x01)
+	testCommandB = txn.Command(0x02)
+	testCommandC = txn.Command(0x03)
 )
 
 func TestABCICheckTx(t *testing.T) {

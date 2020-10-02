@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/tx"
+	"code.vegaprotocol.io/vega/txn"
 	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/mock/gomock"
@@ -68,24 +68,24 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	require.NoError(t, err)
 
 	party := hex.EncodeToString(pub.([]byte))
-	data := map[tx.Command]proto.Message{
-		tx.SubmitOrderCommand: &types.OrderSubmission{
+	data := map[txn.Command]proto.Message{
+		txn.SubmitOrderCommand: &types.OrderSubmission{
 			PartyID: party,
 		},
-		tx.CancelOrderCommand: &types.OrderCancellation{
+		txn.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		// tx.AmendOrderCommand: &types.OrderAmendment{
+		// txn.AmendOrderCommand: &types.OrderAmendment{
 		// 	PartyID: party,
 		// },
-		tx.ProposeCommand: &types.Proposal{
+		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
 		},
-		tx.VoteCommand: &types.Vote{
+		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		// tx.WithdrawCommand: &types.Withdraw{
+		// txn.WithdrawCommand: &types.Withdraw{
 		// 	PartyID: party,
 		// },
 	}

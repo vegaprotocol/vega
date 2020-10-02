@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/tx"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -40,9 +40,9 @@ func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHashLen] }
 func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
 
 // Command returns the Command of the Tx
-func (t *Tx) Command() tx.Command {
+func (t *Tx) Command() txn.Command {
 	cmd := t.tx.InputData[TxHashLen]
-	return tx.Command(cmd)
+	return txn.Command(cmd)
 }
 
 // payload returns the payload of the transaction, this is all the bytes,
@@ -58,17 +58,17 @@ func (tx *Tx) Unmarshal(i interface{}) error {
 
 // toProto decodes a tx given its command into the respective proto type
 func (t *Tx) toProto() (interface{}, error) {
-	msgs := map[tx.Command]proto.Message{
-		tx.SubmitOrderCommand:   &types.OrderSubmission{},
-		tx.CancelOrderCommand:   &types.OrderCancellation{},
-		tx.AmendOrderCommand:    &types.OrderAmendment{},
-		tx.ProposeCommand:       &types.Proposal{},
-		tx.VoteCommand:          &types.Vote{},
-		tx.NodeVoteCommand:      &types.NodeVote{},
-		tx.WithdrawCommand:      &types.WithdrawSubmission{},
-		tx.RegisterNodeCommand:  &types.NodeRegistration{},
-		tx.NodeSignatureCommand: &types.NodeSignature{},
-		tx.ChainEventCommand:    &types.ChainEvent{},
+	msgs := map[txn.Command]proto.Message{
+		txn.SubmitOrderCommand:   &types.OrderSubmission{},
+		txn.CancelOrderCommand:   &types.OrderCancellation{},
+		txn.AmendOrderCommand:    &types.OrderAmendment{},
+		txn.ProposeCommand:       &types.Proposal{},
+		txn.VoteCommand:          &types.Vote{},
+		txn.NodeVoteCommand:      &types.NodeVote{},
+		txn.WithdrawCommand:      &types.WithdrawSubmission{},
+		txn.RegisterNodeCommand:  &types.NodeRegistration{},
+		txn.NodeSignatureCommand: &types.NodeSignature{},
+		txn.ChainEventCommand:    &types.ChainEvent{},
 	}
 	msg, ok := msgs[t.Command()]
 	if !ok {

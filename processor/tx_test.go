@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/tx"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +25,7 @@ func concatBytes(bzs ...[]byte) []byte {
 	return buf.Bytes()
 }
 
-func txEncode(t *testing.T, cmd tx.Command, msg proto.Message) *types.Transaction {
+func txEncode(t *testing.T, cmd txn.Command, msg proto.Message) *types.Transaction {
 	var hash [processor.TxHashLen]byte // empty hash works for this
 	payload, err := proto.Marshal(msg)
 	require.NoError(t, err)
@@ -47,23 +47,23 @@ type TxTestSuite struct {
 func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
-	msgs := map[tx.Command]proto.Message{
-		tx.SubmitOrderCommand: &types.OrderSubmission{
+	msgs := map[txn.Command]proto.Message{
+		txn.SubmitOrderCommand: &types.OrderSubmission{
 			PartyID: party,
 		},
-		tx.CancelOrderCommand: &types.OrderCancellation{
+		txn.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		tx.AmendOrderCommand: &types.OrderAmendment{
+		txn.AmendOrderCommand: &types.OrderAmendment{
 			PartyID: party,
 		},
-		tx.VoteCommand: &types.Vote{
+		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		tx.WithdrawCommand: &types.WithdrawSubmission{
+		txn.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
-		tx.ProposeCommand: &types.Proposal{
+		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 		},
 	}
@@ -84,23 +84,23 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString([]byte("another-party"))
-	msgs := map[tx.Command]proto.Message{
-		tx.SubmitOrderCommand: &types.OrderSubmission{
+	msgs := map[txn.Command]proto.Message{
+		txn.SubmitOrderCommand: &types.OrderSubmission{
 			PartyID: party,
 		},
-		tx.CancelOrderCommand: &types.OrderCancellation{
+		txn.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		tx.AmendOrderCommand: &types.OrderAmendment{
+		txn.AmendOrderCommand: &types.OrderAmendment{
 			PartyID: party,
 		},
-		tx.VoteCommand: &types.Vote{
+		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		tx.WithdrawCommand: &types.WithdrawSubmission{
+		txn.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
-		tx.ProposeCommand: &types.Proposal{
+		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 		},
 	}
@@ -119,7 +119,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 }
 
 func (s *TxTestSuite) testValidateSignedInvalidCommand(t *testing.T) {
-	cmd := tx.VoteCommand
+	cmd := txn.VoteCommand
 	party := []byte("party-id")
 	// wrong type for this command
 	prop := &types.Proposal{
@@ -151,7 +151,7 @@ func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
 			&types.Transaction{
 				InputData: concatBytes(
 					hash[:],
-					[]byte{byte(tx.SubmitOrderCommand)},
+					[]byte{byte(txn.SubmitOrderCommand)},
 					[]byte("foobar"),
 				),
 			},

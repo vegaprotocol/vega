@@ -1,4 +1,4 @@
-package tx
+package txn
 
 // Command ...
 type Command byte

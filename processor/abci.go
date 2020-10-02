@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/tx"
+	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -115,19 +115,19 @@ func NewApp(
 	app.abci.OnDeliverTx = app.OnDeliverTx
 
 	app.abci.
-		HandleCheckTx(tx.NodeSignatureCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(tx.ChainEventCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey)
 
 	app.abci.
-		HandleDeliverTx(tx.SubmitOrderCommand, app.DeliverSubmitOrder).
-		HandleDeliverTx(tx.CancelOrderCommand, app.DeliverCancelOrder).
-		HandleDeliverTx(tx.AmendOrderCommand, app.DeliverAmendOrder).
-		HandleDeliverTx(tx.WithdrawCommand, app.DeliverWithdraw).
-		HandleDeliverTx(tx.ProposeCommand, app.DeliverPropose).
-		HandleDeliverTx(tx.VoteCommand, app.DeliverVote).
-		HandleDeliverTx(tx.RegisterNodeCommand, app.DeliverRegisterNode).
-		HandleDeliverTx(tx.NodeVoteCommand, app.DeliverNodeVote).
-		HandleDeliverTx(tx.ChainEventCommand, app.DeliverChainEvent)
+		HandleDeliverTx(txn.SubmitOrderCommand, app.DeliverSubmitOrder).
+		HandleDeliverTx(txn.CancelOrderCommand, app.DeliverCancelOrder).
+		HandleDeliverTx(txn.AmendOrderCommand, app.DeliverAmendOrder).
+		HandleDeliverTx(txn.WithdrawCommand, app.DeliverWithdraw).
+		HandleDeliverTx(txn.ProposeCommand, app.DeliverPropose).
+		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
+		HandleDeliverTx(txn.RegisterNodeCommand, app.DeliverRegisterNode).
+		HandleDeliverTx(txn.NodeVoteCommand, app.DeliverNodeVote).
+		HandleDeliverTx(txn.ChainEventCommand, app.DeliverChainEvent)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -523,7 +523,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		Sig:  sig,
 		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
-	if err := app.cmd.Command(tx.NodeSignatureCommand, payload); err != nil {
+	if err := app.cmd.Command(txn.NodeSignatureCommand, payload); err != nil {
 		// do nothing for now, we'll need a retry mechanism for this and all command soon
 		app.log.Error("unable to send command for notary",
 			logging.Error(err))
