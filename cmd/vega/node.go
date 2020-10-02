@@ -192,8 +192,8 @@ func (l *NodeCommand) addFlags() {
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")
-	flagSet.StringVarP(&l.record, "abci-record", "", "", "If set, it will record ABCI operations into this file")
-	flagSet.StringVarP(&l.replay, "abci-replay", "", "", "If set, it will replay ABCI operations from this file")
+	flagSet.StringVarP(&l.record, "abci-record", "", "", "ABCI recording dir path. If seti t will record ABCI operations into <path>/abci-record-<timestamp>")
+	flagSet.StringVarP(&l.replay, "abci-replay", "", "", "ABCI replaying file path. If set, it will replay ABCI operations from this file path")
 }
 
 // runNode is the entry of node command.

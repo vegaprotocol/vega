@@ -438,7 +438,10 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 
 	var abciApp tmtypes.Application
 	if l.record != "" {
-		rec, err := recorder.NewRecord(l.record, afero.NewOsFs())
+		path := strings.TrimSuffix(l.record, "/")
+		path = fmt.Sprintf("%s/abci-record-%d", path, time.Now().Unix())
+		l.Log.Info("Recording mode", logging.String("path", path))
+		rec, err := recorder.NewRecord(path, afero.NewOsFs())
 		if err != nil {
 			return nil, err
 		}
