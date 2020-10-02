@@ -294,8 +294,12 @@ func (e *Engine) updateBounds() {
 		e.bounds[p] = priceMoveBound{MinMoveDown: minPrice - latestPrice, MaxMoveUp: maxPrice - latestPrice}
 	}
 	// Remove redundant average prices
-	maxTau := e.parameters[len(e.parameters)-1].Horizon
-	minRequiredHorizon := e.now.Add(time.Duration(-maxTau * time.Second.Nanoseconds()))
+	minRequiredHorizon := e.now
+	if len(e.parameters) > 0 {
+		maxTau := e.parameters[len(e.parameters)-1].Horizon
+		minRequiredHorizon = e.now.Add(time.Duration(-maxTau * time.Second.Nanoseconds()))
+	}
+
 	var i int
 	// Make sure at least one entry is left hence the "len(..) - 1"
 	for i = 0; i < len(e.pricesPast)-1; i++ {

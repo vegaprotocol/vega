@@ -14,6 +14,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEmptyParametersList(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
+	var currentPrice uint64 = 123
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+
+	settings := types.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*types.PriceMonitoringParameters{},
+		UpdateFrequency:           1}
+
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-10), float64(currentPrice+10)).Times(2)
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
+	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
+
+	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now.Add(time.Second))
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now.Add(time.Minute))
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now.Add(time.Hour))
+	require.NoError(t, err)
+}
+
 func TestErrorWithNilRiskModel(t *testing.T) {
 	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	p2 := types.PriceMonitoringParameters{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
