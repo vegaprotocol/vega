@@ -5625,8 +5625,6 @@ type AuctionEvent {
 }
 
 enum BusEventType {
-  "all events"
-  All
   "event type indicating TimeUpdate"
   TimeUpdate
   "transfer response event"

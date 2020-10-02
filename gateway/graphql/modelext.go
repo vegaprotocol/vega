@@ -1215,9 +1215,15 @@ func busEventFromProto(events ...*types.BusEvent) []*BusEvent {
 			// in the future though
 			continue
 		}
+		et, err := eventTypeFromProto(e.Type)
+		if err != nil {
+			// @TODO for now just skip unmapped event types, probably better to handle some kind of error
+			// in the future though
+			continue
+		}
 		be := BusEvent{
 			EventID: e.ID,
-			Type:    eventTypeFromProto(e.Type),
+			Type:    et,
 			Event:   evt,
 		}
 		r = append(r, &be)
@@ -1387,8 +1393,6 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 	r := make([]types.BusEventType, 0, len(btypes))
 	for _, t := range btypes {
 		switch t {
-		case BusEventTypeAll:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ALL)
 		case BusEventTypeTimeUpdate:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
 		case BusEventTypeTransferResponses:
@@ -1436,53 +1440,50 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 	return r
 }
 
-func eventTypeFromProto(t types.BusEventType) BusEventType {
+func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 	switch t {
-	case types.BusEventType_BUS_EVENT_TYPE_ALL:
-		return BusEventTypeAll
 	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
-		return BusEventTypeTimeUpdate
+		return BusEventTypeTimeUpdate, nil
 	case types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
-		return BusEventTypeTransferResponses
+		return BusEventTypeTransferResponses, nil
 	case types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
-		return BusEventTypePositionResolution
+		return BusEventTypePositionResolution, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ORDER:
-		return BusEventTypeOrder
+		return BusEventTypeOrder, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
-		return BusEventTypeAccount
+		return BusEventTypeAccount, nil
 	case types.BusEventType_BUS_EVENT_TYPE_PARTY:
-		return BusEventTypeParty
+		return BusEventTypeParty, nil
 	case types.BusEventType_BUS_EVENT_TYPE_TRADE:
-		return BusEventTypeTrade
+		return BusEventTypeTrade, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
-		return BusEventTypeMarginLevels
+		return BusEventTypeMarginLevels, nil
 	case types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
-		return BusEventTypeProposal
+		return BusEventTypeProposal, nil
 	case types.BusEventType_BUS_EVENT_TYPE_VOTE:
-		return BusEventTypeVote
+		return BusEventTypeVote, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
-		return BusEventTypeMarketData
+		return BusEventTypeMarketData, nil
 	case types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
-		return BusEventTypeNodeSignature
+		return BusEventTypeNodeSignature, nil
 	case types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
-		return BusEventTypeLossSocialization
+		return BusEventTypeLossSocialization, nil
 	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
-		return BusEventTypeSettlePosition
+		return BusEventTypeSettlePosition, nil
 	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
-		return BusEventTypeSettleDistressed
+		return BusEventTypeSettleDistressed, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
-		return BusEventTypeMarketCreated
+		return BusEventTypeMarketCreated, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
-		return BusEventTypeAsset
+		return BusEventTypeAsset, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
-		return BusEventTypeMarketTick
+		return BusEventTypeMarketTick, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
-		return BusEventTypeMarket
+		return BusEventTypeMarket, nil
 	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
-		return BusEventTypeAuction
+		return BusEventTypeAuction, nil
 	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
-		return BusEventTypeRiskFactor
+		return BusEventTypeRiskFactor, nil
 	}
-	// @TODO this should be an error, but no event should ever be returned with this value anyway
-	return BusEventTypeAll
+	return "", errors.New("unsupported proto event type")
 }
