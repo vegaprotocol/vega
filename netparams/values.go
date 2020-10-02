@@ -146,3 +146,118 @@ func FloatLT(f float64) func(float64) error {
 		return fmt.Errorf("expect < %v got %v", f, val)
 	}
 }
+
+type IntRule func(int64) error
+
+type Int struct {
+	*baseValue
+	value   int64
+	rawval  string
+	rules   []IntRule
+	mutable bool
+}
+
+func NewInt(rules ...IntRule) *Int {
+	return &Int{
+		baseValue: &baseValue{},
+		rules:     rules,
+	}
+}
+
+func (i *Int) Validate(value string) error {
+	vali, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	for _, fn := range i.rules {
+		if newerr := fn(vali); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+	return err
+}
+
+func (i *Int) Update(value string) error {
+	if !i.mutable {
+		return errors.New("value is not mutable")
+	}
+	vali, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	for _, fn := range i.rules {
+		if newerr := fn(vali); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err == nil {
+		i.rawval = value
+		i.value = vali
+	}
+
+	return err
+}
+
+func (i *Int) Mutable(b bool) *Int {
+	i.mutable = b
+	return i
+}
+
+func (i *Int) MustUpdate(value string) *Int {
+	err := i.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (i *Int) String() string {
+	return i.rawval
+}
+
+func IntGTE(i int64) func(int64) error {
+	return func(val int64) error {
+		if val >= i {
+			return nil
+		}
+		return fmt.Errorf("expect >= %v got %v", i, val)
+	}
+}
+
+func IntGT(i int64) func(int64) error {
+	return func(val int64) error {
+		if val > i {
+			return nil
+		}
+		return fmt.Errorf("expect > %v got %v", i, val)
+	}
+}
+
+func IntLTE(i int64) func(int64) error {
+	return func(val int64) error {
+		if val <= i {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v got %v", i, val)
+	}
+}
+
+func IntLT(i int64) func(int64) error {
+	return func(val int64) error {
+		if val < i {
+			return nil
+		}
+		return fmt.Errorf("expect < %v got %v", i, val)
+	}
+}

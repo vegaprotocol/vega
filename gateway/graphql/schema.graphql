@@ -462,6 +462,9 @@ type Query {
     "id of the Deposit"
     id: String!
   ): Deposit
+
+  "return the full list of network parameters"
+  networkParameters: [NetworkParameter!]
 }
 
 "Represents an asset in vega"
@@ -1652,106 +1655,33 @@ type NewAsset {
   source: AssetSource!
 }
 
-"Allows submitting a proposal for changing governance network parameters"
-type UpdateNetwork {
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  minCloseInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  maxCloseInSeconds: Int
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  minEnactInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  maxEnactInSeconds: Int
-
-  """
-  Network parameter that sets participation level required for any proposal to pass.
-  Value from 0 to 1.
-  """
-  requiredParticipation: Float
-  """
-  Network parameter that sets majority level required for any proposal to pass.
-  Value from 0.5 to 1.
-  """
-  requiredMajority: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to submit a new proposal. Value greater than 0 to 1.
-  """
-  minProposerBalance: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to cast a vote.  Value greater than 0 to 1.
-  """
-  minVoterBalance: Float
+"Allows submitting a proposal for changing network parameters"
+type UpdateNetworkParameter {
+  networkParmeter: NetworkParameter!
 }
 
-"Allows submitting a proposal for changing governance network parameters"
-input UpdateNetworkInput {
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  minCloseInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  maxCloseInSeconds: Int
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  minEnactInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  maxEnactInSeconds: Int
-
-  """
-  Network parameter that sets participation level required for any proposal to pass.
-  Value from 0 to 1.
-  """
-  requiredParticipation: Float
-  """
-  Network parameter that sets majority level required for any proposal to pass.
-  Value from 0.5 to 1.
-  """
-  requiredMajority: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to submit a new proposal. Value greater than 0 to 1.
-  """
-  minProposerBalance: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to cast a vote.  Value greater than 0 to 1.
-  """
-  minVoterBalance: Float
+"Allows submitting a proposal for changing network parameters"
+input UpdateNetworkParameterInput {
+  networkParmeter: NetworkParameterInput!
 }
 
+"Representation of a network parameter"
+type NetworkParameter {
+  "The name of the network parameter"
+  key: String!
+  "The value of the network parameter"
+  value: String!
+}
 
-union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork | NewAsset
+"Representation of a network parameter"
+input NetworkParameterInput {
+  "The name of the network parameter"
+  key: String!
+  "The value of the network parameter"
+  value: String!
+}
+
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetworkParameter | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -1803,7 +1733,7 @@ input ProposalTermsInput {
   It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
-  updateNetwork: UpdateNetworkInput
+  updateNetworkParameter: UpdateNetworkParameterInput
 
   "a new Asset proposal, this will create a new asset to be used in the vega network"
   newAsset: NewAssetInput

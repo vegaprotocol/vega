@@ -997,7 +997,7 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 		}
 	}
 
-	if p.UpdateNetwork != nil {
+	if p.UpdateNetworkParameter != nil {
 		if isSet {
 			return nil, ErrMultipleProposalChangesSpecified
 		}

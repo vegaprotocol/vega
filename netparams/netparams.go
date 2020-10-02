@@ -74,6 +74,12 @@ func (s *Store) UponGenesis(rawState []byte) error {
 		return err
 	}
 
+	// first we going to send the initial state through the broker
+	for k, v := range s.store {
+		s.broker.Send(events.NewNetworkParameterEvent(
+			context.Background(), k, v.String()))
+	}
+
 	// now iterate overal parameters and update the existing ones
 	for k, v := range state {
 		if err := s.Update(k, v); err != nil {
@@ -138,7 +144,7 @@ func (s *Store) Update(key, value string) error {
 
 	// update was successful we want to notify watchers
 	s.paramUpdates[key] = struct{}{}
-	// and also send it to the broke
+	// and also send it to the broker
 	s.broker.Send(events.NewNetworkParameterEvent(context.Background(), key, value))
 
 	return nil
@@ -174,7 +180,7 @@ func (s *Store) GetFloat(key string) (float64, error) {
 	return svalue.ToFloat()
 }
 
-// GetFloat a value associated to the given key
+// GetInt a value associated to the given key
 func (s *Store) GetInt(key string) (int64, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

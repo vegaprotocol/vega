@@ -11,7 +11,7 @@ import (
 
 type NetParamEvent interface {
 	events.Event
-	NetParam() types.NetworkParameter
+	NetworkParameter() types.NetworkParameter
 }
 
 type Service struct {
@@ -19,14 +19,18 @@ type Service struct {
 
 	params map[string]types.NetworkParameter
 	mu     sync.RWMutex
-	ch     chan types.NetworkParameter
+	nch    chan types.NetworkParameter
 }
 
 func NewService(ctx context.Context) *Service {
-	return &Service{
+	s := &Service{
 		Base:   subscribers.NewBase(ctx, 10, true),
 		params: map[string]types.NetworkParameter{},
+		nch:    make(chan types.NetworkParameter, 100),
 	}
+
+	go s.consume()
+	return s
 }
 
 // GetAll return the list of all current network parameters
@@ -44,18 +48,18 @@ func (s *Service) GetAll() []types.NetworkParameter {
 func (s *Service) Push(evts ...events.Event) {
 	for _, e := range evts {
 		if nse, ok := e.(NetParamEvent); ok {
-			s.ch <- nse.NetParam()
+			s.nch <- nse.NetworkParameter()
 		}
 	}
 }
 
 func (s *Service) consume() {
-	defer func() { close(s.ch) }()
+	defer func() { close(s.nch) }()
 	for {
 		select {
 		case <-s.Closed():
 			return
-		case np, ok := <-s.ch:
+		case np, ok := <-s.nch:
 			if !ok {
 				// cleanup base
 				s.Halt()

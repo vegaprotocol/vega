@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
@@ -123,6 +124,7 @@ type NodeCommand struct {
 	assetService      *assets.Svc
 	feeService        *fee.Svc
 	eventService      *subscribers.Service
+	netParamsService  *netparams.Service
 
 	abciServer       *abci.Server
 	blockchainClient *blockchain.Client
@@ -142,6 +144,7 @@ type NodeCommand struct {
 	executionEngine *execution.Engine
 	governance      *governance.Engine
 	collateral      *collateral.Engine
+	netParams       *netparams.Store
 
 	mktscfg []proto.Market
 
@@ -229,6 +232,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.eventService,
 		l.withdrawalPlugin,
 		l.depositPlugin,
+		l.netParamsService,
 		statusChecker,
 	)
 
