@@ -202,7 +202,7 @@ message PriceMonitoringParameters {
   // Price monitoring projection horizon τ in seconds.
   int64 horizon = 1 [(validator.field) = {int_gt: 0}];
   // Price monitoirng probability level p.
-  double probability = 2 [(validator.field) = {float_gt: 0, float_lt: 0}];
+  double probability = 2 [(validator.field) = {float_gt: 0, float_lt: 1}];
   // Price monitoring auction extension duration in seconds should the price
   // breach it's theoretical level over the specified horizon at the specified
   // probability level.
