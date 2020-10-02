@@ -132,6 +132,10 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
+		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
+			PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+			UpdateFrequency:           0,
+		},
 	}
 	for _, row := range mSetup.Rows {
 		// skip header
