@@ -24,6 +24,10 @@ func (d *Duration) UnmarshalText(text []byte) error {
 	return err
 }
 
+func (d *Duration) UnmarshalFlag(s string) error {
+	return d.UnmarshalText([]byte(s))
+}
+
 // MarshalText marshal a duraton into bytes
 func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.String()), nil
@@ -45,6 +49,10 @@ func (l *LogLevel) UnmarshalText(text []byte) error {
 	var err error
 	l.Level, err = logging.ParseLevel(string(text))
 	return err
+}
+
+func (l *LogLevel) UnmarshalFlag(s string) error {
+	return l.UnmarshalText([]byte(s))
 }
 
 // MarshalText marshal a loglevel into bytes

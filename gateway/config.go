@@ -9,33 +9,33 @@ import (
 
 // ServerConfig represent the configuration of a server in vega
 type ServerConfig struct {
-	Port int
-	IP   string
+	Port int    `long:"port" description:"Listen for connection on port <port>"`
+	IP   string `long:"ip" description:"Bind to address <IP>"`
 }
 
 // GraphqlServiceConfig represents the configuration of the gateway
 type GraphqlServiceConfig struct {
 	ServerConfig
-	Enabled         bool
-	ComplexityLimit int
+	Enabled         bool `long:"enabled"`
+	ComplexityLimit int  `long:"complexity-limit"`
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service
 type RESTGatewayServiceConfig struct {
 	ServerConfig
-	Enabled    bool
+	Enabled    bool `long:"enabled"`
 	APMEnabled bool
 }
 
 // Config represents the general configuration for the gateway
 type Config struct {
-	Level                    encoding.LogLevel
-	Timeout                  encoding.Duration
-	Node                     ServerConfig
-	GraphQL                  GraphqlServiceConfig
-	REST                     RESTGatewayServiceConfig
-	SubscriptionRetries      int
-	GraphQLPlaygroundEnabled bool
+	Level                    encoding.LogLevel        `long:"log-level" choice:"debug" choice:"info" choice:"warning"`
+	Timeout                  encoding.Duration        `long:"timeout"`
+	Node                     ServerConfig             `group:"Node" namespace:"node"`
+	GraphQL                  GraphqlServiceConfig     `group:"GraphQL" namespace:"graphql"`
+	REST                     RESTGatewayServiceConfig `group:"REST" namespace:"rest"`
+	SubscriptionRetries      int                      `long:"subscription-retries"`
+	GraphQLPlaygroundEnabled bool                     `long:"graphql-playground" description:"Enables the GraphQL playground"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
