@@ -9,6 +9,7 @@ import (
 // Simple represents a dummy risk model with fixed risk params.
 type Simple struct {
 	factorLong, factorShort float64
+	maxMoveUp, minMoveDown  float64
 	asset                   string
 }
 
@@ -17,6 +18,8 @@ func NewSimple(ps *types.SimpleRiskModel, asset string) (*Simple, error) {
 	return &Simple{
 		factorLong:  ps.Params.FactorLong,
 		factorShort: ps.Params.FactorShort,
+		maxMoveUp:   ps.Params.MaxMoveUp,
+		minMoveDown: ps.Params.MinMoveDown,
 		asset:       asset,
 	}, nil
 }
@@ -43,4 +46,10 @@ func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.R
 		},
 	}
 	return true, rf
+}
+
+// PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price
+func (f *Simple) PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64) {
+	minPrice, maxPrice = currentPrice+f.maxMoveUp, currentPrice+f.minMoveDown
+	return
 }
