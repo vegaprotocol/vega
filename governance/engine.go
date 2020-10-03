@@ -362,6 +362,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true)
 	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		return validateNetworkParameterUpdate(e.netp, change.UpdateNetworkParameter.Changes)
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

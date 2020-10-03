@@ -4908,6 +4908,12 @@ enum ProposalRejectionReason {
   IncompatibleTimestamps
   "Risk parameters are missing from the market proposal"
   NoRiskParameters
+  "Invalid key in update network parameter proposal"
+  NetworkParameterInvalidKey
+  "Invalid valid in update network parameter proposal"
+  NetworkParameterInvalidValue
+  "Validation failed for network parameter proposal"
+  NetworkParameterValidationFailed
 }
 
 "Reason for the order beeing rejected by the core node"
@@ -5223,7 +5229,7 @@ type UpdateNetworkParameter {
 
 "Allows submitting a proposal for changing network parameters"
 input UpdateNetworkParameterInput {
-  networkParmeter: NetworkParameterInput!
+  networkParameter: NetworkParameterInput!
 }
 
 "Representation of a network parameter"
@@ -20287,9 +20293,9 @@ func (ec *executionContext) unmarshalInputUpdateNetworkParameterInput(ctx contex
 
 	for k, v := range asMap {
 		switch k {
-		case "networkParmeter":
+		case "networkParameter":
 			var err error
-			it.NetworkParmeter, err = ec.unmarshalNNetworkParameterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNetworkParameterInput(ctx, v)
+			it.NetworkParameter, err = ec.unmarshalNNetworkParameterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNetworkParameterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}

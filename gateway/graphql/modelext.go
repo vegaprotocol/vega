@@ -1004,13 +1004,24 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 			return nil, ErrMultipleProposalChangesSpecified
 		}
 		isSet = true
-		result.Change = &types.ProposalTerms_UpdateMarket{}
+		result.Change = &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &types.UpdateNetworkParameter{
+				Changes: p.UpdateNetworkParameter.NetworkParameter.IntoProto(),
+			},
+		}
 	}
 	if !isSet {
 		return nil, ErrInvalidChange
 	}
 
 	return result, nil
+}
+
+func (n *NetworkParameterInput) IntoProto() *types.NetworkParameter {
+	return &types.NetworkParameter{
+		Key:   n.Key,
+		Value: n.Value,
+	}
 }
 
 // ToOptionalProposalState ...

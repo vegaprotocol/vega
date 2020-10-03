@@ -428,8 +428,9 @@ func (s *Svc) validateProposalChanges(changes interface{}) error {
 	}
 }
 
-func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParameter) error {
-	return validateNetworkParameterUpdate(s.netp, np.Changes)
+func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParameter) (err error) {
+	_, err = validateNetworkParameterUpdate(s.netp, np.Changes)
+	return
 }
 
 func (s *Svc) validateNewMarketChanges(nm *types.NewMarket) (err error) {

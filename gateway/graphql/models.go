@@ -743,7 +743,7 @@ func (UpdateNetworkParameter) IsProposalChange() {}
 
 // Allows submitting a proposal for changing network parameters
 type UpdateNetworkParameterInput struct {
-	NetworkParmeter *NetworkParameterInput `json:"networkParmeter"`
+	NetworkParameter *NetworkParameterInput `json:"networkParameter"`
 }
 
 type Vote struct {
@@ -1468,6 +1468,12 @@ const (
 	ProposalRejectionReasonIncompatibleTimestamps ProposalRejectionReason = "IncompatibleTimestamps"
 	// Risk parameters are missing from the market proposal
 	ProposalRejectionReasonNoRiskParameters ProposalRejectionReason = "NoRiskParameters"
+	// Invalid key in update network parameter proposal
+	ProposalRejectionReasonNetworkParameterInvalidKey ProposalRejectionReason = "NetworkParameterInvalidKey"
+	// Invalid valid in update network parameter proposal
+	ProposalRejectionReasonNetworkParameterInvalidValue ProposalRejectionReason = "NetworkParameterInvalidValue"
+	// Validation failed for network parameter proposal
+	ProposalRejectionReasonNetworkParameterValidationFailed ProposalRejectionReason = "NetworkParameterValidationFailed"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1489,11 +1495,14 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInvalidAsset,
 	ProposalRejectionReasonIncompatibleTimestamps,
 	ProposalRejectionReasonNoRiskParameters,
+	ProposalRejectionReasonNetworkParameterInvalidKey,
+	ProposalRejectionReasonNetworkParameterInvalidValue,
+	ProposalRejectionReasonNetworkParameterValidationFailed,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed:
 		return true
 	}
 	return false

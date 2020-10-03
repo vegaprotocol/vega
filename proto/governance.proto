@@ -217,6 +217,12 @@ enum ProposalError {
   PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS = 17;
   // No risk parameteres were specified
   PROPOSAL_ERROR_NO_RISK_PARAMETERS = 18;
+  // Invalid key in update network parameter proposal
+  PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY = 19;
+  // Invalid valid in update network parameter proposal
+  PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE = 20;
+  // Validation failed for network parameter proposal
+  PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED = 21;
 }
 
 // Governance vote.

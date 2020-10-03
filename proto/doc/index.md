@@ -3186,6 +3186,9 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_INVALID_ASSET | 16 | The asset id refer to no assets in vega. |
 | PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment). |
 | PROPOSAL_ERROR_NO_RISK_PARAMETERS | 18 | No risk parameteres were specified |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY | 19 | Invalid key in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE | 20 | Invalid valid in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
 
 
 

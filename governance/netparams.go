@@ -3,6 +3,7 @@ package governance
 import (
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
 )
 
@@ -67,16 +68,24 @@ func (e *Engine) getProposalParametersFromNetParams(
 }
 
 func validateNetworkParameterUpdate(
-	netp NetParams, np *types.NetworkParameter) error {
+	netp NetParams, np *types.NetworkParameter) (types.ProposalError, error) {
 	if len(np.Key) <= 0 {
-		return ErrEmptyNetParamKey
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, ErrEmptyNetParamKey
 	}
 
 	if len(np.Value) <= 0 {
-		return ErrEmptyNetParamValue
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, ErrEmptyNetParamValue
 	}
 
 	// so we seems to just need to call on validate in here.
 	// no need to know what's the parameter really or anything else
-	return netp.Validate(np.Key, np.Value)
+	var (
+		perr = types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED
+		err  = netp.Validate(np.Key, np.Value)
+	)
+	if err != nil {
+		perr = types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
+	}
+
+	return perr, err
 }
