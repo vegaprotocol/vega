@@ -536,11 +536,6 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context) {
-	// If we were an opening auction, clear it
-	if m.isOpeningAuction() {
-		m.mkt.OpeningAuction = nil
-	}
-
 	// @TODO this ought to come from m.mkt
 	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
 	if fba := m.mkt.GetDiscrete(); fba != nil {
@@ -579,6 +574,12 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uo.Order.Id))
 		}
 	}
+
+	// If we were an opening auction, clear it
+	if m.isOpeningAuction() {
+		m.mkt.OpeningAuction = nil
+	}
+
 	// Send an event bus update
 	m.broker.Send(events.NewAuctionEvent(ctx,
 		m.mkt.Id,
