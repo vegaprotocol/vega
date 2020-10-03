@@ -25,6 +25,7 @@ type tstEngine struct {
 	broker          *mocks.MockBroker
 	erc             *mocks.MockExtResChecker
 	assets          *mocks.MockAssets
+	netp            *mocks.MockNetParams
 	proposalCounter uint // to streamline proposal generation
 }
 
@@ -809,9 +810,10 @@ func getTestEngine(t *testing.T) *tstEngine {
 	assets := mocks.NewMockAssets(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 	erc := mocks.NewMockExtResChecker(ctrl)
+	netp := mocks.NewMockNetParams(ctrl)
 
 	log := logging.NewTestLogger()
-	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, assets, erc, time.Now()) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, assets, erc, netp, time.Now()) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
@@ -821,6 +823,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 		broker: broker,
 		assets: assets,
 		erc:    erc,
+		netp:   netp,
 	}
 }
 

@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/governance"
+	mockgov "code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -242,7 +243,7 @@ func getTestGRPCServer(
 	gov, vote := govStub{}, voteStub{}
 	broker := broker.New(ctx)
 
-	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote)
+	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote, mockgov.NewMockNetParams(mockCtrl))
 
 	nplugin := plugins.NewNotary(context.Background())
 	notaryService := notary.NewService(logger, conf.Notary, nplugin)

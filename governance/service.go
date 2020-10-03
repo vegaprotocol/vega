@@ -49,10 +49,11 @@ type Svc struct {
 	bus   EventBus
 	gov   GovernanceDataSub
 	votes VoteSub
+	netp  NetParams
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub) *Svc {
+func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub, netp NetParams) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -62,6 +63,7 @@ func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDat
 		bus:    bus,
 		gov:    gov,
 		votes:  votes,
+		netp:   netp,
 	}
 }
 
@@ -419,9 +421,15 @@ func (s *Svc) validateProposalChanges(changes interface{}) error {
 	switch c := changes.(type) {
 	case *types.ProposalTerms_NewMarket:
 		return s.validateNewMarketChanges(c.NewMarket)
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		return s.validateUpdateNetworkParameterChanges(c.UpdateNetworkParameter)
 	default:
 		return nil
 	}
+}
+
+func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParameter) error {
+	return validateNetworkParameterUpdate(s.netp, np.Changes)
 }
 
 func (s *Svc) validateNewMarketChanges(nm *types.NewMarket) (err error) {

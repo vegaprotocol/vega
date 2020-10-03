@@ -68,6 +68,14 @@ type ExtResChecker interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/vega/governance NetParams
+type NetParams interface {
+	Validate(string, string) error
+	Update(string, string) error
+	GetFloat(string) (float64, error)
+	GetDuration(string) (time.Duration, error)
+}
+
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
@@ -79,6 +87,7 @@ type Engine struct {
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 	assets                 Assets
+	netp                   NetParams
 }
 
 type proposalData struct {
@@ -87,7 +96,17 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
+func NewEngine(
+	log *logging.Logger,
+	cfg Config,
+	params *NetworkParameters,
+	accs Accounts,
+	broker Broker,
+	assets Assets,
+	erc ExtResChecker,
+	netp NetParams,
+	now time.Time,
+) (*Engine, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
 	// ensure params are set
@@ -106,6 +125,7 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		nodeProposalValidation: nodeValidation,
 		broker:                 broker,
 		assets:                 assets,
+		netp:                   netp,
 	}, nil
 }
 

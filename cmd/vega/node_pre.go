@@ -555,14 +555,14 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
+	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
+
 	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
 	}
-
-	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
 	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
 	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
@@ -600,7 +600,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return
 	}
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParams)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore)

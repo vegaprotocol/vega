@@ -23,6 +23,7 @@ type testSvc struct {
 	bus   *mocks.MockEventBus
 	gov   *mocks.MockGovernanceDataSub
 	votes *mocks.MockVoteSub
+	netp  *mocks.MockNetParams
 }
 
 func newTestService(t *testing.T) *testSvc {
@@ -30,6 +31,7 @@ func newTestService(t *testing.T) *testSvc {
 	bus := mocks.NewMockEventBus(ctrl)
 	gov := mocks.NewMockGovernanceDataSub(ctrl)
 	votes := mocks.NewMockVoteSub(ctrl)
+	netp := mocks.NewMockNetParams(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
@@ -40,8 +42,9 @@ func newTestService(t *testing.T) *testSvc {
 		bus:   bus,
 		gov:   gov,
 		votes: votes,
+		netp:  netp,
 	}
-	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), bus, gov, votes)
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), bus, gov, votes, netp)
 	assert.NotNil(t, result.Svc)
 	return result
 }
@@ -110,6 +113,8 @@ func TestGovernanceService(t *testing.T) {
 func testPrepareProposalNormal(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
+
+	svc.netp.EXPECT().Validate(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	updateNetwork := types.UpdateNetworkParameter{
 		Changes: &types.NetworkParameter{
