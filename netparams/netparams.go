@@ -30,6 +30,7 @@ type value interface {
 	ToUint() (uint64, error)
 	ToBool() (bool, error)
 	ToString() (string, error)
+	ToDuration() (time.Duration, error)
 }
 
 type NetParamWatcher func(string, string)
@@ -211,6 +212,17 @@ func (s *Store) GetBool(key string) (bool, error) {
 		return false, ErrUnknownKey
 	}
 	return svalue.ToBool()
+}
+
+// GetDuration a value associated to the given key
+func (s *Store) GetDuration(key string) (time.Duration, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svalue, ok := s.store[key]
+	if !ok {
+		return 0, ErrUnknownKey
+	}
+	return svalue.ToDuration()
 }
 
 // GetString a value associated to the given key

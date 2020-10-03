@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type baseValue struct{}
@@ -22,6 +23,10 @@ func (b *baseValue) ToUint() (uint64, error) {
 
 func (b *baseValue) ToBool() (bool, error) {
 	return false, errors.New("not a bool value")
+}
+
+func (b *baseValue) ToDuration() (time.Duration, error) {
+	return 0, errors.New("not a time.Duration value")
 }
 
 func (b *baseValue) ToString() (string, error) {
@@ -255,6 +260,121 @@ func IntLTE(i int64) func(int64) error {
 
 func IntLT(i int64) func(int64) error {
 	return func(val int64) error {
+		if val < i {
+			return nil
+		}
+		return fmt.Errorf("expect < %v got %v", i, val)
+	}
+}
+
+type DurationRule func(time.Duration) error
+
+type Duration struct {
+	*baseValue
+	value   time.Duration
+	rawval  string
+	rules   []DurationRule
+	mutable bool
+}
+
+func NewDuration(rules ...DurationRule) *Duration {
+	return &Duration{
+		baseValue: &baseValue{},
+		rules:     rules,
+	}
+}
+
+func (i *Duration) Validate(value string) error {
+	vali, err := time.ParseDuration(value)
+	if err != nil {
+		return err
+	}
+
+	for _, fn := range i.rules {
+		if newerr := fn(vali); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+	return err
+}
+
+func (i *Duration) Update(value string) error {
+	if !i.mutable {
+		return errors.New("value is not mutable")
+	}
+	vali, err := time.ParseDuration(value)
+	if err != nil {
+		return err
+	}
+
+	for _, fn := range i.rules {
+		if newerr := fn(vali); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err == nil {
+		i.rawval = value
+		i.value = vali
+	}
+
+	return err
+}
+
+func (i *Duration) Mutable(b bool) *Duration {
+	i.mutable = b
+	return i
+}
+
+func (i *Duration) MustUpdate(value string) *Duration {
+	err := i.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (i *Duration) String() string {
+	return i.rawval
+}
+
+func DurationGTE(i time.Duration) func(time.Duration) error {
+	return func(val time.Duration) error {
+		if val >= i {
+			return nil
+		}
+		return fmt.Errorf("expect >= %v got %v", i, val)
+	}
+}
+
+func DurationGT(i time.Duration) func(time.Duration) error {
+	return func(val time.Duration) error {
+		if val > i {
+			return nil
+		}
+		return fmt.Errorf("expect > %v got %v", i, val)
+	}
+}
+
+func DurationLTE(i time.Duration) func(time.Duration) error {
+	return func(val time.Duration) error {
+		if val <= i {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v got %v", i, val)
+	}
+}
+
+func DurationLT(i time.Duration) func(time.Duration) error {
+	return func(val time.Duration) error {
 		if val < i {
 			return nil
 		}

@@ -8,6 +8,8 @@ const (
 	MarketFeeFactorsMakerFee                   = "market.fee.factors.makerFee"
 	MarketFeeFactorsInfrastructureFee          = "market.fee.factors.infrastructureFee"
 	MarketFeeFactorsLiquidityFee               = "market.fee.factors.liquidityFee"
+	MarketAuctionMinimumDuration               = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration               = "market.auction.maximumDuration"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
