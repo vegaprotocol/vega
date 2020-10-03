@@ -60,6 +60,10 @@ func (f *Float) Validate(value string) error {
 		return err
 	}
 
+	if !f.mutable {
+		return errors.New("value is not mutable")
+	}
+
 	for _, fn := range f.rules {
 		if newerr := fn(valf); newerr != nil {
 			if err != nil {
@@ -69,6 +73,7 @@ func (f *Float) Validate(value string) error {
 			}
 		}
 	}
+
 	return err
 }
 
@@ -173,6 +178,10 @@ func (i *Int) Validate(value string) error {
 	vali, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return err
+	}
+
+	if !i.mutable {
+		return errors.New("value is not mutable")
 	}
 
 	for _, fn := range i.rules {
@@ -288,6 +297,10 @@ func (i *Duration) Validate(value string) error {
 	vali, err := time.ParseDuration(value)
 	if err != nil {
 		return err
+	}
+
+	if !i.mutable {
+		return errors.New("value is not mutable")
 	}
 
 	for _, fn := range i.rules {
