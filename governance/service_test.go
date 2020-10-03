@@ -11,6 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,6 +48,118 @@ func newTestService(t *testing.T) *testSvc {
 	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), bus, gov, votes, netp)
 	assert.NotNil(t, result.Svc)
 	return result
+}
+
+func TestPrepareUpdateNetworkParameterProposal(t *testing.T) {
+	t.Run("prepare update network proposal - success", testPrepareNetworkParameterUpdateProposalSuccess)
+	t.Run("prepare update network proposal - failure empty key", testPrepareNetworkParameterUpdateProposalFailureEmptyKey)
+	t.Run("prepare update network proposal - failure empty value", testPrepareNetworkParameterUpdateProposalFailureEmptyValue)
+	t.Run("prepare update network proposal - validation failure", testPrepareNetworkParameterUpdateProposalValidationFailure)
+}
+
+func testPrepareNetworkParameterUpdateProposalSuccess(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.netp.EXPECT().Validate(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, proposal)
+}
+
+func testPrepareNetworkParameterUpdateProposalFailureEmptyKey(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "",
+			Value: "value",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, governance.ErrEmptyNetParamKey.Error())
+	assert.Nil(t, proposal)
+}
+
+func testPrepareNetworkParameterUpdateProposalFailureEmptyValue(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, governance.ErrEmptyNetParamValue.Error())
+	assert.Nil(t, proposal)
+}
+
+func testPrepareNetworkParameterUpdateProposalValidationFailure(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	// set the mock to return an error
+	svc.netp.EXPECT().Validate(gomock.Any(), gomock.Any()).Times(1).Return(
+		errors.New("validation failure"))
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, "validation failure")
+	assert.Nil(t, proposal)
+
 }
 
 func TestPrepareVote(t *testing.T) {
