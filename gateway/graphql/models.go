@@ -736,7 +736,7 @@ type UpdateMarketInput struct {
 
 // Allows submitting a proposal for changing network parameters
 type UpdateNetworkParameter struct {
-	NetworkParmeter *proto.NetworkParameter `json:"networkParmeter"`
+	NetworkParameter *proto.NetworkParameter `json:"networkParameter"`
 }
 
 func (UpdateNetworkParameter) IsProposalChange() {}

@@ -695,8 +695,10 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 			return nil, err
 		}
 		result.Change = marketConfig
-	} else if terms.GetUpdateNetwork() != nil {
-		result.Change = nil
+	} else if netParam := terms.GetUpdateNetworkParameter(); netParam != nil {
+		result.Change = UpdateNetworkParameter{
+			NetworkParameter: netParam.Changes,
+		}
 	} else if newAsset := terms.GetNewAsset(); newAsset != nil {
 		newAsset, err := NewAssetFromProto(newAsset)
 		if err != nil {

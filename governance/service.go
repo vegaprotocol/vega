@@ -350,7 +350,7 @@ func (s *Svc) GetUpdateMarketProposals(marketID string, inState *types.Proposal_
 // GetNetworkParametersProposals returns proposals aiming to update network
 func (s *Svc) GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData {
 	filters := []subscribers.ProposalFilter{
-		subscribers.ProposalByChange(subscribers.UpdateNetworkProposal),
+		subscribers.ProposalByChange(subscribers.UpdateNetworkParameterProposal),
 	}
 	if inState != nil {
 		filters = append(filters, subscribers.ProposalByState(*inState))

@@ -600,7 +600,7 @@ type ComplexityRoot struct {
 	}
 
 	UpdateNetworkParameter struct {
-		NetworkParmeter func(childComplexity int) int
+		NetworkParameter func(childComplexity int) int
 	}
 
 	Vote struct {
@@ -3373,12 +3373,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateMarket.MarketID(childComplexity), true
 
-	case "UpdateNetworkParameter.networkParmeter":
-		if e.complexity.UpdateNetworkParameter.NetworkParmeter == nil {
+	case "UpdateNetworkParameter.networkParameter":
+		if e.complexity.UpdateNetworkParameter.NetworkParameter == nil {
 			break
 		}
 
-		return e.complexity.UpdateNetworkParameter.NetworkParmeter(childComplexity), true
+		return e.complexity.UpdateNetworkParameter.NetworkParameter(childComplexity), true
 
 	case "Vote.datetime":
 		if e.complexity.Vote.Datetime == nil {
@@ -5218,7 +5218,7 @@ type NewAsset {
 
 "Allows submitting a proposal for changing network parameters"
 type UpdateNetworkParameter {
-  networkParmeter: NetworkParameter!
+  networkParameter: NetworkParameter!
 }
 
 "Allows submitting a proposal for changing network parameters"
@@ -18233,7 +18233,7 @@ func (ec *executionContext) _UpdateMarket_marketId(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _UpdateNetworkParameter_networkParmeter(ctx context.Context, field graphql.CollectedField, obj *UpdateNetworkParameter) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdateNetworkParameter_networkParameter(ctx context.Context, field graphql.CollectedField, obj *UpdateNetworkParameter) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18250,7 +18250,7 @@ func (ec *executionContext) _UpdateNetworkParameter_networkParmeter(ctx context.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.NetworkParmeter, nil
+		return obj.NetworkParameter, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24906,8 +24906,8 @@ func (ec *executionContext) _UpdateNetworkParameter(ctx context.Context, sel ast
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("UpdateNetworkParameter")
-		case "networkParmeter":
-			out.Values[i] = ec._UpdateNetworkParameter_networkParmeter(ctx, field, obj)
+		case "networkParameter":
+			out.Values[i] = ec._UpdateNetworkParameter_networkParameter(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

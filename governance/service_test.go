@@ -111,17 +111,17 @@ func testPrepareProposalNormal(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{
-			MinCloseInSeconds: 100 * 24 * 60 * 60,
-			MaxCloseInSeconds: 1000 * 24 * 60 * 60,
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
 		},
 	}
 	terms := types.ProposalTerms{
 		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
 		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
 		},
 	}
 
@@ -140,12 +140,12 @@ func testPrepareProposalEmpty(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{},
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{},
 	}
 	terms := types.ProposalTerms{
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
 		},
 	}
 
@@ -184,10 +184,10 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{
-			MinCloseInSeconds: 100 * 24 * 60 * 60,
-			MaxCloseInSeconds: 1000 * 24 * 60 * 60,
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
 		},
 	}
 
@@ -197,8 +197,8 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 		ValidationTimestamp: ts,
 		ClosingTimestamp:    ts,
 		EnactmentTimestamp:  ts,
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
 		},
 	}
 

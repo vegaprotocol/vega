@@ -8,7 +8,7 @@ type ToEnact struct {
 	p  *types.Proposal
 	m  *types.Market
 	a  *types.Asset
-	n  *types.NetworkConfiguration
+	n  *types.NetworkParameter
 	as *types.AssetSource
 	u  *types.UpdateMarket
 }
@@ -46,7 +46,7 @@ func (t *ToEnact) NewAssetSource() *types.AssetSource {
 	return t.as
 }
 
-func (t *ToEnact) UpdateNetwork() *types.NetworkConfiguration {
+func (t *ToEnact) UpdateNetwork() *types.NetworkParameter {
 	return t.n
 }
 

@@ -2898,24 +2898,6 @@
       },
       "description": "Fee factors definition."
     },
-    "vegaFeeFactorsConfiguration": {
-      "type": "object",
-      "properties": {
-        "infrastructureFee": {
-          "type": "string",
-          "description": "Infrastructure fee, needs to be a valid float."
-        },
-        "makerFee": {
-          "type": "string",
-          "description": "Maker fee, needs to be a valid float."
-        },
-        "liquidityFee": {
-          "type": "string",
-          "description": "Liquidity fee, it needs to be a valid float."
-        }
-      },
-      "description": "FeeFactors set at the network level."
-    },
     "vegaFees": {
       "type": "object",
       "properties": {
@@ -3416,60 +3398,6 @@
         }
       },
       "title": "Time update for each market, can be used to see when new markets actually started in terms of block-time"
-    },
-    "vegaNetworkConfiguration": {
-      "type": "object",
-      "properties": {
-        "minCloseInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
-        },
-        "maxCloseInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
-        },
-        "minEnactInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
-        },
-        "maxEnactInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
-        },
-        "requiredParticipation": {
-          "type": "number",
-          "format": "float",
-          "description": "Participation level required for any proposal to pass. Value from `0` to `1`."
-        },
-        "requiredMajority": {
-          "type": "number",
-          "format": "float",
-          "description": "Majority level required for any proposal to pass. Value from `0.5` to `1`."
-        },
-        "minProposerBalance": {
-          "type": "number",
-          "format": "float",
-          "description": "Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`."
-        },
-        "minVoterBalance": {
-          "type": "number",
-          "format": "float",
-          "description": "Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`."
-        },
-        "marginConfiguration": {
-          "$ref": "#/definitions/vegaScalingFactors",
-          "description": "Scaling factors for all markets created via governance."
-        },
-        "feeFactorsConfiguration": {
-          "$ref": "#/definitions/vegaFeeFactorsConfiguration",
-          "description": "FeeFactors which are not set via proposal."
-        }
-      },
-      "description": "Network configuration options."
     },
     "vegaNetworkParameter": {
       "type": "object",
@@ -4011,8 +3939,8 @@
           "$ref": "#/definitions/vegaNewMarket",
           "description": "Proposal change for creating new market on Vega."
         },
-        "updateNetwork": {
-          "$ref": "#/definitions/vegaUpdateNetwork",
+        "updateNetworkParameter": {
+          "$ref": "#/definitions/vegaUpdateNetworkParameter",
           "description": "Proposal change for updating Vega network parameters."
         },
         "newAsset": {
@@ -4532,12 +4460,12 @@
       "type": "object",
       "description": "Update an existing market on Vega."
     },
-    "vegaUpdateNetwork": {
+    "vegaUpdateNetworkParameter": {
       "type": "object",
       "properties": {
         "changes": {
-          "$ref": "#/definitions/vegaNetworkConfiguration",
-          "description": "Configuration."
+          "$ref": "#/definitions/vegaNetworkParameter",
+          "title": "The network parameter to update"
         }
       },
       "description": "Update network configuration on Vega."

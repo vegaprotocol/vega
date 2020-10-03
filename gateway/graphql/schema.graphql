@@ -1657,7 +1657,7 @@ type NewAsset {
 
 "Allows submitting a proposal for changing network parameters"
 type UpdateNetworkParameter {
-  networkParmeter: NetworkParameter!
+  networkParameter: NetworkParameter!
 }
 
 "Allows submitting a proposal for changing network parameters"

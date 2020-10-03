@@ -324,9 +324,12 @@ func TestPrepareProposal(t *testing.T) {
 	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
 		PartyID: "invalid-party",
 		Proposal: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateNetwork{
-				UpdateNetwork: &types.UpdateNetwork{
-					Changes: &types.NetworkConfiguration{},
+			Change: &types.ProposalTerms_UpdateNetworkParameter{
+				UpdateNetworkParameter: &types.UpdateNetworkParameter{
+					Changes: &types.NetworkParameter{
+						Key:   "key",
+						Value: "value",
+					},
 				},
 			},
 		},

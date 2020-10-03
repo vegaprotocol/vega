@@ -168,20 +168,18 @@
     - [BusEventType](#vega.BusEventType)
 
 - [proto/governance.proto](#proto/governance.proto)
-    - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
     - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
     - [InstrumentConfiguration](#vega.InstrumentConfiguration)
-    - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
     - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
     - [UpdateMarket](#vega.UpdateMarket)
-    - [UpdateNetwork](#vega.UpdateNetwork)
+    - [UpdateNetworkParameter](#vega.UpdateNetworkParameter)
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
@@ -2913,23 +2911,6 @@ event types, 2 groups: actual single values, and then some events that capture a
 
 
 
-<a name="vega.FeeFactorsConfiguration"></a>
-
-### FeeFactorsConfiguration
-FeeFactors set at the network level.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| infrastructureFee | [string](#string) |  | Infrastructure fee, needs to be a valid float. |
-| makerFee | [string](#string) |  | Maker fee, needs to be a valid float. |
-| liquidityFee | [string](#string) |  | Liquidity fee, it needs to be a valid float. |
-
-
-
-
-
-
 <a name="vega.FutureProduct"></a>
 
 ### FutureProduct
@@ -3010,30 +2991,6 @@ Instrument configuration.
 | baseName | [string](#string) |  | Base security used as the reference. |
 | quoteName | [string](#string) |  | Quote (secondary) security. |
 | future | [FutureProduct](#vega.FutureProduct) |  | Futures. |
-
-
-
-
-
-
-<a name="vega.NetworkConfiguration"></a>
-
-### NetworkConfiguration
-Network configuration options.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| requiredParticipation | [float](#float) |  | Participation level required for any proposal to pass. Value from `0` to `1`. |
-| requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
-| minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
-| minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
-| marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
-| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal. |
 
 
 
@@ -3126,7 +3083,7 @@ Terms for a governance proposal on Vega.
 | validationTimestamp | [int64](#int64) |  | Validation timestamp (Unix time in seconds). |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
-| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
+| updateNetworkParameter | [UpdateNetworkParameter](#vega.UpdateNetworkParameter) |  | Proposal change for updating Vega network parameters. |
 | newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
 
 
@@ -3144,15 +3101,15 @@ Update an existing market on Vega.
 
 
 
-<a name="vega.UpdateNetwork"></a>
+<a name="vega.UpdateNetworkParameter"></a>
 
-### UpdateNetwork
+### UpdateNetworkParameter
 Update network configuration on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  | Configuration. |
+| changes | [NetworkParameter](#vega.NetworkParameter) |  | The network parameter to update |
 
 
 
