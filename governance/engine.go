@@ -75,7 +75,9 @@ type NetParams interface {
 	Validate(string, string) error
 	Update(string, string) error
 	GetFloat(string) (float64, error)
+	GetInt(string) (int64, error)
 	GetDuration(string) (time.Duration, error)
+	Get(string) (string, error)
 }
 
 // Engine is the governance engine that handles proposal and vote lifecycle.
@@ -85,7 +87,6 @@ type Engine struct {
 	accs                   Accounts
 	currentTime            time.Time
 	activeProposals        map[string]*proposalData
-	networkParams          NetworkParameters
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 	assets                 Assets
@@ -101,7 +102,6 @@ type proposalData struct {
 func NewEngine(
 	log *logging.Logger,
 	cfg Config,
-	params *NetworkParameters,
 	accs Accounts,
 	broker Broker,
 	assets Assets,
@@ -123,7 +123,6 @@ func NewEngine(
 		log:                    log,
 		currentTime:            now,
 		activeProposals:        map[string]*proposalData{},
-		networkParams:          *params,
 		nodeProposalValidation: nodeValidation,
 		broker:                 broker,
 		assets:                 assets,
@@ -157,7 +156,7 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	}()
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime, e.assets)
+		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, e.netp, e.currentTime, e.assets)
 		if err != nil {
 			return nil, perr, err
 		}
@@ -170,20 +169,6 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 		te.a = asset.ProtoAsset()
 	}
 	return
-}
-
-// InitState load the genesis configuration into the governance engine
-func (e *Engine) InitState(rawState []byte) error {
-	e.log.Debug("loading genesis configuration")
-	state, err := LoadGenesisState(rawState)
-	if err != nil {
-		e.log.Error("unable to load genesis state",
-			logging.Error(err))
-		return err
-	}
-	params := NetworkParametersFromGenesisState(e.log, *state)
-	e.networkParams = *params
-	return nil
 }
 
 // OnChainTimeUpdate triggers time bound state changes.

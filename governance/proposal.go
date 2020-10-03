@@ -1,6 +1,22 @@
 package governance
 
-import types "code.vegaprotocol.io/vega/proto"
+import (
+	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
+
+// ProposalParameters stores proposal specific parameters
+type ProposalParameters struct {
+	MinClose              time.Duration
+	MaxClose              time.Duration
+	MinEnact              time.Duration
+	MaxEnact              time.Duration
+	RequiredParticipation float64
+	RequiredMajority      float64
+	MinProposerBalance    float64
+	MinVoterBalance       float64
+}
 
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data

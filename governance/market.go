@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/pkg/errors"
 )
@@ -38,7 +39,7 @@ var (
 )
 
 func assignProduct(
-	parameters *NetworkParameters,
+	netp NetParams,
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
 ) error {
@@ -50,10 +51,13 @@ func assignProduct(
 				Asset:    product.Future.Asset,
 				Maturity: product.Future.Maturity,
 				Oracle: &types.Future_EthereumEvent{
+					// FIXME(): this should probably disapear / be removed
+					// or take another forms.
+					// it's totally unused as of now, so it does not matter
 					EthereumEvent: &types.EthereumEvent{
-						ContractID: parameters.FutureOracle.ContractID,
-						Event:      parameters.FutureOracle.Event,
-						Value:      parameters.FutureOracle.Value,
+						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+						Event:      "price_changed",
+						Value:      1500000,
 					},
 				},
 			},
@@ -81,11 +85,11 @@ func assignTradingMode(definition *types.NewMarketConfiguration, target *types.M
 }
 
 func createInstrument(
-	parameters *NetworkParameters,
+	netp NetParams,
 	input *types.InstrumentConfiguration,
 	tags []string,
 ) (*types.Instrument, error) {
-
+	intialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
 	result := &types.Instrument{
 		Name:      input.Name,
 		Code:      input.Code,
@@ -94,10 +98,10 @@ func createInstrument(
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
 		},
-		InitialMarkPrice: parameters.InitialMarkPrice,
+		InitialMarkPrice: uint64(intialMarkPrice),
 	}
 
-	if err := assignProduct(parameters, input, result); err != nil {
+	if err := assignProduct(netp, input, result); err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -124,25 +128,35 @@ func assignRiskModel(definition *types.NewMarketConfiguration, target *types.Tra
 func createMarket(
 	marketID string,
 	definition *types.NewMarketConfiguration,
-	parameters *NetworkParameters,
+	netp NetParams,
 	currentTime time.Time,
 	assets Assets,
 ) (*types.Market, types.ProposalError, error) {
 	if perr, err := validateNewMarket(currentTime, definition, assets, true); err != nil {
 		return nil, perr, err
 	}
-	instrument, err := createInstrument(parameters, definition.Instrument, definition.Metadata)
+	instrument, err := createInstrument(netp, definition.Instrument, definition.Metadata)
 	if err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
+
+	// get factors for the market
+	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
+	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
+	liquiFee, _ := netp.Get(netparams.MarketFeeFactorsLiquidityFee)
+	// get the margin scaling factors
+	searchLevel, _ := netp.GetFloat(netparams.MarketMarginScalingFactorSearchLevel)
+	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
+	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
+
 	market := &types.Market{
 		Id:            marketID,
 		DecimalPlaces: definition.DecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				MakerFee:          parameters.FeeFactors.MakerFee,
-				InfrastructureFee: parameters.FeeFactors.InfrastructureFee,
-				LiquidityFee:      parameters.FeeFactors.LiquidityFee,
+				MakerFee:          makerFee,
+				InfrastructureFee: infraFee,
+				LiquidityFee:      liquiFee,
 			},
 		},
 		OpeningAuction: &types.AuctionDuration{
@@ -152,9 +166,9 @@ func createMarket(
 			Instrument: instrument,
 			MarginCalculator: &types.MarginCalculator{
 				ScalingFactors: &types.ScalingFactors{
-					CollateralRelease: parameters.MarginConfiguration.CollateralRelease,
-					InitialMargin:     parameters.MarginConfiguration.InitialMargin,
-					SearchLevel:       parameters.MarginConfiguration.SearchLevel,
+					CollateralRelease: collateralRelease,
+					InitialMargin:     intialMargin,
+					SearchLevel:       searchLevel,
 				},
 			},
 		},

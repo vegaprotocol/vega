@@ -814,7 +814,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 
 	log := logging.NewTestLogger()
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
-	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, assets, erc, netp, time.Now()) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, accs, broker, assets, erc, netp, time.Now()) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{

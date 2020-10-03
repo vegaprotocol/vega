@@ -33,6 +33,21 @@ func (m *MockNetParams) EXPECT() *MockNetParamsMockRecorder {
 	return m.recorder
 }
 
+// Get mocks base method
+func (m *MockNetParams) Get(arg0 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get
+func (mr *MockNetParamsMockRecorder) Get(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNetParams)(nil).Get), arg0)
+}
+
 // GetDuration mocks base method
 func (m *MockNetParams) GetDuration(arg0 string) (time.Duration, error) {
 	m.ctrl.T.Helper()
@@ -61,6 +76,21 @@ func (m *MockNetParams) GetFloat(arg0 string) (float64, error) {
 func (mr *MockNetParamsMockRecorder) GetFloat(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFloat", reflect.TypeOf((*MockNetParams)(nil).GetFloat), arg0)
+}
+
+// GetInt mocks base method
+func (m *MockNetParams) GetInt(arg0 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInt", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInt indicates an expected call of GetInt
+func (mr *MockNetParamsMockRecorder) GetInt(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInt", reflect.TypeOf((*MockNetParams)(nil).GetInt), arg0)
 }
 
 // Update mocks base method
