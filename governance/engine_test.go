@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -20,12 +21,12 @@ import (
 
 type tstEngine struct {
 	*governance.Engine
-	ctrl            *gomock.Controller
-	accs            *mocks.MockAccounts
-	broker          *mocks.MockBroker
-	erc             *mocks.MockExtResChecker
-	assets          *mocks.MockAssets
-	netp            *mocks.MockNetParams
+	ctrl   *gomock.Controller
+	accs   *mocks.MockAccounts
+	broker *mocks.MockBroker
+	erc    *mocks.MockExtResChecker
+	assets *mocks.MockAssets
+	// netp            *mocks.MockNetParams
 	proposalCounter uint // to streamline proposal generation
 }
 
@@ -810,9 +811,9 @@ func getTestEngine(t *testing.T) *tstEngine {
 	assets := mocks.NewMockAssets(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 	erc := mocks.NewMockExtResChecker(ctrl)
-	netp := mocks.NewMockNetParams(ctrl)
 
 	log := logging.NewTestLogger()
+	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
 	eng, err := governance.NewEngine(log, cfg, governance.DefaultNetworkParameters(log), accs, broker, assets, erc, netp, time.Now()) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
@@ -823,7 +824,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 		broker: broker,
 		assets: assets,
 		erc:    erc,
-		netp:   netp,
+		// netp:   netp,
 	}
 }
 

@@ -174,6 +174,10 @@ func NewInt(rules ...IntRule) *Int {
 	}
 }
 
+func (i *Int) ToInt() (int64, error) {
+	return i.value, nil
+}
+
 func (i *Int) Validate(value string) error {
 	vali, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
@@ -291,6 +295,10 @@ func NewDuration(rules ...DurationRule) *Duration {
 		baseValue: &baseValue{},
 		rules:     rules,
 	}
+}
+
+func (d *Duration) ToDuration() (time.Duration, error) {
+	return d.value, nil
 }
 
 func (i *Duration) Validate(value string) error {

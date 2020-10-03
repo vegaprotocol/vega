@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -34,6 +35,7 @@ var (
 	ErrProposalPassed                          = errors.New("proposal has passed and can no longer be voted on")
 	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
 	ErrIncompatibleTimestamps                  = errors.New("incompatible timestamps")
+	ErrUnsupportedProposalType                 = errors.New("unsupported proposal type")
 )
 
 // Broker - event bus
@@ -283,8 +285,16 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 }
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
-	// FIXME(): we should not have networkf params per proposal type..
-	return &e.networkParams.Proposals, nil
+	switch terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		return e.getNewMarketProposalParameters()
+	case *types.ProposalTerms_NewAsset:
+		return e.getNewAssetProposalParameters()
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		return e.getUpdateNetworkParameterProposalParameters()
+	default:
+		return nil, ErrUnsupportedProposalType
+	}
 }
 
 // validates proposals read from the chain
@@ -296,6 +306,8 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		// params is not possible, the check done before needs to be removed
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
+	fmt.Printf("\n\n%#v\n\n", *params)
+
 	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(params.MinClose).Unix() {
 		e.log.Debug("proposal close time is too soon",
 			logging.Int64("expected-min", e.currentTime.Add(params.MinClose).Unix()),
@@ -347,9 +359,9 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
 	totalTokens := e.accs.GetTotalTokens()
-	if float32(proposerTokens) < float32(totalTokens)*params.MinProposerBalance {
+	if float64(proposerTokens) < float64(totalTokens)*params.MinProposerBalance {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.Float32("expect-balance", float32(totalTokens)*params.MinProposerBalance),
+			logging.Float64("expect-balance", float64(totalTokens)*params.MinProposerBalance),
 			logging.Uint64("proposer-balance", proposerTokens),
 			logging.String("party-id", proposal.PartyID),
 			logging.String("id", proposal.ID))
@@ -406,7 +418,7 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 		return nil, err
 	}
 	totalTokens := e.accs.GetTotalTokens()
-	if float32(voterTokens) < float32(totalTokens)*params.MinVoterBalance {
+	if float64(voterTokens) < float64(totalTokens)*params.MinVoterBalance {
 		return nil, ErrVoterInsufficientTokens
 	}
 
@@ -425,12 +437,12 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, coun
 
 		yes := counter.countVotes(proposal.yes)
 		no := counter.countVotes(proposal.no)
-		totalVotes := float32(yes + no)
+		totalVotes := float64(yes + no)
 
 		// yes          > (yes + no)* required majority ratio
-		if float32(yes) > totalVotes*params.RequiredMajority &&
+		if float64(yes) > totalVotes*params.RequiredMajority &&
 			//(yes+no) >= (yes + no + novote)* required participation ratio
-			totalVotes >= float32(totalStake)*params.RequiredParticipation {
+			totalVotes >= float64(totalStake)*params.RequiredParticipation {
 			proposal.State = types.Proposal_STATE_PASSED
 			e.log.Debug("Proposal passed", logging.String("proposal-id", proposal.ID))
 		} else if totalVotes == 0 {
@@ -440,9 +452,9 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, coun
 				"Proposal declined",
 				logging.String("proposal-id", proposal.ID),
 				logging.Uint64("yes-votes", yes),
-				logging.Float32("min-yes-required", totalVotes*params.RequiredMajority),
-				logging.Float32("total-votes", totalVotes),
-				logging.Float32("min-total-votes-required", float32(totalStake)*params.RequiredParticipation),
+				logging.Float64("min-yes-required", totalVotes*params.RequiredMajority),
+				logging.Float64("total-votes", totalVotes),
+				logging.Float64("min-total-votes-required", float64(totalStake)*params.RequiredParticipation),
 				logging.Float32("tokens", float32(totalStake)),
 			)
 		}

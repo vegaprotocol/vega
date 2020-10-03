@@ -47,10 +47,10 @@ type ProposalParameters struct {
 	MaxClose              time.Duration
 	MinEnact              time.Duration
 	MaxEnact              time.Duration
-	RequiredParticipation float32
-	RequiredMajority      float32
-	MinProposerBalance    float32
-	MinVoterBalance       float32
+	RequiredParticipation float64
+	RequiredMajority      float64
+	MinProposerBalance    float64
+	MinVoterBalance       float64
 }
 
 // ScalingFactors stores scaling factors for all markets created via governance
@@ -202,7 +202,7 @@ func defaultProposalParameters(log *logging.Logger, gstate GenesisState) Proposa
 		}
 	}
 	if len(gstate.RequiredParticipation) > 0 {
-		levelValue, err := strconv.ParseFloat(gstate.RequiredParticipation, 32)
+		levelValue, err := strconv.ParseFloat(gstate.RequiredParticipation, 64)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
@@ -222,10 +222,10 @@ func defaultProposalParameters(log *logging.Logger, gstate GenesisState) Proposa
 				logging.String("RequiredParticipation", gstate.RequiredParticipation),
 			)
 		}
-		result.RequiredParticipation = float32(levelValue)
+		result.RequiredParticipation = levelValue
 	}
 	if len(gstate.RequiredMajority) > 0 {
-		levelValue, err := strconv.ParseFloat(gstate.RequiredMajority, 32)
+		levelValue, err := strconv.ParseFloat(gstate.RequiredMajority, 64)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
@@ -245,10 +245,10 @@ func defaultProposalParameters(log *logging.Logger, gstate GenesisState) Proposa
 				logging.String("RequiredMajority", gstate.RequiredMajority),
 			)
 		}
-		result.RequiredMajority = float32(levelValue)
+		result.RequiredMajority = levelValue
 	}
 	if len(gstate.MinProposerBalance) > 0 {
-		levelValue, err := strconv.ParseFloat(gstate.MinProposerBalance, 32)
+		levelValue, err := strconv.ParseFloat(gstate.MinProposerBalance, 64)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
@@ -268,10 +268,10 @@ func defaultProposalParameters(log *logging.Logger, gstate GenesisState) Proposa
 				logging.String("MinProposerBalance", gstate.MinProposerBalance),
 			)
 		}
-		result.MinProposerBalance = float32(levelValue)
+		result.MinProposerBalance = levelValue
 	}
 	if len(gstate.MinVoterBalance) > 0 {
-		levelValue, err := strconv.ParseFloat(gstate.MinVoterBalance, 32)
+		levelValue, err := strconv.ParseFloat(gstate.MinVoterBalance, 64)
 		if err != nil {
 			log.Fatal(
 				"Failed to parse new market network parameter",
@@ -291,7 +291,7 @@ func defaultProposalParameters(log *logging.Logger, gstate GenesisState) Proposa
 				logging.String("MinVoterBalance", gstate.MinVoterBalance),
 			)
 		}
-		result.MinVoterBalance = float32(levelValue)
+		result.MinVoterBalance = levelValue
 	}
 
 	if result.MaxClose < result.MinClose {
