@@ -66,7 +66,7 @@ func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 
 // UponGenesis load the initial network parameters
 // from the genesis state
-func (s *Store) UponGenesis(rawState []byte) error {
+func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 	s.log.Debug("loading genesis configuration")
 	state, err := LoadGenesisState(rawState)
 	if err != nil {
@@ -77,13 +77,12 @@ func (s *Store) UponGenesis(rawState []byte) error {
 
 	// first we going to send the initial state through the broker
 	for k, v := range s.store {
-		s.broker.Send(events.NewNetworkParameterEvent(
-			context.Background(), k, v.String()))
+		s.broker.Send(events.NewNetworkParameterEvent(ctx, k, v.String()))
 	}
 
 	// now iterate overal parameters and update the existing ones
 	for k, v := range state {
-		if err := s.Update(k, v); err != nil {
+		if err := s.Update(ctx, k, v); err != nil {
 			return fmt.Errorf("%v: %v", k, err)
 		}
 	}
@@ -131,7 +130,7 @@ func (s *Store) Validate(key, value string) error {
 
 // Update will update the stored value for a given key
 // will return an error if the value do not pass validation
-func (s *Store) Update(key, value string) error {
+func (s *Store) Update(ctx context.Context, key, value string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	svalue, ok := s.store[key]
@@ -146,7 +145,7 @@ func (s *Store) Update(key, value string) error {
 	// update was successful we want to notify watchers
 	s.paramUpdates[key] = struct{}{}
 	// and also send it to the broker
-	s.broker.Send(events.NewNetworkParameterEvent(context.Background(), key, value))
+	s.broker.Send(events.NewNetworkParameterEvent(ctx, key, value))
 
 	return nil
 }

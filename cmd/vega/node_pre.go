@@ -301,7 +301,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 }
 
 // load all asset from genesis state
-func (l *NodeCommand) UponGenesis(rawstate []byte) error {
+func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 	state, err := assets.LoadGenesisState(rawstate)
 	if err != nil {
 		return err
@@ -510,9 +510,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.netParamsService = netparams.NewService(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
-	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {
-		l.timeService.SetTimeNow(context.Background(), t)
-	})
+	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
 
 	l.broker = broker.New(l.ctx)
 	l.broker.SubscribeBatch(

@@ -1,6 +1,7 @@
 package netparams_test
 
 import (
+	"context"
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -79,7 +80,8 @@ func testUpdateSuccess(t *testing.T) {
 
 	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	err = netp.Update(netparams.GovernanceProposalMarketMinClose, "10h")
+	err = netp.Update(
+		context.Background(), netparams.GovernanceProposalMarketMinClose, "10h")
 	assert.NoError(t, err)
 
 	nv, err := netp.Get(netparams.GovernanceProposalMarketMinClose)
@@ -93,7 +95,7 @@ func testUpdateUnknownKey(t *testing.T) {
 	netp := getTestNetParams(t)
 	defer netp.ctrl.Finish()
 
-	err := netp.Update("not.a.valid.key", "10h")
+	err := netp.Update(context.Background(), "not.a.valid.key", "10h")
 	assert.EqualError(t, err, netparams.ErrUnknownKey.Error())
 }
 
@@ -101,7 +103,8 @@ func testUpdateValidationFailed(t *testing.T) {
 	netp := getTestNetParams(t)
 	defer netp.ctrl.Finish()
 
-	err := netp.Update(netparams.GovernanceProposalMarketMinClose, "asdadasd")
+	err := netp.Update(
+		context.Background(), netparams.GovernanceProposalMarketMinClose, "asdadasd")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "time: invalid duration")
 }

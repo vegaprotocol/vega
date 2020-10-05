@@ -72,7 +72,7 @@ type ExtResChecker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/vega/governance NetParams
 type NetParams interface {
 	Validate(string, string) error
-	Update(string, string) error
+	Update(context.Context, string, string) error
 	GetFloat(string) (float64, error)
 	GetInt(string) (int64, error)
 	GetDuration(string) (time.Duration, error)
