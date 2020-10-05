@@ -441,7 +441,7 @@ func (m *Market) isOpeningAuction() bool {
 func (m *Market) EnterAuction(ctx context.Context) {
 	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
 
-	m.matching.EnterAuction() // TODO (WG 03/09/20): Cancel orders, calling this only to be able the test the triggers for now.
+	m.matching.EnterAuction()
 	// Change market type to auction
 	ordersToCancel, err := m.matching.EnterAuction()
 	if err != nil {
