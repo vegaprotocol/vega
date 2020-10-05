@@ -2,7 +2,6 @@ package governance
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -291,7 +290,6 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		// params is not possible, the check done before needs to be removed
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
-	fmt.Printf("\n\n%#v\n\n", *params)
 
 	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(params.MinClose).Unix() {
 		e.log.Debug("proposal close time is too soon",
