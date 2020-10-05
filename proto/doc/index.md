@@ -63,6 +63,7 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
@@ -1211,6 +1212,21 @@ Response for a list of markets on Vega.
 
 
 
+<a name="api.ObserveEventBatch"></a>
+
+### ObserveEventBatch
+message to poll current event buffer, and change batch size
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| batchSize | [int64](#int64) |  |  |
+
+
+
+
+
+
 <a name="api.ObserveEventsRequest"></a>
 
 ### ObserveEventsRequest
@@ -1222,6 +1238,7 @@ Request to observe some/all events (raw). All parameters are optional filters (o
 | type | [vega.BusEventType](#vega.BusEventType) | repeated |  |
 | marketID | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
+| batchSize | [int64](#int64) |  |  |
 
 
 
