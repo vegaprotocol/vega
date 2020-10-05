@@ -24,11 +24,12 @@ func NewService(broker Broker) *Service {
 	}
 }
 
-func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, filters ...EventFilter) <-chan []*types.BusEvent {
-	out := make(chan []*types.BusEvent)
+func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, filters ...EventFilter) (<-chan []*types.BusEvent, chan<- int) {
+	in, out := make(chan int), make(chan []*types.BusEvent)
 	ctx, cfunc := context.WithCancel(ctx)
 	// use stream subscriber
-	sub := NewStreamSub(ctx, eTypes, filters...)
+	// use buffer size of 0 for the time being
+	sub := NewStreamSub(ctx, eTypes, 0, filters...)
 	id := s.broker.Subscribe(sub)
 	go func() {
 		defer func() {
@@ -53,5 +54,5 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 			}
 		}
 	}()
-	return out
+	return out, in
 }

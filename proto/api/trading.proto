@@ -1063,6 +1063,12 @@ message ObserveEventsRequest {
   repeated vega.BusEventType type = 1;
   string marketID = 2;
   string partyID = 3;
+  int64 batchSize = 4;
+}
+
+// message to poll current event buffer, and change batch size
+message ObserveEventBatch {
+  int64 batchSize = 1;
 }
 
 // Response type streamed back when observing events. Slice of wrapped events
