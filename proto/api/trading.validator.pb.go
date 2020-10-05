@@ -792,6 +792,9 @@ func (this *EstimateMarginResponse) Validate() error {
 func (this *ObserveEventsRequest) Validate() error {
 	return nil
 }
+func (this *ObserveEventBatch) Validate() error {
+	return nil
+}
 func (this *ObserveEventsResponse) Validate() error {
 	for _, item := range this.Events {
 		if item != nil {
