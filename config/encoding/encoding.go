@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -58,4 +59,17 @@ func (l *LogLevel) UnmarshalFlag(s string) error {
 // MarshalText marshal a loglevel into bytes
 func (l LogLevel) MarshalText() ([]byte, error) {
 	return []byte(l.String()), nil
+}
+
+type Bool bool
+
+func (b *Bool) UnmarshalFlag(s string) error {
+	if s == "true" {
+		*b = true
+	} else if s == "false" {
+		*b = false
+	} else {
+		return fmt.Errorf("only `true' and `false' are valid values, not `%s'", s)
+	}
+	return nil
 }

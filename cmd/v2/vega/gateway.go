@@ -3,10 +3,16 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/gateway"
+	gql "code.vegaprotocol.io/vega/gateway/graphql"
+	"code.vegaprotocol.io/vega/gateway/rest"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/jessevdk/go-flags"
@@ -17,9 +23,18 @@ type gatewayOptions struct {
 	RootPath string `short:"c" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
 }
 
+func Gateway(parser *flags.Parser) error {
+	opts := &gatewayOptions{
+		Config:   gateway.NewDefaultConfig(),
+		RootPath: fsutil.DefaultVegaDir(),
+	}
+
+	_, err := parser.AddCommand("gateway", "short", "long", opts)
+	return err
+}
+
 func (opts *gatewayOptions) Execute(args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
@@ -36,17 +51,35 @@ func (opts *gatewayOptions) Execute(args []string) error {
 	// take precedence.
 	flags.Parse(&conf)
 
+	if conf.Gateway.REST.Enabled {
+		srv := rest.NewProxyServer(log, conf.Gateway)
+		go func() { srv.Start() }()
+		defer srv.Stop()
+	}
+
+	if conf.Gateway.GraphQL.Enabled {
+		srv, err := gql.New(log, conf.Gateway)
+		if err != nil {
+			return err
+		}
+		go func() { srv.Start() }()
+		defer srv.Stop()
+	}
+
+	waitSig(ctx, log)
 	return nil
 }
 
-func Gateway(parser *flags.Parser) error {
-	opts := &gatewayOptions{
-		Config:   gateway.NewDefaultConfig(),
-		RootPath: fsutil.DefaultVegaDir(),
+// waitSig will wait for a sigterm or sigint interrupt.
+func waitSig(ctx context.Context, log *logging.Logger) {
+	var gracefulStop = make(chan os.Signal, 1)
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+
+	select {
+	case sig := <-gracefulStop:
+		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+	case <-ctx.Done():
+		// nothing to do
 	}
-
-	// TODO: load config from path
-
-	_, err := parser.AddCommand("gateway", "short", "long", opts)
-	return err
 }

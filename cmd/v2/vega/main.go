@@ -8,7 +8,8 @@ import (
 )
 
 // mainOptions act as global options.
-type mainOptions struct{}
+type mainOptions struct {
+}
 
 // Subcommand is the signature of a sub command that can be registered.
 type Subcommand func(*flags.Parser) error
@@ -32,8 +33,12 @@ func main() {
 	)
 
 	if _, err := parser.Parse(); err != nil {
-		switch err.(type) {
+		log.Printf("err = %+v\n", err)
+		switch t := err.(type) {
 		case *flags.Error:
+			if t.Type != flags.ErrHelp {
+				parser.WriteHelp(os.Stdout)
+			}
 			os.Exit(-1)
 		default:
 			log.Printf("err = %+v\n", err)

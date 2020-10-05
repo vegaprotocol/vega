@@ -16,15 +16,15 @@ type ServerConfig struct {
 // GraphqlServiceConfig represents the configuration of the gateway
 type GraphqlServiceConfig struct {
 	ServerConfig
-	Enabled         bool `long:"enabled"`
-	ComplexityLimit int  `long:"complexity-limit"`
+	Enabled         encoding.Bool `long:"enabled" description:"Start the GraphQl gateway"`
+	ComplexityLimit int           `long:"complexity-limit"`
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service
 type RESTGatewayServiceConfig struct {
 	ServerConfig
-	Enabled    bool `long:"enabled"`
-	APMEnabled bool
+	Enabled    encoding.Bool `long:"enabled" choice:"true" choice:"false" description:"Start the REST gateway"`
+	APMEnabled encoding.Bool `long:"apm-enabled" choice:"true" choice:"false" description:" "`
 }
 
 // Config represents the general configuration for the gateway
@@ -34,7 +34,7 @@ type Config struct {
 	Node                     ServerConfig             `group:"Node" namespace:"node"`
 	GraphQL                  GraphqlServiceConfig     `group:"GraphQL" namespace:"graphql"`
 	REST                     RESTGatewayServiceConfig `group:"REST" namespace:"rest"`
-	SubscriptionRetries      int                      `long:"subscription-retries"`
+	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
 	GraphQLPlaygroundEnabled bool                     `long:"graphql-playground" description:"Enables the GraphQL playground"`
 }
 
