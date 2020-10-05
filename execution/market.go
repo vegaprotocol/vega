@@ -835,14 +835,13 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		}
 	}
 
-	// Insert aggressive remaining order
-	m.broker.Send(events.NewOrderEvent(ctx, order))
-
 	// we replace the trades in the confirmation with the one we got initially
 	// the contains the fees informations
 	confirmation.Trades = trades
 
 	m.handleConfirmation(ctx, order, confirmation)
+
+	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
