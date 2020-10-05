@@ -15,7 +15,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).MinTimes(11)
@@ -118,7 +118,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -173,7 +173,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -214,7 +214,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -266,7 +266,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 
@@ -316,7 +316,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -377,7 +377,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -418,7 +418,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -538,7 +538,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 func TestAmendToFill(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, "party1")
 	addAccount(tm, "party2")
