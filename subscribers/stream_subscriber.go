@@ -163,8 +163,10 @@ func (s *StreamSub) UpdateBatchSize(size int) []*types.BusEvent {
 	messages := make([]*types.BusEvent, 0, len(data))
 	for _, d := range data {
 		if s.marketEvtsOnly {
-			e := d.(MarketStreamEvent) // we know this works already
-			messages = append(messages, e.StreamMessage())
+			e, ok := d.(MarketStreamEvent)
+			if ok {
+				messages = append(messages, e.StreamMarketMessage())
+			}
 		} else {
 			messages = append(messages, d.StreamMessage())
 		}
