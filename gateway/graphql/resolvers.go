@@ -2591,7 +2591,7 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 	return nil, ErrInvalidVotesSubscription
 }
 
-func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string) (<-chan []*BusEvent, error) {
+func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string, batchSize *int) (<-chan []*BusEvent, error) {
 	if len(types) > 1 {
 		return nil, errors.New("busEvents subscription support streaming 1 event at a time for now")
 	}
@@ -2607,6 +2607,9 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	}
 	if partyID != nil {
 		req.PartyID = *partyID
+	}
+	if batchSize != nil {
+		req.BatchSize = int64(*batchSize)
 	}
 	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req)
 	if err != nil {

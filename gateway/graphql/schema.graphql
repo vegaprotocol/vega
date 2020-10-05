@@ -228,6 +228,8 @@ type Subscription {
     marketID: String
     "optional filter by party ID"
     partyID: String
+    "optional batch size"
+    batchSize: Int
   ): [BusEvent!]
 }
 
