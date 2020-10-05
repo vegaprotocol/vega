@@ -186,7 +186,7 @@ type FeeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/api EventService
 type EventService interface {
-	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, filters ...subscribers.EventFilter) <-chan []*types.BusEvent
+	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*types.BusEvent, chan<- int)
 }
 
 type tradingDataService struct {
@@ -1901,7 +1901,16 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 		}
 	}
 	// number of retries to -1 to have pretty much unlimited retries
-	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
+	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(in.BatchSize), filters...)
+	// check for changes in batch size
+	go func() {
+		for {
+			msg := protoapi.ObserveEventBatch{}
+			if err := stream.RecvMsg(&msg); err == nil {
+				bCh <- int(msg.BatchSize)
+			}
+		}
+	}()
 	for {
 		select {
 		case data, ok := <-ch:

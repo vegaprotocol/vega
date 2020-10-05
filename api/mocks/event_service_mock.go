@@ -37,20 +37,21 @@ func (m *MockEventService) EXPECT() *MockEventServiceMockRecorder {
 }
 
 // ObserveEvents mocks base method
-func (m *MockEventService) ObserveEvents(arg0 context.Context, arg1 int, arg2 []events.Type, arg3 ...subscribers.EventFilter) <-chan []*proto.BusEvent {
+func (m *MockEventService) ObserveEvents(arg0 context.Context, arg1 int, arg2 []events.Type, arg3 int, arg4 ...subscribers.EventFilter) (<-chan []*proto.BusEvent, chan<- int) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1, arg2}
-	for _, a := range arg3 {
+	varargs := []interface{}{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ObserveEvents", varargs...)
 	ret0, _ := ret[0].(<-chan []*proto.BusEvent)
-	return ret0
+	ret1, _ := ret[1].(chan<- int)
+	return ret0, ret1
 }
 
 // ObserveEvents indicates an expected call of ObserveEvents
-func (mr *MockEventServiceMockRecorder) ObserveEvents(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+func (mr *MockEventServiceMockRecorder) ObserveEvents(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveEvents", reflect.TypeOf((*MockEventService)(nil).ObserveEvents), varargs...)
 }

@@ -520,7 +520,7 @@ type ComplexityRoot struct {
 
 	Subscription struct {
 		Accounts    func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *AccountType) int
-		BusEvents   func(childComplexity int, types []BusEventType, marketID *string, partyID *string) int
+		BusEvents   func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize *int) int
 		Candles     func(childComplexity int, marketID string, interval Interval) int
 		Margins     func(childComplexity int, partyID string, marketID *string) int
 		MarketData  func(childComplexity int, marketID *string) int
@@ -816,7 +816,7 @@ type SubscriptionResolver interface {
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *proto.MarginLevels, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *proto.GovernanceData, error)
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
-	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string) (<-chan []*BusEvent, error)
+	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string, batchSize *int) (<-chan []*BusEvent, error)
 }
 type TradeResolver interface {
 	Market(ctx context.Context, obj *proto.Trade) (*Market, error)
@@ -3025,7 +3025,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.BusEvents(childComplexity, args["types"].([]BusEventType), args["marketID"].(*string), args["partyID"].(*string)), true
+		return e.complexity.Subscription.BusEvents(childComplexity, args["types"].([]BusEventType), args["marketID"].(*string), args["partyID"].(*string), args["batchSize"].(*int)), true
 
 	case "Subscription.candles":
 		if e.complexity.Subscription.Candles == nil {
@@ -3817,6 +3817,8 @@ type Subscription {
     marketID: String
     "optional filter by party ID"
     partyID: String
+    "optional batch size"
+    batchSize: Int
   ): [BusEvent!]
 }
 
@@ -6676,6 +6678,14 @@ func (ec *executionContext) field_Subscription_busEvents_args(ctx context.Contex
 		}
 	}
 	args["partyID"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["batchSize"]; ok {
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["batchSize"] = arg3
 	return args, nil
 }
 
@@ -17162,7 +17172,7 @@ func (ec *executionContext) _Subscription_busEvents(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().BusEvents(rctx, args["types"].([]BusEventType), args["marketID"].(*string), args["partyID"].(*string))
+		return ec.resolvers.Subscription().BusEvents(rctx, args["types"].([]BusEventType), args["marketID"].(*string), args["partyID"].(*string), args["batchSize"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

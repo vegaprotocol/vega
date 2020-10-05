@@ -415,6 +415,10 @@
                 </li>
 
                 <li>
+                  <a href="#api.ObserveEventBatch"><span class="badge">M</span>ObserveEventBatch</a>
+                </li>
+
+                <li>
                   <a href="#api.ObserveEventsRequest"><span class="badge">M</span>ObserveEventsRequest</a>
                 </li>
 
@@ -3413,6 +3417,30 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
 
+        <h3 id="api.ObserveEventBatch">ObserveEventBatch</h3>
+        <p>message to poll current event buffer, and change batch size</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>batchSize</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
         <p>Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)</p>
 
@@ -3440,6 +3468,13 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>batchSize</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
