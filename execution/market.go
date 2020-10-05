@@ -325,16 +325,6 @@ func (m *Market) OnChainTimeUpdate(t time.Time) (closed bool) {
 
 	// TODO(): handle market start time
 
-	// @TODO ensure this is set:
-	if m.pMonitor != nil {
-		if err := m.pMonitor.CheckPrice(ctx, m.auctionState, m.markPrice, t); err != nil {
-			m.log.Error("Could not check price", logging.Error(err))
-		}
-	}
-	if !m.isOpeningAuction() {
-		m.auctionModeTimeBasedSemaphore(ctx, t)
-	}
-
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug("Calculating risk factors (if required)",
 			logging.String("market-id", m.mkt.Id))
@@ -444,36 +434,6 @@ func (m *Market) isOpeningAuction() bool {
 	if m.mkt.OpeningAuction != nil {
 		return true
 	}
-	return false
-}
-
-func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time) {
-	isMarketCurrentlyInAuction := m.GetTradingMode() == types.MarketState_MARKET_STATE_AUCTION
-
-	if isMarketCurrentlyInAuction {
-		if m.shouldLeaveAuctionPerTime(t) && !m.shouldEnterAuctionPerTime(t) {
-			indicativeUncrossingPrice, indicativeVolume, _ := m.matching.GetIndicativePriceAndVolume()
-			if indicativeVolume == 0 || !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
-				m.LeaveAuction(ctx)
-			}
-
-		}
-	} else {
-		if m.shouldEnterAuctionPerTime(t) {
-			m.EnterAuction(ctx)
-		}
-	}
-}
-
-func (m *Market) shouldEnterAuctionPerTime(t time.Time) bool {
-	return false
-}
-
-func (m *Market) shouldLeaveAuctionPerTime(t time.Time) bool {
-	return false
-}
-
-func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
 	return false
 }
 
@@ -743,7 +703,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		m.matching.GetMarketState() != types.MarketState_MARKET_STATE_AUCTION {
 
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err = m.evaluateAuctionTriggersAndGetTrades(ctx, order)
+		trades, err = m.checkPriceAndGetTrades(ctx, order, m.auctionState)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, order, err)
 		}
@@ -810,11 +770,13 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return confirmation, nil
 }
 
-func (m *Market) evaluateAuctionTriggersAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
+func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order, as *auctionState) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil && len(trades) > 0 && m.shouldEnterAuctionPerPrice(trades[len(trades)-1].Price) {
-		m.EnterAuction(ctx)
-		trades = make([]*types.Trade, 0)
+	if err == nil && len(trades) > 0 {
+		err = m.pMonitor.CheckPrice(ctx, as, trades[len(trades)-1].Price, m.currentTime)
+		if as.InAuction() {
+			trades = make([]*types.Trade, 0)
+		}
 	}
 	return trades, err
 }
@@ -1920,7 +1882,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		}
 	} else {
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err := m.evaluateAuctionTriggersAndGetTrades(ctx, newOrder)
+		trades, err := m.checkPriceAndGetTrades(ctx, newOrder, m.auctionState)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, newOrder, err)
 		}
