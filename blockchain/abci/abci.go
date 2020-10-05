@@ -1,8 +1,6 @@
 package abci
 
 import (
-	"context"
-
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -37,9 +35,9 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 }
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
-	app.height = uint64(req.Header.Height)
+	height := uint64(req.Header.Height)
 	if app.replayProtector != nil {
-		app.replayProtector.SetHeight(app.height)
+		app.replayProtector.SetHeight(height)
 	}
 
 	if fn := app.OnBeginBlock; fn != nil {
@@ -59,10 +57,6 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	tx, code, err := app.decodeAndValidateTx(req.GetTx())
 	if err != nil {
 		return NewResponseCheckTx(code, err.Error())
-	}
-
-	if err := app.replayProtector.CheckTx(tx); err != nil {
-		return NewResponseCheckTx(AbciTxnValidationFailure, err.Error())
 	}
 
 	ctx := app.ctx
