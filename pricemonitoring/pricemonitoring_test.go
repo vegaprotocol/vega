@@ -380,6 +380,74 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	require.NoError(t, err)
 }
 
+func TestMarketInOpeningAuction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
+	var currentPrice uint64 = 123
+	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+
+	settings := types.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1},
+		UpdateFrequency:           1}
+
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-10), float64(currentPrice+10)).Times(2)
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
+	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
+	auctionStateMock.EXPECT().IsOpeningAuction().Return(true).Times(1)
+
+	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+}
+
+func TestMarketInGenericAuction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
+	var currentPrice uint64 = 123
+	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+
+	settings := types.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1},
+		UpdateFrequency:           1}
+
+	var maxMoveUp uint64 = 10
+	var maxMoveDown uint64 = 5
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-maxMoveDown), float64(currentPrice+maxMoveUp)).Times(1)
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(5)
+	auctionStateMock.EXPECT().InAuction().Return(true).Times(5)
+	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(5)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(5)
+
+	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+maxMoveUp, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDown, now)
+	require.NoError(t, err)
+
+	extension := types.AuctionDuration{Duration: p1.AuctionExtension}
+	auctionStateMock.EXPECT().ExtendAuction(extension).Times(2)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+2*maxMoveUp, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-2*maxMoveDown, now)
+	require.NoError(t, err)
+}
+
 func horizonToYearFraction(horizon int64) float64 {
 	return float64(horizon) / float64(365.25*24*60*60)
 }
