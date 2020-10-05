@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/jessevdk/go-flags"
@@ -29,19 +28,16 @@ func main() {
 
 	Register(parser,
 		Gateway,
-		// other sub-cmds goes here
+		Watch,
 	)
 
 	if _, err := parser.Parse(); err != nil {
-		log.Printf("err = %+v\n", err)
 		switch t := err.(type) {
 		case *flags.Error:
 			if t.Type != flags.ErrHelp {
 				parser.WriteHelp(os.Stdout)
 			}
 			os.Exit(-1)
-		default:
-			log.Printf("err = %+v\n", err)
 		}
 	}
 }
