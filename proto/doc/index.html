@@ -673,6 +673,10 @@
                   <a href="#vega.ERC20"><span class="badge">M</span>ERC20</a>
                 </li>
 
+                <li>
+                  <a href="#vega.ETH"><span class="badge">M</span>ETH</a>
+                </li>
+
 
 
 
@@ -738,6 +742,18 @@
 
                 <li>
                   <a href="#vega.ERC20Withdrawal"><span class="badge">M</span>ERC20Withdrawal</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ETHDeposit"><span class="badge">M</span>ETHDeposit</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ETHEvent"><span class="badge">M</span>ETHEvent</a>
+                </li>
+
+                <li>
+                  <a href="#vega.ETHWithdrawal"><span class="badge">M</span>ETHWithdrawal</a>
                 </li>
 
                 <li>
@@ -5953,6 +5969,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td><p>An Ethereum ERC20 asset. </p></td>
                 </tr>
 
+                <tr>
+                  <td>eth</td>
+                  <td><a href="#vega.ETH">ETH</a></td>
+                  <td></td>
+                  <td><p>An Ether </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -6051,6 +6074,37 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The address of the contract for the token, on the ethereum network </p></td>
+                </tr>
+
+                <tr>
+                  <td>chainID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>ChainID (e.g: 1=mainnet eth, 3=ropsten, etc) </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ETH">ETH</h3>
+        <p>An Ether, ethereum native asset.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>chainID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>ChainID (e.g: 1=mainnet eth, 3=ropsten, etc) </p></td>
                 </tr>
 
             </tbody>
@@ -6403,6 +6457,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>eth</td>
+                  <td><a href="#vega.ETHEvent">ETHEvent</a></td>
+                  <td></td>
+                  <td><p>Ethereum ETHER event </p></td>
+                </tr>
+
+                <tr>
                   <td>validator</td>
                   <td><a href="#vega.ValidatorEvent">ValidatorEvent</a></td>
                   <td></td>
@@ -6562,6 +6623,127 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.ERC20Withdrawal">ERC20Withdrawal</h3>
+        <p>An asset withdrawal for an ERC20 token.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The Vega network internal identifier of the asset. </p></td>
+                </tr>
+
+                <tr>
+                  <td>targetEthereumAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The target Ethereum wallet address. </p></td>
+                </tr>
+
+                <tr>
+                  <td>referenceNonce</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The reference nonce used for the transaction. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ETHDeposit">ETHDeposit</h3>
+        <p>An asset deposit for an ERC20 token.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>vegaAssetID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The vega network internal identifier of the asset. </p></td>
+                </tr>
+
+                <tr>
+                  <td>sourceEthereumAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The Ethereum wallet that initiated the deposit. </p></td>
+                </tr>
+
+                <tr>
+                  <td>targetPartyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The Vega party identifier (pub-key) which is the target of the deposit. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ETHEvent">ETHEvent</h3>
+        <p>An event related to Ether coins.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>index</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The index of the transaction. </p></td>
+                </tr>
+
+                <tr>
+                  <td>block</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The block in which the transaction happened. </p></td>
+                </tr>
+
+                <tr>
+                  <td>deposit</td>
+                  <td><a href="#vega.ETHDeposit">ETHDeposit</a></td>
+                  <td></td>
+                  <td><p>Deposit BTC asset. </p></td>
+                </tr>
+
+                <tr>
+                  <td>withdrawal</td>
+                  <td><a href="#vega.ETHWithdrawal">ETHWithdrawal</a></td>
+                  <td></td>
+                  <td><p>Withdraw BTC asset. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.ETHWithdrawal">ETHWithdrawal</h3>
         <p>An asset withdrawal for an ERC20 token.</p>
 
 

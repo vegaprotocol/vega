@@ -82,6 +82,29 @@ func (this *ERC20Event) Validate() error {
 	}
 	return nil
 }
+func (this *ETHDeposit) Validate() error {
+	return nil
+}
+func (this *ETHWithdrawal) Validate() error {
+	return nil
+}
+func (this *ETHEvent) Validate() error {
+	if oneOfNester, ok := this.GetAction().(*ETHEvent_Deposit); ok {
+		if oneOfNester.Deposit != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Deposit); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Deposit", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetAction().(*ETHEvent_Withdrawal); ok {
+		if oneOfNester.Withdrawal != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Withdrawal); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Withdrawal", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *BTCDeposit) Validate() error {
 	return nil
 }
@@ -180,6 +203,13 @@ func (this *ChainEvent) Validate() error {
 		if oneOfNester.Btc != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Btc); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Btc", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*ChainEvent_Eth); ok {
+		if oneOfNester.Eth != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Eth); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Eth", err)
 			}
 		}
 	}

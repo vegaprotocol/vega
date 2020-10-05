@@ -39,12 +39,22 @@ func (this *AssetSource) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetSource().(*AssetSource_Eth); ok {
+		if oneOfNester.Eth != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Eth); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Eth", err)
+			}
+		}
+	}
 	return nil
 }
 func (this *BuiltinAsset) Validate() error {
 	return nil
 }
 func (this *ERC20) Validate() error {
+	return nil
+}
+func (this *ETH) Validate() error {
 	return nil
 }
 func (this *DevAssets) Validate() error {

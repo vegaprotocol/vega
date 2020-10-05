@@ -5,7 +5,6 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 // The Vega representation of an external asset.
 message Asset {
-
   // Internal identifier of the asset.
   string ID = 1;
   // Name of the asset (e.g: Great British Pound).
@@ -22,19 +21,19 @@ message Asset {
 
 // Asset source definition.
 message AssetSource {
-
   // The source.
   oneof source {
     // A built-in asset.
     BuiltinAsset builtinAsset = 1;
     // An Ethereum ERC20 asset.
     ERC20 erc20 = 2;
+    // An Ether
+    ETH eth = 3;
   }
 }
 
 // A Vega internal asset.
 message BuiltinAsset {
-
   // Name of the asset (e.g: Great British Pound).
   string name = 1;
   // Symbol of the asset (e.g: GBP).
@@ -49,14 +48,20 @@ message BuiltinAsset {
 
 // An ERC20 token based asset, living on the ethereum network.
 message ERC20 {
-
   // The address of the contract for the token, on the ethereum network
   string contractAddress = 1;
+  // ChainID (e.g: 1=mainnet eth, 3=ropsten, etc)
+  string chainID = 2;
+}
+
+// An Ether, ethereum native asset.
+message ETH {
+  // ChainID (e.g: 1=mainnet eth, 3=ropsten, etc)
+  string chainID = 1;
 }
 
 // Dev assets are for use in development networks only.
 message DevAssets {
-
   // Asset sources for development networks.
   repeated AssetSource sources = 1;
 }

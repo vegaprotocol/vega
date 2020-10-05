@@ -128,6 +128,7 @@
     - [BuiltinAsset](#vega.BuiltinAsset)
     - [DevAssets](#vega.DevAssets)
     - [ERC20](#vega.ERC20)
+    - [ETH](#vega.ETH)
 
 - [proto/chain_events.proto](#proto/chain_events.proto)
     - [AddValidator](#vega.AddValidator)
@@ -144,6 +145,9 @@
     - [ERC20Deposit](#vega.ERC20Deposit)
     - [ERC20Event](#vega.ERC20Event)
     - [ERC20Withdrawal](#vega.ERC20Withdrawal)
+    - [ETHDeposit](#vega.ETHDeposit)
+    - [ETHEvent](#vega.ETHEvent)
+    - [ETHWithdrawal](#vega.ETHWithdrawal)
     - [EthereumAddress](#vega.EthereumAddress)
     - [Identifier](#vega.Identifier)
     - [RemoveValidator](#vega.RemoveValidator)
@@ -2214,6 +2218,7 @@ Asset source definition.
 | ----- | ---- | ----- | ----------- |
 | builtinAsset | [BuiltinAsset](#vega.BuiltinAsset) |  | A built-in asset. |
 | erc20 | [ERC20](#vega.ERC20) |  | An Ethereum ERC20 asset. |
+| eth | [ETH](#vega.ETH) |  | An Ether |
 
 
 
@@ -2263,6 +2268,22 @@ An ERC20 token based asset, living on the ethereum network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | contractAddress | [string](#string) |  | The address of the contract for the token, on the ethereum network |
+| chainID | [string](#string) |  | ChainID (e.g: 1=mainnet eth, 3=ropsten, etc) |
+
+
+
+
+
+
+<a name="vega.ETH"></a>
+
+### ETH
+An Ether, ethereum native asset.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chainID | [string](#string) |  | ChainID (e.g: 1=mainnet eth, 3=ropsten, etc) |
 
 
 
@@ -2431,6 +2452,7 @@ An event forwarded to the Vega network to provide information on events happenin
 | builtin | [BuiltinAssetEvent](#vega.BuiltinAssetEvent) |  | Built-in asset event. |
 | erc20 | [ERC20Event](#vega.ERC20Event) |  | Ethereum ERC20 event. |
 | btc | [BTCEvent](#vega.BTCEvent) |  | Bitcoin BTC event. |
+| eth | [ETHEvent](#vega.ETHEvent) |  | Ethereum ETHER event |
 | validator | [ValidatorEvent](#vega.ValidatorEvent) |  | Validator event. |
 
 
@@ -2508,6 +2530,58 @@ An event related to an ERC20 token.
 <a name="vega.ERC20Withdrawal"></a>
 
 ### ERC20Withdrawal
+An asset withdrawal for an ERC20 token.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The Vega network internal identifier of the asset. |
+| targetEthereumAddress | [string](#string) |  | The target Ethereum wallet address. |
+| referenceNonce | [string](#string) |  | The reference nonce used for the transaction. |
+
+
+
+
+
+
+<a name="vega.ETHDeposit"></a>
+
+### ETHDeposit
+An asset deposit for an ERC20 token.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vegaAssetID | [string](#string) |  | The vega network internal identifier of the asset. |
+| sourceEthereumAddress | [string](#string) |  | The Ethereum wallet that initiated the deposit. |
+| targetPartyID | [string](#string) |  | The Vega party identifier (pub-key) which is the target of the deposit. |
+
+
+
+
+
+
+<a name="vega.ETHEvent"></a>
+
+### ETHEvent
+An event related to Ether coins.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| index | [uint64](#uint64) |  | The index of the transaction. |
+| block | [uint64](#uint64) |  | The block in which the transaction happened. |
+| deposit | [ETHDeposit](#vega.ETHDeposit) |  | Deposit BTC asset. |
+| withdrawal | [ETHWithdrawal](#vega.ETHWithdrawal) |  | Withdraw BTC asset. |
+
+
+
+
+
+
+<a name="vega.ETHWithdrawal"></a>
+
+### ETHWithdrawal
 An asset withdrawal for an ERC20 token.
 
 

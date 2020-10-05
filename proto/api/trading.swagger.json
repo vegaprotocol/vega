@@ -2178,6 +2178,10 @@
         "erc20": {
           "$ref": "#/definitions/vegaERC20",
           "description": "An Ethereum ERC20 asset."
+        },
+        "eth": {
+          "$ref": "#/definitions/vegaETH",
+          "title": "An Ether"
         }
       },
       "description": "Asset source definition."
@@ -2559,6 +2563,10 @@
           "$ref": "#/definitions/vegaBTCEvent",
           "description": "Bitcoin BTC event."
         },
+        "eth": {
+          "$ref": "#/definitions/vegaETHEvent",
+          "title": "Ethereum ETHER event"
+        },
         "validator": {
           "$ref": "#/definitions/vegaValidatorEvent",
           "description": "Validator event."
@@ -2660,6 +2668,10 @@
         "contractAddress": {
           "type": "string",
           "title": "The address of the contract for the token, on the ethereum network"
+        },
+        "chainID": {
+          "type": "string",
+          "title": "ChainID (e.g: 1=mainnet eth, 3=ropsten, etc)"
         }
       },
       "description": "An ERC20 token based asset, living on the ethereum network."
@@ -2735,6 +2747,76 @@
       "description": "An event related to an ERC20 token."
     },
     "vegaERC20Withdrawal": {
+      "type": "object",
+      "properties": {
+        "vegaAssetID": {
+          "type": "string",
+          "description": "The Vega network internal identifier of the asset."
+        },
+        "targetEthereumAddress": {
+          "type": "string",
+          "description": "The target Ethereum wallet address."
+        },
+        "referenceNonce": {
+          "type": "string",
+          "description": "The reference nonce used for the transaction."
+        }
+      },
+      "description": "An asset withdrawal for an ERC20 token."
+    },
+    "vegaETH": {
+      "type": "object",
+      "properties": {
+        "chainID": {
+          "type": "string",
+          "title": "ChainID (e.g: 1=mainnet eth, 3=ropsten, etc)"
+        }
+      },
+      "description": "An Ether, ethereum native asset."
+    },
+    "vegaETHDeposit": {
+      "type": "object",
+      "properties": {
+        "vegaAssetID": {
+          "type": "string",
+          "description": "The vega network internal identifier of the asset."
+        },
+        "sourceEthereumAddress": {
+          "type": "string",
+          "description": "The Ethereum wallet that initiated the deposit."
+        },
+        "targetPartyID": {
+          "type": "string",
+          "description": "The Vega party identifier (pub-key) which is the target of the deposit."
+        }
+      },
+      "description": "An asset deposit for an ERC20 token."
+    },
+    "vegaETHEvent": {
+      "type": "object",
+      "properties": {
+        "index": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The index of the transaction."
+        },
+        "block": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The block in which the transaction happened."
+        },
+        "deposit": {
+          "$ref": "#/definitions/vegaETHDeposit",
+          "description": "Deposit BTC asset."
+        },
+        "withdrawal": {
+          "$ref": "#/definitions/vegaETHWithdrawal",
+          "description": "Withdraw BTC asset."
+        }
+      },
+      "description": "An event related to Ether coins."
+    },
+    "vegaETHWithdrawal": {
       "type": "object",
       "properties": {
         "vegaAssetID": {
