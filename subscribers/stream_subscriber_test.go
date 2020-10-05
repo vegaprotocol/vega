@@ -227,10 +227,10 @@ func testCloseChannelWrite(t *testing.T) {
 		}
 	}()
 	<-started
-	sub.cfunc()
 	// wait for sub to be confirmed closed down
-	wg.Wait()
 	data := sub.GetData()
+	sub.cfunc()
+	wg.Wait()
 	// we received at least the first event, which is valid (filtered)
 	// so this slice ought not to be empty
 	assert.NotEmpty(t, data)
