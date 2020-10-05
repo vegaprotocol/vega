@@ -11,14 +11,14 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-type watchOptions struct {
+type watch struct {
 	Address    string `short:"a" long:"address" description:"Node address" default:"tcp://0.0.0.0:26657"`
 	Positional struct {
 		Filters []string `positional-arg-name:"<FILTERS>"`
 	} `positional-args:"true"`
 }
 
-func (opts *watchOptions) Execute(_ []string) error {
+func (opts *watch) Execute(_ []string) error {
 	args := opts.Positional.Filters
 	if len(args) == 0 {
 		return errors.New("Error: watch requires at least one filter")
@@ -43,7 +43,6 @@ func (opts *watchOptions) Execute(_ []string) error {
 	}
 
 	return nil
-	return nil
 }
 
 func Watch(parser *flags.Parser) error {
@@ -57,10 +56,6 @@ for more information about the query syntax.
 Example:
 watch "tm.event = 'NewBlock'" "tm.event = 'Tx'"`
 	)
-	cmd, err := parser.AddCommand("watch", shortDesc, longDesc, &watchOptions{})
-	if err != nil {
-		return err
-	}
-	cmd.ArgsRequired = true
+	_, err := parser.AddCommand("watch", shortDesc, longDesc, &watch{})
 	return err
 }

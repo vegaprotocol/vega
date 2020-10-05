@@ -34,6 +34,11 @@ func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.String()), nil
 }
 
+func (d Duration) MarshalFlag() (string, error) {
+	bz, err := d.MarshalText()
+	return string(bz), err
+}
+
 // LogLevel is wrapper over the actual log level
 // so they can be specified as strings in the toml configuration
 type LogLevel struct {

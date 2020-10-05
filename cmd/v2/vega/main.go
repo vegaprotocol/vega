@@ -6,10 +6,6 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-// mainOptions act as global options.
-type mainOptions struct {
-}
-
 // Subcommand is the signature of a sub command that can be registered.
 type Subcommand func(*flags.Parser) error
 
@@ -24,9 +20,10 @@ func Register(parser *flags.Parser, cmds ...Subcommand) error {
 }
 
 func main() {
-	parser := flags.NewParser(&mainOptions{}, flags.Default)
+	parser := flags.NewParser(&Empty{}, flags.Default)
 
 	Register(parser,
+		Faucet,
 		Gateway,
 		Watch,
 	)

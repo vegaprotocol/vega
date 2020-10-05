@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/gateway"
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/gateway/rest"
@@ -20,13 +19,13 @@ import (
 
 type gatewayOptions struct {
 	gateway.Config
-	RootPath string `short:"c" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
+	RootPathOption
 }
 
 func Gateway(parser *flags.Parser) error {
 	opts := &gatewayOptions{
-		Config:   gateway.NewDefaultConfig(),
-		RootPath: fsutil.DefaultVegaDir(),
+		Config:         gateway.NewDefaultConfig(),
+		RootPathOption: NewRootPathOption(),
 	}
 
 	_, err := parser.AddCommand("gateway", "short", "long", opts)

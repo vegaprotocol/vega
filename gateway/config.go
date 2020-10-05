@@ -10,7 +10,7 @@ import (
 // ServerConfig represent the configuration of a server in vega
 type ServerConfig struct {
 	Port int    `long:"port" description:"Listen for connection on port <port>"`
-	IP   string `long:"ip" description:"Bind to address <IP>"`
+	IP   string `long:"ip" description:"Bind to address <ip>"`
 }
 
 // GraphqlServiceConfig represents the configuration of the gateway
