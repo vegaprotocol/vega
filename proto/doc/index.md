@@ -2630,6 +2630,7 @@ the actual data is set as a oneof field
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | ID | [string](#string) |  |  |
+| block | [string](#string) |  |  |
 | type | [BusEventType](#vega.BusEventType) |  |  |
 | timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
 | transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |

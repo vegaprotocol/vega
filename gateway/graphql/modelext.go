@@ -1224,6 +1224,7 @@ func busEventFromProto(events ...*types.BusEvent) []*BusEvent {
 		be := BusEvent{
 			EventID: e.ID,
 			Type:    et,
+			Block:   e.Block,
 			Event:   evt,
 		}
 		r = append(r, &be)

@@ -49,8 +49,9 @@ func (v Vote) Proto() types.Vote {
 
 func (v Vote) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   v.eventID(),
-		Type: v.et.ToProto(),
+		ID:    v.eventID(),
+		Block: v.TraceID(),
+		Type:  v.et.ToProto(),
 		Event: &types.BusEvent_Vote{
 			Vote: &v.v,
 		},

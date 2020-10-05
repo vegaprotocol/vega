@@ -32,8 +32,9 @@ func (r RiskFactor) Proto() types.RiskFactor {
 
 func (r RiskFactor) StreamMessage() types.BusEvent {
 	return types.BusEvent{
-		ID:   r.eventID(),
-		Type: r.et.ToProto(),
+		ID:    r.eventID(),
+		Block: r.TraceID(),
+		Type:  r.et.ToProto(),
 		Event: &types.BusEvent_RiskFactor{
 			RiskFactor: &r.r,
 		},

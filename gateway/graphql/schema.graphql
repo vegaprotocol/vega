@@ -2095,6 +2095,8 @@ union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution 
 type BusEvent {
   "the id for this event"
   eventID: String!
+  "the block hash"
+  block: String!
   "the type of event we're dealing with"
   type: BusEventType!
   "the payload - the wrapped event"
