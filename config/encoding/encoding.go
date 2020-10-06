@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -77,4 +78,19 @@ func (b *Bool) UnmarshalFlag(s string) error {
 		return fmt.Errorf("only `true' and `false' are valid values, not `%s'", s)
 	}
 	return nil
+}
+
+type Base64 []byte
+
+func (b *Base64) UnmarshalFlag(s string) error {
+	dec, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return err
+	}
+	*b = dec
+	return nil
+}
+
+func (b Base64) MarshalFlag() (string, error) {
+	return base64.StdEncoding.EncodeToString(b), nil
 }

@@ -40,8 +40,8 @@ func main() {
 			if t.Type != flags.ErrHelp {
 				parser.WriteHelp(os.Stdout)
 			}
-			os.Exit(-1)
 		}
+		os.Exit(-1)
 	}
 }
 
