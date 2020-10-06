@@ -5,7 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 
-	"github.com/tendermint/tendermint/abci/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -71,19 +70,23 @@ func (app *App) decodeAndValidateTx(bytes []byte) (Tx, uint32, error) {
 }
 
 // cacheTx adds a Tx to the cache.
-func (app *App) cacheTx(r *types.RequestCheckTx, tx Tx) {
-	app.checkedTxs[string(r.Tx)] = tx
+func (app *App) cacheTx(in []byte, tx Tx) {
+	app.checkedTxs[string(in)] = tx
 }
 
 // txFromCache retrieves (and remove if found) a Tx from the cache,
 // it returns the Tx or nil if not found.
-func (app *App) txFromCache(r *types.RequestDeliverTx) Tx {
-	key := string(r.Tx)
+func (app *App) txFromCache(in []byte) Tx {
+	key := string(in)
 	tx, ok := app.checkedTxs[key]
 	if !ok {
 		return nil
 	}
-	delete(app.checkedTxs, key)
 
 	return tx
+}
+
+func (app *App) removeTxFromCache(in []byte) {
+	key := string(in)
+	delete(app.checkedTxs, key)
 }

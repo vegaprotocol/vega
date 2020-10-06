@@ -79,7 +79,7 @@ func TestABCICheckTx(t *testing.T) {
 	}
 
 	t.Run("CommandWithNoError", func(t *testing.T) {
-		tx := []byte("tx")
+		tx := []byte("tx1")
 		cdc.addTx(tx, &testTx{
 			command: testCommandA,
 		})
@@ -90,7 +90,7 @@ func TestABCICheckTx(t *testing.T) {
 	})
 
 	t.Run("CommandWithError", func(t *testing.T) {
-		tx := []byte("tx")
+		tx := []byte("tx2")
 		cdc.addTx(tx, &testTx{
 			command: testCommandB,
 		})
@@ -102,7 +102,7 @@ func TestABCICheckTx(t *testing.T) {
 	})
 
 	t.Run("TxValidationError", func(t *testing.T) {
-		tx := []byte("tx")
+		tx := []byte("tx3")
 		cdc.addTx(tx, &testTx{
 			command:    testCommandA,
 			validateFn: func() error { return errors.New("invalid tx") },

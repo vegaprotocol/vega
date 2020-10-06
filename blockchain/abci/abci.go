@@ -39,9 +39,16 @@ func (app *App) Commit() (resp types.ResponseCommit) {
 }
 
 func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
-	tx, code, err := app.decodeAndValidateTx(req.GetTx())
-	if err != nil {
-		return NewResponseCheckTx(code, err.Error())
+	tx := app.txFromCache(req.Tx)
+	if tx == nil {
+		var (
+			code uint32
+			err  error
+		)
+		tx, code, err = app.decodeAndValidateTx(req.GetTx())
+		if err != nil {
+			return NewResponseCheckTx(code, err.Error())
+		}
 	}
 
 	ctx := app.ctx
@@ -61,12 +68,14 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 
 	// at this point we consider the Tx as valid, so we add it to
 	// the cache to be consumed by DeliveryTx
-	app.cacheTx(&req, tx)
+	if resp.IsOK() {
+		app.cacheTx(req.Tx, tx)
+	}
 	return resp
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
-	tx := app.txFromCache(&req)
+	tx := app.txFromCache(req.Tx)
 	if tx == nil {
 		var (
 			code uint32
@@ -76,6 +85,8 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 		if err != nil {
 			return NewResponseDeliverTx(code, err.Error())
 		}
+	} else {
+		app.removeTxFromCache(req.Tx)
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here
