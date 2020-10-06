@@ -39,7 +39,8 @@ type AuctionState interface {
 	Duration() types.AuctionDuration
 }
 
-type priceMoveBound struct {
+// bound holds the limits for the valid price movement
+type bound struct {
 	MaxMoveUp   float64
 	MinMoveDown float64
 }
@@ -67,7 +68,7 @@ type Engine struct {
 	update      time.Time
 	pricesNow   []uint64
 	pricesPast  []pastPrice
-	bounds      map[*types.PriceMonitoringParameters]priceMoveBound
+	bounds      map[*types.PriceMonitoringParameters]bound
 }
 
 // NewPriceMonitoring returns a new instance of PriceMonitoring.
@@ -197,7 +198,7 @@ func (e *Engine) reset(price uint64, now time.Time) {
 	e.now = now
 	e.pricesNow = []uint64{price}
 	e.pricesPast = []pastPrice{}
-	e.bounds = map[*types.PriceMonitoringParameters]priceMoveBound{}
+	e.bounds = map[*types.PriceMonitoringParameters]bound{}
 	e.update = now
 	e.updateBounds()
 }
@@ -291,7 +292,7 @@ func (e *Engine) updateBounds() {
 	for _, p := range e.parameters {
 
 		minPrice, maxPrice := e.riskModel.PriceRange(latestPrice, e.fpHorizons[p.Horizon], p.Probability)
-		e.bounds[p] = priceMoveBound{MinMoveDown: minPrice - latestPrice, MaxMoveUp: maxPrice - latestPrice}
+		e.bounds[p] = bound{MinMoveDown: minPrice - latestPrice, MaxMoveUp: maxPrice - latestPrice}
 	}
 	// Remove redundant average prices
 	minRequiredHorizon := e.now
