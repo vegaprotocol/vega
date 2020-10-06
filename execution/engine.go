@@ -43,14 +43,6 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-// AuctionTrigger can be checked with time or price to see if argument should trigger entry to or exit from the auction mode
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_trigger_mock.go -package mocks code.vegaprotocol.io/vega/execution AuctionTrigger
-type AuctionTrigger interface {
-	EnterPerPrice(price uint64) bool
-	EnterPerTime(time time.Time) bool
-	LeavePerTime(time time.Time) bool
-}
-
 // Engine is the execution engine
 type Engine struct {
 	Config
