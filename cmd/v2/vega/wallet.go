@@ -101,7 +101,6 @@ func (opts *walletList) Execute(_ []string) error {
 	}
 
 	// print the new keys for user info
-	fmt.Printf("List of all your keypairs:\n")
 	fmt.Printf("%v\n", string(buf))
 	return nil
 }

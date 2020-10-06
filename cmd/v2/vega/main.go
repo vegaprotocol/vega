@@ -25,6 +25,12 @@ func Register(parser *flags.Parser, cmds ...Subcommand) error {
 }
 
 func main() {
+	if err := Main(os.Args[1:]...); err != nil {
+		os.Exit(-1)
+	}
+}
+
+func Main(args ...string) error {
 	parser := flags.NewParser(&Empty{}, flags.Default)
 
 	Register(parser,
@@ -34,15 +40,16 @@ func main() {
 		Watch,
 	)
 
-	if _, err := parser.Parse(); err != nil {
+	if _, err := parser.ParseArgs(args); err != nil {
 		switch t := err.(type) {
 		case *flags.Error:
 			if t.Type != flags.ErrHelp {
 				parser.WriteHelp(os.Stdout)
 			}
 		}
-		os.Exit(-1)
+		return err
 	}
+	return nil
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.
