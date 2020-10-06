@@ -15,6 +15,13 @@ type App struct {
 	abci.BaseApplication
 	codec Codec
 
+	// options
+	replayProtector interface {
+		SetHeight(uint64)
+		DeliverTx(Tx) error
+	}
+
+	// handlers
 	OnInitChain  OnInitChainHandler
 	OnBeginBlock OnBeginBlockHandler
 	OnCheckTx    OnCheckTxHandler
@@ -34,12 +41,15 @@ type App struct {
 }
 
 func New(codec Codec) *App {
-	return &App{
-		codec:      codec,
-		checkTxs:   map[blockchain.Command]TxHandler{},
-		deliverTxs: map[blockchain.Command]TxHandler{},
-		checkedTxs: map[string]Tx{},
+	app := &App{
+		codec:           codec,
+		replayProtector: &replayProtectorNoop{},
+		checkTxs:        map[blockchain.Command]TxHandler{},
+		deliverTxs:      map[blockchain.Command]TxHandler{},
+		checkedTxs:      map[string]Tx{},
 	}
+
+	return app
 }
 
 func (app *App) HandleCheckTx(cmd blockchain.Command, fn TxHandler) *App {

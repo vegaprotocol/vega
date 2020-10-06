@@ -4688,6 +4688,7 @@ Represents a transaction to be sent to Vega.
 | ----- | ---- | ----- | ----------- |
 | inputData | [bytes](#bytes) |  | One of the set of Vega commands (proto marshalled). |
 | nonce | [uint64](#uint64) |  | A random number used to provided uniqueness and prevents against replay attack. |
+| blockHeight | [uint64](#uint64) |  | The block height associated to the transaction. This should always be current height of the node at the time of sending the Tx. BlockHeight is used as a mechanism for replay protection. |
 | address | [bytes](#bytes) |  | The address of the sender. |
 | pubKey | [bytes](#bytes) |  | The public key of the sender. |
 

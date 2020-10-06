@@ -41,7 +41,13 @@ func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHashLen] }
 // excluding the prefix and the command.
 func (tx *Tx) Payload() []byte { return tx.tx.InputData[TxHeaderLen:] }
 
+// PubKey returns the Tx's public key.
 func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
+
+// BlockHeight returns the target block for which the Tx has been broadcasted.
+// The Tx might be included on a higher block height.
+// Depending on the tolerance of the chain the Tx might be included or rejected.
+func (tx *Tx) BlockHeight() uint64 { return tx.tx.BlockHeight }
 
 // Command returns the Command of the Tx
 func (tx *Tx) Command() blockchain.Command {

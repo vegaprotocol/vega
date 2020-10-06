@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/validators"
 )
@@ -13,6 +14,7 @@ type GenesisState struct {
 	Governance governance.GenesisState `json:"governance"`
 	Assets     assets.GenesisState     `json:"assets"`
 	Validators validators.GenesisState `json:"validators"`
+	Network    abci.GenesisState       `json:"network"`
 }
 
 func DefaultGenesisState() GenesisState {
@@ -20,6 +22,7 @@ func DefaultGenesisState() GenesisState {
 		Governance: governance.DefaultGenesisState(),
 		Assets:     assets.DefaultGenesisState(),
 		Validators: validators.DefaultGenesisState(),
+		Network:    abci.DefaultGenesis(),
 	}
 }
 
