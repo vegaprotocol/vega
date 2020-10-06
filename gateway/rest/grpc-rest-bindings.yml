@@ -78,6 +78,11 @@ http:
       post: '/orders/margins/estimate'
       body: "*"
 
+      # Network parameters
+    - selector: api.trading_data.NetworkParameters
+      post: '/network/parameters'
+      body: "*"
+
     # Parties
     - selector: api.trading_data.Parties
       get: '/parties'

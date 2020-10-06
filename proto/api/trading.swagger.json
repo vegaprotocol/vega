@@ -526,6 +526,33 @@
         ]
       }
     },
+    "/network/parameters": {
+      "post": {
+        "summary": "Get the network parameters",
+        "operationId": "NetworkParameters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiNetworkParametersResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiNetworkParametersRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orders/fee/estimate": {
       "post": {
         "summary": "Get an estimate for the fee to be paid for a given order",
@@ -1655,6 +1682,22 @@
       },
       "description": "Response for a list of markets on Vega."
     },
+    "apiNetworkParametersRequest": {
+      "type": "object",
+      "title": "A message requesting for the list\nof all network parameters"
+    },
+    "apiNetworkParametersResponse": {
+      "type": "object",
+      "properties": {
+        "networkParameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaNetworkParameter"
+          }
+        }
+      },
+      "title": "A response containing all of the\nvega network parameters"
+    },
     "apiObserveEventsResponse": {
       "type": "object",
       "properties": {
@@ -2453,6 +2496,9 @@
         "riskFactor": {
           "$ref": "#/definitions/vegaRiskFactor"
         },
+        "networkParameter": {
+          "$ref": "#/definitions/vegaNetworkParameter"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2486,6 +2532,7 @@
         "BUS_EVENT_TYPE_DEPOSIT",
         "BUS_EVENT_TYPE_AUCTION",
         "BUS_EVENT_TYPE_RISK_FACTOR",
+        "BUS_EVENT_TYPE_NETWORK_PARAMETER",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -2850,24 +2897,6 @@
         }
       },
       "description": "Fee factors definition."
-    },
-    "vegaFeeFactorsConfiguration": {
-      "type": "object",
-      "properties": {
-        "infrastructureFee": {
-          "type": "string",
-          "description": "Infrastructure fee, needs to be a valid float."
-        },
-        "makerFee": {
-          "type": "string",
-          "description": "Maker fee, needs to be a valid float."
-        },
-        "liquidityFee": {
-          "type": "string",
-          "description": "Liquidity fee, it needs to be a valid float."
-        }
-      },
-      "description": "FeeFactors set at the network level."
     },
     "vegaFees": {
       "type": "object",
@@ -3370,59 +3399,16 @@
       },
       "title": "Time update for each market, can be used to see when new markets actually started in terms of block-time"
     },
-    "vegaNetworkConfiguration": {
+    "vegaNetworkParameter": {
       "type": "object",
       "properties": {
-        "minCloseInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
+        "Key": {
+          "type": "string"
         },
-        "maxCloseInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
-        },
-        "minEnactInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
-        },
-        "maxEnactInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
-        },
-        "requiredParticipation": {
-          "type": "number",
-          "format": "float",
-          "description": "Participation level required for any proposal to pass. Value from `0` to `1`."
-        },
-        "requiredMajority": {
-          "type": "number",
-          "format": "float",
-          "description": "Majority level required for any proposal to pass. Value from `0.5` to `1`."
-        },
-        "minProposerBalance": {
-          "type": "number",
-          "format": "float",
-          "description": "Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`."
-        },
-        "minVoterBalance": {
-          "type": "number",
-          "format": "float",
-          "description": "Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`."
-        },
-        "marginConfiguration": {
-          "$ref": "#/definitions/vegaScalingFactors",
-          "description": "Scaling factors for all markets created via governance."
-        },
-        "feeFactorsConfiguration": {
-          "$ref": "#/definitions/vegaFeeFactorsConfiguration",
-          "description": "FeeFactors which are not set via proposal."
+        "Value": {
+          "type": "string"
         }
-      },
-      "description": "Network configuration options."
+      }
     },
     "vegaNewAsset": {
       "type": "object",
@@ -3922,10 +3908,13 @@
         "PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS",
         "PROPOSAL_ERROR_INVALID_ASSET",
         "PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS",
-        "PROPOSAL_ERROR_NO_RISK_PARAMETERS"
+        "PROPOSAL_ERROR_NO_RISK_PARAMETERS",
+        "PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY",
+        "PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE",
+        "PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "A list of possible errors that can cause a proposal to be in state rejected or failed.\n\n - PROPOSAL_ERROR_UNSPECIFIED: Default value.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters.\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens.\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same.\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product.\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported.\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339).\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past.\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode.\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode.\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation.\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source.\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source.\n - PROPOSAL_ERROR_INVALID_ASSET: The asset id refer to no assets in vega.\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment).\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameteres were specified"
+      "description": "A list of possible errors that can cause a proposal to be in state rejected or failed.\n\n - PROPOSAL_ERROR_UNSPECIFIED: Default value.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters.\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens.\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same.\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product.\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported.\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339).\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past.\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode.\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode.\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation.\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source.\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source.\n - PROPOSAL_ERROR_INVALID_ASSET: The asset id refer to no assets in vega.\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment).\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameteres were specified\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY: Invalid key in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE: Invalid valid in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED: Validation failed for network parameter proposal"
     },
     "vegaProposalTerms": {
       "type": "object",
@@ -3953,8 +3942,8 @@
           "$ref": "#/definitions/vegaNewMarket",
           "description": "Proposal change for creating new market on Vega."
         },
-        "updateNetwork": {
-          "$ref": "#/definitions/vegaUpdateNetwork",
+        "updateNetworkParameter": {
+          "$ref": "#/definitions/vegaUpdateNetworkParameter",
           "description": "Proposal change for updating Vega network parameters."
         },
         "newAsset": {
@@ -4474,12 +4463,12 @@
       "type": "object",
       "description": "Update an existing market on Vega."
     },
-    "vegaUpdateNetwork": {
+    "vegaUpdateNetworkParameter": {
       "type": "object",
       "properties": {
         "changes": {
-          "$ref": "#/definitions/vegaNetworkConfiguration",
-          "description": "Configuration."
+          "$ref": "#/definitions/vegaNetworkParameter",
+          "title": "The network parameter to update"
         }
       },
       "description": "Update network configuration on Vega."

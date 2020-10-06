@@ -63,6 +63,8 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [NetworkParametersRequest](#api.NetworkParametersRequest)
+    - [NetworkParametersResponse](#api.NetworkParametersResponse)
     - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
@@ -166,20 +168,18 @@
     - [BusEventType](#vega.BusEventType)
 
 - [proto/governance.proto](#proto/governance.proto)
-    - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
     - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
     - [InstrumentConfiguration](#vega.InstrumentConfiguration)
-    - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
     - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
     - [UpdateMarket](#vega.UpdateMarket)
-    - [UpdateNetwork](#vega.UpdateNetwork)
+    - [UpdateNetworkParameter](#vega.UpdateNetworkParameter)
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
@@ -246,6 +246,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [MarketDepthUpdate](#vega.MarketDepthUpdate)
+    - [NetworkParameter](#vega.NetworkParameter)
     - [NodeRegistration](#vega.NodeRegistration)
     - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
@@ -1204,6 +1205,33 @@ Response for a list of markets on Vega.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | markets | [vega.Market](#vega.Market) | repeated | A list of 0 or more markets. |
+
+
+
+
+
+
+<a name="api.NetworkParametersRequest"></a>
+
+### NetworkParametersRequest
+A message requesting for the list
+of all network parameters
+
+
+
+
+
+
+<a name="api.NetworkParametersResponse"></a>
+
+### NetworkParametersResponse
+A response containing all of the
+vega network parameters
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| networkParameters | [vega.NetworkParameter](#vega.NetworkParameter) | repeated |  |
 
 
 
@@ -2189,6 +2217,7 @@ The response for a list of withdrawals
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
 | Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
 | Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
+| NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
 
 
 
@@ -2671,6 +2700,7 @@ the actual data is set as a oneof field
 | deposit | [Deposit](#vega.Deposit) |  |  |
 | auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
 | riskFactor | [RiskFactor](#vega.RiskFactor) |  |  |
+| networkParameter | [NetworkParameter](#vega.NetworkParameter) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2862,6 +2892,7 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_DEPOSIT | 21 |  |
 | BUS_EVENT_TYPE_AUCTION | 22 |  |
 | BUS_EVENT_TYPE_RISK_FACTOR | 23 |  |
+| BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
@@ -2877,23 +2908,6 @@ event types, 2 groups: actual single values, and then some events that capture a
 <p align="right"><a href="#top">Top</a></p>
 
 ## proto/governance.proto
-
-
-
-<a name="vega.FeeFactorsConfiguration"></a>
-
-### FeeFactorsConfiguration
-FeeFactors set at the network level.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| infrastructureFee | [string](#string) |  | Infrastructure fee, needs to be a valid float. |
-| makerFee | [string](#string) |  | Maker fee, needs to be a valid float. |
-| liquidityFee | [string](#string) |  | Liquidity fee, it needs to be a valid float. |
-
-
-
 
 
 
@@ -2977,30 +2991,6 @@ Instrument configuration.
 | baseName | [string](#string) |  | Base security used as the reference. |
 | quoteName | [string](#string) |  | Quote (secondary) security. |
 | future | [FutureProduct](#vega.FutureProduct) |  | Futures. |
-
-
-
-
-
-
-<a name="vega.NetworkConfiguration"></a>
-
-### NetworkConfiguration
-Network configuration options.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| requiredParticipation | [float](#float) |  | Participation level required for any proposal to pass. Value from `0` to `1`. |
-| requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
-| minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
-| minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
-| marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
-| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal. |
 
 
 
@@ -3093,7 +3083,7 @@ Terms for a governance proposal on Vega.
 | validationTimestamp | [int64](#int64) |  | Validation timestamp (Unix time in seconds). |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
-| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
+| updateNetworkParameter | [UpdateNetworkParameter](#vega.UpdateNetworkParameter) |  | Proposal change for updating Vega network parameters. |
 | newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
 
 
@@ -3111,15 +3101,15 @@ Update an existing market on Vega.
 
 
 
-<a name="vega.UpdateNetwork"></a>
+<a name="vega.UpdateNetworkParameter"></a>
 
-### UpdateNetwork
+### UpdateNetworkParameter
 Update network configuration on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  | Configuration. |
+| changes | [NetworkParameter](#vega.NetworkParameter) |  | The network parameter to update |
 
 
 
@@ -3196,6 +3186,9 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_INVALID_ASSET | 16 | The asset id refer to no assets in vega. |
 | PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment). |
 | PROPOSAL_ERROR_NO_RISK_PARAMETERS | 18 | No risk parameteres were specified |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY | 19 | Invalid key in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE | 20 | Invalid valid in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
 
 
 
@@ -4203,6 +4196,22 @@ Represents the changed market depth since the last update
 | buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the buy side of the book. |
 | sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the sell side of the book. |
 | sequenceNumber | [uint64](#uint64) |  | Sequence number for the market depth update |
+
+
+
+
+
+
+<a name="vega.NetworkParameter"></a>
+
+### NetworkParameter
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| Key | [string](#string) |  |  |
+| Value | [string](#string) |  |  |
 
 
 

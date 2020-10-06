@@ -347,6 +347,12 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, nil
 	case ProposalRejectionReasonNoRiskParameters:
 		return types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, nil
+	case ProposalRejectionReasonNetworkParameterInvalidKey:
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, nil
+	case ProposalRejectionReasonNetworkParameterInvalidValue:
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, nil
+	case ProposalRejectionReasonNetworkParameterValidationFailed:
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from GraphQL to Proto: %v", x)
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -391,6 +397,12 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonInvalidAsset, nil
 	case types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS:
 		return ProposalRejectionReasonNoRiskParameters, nil
+	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY:
+		return ProposalRejectionReasonNetworkParameterInvalidKey, nil
+	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE:
+		return ProposalRejectionReasonNetworkParameterInvalidValue, nil
+	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED:
+		return ProposalRejectionReasonNetworkParameterValidationFailed, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err

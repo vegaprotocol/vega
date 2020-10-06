@@ -874,3 +874,16 @@ func (this *DepositResponse) Validate() error {
 	}
 	return nil
 }
+func (this *NetworkParametersRequest) Validate() error {
+	return nil
+}
+func (this *NetworkParametersResponse) Validate() error {
+	for _, item := range this.NetworkParameters {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("NetworkParameters", err)
+			}
+		}
+	}
+	return nil
+}

@@ -1,6 +1,7 @@
 package validators
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -137,7 +138,7 @@ func (t *Topology) AddNodeRegistration(nr *types.NodeRegistration) error {
 	return nil
 }
 
-func (t *Topology) LoadValidatorsOnGenesis(rawstate []byte) error {
+func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) error {
 	state, err := LoadGenesisState(rawstate)
 	if err != nil {
 		return err

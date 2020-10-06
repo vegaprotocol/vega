@@ -103,6 +103,7 @@ enum BusEventType {
     BUS_EVENT_TYPE_DEPOSIT = 21;
     BUS_EVENT_TYPE_AUCTION = 22;
     BUS_EVENT_TYPE_RISK_FACTOR = 23;
+    BUS_EVENT_TYPE_NETWORK_PARAMETER = 24;
 
     BUS_EVENT_TYPE_MARKET = 101; // special event for all events implementing a specific interface
 }
@@ -136,6 +137,7 @@ message BusEvent {
     Deposit deposit = 120;
     AuctionEvent auction = 121;
     RiskFactor riskFactor = 122;
+    NetworkParameter networkParameter = 123;
     MarketEvent market = 1001;
   }
 }

@@ -415,6 +415,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.NetworkParametersRequest"><span class="badge">M</span>NetworkParametersRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.NetworkParametersResponse"><span class="badge">M</span>NetworkParametersResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.ObserveEventBatch"><span class="badge">M</span>ObserveEventBatch</a>
                 </li>
 
@@ -831,10 +839,6 @@
             <ul>
 
                 <li>
-                  <a href="#vega.FeeFactorsConfiguration"><span class="badge">M</span>FeeFactorsConfiguration</a>
-                </li>
-
-                <li>
                   <a href="#vega.FutureProduct"><span class="badge">M</span>FutureProduct</a>
                 </li>
 
@@ -852,10 +856,6 @@
 
                 <li>
                   <a href="#vega.InstrumentConfiguration"><span class="badge">M</span>InstrumentConfiguration</a>
-                </li>
-
-                <li>
-                  <a href="#vega.NetworkConfiguration"><span class="badge">M</span>NetworkConfiguration</a>
                 </li>
 
                 <li>
@@ -883,7 +883,7 @@
                 </li>
 
                 <li>
-                  <a href="#vega.UpdateNetwork"><span class="badge">M</span>UpdateNetwork</a>
+                  <a href="#vega.UpdateNetworkParameter"><span class="badge">M</span>UpdateNetworkParameter</a>
                 </li>
 
                 <li>
@@ -1149,6 +1149,10 @@
 
                 <li>
                   <a href="#vega.MarketDepthUpdate"><span class="badge">M</span>MarketDepthUpdate</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NetworkParameter"><span class="badge">M</span>NetworkParameter</a>
                 </li>
 
                 <li>
@@ -3408,6 +3412,37 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                   <td><a href="#vega.Market">vega.Market</a></td>
                   <td>repeated</td>
                   <td><p>A list of 0 or more markets. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.NetworkParametersRequest">NetworkParametersRequest</h3>
+        <p>A message requesting for the list</p><p>of all network parameters</p>
+
+
+
+
+
+        <h3 id="api.NetworkParametersResponse">NetworkParametersResponse</h3>
+        <p>A response containing all of the</p><p>vega network parameters</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>networkParameters</td>
+                  <td><a href="#vega.NetworkParameter">vega.NetworkParameter</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -5893,6 +5928,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <td><p>Get withdrawals for a party</p></td>
               </tr>
 
+              <tr>
+                <td>NetworkParameters</td>
+                <td><a href="#api.NetworkParametersRequest">NetworkParametersRequest</a></td>
+                <td><a href="#api.NetworkParametersResponse">NetworkParametersResponse</a></td>
+                <td><p>Get the network parameters</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -7003,6 +7045,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>networkParameter</td>
+                  <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
                   <td>market</td>
                   <td><a href="#vega.MarketEvent">MarketEvent</a></td>
                   <td></td>
@@ -7485,6 +7534,12 @@ these data are being used to bundle the call to the smart contract on the ethere
               </tr>
 
               <tr>
+                <td>BUS_EVENT_TYPE_NETWORK_PARAMETER</td>
+                <td>24</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
                 <td>BUS_EVENT_TYPE_MARKET</td>
                 <td>101</td>
                 <td><p>special event for all events implementing a specific interface</p></td>
@@ -7503,44 +7558,6 @@ these data are being used to bundle the call to the smart contract on the ethere
         <h2 id="proto/governance.proto">proto/governance.proto</h2><a href="#title">Top</a>
       </div>
       <p></p>
-
-
-        <h3 id="vega.FeeFactorsConfiguration">FeeFactorsConfiguration</h3>
-        <p>FeeFactors set at the network level.</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>infrastructureFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Infrastructure fee, needs to be a valid float. </p></td>
-                </tr>
-
-                <tr>
-                  <td>makerFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Maker fee, needs to be a valid float. </p></td>
-                </tr>
-
-                <tr>
-                  <td>liquidityFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Liquidity fee, it needs to be a valid float. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
 
 
         <h3 id="vega.FutureProduct">FutureProduct</h3>
@@ -7837,93 +7854,6 @@ value (Vote) is the vote cast by the given party </p></td>
 
               </tbody>
             </table>
-
-
-
-
-
-        <h3 id="vega.NetworkConfiguration">NetworkConfiguration</h3>
-        <p>Network configuration options.</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>minCloseInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>maxCloseInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minEnactInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>maxEnactInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>requiredParticipation</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Participation level required for any proposal to pass. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>requiredMajority</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Majority level required for any proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minProposerBalance</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Minimum balance required for a party to be able to submit a new proposal. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minVoterBalance</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Minimum balance required for a party to be able to cast a vote. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>marginConfiguration</td>
-                  <td><a href="#vega.ScalingFactors">ScalingFactors</a></td>
-                  <td></td>
-                  <td><p>Scaling factors for all markets created via governance. </p></td>
-                </tr>
-
-                <tr>
-                  <td>feeFactorsConfiguration</td>
-                  <td><a href="#vega.FeeFactorsConfiguration">FeeFactorsConfiguration</a></td>
-                  <td></td>
-                  <td><p>FeeFactors which are not set via proposal. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
 
 
 
@@ -8305,8 +8235,8 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 </tr>
 
                 <tr>
-                  <td>updateNetwork</td>
-                  <td><a href="#vega.UpdateNetwork">UpdateNetwork</a></td>
+                  <td>updateNetworkParameter</td>
+                  <td><a href="#vega.UpdateNetworkParameter">UpdateNetworkParameter</a></td>
                   <td></td>
                   <td><p>Proposal change for updating Vega network parameters. </p></td>
                 </tr>
@@ -8370,7 +8300,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
 
-        <h3 id="vega.UpdateNetwork">UpdateNetwork</h3>
+        <h3 id="vega.UpdateNetworkParameter">UpdateNetworkParameter</h3>
         <p>Update network configuration on Vega.</p>
 
 
@@ -8382,9 +8312,9 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
                 <tr>
                   <td>changes</td>
-                  <td><a href="#vega.NetworkConfiguration">NetworkConfiguration</a></td>
+                  <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
                   <td></td>
-                  <td><p>Configuration. </p></td>
+                  <td><p>The network parameter to update </p></td>
                 </tr>
 
             </tbody>
@@ -8696,6 +8626,24 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>PROPOSAL_ERROR_NO_RISK_PARAMETERS</td>
                 <td>18</td>
                 <td><p>No risk parameteres were specified</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY</td>
+                <td>19</td>
+                <td><p>Invalid key in update network parameter proposal</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE</td>
+                <td>20</td>
+                <td><p>Invalid valid in update network parameter proposal</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED</td>
+                <td>21</td>
+                <td><p>Validation failed for network parameter proposal</p></td>
               </tr>
 
           </tbody>
@@ -11047,6 +10995,37 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Sequence number for the market depth update </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.NetworkParameter">NetworkParameter</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>Key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>Value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
