@@ -130,6 +130,7 @@ func (opts *walletSign) Execute(_ []string) error {
 	for i, v := range w.Keypairs {
 		if v.Pub == opts.PubKey {
 			kp = &w.Keypairs[i]
+			break
 		}
 	}
 	if kp == nil {
@@ -177,6 +178,7 @@ func (opts *walletVerify) Execute(_ []string) error {
 	for i, v := range w.Keypairs {
 		if v.Pub == opts.PubKey {
 			kp = &w.Keypairs[i]
+			break
 		}
 	}
 	if kp == nil {
@@ -194,6 +196,45 @@ func (opts *walletVerify) Execute(_ []string) error {
 	fmt.Printf("%v\n", verified)
 
 	return nil
+}
+
+type walletTaint struct {
+	RootPathOption
+	PassphraseOption
+	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
+}
+
+func (opts *walletTaint) Execute(_ []string) error {
+	name := opts.Name
+	pass, err := opts.PassphraseOption.Get(name)
+	if err != nil {
+		return err
+	}
+
+	w, err := readWallet(opts.RootPath, name, pass)
+	if err != nil {
+		return err
+	}
+	var kp *wallet.Keypair
+	for i, v := range w.Keypairs {
+		if v.Pub == opts.PubKey {
+			kp = &w.Keypairs[i]
+			break
+		}
+	}
+	if kp == nil {
+		return fmt.Errorf("unknown public key: %v", opts.PubKey)
+	}
+
+	if kp.Tainted {
+		return fmt.Errorf("key %v is already tainted", opts.PubKey)
+	}
+
+	kp.Tainted = true
+
+	_, err = wallet.Write(w, opts.RootPath, name, pass)
+	return err
 }
 
 func Wallet(parser *flags.Parser) error {
