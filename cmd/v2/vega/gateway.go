@@ -3,10 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/gateway"
@@ -67,18 +63,4 @@ func (opts *gatewayOptions) Execute(args []string) error {
 
 	waitSig(ctx, log)
 	return nil
-}
-
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-	case <-ctx.Done():
-		// nothing to do
-	}
 }

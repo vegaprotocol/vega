@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -25,6 +30,7 @@ func main() {
 	Register(parser,
 		Faucet,
 		Gateway,
+		Wallet,
 		Watch,
 	)
 
@@ -36,5 +42,19 @@ func main() {
 			}
 			os.Exit(-1)
 		}
+	}
+}
+
+// waitSig will wait for a sigterm or sigint interrupt.
+func waitSig(ctx context.Context, log *logging.Logger) {
+	var gracefulStop = make(chan os.Signal, 1)
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+
+	select {
+	case sig := <-gracefulStop:
+		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+	case <-ctx.Done():
+		// nothing to do
 	}
 }
