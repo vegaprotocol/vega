@@ -242,12 +242,12 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
 	}
-	_, err = tm.market.SubmitOrder(context.TODO(), orderSell)
+	_, err = tm.market.SubmitOrder(context.Background(), orderSell)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
@@ -294,7 +294,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
@@ -373,7 +373,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	_, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
@@ -391,7 +391,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		ExpiresAt:   &types.Timestamp{Value: orderBuy.ExpiresAt},
 	}
 
-	_, err = tm.market.AmendOrder(context.TODO(), amendedOrder)
+	_, err = tm.market.AmendOrder(context.Background(), amendedOrder)
 	if !assert.Nil(t, err) {
 		t.Fatalf("Error: %v", err)
 	}
@@ -488,7 +488,7 @@ func TestMarketCancelOrder(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order",
 	}
-	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	confirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -543,7 +543,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order-1",
 	}
-	confirmationBuy, err := tm.market.SubmitOrder(context.TODO(), orderBuy1)
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
@@ -561,7 +561,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-1",
 	}
-	confirmationSell, err := tm.market.SubmitOrder(context.TODO(), orderSell1)
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -584,7 +584,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order-2",
 	}
-	confirmationBuy, err = tm.market.SubmitOrder(context.TODO(), orderBuy2)
+	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy2)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
@@ -602,7 +602,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-2",
 	}
-	confirmationSell, err = tm.market.SubmitOrder(context.TODO(), orderSell2)
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell2)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -614,7 +614,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	assert.False(t, closed)
 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
-	closed = tm.market.OnChainTimeUpdate(afterAuciton)
+	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
 	assert.False(t, closed)
 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
 }
@@ -657,7 +657,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party2-sell-order-1",
 	}
-	confirmationSell, err := tm.market.SubmitOrder(context.TODO(), orderSell1)
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -675,7 +675,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-1",
 	}
-	confirmationBuy, err := tm.market.SubmitOrder(context.TODO(), orderBuy1)
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
@@ -698,7 +698,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party2-sell-order-2",
 	}
-	confirmationSell, err = tm.market.SubmitOrder(context.TODO(), orderSell2)
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell2)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -716,7 +716,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-2",
 	}
-	confirmationBuy, err = tm.market.SubmitOrder(context.TODO(), orderBuy2)
+	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy2)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
@@ -743,7 +743,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-3",
 	}
-	confirmationSell, err = tm.market.SubmitOrder(context.TODO(), orderSell3)
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell3)
 	assert.NotNil(t, confirmationSell)
 	assert.NoError(t, err)
 
@@ -762,14 +762,14 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order-3",
 	}
-	confirmationBuy, err = tm.market.SubmitOrder(context.TODO(), orderBuy3)
+	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 	tradingMode = tm.market.GetTradingMode()
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
-	closed = tm.market.OnChainTimeUpdate(afterAuciton)
+	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
 	assert.False(t, closed)
 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
 
@@ -813,7 +813,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party2-sell-order-1",
 	}
-	confirmationSell, err := tm.market.SubmitOrder(context.TODO(), orderSell1)
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -831,7 +831,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-1",
 	}
-	confirmationBuy, err := tm.market.SubmitOrder(context.TODO(), orderBuy1)
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
@@ -854,7 +854,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party2-sell-order-2",
 	}
-	confirmationSell, err = tm.market.SubmitOrder(context.TODO(), orderSell2)
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell2)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -872,7 +872,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-2",
 	}
-	confirmationBuy, err = tm.market.SubmitOrder(context.TODO(), orderBuy2)
+	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy2)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
@@ -880,7 +880,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 	require.Equal(t, 0, len(confirmationSell.Trades))
 	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
-	closed := tm.market.OnChainTimeUpdate(stillAuction)
+	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
 	assert.False(t, closed)
 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
@@ -899,7 +899,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-3",
 	}
-	confirmationSell, err = tm.market.SubmitOrder(context.TODO(), orderSell3)
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell3)
 	assert.NotNil(t, confirmationSell)
 	assert.NoError(t, err)
 
@@ -918,7 +918,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party1-buy-order-3",
 	}
-	confirmationBuy, err = tm.market.SubmitOrder(context.TODO(), orderBuy3)
+	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 	tradingMode = tm.market.GetTradingMode()
@@ -926,7 +926,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
 	// Expecting market to still be in auction as auction resulted in invalid price
-	closed = tm.market.OnChainTimeUpdate(initialAuctionEnd)
+	closed = tm.market.OnChainTimeUpdate(context.Background(), initialAuctionEnd)
 	assert.False(t, closed)
 	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 }

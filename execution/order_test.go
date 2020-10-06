@@ -555,7 +555,7 @@ func TestAmendToFill(t *testing.T) {
 func TestUnableToAmendGFAGFN(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, "party1")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
