@@ -14,12 +14,14 @@ import (
 )
 
 type gatewayOptions struct {
+	ctx context.Context
 	gateway.Config
 	RootPathOption
 }
 
-func Gateway(parser *flags.Parser) error {
+func Gateway(ctx context.Context, parser *flags.Parser) error {
 	opts := &gatewayOptions{
+		ctx:            ctx,
 		Config:         gateway.NewDefaultConfig(),
 		RootPathOption: NewRootPathOption(),
 	}
@@ -29,7 +31,7 @@ func Gateway(parser *flags.Parser) error {
 }
 
 func (opts *gatewayOptions) Execute(args []string) error {
-	ctx := context.Background()
+	ctx := opts.ctx
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
@@ -41,13 +43,16 @@ func (opts *gatewayOptions) Execute(args []string) error {
 	}
 
 	conf := cfgwatchr.Get()
+	opts.Config = conf.Gateway
 
 	// parse the remaining command line options again to ensure they
 	// take precedence.
-	flags.Parse(&conf)
+	if _, err := flags.Parse(opts); err != nil {
+		return err
+	}
 
 	if conf.Gateway.REST.Enabled {
-		srv := rest.NewProxyServer(log, conf.Gateway)
+		srv := rest.NewProxyServer(log, opts.Config)
 		go func() { srv.Start() }()
 		defer srv.Stop()
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,12 +13,12 @@ import (
 )
 
 // Subcommand is the signature of a sub command that can be registered.
-type Subcommand func(*flags.Parser) error
+type Subcommand func(context.Context, *flags.Parser) error
 
 // Register registers one or more subcommands.
-func Register(parser *flags.Parser, cmds ...Subcommand) error {
+func Register(ctx context.Context, parser *flags.Parser, cmds ...Subcommand) error {
 	for _, fn := range cmds {
-		if err := fn(parser); err != nil {
+		if err := fn(ctx, parser); err != nil {
 			return err
 		}
 	}
@@ -25,22 +26,24 @@ func Register(parser *flags.Parser, cmds ...Subcommand) error {
 }
 
 func main() {
-	if err := Main(os.Args[1:]...); err != nil {
+	ctx := context.Background()
+	if err := Main(ctx); err != nil {
 		os.Exit(-1)
 	}
 }
 
-func Main(args ...string) error {
+func Main(ctx context.Context) error {
 	parser := flags.NewParser(&Empty{}, flags.Default)
 
-	Register(parser,
+	Register(ctx, parser,
 		Faucet,
 		Gateway,
 		Wallet,
 		Watch,
 	)
 
-	if _, err := parser.ParseArgs(args); err != nil {
+	if _, err := parser.Parse(); err != nil {
+		log.Printf("err = %+v\n", err)
 		switch t := err.(type) {
 		case *flags.Error:
 			if t.Type != flags.ErrHelp {

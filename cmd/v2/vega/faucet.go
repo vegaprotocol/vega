@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/faucet"
 	"code.vegaprotocol.io/vega/fsutil"
@@ -15,7 +16,27 @@ type faucetInit struct {
 	Force bool `short:"f" long:"force" description:"Erase existing configuratio at specified path"`
 }
 
+func (opts *faucetInit) Execute(_ []string) error {
+	logDefaultConfig := logging.NewDefaultConfig()
+	log := logging.NewLoggerFromConfig(logDefaultConfig)
+	defer log.AtExit()
+
+	pass, err := opts.PassphraseOption.Get("faucet")
+	if err != nil {
+		return err
+	}
+
+	pubkey, err := faucet.GenConfig(log, opts.RootPath, pass, opts.Force)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("pubkey: %v\n", pubkey)
+
+	return nil
+}
+
 type faucetRun struct {
+	ctx context.Context
 	faucet.Config
 	RootPathOption
 	PassphraseOption
@@ -35,13 +56,17 @@ func (opts *faucetRun) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+	opts.Config = *cfg
+	if _, err := flags.Parse(opts); err != nil {
+		return err
+	}
 
-	f, err := faucet.New(log, *cfg, pass)
+	f, err := faucet.New(log, opts.Config, pass)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(opts.ctx)
 	go func() {
 		defer cancel()
 		if err := f.Start(); err != nil {
@@ -60,7 +85,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 	return nil
 }
 
-func Faucet(parser *flags.Parser) error {
+func Faucet(ctx context.Context, parser *flags.Parser) error {
 	cmd, err := parser.AddCommand("faucet", "Allow deposit of builtin asset", "", &Empty{})
 	if err != nil {
 		return err
@@ -73,6 +98,7 @@ func Faucet(parser *flags.Parser) error {
 	}
 
 	if _, err = cmd.AddCommand("run", "Runs the faucet", "", &faucetRun{
+		ctx:            ctx,
 		Config:         faucet.NewDefaultConfig(fsutil.DefaultVegaDir()),
 		RootPathOption: NewRootPathOption(),
 	}); err != nil {

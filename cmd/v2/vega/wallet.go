@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -236,7 +237,7 @@ func (opts *walletTaint) Execute(_ []string) error {
 	return err
 }
 
-func Wallet(parser *flags.Parser) error {
+func Wallet(_ context.Context, parser *flags.Parser) error {
 	root, err := parser.AddCommand("wallet", "Create and manage wallets", "", &Empty{})
 	if err != nil {
 		return err

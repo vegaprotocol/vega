@@ -12,6 +12,7 @@ import (
 )
 
 type watch struct {
+	ctx        context.Context
 	Address    string `short:"a" long:"address" description:"Node address" default:"tcp://0.0.0.0:26657"`
 	Positional struct {
 		Filters []string `positional-arg-name:"<FILTERS>"`
@@ -29,7 +30,7 @@ func (opts *watch) Execute(_ []string) error {
 		return err
 	}
 
-	ctx := context.Background()
+	ctx := opts.ctx
 	fn := func(e tmctypes.ResultEvent) error {
 		bz, err := json.Marshal(e.Data)
 		if err != nil {
@@ -45,7 +46,7 @@ func (opts *watch) Execute(_ []string) error {
 	return nil
 }
 
-func Watch(parser *flags.Parser) error {
+func Watch(ctx context.Context, parser *flags.Parser) error {
 	var (
 		shortDesc = "Watches events from Tendermint"
 		longDesc  = `Events results are encoded in JSON and can be filtered
