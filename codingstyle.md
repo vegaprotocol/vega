@@ -241,3 +241,7 @@ We want to be consistent regarding log levels used. We use the standard levels (
 
 Notable exception: A context with timeout/cancel always returns an error if the context is cancelled (whether it be due to the time limit being reached, or the context being cancelled manually). These errors specify why a context was cancelled. This information is returned by the `ctx.Err()` function, but this should *not* be logged as an error. We log this at the `DEBUG` level. When the context for a (gRPC) stream is cancelled, for example, we should either ignore the error, or log it at the `DEBUG` level.
 The reason we might want to log this could be: to ensure that streams are closed correctly if the client disconnects, or the stream hasn't been read in a while. This information is useful when debugging the application, but should not be spamming the logs with `ERROR` entries: this is expected behaviour after all.
+
+## API response errors
+
+The audience for API responses is different to the audience for log messages. An API user who submits a message and receives an error response is interested in what they can do to fix their message. They are not interested in core code (e.g. stack traces, file references or line numbers) or in the node (e.g. disk full, failed to write to badger store).
