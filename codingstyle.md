@@ -245,3 +245,38 @@ The reason we might want to log this could be: to ensure that streams are closed
 ## API response errors
 
 The audience for API responses is different to the audience for log messages. An API user who submits a message and receives an error response is interested in what they can do to fix their message. They are not interested in core code (e.g. stack traces, file references or line numbers) or in the node (e.g. disk full, failed to write to badger store).
+
+## Helpful errors
+
+Errors returned from functions should be as helpful as possible, for example by including function parameters.
+
+Example:
+
+```go
+func DoAllThings(ids []string) error {
+    for _, id := range ids {
+        err := DoSomething(id)
+        if err != nil {
+            return err
+        }
+    }
+}
+
+func DoSomething(id string) error {
+    err := doSomeSub1Thing(id)
+    if err != nil {
+        // details from err are lost, and there is no mention of "id".
+        return ErrFailedToDoSomeSub1Thing
+    }
+
+    err = doSomeSub2Thing(id)
+    if err != nil {
+        // details from err are included, but there is still no mention of "id".
+        return fmt.Errorf("error doing some sub2 thing: %v", err)
+    }
+
+    // ...
+}
+```
+
+The omission of the identifier `id` means that we don't know which call to `DoSomething` was the one that caused the error.
