@@ -180,12 +180,22 @@ func (s *StreamSub) GetData() []*types.BusEvent {
 	s.mu.Lock()
 	// create a new update channel + reset update counter
 	s.updated = make(chan struct{})
+	// this seems to happen with a buffer of 1 sometimes
+	// or could be an issue if s.updated was closed, but the UpdateBatchSize call acquired a lock first
+	if len(s.data) < s.bufSize {
+		// data was drained (possibly UpdateBatchSize), so create new updated channel and carry on as if nothing happened
+		s.mu.Unlock()
+		return nil
+	}
 	dc := s.bufSize
 	s.changeCount = 0
 	// copy the data for return, clear the internal slice
 	data := s.data
 	if s.bufSize == 0 {
 		dc = cap(s.data)
+		s.data = make([]StreamEvent, 0, dc)
+	} else if len(s.data) == s.bufSize {
+		// data var is exactly the right size, data has to be emptied, allocate new slice
 		s.data = make([]StreamEvent, 0, dc)
 	} else {
 		data = data[:s.bufSize]     // only get the batch requested
