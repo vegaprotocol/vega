@@ -1705,10 +1705,11 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/vegaBusEvent"
-          }
+          },
+          "title": "One or more events"
         }
       },
-      "title": "Response type streamed back when observing events. Slice of wrapped events"
+      "title": "Response to a subscribed stream of events from the Vega event bus"
     },
     "apiOptionalProposalState": {
       "type": "object",

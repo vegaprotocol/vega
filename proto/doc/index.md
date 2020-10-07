@@ -1241,12 +1241,13 @@ vega network parameters
 <a name="api.ObserveEventBatch"></a>
 
 ### ObserveEventBatch
-message to poll current event buffer, and change batch size
+Used when subscribed to observe events from the event bus
+This message is used to update the batch size (only for gRPC bi-directional streaming)
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| batchSize | [int64](#int64) |  |  |
+| batchSize | [int64](#int64) |  | Batch size. Required field. Default: 0, send any and all events when they are available. |
 
 
 
@@ -1256,15 +1257,15 @@ message to poll current event buffer, and change batch size
 <a name="api.ObserveEventsRequest"></a>
 
 ### ObserveEventsRequest
-Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+Request to subscribe to a stream of one or more event types from the Vega event bus
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [vega.BusEventType](#vega.BusEventType) | repeated |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| batchSize | [int64](#int64) |  |  |
+| type | [vega.BusEventType](#vega.BusEventType) | repeated | One or more types of event. Required field. |
+| marketID | [string](#string) |  | Market identifier. Optional field. |
+| partyID | [string](#string) |  | Party identifier. Optional field. |
+| batchSize | [int64](#int64) |  | Batch size. Optional field. If specified, will result in the event stream API to return a specific number of events in a batch. For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream. Default: 0, send any and all events when they are available. |
 
 
 
@@ -1274,12 +1275,12 @@ Request to observe some/all events (raw). All parameters are optional filters (o
 <a name="api.ObserveEventsResponse"></a>
 
 ### ObserveEventsResponse
-Response type streamed back when observing events. Slice of wrapped events
+Response to a subscribed stream of events from the Vega event bus
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| events | [vega.BusEvent](#vega.BusEvent) | repeated |  |
+| events | [vega.BusEvent](#vega.BusEvent) | repeated | One or more events |
 
 
 
