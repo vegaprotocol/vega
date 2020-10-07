@@ -382,7 +382,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	// remove expired orders
 	// TODO(FIXME): this should be remove, and handled inside the market directly
 	// when call with the new time (see the next for loop)
-	e.removeExpiredOrders(t)
+	e.removeExpiredOrders(ctx, t)
 
 	// notify markets of the time expiration
 	for mktID, mkt := range e.markets {
@@ -399,11 +399,8 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(t time.Time) {
+func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Removing expiring orders from matching engine")
-	}
 	expiringOrders := []types.Order{}
 	timeNow := t.UnixNano()
 	for _, mkt := range e.markets {
@@ -416,19 +413,11 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 		expiringOrders = append(
 			expiringOrders, orders...)
 	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Removed expired orders from matching engine",
-			logging.Int("orders-removed", len(expiringOrders)))
-	}
 	for _, order := range expiringOrders {
 		order := order
-		evt := events.NewOrderEvent(context.Background(), &order)
+		evt := events.NewOrderEvent(ctx, &order)
 		e.broker.Send(evt)
 		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
-	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Updated expired orders in stores",
-			logging.Int("orders-removed", len(expiringOrders)))
 	}
 	timer.EngineTimeCounterAdd()
 }

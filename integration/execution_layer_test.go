@@ -404,7 +404,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getFirstByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
