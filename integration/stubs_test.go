@@ -265,15 +265,18 @@ func (b *brokerStub) getFirstByReference(party, ref string) (proto.Order, error)
 
 func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
 	data := b.GetOrderEvents()
-	var last *proto.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
+
+	var last proto.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
+	var matched bool = false
 	for _, o := range data {
 		v := o.Order()
 		if v.Reference == ref && v.PartyID == party {
-			last = v
+			last = *v
+			matched = true
 		}
 	}
-	if last != nil {
-		return *last, nil
+	if matched == true {
+		return last, nil
 	}
 	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
 }
