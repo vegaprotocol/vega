@@ -226,19 +226,57 @@ Named return values are perfectly fine. They can be useful in certain scenarios 
 
 We want to be consistent regarding log levels used. We use the standard levels (`DEBUG`, `INFO`, `WARN`, `ERROR`, and `FATAL`). Following the code review document used as a base, we shouldn't use the `PANIC` level.
 
-* `DEBUG`: As the name suggests, debug logs should be used to output information that is useful for debugging. These logs provide information useful for developing features, or fixing bugs. Because logging things like orders has a performance impact, we wrap log statements in an `if`, making sure we only call `log.Debug` if the log level is active.
+* `DEBUG`: As the name suggests, debug logs should be used to output information that is **useful to core developers** for debugging. These logs provide information useful for developing features, or fixing bugs. Because logging things like orders has a performance impact, we wrap log statements in an `if`, making sure we only call `log.Debug` if the log level is active.
+
+  ```go
+  if log.Level() == logging.Debug {
+      log.Debug("log entry here", logging.Order(order))
+  }
+  ```
+* `INFO`: These logs should be **informative to node operators** in the sense that they indicate that the application is working as intended, and something significant has happened. Messages should be one-off (e.g. at start-up or shutdown) or occasional (e.g. market created or settled). Do not log at `INFO` level inside loops, or in a way which means that increased activity causes a proportional increase in the number of log messages (e.g. a distressed trader was closed out, a market entered/exited auction mode).
+* `WARN`: These logs indicate that something unusual (but expected) has happened, the node is now operating in a sub-optimal way, and the node operator could do something to fix this to remove so that the log message would not appear.
+* `ERROR`: These logs indicate that there was a problem with a non-instrumental subsystem (e.g. the REST HTTP server died) but the node can continue, albeit in a degraded state (e.g. gRPC and GraphQL are fine, but not the dead REST HTTP server). The node operator probably needs to take some significant action (e.g. restarting the node, augmenting node hardware).
+* `FATAL`: These logs indicate that the node was unable to continue. Something went terribly wrong, and this is likely due to a bug. Immediate investigation and fixing is required. `os.Exit(1)` is called, which does not run deferred functions.
+* `PANIC`: Simple: don't panic. This should either be a `FATAL` log, or an `ERROR`, depending on the case.
+
+Notable exception: A context with timeout/cancel always returns an error if the context is cancelled (whether it be due to the time limit being reached, or the context being cancelled manually). These errors specify why a context was cancelled. This information is returned by the `ctx.Err()` function, but this should *not* be logged as an error. We log this at the `DEBUG` level. When the context for a (gRPC) stream is cancelled, for example, we should either ignore the error, or log it at the `DEBUG` level.
+The reason we might want to log this could be: to ensure that streams are closed correctly if the client disconnects, or the stream hasn't been read in a while. This information is useful when debugging the application, but should not be spamming the logs with `ERROR` entries: this is expected behaviour after all.
+
+## API response errors
+
+The audience for API responses is different to the audience for log messages. An API user who submits a message and receives an error response is interested in what they can do to fix their message. They are not interested in core code (e.g. stack traces, file references or line numbers) or in the node (e.g. disk full, failed to write to badger store).
+
+## Helpful errors
+
+Errors returned from functions should be as helpful as possible, for example by including function parameters.
+
+Example:
 
 ```go
-if log.Level() == logging.Debug {
-    log.Debug("log entry here", logging.Order(order))
+func DoAllThings(ids []string) error {
+    for _, id := range ids {
+        err := DoSomething(id)
+        if err != nil {
+            return err
+        }
+    }
+}
+
+func DoSomething(id string) error {
+    err := doSomeSub1Thing(id)
+    if err != nil {
+        // details from err are lost, and there is no mention of "id".
+        return ErrFailedToDoSomeSub1Thing
+    }
+
+    err = doSomeSub2Thing(id)
+    if err != nil {
+        // details from err are included, but there is still no mention of "id".
+        return fmt.Errorf("error doing some sub2 thing: %v", err)
+    }
+
+    // ...
 }
 ```
 
-* `INFO`: These logs should be informative in the sense that they indicate that the application is working as intended, and something significant has happened. Examples of this are: the core is closing out distressed traders, a market is entering/exiting auction mode, a new market was added, etc...
-* `WARN`: These logs indicate that something unusual has happened, but it's expected behaviour all the same. For example: a market doesn't have sufficient information to generate an accurate close-out price (used in position resolution), settlements are having to draw on the insurance pool to pay out traders, or even: the market has had to enter to loss socialisation flow (insufficient funds in the insurance pool).
-* `ERROR`: Error logs indicate that the core was unable to perform the expected logic: the core tried to close out traders, but there weren't enough entries in the order book to match the network position (the net position taken over by the network from distressed traders). Depending on what exactly happened, a market might have to fall back on an _"emergency procedure"_ like entering auction mode, or suspending a market. Error logs indicate something went wrong, and we've had to handle the situation in a specific way. What we do is still defined behaviour, but really: these situations shouldn't have happened in the first place. The core can still continue to do its job, but a particular command resulted in an error. For example: a trader submitted an order, but the order couldn't be accepted because the trader didn't have the required margin, or doesn't have a general account for the right asset.
-* `FATAL`: These logs indicate that the node was unable to carry on. Something went terribly wrong, and this is likely due to a bug. Immediate investigation and fixing is required.
-* `PANIC`: Simple: don't panic. This should either be a `FATAL` log, or an `ERROR`, depending on the case.
-
-Notable exception: A context with timeout/cancel always returns an error if the context is cancelled (whether it be due to the time limit being reached, or the context being cancelled manually). These errors specify why a context was cancelled. This information is returned by the `ctx.Err()` function, but this should *not* be logged as an error. We either log this at the `INFO` or `DEBUG` level. When the context for a (gRPC) stream is cancelled, for example, we should either ignore the error, or log it at the `DEBUG` level.
-The reason we might want to log this could be: to ensure that streams are closed correctly if the client disconnects, or the stream hasn't been read in a while. This information is useful when debugging the application, but should not be spamming the logs with `ERROR` entries: this is expected behaviour after all.
+The omission of the identifier `id` means that we don't know which call to `DoSomething` was the one that caused the error.
