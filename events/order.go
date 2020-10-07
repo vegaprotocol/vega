@@ -12,9 +12,10 @@ type Order struct {
 }
 
 func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
+	cpy := *o
 	return &Order{
 		Base: newBase(ctx, OrderEvent),
-		o:    o,
+		o:    &cpy,
 	}
 }
 
