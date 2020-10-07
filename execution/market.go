@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
 	types "code.vegaprotocol.io/vega/proto"
@@ -83,12 +84,9 @@ type Market struct {
 	currentTime time.Time
 
 	// If we are in a time based auction, set the start and finish time here
-	auctionStart time.Time
-	auctionEnd   time.Time
-	mu           sync.Mutex
+	mu sync.Mutex
 
 	markPrice uint64
-	tradeMode types.MarketState
 
 	// own engines
 	matching           *matching.OrderBook
@@ -108,7 +106,7 @@ type Market struct {
 
 	pMonitor PriceMonitor // @TODO initialise and assign
 
-	auctionState *auctionState // @TODO this should be an interface
+	as *monitor.AuctionState // @TODO this should be an interface
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -169,13 +167,12 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	marketState := types.MarketState_MARKET_STATE_CONTINUOUS
-	if mkt.OpeningAuction != nil {
-		marketState = types.MarketState_MARKET_STATE_AUCTION
-	}
+	as := monitor.NewAuctionState(mkt, now)
 
+	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
+	// as far as matching goes: it's either an auction or not
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice, marketState)
+		tradableInstrument.Instrument.InitialMarkPrice, as.Mode())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,
@@ -201,15 +198,6 @@ func NewMarket(
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate fee engine")
 	}
-	mode := types.MarketState_MARKET_STATE_CONTINUOUS
-	if fba := mkt.GetDiscrete(); fba != nil {
-		mode = types.MarketState_MARKET_STATE_AUCTION
-	}
-
-	var auctionClose time.Time
-	if mkt.OpeningAuction != nil && mkt.OpeningAuction.Duration > 0 {
-		auctionClose = now.Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
-	}
 
 	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
 	if err != nil {
@@ -232,14 +220,11 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
-		auctionStart:       now,
-		auctionEnd:         auctionClose,
-		tradeMode:          mode,
-		auctionState:       newAuctionState(mkt, now),
+		as:                 as,
 		pMonitor:           pMonitor,
 	}
 
-	if mkt.OpeningAuction != nil {
+	if market.as.AuctionStart() {
 		market.EnterAuction(ctx)
 	}
 	return market, nil
@@ -276,14 +261,13 @@ func (m *Market) GetMarketData() types.MarketData {
 	// Auction related values
 	var indicativePrice, indicativeVolume uint64
 	var auctionStart, auctionEnd int64
-	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
+	if m.as.InAuction() {
 		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
-		// Zero time does not equal 0 in UnixNanos, we need to check here before converting
-		if !m.auctionStart.IsZero() {
-			auctionStart = m.auctionStart.UnixNano()
+		if t := m.as.Start(); !t.IsZero() {
+			auctionStart = t.UnixNano()
 		}
-		if !m.auctionEnd.IsZero() {
-			auctionEnd = m.auctionEnd.UnixNano()
+		if t := m.as.ExpiresAt(); t != nil {
+			auctionEnd = t.UnixNano()
 		}
 	}
 
@@ -301,7 +285,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		IndicativeVolume: indicativeVolume,
 		AuctionStart:     auctionStart,
 		AuctionEnd:       auctionEnd,
-		MarketState:      m.matching.GetMarketState(),
+		MarketState:      m.as.Mode(),
 	}
 }
 
@@ -343,38 +327,27 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	m.currentTime = t
 
 	// check price auction end
-	if m.auctionState.InAuction() {
-		if m.auctionState.IsOpeningAuction() {
-			// @TODO move opening auction start/end params to auctionstate
-			if !m.auctionEnd.IsZero() && m.auctionEnd.Before(t) {
-				m.LeaveAuction(ctx)
-				m.auctionEnd = time.Time{}
+	if m.as.InAuction() {
+		if m.as.IsOpeningAuction() {
+			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
+				m.LeaveAuction(ctx, t)
 			}
-			// @TODO call m.auctionState.AuctionEnded(), will return event to push
-		} else if m.auctionState.IsPriceAuction() {
+		} else if m.as.IsPriceAuction() {
 			p := m.matching.GetIndicativePrice()
+			// this shouldn't be possible, but just in case: if indicative price is 0, use last known mark price
 			if p == 0 {
 				p = m.markPrice
 			}
-			if err := m.pMonitor.CheckPrice(ctx, m.auctionState, p, t); err != nil {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
 				m.log.Error("Price monitoring error", logging.Error(err))
 				// @TODO handle or panic? (panic is last resort)
 			}
 			// price monitoring engine indicated auction can end
-			if m.auctionState.AuctionEnd() {
-				m.LeaveAuction(ctx)
-				m.auctionState.AuctionEnded() // this will return event to push
+			if m.as.AuctionEnd() {
+				m.LeaveAuction(ctx, t)
 			}
 		}
-	}
-	// @TODO this is opening auction -> use auctionState field, remove once fixed
-	// Look to see if we are in an auction that needs to finish
-	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
-		// Have we completed the auction time
-		if !m.auctionEnd.IsZero() && m.auctionEnd.Before(t) {
-			m.LeaveAuction(ctx)
-			m.auctionEnd = time.Time{}
-		}
+		// This is where ending liquidity auctions and FBA's will be handled
 	}
 
 	// TODO(): handle market start time
@@ -463,16 +436,12 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 }
 
 func (m *Market) isOpeningAuction() bool {
-	if m.mkt.OpeningAuction != nil {
-		return true
-	}
-	return false
+	return m.as.IsOpeningAuction()
 }
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
-	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
-
+	// m.as.AuctionStart() // Check here?
 	m.matching.EnterAuction()
 	// Change market type to auction
 	ordersToCancel, err := m.matching.EnterAuction()
@@ -486,27 +455,18 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	}
 
 	// Send an event bus update
-	m.broker.Send(events.NewAuctionEvent(ctx,
-		m.mkt.Id,
-		false,
-		m.auctionStart.UnixNano(),
-		m.auctionEnd.UnixNano(),
-		m.isOpeningAuction()))
+	m.broker.Send(m.as.AuctionStarted(ctx))
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading
-func (m *Market) LeaveAuction(ctx context.Context) {
+func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// If we were an opening auction, clear it
 	if m.isOpeningAuction() {
 		m.mkt.OpeningAuction = nil
 	}
 
-	// @TODO this ought to come from m.mkt
-	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
-	if fba := m.mkt.GetDiscrete(); fba != nil {
-
-		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
-	}
+	// update auction state, so we know what the new tradeMode ought to be
+	endEvt := m.as.AuctionEnded(ctx, now)
 
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction()
@@ -515,14 +475,17 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	}
 
 	// Process each confirmation
+	evts := make([]events.Event, 0, len(uncrossedOrders))
 	for _, uncrossedOrder := range uncrossedOrders {
 		m.handleConfirmation(ctx, uncrossedOrder.Order, uncrossedOrder)
 
 		if uncrossedOrder.Order.Remaining == 0 {
 			uncrossedOrder.Order.Status = types.Order_STATUS_FILLED
 		}
-		m.broker.Send(events.NewOrderEvent(ctx, uncrossedOrder.Order))
+		evts = append(evts, events.NewOrderEvent(ctx, uncrossedOrder.Order))
 	}
+	// send order events in a single batch, it's more efficient
+	m.broker.SendBatch(evts)
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
@@ -536,33 +499,25 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	for _, uo := range uncrossedOrders {
 		err := m.applyFees(ctx, uo.Order, uo.Trades)
 		if err != nil {
+			// @TODO this ought to be an event
 			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uo.Order.Id))
 		}
 	}
 	// Send an event bus update
-	m.broker.Send(events.NewAuctionEvent(ctx,
-		m.mkt.Id,
-		true,
-		m.auctionStart.UnixNano(),
-		m.auctionEnd.UnixNano(),
-		m.isOpeningAuction()))
-}
-
-// GetTradingMode : Return trading mode that the market is currently in
-func (m *Market) GetTradingMode() types.MarketState {
-	return m.tradeMode // TODO (WG 03/09/20): Adding this only to be able the test the triggers for now. Needs to be reconciled with orderbook's marketState - don't need both.
+	m.broker.Send(endEvt)
 }
 
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
-	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN {
+	isAuction := m.as.InAuction()
+	if isAuction && order.TimeInForce == types.Order_TIF_GFN {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return ErrGFAOrderReceivedDuringContinuousTrading
 	}
 
-	if m.tradeMode == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA {
+	if !isAuction && order.TimeInForce == types.Order_TIF_GFA {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -737,15 +692,11 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// If we are not in an opening auction, apply fees
 	var trades []*types.Trade
-	// @TODO use auctionState for this bit
-	// if m.auctionState.IsFBA() || !m.auctionState.InAuction() {
-	// 	trades, err = m.checkPriceAndGetTrades(ctx, order, m.auctionState)
-	// }
-	if m.mkt.OpeningAuction == nil &&
-		m.matching.GetMarketState() != types.MarketState_MARKET_STATE_AUCTION {
+	// we're not in auction (not opening, not any other auction
+	if !m.as.InAuction() {
 
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err = m.checkPriceAndGetTrades(ctx, order, m.auctionState)
+		trades, err = m.checkPriceAndGetTrades(ctx, order)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, order, err)
 		}
@@ -811,13 +762,12 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return confirmation, nil
 }
 
-func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order, as *auctionState) ([]*types.Trade, error) {
+func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
 	if err == nil && len(trades) > 0 {
-		err = m.pMonitor.CheckPrice(ctx, as, trades[len(trades)-1].Price, m.currentTime)
-		if as.AuctionStart() {
+		err = m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime)
+		if m.as.AuctionStart() {
 			m.EnterAuction(ctx)
-			m.auctionState.AuctionStarted() // @TODO returns event to send on broker - should be moved to EnterAuction && LeaveAuction
 			return nil, err
 		}
 	}
@@ -1372,7 +1322,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 	// @TODO replace markPrice with intidicative uncross price in auction mode if available
 	price := m.markPrice
-	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION {
+	if m.as.InAuction() {
 		if ip, _, _ := m.matching.GetIndicativePriceAndVolume(); ip != 0 {
 			price = ip
 		}
@@ -1936,7 +1886,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		}
 	} else {
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err := m.checkPriceAndGetTrades(ctx, newOrder, m.auctionState)
+		trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, newOrder, err)
 		}
