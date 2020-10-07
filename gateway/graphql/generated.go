@@ -536,7 +536,7 @@ type ComplexityRoot struct {
 
 	Subscription struct {
 		Accounts          func(childComplexity int, marketID *string, partyID *string, asset *string, typeArg *AccountType) int
-		BusEvents         func(childComplexity int, types []BusEventType, marketID *string, partyID *string) int
+		BusEvents         func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize *int) int
 		Candles           func(childComplexity int, marketID string, interval Interval) int
 		Margins           func(childComplexity int, partyID string, marketID *string) int
 		MarketData        func(childComplexity int, marketID *string) int
