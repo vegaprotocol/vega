@@ -69,8 +69,9 @@ func (s SettlePos) Proto() types.SettlePosition {
 func (s SettlePos) StreamMessage() *types.BusEvent {
 	p := s.Proto()
 	return &types.BusEvent{
-		ID:   s.eventID(),
-		Type: s.et.ToProto(),
+		ID:    s.eventID(),
+		Block: s.TraceID(),
+		Type:  s.et.ToProto(),
 		Event: &types.BusEvent_SettlePosition{
 			SettlePosition: &p,
 		},

@@ -26,12 +26,6 @@ type TradeStore interface {
 	Unsubscribe(id uint64) error
 }
 
-// RiskStore represents an abstraction over a Risk storage
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/trades RiskStore
-type RiskStore interface {
-	GetByMarket(market string) (*types.RiskFactor, error)
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_plugin_mock.go -package mocks code.vegaprotocol.io/vega/trades PositionsPlugin
 type PositionsPlugin interface {
 	GetPositionsByMarket(market string) ([]*types.Position, error)
@@ -44,14 +38,13 @@ type Svc struct {
 	Config
 	log                     *logging.Logger
 	tradeStore              TradeStore
-	riskStore               RiskStore
 	positions               PositionsPlugin
 	positionsSubscribersCnt int32
 	tradeSubscribersCnt     int32
 }
 
 // NewService instanciate a new Trades service
-func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskStore RiskStore, posPlug PositionsPlugin) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, tradeStore TradeStore, posPlug PositionsPlugin) (*Svc, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -60,7 +53,6 @@ func NewService(log *logging.Logger, config Config, tradeStore TradeStore, riskS
 		log:        log,
 		Config:     config,
 		tradeStore: tradeStore,
-		riskStore:  riskStore,
 		positions:  posPlug,
 	}, nil
 }

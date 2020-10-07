@@ -152,7 +152,7 @@ service trading_data {
   rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
 
   // Get the list of infrastructure fees accounts filter eventually by assets
- rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
+  rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
 
   // -- Candles --
 
@@ -322,6 +322,9 @@ service trading_data {
   // Get an estimate for the fee to be paid for a given order
   rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
 
+  // Get an estimate for the margin required for a new order
+  rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse);
+
   // Get the bundle approval for an ERC20 withdrawal
   // these data are being used to bundle the call to the smart contract on the ethereum bridge
   rpc ERC20WithdrawalApproval(ERC20WithdrawalApprovalRequest) returns (ERC20WithdrawalApprovalResponse);
@@ -337,6 +340,9 @@ service trading_data {
 
   // Get withdrawals for a party
   rpc Deposits(DepositsRequest) returns (DepositsResponse);
+
+  // Get the network parameters
+  rpc NetworkParameters(NetworkParametersRequest) returns (NetworkParametersResponse);
 }
 
 // Request for a list of all assets enabled on Vega.
@@ -1042,6 +1048,10 @@ message OrderVersionsResponse {
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
   // Order to estimate fees for
+  // the following fields in the order are required:
+  // MarketID (used to specify the fee factors)
+  // Price (the price at which the order could trade)
+  // Size (the size at which the order could eventually trade)
   vega.Order order = 1;
 }
 
@@ -1051,11 +1061,29 @@ message EstimateFeeResponse {
   vega.Fee fee = 2;
 }
 
+// Request to fetch the estimated MarginLevels if an order were to trade immediately
+message EstimateMarginRequest {
+  // Order to estimate fees for
+  vega.Order order = 1;
+}
+
+// Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+message EstimateMarginResponse {
+  // Summary of the estimated margins for this order if it were to trade now
+  vega.MarginLevels marginLevels = 2;
+}
+
 // Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
 message ObserveEventsRequest {
   repeated vega.BusEventType type = 1;
   string marketID = 2;
   string partyID = 3;
+  int64 batchSize = 4;
+}
+
+// message to poll current event buffer, and change batch size
+message ObserveEventBatch {
+  int64 batchSize = 1;
 }
 
 // Response type streamed back when observing events. Slice of wrapped events
@@ -1133,4 +1161,14 @@ message DepositRequest {
 message DepositResponse {
   // The deposit matching the ID from the request
   vega.Deposit deposit = 1 ;
+}
+
+// A message requesting for the list
+// of all network parameters
+message NetworkParametersRequest {}
+
+// A response containing all of the
+// vega network parameters
+message NetworkParametersResponse {
+  repeated vega.NetworkParameter networkParameters = 1;
 }

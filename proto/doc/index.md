@@ -22,6 +22,8 @@
     - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
     - [EstimateFeeRequest](#api.EstimateFeeRequest)
     - [EstimateFeeResponse](#api.EstimateFeeResponse)
+    - [EstimateMarginRequest](#api.EstimateMarginRequest)
+    - [EstimateMarginResponse](#api.EstimateMarginResponse)
     - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
     - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
@@ -62,6 +64,9 @@
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [NetworkParametersRequest](#api.NetworkParametersRequest)
+    - [NetworkParametersResponse](#api.NetworkParametersResponse)
+    - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
@@ -164,20 +169,18 @@
     - [BusEventType](#vega.BusEventType)
 
 - [proto/governance.proto](#proto/governance.proto)
-    - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
     - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
     - [InstrumentConfiguration](#vega.InstrumentConfiguration)
-    - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
     - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
     - [UpdateMarket](#vega.UpdateMarket)
-    - [UpdateNetwork](#vega.UpdateNetwork)
+    - [UpdateNetworkParameter](#vega.UpdateNetworkParameter)
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
@@ -244,6 +247,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [MarketDepthUpdate](#vega.MarketDepthUpdate)
+    - [NetworkParameter](#vega.NetworkParameter)
     - [NodeRegistration](#vega.NodeRegistration)
     - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
@@ -559,7 +563,7 @@ Request to fetch the estimated fee if an order were to trade immediately
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [vega.Order](#vega.Order) |  | Order to estimate fees for |
+| order | [vega.Order](#vega.Order) |  | Order to estimate fees for the following fields in the order are required: MarketID (used to specify the fee factors) Price (the price at which the order could trade) Size (the size at which the order could eventually trade) |
 
 
 
@@ -575,6 +579,36 @@ Response to a EstimateFeeRequest, containing the estimated fees for a given orde
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | fee | [vega.Fee](#vega.Fee) |  | Summary of the estimated fees for this order if it were to trade now |
+
+
+
+
+
+
+<a name="api.EstimateMarginRequest"></a>
+
+### EstimateMarginRequest
+Request to fetch the estimated MarginLevels if an order were to trade immediately
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| order | [vega.Order](#vega.Order) |  | Order to estimate fees for |
+
+
+
+
+
+
+<a name="api.EstimateMarginResponse"></a>
+
+### EstimateMarginResponse
+Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marginLevels | [vega.MarginLevels](#vega.MarginLevels) |  | Summary of the estimated margins for this order if it were to trade now |
 
 
 
@@ -1194,6 +1228,48 @@ Response for a list of markets on Vega.
 
 
 
+<a name="api.NetworkParametersRequest"></a>
+
+### NetworkParametersRequest
+A message requesting for the list
+of all network parameters
+
+
+
+
+
+
+<a name="api.NetworkParametersResponse"></a>
+
+### NetworkParametersResponse
+A response containing all of the
+vega network parameters
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| networkParameters | [vega.NetworkParameter](#vega.NetworkParameter) | repeated |  |
+
+
+
+
+
+
+<a name="api.ObserveEventBatch"></a>
+
+### ObserveEventBatch
+message to poll current event buffer, and change batch size
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| batchSize | [int64](#int64) |  |  |
+
+
+
+
+
+
 <a name="api.ObserveEventsRequest"></a>
 
 ### ObserveEventsRequest
@@ -1205,6 +1281,7 @@ Request to observe some/all events (raw). All parameters are optional filters (o
 | type | [vega.BusEventType](#vega.BusEventType) | repeated |  |
 | marketID | [string](#string) |  |  |
 | partyID | [string](#string) |  |  |
+| batchSize | [int64](#int64) |  |  |
 
 
 
@@ -2152,11 +2229,13 @@ The response for a list of withdrawals
 | AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier. |
 | Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
 | EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
+| EstimateMargin | [EstimateMarginRequest](#api.EstimateMarginRequest) | [EstimateMarginResponse](#api.EstimateMarginResponse) | Get an estimate for the margin required for a new order |
 | ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
 | Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
 | Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
 | Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
+| NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
 
 
 
@@ -2615,6 +2694,7 @@ the actual data is set as a oneof field
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | ID | [string](#string) |  |  |
+| block | [string](#string) |  |  |
 | type | [BusEventType](#vega.BusEventType) |  |  |
 | timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
 | transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
@@ -2637,6 +2717,8 @@ the actual data is set as a oneof field
 | withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
 | deposit | [Deposit](#vega.Deposit) |  |  |
 | auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
+| riskFactor | [RiskFactor](#vega.RiskFactor) |  |  |
+| networkParameter | [NetworkParameter](#vega.NetworkParameter) |  |  |
 | market | [MarketEvent](#vega.MarketEvent) |  |  |
 
 
@@ -2827,6 +2909,8 @@ event types, 2 groups: actual single values, and then some events that capture a
 | BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
 | BUS_EVENT_TYPE_DEPOSIT | 21 |  |
 | BUS_EVENT_TYPE_AUCTION | 22 |  |
+| BUS_EVENT_TYPE_RISK_FACTOR | 23 |  |
+| BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 |  |
 | BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
 
 
@@ -2842,23 +2926,6 @@ event types, 2 groups: actual single values, and then some events that capture a
 <p align="right"><a href="#top">Top</a></p>
 
 ## proto/governance.proto
-
-
-
-<a name="vega.FeeFactorsConfiguration"></a>
-
-### FeeFactorsConfiguration
-FeeFactors set at the network level.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| infrastructureFee | [string](#string) |  | Infrastructure fee, needs to be a valid float. |
-| makerFee | [string](#string) |  | Maker fee, needs to be a valid float. |
-| liquidityFee | [string](#string) |  | Liquidity fee, it needs to be a valid float. |
-
-
-
 
 
 
@@ -2889,8 +2956,8 @@ Governance data.
 | proposal | [Proposal](#vega.Proposal) |  | Proposal. |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
-| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique). |
-| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique). |
+| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique). key (string) is the party ID (public key) value (Vote) is the vote cast by the given party |
+| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (guaranteed to be unique). key (string) is the party ID (public key) value (Vote) is the vote cast by the given party |
 
 
 
@@ -2942,30 +3009,6 @@ Instrument configuration.
 | baseName | [string](#string) |  | Base security used as the reference. |
 | quoteName | [string](#string) |  | Quote (secondary) security. |
 | future | [FutureProduct](#vega.FutureProduct) |  | Futures. |
-
-
-
-
-
-
-<a name="vega.NetworkConfiguration"></a>
-
-### NetworkConfiguration
-Network configuration options.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| requiredParticipation | [float](#float) |  | Participation level required for any proposal to pass. Value from `0` to `1`. |
-| requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
-| minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
-| minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
-| marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
-| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal. |
 
 
 
@@ -3058,7 +3101,7 @@ Terms for a governance proposal on Vega.
 | validationTimestamp | [int64](#int64) |  | Validation timestamp (Unix time in seconds). |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
-| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
+| updateNetworkParameter | [UpdateNetworkParameter](#vega.UpdateNetworkParameter) |  | Proposal change for updating Vega network parameters. |
 | newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
 
 
@@ -3076,15 +3119,15 @@ Update an existing market on Vega.
 
 
 
-<a name="vega.UpdateNetwork"></a>
+<a name="vega.UpdateNetworkParameter"></a>
 
-### UpdateNetwork
+### UpdateNetworkParameter
 Update network configuration on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  | Configuration. |
+| changes | [NetworkParameter](#vega.NetworkParameter) |  | The network parameter to update |
 
 
 
@@ -3160,6 +3203,10 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | The contract address is missing in the ERC20 asset source. |
 | PROPOSAL_ERROR_INVALID_ASSET | 16 | The asset id refer to no assets in vega. |
 | PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment). |
+| PROPOSAL_ERROR_NO_RISK_PARAMETERS | 18 | No risk parameteres were specified |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY | 19 | Invalid key in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE | 20 | Invalid valid in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
 
 
 
@@ -4173,6 +4220,22 @@ Represents the changed market depth since the last update
 
 
 
+<a name="vega.NetworkParameter"></a>
+
+### NetworkParameter
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| Key | [string](#string) |  |  |
+| Value | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="vega.NodeRegistration"></a>
 
 ### NodeRegistration
@@ -4653,6 +4716,7 @@ Represents a transaction to be sent to Vega.
 | ----- | ---- | ----- | ----------- |
 | inputData | [bytes](#bytes) |  | One of the set of Vega commands (proto marshalled). |
 | nonce | [uint64](#uint64) |  | A random number used to provided uniqueness and prevents against replay attack. |
+| blockHeight | [uint64](#uint64) |  | The block height associated to the transaction. This should always be current height of the node at the time of sending the Tx. BlockHeight is used as a mechanism for replay protection. |
 | address | [bytes](#bytes) |  | The address of the sender. |
 | pubKey | [bytes](#bytes) |  | The public key of the sender. |
 
@@ -4970,6 +5034,12 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_INVALID_TIME_IN_FORCE | 23 | Order was submitted with invalid time in force |
 | ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION | 24 | A GFN order has got to the market when it is in auction mode |
 | ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING | 25 | A GFA order has got to the market when it is in continuous trading mode |
+| ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT | 26 | Attempt to amend order to GTT without ExpiryAt |
+| ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT | 27 | Attempt to amend ExpiryAt to a value before CreatedAt |
+| ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT | 28 | Attempt to amend to GTC without an ExpiryAt value |
+| ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 29 | Amending to FOK or IOC is invalid |
+| ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 30 | Amending to GFA or GFN is invalid |
+| ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
 
 
 

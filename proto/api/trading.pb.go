@@ -4445,6 +4445,10 @@ func (m *OrderVersionsResponse) GetOrders() []*proto1.Order {
 // Request to fetch the estimated fee if an order were to trade immediately
 type EstimateFeeRequest struct {
 	// Order to estimate fees for
+	// the following fields in the order are required:
+	// MarketID (used to specify the fee factors)
+	// Price (the price at which the order could trade)
+	// Size (the size at which the order could eventually trade)
 	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -4524,11 +4528,94 @@ func (m *EstimateFeeResponse) GetFee() *proto1.Fee {
 	return nil
 }
 
+// Request to fetch the estimated MarginLevels if an order were to trade immediately
+type EstimateMarginRequest struct {
+	// Order to estimate fees for
+	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *EstimateMarginRequest) Reset()         { *m = EstimateMarginRequest{} }
+func (m *EstimateMarginRequest) String() string { return proto.CompactTextString(m) }
+func (*EstimateMarginRequest) ProtoMessage()    {}
+func (*EstimateMarginRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{100}
+}
+
+func (m *EstimateMarginRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EstimateMarginRequest.Unmarshal(m, b)
+}
+func (m *EstimateMarginRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EstimateMarginRequest.Marshal(b, m, deterministic)
+}
+func (m *EstimateMarginRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EstimateMarginRequest.Merge(m, src)
+}
+func (m *EstimateMarginRequest) XXX_Size() int {
+	return xxx_messageInfo_EstimateMarginRequest.Size(m)
+}
+func (m *EstimateMarginRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_EstimateMarginRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EstimateMarginRequest proto.InternalMessageInfo
+
+func (m *EstimateMarginRequest) GetOrder() *proto1.Order {
+	if m != nil {
+		return m.Order
+	}
+	return nil
+}
+
+// Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+type EstimateMarginResponse struct {
+	// Summary of the estimated margins for this order if it were to trade now
+	MarginLevels         *proto1.MarginLevels `protobuf:"bytes,2,opt,name=marginLevels,proto3" json:"marginLevels,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *EstimateMarginResponse) Reset()         { *m = EstimateMarginResponse{} }
+func (m *EstimateMarginResponse) String() string { return proto.CompactTextString(m) }
+func (*EstimateMarginResponse) ProtoMessage()    {}
+func (*EstimateMarginResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{101}
+}
+
+func (m *EstimateMarginResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EstimateMarginResponse.Unmarshal(m, b)
+}
+func (m *EstimateMarginResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EstimateMarginResponse.Marshal(b, m, deterministic)
+}
+func (m *EstimateMarginResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EstimateMarginResponse.Merge(m, src)
+}
+func (m *EstimateMarginResponse) XXX_Size() int {
+	return xxx_messageInfo_EstimateMarginResponse.Size(m)
+}
+func (m *EstimateMarginResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_EstimateMarginResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EstimateMarginResponse proto.InternalMessageInfo
+
+func (m *EstimateMarginResponse) GetMarginLevels() *proto1.MarginLevels {
+	if m != nil {
+		return m.MarginLevels
+	}
+	return nil
+}
+
 // Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
 type ObserveEventsRequest struct {
 	Type                 []proto1.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
 	MarketID             string                `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	PartyID              string                `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	BatchSize            int64                 `protobuf:"varint,4,opt,name=batchSize,proto3" json:"batchSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -4578,6 +4665,53 @@ func (m *ObserveEventsRequest) GetPartyID() string {
 		return m.PartyID
 	}
 	return ""
+}
+
+func (m *ObserveEventsRequest) GetBatchSize() int64 {
+	if m != nil {
+		return m.BatchSize
+	}
+	return 0
+}
+
+// message to poll current event buffer, and change batch size
+type ObserveEventBatch struct {
+	BatchSize            int64    `protobuf:"varint,1,opt,name=batchSize,proto3" json:"batchSize,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ObserveEventBatch) Reset()         { *m = ObserveEventBatch{} }
+func (m *ObserveEventBatch) String() string { return proto.CompactTextString(m) }
+func (*ObserveEventBatch) ProtoMessage()    {}
+func (*ObserveEventBatch) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{103}
+}
+
+func (m *ObserveEventBatch) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ObserveEventBatch.Unmarshal(m, b)
+}
+func (m *ObserveEventBatch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ObserveEventBatch.Marshal(b, m, deterministic)
+}
+func (m *ObserveEventBatch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObserveEventBatch.Merge(m, src)
+}
+func (m *ObserveEventBatch) XXX_Size() int {
+	return xxx_messageInfo_ObserveEventBatch.Size(m)
+}
+func (m *ObserveEventBatch) XXX_DiscardUnknown() {
+	xxx_messageInfo_ObserveEventBatch.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ObserveEventBatch proto.InternalMessageInfo
+
+func (m *ObserveEventBatch) GetBatchSize() int64 {
+	if m != nil {
+		return m.BatchSize
+	}
+	return 0
 }
 
 // Response type streamed back when observing events. Slice of wrapped events
@@ -5070,6 +5204,80 @@ func (m *DepositResponse) GetDeposit() *proto1.Deposit {
 	return nil
 }
 
+// A message requesting for the list
+// of all network parameters
+type NetworkParametersRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NetworkParametersRequest) Reset()         { *m = NetworkParametersRequest{} }
+func (m *NetworkParametersRequest) String() string { return proto.CompactTextString(m) }
+func (*NetworkParametersRequest) ProtoMessage()    {}
+func (*NetworkParametersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{115}
+}
+
+func (m *NetworkParametersRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NetworkParametersRequest.Unmarshal(m, b)
+}
+func (m *NetworkParametersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NetworkParametersRequest.Marshal(b, m, deterministic)
+}
+func (m *NetworkParametersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NetworkParametersRequest.Merge(m, src)
+}
+func (m *NetworkParametersRequest) XXX_Size() int {
+	return xxx_messageInfo_NetworkParametersRequest.Size(m)
+}
+func (m *NetworkParametersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NetworkParametersRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NetworkParametersRequest proto.InternalMessageInfo
+
+// A response containing all of the
+// vega network parameters
+type NetworkParametersResponse struct {
+	NetworkParameters    []*proto1.NetworkParameter `protobuf:"bytes,1,rep,name=networkParameters,proto3" json:"networkParameters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *NetworkParametersResponse) Reset()         { *m = NetworkParametersResponse{} }
+func (m *NetworkParametersResponse) String() string { return proto.CompactTextString(m) }
+func (*NetworkParametersResponse) ProtoMessage()    {}
+func (*NetworkParametersResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_efb848134bda36f4, []int{116}
+}
+
+func (m *NetworkParametersResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NetworkParametersResponse.Unmarshal(m, b)
+}
+func (m *NetworkParametersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NetworkParametersResponse.Marshal(b, m, deterministic)
+}
+func (m *NetworkParametersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NetworkParametersResponse.Merge(m, src)
+}
+func (m *NetworkParametersResponse) XXX_Size() int {
+	return xxx_messageInfo_NetworkParametersResponse.Size(m)
+}
+func (m *NetworkParametersResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NetworkParametersResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NetworkParametersResponse proto.InternalMessageInfo
+
+func (m *NetworkParametersResponse) GetNetworkParameters() []*proto1.NetworkParameter {
+	if m != nil {
+		return m.NetworkParameters
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*PropagateChainEventRequest)(nil), "api.PropagateChainEventRequest")
 	proto.RegisterType((*PropagateChainEventResponse)(nil), "api.PropagateChainEventResponse")
@@ -5172,7 +5380,10 @@ func init() {
 	proto.RegisterType((*OrderVersionsResponse)(nil), "api.OrderVersionsResponse")
 	proto.RegisterType((*EstimateFeeRequest)(nil), "api.EstimateFeeRequest")
 	proto.RegisterType((*EstimateFeeResponse)(nil), "api.EstimateFeeResponse")
+	proto.RegisterType((*EstimateMarginRequest)(nil), "api.EstimateMarginRequest")
+	proto.RegisterType((*EstimateMarginResponse)(nil), "api.EstimateMarginResponse")
 	proto.RegisterType((*ObserveEventsRequest)(nil), "api.ObserveEventsRequest")
+	proto.RegisterType((*ObserveEventBatch)(nil), "api.ObserveEventBatch")
 	proto.RegisterType((*ObserveEventsResponse)(nil), "api.ObserveEventsResponse")
 	proto.RegisterType((*WithdrawalsRequest)(nil), "api.WithdrawalsRequest")
 	proto.RegisterType((*WithdrawalsResponse)(nil), "api.WithdrawalsResponse")
@@ -5184,6 +5395,8 @@ func init() {
 	proto.RegisterType((*DepositsResponse)(nil), "api.DepositsResponse")
 	proto.RegisterType((*DepositRequest)(nil), "api.DepositRequest")
 	proto.RegisterType((*DepositResponse)(nil), "api.DepositResponse")
+	proto.RegisterType((*NetworkParametersRequest)(nil), "api.NetworkParametersRequest")
+	proto.RegisterType((*NetworkParametersResponse)(nil), "api.NetworkParametersResponse")
 }
 
 func init() { proto.RegisterFile("proto/api/trading.proto", fileDescriptor_efb848134bda36f4) }
@@ -5836,6 +6049,8 @@ type TradingDataClient interface {
 	Assets(ctx context.Context, in *AssetsRequest, opts ...grpc.CallOption) (*AssetsResponse, error)
 	// Get an estimate for the fee to be paid for a given order
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	// Get an estimate for the margin required for a new order
+	EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error)
 	// Get the bundle approval for an ERC20 withdrawal
 	// these data are being used to bundle the call to the smart contract on the ethereum bridge
 	ERC20WithdrawalApproval(ctx context.Context, in *ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*ERC20WithdrawalApprovalResponse, error)
@@ -5847,6 +6062,8 @@ type TradingDataClient interface {
 	Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
 	// Get withdrawals for a party
 	Deposits(ctx context.Context, in *DepositsRequest, opts ...grpc.CallOption) (*DepositsResponse, error)
+	// Get the network parameters
+	NetworkParameters(ctx context.Context, in *NetworkParametersRequest, opts ...grpc.CallOption) (*NetworkParametersResponse, error)
 }
 
 type tradingDataClient struct {
@@ -6679,6 +6896,15 @@ func (c *tradingDataClient) EstimateFee(ctx context.Context, in *EstimateFeeRequ
 	return out, nil
 }
 
+func (c *tradingDataClient) EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error) {
+	out := new(EstimateMarginResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/EstimateMargin", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataClient) ERC20WithdrawalApproval(ctx context.Context, in *ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*ERC20WithdrawalApprovalResponse, error) {
 	out := new(ERC20WithdrawalApprovalResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/ERC20WithdrawalApproval", in, out, opts...)
@@ -6718,6 +6944,15 @@ func (c *tradingDataClient) Deposit(ctx context.Context, in *DepositRequest, opt
 func (c *tradingDataClient) Deposits(ctx context.Context, in *DepositsRequest, opts ...grpc.CallOption) (*DepositsResponse, error) {
 	out := new(DepositsResponse)
 	err := c.cc.Invoke(ctx, "/api.trading_data/Deposits", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataClient) NetworkParameters(ctx context.Context, in *NetworkParametersRequest, opts ...grpc.CallOption) (*NetworkParametersResponse, error) {
+	out := new(NetworkParametersResponse)
+	err := c.cc.Invoke(ctx, "/api.trading_data/NetworkParameters", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -6832,6 +7067,8 @@ type TradingDataServer interface {
 	Assets(context.Context, *AssetsRequest) (*AssetsResponse, error)
 	// Get an estimate for the fee to be paid for a given order
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	// Get an estimate for the margin required for a new order
+	EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error)
 	// Get the bundle approval for an ERC20 withdrawal
 	// these data are being used to bundle the call to the smart contract on the ethereum bridge
 	ERC20WithdrawalApproval(context.Context, *ERC20WithdrawalApprovalRequest) (*ERC20WithdrawalApprovalResponse, error)
@@ -6843,6 +7080,8 @@ type TradingDataServer interface {
 	Deposit(context.Context, *DepositRequest) (*DepositResponse, error)
 	// Get withdrawals for a party
 	Deposits(context.Context, *DepositsRequest) (*DepositsResponse, error)
+	// Get the network parameters
+	NetworkParameters(context.Context, *NetworkParametersRequest) (*NetworkParametersResponse, error)
 }
 
 func RegisterTradingDataServer(s *grpc.Server, srv TradingDataServer) {
@@ -7848,6 +8087,24 @@ func _TradingData_EstimateFee_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingData_EstimateMargin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimateMarginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).EstimateMargin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/EstimateMargin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).EstimateMargin(ctx, req.(*EstimateMarginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingData_ERC20WithdrawalApproval_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ERC20WithdrawalApprovalRequest)
 	if err := dec(in); err != nil {
@@ -7934,6 +8191,24 @@ func _TradingData_Deposits_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServer).Deposits(ctx, req.(*DepositsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingData_NetworkParameters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NetworkParametersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServer).NetworkParameters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.trading_data/NetworkParameters",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServer).NetworkParameters(ctx, req.(*NetworkParametersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -8095,6 +8370,10 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 			Handler:    _TradingData_EstimateFee_Handler,
 		},
 		{
+			MethodName: "EstimateMargin",
+			Handler:    _TradingData_EstimateMargin_Handler,
+		},
+		{
 			MethodName: "ERC20WithdrawalApproval",
 			Handler:    _TradingData_ERC20WithdrawalApproval_Handler,
 		},
@@ -8113,6 +8392,10 @@ var _TradingData_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Deposits",
 			Handler:    _TradingData_Deposits_Handler,
+		},
+		{
+			MethodName: "NetworkParameters",
+			Handler:    _TradingData_NetworkParameters_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

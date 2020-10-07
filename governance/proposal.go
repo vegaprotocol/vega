@@ -1,6 +1,22 @@
 package governance
 
-import types "code.vegaprotocol.io/vega/proto"
+import (
+	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
+
+// ProposalParameters stores proposal specific parameters
+type ProposalParameters struct {
+	MinClose              time.Duration
+	MaxClose              time.Duration
+	MinEnact              time.Duration
+	MaxEnact              time.Duration
+	RequiredParticipation float64
+	RequiredMajority      float64
+	MinProposerBalance    float64
+	MinVoterBalance       float64
+}
 
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data
@@ -8,7 +24,7 @@ type ToEnact struct {
 	p  *types.Proposal
 	m  *types.Market
 	a  *types.Asset
-	n  *types.NetworkConfiguration
+	n  *types.NetworkParameter
 	as *types.AssetSource
 	u  *types.UpdateMarket
 }
@@ -46,7 +62,7 @@ func (t *ToEnact) NewAssetSource() *types.AssetSource {
 	return t.as
 }
 
-func (t *ToEnact) UpdateNetwork() *types.NetworkConfiguration {
+func (t *ToEnact) UpdateNetwork() *types.NetworkParameter {
 	return t.n
 }
 

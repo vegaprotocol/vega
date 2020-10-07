@@ -41,6 +41,7 @@ type marketPartyFilterable interface {
 type Base struct {
 	ctx     context.Context
 	traceID string
+	blockNr int64
 	seq     uint64
 	et      Type
 }
@@ -77,6 +78,8 @@ const (
 	AuctionEvent
 	WithdrawalEvent
 	DepositEvent
+	RiskFactorEvent
+	NetworkParameterEvent
 )
 
 var (
@@ -111,6 +114,8 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:          WithdrawalEvent,
 		types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:             DepositEvent,
 		types.BusEventType_BUS_EVENT_TYPE_AUCTION:             AuctionEvent,
+		types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:         RiskFactorEvent,
+		types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:   NetworkParameterEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
@@ -136,6 +141,8 @@ var (
 		WithdrawalEvent:        types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL,
 		DepositEvent:           types.BusEventType_BUS_EVENT_TYPE_DEPOSIT,
 		AuctionEvent:           types.BusEventType_BUS_EVENT_TYPE_AUCTION,
+		RiskFactorEvent:        types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR,
+		NetworkParameterEvent:  types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER,
 	}
 
 	eventStrings = map[Type]string{
@@ -162,6 +169,8 @@ var (
 		AuctionEvent:           "AuctionEvent",
 		WithdrawalEvent:        "WithdrawalEvent",
 		DepositEvent:           "DepositEvent",
+		RiskFactorEvent:        "RiskFactorEvent",
+		NetworkParameterEvent:  "NetworkParameterEvent",
 	}
 )
 
@@ -213,6 +222,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 	case types.Deposit:
 		e := NewDepositEvent(ctx, tv)
 		return e, nil
+	case types.RiskFactor:
+		e := NewRiskFactorEvent(ctx, tv)
+		return e, nil
 	}
 	return nil, ErrUnsuportedEvent
 }
@@ -220,9 +232,11 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 // A base event holds no data, so the constructor will not be called directly
 func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := contextutil.TraceIDFromContext(ctx)
+	h, _ := contextutil.BlockHeightFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
+		blockNr: h,
 		et:      t,
 	}
 }
@@ -252,7 +266,7 @@ func (b Base) Type() Type {
 }
 
 func (b Base) eventID() string {
-	return fmt.Sprintf("%s-%d", b.traceID, b.seq)
+	return fmt.Sprintf("%d-%d", b.blockNr, b.seq)
 }
 
 // MarketEvents return all the possible market events

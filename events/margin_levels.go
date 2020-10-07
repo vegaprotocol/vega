@@ -45,8 +45,9 @@ func (m MarginLevels) Proto() types.MarginLevels {
 
 func (m MarginLevels) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   m.eventID(),
-		Type: m.et.ToProto(),
+		ID:    m.eventID(),
+		Block: m.TraceID(),
+		Type:  m.et.ToProto(),
 		Event: &types.BusEvent_MarginLevels{
 			MarginLevels: &m.l,
 		},

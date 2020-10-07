@@ -251,6 +251,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.EstimateMarginRequest"><span class="badge">M</span>EstimateMarginRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.EstimateMarginResponse"><span class="badge">M</span>EstimateMarginResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.FeeInfrastructureAccountsRequest"><span class="badge">M</span>FeeInfrastructureAccountsRequest</a>
                 </li>
 
@@ -408,6 +416,18 @@
 
                 <li>
                   <a href="#api.MarketsResponse"><span class="badge">M</span>MarketsResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.NetworkParametersRequest"><span class="badge">M</span>NetworkParametersRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.NetworkParametersResponse"><span class="badge">M</span>NetworkParametersResponse</a>
+                </li>
+
+                <li>
+                  <a href="#api.ObserveEventBatch"><span class="badge">M</span>ObserveEventBatch</a>
                 </li>
 
                 <li>
@@ -823,10 +843,6 @@
             <ul>
 
                 <li>
-                  <a href="#vega.FeeFactorsConfiguration"><span class="badge">M</span>FeeFactorsConfiguration</a>
-                </li>
-
-                <li>
                   <a href="#vega.FutureProduct"><span class="badge">M</span>FutureProduct</a>
                 </li>
 
@@ -844,10 +860,6 @@
 
                 <li>
                   <a href="#vega.InstrumentConfiguration"><span class="badge">M</span>InstrumentConfiguration</a>
-                </li>
-
-                <li>
-                  <a href="#vega.NetworkConfiguration"><span class="badge">M</span>NetworkConfiguration</a>
                 </li>
 
                 <li>
@@ -875,7 +887,7 @@
                 </li>
 
                 <li>
-                  <a href="#vega.UpdateNetwork"><span class="badge">M</span>UpdateNetwork</a>
+                  <a href="#vega.UpdateNetworkParameter"><span class="badge">M</span>UpdateNetworkParameter</a>
                 </li>
 
                 <li>
@@ -1141,6 +1153,10 @@
 
                 <li>
                   <a href="#vega.MarketDepthUpdate"><span class="badge">M</span>MarketDepthUpdate</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NetworkParameter"><span class="badge">M</span>NetworkParameter</a>
                 </li>
 
                 <li>
@@ -1971,7 +1987,11 @@ e.g: 0x &#43; sig1 &#43; sig2 &#43; ... &#43; sixN </p></td>
                   <td>order</td>
                   <td><a href="#vega.Order">vega.Order</a></td>
                   <td></td>
-                  <td><p>Order to estimate fees for </p></td>
+                  <td><p>Order to estimate fees for
+the following fields in the order are required:
+MarketID (used to specify the fee factors)
+Price (the price at which the order could trade)
+Size (the size at which the order could eventually trade) </p></td>
                 </tr>
 
             </tbody>
@@ -1996,6 +2016,54 @@ e.g: 0x &#43; sig1 &#43; sig2 &#43; ... &#43; sixN </p></td>
                   <td><a href="#vega.Fee">vega.Fee</a></td>
                   <td></td>
                   <td><p>Summary of the estimated fees for this order if it were to trade now </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.EstimateMarginRequest">EstimateMarginRequest</h3>
+        <p>Request to fetch the estimated MarginLevels if an order were to trade immediately</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>order</td>
+                  <td><a href="#vega.Order">vega.Order</a></td>
+                  <td></td>
+                  <td><p>Order to estimate fees for </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.EstimateMarginResponse">EstimateMarginResponse</h3>
+        <p>Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marginLevels</td>
+                  <td><a href="#vega.MarginLevels">vega.MarginLevels</a></td>
+                  <td></td>
+                  <td><p>Summary of the estimated margins for this order if it were to trade now </p></td>
                 </tr>
 
             </tbody>
@@ -3415,6 +3483,61 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
 
+        <h3 id="api.NetworkParametersRequest">NetworkParametersRequest</h3>
+        <p>A message requesting for the list</p><p>of all network parameters</p>
+
+
+
+
+
+        <h3 id="api.NetworkParametersResponse">NetworkParametersResponse</h3>
+        <p>A response containing all of the</p><p>vega network parameters</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>networkParameters</td>
+                  <td><a href="#vega.NetworkParameter">vega.NetworkParameter</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.ObserveEventBatch">ObserveEventBatch</h3>
+        <p>message to poll current event buffer, and change batch size</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>batchSize</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
         <p>Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)</p>
 
@@ -3442,6 +3565,13 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>batchSize</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -5825,6 +5955,13 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
               </tr>
 
               <tr>
+                <td>EstimateMargin</td>
+                <td><a href="#api.EstimateMarginRequest">EstimateMarginRequest</a></td>
+                <td><a href="#api.EstimateMarginResponse">EstimateMarginResponse</a></td>
+                <td><p>Get an estimate for the margin required for a new order</p></td>
+              </tr>
+
+              <tr>
                 <td>ERC20WithdrawalApproval</td>
                 <td><a href="#api.ERC20WithdrawalApprovalRequest">ERC20WithdrawalApprovalRequest</a></td>
                 <td><a href="#api.ERC20WithdrawalApprovalResponse">ERC20WithdrawalApprovalResponse</a></td>
@@ -5858,6 +5995,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <td><a href="#api.DepositsRequest">DepositsRequest</a></td>
                 <td><a href="#api.DepositsResponse">DepositsResponse</a></td>
                 <td><p>Get withdrawals for a party</p></td>
+              </tr>
+
+              <tr>
+                <td>NetworkParameters</td>
+                <td><a href="#api.NetworkParametersRequest">NetworkParametersRequest</a></td>
+                <td><a href="#api.NetworkParametersResponse">NetworkParametersResponse</a></td>
+                <td><p>Get the network parameters</p></td>
               </tr>
 
           </tbody>
@@ -6802,6 +6946,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>block</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
                   <td>type</td>
                   <td><a href="#vega.BusEventType">BusEventType</a></td>
                   <td></td>
@@ -6951,6 +7102,20 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <tr>
                   <td>auction</td>
                   <td><a href="#vega.AuctionEvent">AuctionEvent</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>riskFactor</td>
+                  <td><a href="#vega.RiskFactor">RiskFactor</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>networkParameter</td>
+                  <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -7432,6 +7597,18 @@ these data are being used to bundle the call to the smart contract on the ethere
               </tr>
 
               <tr>
+                <td>BUS_EVENT_TYPE_RISK_FACTOR</td>
+                <td>23</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_NETWORK_PARAMETER</td>
+                <td>24</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
                 <td>BUS_EVENT_TYPE_MARKET</td>
                 <td>101</td>
                 <td><p>special event for all events implementing a specific interface</p></td>
@@ -7450,44 +7627,6 @@ these data are being used to bundle the call to the smart contract on the ethere
         <h2 id="proto/governance.proto">proto/governance.proto</h2><a href="#title">Top</a>
       </div>
       <p></p>
-
-
-        <h3 id="vega.FeeFactorsConfiguration">FeeFactorsConfiguration</h3>
-        <p>FeeFactors set at the network level.</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>infrastructureFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Infrastructure fee, needs to be a valid float. </p></td>
-                </tr>
-
-                <tr>
-                  <td>makerFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Maker fee, needs to be a valid float. </p></td>
-                </tr>
-
-                <tr>
-                  <td>liquidityFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Liquidity fee, it needs to be a valid float. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
 
 
         <h3 id="vega.FutureProduct">FutureProduct</h3>
@@ -7594,14 +7733,18 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>yesParty</td>
                   <td><a href="#vega.GovernanceData.YesPartyEntry">GovernanceData.YesPartyEntry</a></td>
                   <td>repeated</td>
-                  <td><p>All latest YES votes by party (guaranteed to be unique). </p></td>
+                  <td><p>All latest YES votes by party (guaranteed to be unique).
+key (string) is the party ID (public key)
+value (Vote) is the vote cast by the given party </p></td>
                 </tr>
 
                 <tr>
                   <td>noParty</td>
                   <td><a href="#vega.GovernanceData.NoPartyEntry">GovernanceData.NoPartyEntry</a></td>
                   <td>repeated</td>
-                  <td><p>All latest NO votes by party (unique). </p></td>
+                  <td><p>All latest NO votes by party (guaranteed to be unique).
+key (string) is the party ID (public key)
+value (Vote) is the vote cast by the given party </p></td>
                 </tr>
 
             </tbody>
@@ -7780,93 +7923,6 @@ these data are being used to bundle the call to the smart contract on the ethere
 
               </tbody>
             </table>
-
-
-
-
-
-        <h3 id="vega.NetworkConfiguration">NetworkConfiguration</h3>
-        <p>Network configuration options.</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>minCloseInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>maxCloseInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minEnactInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>maxEnactInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>requiredParticipation</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Participation level required for any proposal to pass. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>requiredMajority</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Majority level required for any proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minProposerBalance</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Minimum balance required for a party to be able to submit a new proposal. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minVoterBalance</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Minimum balance required for a party to be able to cast a vote. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>marginConfiguration</td>
-                  <td><a href="#vega.ScalingFactors">ScalingFactors</a></td>
-                  <td></td>
-                  <td><p>Scaling factors for all markets created via governance. </p></td>
-                </tr>
-
-                <tr>
-                  <td>feeFactorsConfiguration</td>
-                  <td><a href="#vega.FeeFactorsConfiguration">FeeFactorsConfiguration</a></td>
-                  <td></td>
-                  <td><p>FeeFactors which are not set via proposal. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
 
 
 
@@ -8248,8 +8304,8 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 </tr>
 
                 <tr>
-                  <td>updateNetwork</td>
-                  <td><a href="#vega.UpdateNetwork">UpdateNetwork</a></td>
+                  <td>updateNetworkParameter</td>
+                  <td><a href="#vega.UpdateNetworkParameter">UpdateNetworkParameter</a></td>
                   <td></td>
                   <td><p>Proposal change for updating Vega network parameters. </p></td>
                 </tr>
@@ -8313,7 +8369,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
 
-        <h3 id="vega.UpdateNetwork">UpdateNetwork</h3>
+        <h3 id="vega.UpdateNetworkParameter">UpdateNetworkParameter</h3>
         <p>Update network configuration on Vega.</p>
 
 
@@ -8325,9 +8381,9 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
                 <tr>
                   <td>changes</td>
-                  <td><a href="#vega.NetworkConfiguration">NetworkConfiguration</a></td>
+                  <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
                   <td></td>
-                  <td><p>Configuration. </p></td>
+                  <td><p>The network parameter to update </p></td>
                 </tr>
 
             </tbody>
@@ -8633,6 +8689,30 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS</td>
                 <td>17</td>
                 <td><p>Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment).</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NO_RISK_PARAMETERS</td>
+                <td>18</td>
+                <td><p>No risk parameteres were specified</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY</td>
+                <td>19</td>
+                <td><p>Invalid key in update network parameter proposal</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE</td>
+                <td>20</td>
+                <td><p>Invalid valid in update network parameter proposal</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED</td>
+                <td>21</td>
+                <td><p>Validation failed for network parameter proposal</p></td>
               </tr>
 
           </tbody>
@@ -10993,6 +11073,37 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
 
 
+        <h3 id="vega.NetworkParameter">NetworkParameter</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>Key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>Value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.NodeRegistration">NodeRegistration</h3>
         <p>Used to Register a node as a validator during network start-up.</p>
 
@@ -12604,6 +12715,15 @@ against replay attack. </p></td>
                 </tr>
 
                 <tr>
+                  <td>blockHeight</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The block height associated to the transaction.
+This should always be current height of the node at the time of sending the Tx.
+BlockHeight is used as a mechanism for replay protection. </p></td>
+                </tr>
+
+                <tr>
                   <td>address</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
@@ -13522,6 +13642,42 @@ with an expiration that was badly formatted or otherwise invalid.</p></td>
                 <td>ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING</td>
                 <td>25</td>
                 <td><p>A GFA order has got to the market when it is in continuous trading mode</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT</td>
+                <td>26</td>
+                <td><p>Attempt to amend order to GTT without ExpiryAt</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT</td>
+                <td>27</td>
+                <td><p>Attempt to amend ExpiryAt to a value before CreatedAt</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT</td>
+                <td>28</td>
+                <td><p>Attempt to amend to GTC without an ExpiryAt value</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC</td>
+                <td>29</td>
+                <td><p>Amending to FOK or IOC is invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN</td>
+                <td>30</td>
+                <td><p>Amending to GFA or GFN is invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN</td>
+                <td>31</td>
+                <td><p>Amending from GFA or GFN is invalid</p></td>
               </tr>
 
           </tbody>

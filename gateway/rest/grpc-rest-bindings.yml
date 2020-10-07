@@ -69,8 +69,18 @@ http:
       get: '/orders/{orderID}/trades'
 
     # Fee
-    - selector: api.trading_data.FeeEstimate
+    - selector: api.trading_data.EstimateFee
       post: '/orders/fee/estimate'
+      body: "*"
+
+    # Margins
+    - selector: api.trading_data.EstimateMargin
+      post: '/orders/margins/estimate'
+      body: "*"
+
+      # Network parameters
+    - selector: api.trading_data.NetworkParameters
+      post: '/network/parameters'
       body: "*"
 
     # Parties

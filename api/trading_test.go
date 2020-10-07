@@ -16,9 +16,11 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/governance"
+	mockgov "code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
@@ -223,7 +225,7 @@ func getTestGRPCServer(
 	}
 
 	// Trade Service
-	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, riskStore, nil)
+	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, nil)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create trade service")
 		return
@@ -236,12 +238,12 @@ func getTestGRPCServer(
 		return
 	}
 
-	riskService := risk.NewService(logger, conf.Risk, riskStore)
+	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
 	// stub...
 	gov, vote := govStub{}, voteStub{}
 	broker := broker.New(ctx)
 
-	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote)
+	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote, mockgov.NewMockNetParams(mockCtrl))
 
 	nplugin := plugins.NewNotary(context.Background())
 	notaryService := notary.NewService(logger, conf.Notary, nplugin)
@@ -254,6 +256,7 @@ func getTestGRPCServer(
 	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
 	withdrawal := plugins.NewWithdrawal(ctx)
 	deposit := plugins.NewDeposit(ctx)
+	netparams := netparams.NewService(ctx)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -278,6 +281,7 @@ func getTestGRPCServer(
 		withdrawal,
 		deposit,
 		marketDepth,
+		netparams,
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
@@ -322,9 +326,12 @@ func TestPrepareProposal(t *testing.T) {
 	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
 		PartyID: "invalid-party",
 		Proposal: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateNetwork{
-				UpdateNetwork: &types.UpdateNetwork{
-					Changes: &types.NetworkConfiguration{},
+			Change: &types.ProposalTerms_UpdateNetworkParameter{
+				UpdateNetworkParameter: &types.UpdateNetworkParameter{
+					Changes: &types.NetworkParameter{
+						Key:   "key",
+						Value: "value",
+					},
 				},
 			},
 		},

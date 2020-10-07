@@ -191,6 +191,18 @@ const (
 	OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION OrderError = 24
 	// A GFA order has got to the market when it is in continuous trading mode
 	OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING OrderError = 25
+	// Attempt to amend order to GTT without ExpiryAt
+	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT OrderError = 26
+	// Attempt to amend ExpiryAt to a value before CreatedAt
+	OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT OrderError = 27
+	// Attempt to amend to GTC without an ExpiryAt value
+	OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT OrderError = 28
+	// Amending to FOK or IOC is invalid
+	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC OrderError = 29
+	// Amending to GFA or GFN is invalid
+	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN OrderError = 30
+	// Amending from GFA or GFN is invalid
+	OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN OrderError = 31
 )
 
 var OrderError_name = map[int32]string{
@@ -220,35 +232,47 @@ var OrderError_name = map[int32]string{
 	23: "ORDER_ERROR_INVALID_TIME_IN_FORCE",
 	24: "ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION",
 	25: "ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING",
+	26: "ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT",
+	27: "ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT",
+	28: "ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT",
+	29: "ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC",
+	30: "ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN",
+	31: "ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN",
 }
 
 var OrderError_value = map[string]int32{
-	"ORDER_ERROR_NONE":                                0,
-	"ORDER_ERROR_INVALID_MARKET_ID":                   1,
-	"ORDER_ERROR_INVALID_ORDER_ID":                    2,
-	"ORDER_ERROR_OUT_OF_SEQUENCE":                     3,
-	"ORDER_ERROR_INVALID_REMAINING_SIZE":              4,
-	"ORDER_ERROR_TIME_FAILURE":                        5,
-	"ORDER_ERROR_REMOVAL_FAILURE":                     6,
-	"ORDER_ERROR_INVALID_EXPIRATION_DATETIME":         7,
-	"ORDER_ERROR_INVALID_ORDER_REFERENCE":             8,
-	"ORDER_ERROR_EDIT_NOT_ALLOWED":                    9,
-	"ORDER_ERROR_AMEND_FAILURE":                       10,
-	"ORDER_ERROR_NOT_FOUND":                           11,
-	"ORDER_ERROR_INVALID_PARTY_ID":                    12,
-	"ORDER_ERROR_MARKET_CLOSED":                       13,
-	"ORDER_ERROR_MARGIN_CHECK_FAILED":                 14,
-	"ORDER_ERROR_MISSING_GENERAL_ACCOUNT":             15,
-	"ORDER_ERROR_INTERNAL_ERROR":                      16,
-	"ORDER_ERROR_INVALID_SIZE":                        17,
-	"ORDER_ERROR_INVALID_PERSISTENCE":                 18,
-	"ORDER_ERROR_INVALID_TYPE":                        19,
-	"ORDER_ERROR_SELF_TRADING":                        20,
-	"ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES":      21,
-	"ORDER_ERROR_INCORRECT_MARKET_TYPE":               22,
-	"ORDER_ERROR_INVALID_TIME_IN_FORCE":               23,
-	"ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION":         24,
-	"ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING": 25,
+	"ORDER_ERROR_NONE":                                 0,
+	"ORDER_ERROR_INVALID_MARKET_ID":                    1,
+	"ORDER_ERROR_INVALID_ORDER_ID":                     2,
+	"ORDER_ERROR_OUT_OF_SEQUENCE":                      3,
+	"ORDER_ERROR_INVALID_REMAINING_SIZE":               4,
+	"ORDER_ERROR_TIME_FAILURE":                         5,
+	"ORDER_ERROR_REMOVAL_FAILURE":                      6,
+	"ORDER_ERROR_INVALID_EXPIRATION_DATETIME":          7,
+	"ORDER_ERROR_INVALID_ORDER_REFERENCE":              8,
+	"ORDER_ERROR_EDIT_NOT_ALLOWED":                     9,
+	"ORDER_ERROR_AMEND_FAILURE":                        10,
+	"ORDER_ERROR_NOT_FOUND":                            11,
+	"ORDER_ERROR_INVALID_PARTY_ID":                     12,
+	"ORDER_ERROR_MARKET_CLOSED":                        13,
+	"ORDER_ERROR_MARGIN_CHECK_FAILED":                  14,
+	"ORDER_ERROR_MISSING_GENERAL_ACCOUNT":              15,
+	"ORDER_ERROR_INTERNAL_ERROR":                       16,
+	"ORDER_ERROR_INVALID_SIZE":                         17,
+	"ORDER_ERROR_INVALID_PERSISTENCE":                  18,
+	"ORDER_ERROR_INVALID_TYPE":                         19,
+	"ORDER_ERROR_SELF_TRADING":                         20,
+	"ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES":       21,
+	"ORDER_ERROR_INCORRECT_MARKET_TYPE":                22,
+	"ORDER_ERROR_INVALID_TIME_IN_FORCE":                23,
+	"ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION":          24,
+	"ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING":  25,
+	"ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT": 26,
+	"ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT":            27,
+	"ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT":         28,
+	"ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC":           29,
+	"ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN":           30,
+	"ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN":         31,
 }
 
 func (x OrderError) String() string {
@@ -3987,6 +4011,10 @@ type Transaction struct {
 	// A random number used to provided uniqueness and prevents
 	// against replay attack.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// The block height associated to the transaction.
+	// This should always be current height of the node at the time of sending the Tx.
+	// BlockHeight is used as a mechanism for replay protection.
+	BlockHeight uint64 `protobuf:"varint,3,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
 	// The sender of the transaction.
 	// Any of the following would be valid:
 	//
@@ -4034,6 +4062,13 @@ func (m *Transaction) GetInputData() []byte {
 func (m *Transaction) GetNonce() uint64 {
 	if m != nil {
 		return m.Nonce
+	}
+	return 0
+}
+
+func (m *Transaction) GetBlockHeight() uint64 {
+	if m != nil {
+		return m.BlockHeight
 	}
 	return 0
 }
@@ -4252,6 +4287,53 @@ func (m *NodeSignature) GetKind() NodeSignatureKind {
 	return NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED
 }
 
+type NetworkParameter struct {
+	Key                  string   `protobuf:"bytes,1,opt,name=Key,proto3" json:"Key,omitempty"`
+	Value                string   `protobuf:"bytes,2,opt,name=Value,proto3" json:"Value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NetworkParameter) Reset()         { *m = NetworkParameter{} }
+func (m *NetworkParameter) String() string { return proto.CompactTextString(m) }
+func (*NetworkParameter) ProtoMessage()    {}
+func (*NetworkParameter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_bb6b8173ee11af27, []int{43}
+}
+
+func (m *NetworkParameter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NetworkParameter.Unmarshal(m, b)
+}
+func (m *NetworkParameter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NetworkParameter.Marshal(b, m, deterministic)
+}
+func (m *NetworkParameter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NetworkParameter.Merge(m, src)
+}
+func (m *NetworkParameter) XXX_Size() int {
+	return xxx_messageInfo_NetworkParameter.Size(m)
+}
+func (m *NetworkParameter) XXX_DiscardUnknown() {
+	xxx_messageInfo_NetworkParameter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NetworkParameter proto.InternalMessageInfo
+
+func (m *NetworkParameter) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *NetworkParameter) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterEnum("vega.Side", Side_name, Side_value)
 	proto.RegisterEnum("vega.Interval", Interval_name, Interval_value)
@@ -4312,6 +4394,7 @@ func init() {
 	proto.RegisterType((*Signature)(nil), "vega.Signature")
 	proto.RegisterType((*SignedBundle)(nil), "vega.SignedBundle")
 	proto.RegisterType((*NodeSignature)(nil), "vega.NodeSignature")
+	proto.RegisterType((*NetworkParameter)(nil), "vega.NetworkParameter")
 }
 
 func init() { proto.RegisterFile("proto/vega.proto", fileDescriptor_bb6b8173ee11af27) }
