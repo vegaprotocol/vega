@@ -1,4 +1,4 @@
-package pricemonitoring_test
+package price_test
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/pricemonitoring"
-	"code.vegaprotocol.io/vega/pricemonitoring/mocks"
+	"code.vegaprotocol.io/vega/monitor/price"
+	"code.vegaprotocol.io/vega/monitor/price/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -16,7 +16,7 @@ import (
 
 func TestEmptyParametersList(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
@@ -29,7 +29,7 @@ func TestEmptyParametersList(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	pm, err := price.NewMonitor(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -53,14 +53,14 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
 		UpdateFrequency:           600}
 
-	pm, err := pricemonitoring.NewPriceMonitoring(nil, settings)
+	pm, err := price.NewMonitor(nil, settings)
 	require.Error(t, err)
 	require.Nil(t, pm)
 }
 
 func TestRecordPriceChange(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
@@ -74,7 +74,7 @@ func TestRecordPriceChange(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	pm, err := price.NewMonitor(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -90,7 +90,7 @@ func TestRecordPriceChange(t *testing.T) {
 
 func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
@@ -113,7 +113,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(11)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(11)
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	pm, err := price.NewMonitor(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -161,7 +161,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 
 func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var price1 uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
@@ -178,7 +178,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(25)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(25)
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	pm, err := price.NewMonitor(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	var priceHistorySum uint64 = 0
@@ -382,7 +382,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 
 func TestMarketInOpeningAuction(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
 	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
@@ -397,7 +397,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(true).Times(1)
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	pm, err := price.NewMonitor(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -407,7 +407,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 
 func TestMarketInGenericAuction(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	riskModelMock := mocks.NewMockPriceRangeProvider(ctrl)
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
 	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
@@ -425,7 +425,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(5)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(5)
 
-	pm, err := pricemonitoring.NewPriceMonitoring(riskModelMock, settings)
+	pm, err := price.NewMonitor(riskModelMock, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 

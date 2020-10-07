@@ -1,4 +1,4 @@
-package pricemonitoring
+package price
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 
 var (
 
-	// ErrNilPriceRangeProvider signals that nil was supplied in place of PriceRangeProvider
-	ErrNilPriceRangeProvider = errors.New("nil PriceRangeProvider")
+	// ErrNilRangeProvider signals that nil was supplied in place of RangeProvider
+	ErrNilRangeProvider = errors.New("nil RangeProvider")
 	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/pricemonitoring AuctionState
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price AuctionState
 type AuctionState interface {
 	// What is the current trading mode of the market, is it in auction
 	Mode() types.MarketState
@@ -50,15 +50,15 @@ type pastPrice struct {
 	AveragePrice float64
 }
 
-// PriceRangeProvider provides the minimium and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/pricemonitoring PriceRangeProvider
-type PriceRangeProvider interface {
-	PriceRange(price float64, yearFraction float64, probability float64) (minPrice float64, maxPrice float64)
+// RangeProvider provides the minimium and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price RangeProvider
+type RangeProvider interface {
+	PriceRange(price, yearFraction, probability float64) (float64, float64)
 }
 
-// Engine allows tracking price changes and verifying them against the theoretical levels implied by the PriceRangeProvider (risk model).
+// Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
-	riskModel       PriceRangeProvider
+	riskModel       RangeProvider
 	parameters      []*types.PriceMonitoringParameters
 	updateFrequency time.Duration
 
@@ -71,16 +71,15 @@ type Engine struct {
 	bounds      map[*types.PriceMonitoringParameters]bound
 }
 
-// NewPriceMonitoring returns a new instance of PriceMonitoring.
-func NewPriceMonitoring(riskModel PriceRangeProvider, settings types.PriceMonitoringSettings) (*Engine, error) {
+// NewMonitor returns a new instance of PriceMonitoring.
+func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings) (*Engine, error) {
 	if riskModel == nil {
-		return nil, ErrNilPriceRangeProvider
+		return nil, ErrNilRangeProvider
 	}
 
-	// TODO: Confirm if the deep copy below is necessary (assumed it would makes sense not to sort the original input array, but perhaps not an issue)
-	var parameters []*types.PriceMonitoringParameters = make([]*types.PriceMonitoringParameters, len(settings.PriceMonitoringParameters))
-	for i, p := range settings.PriceMonitoringParameters {
-		parameters[i] = &(*p)
+	parameters := make([]*types.PriceMonitoringParameters, 0, len(settings.PriceMonitoringParameters))
+	for _, p := range settings.PriceMonitoringParameters {
+		parameters = append(parameters, &(*p))
 	}
 
 	// Other functions depend on this sorting
@@ -307,7 +306,6 @@ func (e *Engine) updateBounds() {
 		if !e.pricesPast[i].Time.Before(minRequiredHorizon) {
 			break
 		}
-		e.pricesPast[i] = pastPrice{} //TODO (WG): Confirm if this is needed to reclaim memory
 	}
 	e.pricesPast = e.pricesPast[i:]
 }

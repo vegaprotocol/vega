@@ -49,7 +49,6 @@ func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.R
 }
 
 // PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price
-func (f *Simple) PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64) {
-	minPrice, maxPrice = currentPrice+f.minMoveDown, currentPrice+f.maxMoveUp
-	return
+func (f *Simple) PriceRange(currentPrice, yearFraction, probabilityLevel float64) (float64, float64) {
+	return currentPrice + f.minMoveDown, currentPrice + f.maxMoveUp
 }

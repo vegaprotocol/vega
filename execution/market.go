@@ -18,8 +18,8 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/pricemonitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
@@ -67,7 +67,7 @@ var (
 // PriceMonitor interface to handle price monitoring/auction triggers
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
-	CheckPrice(ctx context.Context, as pricemonitoring.AuctionState, p uint64, now time.Time) error
+	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -211,7 +211,7 @@ func NewMarket(
 		auctionClose = now.Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
 	}
 
-	pMonitor, err := pricemonitoring.NewPriceMonitoring(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
+	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
@@ -342,6 +342,32 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	m.closed = closed
 	m.currentTime = t
 
+	// check price auction end
+	if m.auctionState.InAuction() {
+		if m.auctionState.IsOpeningAuction() {
+			// @TODO move opening auction start/end params to auctionstate
+			if !m.auctionEnd.IsZero() && m.auctionEnd.Before(t) {
+				m.LeaveAuction(ctx)
+				m.auctionEnd = time.Time{}
+			}
+			// @TODO call m.auctionState.AuctionEnded(), will return event to push
+		} else if m.auctionState.IsPriceAuction() {
+			p := m.matching.GetIndicativePrice()
+			if p == 0 {
+				p = m.markPrice
+			}
+			if err := m.pMonitor.CheckPrice(ctx, m.auctionState, p, t); err != nil {
+				m.log.Error("Price monitoring error", logging.Error(err))
+				// @TODO handle or panic? (panic is last resort)
+			}
+			// price monitoring engine indicated auction can end
+			if m.auctionState.AuctionEnd() {
+				m.LeaveAuction(ctx)
+				m.auctionState.AuctionEnded() // this will return event to push
+			}
+		}
+	}
+	// @TODO this is opening auction -> use auctionState field, remove once fixed
 	// Look to see if we are in an auction that needs to finish
 	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
 		// Have we completed the auction time
@@ -392,21 +418,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			// this will be next block
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
-			if m.log.GetLevel() == logging.DebugLevel {
-				// use transfers, unused var thingy
-				for _, v := range transfers {
-					if m.log.GetLevel() == logging.DebugLevel {
-						m.log.Debug(
-							"Got transfers on market close",
-							logging.String("transfer", fmt.Sprintf("%v", *v)),
-							logging.String("market-id", m.GetID()))
-					}
-				}
-			}
 
 			asset, _ := m.mkt.GetAsset()
 			parties := make([]string, 0, len(m.parties))
-			for k, _ := range m.parties {
+			for k := range m.parties {
 				parties = append(parties, k)
 			}
 
@@ -418,17 +433,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			} else {
 				evt := events.NewTransferResponse(ctx, clearMarketTransfers)
 				m.broker.Send(evt)
-				if m.log.GetLevel() == logging.DebugLevel {
-					// use transfers, unused var thingy
-					for _, v := range clearMarketTransfers {
-						if m.log.GetLevel() == logging.DebugLevel {
-							m.log.Debug(
-								"Market cleared with success",
-								logging.String("transfer", fmt.Sprintf("%v", *v)),
-								logging.String("market-id", m.GetID()))
-						}
-					}
-				}
 			}
 		}
 	}
@@ -733,6 +737,10 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// If we are not in an opening auction, apply fees
 	var trades []*types.Trade
+	// @TODO use auctionState for this bit
+	// if m.auctionState.IsFBA() || !m.auctionState.InAuction() {
+	// 	trades, err = m.checkPriceAndGetTrades(ctx, order, m.auctionState)
+	// }
 	if m.mkt.OpeningAuction == nil &&
 		m.matching.GetMarketState() != types.MarketState_MARKET_STATE_AUCTION {
 
@@ -807,8 +815,10 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order,
 	trades, err := m.matching.GetTrades(order)
 	if err == nil && len(trades) > 0 {
 		err = m.pMonitor.CheckPrice(ctx, as, trades[len(trades)-1].Price, m.currentTime)
-		if as.InAuction() {
-			trades = make([]*types.Trade, 0)
+		if as.AuctionStart() {
+			m.EnterAuction(ctx)
+			m.auctionState.AuctionStarted() // @TODO returns event to send on broker - should be moved to EnterAuction && LeaveAuction
+			return nil, err
 		}
 	}
 	return trades, err

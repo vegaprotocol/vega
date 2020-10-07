@@ -246,7 +246,6 @@ func (e *External) CalculateRiskFactors(
 // PriceRange returns currentPrice twice as the mocn mindPrice/maxPrice calculation implementation
 //TODO (WG 02/10/2020): Mock interface implementaiton to avoid additional validation on risk model, this should be implemented properly unless a decision to remove the external model is made.
 //See: https://github.com/vegaprotocol/vega/issues/2337
-func (e *External) PriceRange(currentPrice float64, yearFraction float64, probabilityLevel float64) (minPrice float64, maxPrice float64) {
-	minPrice, maxPrice = currentPrice, currentPrice
-	return
+func (e *External) PriceRange(currentPrice, yearFraction, probabilityLevel float64) (float64, float64) {
+	return currentPrice, currentPrice
 }

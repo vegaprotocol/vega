@@ -226,6 +226,12 @@ func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, 
 	return uncrossedOrders, ordersToCancel, nil
 }
 
+func (b *OrderBook) GetIndicativePrice() uint64 {
+	// @TODO implement more efficient way to get just the uncross price
+	p, _, _ := b.GetIndicativePriceAndVolume()
+	return p
+}
+
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	bestBid := b.getBestBidPrice()
@@ -246,7 +252,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	}
 
 	// Pull out all prices that match that volume
-	prices := make([]uint64, 0)
+	prices := make([]uint64, 0, len(cumulativeVolumes))
 	for _, value := range cumulativeVolumes {
 		if value.maxTradableAmount == maxTradableAmount {
 			prices = append(prices, value.price)
