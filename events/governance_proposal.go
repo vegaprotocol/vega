@@ -42,8 +42,9 @@ func (p Proposal) Proto() types.Proposal {
 
 func (p Proposal) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   p.eventID(),
-		Type: p.et.ToProto(),
+		ID:    p.eventID(),
+		Block: p.TraceID(),
+		Type:  p.et.ToProto(),
 		Event: &types.BusEvent_Proposal{
 			Proposal: &p.p,
 		},

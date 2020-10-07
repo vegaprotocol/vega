@@ -1,26 +1,32 @@
 package proto
 
 var (
-	ErrInvalidMarketID             = OrderError_ORDER_ERROR_INVALID_MARKET_ID
-	ErrInvalidOrderID              = OrderError_ORDER_ERROR_INVALID_ORDER_ID
-	ErrOrderOutOfSequence          = OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
-	ErrInvalidRemainingSize        = OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
-	ErrVegaTimeFailure             = OrderError_ORDER_ERROR_TIME_FAILURE
-	ErrOrderRemovalFailure         = OrderError_ORDER_ERROR_REMOVAL_FAILURE
-	ErrInvalidExpirationDatetime   = OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
-	ErrInvalidOrderReference       = OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE
-	ErrEditNotAllowed              = OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
-	ErrOrderAmendFailure           = OrderError_ORDER_ERROR_AMEND_FAILURE
-	ErrOrderNotFound               = OrderError_ORDER_ERROR_NOT_FOUND
-	ErrInvalidPartyID              = OrderError_ORDER_ERROR_INVALID_PARTY_ID
-	ErrInvalidSize                 = OrderError_ORDER_ERROR_INVALID_SIZE
-	ErrInvalidPersistence          = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
-	ErrInvalidType                 = OrderError_ORDER_ERROR_INVALID_TYPE
-	ErrInsufficientFundsToPayFees  = OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
-	ErrIncorrectMarketType         = OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
-	ErrInvalidTimeInForce          = OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
-	ErrGFNOrderInAuction           = OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
-	ErrGFAOrderInContinuousTrading = OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
+	ErrInvalidMarketID                 = OrderError_ORDER_ERROR_INVALID_MARKET_ID
+	ErrInvalidOrderID                  = OrderError_ORDER_ERROR_INVALID_ORDER_ID
+	ErrOrderOutOfSequence              = OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
+	ErrInvalidRemainingSize            = OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
+	ErrVegaTimeFailure                 = OrderError_ORDER_ERROR_TIME_FAILURE
+	ErrOrderRemovalFailure             = OrderError_ORDER_ERROR_REMOVAL_FAILURE
+	ErrInvalidExpirationDatetime       = OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
+	ErrInvalidOrderReference           = OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE
+	ErrEditNotAllowed                  = OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
+	ErrOrderAmendFailure               = OrderError_ORDER_ERROR_AMEND_FAILURE
+	ErrOrderNotFound                   = OrderError_ORDER_ERROR_NOT_FOUND
+	ErrInvalidPartyID                  = OrderError_ORDER_ERROR_INVALID_PARTY_ID
+	ErrInvalidSize                     = OrderError_ORDER_ERROR_INVALID_SIZE
+	ErrInvalidPersistence              = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
+	ErrInvalidType                     = OrderError_ORDER_ERROR_INVALID_TYPE
+	ErrInsufficientFundsToPayFees      = OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
+	ErrInvalidTimeInForce              = OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
+	ErrCannotAmendToGTTWithoutExpiryAt = OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
+	ErrExpiryAtBeforeCreatedAt         = OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT
+	ErrCannotHaveGTCAndExpiryAt        = OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
+	ErrCannotAmendToFOKAndIOC          = OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
+	ErrCannotAmendToGFAOrGFN           = OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN
+	ErrCannotAmendFromGFAOrGFN         = OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
+	ErrIncorrectMarketType             = OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
+	ErrGFNOrderInAuction               = OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
+	ErrGFAOrderInContinuousTrading     = OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -74,6 +80,18 @@ func (err OrderError) Error() string {
 		return "OrderError: Self trading"
 	case OrderError_ORDER_ERROR_INVALID_TYPE:
 		return "OrderError: Invalid Type"
+	case OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT:
+		return "OrderError: Cannot amend order to GTT without an expiryAt field"
+	case OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT:
+		return "OrderError: ExpiryAt field must not be before CreatedAt"
+	case OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT:
+		return "OrderError: Cannot set ExpiryAt and GTC"
+	case OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC:
+		return "OrderError: Cannot amend TIF to FOK or IOC"
+	case OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN:
+		return "OrderError: Cannot amend TIF to GFA or GFN"
+	case OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN:
+		return "OrderError: Cannot amend TIF from GFA or GFN"
 	case OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE:
 		return "OrderError: Invalid Market Type"
 	case OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION:

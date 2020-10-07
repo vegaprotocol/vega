@@ -113,11 +113,13 @@ type TradingDataClient interface {
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
 	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
 	EstimateFee(ctx context.Context, in *protoapi.EstimateFeeRequest, opts ...grpc.CallOption) (*protoapi.EstimateFeeResponse, error)
+	EstimateMargin(ctx context.Context, in *protoapi.EstimateMarginRequest, opts ...grpc.CallOption) (*protoapi.EstimateMarginResponse, error)
 	Withdrawal(ctx context.Context, in *protoapi.WithdrawalRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalResponse, error)
 	Withdrawals(ctx context.Context, in *protoapi.WithdrawalsRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalsResponse, error)
 	ERC20WithdrawalApproval(ctx context.Context, in *protoapi.ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*protoapi.ERC20WithdrawalApprovalResponse, error)
 	Deposit(ctx context.Context, in *protoapi.DepositRequest, opts ...grpc.CallOption) (*protoapi.DepositResponse, error)
 	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
+	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
 
 	ObserveEventBus(ctx context.Context, in *protoapi.ObserveEventsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
@@ -314,6 +316,17 @@ func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Ass
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) NetworkParameters(ctx context.Context) ([]*types.NetworkParameter, error) {
+	res, err := r.tradingDataClient.NetworkParameters(
+		ctx, &protoapi.NetworkParametersRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.NetworkParameters, nil
+}
+
 func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid string) (*Erc20WithdrawalApproval, error) {
 	res, err := r.tradingDataClient.ERC20WithdrawalApproval(
 		ctx, &protoapi.ERC20WithdrawalApprovalRequest{WithdrawalID: wid},
@@ -364,8 +377,8 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 	return res.Deposit, nil
 }
 
-func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderFeeEstimate, error) {
+func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side Side,
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderEstimate, error) {
 	order := &types.Order{}
 
 	var (
@@ -424,7 +437,7 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	resp, err := r.tradingDataClient.EstimateFee(ctx, &req)
 	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		r.log.Error("Failed to get fee estimates using rpc client in graphQL resolver", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
 
@@ -437,9 +450,22 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 		LiquidityFee:      fmt.Sprintf("%d", resp.Fee.LiquidityFee),
 	}
 
-	return &OrderFeeEstimate{
+	// now we calculate the margins
+	reqm := protoapi.EstimateMarginRequest{
+		Order: order,
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	respm, err := r.tradingDataClient.EstimateMargin(ctx, &reqm)
+	if err != nil {
+		r.log.Error("Failed to get margin estimates using rpc client in graphQL resolver", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return &OrderEstimate{
 		Fee:            &fee,
 		TotalFeeAmount: fmt.Sprintf("%d", ttf),
+		MarginLevels:   respm.MarginLevels,
 	}, nil
 
 }
@@ -498,6 +524,9 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, e
 		if err != nil {
 			return nil, err
 		}
+		if mkt == nil {
+			return []*Market{}, nil
+		}
 		return []*Market{mkt}, nil
 	}
 	res, err := r.tradingDataClient.Markets(ctx, &empty.Empty{})
@@ -540,6 +569,10 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+	// no error / no market = we did not find it
+	if res.Market == nil {
+		return nil, nil
 	}
 	market, err := MarketFromProto(res.Market)
 	if err != nil {
@@ -2570,7 +2603,13 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 	return nil, ErrInvalidVotesSubscription
 }
 
-func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string) (<-chan []*BusEvent, error) {
+func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string, batchSize *int) (<-chan []*BusEvent, error) {
+	if len(types) > 1 {
+		return nil, errors.New("busEvents subscription support streaming 1 event at a time for now")
+	}
+	if len(types) <= 0 {
+		return nil, errors.New("busEvents subscription requires 1 event type")
+	}
 	t := eventTypeToProto(types...)
 	req := protoapi.ObserveEventsRequest{
 		Type: t,
@@ -2580,6 +2619,9 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	}
 	if partyID != nil {
 		req.PartyID = *partyID
+	}
+	if batchSize != nil {
+		req.BatchSize = int64(*batchSize)
 	}
 	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req)
 	if err != nil {
@@ -2758,7 +2800,7 @@ func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *type
 
 func getParty(ctx context.Context, log *logging.Logger, client TradingDataClient, id string) (*types.Party, error) {
 	if len(id) == 0 {
-		return nil, errors.New("invalid party id")
+		return nil, nil
 	}
 	res, err := client.PartyByID(ctx, &protoapi.PartyByIDRequest{PartyID: id})
 	if err != nil {

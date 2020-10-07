@@ -75,18 +75,3 @@ func (mr *MockTradeOrderServiceMockRecorder) PrepareSubmitOrder(arg0, arg1 inter
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareSubmitOrder", reflect.TypeOf((*MockTradeOrderService)(nil).PrepareSubmitOrder), arg0, arg1)
 }
-
-// SubmitTransaction mocks base method
-func (m *MockTradeOrderService) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SubmitTransaction indicates an expected call of SubmitTransaction
-func (mr *MockTradeOrderServiceMockRecorder) SubmitTransaction(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockTradeOrderService)(nil).SubmitTransaction), arg0, arg1)
-}

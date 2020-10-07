@@ -148,6 +148,7 @@ type RiskService interface {
 	) (<-chan []types.MarginLevels, uint64)
 	GetMarginLevelsSubscribersCount() int32
 	GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error)
+	EstimateMargin(ctx context.Context, order *types.Order) (*types.MarginLevels, error)
 }
 
 // Notary ...
@@ -183,9 +184,15 @@ type FeeService interface {
 	EstimateFee(context.Context, *types.Order) (*types.Fee, error)
 }
 
+// NetParamsService Provides apis to estimate fees
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/net_params_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NetParamsService
+type NetParamsService interface {
+	GetAll() []types.NetworkParameter
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/api EventService
 type EventService interface {
-	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, filters ...subscribers.EventFilter) <-chan []*types.BusEvent
+	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*types.BusEvent, chan<- int)
 }
 
 type tradingDataService struct {
@@ -210,7 +217,37 @@ type tradingDataService struct {
 	statusChecker           *monitoring.Status
 	WithdrawalService       WithdrawalService
 	DepositService          DepositService
+	NetParamsService        NetParamsService
 	ctx                     context.Context
+}
+
+func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters")()
+	nps := t.NetParamsService.GetAll()
+	out := make([]*types.NetworkParameter, 0, len(nps))
+	for _, v := range nps {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.NetworkParametersResponse{
+		NetworkParameters: out,
+	}, nil
+}
+
+func (t *tradingDataService) EstimateMargin(ctx context.Context, req *protoapi.EstimateMarginRequest) (*protoapi.EstimateMarginResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin")()
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	margin, err := t.RiskService.EstimateMargin(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateMarginResponse{
+		MarginLevels: margin,
+	}, nil
 }
 
 func (t *tradingDataService) EstimateFee(ctx context.Context, req *protoapi.EstimateFeeRequest) (*protoapi.EstimateFeeResponse, error) {
@@ -1458,18 +1495,16 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	}
 	mkt, err = marketService.GetByID(ctx, marketID)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMarketServiceGetByID, err)
+		// We return nil for error as we do not want
+		// to return an error when a market is not found
+		// but just a nil value.
+		return nil, nil
 	}
 	return mkt, nil
 }
 
 func validateParty(ctx context.Context, log *logging.Logger, partyID string, partyService PartyService) (*types.Party, error) {
-	var pty *types.Party
-	var err error
-	if len(partyID) == 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
-	}
-	pty, err = partyService.GetByID(ctx, partyID)
+	pty, err := partyService.GetByID(ctx, partyID)
 	if err != nil {
 		// we just log the error here, then return an nil error.
 		// right now the only error possible is about not finding a party
@@ -1886,7 +1921,16 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 		}
 	}
 	// number of retries to -1 to have pretty much unlimited retries
-	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
+	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(in.BatchSize), filters...)
+	// check for changes in batch size
+	go func() {
+		for {
+			msg := protoapi.ObserveEventBatch{}
+			if err := stream.RecvMsg(&msg); err == nil {
+				bCh <- int(msg.BatchSize)
+			}
+		}
+	}()
 	for {
 		select {
 		case data, ok := <-ch:

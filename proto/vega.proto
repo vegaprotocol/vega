@@ -296,11 +296,23 @@ enum OrderError {
   ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION = 24;
   // A GFA order has got to the market when it is in continuous trading mode
   ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING = 25;
+  // Attempt to amend order to GTT without ExpiryAt
+  ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT = 26;
+  // Attempt to amend ExpiryAt to a value before CreatedAt
+  ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT = 27;
+  // Attempt to amend to GTC without an ExpiryAt value
+  ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT = 28;
+  // Amending to FOK or IOC is invalid
+  ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC = 29;
+  // Amending to GFA or GFN is invalid
+  ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN = 30;
+  // Amending from GFA or GFN is invalid
+  ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN = 31;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
-  //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum RejectionReason)
+  //       - gateway/graphql/helpers_enum.go
 }
 
 // A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega.
@@ -951,6 +963,11 @@ message Transaction {
   // A random number used to provided uniqueness and prevents
   // against replay attack.
   uint64 nonce = 2;
+
+  // The block height associated to the transaction.
+  // This should always be current height of the node at the time of sending the Tx.
+  // BlockHeight is used as a mechanism for replay protection.
+  uint64 blockHeight = 3;
   // The sender of the transaction.
   // Any of the following would be valid:
   oneof from {
@@ -998,4 +1015,9 @@ message NodeSignature {
   bytes sig = 2;
   // The kind of resource being signed.
   NodeSignatureKind kind = 3;
+}
+
+message NetworkParameter {
+  string Key = 1;
+  string Value = 2;
 }

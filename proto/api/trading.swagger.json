@@ -526,6 +526,87 @@
         ]
       }
     },
+    "/network/parameters": {
+      "post": {
+        "summary": "Get the network parameters",
+        "operationId": "NetworkParameters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiNetworkParametersResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiNetworkParametersRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/orders/fee/estimate": {
+      "post": {
+        "summary": "Get an estimate for the fee to be paid for a given order",
+        "operationId": "EstimateFee",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiEstimateFeeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiEstimateFeeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/orders/margins/estimate": {
+      "post": {
+        "summary": "Get an estimate for the margin required for a new order",
+        "operationId": "EstimateMargin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiEstimateMarginResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiEstimateMarginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/orders/prepare/amend": {
       "post": {
         "summary": "Prepare an amend order request",
@@ -1314,6 +1395,16 @@
       },
       "title": "The response with all information required to bundle the call\nto finalize the withdrawal on the erc20 bridge\nfunction withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)"
     },
+    "apiEstimateFeeRequest": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "Order to estimate fees for\nthe following fields in the order are required:\nMarketID (used to specify the fee factors)\nPrice (the price at which the order could trade)\nSize (the size at which the order could eventually trade)"
+        }
+      },
+      "title": "Request to fetch the estimated fee if an order were to trade immediately"
+    },
     "apiEstimateFeeResponse": {
       "type": "object",
       "properties": {
@@ -1323,6 +1414,26 @@
         }
       },
       "title": "Response to a EstimateFeeRequest, containing the estimated fees for a given order"
+    },
+    "apiEstimateMarginRequest": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "Order to estimate fees for"
+        }
+      },
+      "title": "Request to fetch the estimated MarginLevels if an order were to trade immediately"
+    },
+    "apiEstimateMarginResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "$ref": "#/definitions/vegaMarginLevels",
+          "title": "Summary of the estimated margins for this order if it were to trade now"
+        }
+      },
+      "title": "Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order"
     },
     "apiFeeInfrastructureAccountsResponse": {
       "type": "object",
@@ -1570,6 +1681,22 @@
         }
       },
       "description": "Response for a list of markets on Vega."
+    },
+    "apiNetworkParametersRequest": {
+      "type": "object",
+      "title": "A message requesting for the list\nof all network parameters"
+    },
+    "apiNetworkParametersResponse": {
+      "type": "object",
+      "properties": {
+        "networkParameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaNetworkParameter"
+          }
+        }
+      },
+      "title": "A response containing all of the\nvega network parameters"
     },
     "apiObserveEventsResponse": {
       "type": "object",
@@ -2297,6 +2424,9 @@
         "ID": {
           "type": "string"
         },
+        "block": {
+          "type": "string"
+        },
         "type": {
           "$ref": "#/definitions/vegaBusEventType"
         },
@@ -2363,6 +2493,12 @@
         "auction": {
           "$ref": "#/definitions/vegaAuctionEvent"
         },
+        "riskFactor": {
+          "$ref": "#/definitions/vegaRiskFactor"
+        },
+        "networkParameter": {
+          "$ref": "#/definitions/vegaNetworkParameter"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent"
         }
@@ -2395,6 +2531,8 @@
         "BUS_EVENT_TYPE_WITHDRAWAL",
         "BUS_EVENT_TYPE_DEPOSIT",
         "BUS_EVENT_TYPE_AUCTION",
+        "BUS_EVENT_TYPE_RISK_FACTOR",
+        "BUS_EVENT_TYPE_NETWORK_PARAMETER",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
@@ -2760,24 +2898,6 @@
       },
       "description": "Fee factors definition."
     },
-    "vegaFeeFactorsConfiguration": {
-      "type": "object",
-      "properties": {
-        "infrastructureFee": {
-          "type": "string",
-          "description": "Infrastructure fee, needs to be a valid float."
-        },
-        "makerFee": {
-          "type": "string",
-          "description": "Maker fee, needs to be a valid float."
-        },
-        "liquidityFee": {
-          "type": "string",
-          "description": "Liquidity fee, it needs to be a valid float."
-        }
-      },
-      "description": "FeeFactors set at the network level."
-    },
     "vegaFees": {
       "type": "object",
       "properties": {
@@ -2846,14 +2966,14 @@
           "additionalProperties": {
             "$ref": "#/definitions/vegaVote"
           },
-          "description": "All latest YES votes by party (guaranteed to be unique)."
+          "title": "All latest YES votes by party (guaranteed to be unique).\nkey (string) is the party ID (public key)\nvalue (Vote) is the vote cast by the given party"
         },
         "noParty": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/vegaVote"
           },
-          "description": "All latest NO votes by party (unique)."
+          "title": "All latest NO votes by party (guaranteed to be unique).\nkey (string) is the party ID (public key)\nvalue (Vote) is the vote cast by the given party"
         }
       },
       "description": "Governance data."
@@ -3279,59 +3399,16 @@
       },
       "title": "Time update for each market, can be used to see when new markets actually started in terms of block-time"
     },
-    "vegaNetworkConfiguration": {
+    "vegaNetworkParameter": {
       "type": "object",
       "properties": {
-        "minCloseInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
+        "Key": {
+          "type": "string"
         },
-        "maxCloseInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal."
-        },
-        "minEnactInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
-        },
-        "maxEnactInSeconds": {
-          "type": "string",
-          "format": "int64",
-          "description": "Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal."
-        },
-        "requiredParticipation": {
-          "type": "number",
-          "format": "float",
-          "description": "Participation level required for any proposal to pass. Value from `0` to `1`."
-        },
-        "requiredMajority": {
-          "type": "number",
-          "format": "float",
-          "description": "Majority level required for any proposal to pass. Value from `0.5` to `1`."
-        },
-        "minProposerBalance": {
-          "type": "number",
-          "format": "float",
-          "description": "Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`."
-        },
-        "minVoterBalance": {
-          "type": "number",
-          "format": "float",
-          "description": "Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`."
-        },
-        "marginConfiguration": {
-          "$ref": "#/definitions/vegaScalingFactors",
-          "description": "Scaling factors for all markets created via governance."
-        },
-        "feeFactorsConfiguration": {
-          "$ref": "#/definitions/vegaFeeFactorsConfiguration",
-          "description": "FeeFactors which are not set via proposal."
+        "Value": {
+          "type": "string"
         }
-      },
-      "description": "Network configuration options."
+      }
     },
     "vegaNewAsset": {
       "type": "object",
@@ -3588,10 +3665,16 @@
         "ORDER_ERROR_INCORRECT_MARKET_TYPE",
         "ORDER_ERROR_INVALID_TIME_IN_FORCE",
         "ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION",
-        "ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING"
+        "ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING",
+        "ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT",
+        "ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT",
+        "ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT",
+        "ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC",
+        "ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN",
+        "ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN"
       ],
       "default": "ORDER_ERROR_NONE",
-      "description": "OrderError codes are returned in the `[Order](#vega.Order).reason` field.\nIf there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.\n\n - ORDER_ERROR_NONE: Default value, no error reported.\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist.\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid identifier.\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1.\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size).\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time.\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book.\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: An order with `TimeInForce.TIF_GTT` was submitted or amended\nwith an expiration that was badly formatted or otherwise invalid.\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field.\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order identifier).\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order.\n - ORDER_ERROR_NOT_FOUND: Order not found in an order book or store.\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party identifier.\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed.\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order.\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset.\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error.\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0).\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type.\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field.\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order submitted from the same party.\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order.\n - ORDER_ERROR_INCORRECT_MARKET_TYPE: Order was submitted with an incorrect or invalid market type.\n - ORDER_ERROR_INVALID_TIME_IN_FORCE: Order was submitted with invalid time in force\n - ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION: A GFN order has got to the market when it is in auction mode\n - ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING: A GFA order has got to the market when it is in continuous trading mode"
+      "description": "OrderError codes are returned in the `[Order](#vega.Order).reason` field.\nIf there is an issue with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`.\n\n - ORDER_ERROR_NONE: Default value, no error reported.\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist.\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid identifier.\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1.\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size).\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time.\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book.\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: An order with `TimeInForce.TIF_GTT` was submitted or amended\nwith an expiration that was badly formatted or otherwise invalid.\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field.\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order identifier).\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order.\n - ORDER_ERROR_NOT_FOUND: Order not found in an order book or store.\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party identifier.\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed.\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order.\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset.\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error.\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0).\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type.\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field.\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order submitted from the same party.\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order.\n - ORDER_ERROR_INCORRECT_MARKET_TYPE: Order was submitted with an incorrect or invalid market type.\n - ORDER_ERROR_INVALID_TIME_IN_FORCE: Order was submitted with invalid time in force\n - ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION: A GFN order has got to the market when it is in auction mode\n - ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING: A GFA order has got to the market when it is in continuous trading mode\n - ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT: Attempt to amend order to GTT without ExpiryAt\n - ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT: Attempt to amend ExpiryAt to a value before CreatedAt\n - ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT: Attempt to amend to GTC without an ExpiryAt value\n - ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC: Amending to FOK or IOC is invalid\n - ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN: Amending to GFA or GFN is invalid\n - ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN: Amending from GFA or GFN is invalid"
     },
     "vegaOrderStatus": {
       "type": "string",
@@ -3824,10 +3907,14 @@
         "PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD",
         "PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS",
         "PROPOSAL_ERROR_INVALID_ASSET",
-        "PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS"
+        "PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS",
+        "PROPOSAL_ERROR_NO_RISK_PARAMETERS",
+        "PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY",
+        "PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE",
+        "PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "A list of possible errors that can cause a proposal to be in state rejected or failed.\n\n - PROPOSAL_ERROR_UNSPECIFIED: Default value.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters.\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens.\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same.\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product.\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported.\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339).\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past.\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode.\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode.\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation.\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source.\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source.\n - PROPOSAL_ERROR_INVALID_ASSET: The asset id refer to no assets in vega.\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment)."
+      "description": "A list of possible errors that can cause a proposal to be in state rejected or failed.\n\n - PROPOSAL_ERROR_UNSPECIFIED: Default value.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters.\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens.\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same.\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product.\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported.\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339).\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past.\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode.\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode.\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation.\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source.\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source.\n - PROPOSAL_ERROR_INVALID_ASSET: The asset id refer to no assets in vega.\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment).\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameteres were specified\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY: Invalid key in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE: Invalid valid in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED: Validation failed for network parameter proposal"
     },
     "vegaProposalTerms": {
       "type": "object",
@@ -3855,8 +3942,8 @@
           "$ref": "#/definitions/vegaNewMarket",
           "description": "Proposal change for creating new market on Vega."
         },
-        "updateNetwork": {
-          "$ref": "#/definitions/vegaUpdateNetwork",
+        "updateNetworkParameter": {
+          "$ref": "#/definitions/vegaUpdateNetworkParameter",
           "description": "Proposal change for updating Vega network parameters."
         },
         "newAsset": {
@@ -3875,6 +3962,26 @@
         }
       },
       "description": "A message to notify when a validator is being removed from the Vega network."
+    },
+    "vegaRiskFactor": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "type": "string",
+          "description": "Market ID that relates to this risk factor."
+        },
+        "short": {
+          "type": "number",
+          "format": "double",
+          "description": "Short Risk factor value."
+        },
+        "long": {
+          "type": "number",
+          "format": "double",
+          "description": "Long Risk factor value."
+        }
+      },
+      "description": "Risk factors are used to calculate the current risk associated with orders trading on a given market."
     },
     "vegaScalingFactors": {
       "type": "object",
@@ -4356,12 +4463,12 @@
       "type": "object",
       "description": "Update an existing market on Vega."
     },
-    "vegaUpdateNetwork": {
+    "vegaUpdateNetworkParameter": {
       "type": "object",
       "properties": {
         "changes": {
-          "$ref": "#/definitions/vegaNetworkConfiguration",
-          "description": "Configuration."
+          "$ref": "#/definitions/vegaNetworkParameter",
+          "title": "The network parameter to update"
         }
       },
       "description": "Update network configuration on Vega."

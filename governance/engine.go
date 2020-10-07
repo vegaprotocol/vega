@@ -34,6 +34,7 @@ var (
 	ErrProposalPassed                          = errors.New("proposal has passed and can no longer be voted on")
 	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
 	ErrIncompatibleTimestamps                  = errors.New("incompatible timestamps")
+	ErrUnsupportedProposalType                 = errors.New("unsupported proposal type")
 )
 
 // Broker - event bus
@@ -68,6 +69,16 @@ type ExtResChecker interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/vega/governance NetParams
+type NetParams interface {
+	Validate(string, string) error
+	Update(context.Context, string, string) error
+	GetFloat(string) (float64, error)
+	GetInt(string) (int64, error)
+	GetDuration(string) (time.Duration, error)
+	Get(string) (string, error)
+}
+
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
@@ -75,10 +86,10 @@ type Engine struct {
 	accs                   Accounts
 	currentTime            time.Time
 	activeProposals        map[string]*proposalData
-	networkParams          NetworkParameters
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 	assets                 Assets
+	netp                   NetParams
 }
 
 type proposalData struct {
@@ -87,7 +98,16 @@ type proposalData struct {
 	no  map[string]*types.Vote
 }
 
-func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs Accounts, broker Broker, assets Assets, erc ExtResChecker, now time.Time) (*Engine, error) {
+func NewEngine(
+	log *logging.Logger,
+	cfg Config,
+	accs Accounts,
+	broker Broker,
+	assets Assets,
+	erc ExtResChecker,
+	netp NetParams,
+	now time.Time,
+) (*Engine, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
 	// ensure params are set
@@ -102,10 +122,10 @@ func NewEngine(log *logging.Logger, cfg Config, params *NetworkParameters, accs 
 		log:                    log,
 		currentTime:            now,
 		activeProposals:        map[string]*proposalData{},
-		networkParams:          *params,
 		nodeProposalValidation: nodeValidation,
 		broker:                 broker,
 		assets:                 assets,
+		netp:                   netp,
 	}, nil
 }
 
@@ -135,7 +155,7 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	}()
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, &e.networkParams, e.currentTime, e.assets)
+		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, e.netp, e.currentTime, e.assets)
 		if err != nil {
 			return nil, perr, err
 		}
@@ -148,20 +168,6 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 		te.a = asset.ProtoAsset()
 	}
 	return
-}
-
-// InitState load the genesis configuration into the governance engine
-func (e *Engine) InitState(rawState []byte) error {
-	e.log.Debug("loading genesis configuration")
-	state, err := LoadGenesisState(rawState)
-	if err != nil {
-		e.log.Error("unable to load genesis state",
-			logging.Error(err))
-		return err
-	}
-	params := NetworkParametersFromGenesisState(e.log, *state)
-	e.networkParams = *params
-	return nil
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
@@ -263,8 +269,16 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 }
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
-	// FIXME(): we should not have networkf params per proposal type..
-	return &e.networkParams.Proposals, nil
+	switch terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		return e.getNewMarketProposalParameters()
+	case *types.ProposalTerms_NewAsset:
+		return e.getNewAssetProposalParameters()
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		return e.getUpdateNetworkParameterProposalParameters()
+	default:
+		return nil, ErrUnsupportedProposalType
+	}
 }
 
 // validates proposals read from the chain
@@ -276,6 +290,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		// params is not possible, the check done before needs to be removed
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
+
 	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(params.MinClose).Unix() {
 		e.log.Debug("proposal close time is too soon",
 			logging.Int64("expected-min", e.currentTime.Add(params.MinClose).Unix()),
@@ -327,9 +342,9 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
 	totalTokens := e.accs.GetTotalTokens()
-	if float32(proposerTokens) < float32(totalTokens)*params.MinProposerBalance {
+	if float64(proposerTokens) < float64(totalTokens)*params.MinProposerBalance {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.Float32("expect-balance", float32(totalTokens)*params.MinProposerBalance),
+			logging.Float64("expect-balance", float64(totalTokens)*params.MinProposerBalance),
 			logging.Uint64("proposer-balance", proposerTokens),
 			logging.String("party-id", proposal.PartyID),
 			logging.String("id", proposal.ID))
@@ -342,9 +357,11 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch change := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets)
+		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true)
 	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		return validateNetworkParameterUpdate(e.netp, change.UpdateNetworkParameter.Changes)
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
@@ -386,7 +403,7 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 		return nil, err
 	}
 	totalTokens := e.accs.GetTotalTokens()
-	if float32(voterTokens) < float32(totalTokens)*params.MinVoterBalance {
+	if float64(voterTokens) < float64(totalTokens)*params.MinVoterBalance {
 		return nil, ErrVoterInsufficientTokens
 	}
 
@@ -405,12 +422,12 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, coun
 
 		yes := counter.countVotes(proposal.yes)
 		no := counter.countVotes(proposal.no)
-		totalVotes := float32(yes + no)
+		totalVotes := float64(yes + no)
 
 		// yes          > (yes + no)* required majority ratio
-		if float32(yes) > totalVotes*params.RequiredMajority &&
+		if float64(yes) > totalVotes*params.RequiredMajority &&
 			//(yes+no) >= (yes + no + novote)* required participation ratio
-			totalVotes >= float32(totalStake)*params.RequiredParticipation {
+			totalVotes >= float64(totalStake)*params.RequiredParticipation {
 			proposal.State = types.Proposal_STATE_PASSED
 			e.log.Debug("Proposal passed", logging.String("proposal-id", proposal.ID))
 		} else if totalVotes == 0 {
@@ -420,9 +437,9 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, coun
 				"Proposal declined",
 				logging.String("proposal-id", proposal.ID),
 				logging.Uint64("yes-votes", yes),
-				logging.Float32("min-yes-required", totalVotes*params.RequiredMajority),
-				logging.Float32("total-votes", totalVotes),
-				logging.Float32("min-total-votes-required", float32(totalStake)*params.RequiredParticipation),
+				logging.Float64("min-yes-required", totalVotes*params.RequiredMajority),
+				logging.Float64("total-votes", totalVotes),
+				logging.Float64("min-total-votes-required", float64(totalStake)*params.RequiredParticipation),
 				logging.Float32("tokens", float32(totalStake)),
 			)
 		}

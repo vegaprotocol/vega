@@ -773,7 +773,26 @@ func (this *EstimateFeeResponse) Validate() error {
 	}
 	return nil
 }
+func (this *EstimateMarginRequest) Validate() error {
+	if this.Order != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Order); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
+		}
+	}
+	return nil
+}
+func (this *EstimateMarginResponse) Validate() error {
+	if this.MarginLevels != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginLevels); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarginLevels", err)
+		}
+	}
+	return nil
+}
 func (this *ObserveEventsRequest) Validate() error {
+	return nil
+}
+func (this *ObserveEventBatch) Validate() error {
 	return nil
 }
 func (this *ObserveEventsResponse) Validate() error {
@@ -851,6 +870,19 @@ func (this *DepositResponse) Validate() error {
 	if this.Deposit != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Deposit); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Deposit", err)
+		}
+	}
+	return nil
+}
+func (this *NetworkParametersRequest) Validate() error {
+	return nil
+}
+func (this *NetworkParametersResponse) Validate() error {
+	for _, item := range this.NetworkParameters {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("NetworkParameters", err)
+			}
 		}
 	}
 	return nil

@@ -345,6 +345,14 @@ func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.Pro
 		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, nil
 	case ProposalRejectionReasonInvalidAsset:
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, nil
+	case ProposalRejectionReasonNoRiskParameters:
+		return types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, nil
+	case ProposalRejectionReasonNetworkParameterInvalidKey:
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, nil
+	case ProposalRejectionReasonNetworkParameterInvalidValue:
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, nil
+	case ProposalRejectionReasonNetworkParameterValidationFailed:
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from GraphQL to Proto: %v", x)
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -387,6 +395,14 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonIncompatibleTimestamps, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET:
 		return ProposalRejectionReasonInvalidAsset, nil
+	case types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS:
+		return ProposalRejectionReasonNoRiskParameters, nil
+	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY:
+		return ProposalRejectionReasonNetworkParameterInvalidKey, nil
+	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE:
+		return ProposalRejectionReasonNetworkParameterInvalidValue, nil
+	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED:
+		return ProposalRejectionReasonNetworkParameterValidationFailed, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err
@@ -432,6 +448,18 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
 	case OrderRejectionReasonInvalidTimeInForce:
 		return types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE, nil
+	case OrderRejectionReasonAmendToGTTWithoutExpiryAt:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT, nil
+	case OrderRejectionReasonExpiryAtBeforeCreatedAt:
+		return types.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT, nil
+	case OrderRejectionReasonGTCWithExpiryAtNotValid:
+		return types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT, nil
+	case OrderRejectionReasonCannotAmendToFOKOrIoc:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC, nil
+	case OrderRejectionReasonCannotAmendToGFAOrGfn:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN, nil
+	case OrderRejectionReasonCannotAmendFromGFAOrGfn:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN, nil
 	case OrderRejectionReasonInvalidMarketType:
 		return types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE, nil
 	case OrderRejectionReasonGFAOrderDuringAuction:
@@ -481,6 +509,18 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonInsufficientFundsToPayFees, nil
 	case types.OrderError_ORDER_ERROR_INTERNAL_ERROR:
 		return OrderRejectionReasonInternalError, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT:
+		return OrderRejectionReasonAmendToGTTWithoutExpiryAt, nil
+	case types.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT:
+		return OrderRejectionReasonExpiryAtBeforeCreatedAt, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT:
+		return OrderRejectionReasonGTCWithExpiryAtNotValid, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC:
+		return OrderRejectionReasonCannotAmendToFOKOrIoc, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN:
+		return OrderRejectionReasonCannotAmendToGFAOrGfn, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN:
+		return OrderRejectionReasonCannotAmendFromGFAOrGfn, nil
 	case types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE:
 		return OrderRejectionReasonInvalidMarketType, nil
 	case types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING:

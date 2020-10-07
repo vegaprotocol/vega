@@ -8,7 +8,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/events Broker
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/subscribers Broker
 type Broker interface {
 	Subscribe(s broker.Subscriber) int
 	Unsubscribe(id int)
@@ -24,34 +24,47 @@ func NewService(broker Broker) *Service {
 	}
 }
 
-func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, filters ...EventFilter) <-chan []*types.BusEvent {
-	out := make(chan []*types.BusEvent)
+func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...EventFilter) (<-chan []*types.BusEvent, chan<- int) {
+	in, out := make(chan int), make(chan []*types.BusEvent)
 	ctx, cfunc := context.WithCancel(ctx)
 	// use stream subscriber
-	sub := NewStreamSub(ctx, eTypes, filters...)
+	// use buffer size of 0 for the time being
+	sub := NewStreamSub(ctx, eTypes, batchSize, filters...)
 	id := s.broker.Subscribe(sub)
 	go func() {
 		defer func() {
 			s.broker.Unsubscribe(id)
 			close(out)
+			close(in)
 			cfunc()
 		}()
 		ret := retries
 		for {
-			// wait for actual changes
-			data := sub.GetData()
 			select {
-			case <-ctx.Done():
-				return
-			case out <- data:
+			case bs := <-in:
+				// batch size changed: drain buffer and send data
+				data := sub.UpdateBatchSize(bs)
+				if len(data) > 0 {
+					out <- data
+				}
+				// reset retry count
 				ret = retries
 			default:
-				if ret == 0 {
+				// wait for actual changes
+				data := sub.GetData()
+				select {
+				case <-ctx.Done():
 					return
+				case out <- data:
+					ret = retries
+				default:
+					if ret == 0 {
+						return
+					}
+					ret--
 				}
-				ret--
 			}
 		}
 	}()
-	return out
+	return out, in
 }

@@ -34,6 +34,21 @@ func (m *MockRiskService) EXPECT() *MockRiskServiceMockRecorder {
 	return m.recorder
 }
 
+// EstimateMargin mocks base method
+func (m *MockRiskService) EstimateMargin(arg0 context.Context, arg1 *proto.Order) (*proto.MarginLevels, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EstimateMargin", arg0, arg1)
+	ret0, _ := ret[0].(*proto.MarginLevels)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EstimateMargin indicates an expected call of EstimateMargin
+func (mr *MockRiskServiceMockRecorder) EstimateMargin(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateMargin", reflect.TypeOf((*MockRiskService)(nil).EstimateMargin), arg0, arg1)
+}
+
 // GetMarginLevelsByID mocks base method
 func (m *MockRiskService) GetMarginLevelsByID(arg0, arg1 string) ([]proto.MarginLevels, error) {
 	m.ctrl.T.Helper()

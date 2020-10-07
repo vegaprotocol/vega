@@ -35,8 +35,9 @@ func (d Deposit) Proto() types.Deposit {
 func (d Deposit) StreamMessage() *types.BusEvent {
 	dep := d.d
 	return &types.BusEvent{
-		ID:   d.eventID(),
-		Type: d.et.ToProto(),
+		ID:    d.eventID(),
+		Block: d.TraceID(),
+		Type:  d.et.ToProto(),
 		Event: &types.BusEvent_Deposit{
 			Deposit: &dep,
 		},

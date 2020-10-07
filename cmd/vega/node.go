@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
@@ -106,6 +107,7 @@ type NodeCommand struct {
 	marketDataSub  *subscribers.MarketDataSub
 	newMarketSub   *subscribers.Market
 	candleSub      *subscribers.CandleSub
+	riskFactorSub  *subscribers.RiskFactorSub
 	marketDepthSub *subscribers.MarketDepthBuilder
 
 	candleService     *candles.Svc
@@ -122,6 +124,7 @@ type NodeCommand struct {
 	assetService      *assets.Svc
 	feeService        *fee.Svc
 	eventService      *subscribers.Service
+	netParamsService  *netparams.Service
 
 	abciServer       *abci.Server
 	blockchainClient *blockchain.Client
@@ -141,6 +144,7 @@ type NodeCommand struct {
 	executionEngine *execution.Engine
 	governance      *governance.Engine
 	collateral      *collateral.Engine
+	netParams       *netparams.Store
 
 	mktscfg []proto.Market
 
@@ -191,8 +195,8 @@ func (l *NodeCommand) addFlags() {
 	flagSet.BoolVarP(&l.withPPROF, "with-pprof", "", false, "start the node with pprof support")
 	flagSet.BoolVarP(&l.noChain, "no-chain", "", false, "start the node using the noop chain")
 	flagSet.BoolVarP(&l.noStores, "no-stores", "", false, "start the node without stores support")
-	flagSet.StringVarP(&l.record, "abci-record", "", "", "If set, it will record ABCI operations into this file")
-	flagSet.StringVarP(&l.replay, "abci-replay", "", "", "If set, it will replay ABCI operations from this file")
+	flagSet.StringVarP(&l.record, "abci-record", "", "", "ABCI recording dir path. If set, it will record ABCI operations into <path>/abci-record-<now()>")
+	flagSet.StringVarP(&l.replay, "abci-replay", "", "", "ABCI replaying file path. If set, it will replay ABCI operations from this file path")
 }
 
 // runNode is the entry of node command.
@@ -228,6 +232,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.eventService,
 		l.withdrawalPlugin,
 		l.depositPlugin,
+		l.netParamsService,
 		statusChecker,
 	)
 

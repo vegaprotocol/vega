@@ -30,6 +30,10 @@ models:
     model: code.vegaprotocol.io/vega/proto.NodeSignature
   ProposalEvent:
     model: code.vegaprotocol.io/vega/proto.Proposal
+  RiskFactor:
+    model: code.vegaprotocol.io/vega/proto.RiskFactor
+  NetworkParameter:
+    model: code.vegaprotocol.io/vega/proto.NetworkParameter
   Market:
     fields:
       orders:

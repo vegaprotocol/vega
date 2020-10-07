@@ -57,6 +57,7 @@ type Engine struct {
 	log *logging.Logger
 
 	markets    map[string]*Market
+	marketsCpy []*Market
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
@@ -124,7 +125,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.Config = cfg
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Position, e.Config.Settlement, e.Config.Fee)
 	}
@@ -209,6 +210,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	e.markets[marketConfig.Id] = mkt
+	e.marketsCpy = append(e.marketsCpy, mkt)
 
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before
@@ -344,7 +346,7 @@ func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) 
 func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*types.OrderCancellationConfirmation, error) {
 	confirmations := []*types.OrderCancellationConfirmation{}
 
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		confs, err := mkt.CancelAllOrders(ctx, party)
 		if err != nil {
 			return nil, err
@@ -383,7 +385,7 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
-	for _, v := range e.markets {
+	for _, v := range e.marketsCpy {
 		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
 	}
 	evt := events.NewTime(ctx, t)
@@ -395,7 +397,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	e.log.Debug("updating engine on new time update")
 
 	// update collateral
-	e.collateral.OnChainTimeUpdate(t)
+	e.collateral.OnChainTimeUpdate(ctx, t)
 
 	// remove expired orders
 	// TODO(FIXME): this should be remove, and handled inside the market directly
@@ -403,15 +405,30 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	e.removeExpiredOrders(t)
 
 	// notify markets of the time expiration
-	for mktID, mkt := range e.markets {
+	toDelete := []string{}
+	for _, mkt := range e.marketsCpy {
 		mkt := mkt
-		closing := mkt.OnChainTimeUpdate(t)
+		closing := mkt.OnChainTimeUpdate(ctx, t)
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
-				logging.String("market-id", mktID))
-			delete(e.markets, mktID)
+				logging.String("market-id", mkt.GetID()))
+			delete(e.markets, mkt.GetID())
+			toDelete = append(toDelete, mkt.GetID())
 		}
 	}
+
+	for _, id := range toDelete {
+		var i int
+		for idx, mkt := range e.marketsCpy {
+			if mkt.GetID() == id {
+				i = idx
+				break
+			}
+		}
+		copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
+		e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
+	}
+
 	timer.EngineTimeCounterAdd()
 }
 
@@ -424,7 +441,7 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 	}
 	expiringOrders := []types.Order{}
 	timeNow := t.UnixNano()
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		orders, err := mkt.RemoveExpiredOrders(timeNow)
 		if err != nil {
 			e.log.Error("unable to get remove expired orders",

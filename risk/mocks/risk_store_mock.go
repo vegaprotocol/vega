@@ -48,6 +48,21 @@ func (mr *MockRiskStoreMockRecorder) GetMarginLevelsByID(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarginLevelsByID", reflect.TypeOf((*MockRiskStore)(nil).GetMarginLevelsByID), arg0, arg1)
 }
 
+// GetMarketRiskFactors mocks base method
+func (m *MockRiskStore) GetMarketRiskFactors(arg0 string) (proto.RiskFactor, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMarketRiskFactors", arg0)
+	ret0, _ := ret[0].(proto.RiskFactor)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMarketRiskFactors indicates an expected call of GetMarketRiskFactors
+func (mr *MockRiskStoreMockRecorder) GetMarketRiskFactors(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketRiskFactors", reflect.TypeOf((*MockRiskStore)(nil).GetMarketRiskFactors), arg0)
+}
+
 // Subscribe mocks base method
 func (m *MockRiskStore) Subscribe(arg0 chan []proto.MarginLevels) uint64 {
 	m.ctrl.T.Helper()
