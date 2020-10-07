@@ -20,36 +20,65 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// event types, 2 groups: actual single values, and then some events that capture a group of events
+// An (event) bus event type is used to specify a type of event
+// It has 2 styles of event:
+// Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
+// Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items
 type BusEventType int32
 
 const (
-	BusEventType_BUS_EVENT_TYPE_UNSPECIFIED         BusEventType = 0
-	BusEventType_BUS_EVENT_TYPE_ALL                 BusEventType = 1
-	BusEventType_BUS_EVENT_TYPE_TIME_UPDATE         BusEventType = 2
-	BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES  BusEventType = 3
+	// Default value, always invalid
+	BusEventType_BUS_EVENT_TYPE_UNSPECIFIED BusEventType = 0
+	// Events of ALL event types, used when filtering stream from event bus
+	BusEventType_BUS_EVENT_TYPE_ALL BusEventType = 1
+	// Event for blockchain time updates
+	BusEventType_BUS_EVENT_TYPE_TIME_UPDATE BusEventType = 2
+	// Event for when a transfer happens internally, contains the transfer information
+	BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES BusEventType = 3
+	// Event indicating position resolution has occurred
 	BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION BusEventType = 4
-	BusEventType_BUS_EVENT_TYPE_ORDER               BusEventType = 5
-	BusEventType_BUS_EVENT_TYPE_ACCOUNT             BusEventType = 6
-	BusEventType_BUS_EVENT_TYPE_PARTY               BusEventType = 7
-	BusEventType_BUS_EVENT_TYPE_TRADE               BusEventType = 8
-	BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS       BusEventType = 9
-	BusEventType_BUS_EVENT_TYPE_PROPOSAL            BusEventType = 10
-	BusEventType_BUS_EVENT_TYPE_VOTE                BusEventType = 11
-	BusEventType_BUS_EVENT_TYPE_MARKET_DATA         BusEventType = 12
-	BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE      BusEventType = 13
-	BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION  BusEventType = 14
-	BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION     BusEventType = 15
-	BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED   BusEventType = 16
-	BusEventType_BUS_EVENT_TYPE_MARKET_CREATED      BusEventType = 17
-	BusEventType_BUS_EVENT_TYPE_ASSET               BusEventType = 18
-	BusEventType_BUS_EVENT_TYPE_MARKET_TICK         BusEventType = 19
-	BusEventType_BUS_EVENT_TYPE_WITHDRAWAL          BusEventType = 20
-	BusEventType_BUS_EVENT_TYPE_DEPOSIT             BusEventType = 21
-	BusEventType_BUS_EVENT_TYPE_AUCTION             BusEventType = 22
-	BusEventType_BUS_EVENT_TYPE_RISK_FACTOR         BusEventType = 23
-	BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER   BusEventType = 24
-	BusEventType_BUS_EVENT_TYPE_MARKET              BusEventType = 101
+	// Event for order updates, both new and existing orders
+	BusEventType_BUS_EVENT_TYPE_ORDER BusEventType = 5
+	// Event for account updates
+	BusEventType_BUS_EVENT_TYPE_ACCOUNT BusEventType = 6
+	// Event for party updates
+	BusEventType_BUS_EVENT_TYPE_PARTY BusEventType = 7
+	// Event indicating a new trade has occurred
+	BusEventType_BUS_EVENT_TYPE_TRADE BusEventType = 8
+	// Event indicating margin levels have changed for a party
+	BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS BusEventType = 9
+	// Event for proposal updates (for governance)
+	BusEventType_BUS_EVENT_TYPE_PROPOSAL BusEventType = 10
+	// Event indicating a new vote has occurred (for governance)
+	BusEventType_BUS_EVENT_TYPE_VOTE BusEventType = 11
+	// Event for market data updates
+	BusEventType_BUS_EVENT_TYPE_MARKET_DATA BusEventType = 12
+	// Event for a new signature for a Vega node
+	BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE BusEventType = 13
+	// Event indicating loss socialisation occurred for a party
+	BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION BusEventType = 14
+	// Event for when a position is being settled
+	BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION BusEventType = 15
+	// Event for when a position is distressed
+	BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED BusEventType = 16
+	// Event indicating a new market was created
+	BusEventType_BUS_EVENT_TYPE_MARKET_CREATED BusEventType = 17
+	// Event for when an asset is added to Vega
+	BusEventType_BUS_EVENT_TYPE_ASSET BusEventType = 18
+	// Event indicating a market tick event
+	BusEventType_BUS_EVENT_TYPE_MARKET_TICK BusEventType = 19
+	// Event for when a withdrawal occurs
+	BusEventType_BUS_EVENT_TYPE_WITHDRAWAL BusEventType = 20
+	// Event for when a deposit occurs
+	BusEventType_BUS_EVENT_TYPE_DEPOSIT BusEventType = 21
+	// Event indicating a change in auction state, for example starting or ending an auction
+	BusEventType_BUS_EVENT_TYPE_AUCTION BusEventType = 22
+	// Event indicating a risk factor has been updated
+	BusEventType_BUS_EVENT_TYPE_RISK_FACTOR BusEventType = 23
+	// Event indicating a network parameter has been added or updated
+	BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER BusEventType = 24
+	// Event indicating a market related event, for example when a market opens
+	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
 )
 
 var BusEventType_name = map[int32]string{
@@ -118,10 +147,11 @@ func (BusEventType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_499cf8c2dd86f7dd, []int{0}
 }
 
-// MarketEvent - the common denominator for all market events
-// interface has a method to return a string for logging
+// A market event is a common structure for market updates
 type MarketEvent struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Market identifier for the event
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Payload is a unique information string.
 	Payload              string   `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -167,8 +197,9 @@ func (m *MarketEvent) GetPayload() string {
 	return ""
 }
 
-// TimeUpdate - event containing the latest block time
+// A time update event contains the latest time update from Vega blockchain
 type TimeUpdate struct {
+	// Timestamp containing latest update from Vega blockchain aka Vega-time
 	Timestamp            int64    `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -207,8 +238,9 @@ func (m *TimeUpdate) GetTimestamp() int64 {
 	return 0
 }
 
-// TransferResponses - a slice of transfer response objects
+// A transfer responses event contains a collection of transfer information
 type TransferResponses struct {
+	// 1 or more entries containing internal transfer information
 	Responses            []*TransferResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`
@@ -247,11 +279,16 @@ func (m *TransferResponses) GetResponses() []*TransferResponse {
 	return nil
 }
 
-// PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
+// A position resolution event contains information on distressed trades
 type PositionResolution struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	Distressed           int64    `protobuf:"varint,2,opt,name=distressed,proto3" json:"distressed,omitempty"`
-	Closed               int64    `protobuf:"varint,3,opt,name=closed,proto3" json:"closed,omitempty"`
+	// Market identifier for the event
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Number of distressed traders
+	Distressed int64 `protobuf:"varint,2,opt,name=distressed,proto3" json:"distressed,omitempty"`
+	// Number of close outs
+	Closed int64 `protobuf:"varint,3,opt,name=closed,proto3" json:"closed,omitempty"`
+	// Mark price, as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	MarkPrice            uint64   `protobuf:"varint,4,opt,name=markPrice,proto3" json:"markPrice,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -311,10 +348,13 @@ func (m *PositionResolution) GetMarkPrice() uint64 {
 	return 0
 }
 
-// LossSocialization event amount of wins unable to be distributed
+// A loss socialization event contains details on the amount of wins unable to be distributed
 type LossSocialization struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Market identifier for the event
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier (public key) for the event
+	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Amount distributed
 	Amount               int64    `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -367,9 +407,12 @@ func (m *LossSocialization) GetAmount() int64 {
 	return 0
 }
 
-// TradeSettlement data, part of settle position event
+// A trade settlement is part of the settle position event
 type TradeSettlement struct {
-	Size                 int64    `protobuf:"varint,1,opt,name=size,proto3" json:"size,omitempty"`
+	// Size of trade settlement
+	Size int64 `protobuf:"varint,1,opt,name=size,proto3" json:"size,omitempty"`
+	// Price of settlement as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	Price                uint64   `protobuf:"varint,2,opt,name=price,proto3" json:"price,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -415,11 +458,16 @@ func (m *TradeSettlement) GetPrice() uint64 {
 	return 0
 }
 
-// SettlePosition data for party: position settlements (part of trader position information)
+// A settle position event contains position settlement information for a party
 type SettlePosition struct {
-	MarketID             string             `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string             `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Price                uint64             `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
+	// Market identifier for the event
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier (public key) for the event
+	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Price of settlement as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	Price uint64 `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
+	// A collection of 1 or more trade settlements
 	TradeSettlements     []*TradeSettlement `protobuf:"bytes,4,rep,name=tradeSettlements,proto3" json:"tradeSettlements,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -479,12 +527,17 @@ func (m *SettlePosition) GetTradeSettlements() []*TradeSettlement {
 	return nil
 }
 
-// SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
-// be followed by a number of these events
+// A settle distressed event contains information on distressed trading parties who are closed out
 type SettleDistressed struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	Margin               uint64   `protobuf:"varint,3,opt,name=margin,proto3" json:"margin,omitempty"`
+	// Market identifier for the event
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier (public key) for the event
+	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Margin value as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	Margin uint64 `protobuf:"varint,3,opt,name=margin,proto3" json:"margin,omitempty"`
+	// Price as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	Price                uint64   `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -544,9 +597,11 @@ func (m *SettleDistressed) GetPrice() uint64 {
 	return 0
 }
 
-// Time update for each market, can be used to see when new markets actually started in terms of block-time
+// A market ticket event contains the time value for when a particular market was last processed on Vega
 type MarketTick struct {
-	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// Market identifier for the event
+	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// Timestamp containing latest update from Vega blockchain aka Vega-time
 	Time                 int64    `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -592,11 +647,17 @@ func (m *MarketTick) GetTime() int64 {
 	return 0
 }
 
+// An auction event indicating a change in auction state, for example starting or ending an auction
 type AuctionEvent struct {
-	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	OpeningAuction       bool     `protobuf:"varint,2,opt,name=openingAuction,proto3" json:"openingAuction,omitempty"`
-	Leave                bool     `protobuf:"varint,3,opt,name=leave,proto3" json:"leave,omitempty"`
-	Start                int64    `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
+	// Market identifier for the event
+	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// True if the event indicates an auction opening and False otherwise
+	OpeningAuction bool `protobuf:"varint,2,opt,name=openingAuction,proto3" json:"openingAuction,omitempty"`
+	// True if the event indicates leaving auction mode and False otherwise
+	Leave bool `protobuf:"varint,3,opt,name=leave,proto3" json:"leave,omitempty"`
+	// Timestamp containing the start time for an auction
+	Start int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
+	// Timestamp containing the end time for an auction
 	End                  int64    `protobuf:"varint,5,opt,name=end,proto3" json:"end,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -663,12 +724,14 @@ func (m *AuctionEvent) GetEnd() int64 {
 	return 0
 }
 
-// BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
-// the actual data is set as a oneof field
+// A bus event is a container for event bus events emitted by Vega
 type BusEvent struct {
-	ID    string       `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	Block string       `protobuf:"bytes,2,opt,name=block,proto3" json:"block,omitempty"`
-	Type  BusEventType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
+	// A unique event identifier for the message
+	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// The batch (or block) of transactions that the events relate to
+	Block string `protobuf:"bytes,2,opt,name=block,proto3" json:"block,omitempty"`
+	// The type of bus event (one of the list below)
+	Type BusEventType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
 	// Types that are valid to be assigned to Event:
 	//	*BusEvent_TimeUpdate
 	//	*BusEvent_TransferResponses

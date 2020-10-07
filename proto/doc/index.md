@@ -2650,16 +2650,16 @@ An event related to validator management with foreign networks.
 <a name="vega.AuctionEvent"></a>
 
 ### AuctionEvent
-
+An auction event indicating a change in auction state, for example starting or ending an auction
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| openingAuction | [bool](#bool) |  |  |
-| leave | [bool](#bool) |  |  |
-| start | [int64](#int64) |  |  |
-| end | [int64](#int64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| openingAuction | [bool](#bool) |  | True if the event indicates an auction opening and False otherwise |
+| leave | [bool](#bool) |  | True if the event indicates leaving auction mode and False otherwise |
+| start | [int64](#int64) |  | Timestamp containing the start time for an auction |
+| end | [int64](#int64) |  | Timestamp containing the end time for an auction |
 
 
 
@@ -2669,39 +2669,38 @@ An event related to validator management with foreign networks.
 <a name="vega.BusEvent"></a>
 
 ### BusEvent
-BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
-the actual data is set as a oneof field
+A bus event is a container for event bus events emitted by Vega
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| block | [string](#string) |  |  |
-| type | [BusEventType](#vega.BusEventType) |  |  |
-| timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
-| transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
-| positionResolution | [PositionResolution](#vega.PositionResolution) |  |  |
-| order | [Order](#vega.Order) |  |  |
-| account | [Account](#vega.Account) |  |  |
-| party | [Party](#vega.Party) |  |  |
-| trade | [Trade](#vega.Trade) |  |  |
-| marginLevels | [MarginLevels](#vega.MarginLevels) |  |  |
-| proposal | [Proposal](#vega.Proposal) |  |  |
-| vote | [Vote](#vega.Vote) |  |  |
-| marketData | [MarketData](#vega.MarketData) |  |  |
-| nodeSignature | [NodeSignature](#vega.NodeSignature) |  |  |
-| lossSocialization | [LossSocialization](#vega.LossSocialization) |  |  |
-| settlePosition | [SettlePosition](#vega.SettlePosition) |  |  |
-| settleDistressed | [SettleDistressed](#vega.SettleDistressed) |  |  |
-| marketCreated | [Market](#vega.Market) |  |  |
-| asset | [Asset](#vega.Asset) |  |  |
-| marketTick | [MarketTick](#vega.MarketTick) |  |  |
-| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
-| deposit | [Deposit](#vega.Deposit) |  |  |
-| auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
-| riskFactor | [RiskFactor](#vega.RiskFactor) |  |  |
-| networkParameter | [NetworkParameter](#vega.NetworkParameter) |  |  |
-| market | [MarketEvent](#vega.MarketEvent) |  |  |
+| ID | [string](#string) |  | A unique event identifier for the message |
+| block | [string](#string) |  | The batch (or block) of transactions that the events relate to |
+| type | [BusEventType](#vega.BusEventType) |  | The type of bus event (one of the list below) |
+| timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  | Time update events, see [TimeUpdate](#vega.TimeUpdate) |
+| transferResponses | [TransferResponses](#vega.TransferResponses) |  | Transfer responses update events, see [TransferResponses](#vega.TransferResponses) |
+| positionResolution | [PositionResolution](#vega.PositionResolution) |  | Position resolution events, see [PositionResolution](#vega.PositionResolution) |
+| order | [Order](#vega.Order) |  | Order events |
+| account | [Account](#vega.Account) |  | Account events |
+| party | [Party](#vega.Party) |  | Party events |
+| trade | [Trade](#vega.Trade) |  | Trade events |
+| marginLevels | [MarginLevels](#vega.MarginLevels) |  | Margin level update events |
+| proposal | [Proposal](#vega.Proposal) |  | Proposal events (for governance) |
+| vote | [Vote](#vega.Vote) |  | Vote events (for governance) |
+| marketData | [MarketData](#vega.MarketData) |  | Market data events |
+| nodeSignature | [NodeSignature](#vega.NodeSignature) |  | Node signature events |
+| lossSocialization | [LossSocialization](#vega.LossSocialization) |  | Loss socialization events, see [LossSocialization](#vega.LossSocialization) |
+| settlePosition | [SettlePosition](#vega.SettlePosition) |  | Position settlement events, see [SettlePosition](#vega.SettlePosition) |
+| settleDistressed | [SettleDistressed](#vega.SettleDistressed) |  | Position distressed events, see [SettleDistressed](#vega.SettleDistressed) |
+| marketCreated | [Market](#vega.Market) |  | Market created events |
+| asset | [Asset](#vega.Asset) |  | Asset events |
+| marketTick | [MarketTick](#vega.MarketTick) |  | Market tick events, see [MarketTick](#vega.MarketTick) |
+| withdrawal | [Withdrawal](#vega.Withdrawal) |  | Withdrawal events |
+| deposit | [Deposit](#vega.Deposit) |  | Deposit events |
+| auction | [AuctionEvent](#vega.AuctionEvent) |  | Auction events, see [AuctionEvent](#vega.AuctionEvent) |
+| riskFactor | [RiskFactor](#vega.RiskFactor) |  | Risk factor events |
+| networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
+| market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
 
 
 
@@ -2711,14 +2710,14 @@ the actual data is set as a oneof field
 <a name="vega.LossSocialization"></a>
 
 ### LossSocialization
-LossSocialization event amount of wins unable to be distributed
+A loss socialization event contains details on the amount of wins unable to be distributed
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| amount | [int64](#int64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| partyID | [string](#string) |  | Party identifier (public key) for the event |
+| amount | [int64](#int64) |  | Amount distributed |
 
 
 
@@ -2728,14 +2727,13 @@ LossSocialization event amount of wins unable to be distributed
 <a name="vega.MarketEvent"></a>
 
 ### MarketEvent
-MarketEvent - the common denominator for all market events
-interface has a method to return a string for logging
+A market event is a common structure for market updates
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| payload | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| payload | [string](#string) |  | Payload is a unique information string. |
 
 
 
@@ -2745,13 +2743,13 @@ interface has a method to return a string for logging
 <a name="vega.MarketTick"></a>
 
 ### MarketTick
-Time update for each market, can be used to see when new markets actually started in terms of block-time
+A market ticket event contains the time value for when a particular market was last processed on Vega
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| time | [int64](#int64) |  |  |
+| ID | [string](#string) |  | Market identifier for the event |
+| time | [int64](#int64) |  | Timestamp containing latest update from Vega blockchain aka Vega-time |
 
 
 
@@ -2761,15 +2759,15 @@ Time update for each market, can be used to see when new markets actually starte
 <a name="vega.PositionResolution"></a>
 
 ### PositionResolution
-PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
+A position resolution event contains information on distressed trades
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| distressed | [int64](#int64) |  |  |
-| closed | [int64](#int64) |  |  |
-| markPrice | [uint64](#uint64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| distressed | [int64](#int64) |  | Number of distressed traders |
+| closed | [int64](#int64) |  | Number of close outs |
+| markPrice | [uint64](#uint64) |  | Mark price, as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
 
 
 
@@ -2779,16 +2777,17 @@ PositionResolution event, a market event indicating number of distressed traders
 <a name="vega.SettleDistressed"></a>
 
 ### SettleDistressed
-SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
-be followed by a number of these events
+A settle distressed event contains information on distressed trading parties who are closed out
+
+Note: Any PositionResolution event (market level) will most likely be followed by a number of these events
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| margin | [uint64](#uint64) |  |  |
-| price | [uint64](#uint64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| partyID | [string](#string) |  | Party identifier (public key) for the event |
+| margin | [uint64](#uint64) |  | Margin value as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
+| price | [uint64](#uint64) |  | Price as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
 
 
 
@@ -2798,15 +2797,15 @@ be followed by a number of these events
 <a name="vega.SettlePosition"></a>
 
 ### SettlePosition
-SettlePosition data for party: position settlements (part of trader position information)
+A settle position event contains position settlement information for a party
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| tradeSettlements | [TradeSettlement](#vega.TradeSettlement) | repeated |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| partyID | [string](#string) |  | Party identifier (public key) for the event |
+| price | [uint64](#uint64) |  | Price of settlement as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
+| tradeSettlements | [TradeSettlement](#vega.TradeSettlement) | repeated | A collection of 1 or more trade settlements |
 
 
 
@@ -2816,12 +2815,12 @@ SettlePosition data for party: position settlements (part of trader position inf
 <a name="vega.TimeUpdate"></a>
 
 ### TimeUpdate
-TimeUpdate - event containing the latest block time
+A time update event contains the latest time update from Vega blockchain
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  |  |
+| timestamp | [int64](#int64) |  | Timestamp containing latest update from Vega blockchain aka Vega-time |
 
 
 
@@ -2831,13 +2830,13 @@ TimeUpdate - event containing the latest block time
 <a name="vega.TradeSettlement"></a>
 
 ### TradeSettlement
-TradeSettlement data, part of settle position event
+A trade settlement is part of the settle position event
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| size | [int64](#int64) |  |  |
-| price | [uint64](#uint64) |  |  |
+| size | [int64](#int64) |  | Size of trade settlement |
+| price | [uint64](#uint64) |  | Price of settlement as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
 
 
 
@@ -2847,12 +2846,12 @@ TradeSettlement data, part of settle position event
 <a name="vega.TransferResponses"></a>
 
 ### TransferResponses
-TransferResponses - a slice of transfer response objects
+A transfer responses event contains a collection of transfer information
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| responses | [TransferResponse](#vega.TransferResponse) | repeated |  |
+| responses | [TransferResponse](#vega.TransferResponse) | repeated | 1 or more entries containing internal transfer information |
 
 
 
@@ -2864,36 +2863,39 @@ TransferResponses - a slice of transfer response objects
 <a name="vega.BusEventType"></a>
 
 ### BusEventType
-event types, 2 groups: actual single values, and then some events that capture a group of events
+An (event) bus event type is used to specify a type of event
+It has 2 styles of event:
+Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
+Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| BUS_EVENT_TYPE_UNSPECIFIED | 0 |  |
-| BUS_EVENT_TYPE_ALL | 1 |  |
-| BUS_EVENT_TYPE_TIME_UPDATE | 2 |  |
-| BUS_EVENT_TYPE_TRANSFER_RESPONSES | 3 |  |
-| BUS_EVENT_TYPE_POSITION_RESOLUTION | 4 |  |
-| BUS_EVENT_TYPE_ORDER | 5 |  |
-| BUS_EVENT_TYPE_ACCOUNT | 6 |  |
-| BUS_EVENT_TYPE_PARTY | 7 |  |
-| BUS_EVENT_TYPE_TRADE | 8 |  |
-| BUS_EVENT_TYPE_MARGIN_LEVELS | 9 |  |
-| BUS_EVENT_TYPE_PROPOSAL | 10 |  |
-| BUS_EVENT_TYPE_VOTE | 11 |  |
-| BUS_EVENT_TYPE_MARKET_DATA | 12 |  |
-| BUS_EVENT_TYPE_NODE_SIGNATURE | 13 |  |
-| BUS_EVENT_TYPE_LOSS_SOCIALIZATION | 14 |  |
-| BUS_EVENT_TYPE_SETTLE_POSITION | 15 |  |
-| BUS_EVENT_TYPE_SETTLE_DISTRESSED | 16 |  |
-| BUS_EVENT_TYPE_MARKET_CREATED | 17 |  |
-| BUS_EVENT_TYPE_ASSET | 18 |  |
-| BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
-| BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
-| BUS_EVENT_TYPE_DEPOSIT | 21 |  |
-| BUS_EVENT_TYPE_AUCTION | 22 |  |
-| BUS_EVENT_TYPE_RISK_FACTOR | 23 |  |
-| BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 |  |
-| BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
+| BUS_EVENT_TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| BUS_EVENT_TYPE_ALL | 1 | Events of ALL event types, used when filtering stream from event bus |
+| BUS_EVENT_TYPE_TIME_UPDATE | 2 | Event for blockchain time updates |
+| BUS_EVENT_TYPE_TRANSFER_RESPONSES | 3 | Event for when a transfer happens internally, contains the transfer information |
+| BUS_EVENT_TYPE_POSITION_RESOLUTION | 4 | Event indicating position resolution has occurred |
+| BUS_EVENT_TYPE_ORDER | 5 | Event for order updates, both new and existing orders |
+| BUS_EVENT_TYPE_ACCOUNT | 6 | Event for account updates |
+| BUS_EVENT_TYPE_PARTY | 7 | Event for party updates |
+| BUS_EVENT_TYPE_TRADE | 8 | Event indicating a new trade has occurred |
+| BUS_EVENT_TYPE_MARGIN_LEVELS | 9 | Event indicating margin levels have changed for a party |
+| BUS_EVENT_TYPE_PROPOSAL | 10 | Event for proposal updates (for governance) |
+| BUS_EVENT_TYPE_VOTE | 11 | Event indicating a new vote has occurred (for governance) |
+| BUS_EVENT_TYPE_MARKET_DATA | 12 | Event for market data updates |
+| BUS_EVENT_TYPE_NODE_SIGNATURE | 13 | Event for a new signature for a Vega node |
+| BUS_EVENT_TYPE_LOSS_SOCIALIZATION | 14 | Event indicating loss socialisation occurred for a party |
+| BUS_EVENT_TYPE_SETTLE_POSITION | 15 | Event for when a position is being settled |
+| BUS_EVENT_TYPE_SETTLE_DISTRESSED | 16 | Event for when a position is distressed |
+| BUS_EVENT_TYPE_MARKET_CREATED | 17 | Event indicating a new market was created |
+| BUS_EVENT_TYPE_ASSET | 18 | Event for when an asset is added to Vega |
+| BUS_EVENT_TYPE_MARKET_TICK | 19 | Event indicating a market tick event |
+| BUS_EVENT_TYPE_WITHDRAWAL | 20 | Event for when a withdrawal occurs |
+| BUS_EVENT_TYPE_DEPOSIT | 21 | Event for when a deposit occurs |
+| BUS_EVENT_TYPE_AUCTION | 22 | Event indicating a change in auction state, for example starting or ending an auction |
+| BUS_EVENT_TYPE_RISK_FACTOR | 23 | Event indicating a risk factor has been updated |
+| BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
+| BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
 
 
 
