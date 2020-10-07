@@ -106,8 +106,8 @@ func New(log *logging.Logger, config Config) *Engine {
 }
 
 func (e *Engine) Hash() []byte {
-	output := make([]byte, 0, len(e.positionsCpy)*8*5)
-	i := [8]byte{}
+	output := make([]byte, len(e.positionsCpy)*8*5)
+	var i int
 	for _, p := range e.positionsCpy {
 		values := []uint64{
 			uint64(p.Size()),
@@ -118,8 +118,8 @@ func (e *Engine) Hash() []byte {
 		}
 
 		for _, v := range values {
-			binary.BigEndian.PutUint64(i[0:], v)
-			output = append(output, i[0:]...)
+			binary.BigEndian.PutUint64(output[i:], v)
+			i += 8
 		}
 	}
 
