@@ -434,7 +434,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(ctx, t time.Time) {
+func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Removing expiring orders from matching engine")
