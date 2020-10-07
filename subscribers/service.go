@@ -52,6 +52,10 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 			default:
 				// wait for actual changes
 				data := sub.GetData()
+				// this is a very rare thing, but it can happen
+				if len(data) == 0 {
+					continue
+				}
 				select {
 				case <-ctx.Done():
 					return
