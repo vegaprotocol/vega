@@ -31,18 +31,18 @@ const (
 )
 
 type Config struct {
-	Level       encoding.LogLevel
-	TokenExpiry encoding.Duration
-	Port        int
-	IP          string
-	Node        NodeConfig
-	RsaKey      string
+	Level       encoding.LogLevel `long:"level"`
+	TokenExpiry encoding.Duration `long:"token-expiry"`
+	Port        int               `long:"port"`
+	IP          string            `long:"ip"`
+	Node        NodeConfig        `group:"Node" namespace:"node"`
+	RsaKey      string            `long:"rsa-key"`
 }
 
 type NodeConfig struct {
-	Port    int
-	IP      string
-	Retries uint64
+	Port    int    `long:"port"`
+	IP      string `long:"ip"`
+	Retries uint64 `long:"retries"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

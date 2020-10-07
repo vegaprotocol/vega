@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -43,7 +42,6 @@ func Main(ctx context.Context) error {
 	)
 
 	if _, err := parser.Parse(); err != nil {
-		log.Printf("err = %+v\n", err)
 		switch t := err.(type) {
 		case *flags.Error:
 			if t.Type != flags.ErrHelp {
