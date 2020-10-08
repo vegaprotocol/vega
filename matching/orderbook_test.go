@@ -2295,6 +2295,8 @@ func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(0))
 
 	// Switch to auction mode
 	book.EnterAuction()
@@ -2306,6 +2308,8 @@ func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2335,6 +2339,8 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2365,6 +2371,8 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2397,6 +2405,8 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2436,6 +2446,8 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 	assert.Equal(t, price, uint64(101))
 	assert.Equal(t, volume, uint64(20))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(101))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2473,6 +2485,8 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 	assert.Equal(t, price, uint64(101))
 	assert.Equal(t, volume, uint64(30))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(101))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2507,6 +2521,8 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 	assert.Equal(t, price, uint64(100))
 	assert.Equal(t, volume, uint64(45))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(100))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2541,6 +2557,8 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2589,6 +2607,8 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	assert.Equal(t, price, uint64(100))
 	assert.Equal(t, volume, uint64(34))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(100))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2626,6 +2646,8 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	assert.Equal(t, price, uint64(101))
 	assert.Equal(t, volume, uint64(10))
 	assert.Equal(t, side, types.Side_SIDE_SELL)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(101))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2667,6 +2689,8 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	assert.Equal(t, price, uint64(100))
 	assert.Equal(t, volume, uint64(37))
 	assert.Equal(t, side, types.Side_SIDE_SELL)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(100))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2707,6 +2731,8 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 	assert.Equal(t, price, uint64(100))
 	assert.Equal(t, volume, uint64(38))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(100))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()
@@ -2747,6 +2773,8 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 	assert.Equal(t, price, uint64(100))
 	assert.Equal(t, volume, uint64(5))
 	assert.Equal(t, side, types.Side_SIDE_SELL)
+	price = book.GetIndicativePrice()
+	assert.Equal(t, price, uint64(100))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction()

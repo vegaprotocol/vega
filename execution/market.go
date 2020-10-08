@@ -1290,7 +1290,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	// @TODO replace markPrice with intidicative uncross price in auction mode if available
 	price := m.markPrice
 	if m.as.InAuction() {
-		if ip, _, _ := m.matching.GetIndicativePriceAndVolume(); ip != 0 {
+		if ip := m.matching.GetIndicativePrice(); ip != 0 {
 			price = ip
 		}
 	}

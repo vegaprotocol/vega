@@ -113,7 +113,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		err   error
 	)
 	if b.auction {
-		p, _, _ := b.GetIndicativePriceAndVolume()
+		p := b.GetIndicativePrice()
 		return p, nil
 	}
 
@@ -225,12 +225,6 @@ func (b OrderBook) InAuction() bool {
 	return b.auction
 }
 
-func (b *OrderBook) GetIndicativePrice() uint64 {
-	// @TODO implement more efficient way to get just the uncross price
-	p, _, _ := b.GetIndicativePriceAndVolume()
-	return p
-}
-
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	bestBid := b.getBestBidPrice()
@@ -278,6 +272,40 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 		}
 	}
 	return uncrossPrice, maxTradableAmount, uncrossSide
+}
+
+// GetIndicativePrice Calculates the indicative price of the order book without modifing the order book state
+func (b *OrderBook) GetIndicativePrice() uint64 {
+	bestBid := b.getBestBidPrice()
+	bestAsk := b.getBestAskPrice()
+
+	// Short circuit if the book is not crossed
+	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
+		return 0
+	}
+
+	// Generate a set of price level pairs with their maximum tradable volumes
+	cumulativeVolumes := b.buildCumulativePriceLevels(bestBid, bestAsk)
+
+	// Find the maximum tradable amount
+	var maxTradableAmount uint64
+	for _, value := range cumulativeVolumes {
+		maxTradableAmount = max(maxTradableAmount, value.maxTradableAmount)
+	}
+
+	// Pull out all prices that match that volume
+	prices := make([]uint64, 0, len(cumulativeVolumes))
+	for _, value := range cumulativeVolumes {
+		if value.maxTradableAmount == maxTradableAmount {
+			prices = append(prices, value.price)
+		}
+	}
+
+	// We need to sort the prices list as they are not in order
+	sort.Slice(prices, func(i, j int) bool { return prices[i] < prices[j] })
+
+	// get the maximum volume price from the median of all the maximum tradable price levels
+	return prices[len(prices)/2]
 }
 
 func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[uint64]CumulativeVolumeLevel {
