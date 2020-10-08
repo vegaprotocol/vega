@@ -432,6 +432,14 @@ type MarketTick struct {
 
 func (MarketTick) IsEvent() {}
 
+// Representation of a network parameter
+type NetworkParameterInput struct {
+	// The name of the network parameter
+	Key string `json:"key"`
+	// The value of the network parameter
+	Value string `json:"value"`
+}
+
 // A new asset proposal change
 type NewAsset struct {
 	// the source of the new Asset
@@ -568,7 +576,7 @@ type ProposalTermsInput struct {
 	// Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
 	// It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
 	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
+	UpdateNetworkParameter *UpdateNetworkParameterInput `json:"updateNetworkParameter"`
 	// a new Asset proposal, this will create a new asset to be used in the vega network
 	NewAsset *NewAssetInput `json:"newAsset"`
 }
@@ -726,66 +734,16 @@ type UpdateMarketInput struct {
 	MarketID string `json:"marketId"`
 }
 
-// Allows submitting a proposal for changing governance network parameters
-type UpdateNetwork struct {
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MinCloseInSeconds *int `json:"minCloseInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MinEnactInSeconds *int `json:"minEnactInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that sets participation level required for any proposal to pass.
-	// Value from 0 to 1.
-	RequiredParticipation *float64 `json:"requiredParticipation"`
-	// Network parameter that sets majority level required for any proposal to pass.
-	// Value from 0.5 to 1.
-	RequiredMajority *float64 `json:"requiredMajority"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to submit a new proposal. Value greater than 0 to 1.
-	MinProposerBalance *float64 `json:"minProposerBalance"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to cast a vote.  Value greater than 0 to 1.
-	MinVoterBalance *float64 `json:"minVoterBalance"`
+// Allows submitting a proposal for changing network parameters
+type UpdateNetworkParameter struct {
+	NetworkParameter *proto.NetworkParameter `json:"networkParameter"`
 }
 
-func (UpdateNetwork) IsProposalChange() {}
+func (UpdateNetworkParameter) IsProposalChange() {}
 
-// Allows submitting a proposal for changing governance network parameters
-type UpdateNetworkInput struct {
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MinCloseInSeconds *int `json:"minCloseInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MinEnactInSeconds *int `json:"minEnactInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that sets participation level required for any proposal to pass.
-	// Value from 0 to 1.
-	RequiredParticipation *float64 `json:"requiredParticipation"`
-	// Network parameter that sets majority level required for any proposal to pass.
-	// Value from 0.5 to 1.
-	RequiredMajority *float64 `json:"requiredMajority"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to submit a new proposal. Value greater than 0 to 1.
-	MinProposerBalance *float64 `json:"minProposerBalance"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to cast a vote.  Value greater than 0 to 1.
-	MinVoterBalance *float64 `json:"minVoterBalance"`
+// Allows submitting a proposal for changing network parameters
+type UpdateNetworkParameterInput struct {
+	NetworkParameter *NetworkParameterInput `json:"networkParameter"`
 }
 
 type Vote struct {
@@ -1510,6 +1468,12 @@ const (
 	ProposalRejectionReasonIncompatibleTimestamps ProposalRejectionReason = "IncompatibleTimestamps"
 	// Risk parameters are missing from the market proposal
 	ProposalRejectionReasonNoRiskParameters ProposalRejectionReason = "NoRiskParameters"
+	// Invalid key in update network parameter proposal
+	ProposalRejectionReasonNetworkParameterInvalidKey ProposalRejectionReason = "NetworkParameterInvalidKey"
+	// Invalid valid in update network parameter proposal
+	ProposalRejectionReasonNetworkParameterInvalidValue ProposalRejectionReason = "NetworkParameterInvalidValue"
+	// Validation failed for network parameter proposal
+	ProposalRejectionReasonNetworkParameterValidationFailed ProposalRejectionReason = "NetworkParameterValidationFailed"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1531,11 +1495,14 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInvalidAsset,
 	ProposalRejectionReasonIncompatibleTimestamps,
 	ProposalRejectionReasonNoRiskParameters,
+	ProposalRejectionReasonNetworkParameterInvalidKey,
+	ProposalRejectionReasonNetworkParameterInvalidValue,
+	ProposalRejectionReasonNetworkParameterValidationFailed,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed:
 		return true
 	}
 	return false

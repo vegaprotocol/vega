@@ -695,8 +695,10 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 			return nil, err
 		}
 		result.Change = marketConfig
-	} else if terms.GetUpdateNetwork() != nil {
-		result.Change = nil
+	} else if netParam := terms.GetUpdateNetworkParameter(); netParam != nil {
+		result.Change = UpdateNetworkParameter{
+			NetworkParameter: netParam.Changes,
+		}
 	} else if newAsset := terms.GetNewAsset(); newAsset != nil {
 		newAsset, err := NewAssetFromProto(newAsset)
 		if err != nil {
@@ -997,18 +999,29 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 		}
 	}
 
-	if p.UpdateNetwork != nil {
+	if p.UpdateNetworkParameter != nil {
 		if isSet {
 			return nil, ErrMultipleProposalChangesSpecified
 		}
 		isSet = true
-		result.Change = &types.ProposalTerms_UpdateMarket{}
+		result.Change = &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &types.UpdateNetworkParameter{
+				Changes: p.UpdateNetworkParameter.NetworkParameter.IntoProto(),
+			},
+		}
 	}
 	if !isSet {
 		return nil, ErrInvalidChange
 	}
 
 	return result, nil
+}
+
+func (n *NetworkParameterInput) IntoProto() *types.NetworkParameter {
+	return &types.NetworkParameter{
+		Key:   n.Key,
+		Value: n.Value,
+	}
 }
 
 // ToOptionalProposalState ...

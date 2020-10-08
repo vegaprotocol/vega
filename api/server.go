@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
@@ -56,6 +57,7 @@ type GRPCServer struct {
 	eventService            *subscribers.Service
 	withdrawalService       *plugins.Withdrawal
 	depositService          *plugins.Deposit
+	netParamsService        *netparams.Service
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -90,6 +92,7 @@ func NewGRPCServer(
 	eventService *subscribers.Service,
 	withdrawalService *plugins.Withdrawal,
 	depositService *plugins.Deposit,
+	netParamsService *netparams.Service,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -120,6 +123,7 @@ func NewGRPCServer(
 		withdrawalService:       withdrawalService,
 		depositService:          depositService,
 		statusChecker:           statusChecker,
+		netParamsService:        netParamsService,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
 	}
@@ -240,6 +244,7 @@ func (g *GRPCServer) Start() {
 		statusChecker:           g.statusChecker,
 		WithdrawalService:       g.withdrawalService,
 		DepositService:          g.depositService,
+		NetParamsService:        g.netParamsService,
 		ctx:                     g.ctx,
 	}
 	g.tradingDataService = tradingDataSvc

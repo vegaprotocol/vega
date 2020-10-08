@@ -8,16 +8,15 @@ import (
 
 type Order struct {
 	*Base
-	o *types.Order
+	o types.Order
 }
 
 func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
-	// create a copy as quick fix
-	cpy := *o
-	return &Order{
+	order := &Order{
 		Base: newBase(ctx, OrderEvent),
-		o:    &cpy,
+		o:    *o,
 	}
+	return order
 }
 
 func (o Order) IsParty(id string) bool {
@@ -33,15 +32,15 @@ func (o Order) MarketID() string {
 }
 
 func (o *Order) Order() *types.Order {
-	return o.o
+	return &o.o
 }
 
 func (o Order) Proto() types.Order {
-	return *o.o
+	return o.o
 }
 
 func (o Order) StreamMessage() *types.BusEvent {
-	cpy := *o.o
+	cpy := o.o
 	return &types.BusEvent{
 		ID:    o.eventID(),
 		Block: o.TraceID(),

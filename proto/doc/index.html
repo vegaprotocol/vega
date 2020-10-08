@@ -415,6 +415,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.NetworkParametersRequest"><span class="badge">M</span>NetworkParametersRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.NetworkParametersResponse"><span class="badge">M</span>NetworkParametersResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.ObserveEventBatch"><span class="badge">M</span>ObserveEventBatch</a>
                 </li>
 
@@ -835,10 +843,6 @@
             <ul>
 
                 <li>
-                  <a href="#vega.FeeFactorsConfiguration"><span class="badge">M</span>FeeFactorsConfiguration</a>
-                </li>
-
-                <li>
                   <a href="#vega.FutureProduct"><span class="badge">M</span>FutureProduct</a>
                 </li>
 
@@ -856,10 +860,6 @@
 
                 <li>
                   <a href="#vega.InstrumentConfiguration"><span class="badge">M</span>InstrumentConfiguration</a>
-                </li>
-
-                <li>
-                  <a href="#vega.NetworkConfiguration"><span class="badge">M</span>NetworkConfiguration</a>
                 </li>
 
                 <li>
@@ -887,7 +887,7 @@
                 </li>
 
                 <li>
-                  <a href="#vega.UpdateNetwork"><span class="badge">M</span>UpdateNetwork</a>
+                  <a href="#vega.UpdateNetworkParameter"><span class="badge">M</span>UpdateNetworkParameter</a>
                 </li>
 
                 <li>
@@ -1161,6 +1161,10 @@
 
                 <li>
                   <a href="#vega.MarketDepthUpdate"><span class="badge">M</span>MarketDepthUpdate</a>
+                </li>
+
+                <li>
+                  <a href="#vega.NetworkParameter"><span class="badge">M</span>NetworkParameter</a>
                 </li>
 
                 <li>
@@ -3429,8 +3433,39 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
 
+        <h3 id="api.NetworkParametersRequest">NetworkParametersRequest</h3>
+        <p>A message requesting for the list</p><p>of all network parameters</p>
+
+
+
+
+
+        <h3 id="api.NetworkParametersResponse">NetworkParametersResponse</h3>
+        <p>A response containing all of the</p><p>vega network parameters</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>networkParameters</td>
+                  <td><a href="#vega.NetworkParameter">vega.NetworkParameter</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.ObserveEventBatch">ObserveEventBatch</h3>
-        <p>message to poll current event buffer, and change batch size</p>
+        <p>Used when subscribed to observe events from the event bus</p><p>This message is used to update the batch size (only for gRPC bi-directional streaming)</p>
 
 
           <table class="field-table">
@@ -3443,7 +3478,8 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                   <td>batchSize</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Batch size. Required field.
+Default: 0, send any and all events when they are available. </p></td>
                 </tr>
 
             </tbody>
@@ -3454,7 +3490,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
         <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
-        <p>Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)</p>
+        <p>Request to subscribe to a stream of one or more event types from the Vega event bus</p>
 
 
           <table class="field-table">
@@ -3467,28 +3503,31 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                   <td>type</td>
                   <td><a href="#vega.BusEventType">vega.BusEventType</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>One or more types of event. Required field. </p></td>
                 </tr>
 
                 <tr>
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier. Optional field. </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier. Optional field. </p></td>
                 </tr>
 
                 <tr>
                   <td>batchSize</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Batch size. Optional field.
+If specified, will result in the event stream API to return a specific number of events in a batch.
+For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream.
+Default: 0, send any and all events when they are available. </p></td>
                 </tr>
 
             </tbody>
@@ -3499,7 +3538,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
         <h3 id="api.ObserveEventsResponse">ObserveEventsResponse</h3>
-        <p>Response type streamed back when observing events. Slice of wrapped events</p>
+        <p>Response to a subscribed stream of events from the Vega event bus</p>
 
 
           <table class="field-table">
@@ -3512,7 +3551,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                   <td>events</td>
                   <td><a href="#vega.BusEvent">vega.BusEvent</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>One or more events </p></td>
                 </tr>
 
             </tbody>
@@ -5905,6 +5944,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <td><p>Get withdrawals for a party</p></td>
               </tr>
 
+              <tr>
+                <td>NetworkParameters</td>
+                <td><a href="#api.NetworkParametersRequest">NetworkParametersRequest</a></td>
+                <td><a href="#api.NetworkParametersResponse">NetworkParametersResponse</a></td>
+                <td><p>Get the network parameters</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -6778,7 +6824,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.AuctionEvent">AuctionEvent</h3>
-        <p></p>
+        <p>An auction event indicating a change in auction state, for example starting or ending an auction</p>
 
 
           <table class="field-table">
@@ -6791,35 +6837,35 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>openingAuction</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>True if the event indicates an auction opening and False otherwise </p></td>
                 </tr>
 
                 <tr>
                   <td>leave</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>True if the event indicates leaving auction mode and False otherwise </p></td>
                 </tr>
 
                 <tr>
                   <td>start</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp containing the start time for an auction </p></td>
                 </tr>
 
                 <tr>
                   <td>end</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp containing the end time for an auction </p></td>
                 </tr>
 
                 <tr>
@@ -6837,7 +6883,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.BusEvent">BusEvent</h3>
-        <p>BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.</p><p>the actual data is set as a oneof field</p>
+        <p>A bus event is a container for event bus events emitted by Vega</p>
 
 
           <table class="field-table">
@@ -6850,182 +6896,189 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>A unique event identifier for the message </p></td>
                 </tr>
 
                 <tr>
                   <td>block</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The batch (or block) of transactions that the events relate to </p></td>
                 </tr>
 
                 <tr>
                   <td>type</td>
                   <td><a href="#vega.BusEventType">BusEventType</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>The type of bus event (one of the list below) </p></td>
                 </tr>
 
                 <tr>
                   <td>timeUpdate</td>
                   <td><a href="#vega.TimeUpdate">TimeUpdate</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Time update events, see <a href="#vega.TimeUpdate">TimeUpdate</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>transferResponses</td>
                   <td><a href="#vega.TransferResponses">TransferResponses</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Transfer responses update events, see <a href="#vega.TransferResponses">TransferResponses</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>positionResolution</td>
                   <td><a href="#vega.PositionResolution">PositionResolution</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Position resolution events, see <a href="#vega.PositionResolution">PositionResolution</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>order</td>
                   <td><a href="#vega.Order">Order</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Order events </p></td>
                 </tr>
 
                 <tr>
                   <td>account</td>
                   <td><a href="#vega.Account">Account</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Account events </p></td>
                 </tr>
 
                 <tr>
                   <td>party</td>
                   <td><a href="#vega.Party">Party</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party events </p></td>
                 </tr>
 
                 <tr>
                   <td>trade</td>
                   <td><a href="#vega.Trade">Trade</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Trade events </p></td>
                 </tr>
 
                 <tr>
                   <td>marginLevels</td>
                   <td><a href="#vega.MarginLevels">MarginLevels</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Margin level update events </p></td>
                 </tr>
 
                 <tr>
                   <td>proposal</td>
                   <td><a href="#vega.Proposal">Proposal</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Proposal events (for governance) </p></td>
                 </tr>
 
                 <tr>
                   <td>vote</td>
                   <td><a href="#vega.Vote">Vote</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Vote events (for governance) </p></td>
                 </tr>
 
                 <tr>
                   <td>marketData</td>
                   <td><a href="#vega.MarketData">MarketData</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market data events </p></td>
                 </tr>
 
                 <tr>
                   <td>nodeSignature</td>
                   <td><a href="#vega.NodeSignature">NodeSignature</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Node signature events </p></td>
                 </tr>
 
                 <tr>
                   <td>lossSocialization</td>
                   <td><a href="#vega.LossSocialization">LossSocialization</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Loss socialization events, see <a href="#vega.LossSocialization">LossSocialization</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>settlePosition</td>
                   <td><a href="#vega.SettlePosition">SettlePosition</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Position settlement events, see <a href="#vega.SettlePosition">SettlePosition</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>settleDistressed</td>
                   <td><a href="#vega.SettleDistressed">SettleDistressed</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Position distressed events, see <a href="#vega.SettleDistressed">SettleDistressed</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>marketCreated</td>
                   <td><a href="#vega.Market">Market</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market created events </p></td>
                 </tr>
 
                 <tr>
                   <td>asset</td>
                   <td><a href="#vega.Asset">Asset</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Asset events </p></td>
                 </tr>
 
                 <tr>
                   <td>marketTick</td>
                   <td><a href="#vega.MarketTick">MarketTick</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market tick events, see <a href="#vega.MarketTick">MarketTick</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>withdrawal</td>
                   <td><a href="#vega.Withdrawal">Withdrawal</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Withdrawal events </p></td>
                 </tr>
 
                 <tr>
                   <td>deposit</td>
                   <td><a href="#vega.Deposit">Deposit</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Deposit events </p></td>
                 </tr>
 
                 <tr>
                   <td>auction</td>
                   <td><a href="#vega.AuctionEvent">AuctionEvent</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Auction events, see <a href="#vega.AuctionEvent">AuctionEvent</a> </p></td>
                 </tr>
 
                 <tr>
                   <td>riskFactor</td>
                   <td><a href="#vega.RiskFactor">RiskFactor</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Risk factor events </p></td>
+                </tr>
+
+                <tr>
+                  <td>networkParameter</td>
+                  <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
+                  <td></td>
+                  <td><p>Network parameter events </p></td>
                 </tr>
 
                 <tr>
                   <td>market</td>
                   <td><a href="#vega.MarketEvent">MarketEvent</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market tick events, see <a href="#vega.MarketEvent">MarketEvent</a> </p></td>
                 </tr>
 
             </tbody>
@@ -7036,7 +7089,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.LossSocialization">LossSocialization</h3>
-        <p>LossSocialization event amount of wins unable to be distributed</p>
+        <p>A loss socialization event contains details on the amount of wins unable to be distributed</p>
 
 
           <table class="field-table">
@@ -7049,21 +7102,21 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier (public key) for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>amount</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Amount distributed </p></td>
                 </tr>
 
             </tbody>
@@ -7087,14 +7140,14 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>payload</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Payload is a unique information string. </p></td>
                 </tr>
 
             </tbody>
@@ -7105,7 +7158,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.MarketTick">MarketTick</h3>
-        <p>Time update for each market, can be used to see when new markets actually started in terms of block-time</p>
+        <p>A market ticket event contains the time value for when a particular market was last processed on Vega</p>
 
 
           <table class="field-table">
@@ -7118,14 +7171,14 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>ID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>time</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp containing latest update from Vega blockchain aka Vega-time </p></td>
                 </tr>
 
             </tbody>
@@ -7136,7 +7189,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.PositionResolution">PositionResolution</h3>
-        <p>PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market</p>
+        <p>A position resolution event contains information on distressed trades</p>
 
 
           <table class="field-table">
@@ -7149,28 +7202,29 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>distressed</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Number of distressed traders </p></td>
                 </tr>
 
                 <tr>
                   <td>closed</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Number of close outs </p></td>
                 </tr>
 
                 <tr>
                   <td>markPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Mark price, as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places </p></td>
                 </tr>
 
             </tbody>
@@ -7181,7 +7235,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.SettleDistressed">SettleDistressed</h3>
-        <p>SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely</p><p>be followed by a number of these events</p>
+        <p>A settle distressed event contains information on distressed trading parties who are closed out</p><p>Note: Any PositionResolution event (market level) will most likely be followed by a number of these events</p>
 
 
           <table class="field-table">
@@ -7194,28 +7248,30 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier (public key) for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>margin</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Margin value as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places </p></td>
                 </tr>
 
             </tbody>
@@ -7226,7 +7282,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.SettlePosition">SettlePosition</h3>
-        <p>SettlePosition data for party: position settlements (part of trader position information)</p>
+        <p>A settle position event contains position settlement information for a party</p>
 
 
           <table class="field-table">
@@ -7239,28 +7295,29 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>marketID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Market identifier for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Party identifier (public key) for the event </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price of settlement as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places </p></td>
                 </tr>
 
                 <tr>
                   <td>tradeSettlements</td>
                   <td><a href="#vega.TradeSettlement">TradeSettlement</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>A collection of 1 or more trade settlements </p></td>
                 </tr>
 
             </tbody>
@@ -7271,7 +7328,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.TimeUpdate">TimeUpdate</h3>
-        <p>TimeUpdate - event containing the latest block time</p>
+        <p>A time update event contains the latest time update from Vega blockchain</p>
 
 
           <table class="field-table">
@@ -7284,7 +7341,7 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Timestamp containing latest update from Vega blockchain aka Vega-time </p></td>
                 </tr>
 
             </tbody>
@@ -7295,7 +7352,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.TradeSettlement">TradeSettlement</h3>
-        <p>TradeSettlement data, part of settle position event</p>
+        <p>A trade settlement is part of the settle position event</p>
 
 
           <table class="field-table">
@@ -7308,14 +7365,15 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>size</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Size of trade settlement </p></td>
                 </tr>
 
                 <tr>
                   <td>price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price of settlement as an integer, for example <tt>123456</tt> is a correctly
+formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places </p></td>
                 </tr>
 
             </tbody>
@@ -7326,7 +7384,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.TransferResponses">TransferResponses</h3>
-        <p>TransferResponses - a slice of transfer response objects</p>
+        <p>A transfer responses event contains a collection of transfer information</p>
 
 
           <table class="field-table">
@@ -7339,7 +7397,7 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td>responses</td>
                   <td><a href="#vega.TransferResponse">TransferResponse</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>1 or more entries containing internal transfer information </p></td>
                 </tr>
 
             </tbody>
@@ -7393,7 +7451,7 @@ these data are being used to bundle the call to the smart contract on the ethere
         </table>
 
         <h3 id="vega.BusEventType">BusEventType</h3>
-        <p>event types, 2 groups: actual single values, and then some events that capture a group of events</p>
+        <p>An (event) bus event type is used to specify a type of event</p><p>It has 2 styles of event:</p><p>Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item</p><p>Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -7403,151 +7461,157 @@ these data are being used to bundle the call to the smart contract on the ethere
               <tr>
                 <td>BUS_EVENT_TYPE_UNSPECIFIED</td>
                 <td>0</td>
-                <td><p></p></td>
+                <td><p>Default value, always invalid</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_ALL</td>
                 <td>1</td>
-                <td><p></p></td>
+                <td><p>Events of ALL event types, used when filtering stream from event bus</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_TIME_UPDATE</td>
                 <td>2</td>
-                <td><p></p></td>
+                <td><p>Event for blockchain time updates</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_TRANSFER_RESPONSES</td>
                 <td>3</td>
-                <td><p></p></td>
+                <td><p>Event for when a transfer happens internally, contains the transfer information</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_POSITION_RESOLUTION</td>
                 <td>4</td>
-                <td><p></p></td>
+                <td><p>Event indicating position resolution has occurred</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_ORDER</td>
                 <td>5</td>
-                <td><p></p></td>
+                <td><p>Event for order updates, both new and existing orders</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_ACCOUNT</td>
                 <td>6</td>
-                <td><p></p></td>
+                <td><p>Event for account updates</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_PARTY</td>
                 <td>7</td>
-                <td><p></p></td>
+                <td><p>Event for party updates</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_TRADE</td>
                 <td>8</td>
-                <td><p></p></td>
+                <td><p>Event indicating a new trade has occurred</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_MARGIN_LEVELS</td>
                 <td>9</td>
-                <td><p></p></td>
+                <td><p>Event indicating margin levels have changed for a party</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_PROPOSAL</td>
                 <td>10</td>
-                <td><p></p></td>
+                <td><p>Event for proposal updates (for governance)</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_VOTE</td>
                 <td>11</td>
-                <td><p></p></td>
+                <td><p>Event indicating a new vote has occurred (for governance)</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_MARKET_DATA</td>
                 <td>12</td>
-                <td><p></p></td>
+                <td><p>Event for market data updates</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_NODE_SIGNATURE</td>
                 <td>13</td>
-                <td><p></p></td>
+                <td><p>Event for a new signature for a Vega node</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_LOSS_SOCIALIZATION</td>
                 <td>14</td>
-                <td><p></p></td>
+                <td><p>Event indicating loss socialisation occurred for a party</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_SETTLE_POSITION</td>
                 <td>15</td>
-                <td><p></p></td>
+                <td><p>Event for when a position is being settled</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_SETTLE_DISTRESSED</td>
                 <td>16</td>
-                <td><p></p></td>
+                <td><p>Event for when a position is distressed</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_MARKET_CREATED</td>
                 <td>17</td>
-                <td><p></p></td>
+                <td><p>Event indicating a new market was created</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_ASSET</td>
                 <td>18</td>
-                <td><p></p></td>
+                <td><p>Event for when an asset is added to Vega</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_MARKET_TICK</td>
                 <td>19</td>
-                <td><p></p></td>
+                <td><p>Event indicating a market tick event</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_WITHDRAWAL</td>
                 <td>20</td>
-                <td><p></p></td>
+                <td><p>Event for when a withdrawal occurs</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_DEPOSIT</td>
                 <td>21</td>
-                <td><p></p></td>
+                <td><p>Event for when a deposit occurs</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_AUCTION</td>
                 <td>22</td>
-                <td><p></p></td>
+                <td><p>Event indicating a change in auction state, for example starting or ending an auction</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_RISK_FACTOR</td>
                 <td>23</td>
-                <td><p></p></td>
+                <td><p>Event indicating a risk factor has been updated</p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_NETWORK_PARAMETER</td>
+                <td>24</td>
+                <td><p>Event indicating a network parameter has been added or updated</p></td>
               </tr>
 
               <tr>
                 <td>BUS_EVENT_TYPE_MARKET</td>
                 <td>101</td>
-                <td><p>special event for all events implementing a specific interface</p></td>
+                <td><p>Event indicating a market related event, for example when a market opens</p></td>
               </tr>
 
           </tbody>
@@ -7563,44 +7627,6 @@ these data are being used to bundle the call to the smart contract on the ethere
         <h2 id="proto/governance.proto">proto/governance.proto</h2><a href="#title">Top</a>
       </div>
       <p></p>
-
-
-        <h3 id="vega.FeeFactorsConfiguration">FeeFactorsConfiguration</h3>
-        <p>FeeFactors set at the network level.</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>infrastructureFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Infrastructure fee, needs to be a valid float. </p></td>
-                </tr>
-
-                <tr>
-                  <td>makerFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Maker fee, needs to be a valid float. </p></td>
-                </tr>
-
-                <tr>
-                  <td>liquidityFee</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Liquidity fee, it needs to be a valid float. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
 
 
         <h3 id="vega.FutureProduct">FutureProduct</h3>
@@ -7897,93 +7923,6 @@ value (Vote) is the vote cast by the given party </p></td>
 
               </tbody>
             </table>
-
-
-
-
-
-        <h3 id="vega.NetworkConfiguration">NetworkConfiguration</h3>
-        <p>Network configuration options.</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>minCloseInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>maxCloseInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minEnactInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>maxEnactInSeconds</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. </p></td>
-                </tr>
-
-                <tr>
-                  <td>requiredParticipation</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Participation level required for any proposal to pass. Value from <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>requiredMajority</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Majority level required for any proposal to pass. Value from <tt>0.5</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minProposerBalance</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Minimum balance required for a party to be able to submit a new proposal. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>minVoterBalance</td>
-                  <td><a href="#float">float</a></td>
-                  <td></td>
-                  <td><p>Minimum balance required for a party to be able to cast a vote. Value greater than <tt>0</tt> to <tt>1</tt>. </p></td>
-                </tr>
-
-                <tr>
-                  <td>marginConfiguration</td>
-                  <td><a href="#vega.ScalingFactors">ScalingFactors</a></td>
-                  <td></td>
-                  <td><p>Scaling factors for all markets created via governance. </p></td>
-                </tr>
-
-                <tr>
-                  <td>feeFactorsConfiguration</td>
-                  <td><a href="#vega.FeeFactorsConfiguration">FeeFactorsConfiguration</a></td>
-                  <td></td>
-                  <td><p>FeeFactors which are not set via proposal. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
 
 
 
@@ -8365,8 +8304,8 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 </tr>
 
                 <tr>
-                  <td>updateNetwork</td>
-                  <td><a href="#vega.UpdateNetwork">UpdateNetwork</a></td>
+                  <td>updateNetworkParameter</td>
+                  <td><a href="#vega.UpdateNetworkParameter">UpdateNetworkParameter</a></td>
                   <td></td>
                   <td><p>Proposal change for updating Vega network parameters. </p></td>
                 </tr>
@@ -8430,7 +8369,7 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
 
 
-        <h3 id="vega.UpdateNetwork">UpdateNetwork</h3>
+        <h3 id="vega.UpdateNetworkParameter">UpdateNetworkParameter</h3>
         <p>Update network configuration on Vega.</p>
 
 
@@ -8442,9 +8381,9 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
 
                 <tr>
                   <td>changes</td>
-                  <td><a href="#vega.NetworkConfiguration">NetworkConfiguration</a></td>
+                  <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
                   <td></td>
-                  <td><p>Configuration. </p></td>
+                  <td><p>The network parameter to update </p></td>
                 </tr>
 
             </tbody>
@@ -8756,6 +8695,24 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>PROPOSAL_ERROR_NO_RISK_PARAMETERS</td>
                 <td>18</td>
                 <td><p>No risk parameteres were specified</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY</td>
+                <td>19</td>
+                <td><p>Invalid key in update network parameter proposal</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE</td>
+                <td>20</td>
+                <td><p>Invalid valid in update network parameter proposal</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED</td>
+                <td>21</td>
+                <td><p>Validation failed for network parameter proposal</p></td>
               </tr>
 
           </tbody>
@@ -11327,6 +11284,37 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
 
 
+        <h3 id="vega.NetworkParameter">NetworkParameter</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>Key</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>Value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="vega.NodeRegistration">NodeRegistration</h3>
         <p>Used to Register a node as a validator during network start-up.</p>
 
@@ -12928,6 +12916,15 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td></td>
                   <td><p>A random number used to provided uniqueness and prevents
 against replay attack. </p></td>
+                </tr>
+
+                <tr>
+                  <td>blockHeight</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>The block height associated to the transaction.
+This should always be current height of the node at the time of sending the Tx.
+BlockHeight is used as a mechanism for replay protection. </p></td>
                 </tr>
 
                 <tr>

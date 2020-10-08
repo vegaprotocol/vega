@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/contextutil"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
@@ -159,6 +160,11 @@ func (app *App) cancel() {
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+	hash := hex.EncodeToString(crypto.Hash(req.AppStateBytes))
+	// let's assume genesis block is block 0
+	ctx := contextutil.WithBlockHeight(context.Background(), 0)
+	ctx = contextutil.WithTraceID(ctx, hash)
+
 	vators := make([][]byte, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -174,7 +180,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	}
 
 	app.top.UpdateValidatorSet(vators)
-	if err := app.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
+	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes, vators); err != nil {
 		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
 	}
 

@@ -30,12 +30,13 @@ type OrderBookSide struct {
 }
 
 func (s *OrderBookSide) Hash() []byte {
-	output := make([]byte, 0, len(s.levels)*16)
-	var i [16]byte
+	output := make([]byte, len(s.levels)*16)
+	var i int
 	for _, l := range s.levels {
-		binary.BigEndian.PutUint64(i[0:], l.price)
-		binary.BigEndian.PutUint64(i[8:], l.volume)
-		output = append(output, i[0:]...)
+		binary.BigEndian.PutUint64(output[i:], l.price)
+		i += 8
+		binary.BigEndian.PutUint64(output[i:], l.volume)
+		i += 8
 	}
 	return crypto.Hash(output)
 }
