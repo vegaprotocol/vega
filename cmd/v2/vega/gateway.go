@@ -13,24 +13,13 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type gatewayOptions struct {
+type gatewayCmd struct {
 	ctx context.Context
 	gateway.Config
 	RootPathOption
 }
 
-func Gateway(ctx context.Context, parser *flags.Parser) error {
-	opts := &gatewayOptions{
-		ctx:            ctx,
-		Config:         gateway.NewDefaultConfig(),
-		RootPathOption: NewRootPathOption(),
-	}
-
-	_, err := parser.AddCommand("gateway", "short", "long", opts)
-	return err
-}
-
-func (opts *gatewayOptions) Execute(args []string) error {
+func (opts *gatewayCmd) Execute(args []string) error {
 	ctx := opts.ctx
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -68,4 +57,15 @@ func (opts *gatewayOptions) Execute(args []string) error {
 
 	waitSig(ctx, log)
 	return nil
+}
+
+func Gateway(ctx context.Context, parser *flags.Parser) error {
+	opts := &gatewayCmd{
+		ctx:            ctx,
+		Config:         gateway.NewDefaultConfig(),
+		RootPathOption: NewRootPathOption(),
+	}
+
+	_, err := parser.AddCommand("gateway", "short", "long", opts)
+	return err
 }

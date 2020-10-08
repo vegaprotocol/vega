@@ -17,6 +17,38 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
+type WalletCmd struct {
+	RootPathOption
+
+	Genkey  walletGenkey  `command:"genkey" description:"Generates a new keypar for a wallet" long-description:"Generate a new keypair for a wallet, this will implicitly generate a new wallet if none exist for the given name"`
+	List    walletList    `command:"list" description:"Lists keypairs of a wallet" long-description:"Lists all the keypairs for a given wallet"`
+	Sign    walletSign    `command:"sign" description:"Signs (base64 encoded) data" long-description:"Signs (base64 encoded) data given a public key"`
+	Verify  walletVerify  `command:"verify" description:"Verifies a signature" long-description:"Verifies a signature for a given data"`
+	Taint   walletTaint   `command:"taint" description:"Taints a public key" long-description:"Taints a public key"`
+	Meta    walletMeta    `command:"meta" description:"Adds metadata to a public key" long-description:"Adds a list of metadata to a public key"`
+	Service walletService `command:"service" description:"The wallet service" long-description:"Runs or initializes the wallet service"`
+}
+
+// walletCmd is a global variable that holds generic options for the wallet
+// sub-commands.
+var walletCmd WalletCmd
+
+func Wallet(ctx context.Context, parser *flags.Parser) error {
+	// Build the walletCmd with default values and ctx where needed.
+	walletCmd = WalletCmd{
+		RootPathOption: NewRootPathOption(),
+		Service: walletService{
+			Run: walletServiceRun{
+				ctx:    ctx,
+				Config: wallet.NewDefaultConfig(),
+			},
+		},
+	}
+
+	_, err := parser.AddCommand("wallet", "Create and manage wallets", "", &walletCmd)
+	return err
+}
+
 func readWallet(rootPath, name, pass string) (*wallet.Wallet, error) {
 	if ok, err := fsutil.PathExists(rootPath); !ok {
 		return nil, fmt.Errorf("invalid root directory path: %w", err)
@@ -34,7 +66,6 @@ func readWallet(rootPath, name, pass string) (*wallet.Wallet, error) {
 }
 
 type walletGenkey struct {
-	RootPathOption
 	PassphraseOption
 	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 }
@@ -46,13 +77,13 @@ func (opts *walletGenkey) Execute(_ []string) error {
 		return err
 	}
 
-	if _, err := readWallet(opts.RootPath, name, pass); err != nil {
+	if _, err := readWallet(walletCmd.RootPath, name, pass); err != nil {
 		if !errors.Is(err, wallet.ErrWalletDoesNotExists) {
 			// this an invalid key, returning error
 			return err
 		}
 		// wallet do not exit, let's try to create it
-		_, err = wallet.Create(opts.RootPath, name, pass)
+		_, err = wallet.Create(walletCmd.RootPath, name, pass)
 		if err != nil {
 			return fmt.Errorf("unable to create wallet: %v", err)
 		}
@@ -68,7 +99,7 @@ func (opts *walletGenkey) Execute(_ []string) error {
 	}
 
 	// now updating the wallet and saving it
-	_, err = wallet.AddKeypair(kp, opts.RootPath, opts.Name, pass)
+	_, err = wallet.AddKeypair(kp, walletCmd.RootPath, opts.Name, pass)
 	if err != nil {
 		return fmt.Errorf("unable to add keypair to wallet: %v", err)
 	}
@@ -82,7 +113,6 @@ func (opts *walletGenkey) Execute(_ []string) error {
 }
 
 type walletList struct {
-	RootPathOption
 	PassphraseOption
 	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 }
@@ -94,7 +124,7 @@ func (opts *walletList) Execute(_ []string) error {
 		return err
 	}
 
-	w, err := readWallet(opts.RootPath, name, pass)
+	w, err := readWallet(walletCmd.RootPath, name, pass)
 	if err != nil {
 		return err
 	}
@@ -110,7 +140,6 @@ func (opts *walletList) Execute(_ []string) error {
 }
 
 type walletSign struct {
-	RootPathOption
 	PassphraseOption
 	Name    string          `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
@@ -124,7 +153,7 @@ func (opts *walletSign) Execute(_ []string) error {
 		return err
 	}
 
-	w, err := readWallet(opts.RootPath, name, pass)
+	w, err := readWallet(walletCmd.RootPath, name, pass)
 	if err != nil {
 		return err
 	}
@@ -157,7 +186,6 @@ func (opts *walletSign) Execute(_ []string) error {
 }
 
 type walletVerify struct {
-	RootPathOption
 	PassphraseOption
 	Name    string          `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
@@ -172,7 +200,7 @@ func (opts *walletVerify) Execute(_ []string) error {
 		return err
 	}
 
-	w, err := readWallet(opts.RootPath, name, pass)
+	w, err := readWallet(walletCmd.RootPath, name, pass)
 	if err != nil {
 		return err
 	}
@@ -202,7 +230,6 @@ func (opts *walletVerify) Execute(_ []string) error {
 }
 
 type walletTaint struct {
-	RootPathOption
 	PassphraseOption
 	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
@@ -215,7 +242,7 @@ func (opts *walletTaint) Execute(_ []string) error {
 		return err
 	}
 
-	w, err := readWallet(opts.RootPath, name, pass)
+	w, err := readWallet(walletCmd.RootPath, name, pass)
 	if err != nil {
 		return err
 	}
@@ -235,12 +262,11 @@ func (opts *walletTaint) Execute(_ []string) error {
 	}
 	kp.Tainted = true
 
-	_, err = wallet.Write(w, opts.RootPath, name, pass)
+	_, err = wallet.Write(w, walletCmd.RootPath, name, pass)
 	return err
 }
 
 type walletMeta struct {
-	RootPathOption
 	PassphraseOption
 	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
@@ -254,7 +280,7 @@ func (opts *walletMeta) Execute(_ []string) error {
 		return err
 	}
 
-	w, err := readWallet(opts.RootPath, name, pass)
+	w, err := readWallet(walletCmd.RootPath, name, pass)
 	if err != nil {
 		return err
 	}
@@ -285,19 +311,18 @@ func (opts *walletMeta) Execute(_ []string) error {
 	}
 	kp.Meta = meta
 
-	_, err = wallet.Write(w, opts.RootPath, name, pass)
+	_, err = wallet.Write(w, walletCmd.RootPath, name, pass)
 	return err
 }
 
 type walletServiceInit struct {
-	RootPathOption
 	Force  bool `short:"f" long:"force" description:"Erase existing configuratio at specified path"`
 	GenRSA bool `short:"g" long:"genrsakey" description:"Generates RSA for the JWT tokens"`
 }
 
 func (opts *walletServiceInit) Execute(_ []string) error {
 	log.Printf("opts = %+v\n", opts)
-	if ok, err := fsutil.PathExists(opts.RootPath); !ok {
+	if ok, err := fsutil.PathExists(walletCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %v", err)
 	}
 
@@ -305,17 +330,16 @@ func (opts *walletServiceInit) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
-	return wallet.GenConfig(log, opts.RootPath, opts.Force, opts.GenRSA)
+	return wallet.GenConfig(log, walletCmd.RootPath, opts.Force, opts.GenRSA)
 }
 
 type walletServiceRun struct {
-	ctx context.Context
-	RootPathOption
+	ctx    context.Context
 	Config wallet.Config
 }
 
 func (opts *walletServiceRun) Execute(_ []string) error {
-	cfg, err := wallet.LoadConfig(opts.RootPath)
+	cfg, err := wallet.LoadConfig(walletCmd.RootPath)
 	if err != nil {
 		return err
 	}
@@ -329,7 +353,7 @@ func (opts *walletServiceRun) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
-	srv, err := wallet.NewService(log, &opts.Config, opts.RootPath)
+	srv, err := wallet.NewService(log, &opts.Config, walletCmd.RootPath)
 	if err != nil {
 		return err
 	}
@@ -356,39 +380,6 @@ func (opts *walletServiceRun) Execute(_ []string) error {
 }
 
 type walletService struct {
-	Init walletServiceInit `command:"init" description:"Generates the configuration" description-long:"Generates the configuration for the wallet service"`
-	Run  walletServiceRun  `command:"run" description:"Start the vega wallet service" description-long:"Start a vega wallet service behind an http server"`
-}
-
-type walletCmd struct {
-	Genkey  walletGenkey  `command:"genkey" description:"Generates a new keypar for a wallet" description-long:"Generate a new keypair for a wallet, this will implicitly generate a new wallet if none exist for the given name"`
-	List    walletList    `command:"list" description:"Lists keypairs of a wallet" description-long:"Lists all the keypairs for a given wallet"`
-	Sign    walletSign    `command:"sign" description:"Signs (base64 encoded) data" description-long:"Signs (base64 encoded) data given a public key"`
-	Verify  walletVerify  `command:"verify" description:"Verifies a signature" description-long:"Verifies a signature for a given data"`
-	Taint   walletTaint   `command:"taint" description:"Taints a public key" description-long:"Taints a public key"`
-	Meta    walletMeta    `command:"meta" description:"Adds metadata to a public key" description-long:"Adds a list of metadata to a public key"`
-	Service walletService `command:"service" description:"The wallet service" description-long:"Runs or initializes the wallet service"`
-}
-
-func Wallet(ctx context.Context, parser *flags.Parser) error {
-	root := NewRootPathOption()
-	cmd := &walletCmd{
-		Genkey: walletGenkey{RootPathOption: root},
-		List:   walletList{RootPathOption: root},
-		Sign:   walletSign{RootPathOption: root},
-		Verify: walletVerify{RootPathOption: root},
-		Taint:  walletTaint{RootPathOption: root},
-		Meta:   walletMeta{RootPathOption: root},
-		Service: walletService{
-			Init: walletServiceInit{RootPathOption: root},
-			Run: walletServiceRun{
-				ctx:            ctx,
-				RootPathOption: root,
-				Config:         wallet.NewDefaultConfig(),
-			},
-		},
-	}
-
-	_, err := parser.AddCommand("wallet", "Create and manage wallets", "", cmd)
-	return err
+	Init walletServiceInit `command:"init" description:"Generates the configuration" long-description:"Generates the configuration for the wallet service"`
+	Run  walletServiceRun  `command:"run" description:"Start the vega wallet service" long-description:"Start a vega wallet service behind an http server"`
 }

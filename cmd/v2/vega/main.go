@@ -38,6 +38,7 @@ func Main(ctx context.Context) error {
 		Faucet,
 		Gateway,
 		Genesis,
+		Init,
 		NodeWallet,
 		Wallet,
 		Watch,

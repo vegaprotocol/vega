@@ -12,11 +12,46 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
+type NodeWalletCmd struct {
+	// Global options
+	RootPathOption
+	PassphraseOption
+
+	// Subcommands
+	Import nodeWalletImport `command:"import"`
+	Verify nodeWalletVerify `command:"verify"`
+}
+
+var nodeWalletCmd NodeWalletCmd
+
+func NodeWallet(ctx context.Context, parser *flags.Parser) error {
+	root := NewRootPathOption()
+	nodeWalletCmd = NodeWalletCmd{
+		RootPathOption: root,
+		Import: nodeWalletImport{
+			Config: nodewallet.NewDefaultConfig(root.RootPath),
+		},
+		Verify: nodeWalletVerify{
+			Config: nodewallet.NewDefaultConfig(root.RootPath),
+		},
+	}
+
+	var (
+		short = "Manages the node wallet"
+		long  = `The nodewallet is a wallet owned by the vega node, it contains all
+	the information to login to other wallets from external blockchain that
+	vega will need to run properly (e.g and ethereum wallet, which allow vega
+	to sign transaction  to be verified on the ethereum blockchain) available
+	wallet: eth, vega`
+	)
+
+	_, err := parser.AddCommand("nodewallet", short, long, &nodeWalletCmd)
+	return err
+}
+
 type nodeWalletImport struct {
 	Config nodewallet.Config
 
-	RootPathOption
-	PassphraseOption
 	WalletPassphrase Passphrase `short:"w" long:"wallet-passphrase"`
 
 	Chain      string `short:"c" long:"chain" required:"true"`
@@ -28,11 +63,11 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := fsutil.PathExists(opts.RootPath); !ok {
+	if ok, err := fsutil.PathExists(nodeWalletCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}
 
-	nodePass, err := opts.Passphrase.Get("node wallet")
+	nodePass, err := nodeWalletCmd.Passphrase.Get("node wallet")
 	if err != nil {
 		return err
 	}
@@ -42,7 +77,7 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 		return err
 	}
 
-	conf, err := config.Read(opts.RootPath)
+	conf, err := config.Read(nodeWalletCmd.RootPath)
 	if err != nil {
 		return err
 	}
@@ -81,22 +116,19 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 
 type nodeWalletVerify struct {
 	Config nodewallet.Config
-
-	RootPathOption
-	PassphraseOption
 }
 
 func (opts *nodeWalletVerify) Execute(_ []string) error {
-	if ok, err := fsutil.PathExists(opts.RootPath); !ok {
+	if ok, err := fsutil.PathExists(nodeWalletCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}
 
-	pass, err := opts.Passphrase.Get("node wallet")
+	pass, err := nodeWalletCmd.Passphrase.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	conf, err := config.Read(opts.RootPath)
+	conf, err := config.Read(nodeWalletCmd.RootPath)
 	if err != nil {
 		return err
 	}
@@ -119,26 +151,4 @@ func (opts *nodeWalletVerify) Execute(_ []string) error {
 
 	fmt.Printf("ok\n")
 	return nil
-}
-
-type nodeWalletCmd struct {
-	Import nodeWalletImport `command:"import"`
-	Verify nodeWalletVerify `command:"verify"`
-}
-
-func NodeWallet(ctx context.Context, parser *flags.Parser) error {
-	root := NewRootPathOption()
-	cmd := nodeWalletCmd{
-		Import: nodeWalletImport{
-			Config:         nodewallet.NewDefaultConfig(root.RootPath),
-			RootPathOption: root,
-		},
-		Verify: nodeWalletVerify{
-			Config:         nodewallet.NewDefaultConfig(root.RootPath),
-			RootPathOption: root,
-		},
-	}
-
-	_, err := parser.AddCommand("nodewallet", "", "", &cmd)
-	return err
 }
