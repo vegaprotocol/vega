@@ -234,11 +234,11 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 }
 
 func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonitoringParameters {
-	fp := float64(p)
-	ret := []*types.PriceMonitoringParameters{} // returned price projections, empty if all good
 	var (
-		ph  int64   // previous horizon
-		ref float64 // reference price
+		fp  float64                            = float64(p)                           // price as float
+		ph  int64                                                                     // previous horizon
+		ref float64                                                                   // reference price
+		ret []*types.PriceMonitoringParameters = []*types.PriceMonitoringParameters{} // returned price projections, empty if all good
 	)
 	for _, p := range e.parameters {
 		if p.Horizon != ph {
