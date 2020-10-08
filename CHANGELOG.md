@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.26.0
+
+*2020–10-08*
+
+The events API added in 0.25.0 had some reliability issues when a large volume of events were being emitted. This release addresses that in two ways:
+ - The gRPC event stream now takes a parameter that sets a batch size. A client will receive the events when the batch limit is hit.
+ - GraphQL is now limited to one event type per subscription, and we also removed the ALL event type as an option. This was due to the GraphQL gateway layer taking too long to process the full event stream, leading to sporadic disconnections.
+
+These two fixes combined make both the gRPC and GraphQL streams much more reliable under reasonably heavy load. Let us know if you see any other issues. The release also adds some performance improvements to the way the core processes Tendermint events, some documentation improvements, and some additional debug tools.
+
+### New
+- [#2319](https://github.com/vegaprotocol/vega/pull/2319) Add fee estimate API endpoints to remaining APIs
+- [#2321](https://github.com/vegaprotocol/vega/pull/2321) 🔥 Change `estimateFee` to `estimateOrder` in GraphQL
+- [#2327](https://github.com/vegaprotocol/vega/pull/2327) 🔥 GraphQL: Event bus API - remove ALL type & limit subscription to one event type
+- [#2343](https://github.com/vegaprotocol/vega/pull/2343) 🔥 Add batching support to stream subscribers
+
+### Improvements
+- [#2246](https://github.com/vegaprotocol/vega/pull/2246) Add new market depth subscription methods
+- [#2298](https://github.com/vegaprotocol/vega/pull/2298) Improve error messages for Good For Auction/Good For Normal rejections
+- [#2301](https://github.com/vegaprotocol/vega/pull/2301) Add validation for GFA/GFN orders
+- [#2307](https://github.com/vegaprotocol/vega/pull/2307) Implement app state hash
+- [#2312](https://github.com/vegaprotocol/vega/pull/2312) Add validation for market proposal risk parameters
+- [#2313](https://github.com/vegaprotocol/vega/pull/2313) Add transaction replay protection
+- [#2314](https://github.com/vegaprotocol/vega/pull/2314) GraphQL: Improve response when market does not exist
+- [#2315](https://github.com/vegaprotocol/vega/pull/2315) GraphQL: Improve response when party does not exist
+- [#2316](https://github.com/vegaprotocol/vega/pull/2316) Documentation: Improve documentation for fee estimate endpoint
+- [#2318](https://github.com/vegaprotocol/vega/pull/2318) Documentation: Improve documentation for governance data endpoints
+- [#2324](https://github.com/vegaprotocol/vega/pull/2324) Cache transactions already seen by `checkTX`
+- [#2327](https://github.com/vegaprotocol/vega/pull/2327) Remove `AllEvent` from GraphQL event bus, and limit to max 1 event
+- [#2328](https://github.com/vegaprotocol/vega/pull/2328) Add test covering context cancellation mid data-sending
+- [#2331](https://github.com/vegaprotocol/vega/pull/2331) Internal refactor of network parameter storage
+- [#2334](https://github.com/vegaprotocol/vega/pull/2334) Rewrite `vegastream` to use the event bus
+- [#2333](https://github.com/vegaprotocol/vega/pull/2333) Fix context for events, add block hash and event id
+- [#2335](https://github.com/vegaprotocol/vega/pull/2335) Add ABCI event recorder
+- [#2341](https://github.com/vegaprotocol/vega/pull/2341) Ensure event slices cannot be empty
+- [#2345](https://github.com/vegaprotocol/vega/pull/2345) Handle filled orders in the market depth service before new orders are added
+- [#2346](https://github.com/vegaprotocol/vega/pull/2346) CI: Add missing environment variables
+- [#2348](https://github.com/vegaprotocol/vega/pull/2348) Use cached transactions in `checkTX`
+- [#2349](https://github.com/vegaprotocol/vega/pull/2349) Optimise accounts map accesses
+- [#2351](https://github.com/vegaprotocol/vega/pull/2351) Fix sequence ID related to market `OnChainTimeUpdate`
+- [#2354](https://github.com/vegaprotocol/vega/pull/2354) Update `OrderEvent` to copy order by value
+- [#2355](https://github.com/vegaprotocol/vega/pull/2355) Update coding style doc with info on log levels
+- [#2358](https://github.com/vegaprotocol/vega/pull/2358) Add documentation and comments for `events.proto`
+- [#2359](https://github.com/vegaprotocol/vega/pull/2359) Fix out of bounds index crash
+
 ## 0.25.0
 
 *2020-09-24*
