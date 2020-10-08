@@ -448,9 +448,6 @@ func (mdb *MarketDepthBuilder) Subscribe(updates chan<- *types.MarketDepthUpdate
 	mdb.subscriberID++
 	mdb.subscribers[mdb.subscriberID] = updates
 
-	//	mdb.log.Debug("Market depth updates subscriber added",
-	//		logging.Uint64("subscriber-id", a.subscriberID))
-
 	return mdb.subscriberID
 }
 
@@ -460,23 +457,12 @@ func (mdb *MarketDepthBuilder) Unsubscribe(id uint64) error {
 	defer mdb.mu.Unlock()
 
 	if len(mdb.subscribers) == 0 {
-		//		a.log.Debug("Un-subscribe called on market depth updates, no subscribers connected",
-		//			logging.Uint64("subscriber-id", id))
-
 		return nil
 	}
 
 	if _, exists := mdb.subscribers[id]; exists {
 		delete(mdb.subscribers, id)
-
-		//		a.log.Debug("Un-subscribe called on market depth updates, subscriber removed",
-		//			logging.Uint64("subscriber-id", id))
-
 		return nil
 	}
-
-	//	a.log.Warn("Un-subscribe called on market depth updates, subscriber does not exist",
-	//		logging.Uint64("subscriber-id", id))
-
 	return fmt.Errorf("subscriber to market depth updates does not exist with id: %d", id)
 }

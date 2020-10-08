@@ -1337,10 +1337,11 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 		case depth := <-depthChan:
 			if depth == nil {
 				err = ErrChannelClosed
-				t.log.Error("Depth updates subscriber",
-					logging.Error(err),
-					logging.Uint64("ref", ref),
-				)
+				if t.log.GetLevel() == logging.DebugLevel {
+					t.log.Debug("Depth updates subscriber closed",
+						logging.Error(err),
+						logging.Uint64("ref", ref))
+				}
 				return apiError(codes.Internal, err)
 			}
 			err = srv.Send(depth)

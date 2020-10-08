@@ -239,12 +239,13 @@ func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market strin
 					logging.String("ip-address", ip),
 				)
 				if err := s.marketDepth.Unsubscribe(ref); err != nil {
-					s.log.Error(
-						"Failure un-subscribing market depth updates subscriber when context.Done()",
-						logging.Uint64("id", ref),
-						logging.String("ip-address", ip),
-						logging.Error(err),
-					)
+					if s.log.GetLevel() == logging.DebugLevel {
+						s.log.Debug(
+							"Failure un-subscribing market depth updates subscriber when context.Done()",
+							logging.Uint64("id", ref),
+							logging.String("ip-address", ip),
+							logging.Error(err))
+					}
 				}
 				close(internal)
 				close(depth)
@@ -274,12 +275,13 @@ func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market strin
 					}
 				}
 				if !success && retryCount <= 0 {
-					s.log.Warn(
-						"Market depth updates subscriber has hit the retry limit",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-						logging.Int("retries", retries),
-					)
+					if s.log.GetLevel() == logging.DebugLevel {
+						s.log.Debug(
+							"Market depth updates subscriber has hit the retry limit",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+							logging.Int("retries", retries))
+					}
 					cancel()
 				}
 			}

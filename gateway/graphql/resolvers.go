@@ -1539,13 +1539,12 @@ func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *ty
 
 func (r *myMarketDepthUpdateResolver) Market(ctx context.Context, md *types.MarketDepthUpdate) (*Market, error) {
 	if md == nil {
-		return nil, errors.New("invalid market depth update")
+		return nil, errors.New("Market depth update is nil")
 	}
 
 	req := protoapi.MarketByIDRequest{MarketID: md.MarketID}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)
 	if err != nil {
-		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
 	market, err := MarketFromProto(res.Market)
@@ -1553,9 +1552,8 @@ func (r *myMarketDepthUpdateResolver) Market(ctx context.Context, md *types.Mark
 	switch p := market.TradableInstrument.Instrument.Product.(type) {
 	case *Future:
 		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
-		res, err := r.tradingDataClient.AssetByID(context.Background(), &req)
+		res, err := r.tradingDataClient.AssetByID(ctx, &req)
 		if err != nil {
-			r.log.Error("tradingData client", logging.Error(err))
 			return nil, customErrorFromStatus(err)
 		}
 		p.Asset, err = AssetFromProto(res.Asset)
@@ -2519,11 +2517,15 @@ func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market s
 		for {
 			md, err := stream.Recv()
 			if err == io.EOF {
-				r.log.Error("marketDepthUpdates: stream closed by server", logging.Error(err))
+				if r.log.GetLevel() == logging.DebugLevel {
+					r.log.Debug("marketDepthUpdates: stream closed by server", logging.Error(err))
+				}
 				break
 			}
 			if err != nil {
-				r.log.Error("marketDepthUpdates: stream closed", logging.Error(err))
+				if r.log.GetLevel() == logging.DebugLevel {
+					r.log.Debug("marketDepthUpdates: stream closed", logging.Error(err))
+				}
 				break
 			}
 			c <- md
