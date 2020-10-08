@@ -232,6 +232,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.eventService,
 		l.withdrawalPlugin,
 		l.depositPlugin,
+		l.marketDepthSub,
 		l.netParamsService,
 		statusChecker,
 	)

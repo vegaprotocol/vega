@@ -1652,6 +1652,11 @@
         "lastTrade": {
           "$ref": "#/definitions/vegaTrade",
           "description": "Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`."
+        },
+        "sequenceNumber": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Sequence number incremented after each update"
         }
       },
       "description": "Response for the market depth/order book price levels on a market."
@@ -3402,6 +3407,35 @@
       },
       "description": "Represents market depth or order book data for the specified market on Vega."
     },
+    "vegaMarketDepthUpdate": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string",
+          "description": "Market identifier."
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          },
+          "description": "Collection of updated price levels for the buy side of the book."
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          },
+          "description": "Collection of updated price levels for the sell side of the book."
+        },
+        "sequenceNumber": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Sequence number for the market depth update"
+        }
+      },
+      "title": "Represents the changed market depth since the last update"
+    },
     "vegaMarketEvent": {
       "type": "object",
       "properties": {
@@ -4319,6 +4353,11 @@
         "chainID": {
           "type": "string",
           "description": "Unique identifier for the underlying Vega blockchain."
+        },
+        "marketDepthUpdatesSubscriptions": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Current number of stream subscribers to market depth update data."
         }
       },
       "description": "Vega domain specific statistics as reported by the node the caller is connected to."
@@ -4778,6 +4817,18 @@
         }
       },
       "title": "Stream result of vegaMarketDepth"
+    },
+    "vegaMarketDepthUpdate": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/vegaMarketDepthUpdate"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of vegaMarketDepthUpdate"
     },
     "vegaPosition": {
       "type": "object",

@@ -210,6 +210,7 @@ type resolverRoot interface {
 	Mutation() gql.MutationResolver
 	Candle() gql.CandleResolver
 	MarketDepth() gql.MarketDepthResolver
+	MarketDepthUpdate() gql.MarketDepthUpdateResolver
 	PriceLevel() gql.PriceLevelResolver
 	Market() gql.MarketResolver
 	Order() gql.OrderResolver

@@ -85,6 +85,7 @@ type TradingDataClient interface {
 	TradesSubscribe(ctx context.Context, in *protoapi.TradesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_TradesSubscribeClient, error)
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
 	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
+	MarketDepthUpdatesSubscribe(ctx context.Context, in *protoapi.MarketDepthUpdatesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthUpdatesSubscribeClient, error)
 	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
 	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
 	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarginLevelsSubscribeClient, error)
@@ -167,6 +168,11 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 // MarketDepth returns the market depth resolver
 func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
+}
+
+// MarketDepth returns the market depth update resolver
+func (r *VegaResolverRoot) MarketDepthUpdate() MarketDepthUpdateResolver {
+	return (*myMarketDepthUpdateResolver)(r)
 }
 
 // MarketData returns the market data resolver
@@ -847,9 +853,10 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *Market, maxDepth *
 	}
 
 	return &types.MarketDepth{
-		MarketID: res.MarketID,
-		Buy:      res.Buy,
-		Sell:     res.Sell,
+		MarketID:       res.MarketID,
+		Buy:            res.Buy,
+		Sell:           res.Sell,
+		SequenceNumber: res.SequenceNumber,
 	}, nil
 }
 
@@ -1472,8 +1479,11 @@ func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-
 	return res.Trade, nil
+}
+
+func (r *myMarketDepthResolver) SequenceNumber(ctx context.Context, md *types.MarketDepth) (string, error) {
+	return strconv.FormatUint(md.SequenceNumber, 10), nil
 }
 
 func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDepth) (*Market, error) {
@@ -1503,6 +1513,55 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 }
 
 // END: Market Depth Resolver
+
+// BEGIN: Market Depth Update Resolver
+
+type myMarketDepthUpdateResolver VegaResolverRoot
+
+func (r *myMarketDepthUpdateResolver) Buy(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
+	valBuyLevels := make([]types.PriceLevel, 0)
+	for _, v := range obj.Buy {
+		valBuyLevels = append(valBuyLevels, *v)
+	}
+	return valBuyLevels, nil
+}
+func (r *myMarketDepthUpdateResolver) Sell(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
+	valBuyLevels := make([]types.PriceLevel, 0)
+	for _, v := range obj.Sell {
+		valBuyLevels = append(valBuyLevels, *v)
+	}
+	return valBuyLevels, nil
+}
+
+func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
+	return strconv.FormatUint(md.SequenceNumber, 10), nil
+}
+
+func (r *myMarketDepthUpdateResolver) Market(ctx context.Context, md *types.MarketDepthUpdate) (*Market, error) {
+	if md == nil {
+		return nil, errors.New("Market depth update is nil")
+	}
+
+	req := protoapi.MarketByIDRequest{MarketID: md.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	market, err := MarketFromProto(res.Market)
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(ctx, &req)
+		if err != nil {
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+	return market, err
+}
+
+// END: Market Depth Update Resolver
 
 // BEGIN: Order Resolver
 
@@ -2440,6 +2499,42 @@ func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 	return c, nil
 }
 
+func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market string) (<-chan *types.MarketDepthUpdate, error) {
+	req := &protoapi.MarketDepthUpdatesSubscribeRequest{
+		MarketID: market,
+	}
+	stream, err := r.tradingDataClient.MarketDepthUpdatesSubscribe(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	c := make(chan *types.MarketDepthUpdate)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
+		for {
+			md, err := stream.Recv()
+			if err == io.EOF {
+				if r.log.GetLevel() == logging.DebugLevel {
+					r.log.Debug("marketDepthUpdates: stream closed by server", logging.Error(err))
+				}
+				break
+			}
+			if err != nil {
+				if r.log.GetLevel() == logging.DebugLevel {
+					r.log.Debug("marketDepthUpdates: stream closed", logging.Error(err))
+				}
+				break
+			}
+			c <- md
+		}
+	}()
+
+	return c, nil
+}
+
 func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
 
 	pinterval, err := convertIntervalToProto(interval)
@@ -2784,6 +2879,10 @@ func (r *myStatisticsResolver) CandleSubscriptions(ctx context.Context, obj *typ
 
 func (r *myStatisticsResolver) MarketDepthSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.MarketDepthSubscriptions), nil
+}
+
+func (r *myStatisticsResolver) MarketDepthUpdateSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.MarketDepthUpdatesSubscriptions), nil
 }
 
 func (r *myStatisticsResolver) OrderSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
