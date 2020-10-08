@@ -28,15 +28,15 @@ func (suite *CommandSuite) RunMain(ctx context.Context, format string, args ...i
 	os.Stdout = w
 
 	cmd := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "-> %s\n", cmd)
+	fmt.Fprintf(old, "-> %s\n", cmd)
 	os.Args = append([]string{"vega"}, strings.Fields(cmd)...)
 	err := Main(ctx)
 
 	w.Close()
 	out, _ := ioutil.ReadAll(r)
+	fmt.Fprintf(old, "<- %s\n", out)
 	os.Stdout = old
 
-	fmt.Fprintf(os.Stderr, "<- %s\n", out)
 	return out, err
 }
 
