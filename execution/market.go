@@ -106,7 +106,6 @@ type Market struct {
 	closingAt   time.Time
 	currentTime time.Time
 
-	// If we are in a time based auction, set the start and finish time here
 	mu sync.Mutex
 
 	markPrice uint64
