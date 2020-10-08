@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
+	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -162,6 +163,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		time.Now(),
 		mktsetup.broker,
 		execution.NewIDGen(),
+		monitor.NewAuctionState(mkt, time.Now()),
 	)
 	if err != nil {
 		return err
