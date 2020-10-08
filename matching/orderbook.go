@@ -35,7 +35,7 @@ type OrderBook struct {
 	expiringOrders  *ExpiringOrders
 	ordersByID      map[string]*types.Order
 	ordersPerParty  map[string]map[string]struct{}
-	marketState     types.MarketState
+	auction         bool
 	batchID         uint64
 }
 
@@ -53,11 +53,6 @@ func (b *OrderBook) Hash() []byte {
 	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
-// GetMarketState returns the current state of the orderbook/market
-func (b *OrderBook) GetMarketState() types.MarketState {
-	return b.marketState
-}
-
 func isPersistent(o *types.Order) bool {
 	return o.GetType() == types.Order_TYPE_LIMIT &&
 		(o.GetTimeInForce() == types.Order_TIF_GTC ||
@@ -72,7 +67,7 @@ func isPersistent(o *types.Order) bool {
 // book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
 // updated and the new markPrice will be used there.
 func NewOrderBook(log *logging.Logger, config Config, marketID string,
-	initialMarkPrice uint64, marketState types.MarketState) *OrderBook {
+	initialMarkPrice uint64, auction bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -87,7 +82,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		lastTradedPrice: initialMarkPrice,
 		expiringOrders:  NewExpiringOrders(),
 		ordersByID:      map[string]*types.Order{},
-		marketState:     marketState,
+		auction:         auction,
 		batchID:         0,
 		ordersPerParty:  map[string]map[string]struct{}{},
 	}
@@ -117,7 +112,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price uint64
 		err   error
 	)
-	if b.marketState == types.MarketState_MARKET_STATE_AUCTION {
+	if b.auction {
 		p, _, _ := b.GetIndicativePriceAndVolume()
 		return p, nil
 	}
@@ -177,18 +172,18 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 // EnterAuction Moves the order book into an auction state
 func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Scan existing orders to see which ones can be kept, cancelled and parked
-	buyCancelledOrders, err := b.buy.getOrdersToCancel(types.MarketState_MARKET_STATE_AUCTION)
+	buyCancelledOrders, err := b.buy.getOrdersToCancel(true)
 	if err != nil {
 		return nil, err
 	}
 
-	sellCancelledOrders, err := b.sell.getOrdersToCancel(types.MarketState_MARKET_STATE_AUCTION)
+	sellCancelledOrders, err := b.sell.getOrdersToCancel(true)
 	if err != nil {
 		return nil, err
 	}
 
 	// Set the market state
-	b.marketState = types.MarketState_MARKET_STATE_AUCTION
+	b.auction = true
 
 	// Return all the orders that have been removed from the book and need to be cancelled
 	ordersToCancel := buyCancelledOrders
@@ -208,12 +203,12 @@ func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, 
 	}
 
 	// Remove any orders that will not be valid in continuous trading
-	buyOrdersToCancel, err := b.buy.getOrdersToCancel(types.MarketState_MARKET_STATE_CONTINUOUS)
+	buyOrdersToCancel, err := b.buy.getOrdersToCancel(false)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	sellOrdersToCancel, err := b.sell.getOrdersToCancel(types.MarketState_MARKET_STATE_CONTINUOUS)
+	sellOrdersToCancel, err := b.sell.getOrdersToCancel(false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -221,9 +216,13 @@ func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, 
 	ordersToCancel := append(buyOrdersToCancel, sellOrdersToCancel...)
 
 	// Flip back to continuous
-	b.marketState = types.MarketState_MARKET_STATE_CONTINUOUS
+	b.auction = false
 
 	return uncrossedOrders, ordersToCancel, nil
+}
+
+func (b OrderBook) InAuction() bool {
+	return b.auction
 }
 
 func (b *OrderBook) GetIndicativePrice() uint64 {
@@ -544,7 +543,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	if b.marketState == types.MarketState_MARKET_STATE_AUCTION {
+	if b.auction {
 		return nil, nil
 	}
 
@@ -587,7 +586,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	order.BatchID = b.batchID
 
-	if b.marketState != types.MarketState_MARKET_STATE_AUCTION {
+	if !b.auction {
 		// uncross with opposite
 		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order)
 		if lastTradedPrice != 0 {

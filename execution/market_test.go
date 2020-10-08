@@ -565,9 +565,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	tradingMode := tm.market.GetTradingMode()
 	require.Equal(t, 1, len(confirmationSell.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tradingMode))
 
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -606,17 +604,13 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	tradingMode = tm.market.GetTradingMode()
 	require.Equal(t, 0, len(confirmationSell.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
 	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
 }
 
 func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
@@ -679,9 +673,7 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	tradingMode := tm.market.GetTradingMode()
 	require.Equal(t, 1, len(confirmationBuy.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tradingMode))
 
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -720,13 +712,10 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	tradingMode = tm.market.GetTradingMode()
 	require.Equal(t, 0, len(confirmationSell.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
 	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
 	now = stillAuction
 	orderSell3 := &types.Order{
@@ -765,13 +754,10 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
-	tradingMode = tm.market.GetTradingMode()
 	require.Equal(t, 0, len(confirmationBuy.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tm.market.GetTradingMode()))
 
 	//TODO: Check that `party2-sell-order-3` & `party1-buy-order-3` get matched in auction and a trade is generated
 }
@@ -835,9 +821,7 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	tradingMode := tm.market.GetTradingMode()
 	require.Equal(t, 1, len(confirmationBuy.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_CONTINUOUS), int32(tradingMode))
 
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -876,13 +860,10 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	tradingMode = tm.market.GetTradingMode()
 	require.Equal(t, 0, len(confirmationSell.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
 	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 
 	now = stillAuction
 	orderSell3 := &types.Order{
@@ -921,12 +902,9 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
-	tradingMode = tm.market.GetTradingMode()
 	require.Equal(t, 0, len(confirmationBuy.Trades))
-	require.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tradingMode))
 
 	// Expecting market to still be in auction as auction resulted in invalid price
 	closed = tm.market.OnChainTimeUpdate(context.Background(), initialAuctionEnd)
 	assert.False(t, closed)
-	assert.Equal(t, int32(types.MarketState_MARKET_STATE_AUCTION), int32(tm.market.GetTradingMode()))
 }

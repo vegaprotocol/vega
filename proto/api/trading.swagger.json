@@ -2219,8 +2219,24 @@
         "end": {
           "type": "string",
           "format": "int64"
+        },
+        "trigger": {
+          "$ref": "#/definitions/vegaAuctionTrigger"
         }
       }
+    },
+    "vegaAuctionTrigger": {
+      "type": "string",
+      "enum": [
+        "AUCTION_TRIGGER_UNSPECIFIED",
+        "AUCTION_TRIGGER_BATCH",
+        "AUCTION_TRIGGER_OPENING",
+        "AUCTION_TRIGGER_PRICE",
+        "AUCTION_TRIGGER_LIQUIDITY"
+      ],
+      "default": "AUCTION_TRIGGER_UNSPECIFIED",
+      "description": "- AUCTION_TRIGGER_UNSPECIFIED: No auction triggered\n - AUCTION_TRIGGER_BATCH: Batch auction\n - AUCTION_TRIGGER_OPENING: Opening auction\n - AUCTION_TRIGGER_PRICE: Price monitoring trigger\n - AUCTION_TRIGGER_LIQUIDITY: liquidity monitoring trigger",
+      "title": "What triggered an auction (if any)"
     },
     "vegaBTCDeposit": {
       "type": "object",
@@ -3356,10 +3372,12 @@
       "enum": [
         "MARKET_STATE_UNSPECIFIED",
         "MARKET_STATE_CONTINUOUS",
-        "MARKET_STATE_AUCTION"
+        "MARKET_STATE_BATCH_AUCTION",
+        "MARKET_STATE_OPENING_AUCTION",
+        "MARKET_STATE_MONITORING_AUCTION"
       ],
       "default": "MARKET_STATE_UNSPECIFIED",
-      "description": "What mode is the market currently running, also known as market state.\n\n - MARKET_STATE_UNSPECIFIED: Default value, this is invalid\n - MARKET_STATE_CONTINUOUS: Normal trading\n - MARKET_STATE_AUCTION: Auction trading"
+      "description": "What mode is the market currently running, also known as market state.\n\n - MARKET_STATE_UNSPECIFIED: Default value, this is invalid\n - MARKET_STATE_CONTINUOUS: Normal trading\n - MARKET_STATE_BATCH_AUCTION: Auction trading (FBA)\n - MARKET_STATE_OPENING_AUCTION: Opening auction\n - MARKET_STATE_MONITORING_AUCTION: Auction triggered by monitoring"
     },
     "vegaMarketTick": {
       "type": "object",

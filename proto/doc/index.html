@@ -817,6 +817,10 @@
 
 
                 <li>
+                  <a href="#vega.AuctionTrigger"><span class="badge">E</span>AuctionTrigger</a>
+                </li>
+
+                <li>
                   <a href="#vega.BusEventType"><span class="badge">E</span>BusEventType</a>
                 </li>
 
@@ -6818,6 +6822,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td><p> </p></td>
                 </tr>
 
+                <tr>
+                  <td>trigger</td>
+                  <td><a href="#vega.AuctionTrigger">AuctionTrigger</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -7339,6 +7350,47 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
 
+
+        <h3 id="vega.AuctionTrigger">AuctionTrigger</h3>
+        <p>What triggered an auction (if any)</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>AUCTION_TRIGGER_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>No auction triggered</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_BATCH</td>
+                <td>1</td>
+                <td><p>Batch auction</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_OPENING</td>
+                <td>2</td>
+                <td><p>Opening auction</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_PRICE</td>
+                <td>3</td>
+                <td><p>Price monitoring trigger</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_LIQUIDITY</td>
+                <td>4</td>
+                <td><p>liquidity monitoring trigger</p></td>
+              </tr>
+
+          </tbody>
+        </table>
 
         <h3 id="vega.BusEventType">BusEventType</h3>
         <p>event types, 2 groups: actual single values, and then some events that capture a group of events</p>
@@ -9412,7 +9464,7 @@ probability level. </p></td>
 
                       <li>float_gt: 0</li>
 
-                      <li>float_lt: 0</li>
+                      <li>float_lt: 1</li>
 
                     </ul>
                   </td>
@@ -13450,9 +13502,21 @@ These fees reward traders who provide the best priced liquidity that actually al
               </tr>
 
               <tr>
-                <td>MARKET_STATE_AUCTION</td>
+                <td>MARKET_STATE_BATCH_AUCTION</td>
                 <td>2</td>
-                <td><p>Auction trading</p></td>
+                <td><p>Auction trading (FBA)</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_STATE_OPENING_AUCTION</td>
+                <td>3</td>
+                <td><p>Opening auction</p></td>
+              </tr>
+
+              <tr>
+                <td>MARKET_STATE_MONITORING_AUCTION</td>
+                <td>4</td>
+                <td><p>Auction triggered by monitoring</p></td>
               </tr>
 
           </tbody>

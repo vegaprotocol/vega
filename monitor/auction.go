@@ -6,23 +6,13 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
-)
-
-// Trigger - placeholder type for proto enum
-type Trigger int
-
-const (
-	Trigger_None Trigger = iota // none -> continuous trading
-	Trigger_OpeningAuction
-	Trigger_FBA
-	Trigger_PriceMonitoring
-	Trigger_LiquidityMonitoring
+	"code.vegaprotocol.io/vega/vegatime"
 )
 
 type AuctionState struct {
 	mode        types.MarketState      // current trading mode
 	defMode     types.MarketState      // default trading mode for market
-	trigger     Trigger                // Set to the value indicating what started the auction
+	trigger     types.AuctionTrigger   // Set to the value indicating what started the auction
 	begin       *time.Time             // optional setting auction start time (will be set if start flag is true)
 	end         *types.AuctionDuration // will be set when in auction, defines parameters that end an auction period
 	start, stop bool                   // flags to clarify whether we're entering or leaving auction
@@ -31,22 +21,27 @@ type AuctionState struct {
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	s := AuctionState{
-		mode:    types.MarketState_MARKET_STATE_AUCTION,
+		mode:    types.MarketState_MARKET_STATE_OPENING_AUCTION,
 		defMode: types.MarketState_MARKET_STATE_CONTINUOUS,
-		trigger: Trigger_OpeningAuction,
+		trigger: types.AuctionTrigger_AUCTION_TRIGGER_OPENING,
 		begin:   &now,
 		end:     mkt.OpeningAuction,
 		start:   true,
 	}
 	if mkt.GetContinuous() == nil {
-		s.defMode = types.MarketState_MARKET_STATE_AUCTION
+		s.defMode = types.MarketState_MARKET_STATE_BATCH_AUCTION
 	}
 	// no opening auction
 	if mkt.OpeningAuction == nil {
 		s.mode = s.defMode
+		if s.mode == types.MarketState_MARKET_STATE_BATCH_AUCTION {
+			// @TODO set end params here (FBA is not yet implemented)
+			return &s
+		}
+		// no opening auction
 		s.begin = nil
 		s.start = false
-		s.trigger = Trigger_None
+		s.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 	}
 	return &s
 }
@@ -54,8 +49,8 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 // StartLiquidityAuction - set the state to start a liquidity triggered auction
 // @TODO these functions will be removed once the types are in proto
 func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration) {
-	a.mode = types.MarketState_MARKET_STATE_AUCTION // auction mode
-	a.trigger = Trigger_LiquidityMonitoring
+	a.mode = types.MarketState_MARKET_STATE_MONITORING_AUCTION
+	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 	a.start = true
 	a.stop = false
 	a.begin = &t
@@ -65,8 +60,8 @@ func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDurati
 // StartPriceAuction - set the state to start a price triggered auction
 // @TODO these functions will be removed once the types are in proto
 func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) {
-	a.mode = types.MarketState_MARKET_STATE_AUCTION // auction mode
-	a.trigger = Trigger_PriceMonitoring
+	a.mode = types.MarketState_MARKET_STATE_MONITORING_AUCTION
+	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_PRICE
 	a.start = true
 	a.stop = false
 	a.begin = &t
@@ -123,23 +118,23 @@ func (a AuctionState) Mode() types.MarketState {
 // InAuction returns bool if the market is in auction for any reason
 // Returns false if auction is triggered, but not yet started by market (execution)
 func (a AuctionState) InAuction() bool {
-	return (!a.start && a.trigger != Trigger_None)
+	return (!a.start && a.trigger != types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED)
 }
 
 func (a AuctionState) IsOpeningAuction() bool {
-	return (a.trigger == Trigger_OpeningAuction)
+	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_OPENING)
 }
 
 func (a AuctionState) IsLiquidityAuction() bool {
-	return (a.trigger == Trigger_LiquidityMonitoring)
+	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY)
 }
 
 func (a AuctionState) IsPriceAuction() bool {
-	return (a.trigger == Trigger_PriceMonitoring)
+	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE)
 }
 
 func (a AuctionState) IsFBA() bool {
-	return (a.trigger == Trigger_FBA)
+	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_BATCH)
 }
 
 // AuctionEnd bool indicating whether auction should be closed or not, if true, we can still extend the auction
@@ -158,23 +153,27 @@ func (a AuctionState) AuctionStart() bool {
 func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 	a.start = false
 	end := int64(0)
+	if a.begin == nil {
+		b := vegatime.Now()
+		a.begin = &b
+	}
 	if a.end != nil && a.end.Duration > 0 {
 		end = a.begin.Add(time.Duration(a.end.Duration)).UnixNano()
 	}
-	return events.NewAuctionEvent(ctx, a.m.Id, false, a.begin.UnixNano(), end, a.IsOpeningAuction())
+	return events.NewAuctionEvent(ctx, a.m.Id, false, a.begin.UnixNano(), end, a.trigger)
 }
 
 // AuctionEnded is called by execution to update internal state indicating this auction was closed
 func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.Auction {
 	// the end-of-auction event
-	evt := events.NewAuctionEvent(ctx, a.m.Id, true, a.begin.UnixNano(), now.UnixNano(), a.IsOpeningAuction())
+	evt := events.NewAuctionEvent(ctx, a.m.Id, true, a.begin.UnixNano(), now.UnixNano(), a.trigger)
 	a.start, a.stop = false, false
 	a.begin, a.end = nil, nil
-	a.trigger = Trigger_None
+	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 	a.mode = a.defMode
 	// default mode is auction, this is an FBA market
-	if a.mode == types.MarketState_MARKET_STATE_AUCTION {
-		a.trigger = Trigger_FBA
+	if a.mode == types.MarketState_MARKET_STATE_BATCH_AUCTION {
+		a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_BATCH
 	}
 	return evt
 }

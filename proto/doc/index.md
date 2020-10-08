@@ -163,6 +163,7 @@
     - [TradeSettlement](#vega.TradeSettlement)
     - [TransferResponses](#vega.TransferResponses)
 
+    - [AuctionTrigger](#vega.AuctionTrigger)
     - [BusEventType](#vega.BusEventType)
 
 - [proto/governance.proto](#proto/governance.proto)
@@ -2633,6 +2634,7 @@ An event related to validator management with foreign networks.
 | leave | [bool](#bool) |  |  |
 | start | [int64](#int64) |  |  |
 | end | [int64](#int64) |  |  |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  |  |
 
 
 
@@ -2830,6 +2832,21 @@ TransferResponses - a slice of transfer response objects
 
 
 
+
+
+
+<a name="vega.AuctionTrigger"></a>
+
+### AuctionTrigger
+What triggered an auction (if any)
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| AUCTION_TRIGGER_UNSPECIFIED | 0 | No auction triggered |
+| AUCTION_TRIGGER_BATCH | 1 | Batch auction |
+| AUCTION_TRIGGER_OPENING | 2 | Opening auction |
+| AUCTION_TRIGGER_PRICE | 3 | Price monitoring trigger |
+| AUCTION_TRIGGER_LIQUIDITY | 4 | liquidity monitoring trigger |
 
 
 
@@ -4941,7 +4958,9 @@ What mode is the market currently running, also known as market state.
 | ---- | ------ | ----------- |
 | MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
 | MARKET_STATE_CONTINUOUS | 1 | Normal trading |
-| MARKET_STATE_AUCTION | 2 | Auction trading |
+| MARKET_STATE_BATCH_AUCTION | 2 | Auction trading (FBA) |
+| MARKET_STATE_OPENING_AUCTION | 3 | Opening auction |
+| MARKET_STATE_MONITORING_AUCTION | 4 | Auction triggered by monitoring |
 
 
 

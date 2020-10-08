@@ -158,8 +158,8 @@ func (this *PriceMonitoringParameters) Validate() error {
 	if !(this.Probability > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Probability", fmt.Errorf(`value '%v' must be strictly greater than '0'`, this.Probability))
 	}
-	if !(this.Probability < 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Probability", fmt.Errorf(`value '%v' must be strictly lower than '0'`, this.Probability))
+	if !(this.Probability < 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("Probability", fmt.Errorf(`value '%v' must be strictly lower than '1'`, this.Probability))
 	}
 	if !(this.AuctionExtension > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("AuctionExtension", fmt.Errorf(`value '%v' must be greater than '0'`, this.AuctionExtension))
