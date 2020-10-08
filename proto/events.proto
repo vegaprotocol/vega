@@ -110,6 +110,7 @@ message AuctionEvent {
   int64 start = 4;
   // Timestamp containing the end time for an auction
   int64 end = 5;
+  // the reason this market is/was in auction
   AuctionTrigger trigger = 6;
 }
 

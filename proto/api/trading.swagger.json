@@ -2275,7 +2275,8 @@
           "title": "Timestamp containing the end time for an auction"
         },
         "trigger": {
-          "$ref": "#/definitions/vegaAuctionTrigger"
+          "$ref": "#/definitions/vegaAuctionTrigger",
+          "title": "the reason this market is/was in auction"
         }
       },
       "title": "An auction event indicating a change in auction state, for example starting or ending an auction"

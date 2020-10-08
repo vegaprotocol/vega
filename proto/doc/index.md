@@ -2682,7 +2682,7 @@ An auction event indicating a change in auction state, for example starting or e
 | leave | [bool](#bool) |  | True if the event indicates leaving auction mode and False otherwise |
 | start | [int64](#int64) |  | Timestamp containing the start time for an auction |
 | end | [int64](#int64) |  | Timestamp containing the end time for an auction |
-| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  |  |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | the reason this market is/was in auction |
 
 
 

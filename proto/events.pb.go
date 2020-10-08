@@ -659,7 +659,8 @@ type AuctionEvent struct {
 	// Timestamp containing the start time for an auction
 	Start int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
 	// Timestamp containing the end time for an auction
-	End                  int64          `protobuf:"varint,5,opt,name=end,proto3" json:"end,omitempty"`
+	End int64 `protobuf:"varint,5,opt,name=end,proto3" json:"end,omitempty"`
+	// the reason this market is/was in auction
 	Trigger              AuctionTrigger `protobuf:"varint,6,opt,name=trigger,proto3,enum=vega.AuctionTrigger" json:"trigger,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
