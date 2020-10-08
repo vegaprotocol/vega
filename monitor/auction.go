@@ -27,6 +27,7 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 		begin:   &now,
 		end:     mkt.OpeningAuction,
 		start:   true,
+		m:       mkt,
 	}
 	if mkt.GetContinuous() == nil {
 		s.defMode = types.MarketState_MARKET_STATE_BATCH_AUCTION
