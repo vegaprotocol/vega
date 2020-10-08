@@ -70,3 +70,20 @@ func (l *Liquidity) CheckAuction(as AuctionSate) {
     }
 }
 ```
+
+## Price sub-package
+
+Price subpackage contains the price monitoring engine. It's used to determine if the price movement exceeded the bounds implied by the risk model over a specified horizon at a specified probability level. If that's the case, the price monitoring engine modifies the `AuctionState` to indicate that the price monitoring auction should commence. Once in auction, the engine checks if the auction time has elapsed, and if so if the resulting auction uncrossing price falls within the price monitoring bounds, if that condition is met the `AuctionState` object gets modified to indicate that price monitoring auction should finish, otherwise the  `AuctionState` object gets modified to indicate that the auction should be extended.
+
+Below is the signature of the price montoring constructor:
+
+```go
+func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings) (*Engine, error)
+```
+
+where:
+
+* `RangeProvider` exposes the method `PriceRange(price, yearFraction, probability float64) (float64, float64)` which returns the minimum (`minPrice`) and maximum (`maxPrice`) valid price per current price (`price`), the time horizon expressed as year fraction (`yearFraction`) and probability level (`probability`). `price`, `minPrice`, `maxPrice` are then used to imply `MinMoveDown` and `MaxMoveUp` over `yearFraction` at probability level  `probability` as: `MinMoveDown`=`minPrice` - `price`, `MaxMoveUp`: `maxPrice` - `price`.
+* `PriceMonitoringSettings` contains:
+  * a list of `yearFraction`, `probability` and `auctionExtension` tuples, where `yearFraction`, `probability` are used in a call to the risk model and `auctionExtension` is the period in seconds by which the current auction should be extended (or initial period of new auction if currently market is in its _"normal"_ trading mode) should the actual price movement over min(`yearFraction`,t), where t is the time since last auction expressed as a year fraction, violate the bounds implied by the `RangeProvider` (`MinMoveDown`, `MaxMoveUp`),
+  * `UpdateFrequency` indicates how often `RangeProvider` should be called to update `MinMoveDown`, `MaxMoveUp`.
