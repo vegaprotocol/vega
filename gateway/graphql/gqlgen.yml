@@ -14,6 +14,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.PriceLevel
   MarketDepth:
     model: code.vegaprotocol.io/vega/proto.MarketDepth
+  MarketDepthUpdate:
+    model: code.vegaprotocol.io/vega/proto.MarketDepthUpdate
   Candle:
     model: code.vegaprotocol.io/vega/proto.Candle
   Position:

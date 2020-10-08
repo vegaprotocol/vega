@@ -160,13 +160,6 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if margins == nil {
 		return nil, nil
 	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("margins calculated on new order",
-			logging.String("party-id", evt.Party()),
-			logging.String("market-id", evt.MarketID()),
-			logging.Reflect("margins", *margins),
-		)
-	}
 
 	// update other fields for the margins
 	margins.PartyID = evt.Party()

@@ -292,6 +292,9 @@ service trading_data {
   // Subscribe to a stream of Market Depth
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
 
+  // Subscribe to a stream of Market Depth PriceLevel Updates
+  rpc MarketDepthUpdatesSubscribe(MarketDepthUpdatesSubscribeRequest) returns (stream vega.MarketDepthUpdate);
+
   // Subscribe to a stream of Markets Data
   rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
 
@@ -733,6 +736,13 @@ message MarketDepthSubscribeRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+// Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data.
+message MarketDepthUpdatesSubscribeRequest {
+
+  // Market identifier. Required field.
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
 // Request to subscribe to a stream of (Positions)[#vega.Position].
 message PositionsSubscribeRequest {
 
@@ -849,6 +859,8 @@ message MarketDepthResponse {
   repeated vega.PriceLevel sell = 3;
   // Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
   vega.Trade lastTrade = 4;
+  // Sequence number incremented after each update
+  uint64 sequenceNumber = 5;
 }
 
 // Request for a list of trades on a market.

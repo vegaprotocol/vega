@@ -5,7 +5,7 @@ go 1.14
 require (
 	code.vegaprotocol.io/quant v0.2.0
 	dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 // indirect
-	github.com/99designs/gqlgen v0.8.3
+	github.com/99designs/gqlgen v0.11.3
 	github.com/Azure/azure-pipeline-go v0.2.2 // indirect
 	github.com/Azure/azure-storage-blob-go v0.7.0 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.8.0 // indirect

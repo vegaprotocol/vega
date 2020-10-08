@@ -352,17 +352,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	// TODO(): handle market start time
 
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Calculating risk factors (if required)",
-			logging.String("market-id", m.mkt.Id))
-	}
-
 	m.risk.CalculateFactors(ctx, t)
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Calculated risk factors and updated positions (maybe)",
-			logging.String("market-id", m.mkt.Id))
-	}
 
 	timer.EngineTimeCounterAdd()
 
@@ -435,10 +425,6 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
-func (m *Market) isOpeningAuction() bool {
-	return m.as.IsOpeningAuction()
-}
-
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	// m.as.AuctionStart() // Check here?
@@ -461,7 +447,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// If we were an opening auction, clear it
-	if m.isOpeningAuction() {
+	if m.as.IsOpeningAuction() {
 		m.mkt.OpeningAuction = nil
 	}
 
@@ -783,7 +769,7 @@ func (m *Market) addParty(party string) {
 func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
 	// if we have some trades, let's try to get the fees
 
-	if len(trades) <= 0 || m.isOpeningAuction() {
+	if len(trades) <= 0 || m.as.IsOpeningAuction() {
 		return nil
 	}
 
@@ -793,8 +779,8 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		err  error
 	)
 
-	switch m.mkt.TradingMode.(type) {
-	case *types.Market_Continuous:
+	// continuous trading
+	if !m.as.InAuction() {
 		// change this by the following check:
 		// if m.NotInMonitoringAuctionMode {
 		if true {
@@ -822,8 +808,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		transfers []*types.TransferResponse
 		asset, _  = m.mkt.GetAsset()
 	)
-	switch m.mkt.TradingMode.(type) {
-	case *types.Market_Continuous:
+	if !m.as.InAuction() {
 		// change this by the following check:
 		// if m.NotInMonitoringAuctionMode {
 		if true {
@@ -907,24 +892,6 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 		if len(margins) > 0 {
 
 			transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug(
-					"Updated margin balances",
-					logging.Int("transfer-count", len(transfers)),
-					logging.Int("closed-count", len(closed)),
-					logging.Error(err),
-				)
-				for _, tr := range transfers {
-					for _, v := range tr.GetTransfers() {
-						if m.log.GetLevel() == logging.DebugLevel {
-							m.log.Debug(
-								"Ensured margin on order with success",
-								logging.String("transfer", fmt.Sprintf("%v", *v)),
-								logging.String("market-id", m.GetID()))
-						}
-					}
-				}
-			}
 			if err == nil && len(transfers) > 0 {
 				evt := events.NewTransferResponse(ctx, transfers)
 				m.broker.Send(evt)
@@ -1337,12 +1304,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 			)
 		}
 		return nil, ErrMarginCheckInsufficient
-	} else if riskUpdate == nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("No risk updates",
-				logging.String("market-id", m.GetID()))
-		}
-	} else {
+	} else if riskUpdate != nil {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
 		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
@@ -1363,17 +1325,6 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 			}
 
 			return nil, ErrMarginCheckInsufficient
-		}
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Transfers applied for ")
-			for _, v := range transfer.GetTransfers() {
-				m.log.Debug(
-					"Ensured margin on order with success",
-					logging.String("transfer", fmt.Sprintf("%v", *v)),
-					logging.String("market-id", m.GetID()),
-				)
-			}
 		}
 
 		if len(transfer.Transfers) > 0 {
@@ -1405,18 +1356,7 @@ func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin,
 		return nil, err
 	}
 	if riskUpdate == nil {
-		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil, nil
-	}
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Got margins transfer on new order")
-		transfer := riskUpdate.Transfer()
-		m.log.Debug(
-			"New margin transfer on order submit",
-			logging.String("transfer", fmt.Sprintf("%v", *transfer)),
-			logging.String("market-id", m.GetID()),
-		)
 	}
 
 	return riskUpdate, nil
@@ -1433,6 +1373,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
+	defer timer.EngineTimeCounterAdd()
 	asset, _ := m.mkt.GetAsset()
 	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if err != nil {
@@ -1442,29 +1383,16 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		)
 		return nil
 	}
-	if m.log.GetLevel() == logging.DebugLevel {
-		// @TODO stream the ledger movements here
-		m.log.Debug(
-			"transfer responses after MTM settlement",
-			logging.Int("transfer-count", len(response)),
-			logging.String("raw-dump", fmt.Sprintf("%#v", response)),
-		)
-	}
 	// sending response to buffer
-	evt := events.NewTransferResponse(ctx, response)
-	m.broker.Send(evt)
+	m.broker.Send(events.NewTransferResponse(ctx, response))
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice)
 	if len(riskUpdates) == 0 {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
-		}
 		return nil
 	}
 
-	timer.EngineTimeCounterAdd()
 	return riskUpdates
 }
 
@@ -1867,10 +1795,6 @@ func (m *Market) applyOrderAmendment(
 
 func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderCancelReplace")
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Cancel/replace order")
-	}
 
 	cancellation, err := m.matching.CancelOrder(existingOrder)
 	if cancellation == nil {

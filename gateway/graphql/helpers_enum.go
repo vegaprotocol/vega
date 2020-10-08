@@ -253,8 +253,12 @@ func convertOrderTypeFromProto(x types.Order_Type) (OrderType, error) {
 // convertMarketStateFromProto converts a Proto enum to a GraphQL enum
 func convertMarketStateFromProto(ms types.MarketState) (MarketState, error) {
 	switch ms {
-	case types.MarketState_MARKET_STATE_AUCTION:
-		return MarketStateAuction, nil
+	case types.MarketState_MARKET_STATE_OPENING_AUCTION:
+		return MarketStateOpeningAuction, nil
+	case types.MarketState_MARKET_STATE_BATCH_AUCTION:
+		return MarketStateBatchAuction, nil
+	case types.MarketState_MARKET_STATE_MONITORING_AUCTION:
+		return MarketStateMonitoringAuction, nil
 	case types.MarketState_MARKET_STATE_CONTINUOUS:
 		return MarketStateContinuous, nil
 	default:

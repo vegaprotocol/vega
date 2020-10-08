@@ -76,6 +76,7 @@ type MarketService interface {
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string, limit uint64) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
+	ObserveDepthUpdates(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepthUpdate, ref uint64)
 	GetMarketDepthSubscribersCount() int32
 	ObserveMarketsData(ctx context.Context, retries int, marketID string) (<-chan []types.MarketData, uint64)
 	GetMarketDataSubscribersCount() int32
@@ -217,6 +218,7 @@ type tradingDataService struct {
 	statusChecker           *monitoring.Status
 	WithdrawalService       WithdrawalService
 	DepositService          DepositService
+	MarketDepthService      *subscribers.MarketDepthBuilder
 	NetParamsService        NetParamsService
 	ctx                     context.Context
 }
@@ -591,9 +593,10 @@ func (t *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 
 	// Build market depth response, including last trade (if available)
 	resp := &protoapi.MarketDepthResponse{
-		Buy:      depth.Buy,
-		MarketID: depth.MarketID,
-		Sell:     depth.Sell,
+		Buy:            depth.Buy,
+		MarketID:       depth.MarketID,
+		Sell:           depth.Sell,
+		SequenceNumber: depth.SequenceNumber,
 	}
 	if len(ts) > 0 && ts[0] != nil {
 		resp.LastTrade = ts[0]
@@ -1278,7 +1281,7 @@ func (t *tradingDataService) MarketDepthSubscribe(
 			err = srv.Send(depth)
 			if err != nil {
 				if t.log.GetLevel() == logging.DebugLevel {
-					t.log.Error("Depth subscriber - rpc stream error",
+					t.log.Debug("Depth subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
 					)
@@ -1301,6 +1304,72 @@ func (t *tradingDataService) MarketDepthSubscribe(
 		if depthChan == nil {
 			if t.log.GetLevel() == logging.DebugLevel {
 				t.log.Debug("Depth subscriber - rpc stream closed", logging.Uint64("ref", ref))
+			}
+			return apiError(codes.Internal, ErrStreamClosed)
+		}
+	}
+}
+
+// MarketDepthUpdatesSubscribe opens a subscription to the MarketDepth Updates service.
+func (t *tradingDataService) MarketDepthUpdatesSubscribe(
+	req *protoapi.MarketDepthUpdatesSubscribeRequest,
+	srv protoapi.TradingData_MarketDepthUpdatesSubscribeServer,
+) error {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketDepthUpdatesSubscribe")()
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	_, err := validateMarket(ctx, req.MarketID, t.MarketService)
+	if err != nil {
+		return err // validateMarket already returns an API error, no additional wrapping needed
+	}
+
+	depthChan, ref := t.MarketService.ObserveDepthUpdates(
+		ctx, t.Config.StreamRetries, req.MarketID)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Depth updates subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	for {
+		select {
+		case depth := <-depthChan:
+			if depth == nil {
+				err = ErrChannelClosed
+				if t.log.GetLevel() == logging.DebugLevel {
+					t.log.Debug("Depth updates subscriber closed",
+						logging.Error(err),
+						logging.Uint64("ref", ref))
+				}
+				return apiError(codes.Internal, err)
+			}
+			err = srv.Send(depth)
+			if err != nil {
+				if t.log.GetLevel() == logging.DebugLevel {
+					t.log.Debug("Depth updates subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+				}
+				return apiError(codes.Internal, ErrStreamInternal, err)
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			if t.log.GetLevel() == logging.DebugLevel {
+				t.log.Debug("Depth updates subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
+			return apiError(codes.Internal, ErrStreamInternal, err)
+		case <-t.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+
+		if depthChan == nil {
+			if t.log.GetLevel() == logging.DebugLevel {
+				t.log.Debug("Depth updates subscriber - rpc stream closed", logging.Uint64("ref", ref))
 			}
 			return apiError(codes.Internal, ErrStreamClosed)
 		}
