@@ -356,7 +356,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			}
 		} else if m.as.IsPriceAuction() {
 			p := m.matching.GetIndicativePrice()
-			// this shouldn't be possible, but just in case: if indicative price is 0, use last known mark price
+			// ending auction now would result in no trades so feed the last mark price into pMonitor
 			if p == 0 {
 				p = m.markPrice
 			}
