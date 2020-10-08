@@ -225,7 +225,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
-	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
 }
 

@@ -539,6 +539,8 @@ message Statistics {
   string uptime = 32;
   // Unique identifier for the underlying Vega blockchain.
   string chainID = 33;
+  // Current number of stream subscribers to market depth update data.
+  uint32 marketDepthUpdatesSubscriptions = 34;
 }
 
 // The Vega blockchain status as reported by the node the caller is connected to.

@@ -62,6 +62,8 @@ type GRPCServer struct {
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
 
+	marketDepthService *subscribers.MarketDepthBuilder
+
 	statusChecker *monitoring.Status
 
 	// used in order to gracefully close streams
@@ -92,6 +94,7 @@ func NewGRPCServer(
 	eventService *subscribers.Service,
 	withdrawalService *plugins.Withdrawal,
 	depositService *plugins.Deposit,
+	marketDepthService *subscribers.MarketDepthBuilder,
 	netParamsService *netparams.Service,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
@@ -122,6 +125,7 @@ func NewGRPCServer(
 		eventService:            eventService,
 		withdrawalService:       withdrawalService,
 		depositService:          depositService,
+		marketDepthService:      marketDepthService,
 		statusChecker:           statusChecker,
 		netParamsService:        netParamsService,
 		ctx:                     ctx,
@@ -244,6 +248,7 @@ func (g *GRPCServer) Start() {
 		statusChecker:           g.statusChecker,
 		WithdrawalService:       g.withdrawalService,
 		DepositService:          g.depositService,
+		MarketDepthService:      g.marketDepthService,
 		NetParamsService:        g.netParamsService,
 		ctx:                     g.ctx,
 	}
