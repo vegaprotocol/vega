@@ -17,6 +17,10 @@ var (
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
 )
 
+const (
+	secondsPerYear = 365.25 * 24 * 60 * 60
+)
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price AuctionState
 type AuctionState interface {
 	// What is the current trading mode of the market, is it in auction
@@ -89,11 +93,10 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 				parameters[i].Probability >= parameters[j].Probability
 		})
 
-	h := make(map[int64]float64)
-	secondsInYear := 365.25 * 24 * 60 * 60
+	h := map[int64]float64{}
 	for _, p := range parameters {
 		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = float64(p.Horizon) / float64(secondsInYear)
+			h[p.Horizon] = float64(p.Horizon) / secondsPerYear
 		}
 	}
 	e := &Engine{
@@ -223,7 +226,7 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 				Time:         e.now,
 				AveragePrice: float64(sum) / float64(len(e.pricesNow)),
 			})
-		e.pricesNow = make([]uint64, 0, cap(e.pricesNow))
+		e.pricesNow = e.pricesNow[:0]
 		e.now = now
 		e.updateBounds()
 	}
