@@ -75,6 +75,8 @@ type AuctionEvent struct {
 	AuctionStart string `json:"auctionStart"`
 	// optional end time of auction
 	AuctionEnd string `json:"auctionEnd"`
+	// What triggered the auction
+	Trigger AuctionTrigger `json:"trigger"`
 }
 
 func (AuctionEvent) IsEvent() {}
@@ -842,6 +844,58 @@ func (e AccountType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type AuctionTrigger string
+
+const (
+	// Invalid trigger (or no auction)
+	AuctionTriggerUnspecified AuctionTrigger = "Unspecified"
+	// Auction because market is trading FBA
+	AuctionTriggerBatch AuctionTrigger = "Batch"
+	// Opening auction
+	AuctionTriggerOpening AuctionTrigger = "Opening"
+	// Price monitoring
+	AuctionTriggerPrice AuctionTrigger = "Price"
+	// Liquidity monitoring
+	AuctionTriggerLiquidity AuctionTrigger = "Liquidity"
+)
+
+var AllAuctionTrigger = []AuctionTrigger{
+	AuctionTriggerUnspecified,
+	AuctionTriggerBatch,
+	AuctionTriggerOpening,
+	AuctionTriggerPrice,
+	AuctionTriggerLiquidity,
+}
+
+func (e AuctionTrigger) IsValid() bool {
+	switch e {
+	case AuctionTriggerUnspecified, AuctionTriggerBatch, AuctionTriggerOpening, AuctionTriggerPrice, AuctionTriggerLiquidity:
+		return true
+	}
+	return false
+}
+
+func (e AuctionTrigger) String() string {
+	return string(e)
+}
+
+func (e *AuctionTrigger) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AuctionTrigger(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AuctionTrigger", str)
+	}
+	return nil
+}
+
+func (e AuctionTrigger) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type BusEventType string
 
 const (
@@ -1051,18 +1105,24 @@ type MarketState string
 const (
 	// Continuous trading where orders are processed and potentially matched on arrival
 	MarketStateContinuous MarketState = "CONTINUOUS"
-	// Auction trading where orders are uncrossed at the end of the auction period
-	MarketStateAuction MarketState = "AUCTION"
+	// Auction trading where orders are uncrossed at the end of the opening auction period
+	MarketStateOpeningAuction MarketState = "OPENING_AUCTION"
+	// Auction as normal trading mode for the market, where orders are uncrossed periodically
+	MarketStateBatchAuction MarketState = "BATCH_AUCTION"
+	// Auction triggered by price/liquidity monitoring
+	MarketStateMonitoringAuction MarketState = "MONITORING_AUCTION"
 )
 
 var AllMarketState = []MarketState{
 	MarketStateContinuous,
-	MarketStateAuction,
+	MarketStateOpeningAuction,
+	MarketStateBatchAuction,
+	MarketStateMonitoringAuction,
 }
 
 func (e MarketState) IsValid() bool {
 	switch e {
-	case MarketStateContinuous, MarketStateAuction:
+	case MarketStateContinuous, MarketStateOpeningAuction, MarketStateBatchAuction, MarketStateMonitoringAuction:
 		return true
 	}
 	return false

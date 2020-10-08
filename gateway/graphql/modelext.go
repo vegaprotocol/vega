@@ -1271,12 +1271,29 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 	return gql
 }
 
+func auctionTriggerFromProto(t types.AuctionTrigger) AuctionTrigger {
+	switch t {
+	case types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED:
+		return AuctionTriggerUnspecified
+	case types.AuctionTrigger_AUCTION_TRIGGER_BATCH:
+		return AuctionTriggerBatch
+	case types.AuctionTrigger_AUCTION_TRIGGER_OPENING:
+		return AuctionTriggerOpening
+	case types.AuctionTrigger_AUCTION_TRIGGER_PRICE:
+		return AuctionTriggerPrice
+	case types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY:
+		return AuctionTriggerLiquidity
+	}
+	return AuctionTriggerUnspecified
+}
+
 func auctionEventFromProto(ae *types.AuctionEvent) *AuctionEvent {
 	r := &AuctionEvent{
 		MarketID:       ae.MarketID,
 		Leave:          ae.Leave,
 		OpeningAuction: ae.OpeningAuction,
 		AuctionStart:   nanoTSToDatetime(ae.Start),
+		Trigger:        auctionTriggerFromProto(ae.Trigger),
 	}
 	if ae.End != 0 {
 		r.AuctionEnd = nanoTSToDatetime(ae.End)
