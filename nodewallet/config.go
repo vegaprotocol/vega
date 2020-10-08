@@ -15,10 +15,10 @@ const (
 )
 
 type Config struct {
-	Level          encoding.LogLevel
-	StorePath      string
-	DevWalletsPath string
-	ETH            eth.Config
+	Level          encoding.LogLevel `long:"level"`
+	StorePath      string            `long:"store-path"`
+	DevWalletsPath string            `long:"dev-wallets-path"`
+	ETH            eth.Config        `group:"ETH" namespace:"eth"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

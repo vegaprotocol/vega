@@ -21,7 +21,7 @@ func (opts *faucetInit) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
-	pass, err := opts.PassphraseOption.Get("faucet")
+	pass, err := opts.Passphrase.Get("faucet")
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
-	pass, err := opts.PassphraseOption.Get("faucet")
+	pass, err := opts.Passphrase.Get("faucet")
 	if err != nil {
 		return err
 	}

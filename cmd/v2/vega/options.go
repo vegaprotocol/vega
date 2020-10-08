@@ -22,17 +22,19 @@ func NewRootPathOption() RootPathOption {
 }
 
 type PassphraseOption struct {
-	Passphrase string `short:"p" long:"passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+	Passphrase Passphrase `short:"p" long:"passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 }
 
-func (p *PassphraseOption) Get(prompt string) (string, error) {
-	if len(p.Passphrase) == 0 {
+type Passphrase string
+
+func (p Passphrase) Get(prompt string) (string, error) {
+	if len(p) == 0 {
 		return p.getFromUser(prompt)
 	}
-	return p.getFromFile(p.Passphrase)
+	return p.getFromFile(string(p))
 }
 
-func (p *PassphraseOption) getFromUser(prompt string) (string, error) {
+func (p Passphrase) getFromUser(prompt string) (string, error) {
 	fmt.Printf("please enter %v passphrase:", prompt)
 	password, err := terminal.ReadPassword(0)
 	if err != nil {
@@ -43,7 +45,7 @@ func (p *PassphraseOption) getFromUser(prompt string) (string, error) {
 	return string(password), nil
 }
 
-func (p *PassphraseOption) getFromFile(path string) (string, error) {
+func (p Passphrase) getFromFile(path string) (string, error) {
 	buf, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", err

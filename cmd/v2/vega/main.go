@@ -37,6 +37,7 @@ func Main(ctx context.Context) error {
 	Register(ctx, parser,
 		Faucet,
 		Gateway,
+		NodeWallet,
 		Wallet,
 		Watch,
 	)

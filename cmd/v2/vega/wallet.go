@@ -19,7 +19,7 @@ import (
 
 func readWallet(rootPath, name, pass string) (*wallet.Wallet, error) {
 	if ok, err := fsutil.PathExists(rootPath); !ok {
-		return nil, fmt.Errorf("invalid root directory path: %v", err)
+		return nil, fmt.Errorf("invalid root directory path: %w", err)
 	}
 
 	if err := wallet.EnsureBaseFolder(rootPath); err != nil {
@@ -41,7 +41,7 @@ type walletGenkey struct {
 
 func (opts *walletGenkey) Execute(_ []string) error {
 	name := opts.Name
-	pass, err := opts.PassphraseOption.Get(name)
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ type walletList struct {
 
 func (opts *walletList) Execute(_ []string) error {
 	name := opts.Name
-	pass, err := opts.PassphraseOption.Get(name)
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ type walletSign struct {
 
 func (opts *walletSign) Execute(_ []string) error {
 	name := opts.Name
-	pass, err := opts.PassphraseOption.Get(name)
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ type walletVerify struct {
 
 func (opts *walletVerify) Execute(_ []string) error {
 	name := opts.Name
-	pass, err := opts.PassphraseOption.Get(name)
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ type walletTaint struct {
 
 func (opts *walletTaint) Execute(_ []string) error {
 	name := opts.Name
-	pass, err := opts.PassphraseOption.Get(name)
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ type walletMeta struct {
 
 func (opts *walletMeta) Execute(_ []string) error {
 	name := opts.Name
-	pass, err := opts.PassphraseOption.Get(name)
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
 	}
