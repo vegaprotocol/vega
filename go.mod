@@ -3,7 +3,6 @@ module code.vegaprotocol.io/vega
 go 1.14
 
 require (
-	cloud.google.com/go v0.39.0 // indirect
 	code.vegaprotocol.io/quant v0.2.0
 	dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 // indirect
 	github.com/99designs/gqlgen v0.8.3
@@ -25,7 +24,6 @@ require (
 	github.com/aws/aws-sdk-go v1.27.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v0.18.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bketelsen/crypt v0.0.2 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/casbin/casbin/v2 v2.1.2 // indirect
@@ -72,7 +70,7 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.2+incompatible // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
-	github.com/golang/mock v1.2.0
+	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.4.1
 	github.com/google/btree v1.0.0
 	github.com/google/martian v2.1.0+incompatible // indirect
@@ -126,7 +124,7 @@ require (
 	github.com/performancecopilot/speed v3.0.0+incompatible // indirect
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.9.1
 	github.com/prometheus/procfs v0.0.11 // indirect
@@ -146,7 +144,7 @@ require (
 	github.com/sony/gobreaker v0.4.1 // indirect
 	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v1.0.0
-	github.com/spf13/viper v1.6.3
+	github.com/spf13/viper v1.7.0
 	github.com/status-im/keycard-go v0.0.0-20190316090335-8537d3370df4 // indirect
 	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570 // indirect
 	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
@@ -157,7 +155,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/tendermint/go-amino v0.14.1 // indirect
-	github.com/tendermint/tendermint v0.33.8
+	github.com/tendermint/tendermint v0.33.1-dev3.0.20200615111712-b8b50733f0a8
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef // indirect
 	github.com/ugorji/go v1.1.4 // indirect
@@ -180,8 +178,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	google.golang.org/appengine v1.6.0 // indirect
-	google.golang.org/grpc v1.28.1
+	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/cheggaaa/pb.v1 v1.0.25 // indirect
 	gopkg.in/gcfg.v1 v1.2.3 // indirect
