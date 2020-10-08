@@ -829,10 +829,6 @@
 
 
                 <li>
-                  <a href="#vega.AuctionTrigger"><span class="badge">E</span>AuctionTrigger</a>
-                </li>
-
-                <li>
                   <a href="#vega.BusEventType"><span class="badge">E</span>BusEventType</a>
                 </li>
 
@@ -1302,6 +1298,10 @@
 
                 <li>
                   <a href="#vega.AccountType"><span class="badge">E</span>AccountType</a>
+                </li>
+
+                <li>
+                  <a href="#vega.AuctionTrigger"><span class="badge">E</span>AuctionTrigger</a>
                 </li>
 
                 <li>
@@ -7478,47 +7478,6 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
 
 
 
-        <h3 id="vega.AuctionTrigger">AuctionTrigger</h3>
-        <p>What triggered an auction (if any)</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-
-              <tr>
-                <td>AUCTION_TRIGGER_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>No auction triggered</p></td>
-              </tr>
-
-              <tr>
-                <td>AUCTION_TRIGGER_BATCH</td>
-                <td>1</td>
-                <td><p>Batch auction</p></td>
-              </tr>
-
-              <tr>
-                <td>AUCTION_TRIGGER_OPENING</td>
-                <td>2</td>
-                <td><p>Opening auction</p></td>
-              </tr>
-
-              <tr>
-                <td>AUCTION_TRIGGER_PRICE</td>
-                <td>3</td>
-                <td><p>Price monitoring trigger</p></td>
-              </tr>
-
-              <tr>
-                <td>AUCTION_TRIGGER_LIQUIDITY</td>
-                <td>4</td>
-                <td><p>liquidity monitoring trigger</p></td>
-              </tr>
-
-          </tbody>
-        </table>
-
         <h3 id="vega.BusEventType">BusEventType</h3>
         <p>An (event) bus event type is used to specify a type of event</p><p>It has 2 styles of event:</p><p>Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item</p><p>Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items</p>
         <table class="enum-table">
@@ -11256,6 +11215,13 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><p>the current state of the market </p></td>
                 </tr>
 
+                <tr>
+                  <td>trigger</td>
+                  <td><a href="#vega.AuctionTrigger">AuctionTrigger</a></td>
+                  <td></td>
+                  <td><p>if the market is in auction state, this field indicates what triggered the auction </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -13426,6 +13392,47 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td>ACCOUNT_TYPE_LOCK_WITHDRAW</td>
                 <td>8</td>
                 <td><p>This account is created to lock funds to be withdrawn by parties</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.AuctionTrigger">AuctionTrigger</h3>
+        <p>What triggered an auction (if any)</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>AUCTION_TRIGGER_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>No auction triggered</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_BATCH</td>
+                <td>1</td>
+                <td><p>Batch auction</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_OPENING</td>
+                <td>2</td>
+                <td><p>Opening auction</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_PRICE</td>
+                <td>3</td>
+                <td><p>Price monitoring trigger</p></td>
+              </tr>
+
+              <tr>
+                <td>AUCTION_TRIGGER_LIQUIDITY</td>
+                <td>4</td>
+                <td><p>liquidity monitoring trigger</p></td>
               </tr>
 
           </tbody>

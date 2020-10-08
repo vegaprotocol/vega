@@ -100,6 +100,20 @@ enum MarketState {
   //       - gateway/graphql/schema.graphql (enum MarketState)
 }
 
+// What triggered an auction (if any)
+enum AuctionTrigger {
+  // No auction triggered
+  AUCTION_TRIGGER_UNSPECIFIED = 0;
+  // Batch auction
+  AUCTION_TRIGGER_BATCH = 1;
+  // Opening auction
+  AUCTION_TRIGGER_OPENING = 2;
+  // Price monitoring trigger
+  AUCTION_TRIGGER_PRICE = 3;
+  // liquidity monitoring trigger
+  AUCTION_TRIGGER_LIQUIDITY = 4;
+}
+
 // An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties.
 message Order {
 
@@ -950,6 +964,8 @@ message MarketData {
   uint64 indicativeVolume = 13;
   // the current state of the market
   MarketState marketState = 14;
+  // if the market is in auction state, this field indicates what triggered the auction
+  AuctionTrigger trigger = 15;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.

@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
+	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/positions"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -33,6 +34,7 @@ type testMarket struct {
 	broker          *mocks.MockBroker
 	now             time.Time
 	asset           string
+	mas             *monitor.AuctionState
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings) *testMarket {
@@ -77,9 +79,10 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 
 	mkts := getMarkets(closingAt, pMonitorSettings)
 
+	mas := monitor.NewAuctionState(&mkts[0], now)
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen())
+		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), mas)
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -97,6 +100,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 		broker:          broker,
 		now:             now,
 		asset:           asset,
+		mas:             mas,
 	}
 }
 

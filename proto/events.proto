@@ -8,20 +8,6 @@ import "proto/assets.proto";
 import "proto/governance.proto";
 import "proto/vega.proto";
 
-// What triggered an auction (if any)
-enum AuctionTrigger {
-  // No auction triggered
-  AUCTION_TRIGGER_UNSPECIFIED = 0;
-  // Batch auction
-  AUCTION_TRIGGER_BATCH = 1;
-  // Opening auction
-  AUCTION_TRIGGER_OPENING = 2;
-  // Price monitoring trigger
-  AUCTION_TRIGGER_PRICE = 3;
-  // liquidity monitoring trigger
-  AUCTION_TRIGGER_LIQUIDITY = 4;
-}
-
 // MarketEvent - the common denominator for all market events
 // interface has a method to return a string for logging
 message MarketEvent {
