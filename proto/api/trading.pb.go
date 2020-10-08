@@ -4560,15 +4560,22 @@ func (m *EstimateMarginResponse) GetMarginLevels() *proto1.MarginLevels {
 	return nil
 }
 
-// Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+// Request to subscribe to a stream of one or more event types from the Vega event bus
 type ObserveEventsRequest struct {
-	Type                 []proto1.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
-	MarketID             string                `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	PartyID              string                `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	BatchSize            int64                 `protobuf:"varint,4,opt,name=batchSize,proto3" json:"batchSize,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	// One or more types of event. Required field.
+	Type []proto1.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
+	// Market identifier. Optional field.
+	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
+	// Party identifier. Optional field.
+	PartyID string `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
+	// Batch size. Optional field.
+	// If specified, will result in the event stream API to return a specific number of events in a batch.
+	// For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream.
+	// Default: 0, send any and all events when they are available.
+	BatchSize            int64    `protobuf:"varint,4,opt,name=batchSize,proto3" json:"batchSize,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *ObserveEventsRequest) Reset()         { *m = ObserveEventsRequest{} }
@@ -4624,8 +4631,11 @@ func (m *ObserveEventsRequest) GetBatchSize() int64 {
 	return 0
 }
 
-// message to poll current event buffer, and change batch size
+// Used when subscribed to observe events from the event bus
+// This message is used to update the batch size (only for gRPC bi-directional streaming)
 type ObserveEventBatch struct {
+	// Batch size. Required field.
+	// Default: 0, send any and all events when they are available.
 	BatchSize            int64    `protobuf:"varint,1,opt,name=batchSize,proto3" json:"batchSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4664,8 +4674,9 @@ func (m *ObserveEventBatch) GetBatchSize() int64 {
 	return 0
 }
 
-// Response type streamed back when observing events. Slice of wrapped events
+// Response to a subscribed stream of events from the Vega event bus
 type ObserveEventsResponse struct {
+	// One or more events
 	Events               []*proto1.BusEvent `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`

@@ -1061,21 +1061,32 @@ message EstimateMarginResponse {
   vega.MarginLevels marginLevels = 2;
 }
 
-// Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+// Request to subscribe to a stream of one or more event types from the Vega event bus
 message ObserveEventsRequest {
+  // One or more types of event. Required field.
   repeated vega.BusEventType type = 1;
+  // Market identifier. Optional field.
   string marketID = 2;
+  // Party identifier. Optional field.
   string partyID = 3;
+  // Batch size. Optional field.
+  // If specified, will result in the event stream API to return a specific number of events in a batch.
+  // For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream.
+  // Default: 0, send any and all events when they are available.
   int64 batchSize = 4;
 }
 
-// message to poll current event buffer, and change batch size
+// Used when subscribed to observe events from the event bus
+// This message is used to update the batch size (only for gRPC bi-directional streaming)
 message ObserveEventBatch {
+  // Batch size. Required field.
+  // Default: 0, send any and all events when they are available.
   int64 batchSize = 1;
 }
 
-// Response type streamed back when observing events. Slice of wrapped events
+// Response to a subscribed stream of events from the Vega event bus
 message ObserveEventsResponse {
+  // One or more events
   repeated vega.BusEvent events = 1;
 }
 
