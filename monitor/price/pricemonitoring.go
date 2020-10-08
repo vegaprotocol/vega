@@ -156,7 +156,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 		start, dur := as.Start(), as.Duration()
 
 		// auction still hasn't ended yet
-		if end := start.Add(time.Duration(dur.Duration * time.Second.Nanoseconds())); end.After(now) {
+		end := start.Add(time.Duration(dur.Duration * time.Second.Nanoseconds()))
+		if !now.After(end) {
 			return nil
 		}
 		// auction can be terminated
