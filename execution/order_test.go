@@ -554,7 +554,8 @@ func TestAmendToFill(t *testing.T) {
 
 func TestUnableToAmendGFAGFN(t *testing.T) {
 	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, "party1")
@@ -569,6 +570,10 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GTC, 0, false)
 	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GFA, 0, false)
 
+	// EnterAuction should actually trigger an auction here...
+	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
+		Duration: closeSec / 10, // some time in the future, before closing
+	})
 	tm.market.EnterAuction(context.Background())
 	orderId3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
 	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GTC, 0, false)

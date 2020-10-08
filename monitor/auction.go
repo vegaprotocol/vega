@@ -116,6 +116,11 @@ func (a AuctionState) Mode() types.MarketState {
 	return a.mode
 }
 
+// Trigger returns what triggered an auction
+func (a AuctionState) Trigger() types.AuctionTrigger {
+	return a.trigger
+}
+
 // InAuction returns bool if the market is in auction for any reason
 // Returns false if auction is triggered, but not yet started by market (execution)
 func (a AuctionState) InAuction() bool {

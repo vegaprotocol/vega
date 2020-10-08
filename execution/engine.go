@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitor"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -179,6 +180,8 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	}
 
+	// create market auction state
+	mas := monitor.NewAuctionState(marketConfig, now)
 	mkt, err := NewMarket(
 		ctx,
 		e.log,
@@ -192,6 +195,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
+		mas,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",

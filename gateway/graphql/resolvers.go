@@ -1447,6 +1447,11 @@ func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) 
 	return market, nil
 }
 
+// Trigger...
+func (r *myMarketDataResolver) Trigger(_ context.Context, m *types.MarketData) (AuctionTrigger, error) {
+	return convertAuctionTriggerFromProto(m.Trigger)
+}
+
 // END: MarketData resolver
 
 // BEGIN: Market Depth Resolver

@@ -267,6 +267,24 @@ func convertMarketStateFromProto(ms types.MarketState) (MarketState, error) {
 	}
 }
 
+// convertAuctionTriggerFromProto converts a proto enum to GQL enum
+func convertAuctionTriggerFromProto(t types.AuctionTrigger) (AuctionTrigger, error) {
+	switch t {
+	case types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED:
+		return AuctionTriggerUnspecified, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_BATCH:
+		return AuctionTriggerBatch, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_OPENING:
+		return AuctionTriggerOpening, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_PRICE:
+		return AuctionTriggerPrice, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY:
+		return AuctionTriggerLiquidity, nil
+	}
+	err := fmt.Errorf("failed to convert AuctionTrigger from proto to GQL: %v", t)
+	return AuctionTriggerUnspecified, err
+}
+
 // convertProposalStateToProto converts a GraphQL enum to a Proto enum
 func convertProposalStateToProto(x ProposalState) (types.Proposal_State, error) {
 	switch x {

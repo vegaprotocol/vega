@@ -71,6 +71,29 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
 }
 
+// We can't use the interface yet. AuctionState is passed to the engines, which access different methods
+// keep the interface for documentation purposes
+type AuctionState interface {
+	// are we in auction, and what auction are we in?
+	InAuction() bool
+	IsOpeningAuction() bool
+	IsPriceAuction() bool
+	IsLiquidityAuction() bool
+	IsFBA() bool
+	// is it the start/end of an auction
+	AuctionStart() bool
+	AuctionEnd() bool
+	// when does the auction start/end
+	ExpiresAt() *time.Time
+	Start() time.Time
+	// signal we've started/ended the auction
+	AuctionStarted(ctx context.Context) *events.Auction
+	AuctionEnded(ctx context.Context, now time.Time) *events.Auction
+	// get some data
+	Mode() types.MarketState
+	Trigger() types.AuctionTrigger
+}
+
 // Market represents an instance of a market in vega and is in charge of calling
 // the engines in order to process all transctiona
 type Market struct {
@@ -83,7 +106,6 @@ type Market struct {
 	closingAt   time.Time
 	currentTime time.Time
 
-	// If we are in a time based auction, set the start and finish time here
 	mu sync.Mutex
 
 	markPrice uint64
@@ -147,6 +169,7 @@ func NewMarket(
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
+	as *monitor.AuctionState,
 ) (*Market, error) {
 
 	if len(mkt.Id) == 0 {
@@ -166,8 +189,6 @@ func NewMarket(
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
-
-	as := monitor.NewAuctionState(mkt, now)
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
@@ -286,6 +307,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionStart:     auctionStart,
 		AuctionEnd:       auctionEnd,
 		MarketState:      m.as.Mode(),
+		Trigger:          m.as.Trigger(),
 	}
 }
 
@@ -427,8 +449,6 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
-	// m.as.AuctionStart() // Check here?
-	m.matching.EnterAuction()
 	// Change market type to auction
 	ordersToCancel, err := m.matching.EnterAuction()
 	if err != nil {
