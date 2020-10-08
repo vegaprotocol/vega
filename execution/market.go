@@ -450,8 +450,6 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
-	// m.as.AuctionStart() // Check here?
-	m.matching.EnterAuction()
 	// Change market type to auction
 	ordersToCancel, err := m.matching.EnterAuction()
 	if err != nil {
