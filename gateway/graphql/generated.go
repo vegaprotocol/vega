@@ -543,7 +543,7 @@ type ComplexityRoot struct {
 		MarketDepth       func(childComplexity int, marketID string) int
 		MarketDepthUpdate func(childComplexity int, marketID string) int
 		Orders            func(childComplexity int, marketID *string, partyID *string) int
-		Positions         func(childComplexity int, partyID string) int
+		Positions         func(childComplexity int, partyID *string, marketID *string) int
 		Proposals         func(childComplexity int, partyID *string) int
 		Trades            func(childComplexity int, marketID *string, partyID *string) int
 		Votes             func(childComplexity int, proposalID *string, partyID *string) int
@@ -827,7 +827,7 @@ type SubscriptionResolver interface {
 	Candles(ctx context.Context, marketID string, interval Interval) (<-chan *proto.Candle, error)
 	Orders(ctx context.Context, marketID *string, partyID *string) (<-chan []*proto.Order, error)
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*proto.Trade, error)
-	Positions(ctx context.Context, partyID string) (<-chan *proto.Position, error)
+	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan *proto.Position, error)
 	MarketDepth(ctx context.Context, marketID string) (<-chan *proto.MarketDepth, error)
 	MarketDepthUpdate(ctx context.Context, marketID string) (<-chan *proto.MarketDepthUpdate, error)
 	Accounts(ctx context.Context, marketID *string, partyID *string, asset *string, typeArg *AccountType) (<-chan *proto.Account, error)
@@ -3191,7 +3191,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Positions(childComplexity, args["partyId"].(string)), true
+		return e.complexity.Subscription.Positions(childComplexity, args["partyId"].(*string), args["marketId"].(*string)), true
 
 	case "Subscription.proposals":
 		if e.complexity.Subscription.Proposals == nil {
@@ -3805,7 +3805,9 @@ type Subscription {
   "Subscribe to the positions updates"
   positions(
     "ID of the party from we want updates for"
-    partyId: String!
+    partyId: String
+    "ID of the market from which we want postion updates"
+    marketId: String
   ): Position!
 
   "Subscribe to the market depths update"
@@ -6812,14 +6814,22 @@ func (ec *executionContext) field_Subscription_orders_args(ctx context.Context, 
 func (ec *executionContext) field_Subscription_positions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["partyId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["marketId"] = arg1
 	return args, nil
 }
 
@@ -17138,7 +17148,7 @@ func (ec *executionContext) _Subscription_positions(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Positions(rctx, args["partyId"].(string))
+		return ec.resolvers.Subscription().Positions(rctx, args["partyId"].(*string), args["marketId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

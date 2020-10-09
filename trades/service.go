@@ -31,6 +31,7 @@ type PositionsPlugin interface {
 	GetPositionsByMarket(market string) ([]*types.Position, error)
 	GetPositionsByParty(party string) ([]*types.Position, error)
 	GetPositionsByMarketAndParty(market, party string) (*types.Position, error)
+	GetAllPositions() ([]*types.Position, error)
 }
 
 // Svc is the service handling trades
@@ -235,7 +236,7 @@ func (s *Svc) GetPositionsSubscribersCount() int32 {
 
 // ObservePositions return a channel through which all positions are streamed to the caller
 // when they get updated
-func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (<-chan *types.Position, uint64) {
+func (s *Svc) ObservePositions(ctx context.Context, retries int, party, market string) (<-chan *types.Position, uint64) {
 	positions := make(chan *types.Position)
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
@@ -267,7 +268,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party string) (
 				close(positions)
 				return
 			case <-internal: // again, we're using this channel to detect state changes, the data itself isn't relevant
-				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party, "")
+				mapOfMarketPositions, err := s.GetPositionsByParty(ctx, party, market)
 				if err != nil {
 					s.log.Error(
 						"Failed to get positions for subscriber (getPositionsByParty)",
@@ -327,6 +328,14 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 	s.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
 
+	if party == "" && marketID == "" {
+		pos, err := s.positions.GetAllPositions()
+		if err != nil {
+			s.log.Error("Error getting all positions", logging.Error(err))
+			return nil, err
+		}
+		return pos, nil
+	}
 	var positions []*types.Position
 	if party != "" && marketID != "" {
 		pos, err := s.positions.GetPositionsByMarketAndParty(marketID, party)

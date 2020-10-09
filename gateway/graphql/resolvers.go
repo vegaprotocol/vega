@@ -2435,9 +2435,13 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.Position, error) {
-	req := &protoapi.PositionsSubscribeRequest{
-		PartyID: party,
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan *types.Position, error) {
+	req := &protoapi.PositionsSubscribeRequest{}
+	if party != nil {
+		req.PartyID = *party
+	}
+	if market != nil {
+		req.MarketID = *market
 	}
 	stream, err := r.tradingDataClient.PositionsSubscribe(ctx, req)
 	if err != nil {

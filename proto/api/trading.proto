@@ -746,8 +746,11 @@ message MarketDepthUpdatesSubscribeRequest {
 // Request to subscribe to a stream of (Positions)[#vega.Position].
 message PositionsSubscribeRequest {
 
-  // Party identifier. Required field.
+  // Party identifier. Optional field.
   string partyID = 1;
+
+  // Market identifier. Optional field.
+  string marketID = 2;
 }
 
 // Request for a list of orders for a market.
