@@ -392,6 +392,9 @@ func (c *Candle) queueEvent(market string, candle types.Candle) {
 // notify sends out any candles in the buffer to subscribers. If there are no
 // subscribers or the queue is empty it will return with no work.
 func (c *Candle) notify() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if len(c.subscribers) == 0 {
 		c.log.Debug("No subscribers connected in candle store")
 		return nil
