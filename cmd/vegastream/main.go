@@ -53,9 +53,10 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 
 	client := api.NewTradingDataClient(conn)
 	stream, err := client.ObserveEventBus(ctx, &api.ObserveEventsRequest{
-		MarketID: market,
-		PartyID:  party,
-		Type:     []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
+		MarketID:  market,
+		PartyID:   party,
+		BatchSize: 10000,
+		Type:      []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
 	})
 	if err != nil {
 		conn.Close()

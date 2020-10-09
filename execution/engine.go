@@ -71,18 +71,12 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	ts TimeService,
-	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
-	// this is here because we're creating some markets here
-	// this isn't going to be the case in the final version
-	// so I'm using Background rather than TODO
-	ctx := context.Background()
-
 	e := &Engine{
 		log:        log,
 		Config:     executionConfig,
@@ -91,19 +85,6 @@ func NewEngine(
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
-	}
-
-	var err error
-	// Add initial markets and flush to stores (if they're configured)
-	if len(pmkts) > 0 {
-		for _, mkt := range pmkts {
-			mkt := mkt
-			err = e.SubmitMarket(ctx, &mkt)
-			if err != nil {
-				e.log.Panic("Unable to submit market",
-					logging.Error(err))
-			}
-		}
 	}
 
 	// Add time change event handler
