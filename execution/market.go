@@ -601,6 +601,20 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 		return ErrGFAOrderReceivedDuringContinuousTrading
 	}
 
+	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_IOC {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return ErrGFAOrderReceivedDuringContinuousTrading
+	}
+
+	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_FOK {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return ErrGFAOrderReceivedDuringContinuousTrading
+	}
+
 	if m.tradeMode == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING

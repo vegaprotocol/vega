@@ -308,6 +308,10 @@ enum OrderError {
   ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN = 30;
   // Amending from GFA or GFN is invalid
   ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN = 31;
+  // IOC orders are not allowed during auction
+  ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION = 32;
+  // FOK orders are not allowed during auction
+  ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION = 33;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
