@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/nodewallet/vega"
 	"github.com/jessevdk/go-flags"
@@ -15,7 +16,7 @@ import (
 )
 
 type genesisCmd struct {
-	PassphraseOption
+	config.PassphraseFlag
 	InPlace    bool   `short:"i" long:"in-place" description:"Edit the genesis file in-place"`
 	TmRoot     string `short:"t" long:"tm-root" description:"The root path of tendermint"`
 	WalletPath string `short:"v" long:"vega-wallet-path" description:"The path of vega wallet" required:"true"`

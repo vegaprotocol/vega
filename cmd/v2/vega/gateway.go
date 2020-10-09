@@ -6,8 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/gateway"
-	gql "code.vegaprotocol.io/vega/gateway/graphql"
-	"code.vegaprotocol.io/vega/gateway/rest"
+	"code.vegaprotocol.io/vega/gateway/server"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/jessevdk/go-flags"
@@ -16,11 +15,12 @@ import (
 type gatewayCmd struct {
 	ctx context.Context
 	gateway.Config
-	RootPathOption
+	config.RootPathFlag
 }
 
 func (opts *gatewayCmd) Execute(args []string) error {
-	ctx := opts.ctx
+	ctx, cancel := context.WithCancel(opts.ctx)
+	defer cancel()
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
@@ -40,20 +40,11 @@ func (opts *gatewayCmd) Execute(args []string) error {
 		return err
 	}
 
-	if conf.Gateway.REST.Enabled {
-		srv := rest.NewProxyServer(log, opts.Config)
-		go func() { srv.Start() }()
-		defer srv.Stop()
+	srv := server.New(opts.Config, log)
+	if err := srv.Start(); err != nil {
+		return err
 	}
-
-	if conf.Gateway.GraphQL.Enabled {
-		srv, err := gql.New(log, conf.Gateway)
-		if err != nil {
-			return err
-		}
-		go func() { srv.Start() }()
-		defer srv.Stop()
-	}
+	defer srv.Stop()
 
 	waitSig(ctx, log)
 	return nil
@@ -61,9 +52,9 @@ func (opts *gatewayCmd) Execute(args []string) error {
 
 func Gateway(ctx context.Context, parser *flags.Parser) error {
 	opts := &gatewayCmd{
-		ctx:            ctx,
-		Config:         gateway.NewDefaultConfig(),
-		RootPathOption: NewRootPathOption(),
+		ctx:          ctx,
+		Config:       gateway.NewDefaultConfig(),
+		RootPathFlag: config.NewRootPathFlag(),
 	}
 
 	_, err := parser.AddCommand("gateway", "short", "long", opts)

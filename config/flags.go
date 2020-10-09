@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -11,17 +11,17 @@ import (
 // Empty is used when a command or sub-command receives no argument and has no execution.
 type Empty struct{}
 
-type RootPathOption struct {
+type RootPathFlag struct {
 	RootPath string `short:"r" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
 }
 
-func NewRootPathOption() RootPathOption {
-	return RootPathOption{
+func NewRootPathFlag() RootPathFlag {
+	return RootPathFlag{
 		RootPath: fsutil.DefaultVegaDir(),
 	}
 }
 
-type PassphraseOption struct {
+type PassphraseFlag struct {
 	Passphrase Passphrase `short:"p" long:"passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 }
 

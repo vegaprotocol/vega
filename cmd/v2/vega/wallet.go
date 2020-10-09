@@ -9,6 +9,7 @@ import (
 	"log"
 	"strings"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
@@ -18,7 +19,7 @@ import (
 )
 
 type WalletCmd struct {
-	RootPathOption
+	config.RootPathFlag
 
 	Genkey  walletGenkey  `command:"genkey" description:"Generates a new keypar for a wallet" long-description:"Generate a new keypair for a wallet, this will implicitly generate a new wallet if none exist for the given name"`
 	List    walletList    `command:"list" description:"Lists keypairs of a wallet" long-description:"Lists all the keypairs for a given wallet"`
@@ -36,7 +37,7 @@ var walletCmd WalletCmd
 func Wallet(ctx context.Context, parser *flags.Parser) error {
 	// Build the walletCmd with default values and ctx where needed.
 	walletCmd = WalletCmd{
-		RootPathOption: NewRootPathOption(),
+		RootPathFlag: config.NewRootPathFlag(),
 		Service: walletService{
 			Run: walletServiceRun{
 				ctx:    ctx,
@@ -66,7 +67,7 @@ func readWallet(rootPath, name, pass string) (*wallet.Wallet, error) {
 }
 
 type walletGenkey struct {
-	PassphraseOption
+	config.PassphraseFlag
 	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 }
 
@@ -113,7 +114,7 @@ func (opts *walletGenkey) Execute(_ []string) error {
 }
 
 type walletList struct {
-	PassphraseOption
+	config.PassphraseFlag
 	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 }
 
@@ -140,7 +141,7 @@ func (opts *walletList) Execute(_ []string) error {
 }
 
 type walletSign struct {
-	PassphraseOption
+	config.PassphraseFlag
 	Name    string          `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
 	PubKey  string          `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
@@ -186,7 +187,7 @@ func (opts *walletSign) Execute(_ []string) error {
 }
 
 type walletVerify struct {
-	PassphraseOption
+	config.PassphraseFlag
 	Name    string          `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
 	PubKey  string          `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
@@ -230,7 +231,7 @@ func (opts *walletVerify) Execute(_ []string) error {
 }
 
 type walletTaint struct {
-	PassphraseOption
+	config.PassphraseFlag
 	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
 }
@@ -267,7 +268,7 @@ func (opts *walletTaint) Execute(_ []string) error {
 }
 
 type walletMeta struct {
-	PassphraseOption
+	config.PassphraseFlag
 	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
 	Metas  string `short:"m" long:"metas" description:"A list of metadata e.g:'primary:true;asset:BTC'" required:"true"`

@@ -24,8 +24,8 @@ import (
 )
 
 type InitCmd struct {
-	RootPathOption
-	Passphrase
+	config.RootPathFlag
+	config.PassphraseFlag
 
 	Force      bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
 	GenDev     bool `short:"g" long:"gen-dev-nodewallet" description:"Generate dev wallet for all vega supported chains (not for production)"`
@@ -301,7 +301,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 
 func Init(ctx context.Context, parser *flags.Parser) error {
 	initCmd = InitCmd{
-		RootPathOption: NewRootPathOption(),
+		RootPathFlag: config.NewRootPathFlag(),
 	}
 
 	var (

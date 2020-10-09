@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/faucet"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
 )
 
 type FaucetCmd struct {
-	// Global options
-	RootPathOption
-	PassphraseOption
-
-	// Subcommands
 	Init faucetInit `command:"init" description:"Generates the faucet configuration"`
 	Run  faucetRun  `command:"run" description:"Runs the faucet"`
 }
@@ -24,13 +20,15 @@ type FaucetCmd struct {
 var faucetCmd FaucetCmd
 
 func Faucet(ctx context.Context, parser *flags.Parser) error {
-	defaultPath := NewRootPathOption()
+	defaultPath := config.NewRootPathFlag()
 	faucetCmd = FaucetCmd{
-		RootPathOption: defaultPath,
-
+		Init: faucetInit{
+			RootPathFlag: defaultPath,
+		},
 		Run: faucetRun{
-			ctx:    ctx,
-			Config: faucet.NewDefaultConfig(defaultPath.RootPath),
+			ctx:          ctx,
+			RootPathFlag: defaultPath,
+			Config:       faucet.NewDefaultConfig(defaultPath.RootPath),
 		},
 	}
 
@@ -39,6 +37,8 @@ func Faucet(ctx context.Context, parser *flags.Parser) error {
 }
 
 type faucetInit struct {
+	config.RootPathFlag
+	config.PassphraseFlag
 	Force bool `short:"f" long:"force" description:"Erase existing configuratio at specified path"`
 }
 
@@ -47,12 +47,12 @@ func (opts *faucetInit) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
-	pass, err := faucetCmd.Passphrase.Get("faucet")
+	pass, err := opts.Passphrase.Get("faucet")
 	if err != nil {
 		return err
 	}
 
-	pubkey, err := faucet.GenConfig(log, faucetCmd.RootPath, pass, opts.Force)
+	pubkey, err := faucet.GenConfig(log, opts.RootPath, pass, opts.Force)
 	if err != nil {
 		return err
 	}
@@ -62,25 +62,30 @@ func (opts *faucetInit) Execute(_ []string) error {
 
 type faucetRun struct {
 	ctx context.Context
+
+	config.RootPathFlag
+	config.PassphraseFlag
+
 	faucet.Config
 }
 
 func (opts *faucetRun) Execute(_ []string) error {
-	logDefaultConfig := logging.NewDefaultConfig()
-	log := logging.NewLoggerFromConfig(logDefaultConfig)
+	log := logging.NewLoggerFromConfig(
+		logging.NewDefaultConfig(),
+	)
 	defer log.AtExit()
 
-	pass, err := faucetCmd.Passphrase.Get("faucet")
-	if err != nil {
-		return err
-	}
-
-	cfg, err := faucet.LoadConfig(faucetCmd.RootPath)
+	cfg, err := faucet.LoadConfig(opts.RootPath)
 	if err != nil {
 		return err
 	}
 	opts.Config = *cfg
 	if _, err := flags.Parse(opts); err != nil {
+		return err
+	}
+
+	pass, err := opts.Passphrase.Get("faucet")
+	if err != nil {
 		return err
 	}
 

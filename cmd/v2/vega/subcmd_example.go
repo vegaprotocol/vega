@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/config"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -11,7 +12,7 @@ import (
 // sub-commands itself.
 type ExampleCmd struct {
 	// Global variables
-	RootPathOption
+	config.RootPathFlag
 
 	// Subcommands.
 	Foo exampleFoo `command:"foo"`
@@ -26,7 +27,7 @@ func Example(ctx context.Context, parser *flags.Parser) error {
 
 	// here we initialize the global exampleCmd with needed default values.
 	exampleCmd = ExampleCmd{
-		RootPathOption: NewRootPathOption(),
+		RootPathFlag: config.NewRootPathFlag(),
 	}
 	_, err := parser.AddCommand("example", "short desc", "long desc", &exampleCmd)
 	return err

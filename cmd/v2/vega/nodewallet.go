@@ -14,8 +14,8 @@ import (
 
 type NodeWalletCmd struct {
 	// Global options
-	RootPathOption
-	PassphraseOption
+	config.RootPathFlag
+	config.PassphraseFlag
 
 	// Subcommands
 	Import nodeWalletImport `command:"import"`
@@ -25,9 +25,9 @@ type NodeWalletCmd struct {
 var nodeWalletCmd NodeWalletCmd
 
 func NodeWallet(ctx context.Context, parser *flags.Parser) error {
-	root := NewRootPathOption()
+	root := config.NewRootPathFlag()
 	nodeWalletCmd = NodeWalletCmd{
-		RootPathOption: root,
+		RootPathFlag: root,
 		Import: nodeWalletImport{
 			Config: nodewallet.NewDefaultConfig(root.RootPath),
 		},
@@ -52,7 +52,7 @@ func NodeWallet(ctx context.Context, parser *flags.Parser) error {
 type nodeWalletImport struct {
 	Config nodewallet.Config
 
-	WalletPassphrase Passphrase `short:"w" long:"wallet-passphrase"`
+	WalletPassphrase config.Passphrase `short:"w" long:"wallet-passphrase"`
 
 	Chain      string `short:"c" long:"chain" required:"true"`
 	WalletPath string `long:"wallet-path" required:"true"`

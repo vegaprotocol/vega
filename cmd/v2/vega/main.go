@@ -7,8 +7,17 @@ import (
 	"os/signal"
 	"syscall"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
+)
+
+var (
+	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
+	VersionHash = ""
+
+	// Version specifies the version used to build the application. See VERSION in Makefile for details.
+	Version = ""
 )
 
 // Subcommand is the signature of a sub command that can be registered.
@@ -32,13 +41,14 @@ func main() {
 }
 
 func Main(ctx context.Context) error {
-	parser := flags.NewParser(&Empty{}, flags.Default)
+	parser := flags.NewParser(&config.Empty{}, flags.Default)
 
 	Register(ctx, parser,
 		Faucet,
 		Gateway,
 		Genesis,
 		Init,
+		Node,
 		NodeWallet,
 		Wallet,
 		Watch,
