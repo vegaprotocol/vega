@@ -237,7 +237,16 @@ func (s *Svc) GetPositionsSubscribersCount() int32 {
 // ObservePositions return a channel through which all positions are streamed to the caller
 // when they get updated
 func (s *Svc) ObservePositions(ctx context.Context, retries int, party, market string) (<-chan *types.Position, uint64) {
-	positions := make(chan *types.Position)
+	pBuf := 1
+	// all parties, increase channel buffer by 100
+	if party == "" {
+		pBuf *= 100
+	}
+	// all markets, increase buffer by 100 (so all parties in all markets == 1k buffer)
+	if market == "" {
+		pBuf *= 10
+	}
+	positions := make(chan *types.Position, pBuf)
 	internal := make(chan []types.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
