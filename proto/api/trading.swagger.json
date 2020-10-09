@@ -3557,6 +3557,10 @@
           "format": "int64",
           "description": "Time duration for the opening auction to last."
         },
+        "priceMonitoringSettings": {
+          "$ref": "#/definitions/vegaPriceMonitoringSettings",
+          "title": "price monitoring configuration"
+        },
         "simple": {
           "$ref": "#/definitions/vegaSimpleModelParams",
           "title": "Simple risk model parameters, valid only if MODEL_SIMPLE is selected"

@@ -60,6 +60,11 @@ func (this *NewMarketConfiguration) Validate() error {
 	if !(this.DecimalPlaces < 150) {
 		return github_com_mwitkow_go_proto_validators.FieldError("DecimalPlaces", fmt.Errorf(`value '%v' must be less than '150'`, this.DecimalPlaces))
 	}
+	if this.PriceMonitoringSettings != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PriceMonitoringSettings); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
+		}
+	}
 	if oneOfNester, ok := this.GetRiskParameters().(*NewMarketConfiguration_Simple); ok {
 		if oneOfNester.Simple != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Simple); err != nil {
