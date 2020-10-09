@@ -54,16 +54,9 @@ func (app *App) Commit() (resp types.ResponseCommit) {
 }
 
 func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
-	tx := app.txFromCache(req.Tx)
-	if tx == nil {
-		var (
-			code uint32
-			err  error
-		)
-		tx, code, err = app.decodeAndValidateTx(req.GetTx())
-		if err != nil {
-			return NewResponseCheckTx(code, err.Error())
-		}
+	tx, code, err := app.getTx(req.GetTx())
+	if err != nil {
+		return NewResponseCheckTx(code, err.Error())
 	}
 
 	ctx := app.ctx
@@ -90,23 +83,15 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
-	tx := app.txFromCache(req.Tx)
-	if tx == nil {
-		var (
-			code uint32
-			err  error
-		)
-		tx, code, err = app.decodeAndValidateTx(req.GetTx())
-		if err != nil {
-			return NewResponseDeliverTx(code, err.Error())
-		}
-	} else {
-		app.removeTxFromCache(req.Tx)
+	tx, code, err := app.getTx(req.GetTx())
+	if err != nil {
+		return NewResponseDeliverTx(code, err.Error())
 	}
 
 	if err := app.replayProtector.DeliverTx(tx); err != nil {
 		return NewResponseDeliverTx(AbciTxnValidationFailure, err.Error())
 	}
+	app.removeTxFromCache(req.GetTx())
 
 	// It's been validated by CheckTx so we can skip the validation here
 	ctx := app.ctx
