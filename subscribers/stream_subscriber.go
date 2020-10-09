@@ -49,20 +49,26 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 			expandedTypes = append(expandedTypes, t)
 		}
 	}
+	// @TODO find a more intellegent way than this messy thing. We don't want to allocate 2k events per stream unless we have to
+	// but we don't want to run into issues because the event stream is using too small of a local buffer
 	// size of a given batch and then some (in case batch size is increased
-	bufLen := batchSize * 5
+	bufLen := batchSize * 5 * len(expandedTypes)
+	if newLen := len(expandedTypes) * 10; newLen > bufLen {
+		if trades {
+			newLen *= 10 // trades increase buffer size with an order of magnitude
+		}
+		bufLen *= newLen // just get a big buffer here
+	}
 	if bufLen == 0 {
 		bufLen := len(expandedTypes) * 10 // each type adds a buffer of 10
 		if bufLen == 0 {
-			// we're subscribing to all events, buffer should be way more than 0, obviously
-			// there's roughly 20 event types, each need a buffer of at least 10
-			// trades are a special case: there's potentially hundreds of trade events per block
-			// wo we want to ensure our buffers are large enough for a normal trade volume
+			// if we're subscribing to trades, that's a lot of events. An average block easily produces 2k events
+			// so let's just set our buffer length to 2k
 			trades = true
-			bufLen = 200 // 20 event types, buffer of 10 each
+			bufLen = 2000 // 20 event types, buffer of 10 each
 		}
 		if trades {
-			bufLen += 100 // add buffer for 100 events
+			bufLen += 1000 // add buffer for 1000 events, or about half a block
 		}
 	}
 	s := &StreamSub{
