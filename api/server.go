@@ -252,6 +252,7 @@ func (g *GRPCServer) Start() {
 		NetParamsService:        g.netParamsService,
 		ctx:                     g.ctx,
 	}
+	go tradingDataSvc.updateNetInfo(g.ctx)
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)
 
