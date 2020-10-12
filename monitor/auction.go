@@ -107,7 +107,7 @@ func (a AuctionState) ExpiresAt() *time.Time {
 		return nil
 	}
 	// add duration to start time, return
-	t := a.begin.Add(time.Duration(a.end.Duration))
+	t := a.begin.Add(time.Duration(a.end.Duration) * time.Second)
 	return &t
 }
 
@@ -164,7 +164,7 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 		a.begin = &b
 	}
 	if a.end != nil && a.end.Duration > 0 {
-		end = a.begin.Add(time.Duration(a.end.Duration)).UnixNano()
+		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
 	}
 	return events.NewAuctionEvent(ctx, a.m.Id, false, a.begin.UnixNano(), end, a.trigger)
 }
