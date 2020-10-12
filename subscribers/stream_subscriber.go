@@ -88,7 +88,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 
 func (s *StreamSub) Halt() {
 	s.mu.Lock()
-	if s.changeCount == 0 {
+	if s.changeCount == 0 || s.changeCount < s.bufSize {
 		close(s.updated)
 	}
 	s.mu.Unlock()
@@ -181,11 +181,16 @@ func (s *StreamSub) UpdateBatchSize(size int) []*types.BusEvent {
 }
 
 // GetData returns events from buffer, all if bufSize == 0, or max buffer size (rest are kept in data slice)
-func (s *StreamSub) GetData() []*types.BusEvent {
-	<-s.updated
-	s.mu.Lock()
-	// create a new update channel + reset update counter
-	s.updated = make(chan struct{})
+func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
+	select {
+	case <-ctx.Done():
+		// stream was closed
+		return nil
+	case <-s.updated:
+		s.mu.Lock()
+		// create new channel
+		s.updated = make(chan struct{})
+	}
 	// this seems to happen with a buffer of 1 sometimes
 	// or could be an issue if s.updated was closed, but the UpdateBatchSize call acquired a lock first
 	if len(s.data) < s.bufSize {

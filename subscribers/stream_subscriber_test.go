@@ -73,7 +73,7 @@ func testUnfilteredNoEvents(t *testing.T) {
 	wg.Add(1)
 	var data []*types.BusEvent
 	go func() {
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		wg.Done()
 	}()
 	sub.cfunc() // cancel ctx
@@ -94,14 +94,14 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 		}),
 	}
 	sub.Push(set...)
-	data := sub.GetData()
+	data := sub.GetData(context.Background())
 	// we expect to see no events
 	assert.Equal(t, len(set), len(data))
 	last := events.NewAccountEvent(sub.ctx, types.Account{
 		Id: "acc-3",
 	})
 	sub.Push(last)
-	data = sub.GetData()
+	data = sub.GetData(context.Background())
 	assert.Equal(t, 1, len(data))
 	rt, err := events.ProtoToInternal(data[0].Type)
 	assert.NoError(t, err)
@@ -129,7 +129,7 @@ func testFilteredNoValidEvents(t *testing.T) {
 	wg.Add(1)
 	var data []*types.BusEvent
 	go func() {
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		wg.Done()
 	}()
 	sub.cfunc()
@@ -152,7 +152,7 @@ func testFilteredSomeValidEvents(t *testing.T) {
 		}),
 	}
 	sub.Push(set...)
-	data := sub.GetData()
+	data := sub.GetData(context.Background())
 	// we expect to see no events
 	assert.Equal(t, 1, len(data))
 }
@@ -191,7 +191,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	// now start receiving, this should not receive any events:
 	var data []*types.BusEvent
 	go func() {
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		close(rec)
 	}()
 	// let's send a new batch, this ought to fill the buffer
@@ -208,7 +208,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	go sendRoutine(sent, sub, set1)
 	<-sent
 	// we don't need the rec channel, the buffer is 3, and we sent 3 events
-	data = sub.GetData()
+	data = sub.GetData(context.Background())
 	assert.Equal(t, 3, len(data))
 	// just in case -> this is with the rec channel, it ought to produce the exact same result
 	sent = make(chan struct{})
@@ -217,8 +217,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	rec = make(chan struct{})
 	// buffer is 3, we sent 3 events, GetData ought to return
 	go func() {
-		t.Logf("starting GetData call")
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		close(rec)
 	}()
 	<-rec
@@ -292,7 +291,7 @@ func testCloseChannelWrite(t *testing.T) {
 	}()
 	<-started
 	// wait for sub to be confirmed closed down
-	data := sub.GetData()
+	data := sub.GetData(context.Background())
 	sub.cfunc()
 	wg.Wait()
 	// we received at least the first event, which is valid (filtered)

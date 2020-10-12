@@ -51,7 +51,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				ret = retries
 			default:
 				// wait for actual changes
-				data := sub.GetData()
+				data := sub.GetData(ctx)
 				// this is a very rare thing, but it can happen
 				if len(data) == 0 {
 					continue
