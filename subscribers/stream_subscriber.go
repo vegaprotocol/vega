@@ -107,7 +107,7 @@ func (s *StreamSub) loop(ctx context.Context) {
 			if !ok {
 				return
 			}
-			s.Push(e)
+			s.Push(e...)
 		}
 	}
 }
