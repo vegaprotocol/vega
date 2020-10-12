@@ -211,8 +211,8 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	require.NoError(t, err)
 
 	//Still before update (no price change)
-	updateTime := now.Add(time.Duration(boundUpdateFrequency * time.Second.Nanoseconds()))
-	now = updateTime.Add(-time.Nanosecond)
+	updateTime := now.Add(time.Duration(boundUpdateFrequency) * time.Second)
+	now = updateTime.Add(-time.Second)
 	averagePrice1 := float64(priceHistorySum) / float64(n)
 	referencePrice = averagePrice1
 	validPriceToCheck = uint64(referencePrice)
@@ -276,7 +276,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	require.NoError(t, err)
 
 	// Right before update time (horizon away from averagePrice3)
-	now = updateTime.Add(-time.Nanosecond).Add(time.Duration(p1.Horizon * time.Second.Nanoseconds()))
+	now = updateTime.Add(-time.Second).Add(time.Duration(p1.Horizon) * time.Second)
 	averagePrice3 := float64(priceHistorySum) / float64(n)
 	referencePrice = averagePrice2
 	maxMoveDown3 := 6 * maxMoveDown1
@@ -310,7 +310,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	require.NoError(t, err)
 
 	// Right at update time (horizon away from price2Average)
-	now = updateTime.Add(time.Duration(p1.Horizon * time.Second.Nanoseconds()))
+	now = updateTime.Add(time.Duration(p1.Horizon) * time.Second)
 	averagePrice4 := float64(priceHistorySum) / float64(n)
 	referencePrice = averagePrice3
 	riskModelMock.EXPECT().PriceRange(averagePrice4, horizonToYearFraction(p1.Horizon), p1.Probability).Return(averagePrice4-float64(maxMoveDown3), averagePrice4+float64(maxMoveUp3))
@@ -354,9 +354,10 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
-	auctionStateMock.EXPECT().Start().Return(now.Add(time.Duration(-(p1.Horizon + 1) * time.Second.Nanoseconds()))).Times(1)
-	auctionStateMock.EXPECT().Duration().Return(types.AuctionDuration{Duration: p1.Horizon}).Times(1) // So that end=start+duration>now
-	auctionStateMock.EXPECT().EndAuction().Times(1)                                                   // So that end=start+duration>now
+	auctionStateMock.EXPECT().Start().Return(now.Add(time.Duration(-(p1.Horizon + 1)) * time.Second)).Times(1)
+	endBefore := now.Add(-time.Second)
+	auctionStateMock.EXPECT().ExpiresAt().Times(1).Return(&endBefore)
+	auctionStateMock.EXPECT().EndAuction().Times(1) // So that end=start+duration>now
 	validPriceToCheck = resetPrice
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, validPriceToCheck, now)
 	require.NoError(t, err)

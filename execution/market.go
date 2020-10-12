@@ -80,6 +80,7 @@ type AuctionState interface {
 	IsPriceAuction() bool
 	IsLiquidityAuction() bool
 	IsFBA() bool
+	IsMonitorAuction() bool
 	// is it the start/end of an auction
 	AuctionStart() bool
 	AuctionEnd() bool
@@ -352,6 +353,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	if m.as.InAuction() {
 		if m.as.IsOpeningAuction() {
 			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
+				// mark opening auction as ending
+				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
 			}
 		} else if m.as.IsPriceAuction() {
@@ -799,24 +802,13 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		err  error
 	)
 
-	// continuous trading
 	if !m.as.InAuction() {
-		// change this by the following check:
-		// if m.NotInMonitoringAuctionMode {
-		if true {
-			fees, err = m.fee.CalculateForContinuousMode(trades)
-		}
-		// FIXME(): uncomment this once we have implemented
-		// monitoring auction mode
-		//  Use this once we implemented Opening auction
-		// } else {
-		// 	fees, err = m.fee.CalculateForAuctionMode(trades)
-		// }
-
-		// FIXME(): uncomment this once we have implemented
-		// FrequentBatchesAuctions
-		// case *types.Market_FrequentBatchesAuctions:
-		// 	fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
+		fees, err = m.fee.CalculateForContinuousMode(trades)
+	} else if m.as.IsMonitorAuction() {
+		// we are in auction mode
+		fees, err = m.fee.CalculateForAuctionMode(trades)
+	} else if m.as.IsFBA() {
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
 	}
 
 	if err != nil {
@@ -828,25 +820,15 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		transfers []*types.TransferResponse
 		asset, _  = m.mkt.GetAsset()
 	)
-	if !m.as.InAuction() {
-		// change this by the following check:
-		// if m.NotInMonitoringAuctionMode {
-		if true {
-			transfers, err = m.collateral.TransferFeesContinuousTrading(
-				ctx, m.GetID(), asset, fees)
-		}
-		// FIXME():
-		//  Use this once we implemented Opening auction
-		// } else {
-		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
-		// 		ctx, m.GetID(), asset, fees)
-		// }
 
-		// FIXME(): uncomment once Frequent batches auctions is implemented
-		// case *types.Market_FrequentBatchesAuctions:
-		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
-		// 		ctx, m.GetID(), asset, fees)
-		// }
+	if !m.as.InAuction() {
+		transfers, err = m.collateral.TransferFeesContinuousTrading(ctx, m.GetID(), asset, fees)
+	} else if m.as.IsMonitorAuction() {
+		// @TODO handle this properly
+		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+	} else if m.as.IsFBA() {
+		// @TODO implement transfer for auction types
+		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
 	}
 
 	if err != nil {

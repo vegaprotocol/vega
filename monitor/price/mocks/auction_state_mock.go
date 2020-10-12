@@ -88,6 +88,20 @@ func (mr *MockAuctionStateMockRecorder) EndAuction() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndAuction", reflect.TypeOf((*MockAuctionState)(nil).EndAuction))
 }
 
+// ExpiresAt mocks base method
+func (m *MockAuctionState) ExpiresAt() *time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExpiresAt")
+	ret0, _ := ret[0].(*time.Time)
+	return ret0
+}
+
+// ExpiresAt indicates an expected call of ExpiresAt
+func (mr *MockAuctionStateMockRecorder) ExpiresAt() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpiresAt", reflect.TypeOf((*MockAuctionState)(nil).ExpiresAt))
+}
+
 // ExtendAuction mocks base method
 func (m *MockAuctionState) ExtendAuction(arg0 proto.AuctionDuration) {
 	m.ctrl.T.Helper()

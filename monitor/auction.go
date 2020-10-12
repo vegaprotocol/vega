@@ -143,6 +143,11 @@ func (a AuctionState) IsFBA() bool {
 	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_BATCH)
 }
 
+// IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine
+func (a AuctionState) IsMonitorAuction() bool {
+	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE || a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY)
+}
+
 // AuctionEnd bool indicating whether auction should be closed or not, if true, we can still extend the auction
 // but when the market takes over (after monitoring engines), the auction will be closed
 func (a AuctionState) AuctionEnd() bool {

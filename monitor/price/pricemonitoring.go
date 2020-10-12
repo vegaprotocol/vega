@@ -15,6 +15,8 @@ var (
 	ErrNilRangeProvider = errors.New("nil RangeProvider")
 	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
+	// ErrExpiresAtNotSet indicates price monitoring auction is endless somehow
+	ErrExpiresAtNotSet = errors.New("price monitoring auction with no end time")
 )
 
 const (
@@ -40,7 +42,8 @@ type AuctionState interface {
 	EndAuction()
 	// get parameters for current auction
 	Start() time.Time
-	Duration() types.AuctionDuration
+	Duration() types.AuctionDuration // currently not used - might be useful when extending an auction
+	ExpiresAt() *time.Time
 }
 
 // bound holds the limits for the valid price movement
@@ -156,11 +159,11 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 	// current auction is price monitoring
 	// check for end of auction, reset monitoring, and end auction
 	if as.IsPriceAuction() {
-		start, dur := as.Start(), as.Duration()
-
-		// auction still hasn't ended yet
-		end := start.Add(time.Duration(dur.Duration * time.Second.Nanoseconds()))
-		if !now.After(end) {
+		end := as.ExpiresAt()
+		if end == nil {
+			return ErrExpiresAtNotSet
+		}
+		if !now.After(*end) {
 			return nil
 		}
 		// auction can be terminated
