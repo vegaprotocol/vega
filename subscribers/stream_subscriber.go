@@ -201,7 +201,10 @@ func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
 	s.changeCount = 0
 	// copy the data for return, clear the internal slice
 	data := s.data
-	if s.bufSize == 0 || len(s.data) == s.bufSize {
+	if s.bufSize == 0 {
+		// if we use s.data = s.data[:0] here, we get a data race somehow
+		s.data = make([]StreamEvent, 0, cap(s.data))
+	} else if len(s.data) == s.bufSize {
 		s.data = s.data[:0]
 	} else {
 		data = data[:s.bufSize]     // only get the batch requested
