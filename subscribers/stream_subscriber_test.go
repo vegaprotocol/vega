@@ -291,7 +291,7 @@ func testCloseChannelWrite(t *testing.T) {
 	}()
 	<-started
 	// wait for sub to be confirmed closed down
-	data := sub.GetData(context.Background())
+	data := sub.GetData(sub.ctx)
 	sub.cfunc()
 	wg.Wait()
 	// we received at least the first event, which is valid (filtered)
