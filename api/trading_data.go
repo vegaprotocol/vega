@@ -2055,15 +2055,39 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 	// number of retries to -1 to have pretty much unlimited retries
 	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(in.BatchSize), filters...)
 	// check for changes in batch size
-	go func() {
-		for {
-			msg := protoapi.ObserveEventBatch{}
-			if err := stream.RecvMsg(&msg); err == nil {
-				bCh <- int(msg.BatchSize)
-			}
-		}
-	}()
+	if in.BatchSize > 0 {
+		// handle bi-directional observing
+		return t.observeEventsBiDi(stream, ch, bCh)
+	}
 	for {
+		select {
+		case data, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			resp := &protoapi.ObserveEventsResponse{
+				Events: data,
+			}
+			if err := stream.Send(resp); err != nil {
+				t.log.Error("Error sending event on stream", logging.Error(err))
+				return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-t.ctx.Done():
+			return apiError(codes.Aborted, ErrServerShutdown)
+		}
+	}
+}
+
+func (t *tradingDataService) observeEventsBiDi(stream protoapi.TradingData_ObserveEventBusServer, ch <-chan []*types.BusEvent, bCh chan<- int) error {
+	ctx := stream.Context()
+	for {
+		nb := protoapi.ObserveEventBatch{}
+		if err := stream.RecvMsg(&nb); err != nil {
+			return err
+		}
+		bCh <- int(nb.BatchSize)
 		select {
 		case data, ok := <-ch:
 			if !ok {

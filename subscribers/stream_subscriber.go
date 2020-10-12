@@ -198,16 +198,11 @@ func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
 		s.mu.Unlock()
 		return nil
 	}
-	dc := s.bufSize
 	s.changeCount = 0
 	// copy the data for return, clear the internal slice
 	data := s.data
-	if s.bufSize == 0 {
-		dc = cap(s.data)
-		s.data = make([]StreamEvent, 0, dc)
-	} else if len(s.data) == s.bufSize {
-		// data var is exactly the right size, data has to be emptied, allocate new slice
-		s.data = make([]StreamEvent, 0, dc)
+	if s.bufSize == 0 || len(s.data) == s.bufSize {
+		s.data = s.data[:0]
 	} else {
 		data = data[:s.bufSize]     // only get the batch requested
 		s.data = s.data[s.bufSize:] // leave rest in the buffer
