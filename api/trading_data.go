@@ -2082,12 +2082,24 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 
 func (t *tradingDataService) observeEventsBiDi(stream protoapi.TradingData_ObserveEventBusServer, ch <-chan []*types.BusEvent, bCh chan<- int) error {
 	ctx := stream.Context()
+	oebCh := make(chan protoapi.ObserveEventBatch)
+	defer close(oebCh)
 	for {
-		nb := protoapi.ObserveEventBatch{}
-		if err := stream.RecvMsg(&nb); err != nil {
-			return err
+		readCtx, cfunc := context.WithTimeout(ctx, 5*time.Second)
+		go func() {
+			nb := protoapi.ObserveEventBatch{}
+			if err := stream.RecvMsg(&nb); err != nil {
+				cfunc()
+				return
+			}
+			oebCh <- nb
+		}()
+		select {
+		case <-readCtx.Done():
+			return nil
+		case nb := <-oebCh:
+			bCh <- int(nb.BatchSize)
 		}
-		bCh <- int(nb.BatchSize)
 		select {
 		case data, ok := <-ch:
 			if !ok {
