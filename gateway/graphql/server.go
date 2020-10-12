@@ -111,24 +111,10 @@ func (g *GraphServer) Start() {
 	}
 
 	loggingMiddleware := handler.ResolverMiddleware(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
-		// reqctx := graphql.GetRequestContext(ctx)
 		resctx := graphql.GetResolverContext(ctx)
-		// logfields := make([]zap.Field, 0)
-		// logfields = append(logfields, logging.String("raw", reqctx.RawQuery))
-		// rlogger := g.log.With(logfields...)
-		// rlogger.Debug("GQL Start")
-		// start := vegatime.Now()
 		clockstart := time.Now()
 		res, err = next(ctx)
-		// end := vegatime.Now()
-		// if err != nil {
-		// logfields = append(logfields, logging.String("error", err.Error()))
-		// }
-		// timetaken := end.Sub(start)
 		metrics.APIRequestAndTimeGraphQL(resctx.Field.Name, time.Since(clockstart).Seconds())
-		// logfields = append(logfields, logging.Int64("duration_nano", timetaken.Nanoseconds()))
-		// rlogger = g.log.With(logfields...)
-		// rlogger.Debug("GQL Finish")
 		return res, err
 	})
 
