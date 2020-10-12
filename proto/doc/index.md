@@ -1707,7 +1707,8 @@ Request to subscribe to a stream of (Positions)[#vega.Position].
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | Party identifier. Required field. |
+| partyID | [string](#string) |  | Party identifier. Optional field. |
+| marketID | [string](#string) |  | Market identifier. Optional field. |
 
 
 
