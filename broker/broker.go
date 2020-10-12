@@ -14,7 +14,7 @@ type Subscriber interface {
 	Push(val ...events.Event)
 	Skip() <-chan struct{}
 	Closed() <-chan struct{}
-	C() chan<- events.Event
+	C() chan<- []events.Event
 	Types() []events.Type
 	SetID(id int)
 	ID() int
@@ -54,26 +54,21 @@ func New(ctx context.Context) *Broker {
 	}
 }
 
-func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
-	for _, e := range evts {
-		// assign before select to remove overhead of call in select (it's implicit anyway)
-		// but this way we ensure that more recent states of ctx, Skip and Closed are checked
-		ch := sub.C()
-		select {
-		case <-b.ctx.Done():
-			return
-		case <-sub.Skip():
-			return
-		case <-sub.Closed():
-			unsub = true
-			return
-		case ch <- e:
-			continue
-		default:
-			continue
-		}
+func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) bool {
+	// assign before select to remove overhead of call in select (it's implicit anyway)
+	// but this way we ensure that more recent states of ctx, Skip and Closed are checked
+	select {
+	case <-b.ctx.Done():
+		return false
+	case <-sub.Skip():
+		return false
+	case <-sub.Closed():
+		return true
+	case sub.C() <- evts:
+		return false
+	default:
+		return false
 	}
-	return
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {

@@ -81,7 +81,7 @@ func (mdb *MarketDepthBuilder) loop(ctx context.Context) {
 			return
 		case e := <-mdb.ch:
 			if mdb.isRunning() {
-				mdb.Push(e)
+				mdb.Push(e...)
 			}
 		}
 	}

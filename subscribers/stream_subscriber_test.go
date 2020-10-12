@@ -182,9 +182,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 		}),
 	}
 	sendRoutine := func(ch chan struct{}, sub *tstStreamSub, set []events.Event) {
-		for _, e := range set {
-			sub.C() <- e
-		}
+		sub.C() <- set
 		close(ch)
 	}
 	go sendRoutine(sent, sub, set1)
@@ -278,19 +276,16 @@ func testCloseChannelWrite(t *testing.T) {
 		// keep iterating until the context was closed, ensuring
 		// the context is cancelled mid-send
 		for {
-			for _, e := range set {
-				// ch := sub.C()
-				select {
-				case <-sub.Closed():
-					return
-				case <-sub.Skip():
-					return
-				case sub.C() <- e:
-					// case ch <- e:
-					if !first {
-						first = true
-						close(started)
-					}
+			select {
+			case <-sub.Closed():
+				return
+			case <-sub.Skip():
+				return
+			case sub.C() <- set:
+				// case ch <- e:
+				if !first {
+					first = true
+					close(started)
 				}
 			}
 		}

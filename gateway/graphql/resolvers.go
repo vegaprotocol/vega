@@ -2435,9 +2435,13 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.Position, error) {
-	req := &protoapi.PositionsSubscribeRequest{
-		PartyID: party,
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan *types.Position, error) {
+	req := &protoapi.PositionsSubscribeRequest{}
+	if party != nil {
+		req.PartyID = *party
+	}
+	if market != nil {
+		req.MarketID = *market
 	}
 	stream, err := r.tradingDataClient.PositionsSubscribe(ctx, req)
 	if err != nil {
@@ -2715,14 +2719,22 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	if partyID != nil {
 		req.PartyID = *partyID
 	}
+	mb := 10
 	if batchSize != nil {
 		req.BatchSize = int64(*batchSize)
+		if *batchSize > 10000 {
+			mb *= (*batchSize)
+		}
 	}
-	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req)
+	// about 10MB message size allowed
+	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
+	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req, msgSize)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	out := make(chan []*BusEvent)
+	// keep buffer of 10 batches. 5 retries cause a fail of stream
+	// this way we're a bit more secure
+	out := make(chan []*BusEvent, 10)
 	go func() {
 		defer func() {
 			stream.CloseSend()

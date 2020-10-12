@@ -50,15 +50,15 @@ func (b *brokerStub) SendBatch(evts []events.Event) {
 				sub.Push(evts...)
 				continue
 			}
-			for _, e := range evts {
-				select {
-				case <-sub.Closed():
-					continue
-				case <-sub.Skip():
-					continue
-				case sub.C() <- e:
-					continue
-				}
+			select {
+			case <-sub.Closed():
+				continue
+			case <-sub.Skip():
+				continue
+			case sub.C() <- evts:
+				continue
+			default:
+				continue
 			}
 		}
 	}
@@ -82,7 +82,9 @@ func (b *brokerStub) Send(e events.Event) {
 					continue
 				case <-sub.Skip():
 					continue
-				case sub.C() <- e:
+				case sub.C() <- []events.Event{e}:
+					continue
+				default:
 					continue
 				}
 			}

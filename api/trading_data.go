@@ -56,7 +56,7 @@ type TradeService interface {
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party, marketID string) (positions []*types.Position, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
-	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.Position, ref uint64)
+	ObservePositions(ctx context.Context, retries int, party, market string) (positions <-chan *types.Position, ref uint64)
 	GetTradeSubscribersCount() int32
 	GetPositionsSubscribersCount() int32
 }
@@ -1386,7 +1386,7 @@ func (t *tradingDataService) PositionsSubscribe(
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	positionsChan, ref := t.TradeService.ObservePositions(ctx, t.Config.StreamRetries, req.PartyID)
+	positionsChan, ref := t.TradeService.ObservePositions(ctx, t.Config.StreamRetries, req.PartyID, req.MarketID)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))

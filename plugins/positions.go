@@ -174,6 +174,24 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	return positions, nil
 }
 
+// GetAllPositions returns all positions, across markets
+func (p *Positions) GetAllPositions() ([]*types.Position, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	var pos []*types.Position
+	for k := range p.data {
+		// guesstimate what the slice cap ought to be: number of markets * number of traders in 1 market
+		pos = make([]*types.Position, 0, len(p.data)*len(p.data[k]))
+		break
+	}
+	for _, traders := range p.data {
+		for _, tp := range traders {
+			pos = append(pos, &tp.Position)
+		}
+	}
+	return pos, nil
+}
+
 // GetPositionsByMarket get all trader positions in a given market
 func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
