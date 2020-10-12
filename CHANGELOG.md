@@ -45,6 +45,7 @@ These two fixes combined make both the gRPC and GraphQL streams much more reliab
 - [#2358](https://github.com/vegaprotocol/vega/pull/2358) Add documentation and comments for `events.proto`
 - [#2359](https://github.com/vegaprotocol/vega/pull/2359) Fix out of bounds index crash
 - [#2364](https://github.com/vegaprotocol/vega/pull/2364) Add mutex to protect map access
+- [#2370](https://github.com/vegaprotocol/vega/pull/2370) Event stream: Send batches instead of single events
 
 ## 0.25.0
 
