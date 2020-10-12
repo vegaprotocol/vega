@@ -237,7 +237,7 @@ type Subscription {
     "optional filter by party ID"
     partyID: String
     "optional batch size"
-    batchSize: Int
+    batchSize: Int!
   ): [BusEvent!]
 }
 
