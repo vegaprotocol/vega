@@ -27,12 +27,22 @@ type Watcher struct {
 	// to be used as an atomic
 	hasChanged         int32
 	cfgUpdateListeners []func(Config)
-	cfgHandlers        []func(*Config)
+	cfgHandlers        []func(*Config) error
 	mu                 sync.Mutex
 }
 
+type Option func(w *Watcher)
+
+func Use(use func(*Config) error) Option {
+	fn := func(w *Watcher) {
+		w.Use(use)
+	}
+
+	return fn
+}
+
 // NewFromFile instantiate a new watcher from the vega config files
-func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string) (*Watcher, error) {
+func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string, opts ...Option) (*Watcher, error) {
 	watcherlog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
 	watcherlog.SetLevel(logging.DebugLevel)
@@ -41,6 +51,10 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 		cfg:                NewDefaultConfig(defaultStoreDirPath),
 		path:               filepath.Join(path, configFileName),
 		cfgUpdateListeners: []func(Config){},
+	}
+
+	for _, opt := range opts {
+		opt(w)
 	}
 
 	err := w.load()
@@ -73,10 +87,6 @@ func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
 	// get the config and updates listeners
 	cfg := w.Get()
 
-	for _, f := range w.cfgHandlers {
-		f(&cfg)
-	}
-
 	for _, f := range w.cfgUpdateListeners {
 		f(cfg)
 	}
@@ -103,7 +113,7 @@ func (w *Watcher) OnConfigUpdate(fns ...func(Config)) {
 }
 
 // Use registers a function that modify the config when the configuration is updated.
-func (w *Watcher) Use(fns ...func(*Config)) {
+func (w *Watcher) Use(fns ...func(*Config) error) {
 	w.mu.Lock()
 	for _, f := range fns {
 		w.cfgHandlers = append(w.cfgHandlers, f)
@@ -122,6 +132,13 @@ func (w *Watcher) load() error {
 	if _, err := toml.Decode(string(buf), &w.cfg); err != nil {
 		return err
 	}
+
+	for _, f := range w.cfgHandlers {
+		if err := f(&w.cfg); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -72,26 +71,8 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		}
 	}()
 	l.ctx, l.cancel = context.WithCancel(context.Background())
-	// Use configPath from args
-	configPath := l.configPath
-	if configPath == "" {
-		// Use configPath from ENV
-		configPath = envConfigPath()
-		if configPath == "" {
-			// Default directory ($HOME/.vega)
-			configPath = fsutil.DefaultVegaDir()
-		}
-	}
-	l.configPath = configPath
 
-	// VEGA config (holds all package level configs)
-	cfgwatchr, err := config.NewFromFile(l.ctx, l.Log, configPath, configPath)
-	if err != nil {
-		l.Log.Error("unable to start config watcher", logging.Error(err))
-		return
-	}
-	conf := cfgwatchr.Get()
-	l.cfgwatchr = cfgwatchr
+	conf := l.cfgwatchr.Get()
 
 	if flagProvided("--no-chain") {
 		conf.Blockchain.ChainProvider = "noop"
@@ -99,18 +80,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	if flagProvided("--no-stores") {
 		conf.StoresEnabled = false
-	}
-
-	// if theses is not specified, we then trigger a prompt
-	// for the user to type his password
-	var nodeWalletPassphrase string
-	if len(l.nodeWalletPassphrase) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
-	} else {
-		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
-	}
-	if err != nil {
-		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
 	}
 
 	// reload logger with the setup from configuration
@@ -125,12 +94,9 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}
 
 	l.Log.Info("Starting Vega",
-		logging.String("config-path", configPath),
+		logging.String("config-path", l.configPath),
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
-
-	// assign config vars
-	l.configPath, l.conf = configPath, conf
 
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
@@ -169,7 +135,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}
 
 	// nodewallet
-	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase, ethclt)
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt)
 	if err != nil {
 		return err
 	}

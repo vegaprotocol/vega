@@ -11,8 +11,8 @@ const namedLogger = "position"
 
 // Config represents the configuration of the position engine
 type Config struct {
-	Level             encoding.LogLevel
-	LogPositionUpdate bool
+	Level             encoding.LogLevel `long:"level"`
+	LogPositionUpdate encoding.Bool     `long:"log-position-update"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

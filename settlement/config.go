@@ -44,14 +44,18 @@ func (f *FinalSettlementW) UnmarshalText(text []byte) error {
 	return err
 }
 
+func (f *FinalSettlementW) UnmarshalFlag(text string) error {
+	return f.UnmarshalText([]byte(text))
+}
+
 func (f FinalSettlementW) MarshalText() ([]byte, error) {
 	return []byte(f.FinalSettlement), nil
 }
 
 // Config represent the configuration of the settlement engine
 type Config struct {
-	Level           encoding.LogLevel
-	FinalSettlement FinalSettlementW
+	Level           encoding.LogLevel `long:"level"`
+	FinalSettlement FinalSettlementW  `long:"final-settlement"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

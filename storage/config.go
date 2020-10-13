@@ -44,17 +44,17 @@ type Config struct {
 	//Risk      ConfigOptions
 	//Positions ConfigOptions
 
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"level"`
 
-	Timeout encoding.Duration
+	Timeout encoding.Duration `long:"timeout"`
 
-	AccountsDirPath string
-	CandlesDirPath  string
-	MarketsDirPath  string
-	OrdersDirPath   string
-	TradesDirPath   string
+	AccountsDirPath string `long:"accounts-dir-path" description:" "`
+	CandlesDirPath  string `long:"candles-dir-path" description:" "`
+	MarketsDirPath  string `long:"markets-dir-path" description:" "`
+	OrdersDirPath   string `long:"orders-dir-path" description:" "`
+	TradesDirPath   string `long:"trades-dir-path" description:" "`
 
-	LogPositionStoreDebug bool
+	LogPositionStoreDebug bool `long:"log-position-store-debug"`
 }
 
 // NewDefaultConfig constructs a new Config instance with default parameters.

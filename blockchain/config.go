@@ -12,12 +12,12 @@ const namedLogger = "blockchain"
 
 // Config represent the configuration of the blockchain package
 type Config struct {
-	Level               encoding.LogLevel
-	LogTimeDebug        bool
-	LogOrderSubmitDebug bool
-	LogOrderAmendDebug  bool
-	LogOrderCancelDebug bool
-	ChainProvider       string
+	Level               encoding.LogLevel `long:"level"`
+	LogTimeDebug        bool              `long:"log-time-debug"`
+	LogOrderSubmitDebug bool              `long:"log-order-submit-debug"`
+	LogOrderAmendDebug  bool              `long:"log-order-amend-debug"`
+	LogOrderCancelDebug bool              `long:"log-order-cancel-debug"`
+	ChainProvider       string            `long:"chain-provider"`
 
 	Tendermint TendermintConfig
 	Noop       noop.Config

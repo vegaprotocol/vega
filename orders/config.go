@@ -11,7 +11,7 @@ const namedLogger = "orders"
 
 // Config represents the configuration of the Orders service
 type Config struct {
-	Level cfgencoding.LogLevel
+	Level cfgencoding.LogLevel `long:"level"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

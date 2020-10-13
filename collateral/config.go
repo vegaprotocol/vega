@@ -11,7 +11,7 @@ const namedLogger = "collateral"
 
 // Config represent the configuration of the collateral engine
 type Config struct {
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"level"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

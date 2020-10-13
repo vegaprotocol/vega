@@ -11,9 +11,9 @@ const namedLogger = "risk"
 
 // Config represent the configuration of the Risk engine
 type Config struct {
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"level"`
 
-	LogMarginUpdate bool
+	LogMarginUpdate encoding.Bool `long:"log-margin-update"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

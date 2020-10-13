@@ -11,7 +11,7 @@ const namedLogger = "parties"
 
 // Config reprensent the configuration of the parties service
 type Config struct {
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"level"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

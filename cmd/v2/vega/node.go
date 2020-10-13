@@ -10,6 +10,7 @@ import (
 )
 
 type NodeCmd struct {
+	config.Passphrase
 	config.RootPathFlag
 	config.Config
 }
@@ -22,29 +23,30 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	)
 	defer log.AtExit()
 
-	cfgwatchr, err := config.NewFromFile(context.Background(), log, cmd.RootPath, cmd.RootPath)
+	pass, err := cmd.Passphrase.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	// reload the config on update keeping user specified flags
-	cfgwatchr.Use(func(cfg *config.Config) {
-		cmd.Config = *cfg
-		if _, err := flags.Parse(cmd); err != nil {
-			log.Error("Couldn't parse config", logging.Error(err))
-			return
-		}
-		*cfg = cmd.Config
-	})
-
-	cmd.Config = cfgwatchr.Get()
-	if _, err := flags.Parse(cmd); err != nil {
+	// we define this option to parse the cli args each time the config is
+	// loaded. So that we can respect the cli flag presedence.
+	parseFlagOpt := func(cfg *config.Config) error {
+		_, err := flags.Parse(cfg)
+		return err
+	}
+	cfgwatchr, err := config.NewFromFile(context.Background(), log, cmd.RootPath, cmd.RootPath, config.Use(parseFlagOpt))
+	if err != nil {
 		return err
 	}
 
 	return (&node.NodeCommand{
 		Log: log,
-	}).Execute(args)
+	}).Run(
+		cfgwatchr,
+		cmd.RootPath,
+		pass,
+		args,
+	)
 }
 
 func Node(ctx context.Context, parser *flags.Parser) error {

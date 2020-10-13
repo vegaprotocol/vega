@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
@@ -44,43 +45,43 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	API         api.Config
-	Accounts    accounts.Config
-	Blockchain  blockchain.Config
-	Candles     candles.Config
-	Collateral  collateral.Config
-	Execution   execution.Config
-	Processor   processor.Config
-	Logging     logging.Config `group:"logging" namespace:"logging"`
-	Matching    matching.Config
-	Markets     markets.Config
-	Orders      orders.Config
-	Parties     parties.Config
-	Position    positions.Config
-	Risk        risk.Config
-	Settlement  settlement.Config
-	Storage     storage.Config
-	Trades      trades.Config
-	Time        vegatime.Config
-	Monitoring  monitoring.Config
-	Gateway     gateway.Config `group:"Gateway" namespace:"gateway"`
-	Metrics     metrics.Config `group:"Metrics" namespace:"metrics"`
-	Transfers   transfers.Config
-	Governance  governance.Config
-	NodeWallet  nodewallet.Config `group:"NodeWallet" namespace:"nodewallet"`
-	Assets      assets.Config
-	Notary      notary.Config
-	EvtForward  evtforward.Config
-	Subscribers subscribers.Config
-	Genesis     genesis.Config
-	Validators  validators.Config
-	Banking     banking.Config
-	Stats       stats.Config
+	API         api.Config         `group:"API" namespace:"api"`
+	Accounts    accounts.Config    `group:"Accounts" namespace:"accounts"`
+	Blockchain  blockchain.Config  `group:"Blockchain" namespace:"blockchain"`
+	Candles     candles.Config     `group:"Candles" namespace:"candles"`
+	Collateral  collateral.Config  `group:"Collateral" namespace:"collateral"`
+	Execution   execution.Config   `group:"Execution" namespace:"execution"`
+	Processor   processor.Config   `group:"Processor" namespace:"processor"`
+	Logging     logging.Config     `group:"logging" namespace:"logging"`
+	Matching    matching.Config    `group:"Matching" namespace:"matching"`
+	Markets     markets.Config     `group:"Markets" namespace:"markets"`
+	Orders      orders.Config      `group:"Orders" namespace:"orders"`
+	Parties     parties.Config     `group:"Parties" namespace:"parties"`
+	Position    positions.Config   `group:"Position" namespace:"position"`
+	Risk        risk.Config        `group:"Risk" namespace:"risk"`
+	Settlement  settlement.Config  `group:"Settlement" namespace:"settlement"`
+	Storage     storage.Config     `group:"Storage" namespace:"storage"`
+	Trades      trades.Config      `group:"Trades" namespace:"trades"`
+	Time        vegatime.Config    `group:"Time" namespace:"time"`
+	Monitoring  monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
+	Gateway     gateway.Config     `group:"Gateway" namespace:"gateway"`
+	Metrics     metrics.Config     `group:"Metrics" namespace:"metrics"`
+	Transfers   transfers.Config   `group:"Transfers" namespace:"transfers"`
+	Governance  governance.Config  `group:"Governance" namespace:"governance"`
+	NodeWallet  nodewallet.Config  `group:"NodeWallet" namespace:"nodewallet"`
+	Assets      assets.Config      `group:"Assets" namespace:"assets"`
+	Notary      notary.Config      `group:"Notary" namespace:"notary"`
+	EvtForward  evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
+	Subscribers subscribers.Config `group:"Subscribers" namespace:"subscribers"`
+	Genesis     genesis.Config     `group:"Genesis" namespace:"genesis"`
+	Validators  validators.Config  `group:"Validators" namespace:"validators"`
+	Banking     banking.Config     `group:"Banking" namespace:"banking"`
+	Stats       stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config
 
-	Pprof          pprof.Config
-	GatewayEnabled bool
-	StoresEnabled  bool
+	Pprof          pprof.Config `group:"Pprof" namespace:"pprof"`
+	GatewayEnabled encoding.Bool
+	StoresEnabled  encoding.Bool
 	UlimitNOFile   uint64 `tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 

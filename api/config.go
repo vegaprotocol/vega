@@ -13,11 +13,11 @@ const namedLogger = "api.grpc"
 
 // Config represents the configuration of the api package
 type Config struct {
-	Level         encoding.LogLevel
-	Timeout       encoding.Duration
-	Port          int
-	IP            string
-	StreamRetries int
+	Level         encoding.LogLevel `long:"level"`
+	Timeout       encoding.Duration `long:"timeout"`
+	Port          int               `long:"port"`
+	IP            string            `long:"ip"`
+	StreamRetries int               `long:"stream-retries"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

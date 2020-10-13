@@ -16,10 +16,10 @@ const (
 
 // Config represent the configuration of the processor package
 type Config struct {
-	Level               encoding.LogLevel
-	LogOrderSubmitDebug bool
-	LogOrderAmendDebug  bool
-	LogOrderCancelDebug bool
+	Level               encoding.LogLevel `long:"level"`
+	LogOrderSubmitDebug bool              `long:"log-order-submit-debug"`
+	LogOrderAmendDebug  bool              `long:"log-order-amend-debug"`
+	LogOrderCancelDebug bool              `long:"log-order-cancel-debug"`
 	Ratelimit           ratelimit.Config
 }
 
