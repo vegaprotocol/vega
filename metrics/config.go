@@ -9,11 +9,11 @@ import (
 
 // Config represents the configuration of the metric package
 type Config struct {
-	Level   encoding.LogLevel
-	Timeout encoding.Duration
-	Port    int
-	Path    string
-	Enabled bool
+	Level   encoding.LogLevel `long:"level"`
+	Timeout encoding.Duration `long:"timeout"`
+	Port    int               `long:"port"`
+	Path    string            `long:"path"`
+	Enabled encoding.Bool     `long:"enabled"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

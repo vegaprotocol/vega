@@ -43,7 +43,7 @@ func main() {
 func Main(ctx context.Context) error {
 	parser := flags.NewParser(&config.Empty{}, flags.Default)
 
-	Register(ctx, parser,
+	if err := Register(ctx, parser,
 		Faucet,
 		Gateway,
 		Genesis,
@@ -52,7 +52,10 @@ func Main(ctx context.Context) error {
 		NodeWallet,
 		Wallet,
 		Watch,
-	)
+	); err != nil {
+		fmt.Printf("%+v\n", err)
+		return err
+	}
 
 	if _, err := parser.Parse(); err != nil {
 		switch t := err.(type) {

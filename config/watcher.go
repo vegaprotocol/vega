@@ -27,6 +27,7 @@ type Watcher struct {
 	// to be used as an atomic
 	hasChanged         int32
 	cfgUpdateListeners []func(Config)
+	cfgHandlers        []func(*Config)
 	mu                 sync.Mutex
 }
 
@@ -69,13 +70,19 @@ func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
 		// no changes we can return straight away
 		return
 	}
-	// reset the atomic
-	atomic.StoreInt32(&w.hasChanged, 0)
 	// get the config and updates listeners
 	cfg := w.Get()
+
+	for _, f := range w.cfgHandlers {
+		f(&cfg)
+	}
+
 	for _, f := range w.cfgUpdateListeners {
 		f(cfg)
 	}
+
+	// reset the atomic
+	atomic.StoreInt32(&w.hasChanged, 0)
 }
 
 // Get return the last update of the configuration
@@ -91,6 +98,15 @@ func (w *Watcher) OnConfigUpdate(fns ...func(Config)) {
 	w.mu.Lock()
 	for _, f := range fns {
 		w.cfgUpdateListeners = append(w.cfgUpdateListeners, f)
+	}
+	w.mu.Unlock()
+}
+
+// Use registers a function that modify the config when the configuration is updated.
+func (w *Watcher) Use(fns ...func(*Config)) {
+	w.mu.Lock()
+	for _, f := range fns {
+		w.cfgHandlers = append(w.cfgHandlers, f)
 	}
 	w.mu.Unlock()
 }

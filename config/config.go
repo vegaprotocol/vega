@@ -44,38 +44,38 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	API               api.Config
-	Accounts          accounts.Config
-	Blockchain        blockchain.Config
-	Candles           candles.Config
-	Collateral        collateral.Config
-	Execution         execution.Config
-	Processor         processor.Config
-	Logging           logging.Config
-	Matching          matching.Config
-	Markets           markets.Config
-	Orders            orders.Config
-	Parties           parties.Config
-	Position          positions.Config
-	Risk              risk.Config
-	Settlement        settlement.Config
-	Storage           storage.Config
-	Trades            trades.Config
-	Time              vegatime.Config
-	Monitoring        monitoring.Config
-	Gateway           gateway.Config
-	Metrics           metrics.Config
-	Transfers         transfers.Config
-	Governance        governance.Config
-	NodeWallet        nodewallet.Config
-	Assets            assets.Config
-	Notary            notary.Config
-	EvtForward        evtforward.Config
-	Subscribers       subscribers.Config
-	Genesis           genesis.Config
-	Validators        validators.Config
-	Banking           banking.Config
-	Stats             stats.Config
+	API         api.Config
+	Accounts    accounts.Config
+	Blockchain  blockchain.Config
+	Candles     candles.Config
+	Collateral  collateral.Config
+	Execution   execution.Config
+	Processor   processor.Config
+	Logging     logging.Config `group:"logging" namespace:"logging"`
+	Matching    matching.Config
+	Markets     markets.Config
+	Orders      orders.Config
+	Parties     parties.Config
+	Position    positions.Config
+	Risk        risk.Config
+	Settlement  settlement.Config
+	Storage     storage.Config
+	Trades      trades.Config
+	Time        vegatime.Config
+	Monitoring  monitoring.Config
+	Gateway     gateway.Config `group:"Gateway" namespace:"gateway"`
+	Metrics     metrics.Config `group:"Metrics" namespace:"metrics"`
+	Transfers   transfers.Config
+	Governance  governance.Config
+	NodeWallet  nodewallet.Config `group:"NodeWallet" namespace:"nodewallet"`
+	Assets      assets.Config
+	Notary      notary.Config
+	EvtForward  evtforward.Config
+	Subscribers subscribers.Config
+	Genesis     genesis.Config
+	Validators  validators.Config
+	Banking     banking.Config
+	Stats       stats.Config
 	NetworkParameters netparams.Config
 
 	Pprof          pprof.Config
