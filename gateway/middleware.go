@@ -26,11 +26,6 @@ func RemoteAddr(r *http.Request) (string, error) {
 		return "", fmt.Errorf("unable to get remote address (failed to split host:port) from \"%s\": %v", r.RemoteAddr, err)
 	}
 
-	parsedIP := net.ParseIP(ip)
-	if parsedIP == nil {
-		return "", fmt.Errorf("unable to get remote address (failed to parse IP address) from \"%s\"", ip)
-	}
-
 	return ip, nil
 }
 
