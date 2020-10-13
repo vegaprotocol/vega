@@ -35,13 +35,12 @@ func (p Passphrase) Get(prompt string) (string, error) {
 }
 
 func (p Passphrase) getFromUser(prompt string) (string, error) {
-	fmt.Printf("please enter %v passphrase:", prompt)
+	fmt.Printf("please enter %s passphrase:", prompt)
 	password, err := terminal.ReadPassword(0)
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Println("")
 	return string(password), nil
 }
 
