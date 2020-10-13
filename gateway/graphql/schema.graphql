@@ -236,7 +236,7 @@ type Subscription {
     marketID: String
     "optional filter by party ID"
     partyID: String
-    "optional batch size"
+    "Specifies the size that the client will receive events in. Using 0 results in a variable batch size being sent. The stream will be closed if the client fails to read a batch within 5 seconds"
     batchSize: Int!
   ): [BusEvent!]
 }
