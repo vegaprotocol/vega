@@ -29,7 +29,15 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
-	@go generate ./...
+	@fiddle=no && \
+	if test -d vendor ; then \
+		mv vendor vendor.tmp && \
+		fiddle=yes ; \
+	fi && \
+	go generate ./... && \
+	if test "$$fiddle" = yes ; then \
+		mv vendor.tmp vendor ; \
+	fi
 
 .PHONY: msan
 msan: ## Run memory sanitizer
