@@ -2714,6 +2714,10 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		Type:      t,
 		BatchSize: int64(batchSize),
 	}
+	if req.BatchSize == 0 {
+		req.BatchSize = -1 // sending this with -1 to indicate to underlying gRPC call this is a special case: GQL
+		batchSize = 0
+	}
 	if marketID != nil {
 		req.MarketID = *marketID
 	}
@@ -2730,9 +2734,8 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	poll := &protoapi.ObserveEventBatch{
 		BatchSize: int64(batchSize),
 	}
-	// keep buffer of 10 batches. 5 retries cause a fail of stream
-	// this way we're a bit more secure
-	out := make(chan []*BusEvent, 10)
+	// we no longer buffer this channel. Client receives batch, then we request the next batch
+	out := make(chan []*BusEvent)
 	go func() {
 		defer func() {
 			stream.CloseSend()

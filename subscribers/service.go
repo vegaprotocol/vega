@@ -43,7 +43,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 			select {
 			case bs := <-in:
 				// batch size changed: drain buffer and send data
-				data := sub.UpdateBatchSize(bs)
+				data := sub.UpdateBatchSize(ctx, bs)
 				if len(data) > 0 {
 					out <- data
 				}
