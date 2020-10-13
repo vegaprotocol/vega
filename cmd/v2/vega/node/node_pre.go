@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -27,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
@@ -189,7 +189,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
-	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
 }
 
@@ -265,7 +265,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 }
 
 // load all asset from genesis state
-func (l *NodeCommand) UponGenesis(rawstate []byte) error {
+func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 	state, err := assets.LoadGenesisState(rawstate)
 	if err != nil {
 		return err
@@ -469,11 +469,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
+	l.netParamsService = netparams.NewService(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
-	l.genesisHandler.OnGenesisTimeLoaded(func(t time.Time) {
-		l.timeService.SetTimeNow(context.Background(), t)
-	})
+	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
 
 	l.broker = broker.New(l.ctx)
 	l.broker.SubscribeBatch(
@@ -501,7 +500,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.mktscfg,
 		l.collateral,
 		l.broker,
 	)
@@ -516,15 +514,15 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
-	netParams := governance.DefaultNetworkParameters(l.Log)
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, netParams, l.collateral, l.broker, l.assets, l.erc, now)
+	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
+
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
 	}
 
 	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
-	l.genesisHandler.OnGenesisAppStateLoaded(l.governance.InitState)
 	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
 	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 
@@ -558,7 +556,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return
 	}
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParams)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore)
