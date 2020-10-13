@@ -53,6 +53,16 @@ func Node(ctx context.Context, parser *flags.Parser) error {
 		RootPathFlag: rootPath,
 		Config:       config.NewDefaultConfig(rootPath.RootPath),
 	}
-	_, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
-	return err
+	cmd, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
+	if err != nil {
+		return err
+	}
+
+	// Print nested groups under parent's name using `::` as the separator.
+	for _, parent := range cmd.Groups() {
+		for _, grp := range parent.Groups() {
+			grp.ShortDescription = parent.ShortDescription + "::" + grp.ShortDescription
+		}
+	}
+	return nil
 }
