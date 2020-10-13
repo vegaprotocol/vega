@@ -33,6 +33,11 @@ type StreamSub struct {
 }
 
 func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filters ...EventFilter) *StreamSub {
+	// we can ignore this value throughout the call-chain, but internally we have to account for it
+	// this is equivalent to 0, but used for GQL mapping
+	if batchSize == -1 {
+		batchSize = 0
+	}
 	trades, meo := false, (len(types) == 1 && types[0] == events.MarketEvent)
 	expandedTypes := make([]events.Type, 0, len(types))
 	for _, t := range types {
@@ -155,16 +160,23 @@ func (s *StreamSub) Push(evts ...events.Event) {
 
 // UpdateBatchSize changes the batch size, and returns whatever the current buffer contains
 // it's effectively a poll of current events ignoring requested batch size
-func (s *StreamSub) UpdateBatchSize(size int) []*types.BusEvent {
+func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*types.BusEvent {
 	s.mu.Lock()
+	if size == s.bufSize {
+		s.mu.Unlock()
+		// this is equivalent to polling for data again, wait for the buffer to be full and return
+		return s.GetData(ctx)
+	}
 	s.changeCount = 0
 	data := s.data
 	dc := size
-	if dc == 0 {
+	if dc == 0 { // size == 0
 		dc = cap(s.data)
+	} else if size != s.bufSize { // size was not 0, reassign bufSize
+		// buffer size changes
+		s.bufSize = size
 	}
 	s.data = make([]StreamEvent, 0, dc)
-	s.bufSize = size
 	s.mu.Unlock()
 	messages := make([]*types.BusEvent, 0, len(data))
 	for _, d := range data {

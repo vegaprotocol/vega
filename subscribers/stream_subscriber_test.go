@@ -202,8 +202,8 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	assert.Equal(t, 5, len(data))
 	// a total of 6 events were now sent to the subscriber, changing the buffer size ought to return 1 event
 	<-sent
-	data = sub.UpdateBatchSize(len(set1)) // set batch size to match test-data set
-	assert.Equal(t, 1, len(data))         // we should have drained the buffer
+	data = sub.UpdateBatchSize(sub.ctx, len(set1)) // set batch size to match test-data set
+	assert.Equal(t, 1, len(data))                  // we should have drained the buffer
 	sent = make(chan struct{})
 	go sendRoutine(sent, sub, set1)
 	<-sent

@@ -2055,7 +2055,8 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 	// number of retries to -1 to have pretty much unlimited retries
 	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(in.BatchSize), filters...)
 	// check for changes in batch size
-	if in.BatchSize > 0 {
+	// -1 is used by the GQL stream, this means no batch size is set, but the resolver will poll automatically
+	if in.BatchSize > 0 || in.BatchSize == -1 {
 		// handle bi-directional observing
 		return t.observeEventsBiDi(stream, ch, bCh)
 	}
