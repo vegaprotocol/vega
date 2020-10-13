@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -11,34 +12,39 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 )
 
+// RemoteAddrs collects possible remote addresses from a request
+func RemoteAddr(r *http.Request) (string, error) {
+	// Only defined when site is accessed via non-anonymous proxy
+	// and takes precedence over RemoteAddr
+	remote := r.Header.Get("X-Forwarded-For")
+	if remote != "" {
+		return remote, nil
+	}
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return "", fmt.Errorf("unable to get remote address (failed to split host:port) from \"%s\": %v", r.RemoteAddr, err)
+	}
+
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return "", fmt.Errorf("unable to get remote address (failed to parse IP address) from \"%s\"", ip)
+	}
+
+	return ip, nil
+}
+
 // RemoteAddrMiddleware is a middleware adding to the current request context the
 // address of the caller
 func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		found := false
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		ip, err := RemoteAddr(r)
 		if err != nil {
-			log.Warn("Remote address is not splittable in middleware",
-				logging.String("remote-addr", r.RemoteAddr))
+			log.Debug("Failed to get remote address in middleware",
+				logging.String("remote-addr", r.RemoteAddr),
+				logging.String("x-forwarded-for", r.Header.Get("X-Forwarded-For")),
+			)
 		} else {
-			userIP := net.ParseIP(ip)
-			if userIP == nil {
-				log.Warn("Remote address is not IP:port format in middleware",
-					logging.String("remote-addr", r.RemoteAddr))
-			} else {
-				found = true
-
-				// Only defined when site is accessed via non-anonymous proxy
-				// and takes precedence over RemoteAddr
-				forward := r.Header.Get("X-Forwarded-For")
-				if forward != "" {
-					ip = forward
-				}
-			}
-		}
-
-		if found {
 			r = r.WithContext(contextutil.WithRemoteIPAddr(r.Context(), ip))
 		}
 		next.ServeHTTP(w, r)

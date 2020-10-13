@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
@@ -44,7 +45,7 @@ type Faucet struct {
 	cfg   Config
 	wal   *wallet.Wallet
 	s     *http.Server
-	rl    *RateLimit
+	rl    *gateway.RateLimit
 	cfunc context.CancelFunc
 
 	// node connections stuff
@@ -90,7 +91,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		cltdata: clientData,
 		conn:    conn,
 		cfunc:   cfunc,
-		rl:      NewRateLimit(ctx, cfg),
+		rl:      gateway.NewRateLimit(ctx, cfg.RateLimit),
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
@@ -127,7 +128,9 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		writeError(w, newError(err.Error()), http.StatusInternalServerError)
 		return
 	}
-	if err := f.rl.NewRequest(req.Party, req.Asset); err != nil {
+	rlkey := fmt.Sprintf("party-%s-asset-%s", req.Party, req.Asset)
+	if err := f.rl.NewRequest(rlkey); err != nil {
+		f.log.Debug("Mint denied - rate limit", logging.String("rlkey", rlkey))
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}

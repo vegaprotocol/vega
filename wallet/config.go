@@ -14,17 +14,19 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/zannen/toml"
 )
 
 const (
-	namedLogger    = "wallet"
-	configFile     = "wallet-service-config.toml"
-	rsaKeyPath     = "wallet_rsa"
-	pubRsaKeyName  = "public.pem"
-	privRsaKeyName = "private.pem"
+	namedLogger     = "wallet"
+	configFile      = "wallet-service-config.toml"
+	rsaKeyPath      = "wallet_rsa"
+	pubRsaKeyName   = "public.pem"
+	privRsaKeyName  = "private.pem"
+	defaultCoolDown = 1 * time.Minute
 
 	//  7 days, needs to be in seconds for the token
 	tokenExpiry = time.Hour * 24 * 7
@@ -37,6 +39,7 @@ type Config struct {
 	IP          string
 	Node        NodeConfig
 	RsaKey      string
+	RateLimit   gateway.RateLimitConfig
 }
 
 type NodeConfig struct {
@@ -59,6 +62,9 @@ func NewDefaultConfig() Config {
 		IP:     "0.0.0.0",
 		Port:   1789,
 		RsaKey: rsaKeyPath,
+		RateLimit: gateway.RateLimitConfig{
+			CoolDown: encoding.Duration{Duration: defaultCoolDown},
+		},
 	}
 }
 

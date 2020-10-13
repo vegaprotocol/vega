@@ -10,6 +10,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/zannen/toml"
 )
@@ -23,7 +24,7 @@ const (
 
 type Config struct {
 	Level      encoding.LogLevel
-	CoolDown   encoding.Duration
+	RateLimit  gateway.RateLimitConfig
 	WalletPath string
 	Port       int
 	IP         string
@@ -38,8 +39,10 @@ type NodeConfig struct {
 
 func NewDefaultConfig(defaultDirPath string) Config {
 	return Config{
-		Level:      encoding.LogLevel{Level: logging.InfoLevel},
-		CoolDown:   encoding.Duration{Duration: defaultCoolDown},
+		Level: encoding.LogLevel{Level: logging.InfoLevel},
+		RateLimit: gateway.RateLimitConfig{
+			CoolDown: encoding.Duration{Duration: defaultCoolDown},
+		},
 		WalletPath: filepath.Join(defaultDirPath, defaultWallet),
 		Node: NodeConfig{
 			IP:      "127.0.0.1",

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/protobuf/proto"
@@ -24,6 +25,8 @@ type Service struct {
 	s           *http.Server
 	handler     WalletHandler
 	nodeForward NodeForward
+	rl          *gateway.RateLimit
+	cfunc       context.CancelFunc
 }
 
 // CreateLoginWalletRequest describes the request for CreateWallet, LoginWallet.
@@ -85,6 +88,7 @@ type WalletHandler interface {
 	RevokeToken(token string) error
 	GenerateKeypair(token, passphrase string) (string, error)
 	GetPublicKey(token, pubKey string) (*Keypair, error)
+	GetWalletName(token string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
 	SignTx(token, tx, pubkey string) (SignedBundle, error)
 	TaintKey(token, pubkey, passphrase string) error
@@ -99,12 +103,15 @@ type NodeForward interface {
 }
 
 func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler, n NodeForward) (*Service, error) {
+	ctx, cfunc := context.WithCancel(context.Background())
 	s := &Service{
 		Router:      httprouter.New(),
 		log:         log,
 		cfg:         cfg,
 		handler:     h,
 		nodeForward: n,
+		cfunc:       cfunc,
+		rl:          gateway.NewRateLimit(ctx, cfg.RateLimit),
 	}
 
 	// all the endpoints are public for testing purpose
@@ -155,6 +162,7 @@ func (s *Service) Start() error {
 }
 
 func (s *Service) Stop() error {
+	s.cfunc()
 	return s.s.Shutdown(context.Background())
 }
 
@@ -176,11 +184,31 @@ func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 
+	// rate limit wallet creation by source IP address
+	ip, err := gateway.RemoteAddr(r)
+	if err != nil {
+		writeError(w, newError(fmt.Sprintf("failed to get request remote address: %v", err)), http.StatusBadRequest)
+		return
+	}
+	rlkey := fmt.Sprintf("createwallet-%s", ip)
+	if err := s.rl.NewRequest(rlkey); err != nil {
+		s.log.Debug("Wallet creation denied - rate limit",
+			logging.String("name", req.Wallet),
+			logging.String("rlkey", rlkey),
+		)
+		writeError(w, newError(err.Error()), http.StatusForbidden)
+		return
+	}
+
 	token, err := s.handler.CreateWallet(req.Wallet, req.Passphrase)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}
+	s.log.Debug("Created wallet",
+		logging.String("name", req.Wallet),
+		logging.String("ip", ip),
+	)
 	writeSuccess(w, TokenResponse{token}, http.StatusOK)
 }
 
@@ -229,13 +257,31 @@ func (s *Service) Revoke(t string, w http.ResponseWriter, r *http.Request, _ htt
 }
 
 func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// unmarshal request
 	req := PassphraseMetaRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
 		writeError(w, newError(err.Error()), http.StatusBadRequest)
 		return
 	}
+
+	// validation
 	if len(req.Passphrase) <= 0 {
 		writeError(w, newError("missing passphrase field"), http.StatusBadRequest)
+		return
+	}
+
+	// rate limit keypair creation by wallet name
+	wname, err := s.handler.GetWalletName(t)
+	if err != nil {
+		writeError(w, newError("failed to get wallet name from token"), http.StatusBadRequest)
+		return
+	}
+	rlkey := fmt.Sprintf("wallet-%s", wname)
+	if err := s.rl.NewRequest(rlkey); err != nil {
+		s.log.Debug("Keypair generation denied - rate limit",
+			logging.String("rlkey", rlkey),
+		)
+		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}
 
@@ -260,6 +306,10 @@ func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	s.log.Debug("Generated keypair",
+		logging.String("pubkey", pubKey),
+		logging.String("walletname", wname),
+	)
 	writeSuccess(w, KeyResponse{Key: *key}, http.StatusOK)
 }
 

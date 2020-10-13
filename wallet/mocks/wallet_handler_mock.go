@@ -78,6 +78,21 @@ func (mr *MockWalletHandlerMockRecorder) GetPublicKey(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicKey", reflect.TypeOf((*MockWalletHandler)(nil).GetPublicKey), arg0, arg1)
 }
 
+// GetWalletName mocks base method
+func (m *MockWalletHandler) GetWalletName(arg0 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWalletName", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWalletName indicates an expected call of GetWalletName
+func (mr *MockWalletHandlerMockRecorder) GetWalletName(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWalletName", reflect.TypeOf((*MockWalletHandler)(nil).GetWalletName), arg0)
+}
+
 // ListPublicKeys mocks base method
 func (m *MockWalletHandler) ListPublicKeys(arg0 string) ([]wallet.Keypair, error) {
 	m.ctrl.T.Helper()
