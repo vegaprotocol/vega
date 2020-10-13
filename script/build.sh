@@ -358,6 +358,11 @@ run() {
 		fi
 
 		for app in "${apps[@]}" ; do
+			if test "$app" = "v2" ; then
+				app=vega
+			fi
+
+			echo "Building $app"
 			case "$action" in
 			build)
 				o="cmd/$app/$app$osarchsuffix$dbgsuffix$suffix$typesuffix"
