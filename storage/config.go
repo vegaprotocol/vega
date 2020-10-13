@@ -44,7 +44,7 @@ type Config struct {
 	//Risk      ConfigOptions
 	//Positions ConfigOptions
 
-	Level encoding.LogLevel `long:"level"`
+	Level encoding.LogLevel `long:"log-level"`
 
 	Timeout encoding.Duration `long:"timeout"`
 

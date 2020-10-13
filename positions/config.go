@@ -11,7 +11,7 @@ const namedLogger = "position"
 
 // Config represents the configuration of the position engine
 type Config struct {
-	Level             encoding.LogLevel `long:"level"`
+	Level             encoding.LogLevel `long:"log-level"`
 	LogPositionUpdate encoding.Bool     `long:"log-position-update"`
 }
 

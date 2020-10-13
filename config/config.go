@@ -52,7 +52,7 @@ type Config struct {
 	Collateral  collateral.Config  `group:"Collateral" namespace:"collateral"`
 	Execution   execution.Config   `group:"Execution" namespace:"execution"`
 	Processor   processor.Config   `group:"Processor" namespace:"processor"`
-	Logging     logging.Config     `group:"logging" namespace:"logging"`
+	Logging     logging.Config     `group:"Logging" namespace:"logging"`
 	Matching    matching.Config    `group:"Matching" namespace:"matching"`
 	Markets     markets.Config     `group:"Markets" namespace:"markets"`
 	Orders      orders.Config      `group:"Orders" namespace:"orders"`
@@ -79,10 +79,10 @@ type Config struct {
 	Stats       stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config
 
-	Pprof          pprof.Config `group:"Pprof" namespace:"pprof"`
-	GatewayEnabled encoding.Bool
-	StoresEnabled  encoding.Bool
-	UlimitNOFile   uint64 `tomlcp:"Set the max number of open files (see: ulimit -n)"`
+	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
+	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
+	StoresEnabled  encoding.Bool `long:"stores-enabled" choice:"true" choice:"false" description:" "`
+	UlimitNOFile   uint64        `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package

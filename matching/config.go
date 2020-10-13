@@ -11,7 +11,7 @@ const namedLogger = "matching"
 
 // Config represents the configuration of the Matching engine
 type Config struct {
-	Level encoding.LogLevel `long:"level"`
+	Level encoding.LogLevel `long:"log-level"`
 
 	LogPriceLevelsDebug   bool `long:"log-price-levels-debug"`
 	LogRemovedOrdersDebug bool `long:"log-removed-orders-debug"`

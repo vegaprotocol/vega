@@ -10,7 +10,7 @@ const (
 )
 
 type Config struct {
-	Level         encoding.LogLevel `long:"level"`
+	Level         encoding.LogLevel `long:"log-level"`
 	Address       string            `long:"address"`
 	BridgeAddress string            `long:"bridge-address"`
 }

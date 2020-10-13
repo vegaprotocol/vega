@@ -15,7 +15,7 @@ const (
 )
 
 type Config struct {
-	Level          encoding.LogLevel `long:"level"`
+	Level          encoding.LogLevel `long:"log-level"`
 	StorePath      string            `long:"store-path"`
 	DevWalletsPath string            `long:"dev-wallets-path"`
 	ETH            eth.Config        `group:"ETH" namespace:"eth"`

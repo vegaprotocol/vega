@@ -54,7 +54,7 @@ func (f FinalSettlementW) MarshalText() ([]byte, error) {
 
 // Config represent the configuration of the settlement engine
 type Config struct {
-	Level           encoding.LogLevel `long:"level"`
+	Level           encoding.LogLevel `long:"log-level"`
 	FinalSettlement FinalSettlementW  `long:"final-settlement"`
 }
 

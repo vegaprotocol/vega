@@ -11,7 +11,7 @@ const namedLogger = "candles"
 
 // Config represent the configuration of the candle package
 type Config struct {
-	Level encoding.LogLevel `long:"level"`
+	Level encoding.LogLevel `long:"log-level"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

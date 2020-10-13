@@ -35,7 +35,7 @@ type Config struct {
 	GraphQL                  GraphqlServiceConfig     `group:"GraphQL" namespace:"graphql"`
 	REST                     RESTGatewayServiceConfig `group:"REST" namespace:"rest"`
 	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
-	GraphQLPlaygroundEnabled bool                     `long:"graphql-playground" description:"Enables the GraphQL playground"`
+	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
