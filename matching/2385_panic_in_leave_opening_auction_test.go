@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"fmt"
 	"testing"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -101,16 +100,6 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Type:        types.Order_TYPE_LIMIT,
 			Id:          "v0000000000000-0000008",
 		},
-		// {
-		// 	MarketID:    market,
-		// 	PartyID:     "B",
-		// 	Side:        types.Side_SIDE_SELL,
-		// 	Size:        25,
-		// 	Remaining:   25,
-		// 	TimeInForce: types.Order_TIF_FOK,
-		// 	Type:        types.Order_TYPE_MARKET,
-		// 	Id:          "v0000000000000-0000008",
-		// },
 	}
 
 	// enter auction, should return no error and no orders
@@ -120,7 +109,6 @@ func TestPanicInLeaveAuction(t *testing.T) {
 
 	for _, o := range orders {
 		o := o
-		fmt.Printf("YOLO\n")
 		cnf, err := book.SubmitOrder(&o)
 		assert.NoError(t, err)
 		assert.Len(t, cnf.Trades, 0)
