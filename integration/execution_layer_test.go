@@ -906,6 +906,11 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {
+	pMonitorSettings := &proto.PriceMonitoringSettings{
+		PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+		UpdateFrequency:           0,
+	}
+
 	mkt := proto.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
@@ -949,8 +954,8 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 					Params: &proto.SimpleModelParams{
 						FactorLong:  f64val(row, 6),
 						FactorShort: f64val(row, 7),
-						MaxMoveUp:   0, //TODO (WG 02/10/2020): Inject from .feature file
-						MinMoveDown: 0, //TODO (WG 02/10/2020): Inject from .feature file
+						MaxMoveUp:   f64val(row, 8),
+						MinMoveDown: f64val(row, 9),
 					},
 				},
 			},
@@ -965,10 +970,7 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
-		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
-			PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
-			UpdateFrequency:           0,
-		},
+		PriceMonitoringSettings: pMonitorSettings,
 	}
 
 	if val(row, 5) == "forward" {

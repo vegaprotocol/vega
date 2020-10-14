@@ -3,6 +3,7 @@ package core_test
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"code.vegaprotocol.io/vega/proto"
 
@@ -35,6 +36,26 @@ func f64val(rows *gherkin.TableRow, idx int) float64 {
 	s := rows.Cells[idx].Value
 	ret, _ := strconv.ParseFloat(s, 10)
 	return ret
+}
+
+func f64arr(rows *gherkin.TableRow, idx int, sep string) []float64 {
+	sArr := strings.Split(rows.Cells[idx].Value, sep)
+	f64arr := make([]float64, len(sArr))
+	for _, s := range sArr {
+		f64, _ := strconv.ParseFloat(s, 10)
+		f64arr = append(f64arr, f64)
+	}
+	return f64arr
+}
+
+func i64arr(rows *gherkin.TableRow, idx int, sep string) []int64 {
+	sArr := strings.Split(rows.Cells[idx].Value, sep)
+	i64arr := make([]int64, len(sArr))
+	for _, s := range sArr {
+		i64, _ := strconv.ParseInt(s, 10, 0)
+		i64arr = append(i64arr, i64)
+	}
+	return i64arr
 }
 
 func sideval(rows *gherkin.TableRow, idx int) proto.Side {
