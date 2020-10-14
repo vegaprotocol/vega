@@ -124,7 +124,7 @@ func main() {
 	defer cancel()
 	wg := sync.WaitGroup{}
 	if err := run(ctx, &wg); err != nil {
-
+		log.Printf("error when starting the stream: %v", err)
 	}
 
 	waitSig(cancel)
