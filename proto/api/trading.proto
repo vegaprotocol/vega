@@ -270,7 +270,7 @@ service trading_data {
   rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
 
   // Subscribe to a stream of events from the core
-  rpc ObserveEventBus(ObserveEventsRequest) returns (stream ObserveEventsResponse);
+  rpc ObserveEventBus(stream ObserveEventsRequest) returns (stream ObserveEventsResponse);
 
   // -- Misc --
 

@@ -2030,36 +2030,63 @@ func (t *tradingDataService) ObserveProposalVotes(
 	}
 }
 
-func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, stream protoapi.TradingData_ObserveEventBusServer) error {
+func (t *tradingDataService) ObserveEventBus(
+	stream protoapi.TradingData_ObserveEventBusServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
-	if err := in.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
+
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
-	types, err := events.ProtoToInternal(in.Type...)
+
+	// now we start listening for a few seconds in order to get at least the very first message
+	// this will be blocking until the connection by the client is closed
+	// and we will not start processing any events until we receive the original request
+	// indicating filters and batch size.
+	req, err := t.recvEventRequest(stream)
+	if err != nil {
+		// client exited, nothing to do
+		return nil
+	}
+
+	if err := req.Validate(); err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
+	// now we will aggregaate filter out of the initial reuqest
+	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	filters := []subscribers.EventFilter{}
-	if len(in.MarketID) > 0 && len(in.PartyID) > 0 {
-		filters = append(filters, events.GetPartyAndMarketFilter(in.MarketID, in.PartyID))
+	if len(req.MarketID) > 0 && len(req.PartyID) > 0 {
+		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketID, req.PartyID))
 	} else {
-		if len(in.MarketID) > 0 {
-			filters = append(filters, events.GetMarketIDFilter(in.MarketID))
+		if len(req.MarketID) > 0 {
+			filters = append(filters, events.GetMarketIDFilter(req.MarketID))
 		}
-		if len(in.PartyID) > 0 {
-			filters = append(filters, events.GetPartyIDFilter(in.PartyID))
+		if len(req.PartyID) > 0 {
+			filters = append(filters, events.GetPartyIDFilter(req.PartyID))
 		}
 	}
+
 	// number of retries to -1 to have pretty much unlimited retries
-	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(in.BatchSize), filters...)
-	// check for changes in batch size
-	// -1 is used by the GQL stream, this means no batch size is set, but the resolver will poll automatically
-	if in.BatchSize > 0 || in.BatchSize == -1 {
-		// handle bi-directional observing
-		return t.observeEventsBiDi(stream, ch, bCh)
+	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(req.BatchSize), filters...)
+
+	if req.BatchSize > 0 {
+		err := t.observeEventsWithAck(stream, req.BatchSize, ch, bCh)
+		fmt.Printf("ENDING OBSERVE WITH ACK %v\n", err)
+		return err
+
 	}
+	return t.observeEvents(stream, ch)
+}
+
+func (t *tradingDataService) observeEvents(
+	stream protoapi.TradingData_ObserveEventBusServer,
+	ch <-chan []*types.BusEvent,
+) error {
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+
 	for {
 		select {
 		case data, ok := <-ch:
@@ -2081,26 +2108,49 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 	}
 }
 
-func (t *tradingDataService) observeEventsBiDi(stream protoapi.TradingData_ObserveEventBusServer, ch <-chan []*types.BusEvent, bCh chan<- int) error {
-	ctx := stream.Context()
-	oebCh := make(chan protoapi.ObserveEventBatch)
+func (t *tradingDataService) recvEventRequest(
+	stream protoapi.TradingData_ObserveEventBusServer,
+) (*protoapi.ObserveEventsRequest, error) {
+	fmt.Printf("ENTERING RECV\n")
+	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
+	oebCh := make(chan protoapi.ObserveEventsRequest)
 	defer close(oebCh)
-	for {
-		readCtx, cfunc := context.WithTimeout(ctx, 5*time.Second)
-		go func() {
-			nb := protoapi.ObserveEventBatch{}
-			if err := stream.RecvMsg(&nb); err != nil {
-				cfunc()
-				return
-			}
-			oebCh <- nb
-		}()
-		select {
-		case <-readCtx.Done():
-			return nil
-		case nb := <-oebCh:
-			bCh <- int(nb.BatchSize)
+	var err error
+	go func() {
+		nb := protoapi.ObserveEventsRequest{}
+		if err = stream.RecvMsg(&nb); err != nil {
+			fmt.Printf("STREAM ERROR\n")
+			cfunc()
+			return
 		}
+		oebCh <- nb
+	}()
+	select {
+	case <-readCtx.Done():
+		if err != nil {
+			fmt.Printf("stream error: %v\n", err)
+			// this means the client disconnectd
+			return nil, err
+		}
+		fmt.Printf("stream error: %v\n", readCtx.Err())
+		// this mean we timedout
+		return nil, readCtx.Err()
+	case nb := <-oebCh:
+		return &nb, nil
+	}
+}
+
+func (t *tradingDataService) observeEventsWithAck(
+	stream protoapi.TradingData_ObserveEventBusServer,
+	batchSize int64,
+	ch <-chan []*types.BusEvent,
+	bCh chan<- int,
+) error {
+	fmt.Printf("STARTING OBSERVE WITH ACK\n")
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
+	for {
+		fmt.Printf("STARTING NEW LOOP RECV\n")
 		select {
 		case data, ok := <-ch:
 			if !ok {
@@ -2118,8 +2168,17 @@ func (t *tradingDataService) observeEventsBiDi(stream protoapi.TradingData_Obser
 		case <-t.ctx.Done():
 			return apiError(codes.Aborted, ErrServerShutdown)
 		}
+
+		// now we try to read again the new size / ack
+		req, err := t.recvEventRequest(stream)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("OUT RECV\n")
+
+		if req.BatchSize != batchSize {
+			batchSize = req.BatchSize
+			bCh <- int(batchSize)
+		}
 	}
 }
-
-// func (t *tradingDataService) TransferResponsesSubscribe(
-// req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {

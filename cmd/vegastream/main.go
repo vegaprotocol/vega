@@ -51,21 +51,37 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 		return err
 	}
 
+	var batchSize int64 = 50
+
 	client := api.NewTradingDataClient(conn)
-	stream, err := client.ObserveEventBus(ctx, &api.ObserveEventsRequest{
-		MarketID:  market,
-		PartyID:   party,
-		BatchSize: 10000,
-		Type:      []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
-	})
+	stream, err := client.ObserveEventBus(ctx)
 	if err != nil {
+		wg.Done()
 		conn.Close()
 		return err
+	}
+
+	req := &api.ObserveEventsRequest{
+		MarketID:  market,
+		PartyID:   party,
+		BatchSize: batchSize,
+		Type:      []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
+	}
+
+	if err := stream.Send(req); err != nil {
+		wg.Done()
+		return fmt.Errorf("error when sending initial message in stream: %w", err)
+	}
+
+	poll := &api.ObserveEventsRequest{
+		BatchSize: batchSize,
 	}
 
 	go func() {
 		defer wg.Done()
 		defer conn.Close()
+		defer stream.CloseSend()
+
 		m := jsonpb.Marshaler{}
 		for {
 			o, err := stream.Recv()
@@ -85,6 +101,10 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 
 				fmt.Printf("%v\n", estr)
 			}
+			if err := stream.SendMsg(poll); err != nil {
+				log.Printf("failed to poll next event batch err=%v", err)
+				return
+			}
 		}
 
 	}()
@@ -103,7 +123,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	run(ctx, &wg)
+	if err := run(ctx, &wg); err != nil {
+
+	}
 
 	waitSig(cancel)
 	wg.Wait()

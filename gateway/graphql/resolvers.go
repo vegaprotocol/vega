@@ -122,7 +122,7 @@ type TradingDataClient interface {
 	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
 	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
 
-	ObserveEventBus(ctx context.Context, in *protoapi.ObserveEventsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
+	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -2732,7 +2732,8 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	mb := 10
 	// about 10MB message size allowed
 	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
-	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req, msgSize)
+	// stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req, msgSize)
+	stream, err := r.tradingDataClient.ObserveEventBus(ctx, msgSize)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
