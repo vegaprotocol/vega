@@ -152,32 +152,33 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 		return nil
 	}
 	// market is in auction
+
 	// opening auction -> ignore
 	if as.IsOpeningAuction() {
 		return nil
 	}
-	// current auction is price monitoring
-	// check for end of auction, reset monitoring, and end auction
-	if as.IsPriceAuction() {
-		end := as.ExpiresAt()
-		if end == nil {
-			return ErrExpiresAtNotSet
-		}
-		if !now.After(*end) {
-			return nil
-		}
-		// auction can be terminated
-		as.EndAuction()
-		// reset the engine
-		e.reset(p, now)
-		return nil
-	}
-	// market is in auction mode, liquidity
+
 	if err := e.recordTimeChange(now); err != nil {
 		return err
 	}
+
 	bounds := e.checkBounds(ctx, p)
 	if len(bounds) == 0 {
+		// current auction is price monitoring
+		// check for end of auction, reset monitoring, and end auction
+		if as.IsPriceAuction() {
+			end := as.ExpiresAt()
+			if end == nil {
+				return ErrExpiresAtNotSet
+			}
+			if !now.After(*end) {
+				return nil
+			}
+			// auction can be terminated
+			as.EndAuction()
+			// reset the engine
+			e.reset(p, now)
+		}
 		return nil
 	}
 
@@ -185,10 +186,12 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 	for _, b := range bounds {
 		duration += b.AuctionExtension
 	}
-	// let's say we need to extend this auction (in reality, liquidity can extend price, but not the other way around IIRC)
+
+	// extend the current auction
 	as.ExtendAuction(types.AuctionDuration{
 		Duration: duration,
 	})
+
 	return nil
 }
 
@@ -202,11 +205,18 @@ func (e *Engine) initialise(price uint64, now time.Time) {
 // reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
 func (e *Engine) reset(price uint64, now time.Time) {
 	e.now = now
+	e.update = now
 	e.pricesNow = []uint64{price}
 	e.pricesPast = []pastPrice{}
-	e.bounds = map[*types.PriceMonitoringParameters]bound{}
-	e.update = now
+	e.initilizeBounds()
 	e.updateBounds()
+}
+
+func (e *Engine) initilizeBounds() {
+	e.bounds = make(map[*types.PriceMonitoringParameters]bound, len(e.parameters))
+	for _, p := range e.parameters {
+		e.bounds[p] = bound{}
+	}
 }
 
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime
@@ -220,15 +230,17 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 		return ErrTimeSequence // This shouldn't happen, but if it does there's something fishy going on
 	}
 	if now.After(e.now) {
-		var sum uint64 = 0
-		for _, x := range e.pricesNow {
-			sum += x
+		if len(e.pricesNow) > 0 {
+			var sum uint64 = 0
+			for _, x := range e.pricesNow {
+				sum += x
+			}
+			e.pricesPast = append(e.pricesPast,
+				pastPrice{
+					Time:         e.now,
+					AveragePrice: float64(sum) / float64(len(e.pricesNow)),
+				})
 		}
-		e.pricesPast = append(e.pricesPast,
-			pastPrice{
-				Time:         e.now,
-				AveragePrice: float64(sum) / float64(len(e.pricesNow)),
-			})
 		e.pricesNow = e.pricesNow[:0]
 		e.now = now
 		e.updateBounds()
@@ -244,15 +256,21 @@ func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonito
 		ret []*types.PriceMonitoringParameters = []*types.PriceMonitoringParameters{} // returned price projections, empty if all good
 	)
 	for _, p := range e.parameters {
+		b, ok := e.bounds[p]
+		if !ok {
+			continue
+		}
+
 		if p.Horizon != ph {
 			ph = p.Horizon
 			ref = e.getReferencePrice(e.now.Add(time.Duration(-ph * time.Second.Nanoseconds())))
 		}
 
 		diff := fp - ref
-		b := e.bounds[p]
 		if diff < b.MinMoveDown || diff > b.MaxMoveUp {
 			ret = append(ret, p)
+			// Remove bound that gets violated so it doesn't prevent auction from terminating
+			delete(e.bounds, p)
 		}
 	}
 	return ret
@@ -295,7 +313,7 @@ func (e *Engine) updateBounds() {
 	} else {
 		latestPrice = e.pricesPast[len(e.pricesPast)-1].AveragePrice
 	}
-	for _, p := range e.parameters {
+	for p := range e.bounds {
 
 		minPrice, maxPrice := e.riskModel.PriceRange(latestPrice, e.fpHorizons[p.Horizon], p.Probability)
 		e.bounds[p] = bound{MinMoveDown: minPrice - latestPrice, MaxMoveUp: maxPrice - latestPrice}

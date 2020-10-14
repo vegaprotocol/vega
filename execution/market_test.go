@@ -516,8 +516,8 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	var auctionExtensionSeconds int64 = 45
-	stillAuction := now.Add(time.Duration(auctionExtensionSeconds * time.Second.Nanoseconds()))
-	afterAuciton := stillAuction.Add(1 * time.Nanosecond)
+	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds * time.Second.Nanoseconds()))
+	afterAuciton := auctionEndTime.Add(1 * time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		PriceMonitoringParameters: []*types.PriceMonitoringParameters{
 			{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
@@ -571,6 +571,9 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 
 	require.Equal(t, 1, len(confirmationSell.Trades))
 
+	auctionEnd := tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
@@ -610,21 +613,24 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 
 	require.Equal(t, 0, len(confirmationSell.Trades))
 
-	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+
+	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
 	assert.False(t, closed)
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
 	assert.False(t, closed)
 }
 
-func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
+func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	var auctionExtensionSeconds int64 = 45
-	stillAuction := now.Add(time.Duration(auctionExtensionSeconds * time.Second.Nanoseconds()))
-	afterAuciton := stillAuction.Add(1 * time.Nanosecond)
+	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds * time.Second.Nanoseconds()))
+	afterAuciton := auctionEndTime.Add(1 * time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		PriceMonitoringParameters: []*types.PriceMonitoringParameters{
 			{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
@@ -679,6 +685,9 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 
 	require.Equal(t, 1, len(confirmationBuy.Trades))
 
+	auctionEnd := tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
@@ -718,10 +727,10 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 
 	require.Equal(t, 0, len(confirmationSell.Trades))
 
-	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
+	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
 	assert.False(t, closed)
 
-	now = stillAuction
+	now = auctionEndTime
 	orderSell3 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GFA,
@@ -760,20 +769,26 @@ func TestTriggerByPriceValidPriceInAuction(t *testing.T) {
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+
 	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
 	assert.False(t, closed)
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
 	//TODO: Check that `party2-sell-order-3` & `party1-buy-order-3` get matched in auction and a trade is generated
 }
 
-func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
+func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	var auctionExtensionSeconds int64 = 45
-	stillAuction := now.Add(time.Duration(auctionExtensionSeconds * time.Second.Nanoseconds()))
-	initialAuctionEnd := stillAuction.Add(1 * time.Nanosecond)
+	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds * time.Second.Nanoseconds()))
+	initialAuctionEnd := auctionEndTime.Add(1 * time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		PriceMonitoringParameters: []*types.PriceMonitoringParameters{
 			{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
@@ -827,6 +842,9 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 
 	require.Equal(t, 1, len(confirmationBuy.Trades))
 
+	auctionEnd := tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
@@ -866,10 +884,13 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 
 	require.Equal(t, 0, len(confirmationSell.Trades))
 
-	closed := tm.market.OnChainTimeUpdate(context.Background(), stillAuction)
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+
+	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
 	assert.False(t, closed)
 
-	now = stillAuction
+	now = auctionEndTime
 	orderSell3 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GFA,
@@ -908,7 +929,13 @@ func TestTriggerByPriceInValidPriceInAuction(t *testing.T) {
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+
 	// Expecting market to still be in auction as auction resulted in invalid price
 	closed = tm.market.OnChainTimeUpdate(context.Background(), initialAuctionEnd)
 	assert.False(t, closed)
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction (trigger can only start auction, but can't stop it from concluding at a higher price)
 }
