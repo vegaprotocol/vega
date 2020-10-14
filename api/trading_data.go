@@ -2073,7 +2073,6 @@ func (t *tradingDataService) ObserveEventBus(
 
 	if req.BatchSize > 0 {
 		err := t.observeEventsWithAck(stream, req.BatchSize, ch, bCh)
-		fmt.Printf("ENDING OBSERVE WITH ACK %v\n", err)
 		return err
 
 	}
@@ -2111,7 +2110,6 @@ func (t *tradingDataService) observeEvents(
 func (t *tradingDataService) recvEventRequest(
 	stream protoapi.TradingData_ObserveEventBusServer,
 ) (*protoapi.ObserveEventsRequest, error) {
-	fmt.Printf("ENTERING RECV\n")
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
 	oebCh := make(chan protoapi.ObserveEventsRequest)
 	defer close(oebCh)
@@ -2119,7 +2117,6 @@ func (t *tradingDataService) recvEventRequest(
 	go func() {
 		nb := protoapi.ObserveEventsRequest{}
 		if err = stream.RecvMsg(&nb); err != nil {
-			fmt.Printf("STREAM ERROR\n")
 			cfunc()
 			return
 		}
@@ -2128,11 +2125,9 @@ func (t *tradingDataService) recvEventRequest(
 	select {
 	case <-readCtx.Done():
 		if err != nil {
-			fmt.Printf("stream error: %v\n", err)
 			// this means the client disconnectd
 			return nil, err
 		}
-		fmt.Printf("stream error: %v\n", readCtx.Err())
 		// this mean we timedout
 		return nil, readCtx.Err()
 	case nb := <-oebCh:
@@ -2146,11 +2141,9 @@ func (t *tradingDataService) observeEventsWithAck(
 	ch <-chan []*types.BusEvent,
 	bCh chan<- int,
 ) error {
-	fmt.Printf("STARTING OBSERVE WITH ACK\n")
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 	for {
-		fmt.Printf("STARTING NEW LOOP RECV\n")
 		select {
 		case data, ok := <-ch:
 			if !ok {
@@ -2174,7 +2167,6 @@ func (t *tradingDataService) observeEventsWithAck(
 		if err != nil {
 			return err
 		}
-		fmt.Printf("OUT RECV\n")
 
 		if req.BatchSize != batchSize {
 			batchSize = req.BatchSize

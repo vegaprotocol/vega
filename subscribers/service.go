@@ -2,7 +2,6 @@ package subscribers
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
@@ -38,13 +37,11 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 			close(out)
 			close(in)
 			cfunc()
-			fmt.Printf("STOP LISTENING TO EVENTS IN SERVICE\n")
 		}()
 		ret := retries
 		for {
 			select {
 			case bs := <-in:
-				fmt.Printf("batch size changed!\n")
 				// batch size changed: drain buffer and send data
 				data := sub.UpdateBatchSize(ctx, bs)
 				if len(data) > 0 {
@@ -53,7 +50,6 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				// reset retry count
 				ret = retries
 			default:
-				fmt.Printf("default then!\n")
 				// wait for actual changes
 				data := sub.GetData(ctx)
 				// this is a very rare thing, but it can happen
@@ -62,10 +58,8 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				}
 				select {
 				case <-ctx.Done():
-					fmt.Printf("context is doneeee!!\n")
 					return
 				case out <- data:
-					fmt.Printf("reducing retries baby! %v\n", retries)
 					ret = retries
 				default:
 					if ret == 0 {
