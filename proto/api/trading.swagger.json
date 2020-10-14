@@ -163,6 +163,33 @@
         ]
       }
     },
+    "/governance/prepare/vote": {
+      "post": {
+        "summary": "Prepare a governance vote",
+        "operationId": "PrepareVote",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareVoteResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPrepareVoteRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/markets": {
       "get": {
         "summary": "Get a list of Markets",
@@ -1804,6 +1831,16 @@
         }
       },
       "description": "Response for preparing an order submission."
+    },
+    "apiPrepareVoteRequest": {
+      "type": "object",
+      "properties": {
+        "vote": {
+          "$ref": "#/definitions/vegaVote",
+          "description": "Vote. Required field."
+        }
+      },
+      "description": "Request to prepare a governance vote."
     },
     "apiPrepareVoteResponse": {
       "type": "object",
