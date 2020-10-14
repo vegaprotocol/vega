@@ -292,6 +292,9 @@ service trading_data {
   // Subscribe to a stream of Market Depth
   rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
 
+  // Subscribe to a stream of Market Depth PriceLevel Updates
+  rpc MarketDepthUpdatesSubscribe(MarketDepthUpdatesSubscribeRequest) returns (stream vega.MarketDepthUpdate);
+
   // Subscribe to a stream of Markets Data
   rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
 
@@ -733,11 +736,21 @@ message MarketDepthSubscribeRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+// Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data.
+message MarketDepthUpdatesSubscribeRequest {
+
+  // Market identifier. Required field.
+  string marketID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
 // Request to subscribe to a stream of (Positions)[#vega.Position].
 message PositionsSubscribeRequest {
 
-  // Party identifier. Required field.
+  // Party identifier. Optional field.
   string partyID = 1;
+
+  // Market identifier. Optional field.
+  string marketID = 2;
 }
 
 // Request for a list of orders for a market.
@@ -849,6 +862,8 @@ message MarketDepthResponse {
   repeated vega.PriceLevel sell = 3;
   // Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
   vega.Trade lastTrade = 4;
+  // Sequence number incremented after each update
+  uint64 sequenceNumber = 5;
 }
 
 // Request for a list of trades on a market.
@@ -1070,8 +1085,11 @@ message ObserveEventsRequest {
   // Party identifier. Optional field.
   string partyID = 3;
   // Batch size. Optional field.
-  // If specified, will result in the event stream API to return a specific number of events in a batch.
-  // For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream.
+  // If not specified, any events received will be sent immediately. If the client is not ready
+  // for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
+  // if specified, the first batch will be sent when ready. To receive the next set of events, the client
+  // must write an `ObserveEventBatch` message on the stream to flush the buffer.
+  // If no message is received in 5 seconds, the stream is closed.
   // Default: 0, send any and all events when they are available.
   int64 batchSize = 4;
 }
@@ -1081,7 +1099,7 @@ message ObserveEventsRequest {
 message ObserveEventBatch {
   // Batch size. Required field.
   // Default: 0, send any and all events when they are available.
-  int64 batchSize = 1;
+  int64 batchSize = 1 [(validator.field) = {int_gt: -1}];
 }
 
 // Response to a subscribed stream of events from the Vega event bus

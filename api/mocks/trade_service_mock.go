@@ -123,18 +123,18 @@ func (mr *MockTradeServiceMockRecorder) GetTradeSubscribersCount() *gomock.Call 
 }
 
 // ObservePositions mocks base method
-func (m *MockTradeService) ObservePositions(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.Position, uint64) {
+func (m *MockTradeService) ObservePositions(arg0 context.Context, arg1 int, arg2, arg3 string) (<-chan *proto.Position, uint64) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ObservePositions", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "ObservePositions", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(<-chan *proto.Position)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
 
 // ObservePositions indicates an expected call of ObservePositions
-func (mr *MockTradeServiceMockRecorder) ObservePositions(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockTradeServiceMockRecorder) ObservePositions(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObservePositions", reflect.TypeOf((*MockTradeService)(nil).ObservePositions), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObservePositions", reflect.TypeOf((*MockTradeService)(nil).ObservePositions), arg0, arg1, arg2, arg3)
 }
 
 // ObserveTrades mocks base method

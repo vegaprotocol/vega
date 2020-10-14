@@ -174,7 +174,12 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	}
 	execsetup.collateral.EnableAsset(context.Background(), tokAsset)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, mkts, execsetup.collateral, execsetup.broker)
+	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.collateral, execsetup.broker)
+
+	for _, mkt := range mkts {
+		mkt := mkt
+		execsetup.engine.SubmitMarket(context.Background(), &mkt)
+	}
 
 	// instanciate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())

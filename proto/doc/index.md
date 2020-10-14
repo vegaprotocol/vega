@@ -60,6 +60,7 @@
     - [MarketDepthRequest](#api.MarketDepthRequest)
     - [MarketDepthResponse](#api.MarketDepthResponse)
     - [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest)
+    - [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest)
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
@@ -1144,6 +1145,7 @@ Response for the market depth/order book price levels on a market.
 | buy | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the buy side of the market depth data. |
 | sell | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the sell side of the market depth data. |
 | lastTrade | [vega.Trade](#vega.Trade) |  | Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`. |
+| sequenceNumber | [uint64](#uint64) |  | Sequence number incremented after each update |
 
 
 
@@ -1154,6 +1156,21 @@ Response for the market depth/order book price levels on a market.
 
 ### MarketDepthSubscribeRequest
 Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+
+
+
+
+
+
+<a name="api.MarketDepthUpdatesSubscribeRequest"></a>
+
+### MarketDepthUpdatesSubscribeRequest
+Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data.
 
 
 | Field | Type | Label | Description |
@@ -1265,7 +1282,7 @@ Request to subscribe to a stream of one or more event types from the Vega event 
 | type | [vega.BusEventType](#vega.BusEventType) | repeated | One or more types of event. Required field. |
 | marketID | [string](#string) |  | Market identifier. Optional field. |
 | partyID | [string](#string) |  | Party identifier. Optional field. |
-| batchSize | [int64](#int64) |  | Batch size. Optional field. If specified, will result in the event stream API to return a specific number of events in a batch. For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream. Default: 0, send any and all events when they are available. |
+| batchSize | [int64](#int64) |  | Batch size. Optional field. If not specified, any events received will be sent immediately. If the client is not ready for the next data-set, data may be dropped a number of times, and eventually the stream is closed. if specified, the first batch will be sent when ready. To receive the next set of events, the client must write an `ObserveEventBatch` message on the stream to flush the buffer. If no message is received in 5 seconds, the stream is closed. Default: 0, send any and all events when they are available. |
 
 
 
@@ -1690,7 +1707,8 @@ Request to subscribe to a stream of (Positions)[#vega.Position].
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | Party identifier. Required field. |
+| partyID | [string](#string) |  | Party identifier. Optional field. |
+| marketID | [string](#string) |  | Market identifier. Optional field. |
 
 
 
@@ -2203,6 +2221,7 @@ The response for a list of withdrawals
 | CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream | Subscribe to a stream of Candles |
 | MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream | Subscribe to a stream of Margin Levels |
 | MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream | Subscribe to a stream of Market Depth |
+| MarketDepthUpdatesSubscribe | [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest) | [.vega.MarketDepthUpdate](#vega.MarketDepthUpdate) stream | Subscribe to a stream of Market Depth PriceLevel Updates |
 | MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream | Subscribe to a stream of Markets Data |
 | OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream | Subscribe to a stream of Orders |
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
@@ -4624,6 +4643,7 @@ Vega domain specific statistics as reported by the node the caller is connected 
 | blockDuration | [uint64](#uint64) |  | Current block duration, in nanoseconds. |
 | uptime | [string](#string) |  | Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision. |
 | chainID | [string](#string) |  | Unique identifier for the underlying Vega blockchain. |
+| marketDepthUpdatesSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to market depth update data. |
 
 
 

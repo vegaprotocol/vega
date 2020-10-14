@@ -403,6 +403,10 @@
                 </li>
 
                 <li>
+                  <a href="#api.MarketDepthUpdatesSubscribeRequest"><span class="badge">M</span>MarketDepthUpdatesSubscribeRequest</a>
+                </li>
+
+                <li>
                   <a href="#api.MarketsDataResponse"><span class="badge">M</span>MarketsDataResponse</a>
                 </li>
 
@@ -3291,6 +3295,13 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                   <td><p>Last trade recorded on Vega at the time of retrieving the <tt>MarketDepthResponse</tt>. </p></td>
                 </tr>
 
+                <tr>
+                  <td>sequenceNumber</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Sequence number incremented after each update </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -3300,6 +3311,57 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
         <h3 id="api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</h3>
         <p>Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Market identifier. Required field. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.MarketDepthUpdatesSubscribeRequest">MarketDepthUpdatesSubscribeRequest</h3>
+        <p>Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data.</p>
 
 
           <table class="field-table">
@@ -3476,6 +3538,33 @@ Default: 0, send any and all events when they are available. </p></td>
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>batchSize</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: -1</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
         <p>Request to subscribe to a stream of one or more event types from the Vega event bus</p>
@@ -3513,8 +3602,11 @@ Default: 0, send any and all events when they are available. </p></td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Batch size. Optional field.
-If specified, will result in the event stream API to return a specific number of events in a batch.
-For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream.
+If not specified, any events received will be sent immediately. If the client is not ready
+for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
+if specified, the first batch will be sent when ready. To receive the next set of events, the client
+must write an <tt>ObserveEventBatch</tt> message on the stream to flush the buffer.
+If no message is received in 5 seconds, the stream is closed.
 Default: 0, send any and all events when they are available. </p></td>
                 </tr>
 
@@ -4559,7 +4651,14 @@ Default is true, if false the results will be returned in ascending order. </p><
                   <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Party identifier. Required field. </p></td>
+                  <td><p>Party identifier. Optional field. </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Market identifier. Optional field. </p></td>
                 </tr>
 
             </tbody>
@@ -5824,6 +5923,13 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                 <td><a href="#api.MarketDepthSubscribeRequest">MarketDepthSubscribeRequest</a></td>
                 <td><a href="#vega.MarketDepth">.vega.MarketDepth</a> stream</td>
                 <td><p>Subscribe to a stream of Market Depth</p></td>
+              </tr>
+
+              <tr>
+                <td>MarketDepthUpdatesSubscribe</td>
+                <td><a href="#api.MarketDepthUpdatesSubscribeRequest">MarketDepthUpdatesSubscribeRequest</a></td>
+                <td><a href="#vega.MarketDepthUpdate">.vega.MarketDepthUpdate</a> stream</td>
+                <td><p>Subscribe to a stream of Market Depth PriceLevel Updates</p></td>
               </tr>
 
               <tr>
@@ -12441,6 +12547,13 @@ See <a href="#vega.ChainStatus"><tt>ChainStatus</tt></a>. </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique identifier for the underlying Vega blockchain. </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketDepthUpdatesSubscriptions</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p>Current number of stream subscribers to market depth update data. </p></td>
                 </tr>
 
             </tbody>
