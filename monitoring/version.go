@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	minVersion = semver.MustParse("0.33.5")
+	minVersion = semver.MustParse("0.33.8")
 	maxVersion = semver.MustParse("0.34.0")
 )
 
