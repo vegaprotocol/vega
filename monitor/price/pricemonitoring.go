@@ -106,7 +106,7 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		riskModel:       riskModel,
 		parameters:      parameters,
 		fpHorizons:      h,
-		updateFrequency: time.Duration(settings.UpdateFrequency * time.Second.Nanoseconds()),
+		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
 	}
 	return e, nil
 }
@@ -263,7 +263,7 @@ func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonito
 
 		if p.Horizon != ph {
 			ph = p.Horizon
-			ref = e.getReferencePrice(e.now.Add(time.Duration(-ph * time.Second.Nanoseconds())))
+			ref = e.getReferencePrice(e.now.Add(time.Duration(-ph) * time.Second))
 		}
 
 		diff := fp - ref
@@ -286,7 +286,7 @@ func (e *Engine) checkBoundViolations(price uint64) map[*types.PriceMonitoringPa
 	for _, p := range e.parameters {
 		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
 		if p.Horizon != prevHorizon {
-			ref = e.getReferencePrice(e.now.Add(time.Duration(-p.Horizon * time.Second.Nanoseconds())))
+			ref = e.getReferencePrice(e.now.Add(time.Duration(-p.Horizon) * time.Second))
 			prevHorizon = p.Horizon
 		}
 
@@ -322,7 +322,7 @@ func (e *Engine) updateBounds() {
 	minRequiredHorizon := e.now
 	if len(e.parameters) > 0 {
 		maxTau := e.parameters[len(e.parameters)-1].Horizon
-		minRequiredHorizon = e.now.Add(time.Duration(-maxTau * time.Second.Nanoseconds()))
+		minRequiredHorizon = e.now.Add(time.Duration(-maxTau) * time.Second)
 	}
 
 	var i int

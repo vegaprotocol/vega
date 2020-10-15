@@ -443,7 +443,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, p1ViolatingPrice, now) //P1 violated only
 	require.NoError(t, err)
 
-	initialAuctionEnd := now.Add(time.Duration(p1.AuctionExtension * time.Second.Nanoseconds()))
+	initialAuctionEnd := now.Add(time.Duration(p1.AuctionExtension) * time.Second)
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
@@ -499,7 +499,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, p2ViolatingPrice, now) //P1 violated only
 	require.NoError(t, err)
 
-	initialAuctionEnd := now.Add(time.Duration((p1.AuctionExtension + p2.AuctionExtension) * time.Second.Nanoseconds()))
+	initialAuctionEnd := now.Add(time.Duration(p1.AuctionExtension+p2.AuctionExtension) * time.Second)
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
@@ -555,7 +555,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, p1ViolatingPrice, now) //P1 violated only
 	require.NoError(t, err)
 
-	initialAuctionEnd := now.Add(time.Duration(p1.AuctionExtension * time.Second.Nanoseconds()))
+	initialAuctionEnd := now.Add(time.Duration(p1.AuctionExtension) * time.Second)
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
@@ -571,7 +571,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, p2ViolatingPrice, afterInitialAuction) //price should violated 2nd trigger and result in auction extension
 	require.NoError(t, err)
 
-	extendedAuctionEnd := now.Add(time.Duration((p1.AuctionExtension + p2.AuctionExtension) * time.Second.Nanoseconds()))
+	extendedAuctionEnd := now.Add(time.Duration(p1.AuctionExtension+p2.AuctionExtension) * time.Second)
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
