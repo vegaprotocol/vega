@@ -1,18 +1,3 @@
-/*
-Command vegastream connects to a gRPC server and subscribes to various streams (accounts, orders, trades etc).
-
-For the accounts subscription, specify account type, and optionally market and/or party.
-
-For the orders and trades subscriptions, specify market and party.
-
-For the positions subscription, specify party.
-
-For the candles and (market) depth subscriptions, specify market.
-
-Syntax:
-
-    vegastream -addr somenode.somenet.vega.xyz:3002 [plus other options...]
-*/
 package main
 
 import (
@@ -46,8 +31,7 @@ func init() {
 	flag.StringVar(&serverAddr, "addr", "127.0.0.1:3002", "address of the grpc server")
 }
 
-func run(ctx context.Context, wg *sync.WaitGroup) error {
-	wg.Add(1)
+func run(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) error {
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return err
@@ -56,7 +40,6 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 	client := api.NewTradingDataClient(conn)
 	stream, err := client.ObserveEventBus(ctx)
 	if err != nil {
-		wg.Done()
 		conn.Close()
 		return err
 	}
@@ -69,7 +52,6 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 	}
 
 	if err := stream.Send(req); err != nil {
-		wg.Done()
 		return fmt.Errorf("error when sending initial message in stream: %w", err)
 	}
 
@@ -77,10 +59,12 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 		BatchSize: batchSize,
 	}
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		defer conn.Close()
 		defer stream.CloseSend()
+		defer cancel()
 
 		m := jsonpb.Marshaler{}
 		for {
@@ -125,21 +109,26 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	if err := run(ctx, &wg); err != nil {
+	if err := run(ctx, cancel, &wg); err != nil {
 		log.Printf("error when starting the stream: %v", err)
+		os.Exit(1)
 	}
 
-	waitSig(cancel)
+	waitSig(ctx, cancel)
 	wg.Wait()
 }
 
-func waitSig(cancel func()) {
+func waitSig(ctx context.Context, cancel func()) {
 	var gracefulStop = make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 
-	sig := <-gracefulStop
-	log.Printf("Caught signal name=%v", sig)
-	log.Printf("closing client connections")
-	cancel()
+	select {
+	case sig := <-gracefulStop:
+		log.Printf("Caught signal name=%v", sig)
+		log.Printf("closing client connections")
+		cancel()
+	case <-ctx.Done():
+		return
+	}
 }

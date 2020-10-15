@@ -1094,14 +1094,6 @@ message ObserveEventsRequest {
   int64 batchSize = 4;
 }
 
-// Used when subscribed to observe events from the event bus
-// This message is used to update the batch size (only for gRPC bi-directional streaming)
-message ObserveEventBatch {
-  // Batch size. Required field.
-  // Default: 0, send any and all events when they are available.
-  int64 batchSize = 1 [(validator.field) = {int_gt: -1}];
-}
-
 // Response to a subscribed stream of events from the Vega event bus
 message ObserveEventsResponse {
   // One or more events

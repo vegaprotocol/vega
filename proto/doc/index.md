@@ -66,7 +66,6 @@
     - [MarketsResponse](#api.MarketsResponse)
     - [NetworkParametersRequest](#api.NetworkParametersRequest)
     - [NetworkParametersResponse](#api.NetworkParametersResponse)
-    - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
@@ -1252,22 +1251,6 @@ vega network parameters
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | networkParameters | [vega.NetworkParameter](#vega.NetworkParameter) | repeated |  |
-
-
-
-
-
-
-<a name="api.ObserveEventBatch"></a>
-
-### ObserveEventBatch
-Used when subscribed to observe events from the event bus
-This message is used to update the batch size (only for gRPC bi-directional streaming)
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| batchSize | [int64](#int64) |  | Batch size. Required field. Default: 0, send any and all events when they are available. |
 
 
 
