@@ -36,9 +36,11 @@ var (
 	party      string
 	market     string
 	serverAddr string
+	batchSize  int64
 )
 
 func init() {
+	flag.Int64Var(&batchSize, "batch", 0, "size of the batch")
 	flag.StringVar(&party, "party", "", "name of the party to listen for updates")
 	flag.StringVar(&market, "market", "", "id of the market to listen for updates")
 	flag.StringVar(&serverAddr, "addr", "127.0.0.1:3002", "address of the grpc server")
@@ -50,8 +52,6 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 	if err != nil {
 		return err
 	}
-
-	var batchSize int64 = 50
 
 	client := api.NewTradingDataClient(conn)
 	stream, err := client.ObserveEventBus(ctx)
@@ -101,9 +101,11 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 
 				fmt.Printf("%v\n", estr)
 			}
-			if err := stream.SendMsg(poll); err != nil {
-				log.Printf("failed to poll next event batch err=%v", err)
-				return
+			if batchSize > 0 {
+				if err := stream.SendMsg(poll); err != nil {
+					log.Printf("failed to poll next event batch err=%v", err)
+					return
+				}
 			}
 		}
 
