@@ -788,7 +788,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	var auctionExtensionSeconds int64 = 45
 	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
-	initialAuctionEnd := auctionEndTime.Add(timeSimond)
+	initialAuctionEnd := auctionEndTime.Add(time.Second)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		PriceMonitoringParameters: []*types.PriceMonitoringParameters{
 			{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
