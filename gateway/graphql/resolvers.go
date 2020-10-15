@@ -2440,9 +2440,13 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.Position, error) {
-	req := &protoapi.PositionsSubscribeRequest{
-		PartyID: party,
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan *types.Position, error) {
+	req := &protoapi.PositionsSubscribeRequest{}
+	if party != nil {
+		req.PartyID = *party
+	}
+	if market != nil {
+		req.MarketID = *market
 	}
 	stream, err := r.tradingDataClient.PositionsSubscribe(ctx, req)
 	if err != nil {
@@ -2703,7 +2707,7 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 	return nil, ErrInvalidVotesSubscription
 }
 
-func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string, batchSize *int) (<-chan []*BusEvent, error) {
+func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string, batchSize int) (<-chan []*BusEvent, error) {
 	if len(types) > 1 {
 		return nil, errors.New("busEvents subscription support streaming 1 event at a time for now")
 	}
@@ -2712,7 +2716,12 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	}
 	t := eventTypeToProto(types...)
 	req := protoapi.ObserveEventsRequest{
-		Type: t,
+		Type:      t,
+		BatchSize: int64(batchSize),
+	}
+	if req.BatchSize == 0 {
+		req.BatchSize = -1 // sending this with -1 to indicate to underlying gRPC call this is a special case: GQL
+		batchSize = 0
 	}
 	if marketID != nil {
 		req.MarketID = *marketID
@@ -2720,13 +2729,17 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	if partyID != nil {
 		req.PartyID = *partyID
 	}
-	if batchSize != nil {
-		req.BatchSize = int64(*batchSize)
-	}
-	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req)
+	mb := 10
+	// about 10MB message size allowed
+	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
+	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req, msgSize)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+	poll := &protoapi.ObserveEventBatch{
+		BatchSize: int64(batchSize),
+	}
+	// we no longer buffer this channel. Client receives batch, then we request the next batch
 	out := make(chan []*BusEvent)
 	go func() {
 		defer func() {
@@ -2734,6 +2747,7 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 			close(out)
 		}()
 		for {
+			// receive batch
 			data, err := stream.Recv()
 			if isStreamClosed(err, r.log) {
 				return
@@ -2744,6 +2758,11 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 			}
 			be := busEventFromProto(data.Events...)
 			out <- be
+			// send request for the next batch
+			if err := stream.SendMsg(poll); err != nil {
+				r.log.Error("Failed to poll next event batch", logging.Error(err))
+				return
+			}
 		}
 	}()
 	return out, nil

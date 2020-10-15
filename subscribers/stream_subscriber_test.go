@@ -73,7 +73,7 @@ func testUnfilteredNoEvents(t *testing.T) {
 	wg.Add(1)
 	var data []*types.BusEvent
 	go func() {
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		wg.Done()
 	}()
 	sub.cfunc() // cancel ctx
@@ -94,14 +94,14 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 		}),
 	}
 	sub.Push(set...)
-	data := sub.GetData()
+	data := sub.GetData(context.Background())
 	// we expect to see no events
 	assert.Equal(t, len(set), len(data))
 	last := events.NewAccountEvent(sub.ctx, types.Account{
 		Id: "acc-3",
 	})
 	sub.Push(last)
-	data = sub.GetData()
+	data = sub.GetData(context.Background())
 	assert.Equal(t, 1, len(data))
 	rt, err := events.ProtoToInternal(data[0].Type)
 	assert.NoError(t, err)
@@ -129,7 +129,7 @@ func testFilteredNoValidEvents(t *testing.T) {
 	wg.Add(1)
 	var data []*types.BusEvent
 	go func() {
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		wg.Done()
 	}()
 	sub.cfunc()
@@ -152,7 +152,7 @@ func testFilteredSomeValidEvents(t *testing.T) {
 		}),
 	}
 	sub.Push(set...)
-	data := sub.GetData()
+	data := sub.GetData(context.Background())
 	// we expect to see no events
 	assert.Equal(t, 1, len(data))
 }
@@ -182,9 +182,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 		}),
 	}
 	sendRoutine := func(ch chan struct{}, sub *tstStreamSub, set []events.Event) {
-		for _, e := range set {
-			sub.C() <- e
-		}
+		sub.C() <- set
 		close(ch)
 	}
 	go sendRoutine(sent, sub, set1)
@@ -193,7 +191,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	// now start receiving, this should not receive any events:
 	var data []*types.BusEvent
 	go func() {
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		close(rec)
 	}()
 	// let's send a new batch, this ought to fill the buffer
@@ -204,13 +202,13 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	assert.Equal(t, 5, len(data))
 	// a total of 6 events were now sent to the subscriber, changing the buffer size ought to return 1 event
 	<-sent
-	data = sub.UpdateBatchSize(len(set1)) // set batch size to match test-data set
-	assert.Equal(t, 1, len(data))         // we should have drained the buffer
+	data = sub.UpdateBatchSize(sub.ctx, len(set1)) // set batch size to match test-data set
+	assert.Equal(t, 1, len(data))                  // we should have drained the buffer
 	sent = make(chan struct{})
 	go sendRoutine(sent, sub, set1)
 	<-sent
 	// we don't need the rec channel, the buffer is 3, and we sent 3 events
-	data = sub.GetData()
+	data = sub.GetData(context.Background())
 	assert.Equal(t, 3, len(data))
 	// just in case -> this is with the rec channel, it ought to produce the exact same result
 	sent = make(chan struct{})
@@ -219,8 +217,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	rec = make(chan struct{})
 	// buffer is 3, we sent 3 events, GetData ought to return
 	go func() {
-		t.Logf("starting GetData call")
-		data = sub.GetData()
+		data = sub.GetData(context.Background())
 		close(rec)
 	}()
 	<-rec
@@ -278,26 +275,23 @@ func testCloseChannelWrite(t *testing.T) {
 		// keep iterating until the context was closed, ensuring
 		// the context is cancelled mid-send
 		for {
-			for _, e := range set {
-				// ch := sub.C()
-				select {
-				case <-sub.Closed():
-					return
-				case <-sub.Skip():
-					return
-				case sub.C() <- e:
-					// case ch <- e:
-					if !first {
-						first = true
-						close(started)
-					}
+			select {
+			case <-sub.Closed():
+				return
+			case <-sub.Skip():
+				return
+			case sub.C() <- set:
+				// case ch <- e:
+				if !first {
+					first = true
+					close(started)
 				}
 			}
 		}
 	}()
 	<-started
 	// wait for sub to be confirmed closed down
-	data := sub.GetData()
+	data := sub.GetData(sub.ctx)
 	sub.cfunc()
 	wg.Wait()
 	// we received at least the first event, which is valid (filtered)

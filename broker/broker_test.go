@@ -289,7 +289,7 @@ func testSendBatch(t *testing.T) {
 func testSendBatchChannel(t *testing.T) {
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
+	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
 	defer func() {
 		tstBroker.Finish()
 		close(closedCh)
@@ -303,32 +303,39 @@ func testSendBatchChannel(t *testing.T) {
 	sub.EXPECT().Ack().AnyTimes().Return(false)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
+	batch2 := []events.Event{
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+	}
 	events := []events.Event{
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 	}
-	// ensure all 3 events are being sent (wait for routine to spawn)
+	// ensure both batches are sent
 	wg := sync.WaitGroup{}
-	wg.Add(len(events))
+	// 2 calls, only the first batch will be sent
+	wg.Add(2)
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	// we try to get the channel 3 times, only 1 of the attempts will actually publish the event
-	sub.EXPECT().C().Times(len(events)).Return(cCh).Do(func() {
+	// we try to get the channel 2 times, only 1 of the attempts will actually publish the events
+	sub.EXPECT().C().Times(2).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})
 
 	// send events
 	tstBroker.SendBatch(events)
+	tstBroker.SendBatch(batch2)
 	wg.Wait()
-	// we've tried to send 3 events, subscriber could only accept one. Check state of all the things
+	// we've tried to send 2 batches of events, subscriber could only accept one. Check state of all the things
 	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
 	// because there's a loop calling functions that are returning the channels we're closing here
 	tstBroker.Unsubscribe(k1)
 	// ensure unsubscribe has returned
 	twg.Wait()
-	assert.Equal(t, events[0], <-cCh)
+	batch := <-cCh
+	assert.Equal(t, events, batch)
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
 	// ensure sequence ID's are set and are unique
@@ -353,7 +360,7 @@ func testSendBatchChannel(t *testing.T) {
 func testSkipOptional(t *testing.T) {
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
+	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
 	defer func() {
 		tstBroker.Finish()
 		close(closedCh)
@@ -368,24 +375,24 @@ func testSkipOptional(t *testing.T) {
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 
-	events := []*evt{
+	evts := []*evt{
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 	}
 	// ensure all 3 events are being sent (wait for routine to spawn)
 	wg := sync.WaitGroup{}
-	wg.Add(len(events))
+	wg.Add(len(evts))
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
 	// we try to get the channel 3 times, only 1 of the attempts will actually publish the event
-	sub.EXPECT().C().Times(len(events)).Return(cCh).Do(func() {
+	sub.EXPECT().C().Times(len(evts)).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})
 
 	// send events
-	for _, e := range events {
+	for _, e := range evts {
 		tstBroker.Send(e)
 	}
 	wg.Wait()
@@ -395,7 +402,9 @@ func testSkipOptional(t *testing.T) {
 	tstBroker.Unsubscribe(k1)
 	// ensure unsubscribe has returned
 	twg.Wait()
-	assert.Equal(t, events[0], <-cCh)
+	first := <-cCh
+	assert.NotEmpty(t, first)
+	assert.Equal(t, evts[0], first[0])
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
 }

@@ -33,6 +33,21 @@ func (m *MockPositionsPlugin) EXPECT() *MockPositionsPluginMockRecorder {
 	return m.recorder
 }
 
+// GetAllPositions mocks base method
+func (m *MockPositionsPlugin) GetAllPositions() ([]*proto.Position, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllPositions")
+	ret0, _ := ret[0].([]*proto.Position)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllPositions indicates an expected call of GetAllPositions
+func (mr *MockPositionsPluginMockRecorder) GetAllPositions() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPositions", reflect.TypeOf((*MockPositionsPlugin)(nil).GetAllPositions))
+}
+
 // GetPositionsByMarket mocks base method
 func (m *MockPositionsPlugin) GetPositionsByMarket(arg0 string) ([]*proto.Position, error) {
 	m.ctrl.T.Helper()

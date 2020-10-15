@@ -171,7 +171,9 @@ type Subscription {
   "Subscribe to the positions updates"
   positions(
     "ID of the party from we want updates for"
-    partyId: String!
+    partyId: String
+    "ID of the market from which we want postion updates"
+    marketId: String
   ): Position!
 
   "Subscribe to the market depths update"
@@ -234,8 +236,8 @@ type Subscription {
     marketID: String
     "optional filter by party ID"
     partyID: String
-    "optional batch size"
-    batchSize: Int
+    "Specifies the size that the client will receive events in. Using 0 results in a variable batch size being sent. The stream will be closed if the client fails to read a batch within 5 seconds"
+    batchSize: Int!
   ): [BusEvent!]
 }
 
@@ -1483,6 +1485,11 @@ enum OrderRejectionReason {
 
   "Good for auction order received during continuous trading"
   GFNOrderDuringContinuousTrading
+
+  "IOC orders are not allowed during auction"
+  IOCOrderDuringAuction
+  "FOK orders are not allowed during auction"
+  FOKOrderDuringAuction
 }
 
 enum OrderType {

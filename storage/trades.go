@@ -381,6 +381,10 @@ func (ts *Trade) notify(items []types.Trade) error {
 	if len(items) == 0 {
 		return nil
 	}
+
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
 	if len(ts.subscribers) == 0 {
 		ts.log.Debug("No subscribers connected in trade store")
 		return nil

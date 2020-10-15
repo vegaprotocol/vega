@@ -11,7 +11,7 @@ type Base struct {
 	ctx     context.Context
 	cfunc   context.CancelFunc
 	sCh     chan struct{}
-	ch      chan events.Event
+	ch      chan []events.Event
 	ack     bool
 	running bool
 	id      int
@@ -23,7 +23,7 @@ func NewBase(ctx context.Context, buf int, ack bool) *Base {
 		ctx:     ctx,
 		cfunc:   cfunc,
 		sCh:     make(chan struct{}),
-		ch:      make(chan events.Event, buf),
+		ch:      make(chan []events.Event, buf),
 		ack:     ack,
 		running: !ack, // assume the implementation will start a routine asap
 	}
@@ -64,7 +64,7 @@ func (b Base) isRunning() bool {
 }
 
 // C returns the event channel for optional subscribers
-func (b *Base) C() chan<- events.Event {
+func (b *Base) C() chan<- []events.Event {
 	return b.ch
 }
 
