@@ -2,6 +2,7 @@ package matching
 
 import (
 	"testing"
+	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
@@ -115,7 +116,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 		assert.Len(t, cnf.PassiveOrdersAffected, 0)
 	}
 
-	cnf, porders, err := book.LeaveAuction()
+	cnf, porders, err := book.LeaveAuction(time.Now())
 	assert.NoError(t, err)
 	_ = cnf
 	_ = porders

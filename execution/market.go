@@ -476,7 +476,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	}
 
 	// Change market type to continuous trading
-	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction()
+	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.currentTime)
 	if err != nil {
 		m.log.Error("Error leaving auction", logging.Error(err))
 	}

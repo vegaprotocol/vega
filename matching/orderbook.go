@@ -3,6 +3,7 @@ package matching
 import (
 	"sort"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
@@ -192,14 +193,26 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
-func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, error) {
+func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*types.Order, error) {
 	// Update batchID
 	b.batchID++
+
+	ts := at.UnixNano()
 
 	// Uncross the book
 	uncrossedOrders, err := b.uncrossBook()
 	if err != nil {
 		return nil, nil, err
+	}
+
+	for _, uo := range uncrossedOrders {
+		uo.Order.UpdatedAt = ts
+		for _, po := range uo.PassiveOrdersAffected {
+			po.UpdatedAt = ts
+		}
+		for _, tr := range uo.Trades {
+			tr.Timestamp = ts
+		}
 	}
 
 	// Remove any orders that will not be valid in continuous trading
@@ -214,6 +227,10 @@ func (b *OrderBook) LeaveAuction() ([]*types.OrderConfirmation, []*types.Order, 
 	}
 	// Return all the orders that have been cancelled from the book
 	ordersToCancel := append(buyOrdersToCancel, sellOrdersToCancel...)
+
+	for _, oc := range ordersToCancel {
+		oc.UpdatedAt = ts
+	}
 
 	// Flip back to continuous
 	b.auction = false
