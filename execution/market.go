@@ -434,6 +434,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 	}
+	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.Order_STATUS_REJECTED
 	if oerr, ok := types.IsOrderError(err); ok {
 		order.Reason = oerr
@@ -474,9 +475,6 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		m.mkt.OpeningAuction = nil
 	}
 
-	// update auction state, so we know what the new tradeMode ought to be
-	endEvt := m.as.AuctionEnded(ctx, now)
-
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction()
 	if err != nil {
@@ -512,6 +510,10 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uo.Order.Id))
 		}
 	}
+
+	// update auction state, so we know what the new tradeMode ought to be
+	endEvt := m.as.AuctionEnded(ctx, now)
+
 	// Send an event bus update
 	m.broker.Send(endEvt)
 }
