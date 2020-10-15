@@ -2072,20 +2072,18 @@ func (t *tradingDataService) ObserveEventBus(
 	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(req.BatchSize), filters...)
 
 	if req.BatchSize > 0 {
-		err := t.observeEventsWithAck(stream, req.BatchSize, ch, bCh)
+		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
 		return err
 
 	}
-	return t.observeEvents(stream, ch)
+	return t.observeEvents(ctx, stream, ch)
 }
 
 func (t *tradingDataService) observeEvents(
+	ctx context.Context,
 	stream protoapi.TradingData_ObserveEventBusServer,
 	ch <-chan []*types.BusEvent,
 ) error {
-	ctx, cancel := context.WithCancel(stream.Context())
-	defer cancel()
-
 	for {
 		select {
 		case data, ok := <-ch:
@@ -2136,13 +2134,12 @@ func (t *tradingDataService) recvEventRequest(
 }
 
 func (t *tradingDataService) observeEventsWithAck(
+	ctx context.Context,
 	stream protoapi.TradingData_ObserveEventBusServer,
 	batchSize int64,
 	ch <-chan []*types.BusEvent,
 	bCh chan<- int,
 ) error {
-	ctx, cancel := context.WithCancel(stream.Context())
-	defer cancel()
 	for {
 		select {
 		case data, ok := <-ch:
