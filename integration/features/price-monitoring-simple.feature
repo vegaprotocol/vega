@@ -1,10 +1,10 @@
-Feature: test for issue 1920
+Feature: Price monitoring test using simple risk model
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations |
-      | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |      0.11 |       0.1 |  0 | 0 |     0 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 60                 |         60,120 |   0.95,0.99 |          90,180 |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations |
+      | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |      0.11 |       0.1 |             10 |              -5 |     0 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 60                 |         60,120 |   0.95,0.99 |          90,180 |
 
   Scenario: a trader place a new order in the system, margin are calculated, then the order is stopped, the margin is released
     Given the following traders:

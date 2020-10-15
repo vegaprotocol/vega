@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -909,6 +910,30 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 	pMonitorSettings := &proto.PriceMonitoringSettings{
 		PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
 		UpdateFrequency:           0,
+	}
+
+	if len(row.Cells) > 20 {
+		horizons := i64arr(row, 21, ",")
+		probs := f64arr(row, 22, ",")
+		durations := i64arr(row, 23, ",")
+
+		n := len(horizons)
+		if n != len(probs) || n != len(durations) {
+			log.Fatal(fmt.Sprintf("horizons (%v), probabilities (%v) and durations (%v) need to have the same number of elements",
+				n,
+				len(probs),
+				len(durations)))
+		}
+
+		params := make([]*proto.PriceMonitoringParameters, 0, n)
+		for i := 0; i < n; i++ {
+			p := &proto.PriceMonitoringParameters{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
+			params = append(params, p)
+		}
+		pMonitorSettings = &proto.PriceMonitoringSettings{
+			PriceMonitoringParameters: params,
+			UpdateFrequency:           i64val(row, 20),
+		}
 	}
 
 	mkt := proto.Market{
