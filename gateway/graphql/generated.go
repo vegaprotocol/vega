@@ -5117,6 +5117,11 @@ enum OrderRejectionReason {
 
   "Good for auction order received during continuous trading"
   GFNOrderDuringContinuousTrading
+
+  "IOC orders are not allowed during auction"
+  IOCOrderDuringAuction
+  "FOK orders are not allowed during auction"
+  FOKOrderDuringAuction
 }
 
 enum OrderType {
