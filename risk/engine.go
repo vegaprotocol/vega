@@ -21,7 +21,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/risk Orderbook
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
-	GetMarketState() types.MarketState
+	InAuction() bool
 }
 
 // Broker the event bus broker
@@ -151,7 +151,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	var margins *types.MarginLevels
-	if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+	if !e.ob.InAuction() {
 		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 	} else {
 		margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -159,13 +159,6 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	// no margins updates, nothing to do then
 	if margins == nil {
 		return nil, nil
-	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("margins calculated on new order",
-			logging.String("party-id", evt.Party()),
-			logging.String("market-id", evt.MarketID()),
-			logging.Reflect("margins", *margins),
-		)
 	}
 
 	// update other fields for the margins
@@ -228,7 +221,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
-		if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+		if !e.ob.InAuction() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -317,7 +310,7 @@ func (e *Engine) ExpectMargins(
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	for _, evt := range evts {
 		var margins *types.MarginLevels
-		if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+		if !e.ob.InAuction() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])

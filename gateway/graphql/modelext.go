@@ -1272,11 +1272,13 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 }
 
 func auctionEventFromProto(ae *types.AuctionEvent) *AuctionEvent {
+	t, _ := convertAuctionTriggerFromProto(ae.Trigger)
 	r := &AuctionEvent{
 		MarketID:       ae.MarketID,
 		Leave:          ae.Leave,
 		OpeningAuction: ae.OpeningAuction,
 		AuctionStart:   nanoTSToDatetime(ae.Start),
+		Trigger:        t,
 	}
 	if ae.End != 0 {
 		r.AuctionEnd = nanoTSToDatetime(ae.End)

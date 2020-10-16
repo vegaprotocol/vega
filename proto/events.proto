@@ -8,7 +8,8 @@ import "proto/assets.proto";
 import "proto/governance.proto";
 import "proto/vega.proto";
 
-// A market event is a common structure for market updates
+// MarketEvent - the common denominator for all market events
+// interface has a method to return a string for logging
 message MarketEvent {
   // Market identifier for the event
   string marketID = 1;
@@ -109,6 +110,8 @@ message AuctionEvent {
   int64 start = 4;
   // Timestamp containing the end time for an auction
   int64 end = 5;
+  // the reason this market is/was in auction
+  AuctionTrigger trigger = 6;
 }
 
 // An (event) bus event type is used to specify a type of event
