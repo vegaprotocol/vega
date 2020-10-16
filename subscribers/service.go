@@ -25,7 +25,8 @@ func NewService(broker Broker) *Service {
 }
 
 func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...EventFilter) (<-chan []*types.BusEvent, chan<- int) {
-	in, out := make(chan int), make(chan []*types.BusEvent)
+	// one batch buffer for the out channel
+	in, out := make(chan int), make(chan []*types.BusEvent, 1)
 	ctx, cfunc := context.WithCancel(ctx)
 	// use stream subscriber
 	// use buffer size of 0 for the time being
