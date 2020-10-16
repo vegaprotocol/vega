@@ -33,6 +33,11 @@ type StreamSub struct {
 }
 
 func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filters ...EventFilter) *StreamSub {
+	// we can ignore this value throughout the call-chain, but internally we have to account for it
+	// this is equivalent to 0, but used for GQL mapping
+	if batchSize == -1 {
+		batchSize = 0
+	}
 	trades, meo := false, (len(types) == 1 && types[0] == events.MarketEvent)
 	expandedTypes := make([]events.Type, 0, len(types))
 	for _, t := range types {
@@ -88,7 +93,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 
 func (s *StreamSub) Halt() {
 	s.mu.Lock()
-	if s.changeCount == 0 {
+	if s.changeCount == 0 || s.changeCount < s.bufSize {
 		close(s.updated)
 	}
 	s.mu.Unlock()
@@ -155,16 +160,23 @@ func (s *StreamSub) Push(evts ...events.Event) {
 
 // UpdateBatchSize changes the batch size, and returns whatever the current buffer contains
 // it's effectively a poll of current events ignoring requested batch size
-func (s *StreamSub) UpdateBatchSize(size int) []*types.BusEvent {
+func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*types.BusEvent {
 	s.mu.Lock()
+	if size == s.bufSize {
+		s.mu.Unlock()
+		// this is equivalent to polling for data again, wait for the buffer to be full and return
+		return s.GetData(ctx)
+	}
 	s.changeCount = 0
 	data := s.data
 	dc := size
-	if dc == 0 {
+	if dc == 0 { // size == 0
 		dc = cap(s.data)
+	} else if size != s.bufSize { // size was not 0, reassign bufSize
+		// buffer size changes
+		s.bufSize = size
 	}
 	s.data = make([]StreamEvent, 0, dc)
-	s.bufSize = size
 	s.mu.Unlock()
 	messages := make([]*types.BusEvent, 0, len(data))
 	for _, d := range data {
@@ -181,11 +193,16 @@ func (s *StreamSub) UpdateBatchSize(size int) []*types.BusEvent {
 }
 
 // GetData returns events from buffer, all if bufSize == 0, or max buffer size (rest are kept in data slice)
-func (s *StreamSub) GetData() []*types.BusEvent {
-	<-s.updated
-	s.mu.Lock()
-	// create a new update channel + reset update counter
-	s.updated = make(chan struct{})
+func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
+	select {
+	case <-ctx.Done():
+		// stream was closed
+		return nil
+	case <-s.updated:
+		s.mu.Lock()
+		// create new channel
+		s.updated = make(chan struct{})
+	}
 	// this seems to happen with a buffer of 1 sometimes
 	// or could be an issue if s.updated was closed, but the UpdateBatchSize call acquired a lock first
 	if len(s.data) < s.bufSize {
@@ -193,16 +210,14 @@ func (s *StreamSub) GetData() []*types.BusEvent {
 		s.mu.Unlock()
 		return nil
 	}
-	dc := s.bufSize
 	s.changeCount = 0
 	// copy the data for return, clear the internal slice
 	data := s.data
 	if s.bufSize == 0 {
-		dc = cap(s.data)
-		s.data = make([]StreamEvent, 0, dc)
+		// if we use s.data = s.data[:0] here, we get a data race somehow
+		s.data = make([]StreamEvent, 0, cap(s.data))
 	} else if len(s.data) == s.bufSize {
-		// data var is exactly the right size, data has to be emptied, allocate new slice
-		s.data = make([]StreamEvent, 0, dc)
+		s.data = s.data[:0]
 	} else {
 		data = data[:s.bufSize]     // only get the batch requested
 		s.data = s.data[s.bufSize:] // leave rest in the buffer

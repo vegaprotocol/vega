@@ -167,6 +167,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	if s.side == types.Side_SIDE_BUY {
 		for i := len(s.levels) - 1; i >= 0; i-- {
 			pricelevel := s.levels[i]
+			var toRemove int
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price >= price && totalVolume+order.Remaining <= volume {
@@ -174,13 +175,17 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining
 					// Remove the order from the price level
-					pricelevel.removeOrder(0)
+					toRemove++
 
 				} else {
 					// We should never get to here unless the passed in price
 					// and volume are not correct
 					return nil, ErrInvalidVolume
 				}
+			}
+			for toRemove > 0 {
+				toRemove--
+				pricelevel.removeOrder(0)
 			}
 			// Erase this price level which will be at the end of the slice
 			s.levels[i] = nil
@@ -194,6 +199,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	} else {
 		for i := len(s.levels) - 1; i >= 0; i-- {
 			pricelevel := s.levels[i]
+			var toRemove int
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price <= price && totalVolume+order.Remaining <= volume {
@@ -201,13 +207,18 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining
 					// Remove the order from the price level
-					pricelevel.removeOrder(0)
+					toRemove++
 				} else {
 					// We should never get to here unless the passed in price
 					// and volume are not correct
 					return nil, ErrInvalidVolume
 				}
 			}
+			if toRemove > 0 {
+				toRemove--
+				pricelevel.removeOrder(0)
+			}
+
 			// Erase this price level which will be the end of the slice
 			s.levels[i] = nil
 			s.levels = s.levels[:len(s.levels)-1]

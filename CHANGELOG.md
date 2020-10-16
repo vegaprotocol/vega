@@ -40,12 +40,21 @@ These two fixes combined make both the gRPC and GraphQL streams much more reliab
 - [#2348](https://github.com/vegaprotocol/vega/pull/2348) Use cached transactions in `checkTX`
 - [#2349](https://github.com/vegaprotocol/vega/pull/2349) Optimise accounts map accesses
 - [#2351](https://github.com/vegaprotocol/vega/pull/2351) Fix sequence ID related to market `OnChainTimeUpdate`
-- [#2354](https://github.com/vegaprotocol/vega/pull/2354) Update `OrderEvent` to copy order by value
 - [#2355](https://github.com/vegaprotocol/vega/pull/2355) Update coding style doc with info on log levels
 - [#2358](https://github.com/vegaprotocol/vega/pull/2358) Add documentation and comments for `events.proto`
 - [#2359](https://github.com/vegaprotocol/vega/pull/2359) Fix out of bounds index crash
 - [#2364](https://github.com/vegaprotocol/vega/pull/2364) Add mutex to protect map access
 - [#2370](https://github.com/vegaprotocol/vega/pull/2370) Event stream: Send batches instead of single events
+
+## 0.25.1
+
+*2020-10-14*
+
+This release backports two fixes from the forthcoming 0.26.0 release.
+
+### Improvements
+- [#2354](https://github.com/vegaprotocol/vega/pull/2354) Update `OrderEvent` to copy by value
+- [#2379](https://github.com/vegaprotocol/vega/pull/2379) Add missing `/governance/prepare/vote` REST endpoint
 
 ## 0.25.0
 

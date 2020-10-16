@@ -3538,6 +3538,33 @@ Default: 0, send any and all events when they are available. </p></td>
 
 
 
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>batchSize</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: -1</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
 
         <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
         <p>Request to subscribe to a stream of one or more event types from the Vega event bus</p>
@@ -3575,8 +3602,11 @@ Default: 0, send any and all events when they are available. </p></td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Batch size. Optional field.
-If specified, will result in the event stream API to return a specific number of events in a batch.
-For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream.
+If not specified, any events received will be sent immediately. If the client is not ready
+for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
+if specified, the first batch will be sent when ready. To receive the next set of events, the client
+must write an <tt>ObserveEventBatch</tt> message on the stream to flush the buffer.
+If no message is received in 5 seconds, the stream is closed.
 Default: 0, send any and all events when they are available. </p></td>
                 </tr>
 
@@ -13694,6 +13724,18 @@ with an expiration that was badly formatted or otherwise invalid.</p></td>
                 <td>ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN</td>
                 <td>31</td>
                 <td><p>Amending from GFA or GFN is invalid</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION</td>
+                <td>32</td>
+                <td><p>IOC orders are not allowed during auction</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION</td>
+                <td>33</td>
+                <td><p>FOK orders are not allowed during auction</p></td>
               </tr>
 
           </tbody>

@@ -1282,7 +1282,7 @@ Request to subscribe to a stream of one or more event types from the Vega event 
 | type | [vega.BusEventType](#vega.BusEventType) | repeated | One or more types of event. Required field. |
 | marketID | [string](#string) |  | Market identifier. Optional field. |
 | partyID | [string](#string) |  | Party identifier. Optional field. |
-| batchSize | [int64](#int64) |  | Batch size. Optional field. If specified, will result in the event stream API to return a specific number of events in a batch. For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream. Default: 0, send any and all events when they are available. |
+| batchSize | [int64](#int64) |  | Batch size. Optional field. If not specified, any events received will be sent immediately. If the client is not ready for the next data-set, data may be dropped a number of times, and eventually the stream is closed. if specified, the first batch will be sent when ready. To receive the next set of events, the client must write an `ObserveEventBatch` message on the stream to flush the buffer. If no message is received in 5 seconds, the stream is closed. Default: 0, send any and all events when they are available. |
 
 
 
@@ -5044,6 +5044,8 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 29 | Amending to FOK or IOC is invalid |
 | ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 30 | Amending to GFA or GFN is invalid |
 | ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
+| ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION | 32 | IOC orders are not allowed during auction |
+| ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION | 33 | FOK orders are not allowed during auction |
 
 
 

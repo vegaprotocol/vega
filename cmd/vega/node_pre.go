@@ -538,7 +538,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
-		l.mktscfg,
 		l.collateral,
 		l.broker,
 	)
