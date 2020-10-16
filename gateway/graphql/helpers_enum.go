@@ -253,14 +253,36 @@ func convertOrderTypeFromProto(x types.Order_Type) (OrderType, error) {
 // convertMarketStateFromProto converts a Proto enum to a GraphQL enum
 func convertMarketStateFromProto(ms types.MarketState) (MarketState, error) {
 	switch ms {
-	case types.MarketState_MARKET_STATE_AUCTION:
-		return MarketStateAuction, nil
+	case types.MarketState_MARKET_STATE_OPENING_AUCTION:
+		return MarketStateOpeningAuction, nil
+	case types.MarketState_MARKET_STATE_BATCH_AUCTION:
+		return MarketStateBatchAuction, nil
+	case types.MarketState_MARKET_STATE_MONITORING_AUCTION:
+		return MarketStateMonitoringAuction, nil
 	case types.MarketState_MARKET_STATE_CONTINUOUS:
 		return MarketStateContinuous, nil
 	default:
 		err := fmt.Errorf("failed to convert MarketState from Proto to GraphQL: %v", ms)
 		return MarketStateContinuous, err
 	}
+}
+
+// convertAuctionTriggerFromProto converts a proto enum to GQL enum
+func convertAuctionTriggerFromProto(t types.AuctionTrigger) (AuctionTrigger, error) {
+	switch t {
+	case types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED:
+		return AuctionTriggerUnspecified, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_BATCH:
+		return AuctionTriggerBatch, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_OPENING:
+		return AuctionTriggerOpening, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_PRICE:
+		return AuctionTriggerPrice, nil
+	case types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY:
+		return AuctionTriggerLiquidity, nil
+	}
+	err := fmt.Errorf("failed to convert AuctionTrigger from proto to GQL: %v", t)
+	return AuctionTriggerUnspecified, err
 }
 
 // convertProposalStateToProto converts a GraphQL enum to a Proto enum
@@ -466,6 +488,10 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING, nil
 	case OrderRejectionReasonGFNOrderDuringContinuousTrading:
 		return types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION, nil
+	case OrderRejectionReasonIOCOrderDuringAuction:
+		return types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION, nil
+	case OrderRejectionReasonFOKOrderDuringAuction:
+		return types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
@@ -527,6 +553,10 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonGFAOrderDuringAuction, nil
 	case types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION:
 		return OrderRejectionReasonGFNOrderDuringContinuousTrading, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION:
+		return OrderRejectionReasonIOCOrderDuringAuction, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION:
+		return OrderRejectionReasonFOKOrderDuringAuction, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err

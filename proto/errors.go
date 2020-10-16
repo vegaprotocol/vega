@@ -98,6 +98,10 @@ func (err OrderError) Error() string {
 		return "OrderError: GFN Order Received During An Auction"
 	case OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING:
 		return "OrderError: GFA Order Received During Continuous Trading"
+	case OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION:
+		return "OrderError: IOC orders are not allowed during auction"
+	case OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION:
+		return "orderError: FOK orders are not allowed during auction"
 	default:
 		return "invalid OrderError"
 	}

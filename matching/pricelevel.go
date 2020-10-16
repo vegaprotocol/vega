@@ -118,6 +118,7 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 		// Get size and make newTrade
 		size := l.getVolumeAllocation(agg, order)
 		if size <= 0 {
+
 			panic("Trade.size > order.remaining")
 		}
 

@@ -296,6 +296,8 @@ type MarketData {
   indicativeVolume: String!
   "what state the market is in (auction, continuous etc)"
   marketState: MarketState!
+  "what triggered an auction (if an auction was started)"
+  trigger: AuctionTrigger!
 }
 
 type PreparedWithdrawal {
@@ -1483,6 +1485,11 @@ enum OrderRejectionReason {
 
   "Good for auction order received during continuous trading"
   GFNOrderDuringContinuousTrading
+
+  "IOC orders are not allowed during auction"
+  IOCOrderDuringAuction
+  "FOK orders are not allowed during auction"
+  FOKOrderDuringAuction
 }
 
 enum OrderType {
@@ -1504,8 +1511,14 @@ enum MarketState {
   "Continuous trading where orders are processed and potentially matched on arrival"
   CONTINUOUS
 
-  "Auction trading where orders are uncrossed at the end of the auction period"
-  AUCTION
+  "Auction trading where orders are uncrossed at the end of the opening auction period"
+  OPENING_AUCTION
+
+  "Auction as normal trading mode for the market, where orders are uncrossed periodically"
+  BATCH_AUCTION
+
+  "Auction triggered by price/liquidity monitoring"
+  MONITORING_AUCTION
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -2012,6 +2025,21 @@ type AuctionEvent {
   auctionStart: String!
   "optional end time of auction"
   auctionEnd: String!
+  "What triggered the auction"
+  trigger: AuctionTrigger!
+}
+
+enum AuctionTrigger {
+  "Invalid trigger (or no auction)"
+  Unspecified
+  "Auction because market is trading FBA"
+  Batch
+  "Opening auction"
+  Opening
+  "Price monitoring"
+  Price
+  "Liquidity monitoring"
+  Liquidity
 }
 
 enum BusEventType {

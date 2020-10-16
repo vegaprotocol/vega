@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitor"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -41,14 +42,6 @@ type TimeService interface {
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
-}
-
-// AuctionTrigger can be checked with time or price to see if argument should trigger entry to or exit from the auction mode
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_trigger_mock.go -package mocks code.vegaprotocol.io/vega/execution AuctionTrigger
-type AuctionTrigger interface {
-	EnterPerPrice(price uint64) bool
-	EnterPerTime(time time.Time) bool
-	LeavePerTime(time time.Time) bool
 }
 
 // Engine is the execution engine
@@ -168,6 +161,8 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	}
 
+	// create market auction state
+	mas := monitor.NewAuctionState(marketConfig, now)
 	mkt, err := NewMarket(
 		ctx,
 		e.log,
@@ -181,7 +176,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
-		nil,
+		mas,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",

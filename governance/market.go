@@ -172,6 +172,7 @@ func createMarket(
 				},
 			},
 		},
+		PriceMonitoringSettings: definition.PriceMonitoringSettings,
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err

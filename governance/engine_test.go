@@ -876,6 +876,9 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 						TickSize: "0.1",
 					},
 				},
+				PriceMonitoringSettings: &types.PriceMonitoringSettings{
+					UpdateFrequency: 10,
+				},
 			},
 		},
 	}

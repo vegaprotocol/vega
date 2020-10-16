@@ -62,3 +62,18 @@ func (mr *MockModelMockRecorder) CalculationInterval() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculationInterval", reflect.TypeOf((*MockModel)(nil).CalculationInterval))
 }
+
+// PriceRange mocks base method
+func (m *MockModel) PriceRange(arg0, arg1, arg2 float64) (float64, float64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PriceRange", arg0, arg1, arg2)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(float64)
+	return ret0, ret1
+}
+
+// PriceRange indicates an expected call of PriceRange
+func (mr *MockModelMockRecorder) PriceRange(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PriceRange", reflect.TypeOf((*MockModel)(nil).PriceRange), arg0, arg1, arg2)
+}

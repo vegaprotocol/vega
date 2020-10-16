@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
+	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -132,6 +133,10 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
+		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
+			PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+			UpdateFrequency:           0,
+		},
 	}
 	for _, row := range mSetup.Rows {
 		// skip header
@@ -158,7 +163,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		time.Now(),
 		mktsetup.broker,
 		execution.NewIDGen(),
-		nil,
+		monitor.NewAuctionState(mkt, time.Now()),
 	)
 	if err != nil {
 		return err
