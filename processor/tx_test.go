@@ -26,15 +26,11 @@ func concatBytes(bzs ...[]byte) []byte {
 }
 
 func txEncode(t *testing.T, cmd txn.Command, msg proto.Message) *types.Transaction {
-	var hash [processor.TxHashLen]byte // empty hash works for this
 	payload, err := proto.Marshal(msg)
 	require.NoError(t, err)
 
-	bz := concatBytes(
-		hash[:],
-		[]byte{byte(cmd)},
-		payload,
-	)
+	bz, err := txn.Encode(payload, cmd)
+	require.NoError(t, err)
 
 	return &types.Transaction{
 		InputData: bz,

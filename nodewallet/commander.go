@@ -57,7 +57,7 @@ func (c *Commander) Command(cmd txn.Command, payload proto.Message) error {
 	if err != nil {
 		return err
 	}
-	encodedCmd, err := blockchain.TxEncode(raw, cmd)
+	encodedCmd, err := txn.Encode(raw, cmd)
 	if err != nil {
 		return err
 	}

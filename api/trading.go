@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -83,7 +82,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, txn.SubmitOrderCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.SubmitOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
@@ -103,7 +102,7 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, txn.CancelOrderCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.CancelOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
 	return &protoapi.PrepareCancelOrderResponse{
@@ -122,7 +121,7 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, txn.AmendOrderCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.AmendOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
 	return &protoapi.PrepareAmendOrderResponse{
@@ -160,7 +159,7 @@ func (s *tradingService) PrepareWithdraw(
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, txn.WithdrawCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.WithdrawCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
 	}
 	return &protoapi.PrepareWithdrawResponse{
@@ -186,7 +185,7 @@ func (s *tradingService) PrepareProposal(
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 
-	if raw, err = blockchain.TxEncode(raw, txn.ProposeCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.ProposeCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 	return &protoapi.PrepareProposalResponse{
@@ -215,7 +214,7 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, txn.VoteCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.VoteCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
 	return &protoapi.PrepareVoteResponse{
