@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.25.1
+
+*2020-10-14*
+
+This release backports two fixes from the forthcoming 0.26.0 release.
+
+### Improvements
+- [#2354](https://github.com/vegaprotocol/vega/pull/2354) Update `OrderEvent` to copy by value
+- [#2379](https://github.com/vegaprotocol/vega/pull/2379) Add missing `/governance/prepare/vote` REST endpoint
+
 ## 0.25.0
 
 *2020-09-24*
