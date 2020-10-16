@@ -424,7 +424,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 	return filled, trades, nil
 }
 
-func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64, error) {
+func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, uint64, error) {
 	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 
 	var (
@@ -504,7 +504,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
 			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
 				// break if a wash trade is detected
@@ -540,7 +540,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
 			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
 				if err != nil && err == ErrWashTrade {

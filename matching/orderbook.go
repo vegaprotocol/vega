@@ -345,7 +345,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 
 		// Uncross each one
 		for _, order := range uncrossOrders {
-			trades, affectedOrders, _, err := b.sell.uncross(order)
+			trades, affectedOrders, _, err := b.sell.uncross(order, false)
 
 			if err != nil {
 				return nil, err
@@ -372,7 +372,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 
 		// Uncross each one
 		for _, order := range uncrossOrders {
-			trades, affectedOrders, _, err := b.buy.uncross(order)
+			trades, affectedOrders, _, err := b.buy.uncross(order, false)
 
 			if err != nil {
 				return nil, err
@@ -583,7 +583,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	if b.marketState != types.MarketState_MARKET_STATE_AUCTION {
 		// uncross with opposite
-		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order)
+		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order, true)
 		if lastTradedPrice != 0 {
 			b.lastTradedPrice = lastTradedPrice
 		}
