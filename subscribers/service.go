@@ -41,6 +41,8 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 		ret := retries
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case bs := <-in:
 				// batch size changed: drain buffer and send data
 				data := sub.UpdateBatchSize(ctx, bs)
@@ -53,7 +55,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				// wait for actual changes
 				data := sub.GetData(ctx)
 				// this is a very rare thing, but it can happen
-				if len(data) == 0 && ctx.Err() == nil {
+				if len(data) == 0 {
 					continue
 				}
 				select {

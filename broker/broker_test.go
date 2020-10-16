@@ -116,12 +116,8 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 	seqH1 := []uint64{}
 	seqH2 := []uint64{}
 	for i := range dataH1 {
-		e1, ok := dataH1[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH1 = append(seqH1, e1.Sequence())
-		e2, ok := dataH2[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH2 = append(seqH2, e2.Sequence())
+		seqH1 = append(seqH1, dataH1[i].Sequence())
+		seqH2 = append(seqH2, dataH2[i].Sequence())
 	}
 	assert.Equal(t, seqH1, seqH2)
 	<-done
@@ -168,12 +164,8 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 	seqH1 := []uint64{}
 	seqH2 := []uint64{}
 	for i := range dataH1 {
-		e1, ok := dataH1[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH1 = append(seqH1, e1.Sequence())
-		e2, ok := dataH2[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH2 = append(seqH2, e2.Sequence())
+		seqH1 = append(seqH1, dataH1[i].Sequence())
+		seqH2 = append(seqH2, dataH2[i].Sequence())
 	}
 	assert.Equal(t, seqH1, seqH2)
 	<-done
@@ -341,9 +333,7 @@ func testSendBatchChannel(t *testing.T) {
 	// ensure sequence ID's are set and are unique
 	seqIDs := make([]uint64, 0, len(events))
 	for _, e := range events {
-		se, ok := e.(broker.SeqEvent)
-		assert.True(t, ok)
-		sID := se.Sequence()
+		sID := e.Sequence()
 		assert.NotZero(t, sID)
 		seqIDs = append(seqIDs, sID)
 	}

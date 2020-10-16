@@ -46,10 +46,14 @@ type Base struct {
 	et      Type
 }
 
+// Event - the base event interface type, add sequence ID setter here, because the type assertions in broker
+// seem to be a bottleneck. Change its behaviour so as to only set the sequence ID once
 type Event interface {
 	Type() Type
 	Context() context.Context
 	TraceID() string
+	Sequence() uint64
+	SetSequenceID(s uint64)
 }
 
 const (
@@ -247,6 +251,10 @@ func (b Base) TraceID() string {
 }
 
 func (b *Base) SetSequenceID(s uint64) {
+	// sequence ID can only be set once
+	if b.seq != 0 {
+		return
+	}
 	b.seq = s
 }
 
