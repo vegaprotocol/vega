@@ -78,6 +78,11 @@ http:
       post: '/orders/margins/estimate'
       body: "*"
 
+      # Network parameters
+    - selector: api.trading_data.NetworkParameters
+      post: '/network/parameters'
+      body: "*"
+
     # Parties
     - selector: api.trading_data.Parties
       get: '/parties'
@@ -117,6 +122,9 @@ http:
     # Governance
     - selector: api.trading.PrepareProposal
       post: '/governance/prepare/proposal'
+      body: "*"
+    - selector: api.trading.PrepareVote
+      post: '/governance/prepare/vote'
       body: "*"
 
 

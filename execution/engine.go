@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitor"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -43,20 +44,13 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-// AuctionTrigger can be checked with time or price to see if argument should trigger entry to or exit from the auction mode
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_trigger_mock.go -package mocks code.vegaprotocol.io/vega/execution AuctionTrigger
-type AuctionTrigger interface {
-	EnterPerPrice(price uint64) bool
-	EnterPerTime(time time.Time) bool
-	LeavePerTime(time time.Time) bool
-}
-
 // Engine is the execution engine
 type Engine struct {
 	Config
 	log *logging.Logger
 
 	markets    map[string]*Market
+	marketsCpy []*Market
 	collateral *collateral.Engine
 	idgen      *IDgenerator
 
@@ -70,18 +64,12 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	ts TimeService,
-	pmkts []types.Market,
 	collateral *collateral.Engine,
 	broker Broker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
-	// this is here because we're creating some markets here
-	// this isn't going to be the case in the final version
-	// so I'm using Background rather than TODO
-	ctx := context.Background()
-
 	e := &Engine{
 		log:        log,
 		Config:     executionConfig,
@@ -90,19 +78,6 @@ func NewEngine(
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
-	}
-
-	var err error
-	// Add initial markets and flush to stores (if they're configured)
-	if len(pmkts) > 0 {
-		for _, mkt := range pmkts {
-			mkt := mkt
-			err = e.SubmitMarket(ctx, &mkt)
-			if err != nil {
-				e.log.Panic("Unable to submit market",
-					logging.Error(err))
-			}
-		}
 	}
 
 	// Add time change event handler
@@ -124,7 +99,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.Config = cfg
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
 			e.Config.Position, e.Config.Settlement, e.Config.Fee)
 	}
@@ -186,6 +161,8 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	}
 
+	// create market auction state
+	mas := monitor.NewAuctionState(marketConfig, now)
 	mkt, err := NewMarket(
 		ctx,
 		e.log,
@@ -199,7 +176,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 		now,
 		e.broker,
 		e.idgen,
-		nil,
+		mas,
 	)
 	if err != nil {
 		e.log.Error("Failed to instantiate market",
@@ -209,6 +186,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	e.markets[marketConfig.Id] = mkt
+	e.marketsCpy = append(e.marketsCpy, mkt)
 
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before
@@ -344,7 +322,7 @@ func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) 
 func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*types.OrderCancellationConfirmation, error) {
 	confirmations := []*types.OrderCancellationConfirmation{}
 
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		confs, err := mkt.CancelAllOrders(ctx, party)
 		if err != nil {
 			return nil, err
@@ -383,7 +361,7 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
-	for _, v := range e.markets {
+	for _, v := range e.marketsCpy {
 		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
 	}
 	evt := events.NewTime(ctx, t)
@@ -395,36 +373,48 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	e.log.Debug("updating engine on new time update")
 
 	// update collateral
-	e.collateral.OnChainTimeUpdate(t)
+	e.collateral.OnChainTimeUpdate(ctx, t)
 
 	// remove expired orders
 	// TODO(FIXME): this should be remove, and handled inside the market directly
 	// when call with the new time (see the next for loop)
-	e.removeExpiredOrders(t)
+	e.removeExpiredOrders(ctx, t)
 
 	// notify markets of the time expiration
-	for mktID, mkt := range e.markets {
+	toDelete := []string{}
+	for _, mkt := range e.marketsCpy {
 		mkt := mkt
-		closing := mkt.OnChainTimeUpdate(t)
+		closing := mkt.OnChainTimeUpdate(ctx, t)
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
-				logging.String("market-id", mktID))
-			delete(e.markets, mktID)
+				logging.String("market-id", mkt.GetID()))
+			delete(e.markets, mkt.GetID())
+			toDelete = append(toDelete, mkt.GetID())
 		}
 	}
+
+	for _, id := range toDelete {
+		var i int
+		for idx, mkt := range e.marketsCpy {
+			if mkt.GetID() == id {
+				i = idx
+				break
+			}
+		}
+		copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
+		e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
+	}
+
 	timer.EngineTimeCounterAdd()
 }
 
 // Process any data updates (including state changes)
 // e.g. removing expired orders from matching engine.
-func (e *Engine) removeExpiredOrders(t time.Time) {
+func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Removing expiring orders from matching engine")
-	}
 	expiringOrders := []types.Order{}
 	timeNow := t.UnixNano()
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		orders, err := mkt.RemoveExpiredOrders(timeNow)
 		if err != nil {
 			e.log.Error("unable to get remove expired orders",
@@ -434,19 +424,11 @@ func (e *Engine) removeExpiredOrders(t time.Time) {
 		expiringOrders = append(
 			expiringOrders, orders...)
 	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Removed expired orders from matching engine",
-			logging.Int("orders-removed", len(expiringOrders)))
-	}
 	for _, order := range expiringOrders {
 		order := order
-		evt := events.NewOrderEvent(context.Background(), &order)
+		evt := events.NewOrderEvent(ctx, &order)
 		e.broker.Send(evt)
 		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
-	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Updated expired orders in stores",
-			logging.Int("orders-removed", len(expiringOrders)))
 	}
 	timer.EngineTimeCounterAdd()
 }

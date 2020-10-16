@@ -11,6 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,6 +24,7 @@ type testSvc struct {
 	bus   *mocks.MockEventBus
 	gov   *mocks.MockGovernanceDataSub
 	votes *mocks.MockVoteSub
+	netp  *mocks.MockNetParams
 }
 
 func newTestService(t *testing.T) *testSvc {
@@ -30,6 +32,7 @@ func newTestService(t *testing.T) *testSvc {
 	bus := mocks.NewMockEventBus(ctrl)
 	gov := mocks.NewMockGovernanceDataSub(ctrl)
 	votes := mocks.NewMockVoteSub(ctrl)
+	netp := mocks.NewMockNetParams(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
@@ -40,10 +43,123 @@ func newTestService(t *testing.T) *testSvc {
 		bus:   bus,
 		gov:   gov,
 		votes: votes,
+		netp:  netp,
 	}
-	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), bus, gov, votes)
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), bus, gov, votes, netp)
 	assert.NotNil(t, result.Svc)
 	return result
+}
+
+func TestPrepareUpdateNetworkParameterProposal(t *testing.T) {
+	t.Run("prepare update network proposal - success", testPrepareNetworkParameterUpdateProposalSuccess)
+	t.Run("prepare update network proposal - failure empty key", testPrepareNetworkParameterUpdateProposalFailureEmptyKey)
+	t.Run("prepare update network proposal - failure empty value", testPrepareNetworkParameterUpdateProposalFailureEmptyValue)
+	t.Run("prepare update network proposal - validation failure", testPrepareNetworkParameterUpdateProposalValidationFailure)
+}
+
+func testPrepareNetworkParameterUpdateProposalSuccess(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	svc.netp.EXPECT().Validate(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, proposal)
+}
+
+func testPrepareNetworkParameterUpdateProposalFailureEmptyKey(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "",
+			Value: "value",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, governance.ErrEmptyNetParamKey.Error())
+	assert.Nil(t, proposal)
+}
+
+func testPrepareNetworkParameterUpdateProposalFailureEmptyValue(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, governance.ErrEmptyNetParamValue.Error())
+	assert.Nil(t, proposal)
+}
+
+func testPrepareNetworkParameterUpdateProposalValidationFailure(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+
+	// set the mock to return an error
+	svc.netp.EXPECT().Validate(gomock.Any(), gomock.Any()).Times(1).Return(
+		errors.New("validation failure"))
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
+		},
+	}
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
+		},
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, "validation failure")
+	assert.Nil(t, proposal)
+
 }
 
 func TestPrepareVote(t *testing.T) {
@@ -111,17 +227,19 @@ func testPrepareProposalNormal(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{
-			MinCloseInSeconds: 100 * 24 * 60 * 60,
-			MaxCloseInSeconds: 1000 * 24 * 60 * 60,
+	svc.netp.EXPECT().Validate(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
 		},
 	}
 	terms := types.ProposalTerms{
 		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
 		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
 		},
 	}
 
@@ -140,12 +258,12 @@ func testPrepareProposalEmpty(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{},
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{},
 	}
 	terms := types.ProposalTerms{
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
 		},
 	}
 
@@ -184,10 +302,10 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	updateNetwork := types.UpdateNetwork{
-		Changes: &types.NetworkConfiguration{
-			MinCloseInSeconds: 100 * 24 * 60 * 60,
-			MaxCloseInSeconds: 1000 * 24 * 60 * 60,
+	updateNetwork := types.UpdateNetworkParameter{
+		Changes: &types.NetworkParameter{
+			Key:   "key",
+			Value: "value",
 		},
 	}
 
@@ -197,8 +315,8 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 		ValidationTimestamp: ts,
 		ClosingTimestamp:    ts,
 		EnactmentTimestamp:  ts,
-		Change: &types.ProposalTerms_UpdateNetwork{
-			UpdateNetwork: &updateNetwork,
+		Change: &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &updateNetwork,
 		},
 	}
 

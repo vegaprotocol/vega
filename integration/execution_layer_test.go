@@ -404,7 +404,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getFirstByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -949,6 +949,8 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 					Params: &proto.SimpleModelParams{
 						FactorLong:  f64val(row, 6),
 						FactorShort: f64val(row, 7),
+						MaxMoveUp:   0, //TODO (WG 02/10/2020): Inject from .feature file
+						MinMoveDown: 0, //TODO (WG 02/10/2020): Inject from .feature file
 					},
 				},
 			},
@@ -962,6 +964,10 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 		},
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
+		},
+		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
+			PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+			UpdateFrequency:           0,
 		},
 	}
 

@@ -48,10 +48,10 @@ func (mr *MockSubscriberMockRecorder) Ack() *gomock.Call {
 }
 
 // C mocks base method
-func (m *MockSubscriber) C() chan<- events.Event {
+func (m *MockSubscriber) C() chan<- []events.Event {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "C")
-	ret0, _ := ret[0].(chan<- events.Event)
+	ret0, _ := ret[0].(chan<- []events.Event)
 	return ret0
 }
 

@@ -106,7 +106,7 @@ func testChannelOptionalSuccess(t *testing.T) {
 		skipped = true
 	case <-tr.Closed():
 		t.FailNow()
-	case tr.C() <- evt:
+	case tr.C() <- []events.Event{evt}:
 		skipped = false
 	}
 	assert.False(t, skipped)
@@ -119,7 +119,7 @@ func testChannelOptionalSuccess(t *testing.T) {
 		wg.Done()
 	})
 	// push time event
-	tr.C() <- time
+	tr.C() <- []events.Event{time}
 	// Make sure the time event triggers the call to the storage
 	wg.Wait()
 }
@@ -139,7 +139,7 @@ func testChannelOptionalSkip(t *testing.T) {
 	select {
 	case <-tr.Skip():
 		skipped = true
-	case tr.C() <- evt:
+	case tr.C() <- []events.Event{evt}:
 		skipped = false
 	}
 	assert.True(t, skipped)

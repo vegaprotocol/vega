@@ -316,6 +316,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				Duration: int64(auctionDuration.Seconds()),
 				Volume:   0,
 			},
+			PriceMonitoringSettings: &proto.PriceMonitoringSettings{
+				PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+				UpdateFrequency:           60,
+			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
 		err = createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))

@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
@@ -56,9 +57,12 @@ type GRPCServer struct {
 	eventService            *subscribers.Service
 	withdrawalService       *plugins.Withdrawal
 	depositService          *plugins.Deposit
+	netParamsService        *netparams.Service
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
+
+	marketDepthService *subscribers.MarketDepthBuilder
 
 	statusChecker *monitoring.Status
 
@@ -90,6 +94,8 @@ func NewGRPCServer(
 	eventService *subscribers.Service,
 	withdrawalService *plugins.Withdrawal,
 	depositService *plugins.Deposit,
+	marketDepthService *subscribers.MarketDepthBuilder,
+	netParamsService *netparams.Service,
 	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
@@ -119,7 +125,9 @@ func NewGRPCServer(
 		eventService:            eventService,
 		withdrawalService:       withdrawalService,
 		depositService:          depositService,
+		marketDepthService:      marketDepthService,
 		statusChecker:           statusChecker,
+		netParamsService:        netParamsService,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
 	}
@@ -240,8 +248,11 @@ func (g *GRPCServer) Start() {
 		statusChecker:           g.statusChecker,
 		WithdrawalService:       g.withdrawalService,
 		DepositService:          g.depositService,
+		MarketDepthService:      g.marketDepthService,
+		NetParamsService:        g.netParamsService,
 		ctx:                     g.ctx,
 	}
+	go tradingDataSvc.updateNetInfo(g.ctx)
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)
 

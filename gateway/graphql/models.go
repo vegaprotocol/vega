@@ -75,6 +75,8 @@ type AuctionEvent struct {
 	AuctionStart string `json:"auctionStart"`
 	// optional end time of auction
 	AuctionEnd string `json:"auctionEnd"`
+	// What triggered the auction
+	Trigger AuctionTrigger `json:"trigger"`
 }
 
 func (AuctionEvent) IsEvent() {}
@@ -114,6 +116,8 @@ type BuiltinAssetInput struct {
 type BusEvent struct {
 	// the id for this event
 	EventID string `json:"eventID"`
+	// the block hash
+	Block string `json:"block"`
 	// the type of event we're dealing with
 	Type BusEventType `json:"type"`
 	// the payload - the wrapped event
@@ -430,6 +434,14 @@ type MarketTick struct {
 
 func (MarketTick) IsEvent() {}
 
+// Representation of a network parameter
+type NetworkParameterInput struct {
+	// The name of the network parameter
+	Key string `json:"key"`
+	// The value of the network parameter
+	Value string `json:"value"`
+}
+
 // A new asset proposal change
 type NewAsset struct {
 	// the source of the new Asset
@@ -566,7 +578,7 @@ type ProposalTermsInput struct {
 	// Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
 	// It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
 	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-	UpdateNetwork *UpdateNetworkInput `json:"updateNetwork"`
+	UpdateNetworkParameter *UpdateNetworkParameterInput `json:"updateNetworkParameter"`
 	// a new Asset proposal, this will create a new asset to be used in the vega network
 	NewAsset *NewAssetInput `json:"newAsset"`
 }
@@ -724,66 +736,16 @@ type UpdateMarketInput struct {
 	MarketID string `json:"marketId"`
 }
 
-// Allows submitting a proposal for changing governance network parameters
-type UpdateNetwork struct {
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MinCloseInSeconds *int `json:"minCloseInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MinEnactInSeconds *int `json:"minEnactInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that sets participation level required for any proposal to pass.
-	// Value from 0 to 1.
-	RequiredParticipation *float64 `json:"requiredParticipation"`
-	// Network parameter that sets majority level required for any proposal to pass.
-	// Value from 0.5 to 1.
-	RequiredMajority *float64 `json:"requiredMajority"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to submit a new proposal. Value greater than 0 to 1.
-	MinProposerBalance *float64 `json:"minProposerBalance"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to cast a vote.  Value greater than 0 to 1.
-	MinVoterBalance *float64 `json:"minVoterBalance"`
+// Allows submitting a proposal for changing network parameters
+type UpdateNetworkParameter struct {
+	NetworkParameter *proto.NetworkParameter `json:"networkParameter"`
 }
 
-func (UpdateNetwork) IsProposalChange() {}
+func (UpdateNetworkParameter) IsProposalChange() {}
 
-// Allows submitting a proposal for changing governance network parameters
-type UpdateNetworkInput struct {
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MinCloseInSeconds *int `json:"minCloseInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to close voting. Value represents duration in seconds.
-	MaxCloseInSeconds *int `json:"maxCloseInSeconds"`
-	// Network parameter that restricts when the earliest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MinEnactInSeconds *int `json:"minEnactInSeconds"`
-	// Network parameter that restricts when the latest a proposal
-	// can be set to be executed (if that proposal passed).
-	// Value represents duration in seconds.
-	MaxEnactInSeconds *int `json:"maxEnactInSeconds"`
-	// Network parameter that sets participation level required for any proposal to pass.
-	// Value from 0 to 1.
-	RequiredParticipation *float64 `json:"requiredParticipation"`
-	// Network parameter that sets majority level required for any proposal to pass.
-	// Value from 0.5 to 1.
-	RequiredMajority *float64 `json:"requiredMajority"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to submit a new proposal. Value greater than 0 to 1.
-	MinProposerBalance *float64 `json:"minProposerBalance"`
-	// Network parameter that sets minimum balance required for a party
-	// to be able to cast a vote.  Value greater than 0 to 1.
-	MinVoterBalance *float64 `json:"minVoterBalance"`
+// Allows submitting a proposal for changing network parameters
+type UpdateNetworkParameterInput struct {
+	NetworkParameter *NetworkParameterInput `json:"networkParameter"`
 }
 
 type Vote struct {
@@ -879,6 +841,58 @@ func (e *AccountType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e AccountType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type AuctionTrigger string
+
+const (
+	// Invalid trigger (or no auction)
+	AuctionTriggerUnspecified AuctionTrigger = "Unspecified"
+	// Auction because market is trading FBA
+	AuctionTriggerBatch AuctionTrigger = "Batch"
+	// Opening auction
+	AuctionTriggerOpening AuctionTrigger = "Opening"
+	// Price monitoring
+	AuctionTriggerPrice AuctionTrigger = "Price"
+	// Liquidity monitoring
+	AuctionTriggerLiquidity AuctionTrigger = "Liquidity"
+)
+
+var AllAuctionTrigger = []AuctionTrigger{
+	AuctionTriggerUnspecified,
+	AuctionTriggerBatch,
+	AuctionTriggerOpening,
+	AuctionTriggerPrice,
+	AuctionTriggerLiquidity,
+}
+
+func (e AuctionTrigger) IsValid() bool {
+	switch e {
+	case AuctionTriggerUnspecified, AuctionTriggerBatch, AuctionTriggerOpening, AuctionTriggerPrice, AuctionTriggerLiquidity:
+		return true
+	}
+	return false
+}
+
+func (e AuctionTrigger) String() string {
+	return string(e)
+}
+
+func (e *AuctionTrigger) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AuctionTrigger(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AuctionTrigger", str)
+	}
+	return nil
+}
+
+func (e AuctionTrigger) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1091,18 +1105,24 @@ type MarketState string
 const (
 	// Continuous trading where orders are processed and potentially matched on arrival
 	MarketStateContinuous MarketState = "CONTINUOUS"
-	// Auction trading where orders are uncrossed at the end of the auction period
-	MarketStateAuction MarketState = "AUCTION"
+	// Auction trading where orders are uncrossed at the end of the opening auction period
+	MarketStateOpeningAuction MarketState = "OPENING_AUCTION"
+	// Auction as normal trading mode for the market, where orders are uncrossed periodically
+	MarketStateBatchAuction MarketState = "BATCH_AUCTION"
+	// Auction triggered by price/liquidity monitoring
+	MarketStateMonitoringAuction MarketState = "MONITORING_AUCTION"
 )
 
 var AllMarketState = []MarketState{
 	MarketStateContinuous,
-	MarketStateAuction,
+	MarketStateOpeningAuction,
+	MarketStateBatchAuction,
+	MarketStateMonitoringAuction,
 }
 
 func (e MarketState) IsValid() bool {
 	switch e {
-	case MarketStateContinuous, MarketStateAuction:
+	case MarketStateContinuous, MarketStateOpeningAuction, MarketStateBatchAuction, MarketStateMonitoringAuction:
 		return true
 	}
 	return false
@@ -1239,6 +1259,10 @@ const (
 	OrderRejectionReasonGFAOrderDuringAuction OrderRejectionReason = "GFAOrderDuringAuction"
 	// Good for auction order received during continuous trading
 	OrderRejectionReasonGFNOrderDuringContinuousTrading OrderRejectionReason = "GFNOrderDuringContinuousTrading"
+	// IOC orders are not allowed during auction
+	OrderRejectionReasonIOCOrderDuringAuction OrderRejectionReason = "IOCOrderDuringAuction"
+	// FOK orders are not allowed during auction
+	OrderRejectionReasonFOKOrderDuringAuction OrderRejectionReason = "FOKOrderDuringAuction"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1273,11 +1297,13 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonInvalidMarketType,
 	OrderRejectionReasonGFAOrderDuringAuction,
 	OrderRejectionReasonGFNOrderDuringContinuousTrading,
+	OrderRejectionReasonIOCOrderDuringAuction,
+	OrderRejectionReasonFOKOrderDuringAuction,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction:
 		return true
 	}
 	return false
@@ -1508,6 +1534,12 @@ const (
 	ProposalRejectionReasonIncompatibleTimestamps ProposalRejectionReason = "IncompatibleTimestamps"
 	// Risk parameters are missing from the market proposal
 	ProposalRejectionReasonNoRiskParameters ProposalRejectionReason = "NoRiskParameters"
+	// Invalid key in update network parameter proposal
+	ProposalRejectionReasonNetworkParameterInvalidKey ProposalRejectionReason = "NetworkParameterInvalidKey"
+	// Invalid valid in update network parameter proposal
+	ProposalRejectionReasonNetworkParameterInvalidValue ProposalRejectionReason = "NetworkParameterInvalidValue"
+	// Validation failed for network parameter proposal
+	ProposalRejectionReasonNetworkParameterValidationFailed ProposalRejectionReason = "NetworkParameterValidationFailed"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1529,11 +1561,14 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInvalidAsset,
 	ProposalRejectionReasonIncompatibleTimestamps,
 	ProposalRejectionReasonNoRiskParameters,
+	ProposalRejectionReasonNetworkParameterInvalidKey,
+	ProposalRejectionReasonNetworkParameterInvalidValue,
+	ProposalRejectionReasonNetworkParameterValidationFailed,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed:
 		return true
 	}
 	return false

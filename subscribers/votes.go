@@ -59,7 +59,7 @@ func (v *VoteSub) loop(ctx context.Context) {
 			return
 		case e := <-v.ch:
 			if v.isRunning() {
-				v.Push(e)
+				v.Push(e...)
 			}
 		}
 	}

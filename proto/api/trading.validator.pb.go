@@ -460,6 +460,12 @@ func (this *MarketDepthSubscribeRequest) Validate() error {
 	}
 	return nil
 }
+func (this *MarketDepthUpdatesSubscribeRequest) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	return nil
+}
 func (this *PositionsSubscribeRequest) Validate() error {
 	return nil
 }
@@ -792,6 +798,12 @@ func (this *EstimateMarginResponse) Validate() error {
 func (this *ObserveEventsRequest) Validate() error {
 	return nil
 }
+func (this *ObserveEventBatch) Validate() error {
+	if !(this.BatchSize > -1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("BatchSize", fmt.Errorf(`value '%v' must be greater than '-1'`, this.BatchSize))
+	}
+	return nil
+}
 func (this *ObserveEventsResponse) Validate() error {
 	for _, item := range this.Events {
 		if item != nil {
@@ -867,6 +879,19 @@ func (this *DepositResponse) Validate() error {
 	if this.Deposit != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Deposit); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Deposit", err)
+		}
+	}
+	return nil
+}
+func (this *NetworkParametersRequest) Validate() error {
+	return nil
+}
+func (this *NetworkParametersResponse) Validate() error {
+	for _, item := range this.NetworkParameters {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("NetworkParameters", err)
+			}
 		}
 	}
 	return nil

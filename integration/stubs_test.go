@@ -50,15 +50,15 @@ func (b *brokerStub) SendBatch(evts []events.Event) {
 				sub.Push(evts...)
 				continue
 			}
-			for _, e := range evts {
-				select {
-				case <-sub.Closed():
-					continue
-				case <-sub.Skip():
-					continue
-				case sub.C() <- e:
-					continue
-				}
+			select {
+			case <-sub.Closed():
+				continue
+			case <-sub.Skip():
+				continue
+			case sub.C() <- evts:
+				continue
+			default:
+				continue
 			}
 		}
 	}
@@ -82,7 +82,9 @@ func (b *brokerStub) Send(e events.Event) {
 					continue
 				case <-sub.Skip():
 					continue
-				case sub.C() <- e:
+				case sub.C() <- []events.Event{e}:
+					continue
+				default:
 					continue
 				}
 			}
@@ -252,13 +254,31 @@ func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (proto.Accoun
 	return proto.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
+func (b *brokerStub) getFirstByReference(party, ref string) (proto.Order, error) {
 	data := b.GetOrderEvents()
 	for _, o := range data {
 		v := o.Order()
 		if v.Reference == ref && v.PartyID == party {
 			return *v, nil
 		}
+	}
+	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+}
+
+func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
+	data := b.GetOrderEvents()
+
+	var last proto.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
+	var matched bool = false
+	for _, o := range data {
+		v := o.Order()
+		if v.Reference == ref && v.PartyID == party {
+			last = *v
+			matched = true
+		}
+	}
+	if matched == true {
+		return last, nil
 	}
 	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
 }
