@@ -314,7 +314,8 @@ func Init(ctx context.Context, parser *flags.Parser) error {
 
 func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
 	m := jsonpb.Marshaler{
-		Indent: "  ",
+		Indent:       "  ",
+		EmitDefaults: true,
 	}
 	buf, err := m.MarshalToString(mkt)
 	if err != nil {
