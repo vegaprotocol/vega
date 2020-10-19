@@ -496,6 +496,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		err     error
 	)
 
+	totalPrice = 0
 	if agg.Side == types.Side_SIDE_SELL {
 		// in here we iterate from the end, as it's easier to remove the
 		// price levels from the back of the slice instead of from the front
@@ -569,6 +570,9 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	}
 
 	if agg.Type == types.Order_TYPE_NETWORK {
+		for _, t := range trades {
+			totalPrice += t.Price * t.Size
+		}
 		// now we are done with uncrossing,
 		// we can set back the price of the netorder to the average
 		// price over the whole volume
