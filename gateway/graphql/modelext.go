@@ -74,6 +74,10 @@ var (
 	ErrNilFeeFactors = errors.New("nil fee factors")
 	// ErrNilFees is raised when the fees are missing from the market
 	ErrNilFees = errors.New("nil fees")
+	// ErrNilAuctionDuration is raised when auction duration is missing from the market
+	ErrNilAuctionDuration = errors.New("nil auction duration")
+	// ErrNilPriceMonitoringParameters ...
+	ErrNilPriceMonitoringParameters = errors.New("nil price monitoring parameters")
 )
 
 type MarketLogEvent interface {
@@ -582,6 +586,50 @@ func FeesFromProto(pf *types.Fees) (*Fees, error) {
 	}, nil
 }
 
+func AuctionDurationFromProto(pad *types.AuctionDuration) (*AuctionDuration, error) {
+	if pad == nil {
+		return nil, ErrNilAuctionDuration
+	}
+
+	return &AuctionDuration{
+		Volume:       int(pad.Volume),
+		DurationSecs: int(pad.Duration),
+	}, nil
+}
+
+func PriceMonitoringParametersFromProto(ppmp *types.PriceMonitoringParameters) (*PriceMonitoringParameters, error) {
+	if ppmp == nil {
+		return nil, ErrNilPriceMonitoringParameters
+	}
+
+	return &PriceMonitoringParameters{
+		HorizonSecs:          int(ppmp.Horizon),
+		Probability:          ppmp.Probability,
+		AuctionExtensionSecs: int(ppmp.AuctionExtension),
+	}, nil
+}
+
+func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*PriceMonitoringSettings, error) {
+	if ppmst == nil {
+		// these are not mandatoryu anyway for now, so if nil we return an empty one
+		return &PriceMonitoringSettings{}, nil
+	}
+
+	params := []*PriceMonitoringParameters{}
+	for _, v := range ppmst.PriceMonitoringParameters {
+		p, err := PriceMonitoringParametersFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		params = append(params, p)
+	}
+
+	return &PriceMonitoringSettings{
+		Parameters:          params,
+		UpdateFrequencySecs: int(ppmst.UpdateFrequency),
+	}, nil
+}
+
 // MarketFromProto ...
 func MarketFromProto(pmkt *types.Market) (*Market, error) {
 	if pmkt == nil {
@@ -604,6 +652,17 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 		return nil, err
 	}
 	mkt.TradableInstrument = tradableInstrument
+
+	mkt.OpeningAuction, err = AuctionDurationFromProto(pmkt.OpeningAuction)
+	if err != nil {
+		return nil, err
+	}
+
+	mkt.PriceMonitoringSettings, err = PriceMonitoringSettingsFromProto(pmkt.PriceMonitoringSettings)
+	if err != nil {
+		return nil, err
+	}
+
 	return mkt, nil
 }
 
