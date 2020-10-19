@@ -499,7 +499,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		_, sig, err = asset.SignBridgeWhitelisting()
 	}
 	if err != nil {
-		app.log.Error("unable to sign whitelisting transaction",
+		app.log.Error("unable to sign allowlisting transaction",
 			logging.String("asset-id", prop.ID),
 			logging.Error(err))
 		prop.State = types.Proposal_STATE_FAILED

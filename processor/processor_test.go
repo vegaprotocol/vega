@@ -115,7 +115,7 @@ func (a assetStub) Data() *types.Asset                      { return nil }
 func (a assetStub) GetAssetClass() common.AssetClass        { return common.ERC20 }
 func (a assetStub) IsValid() bool                           { return a.valid }
 func (a assetStub) Validate() error                         { return a.err }
-func (a assetStub) SignBridgeWhitelisting() ([]byte, error) { return nil, nil }
+func (a assetStub) SignBridgeAllowlisting() ([]byte, error) { return nil, nil }
 func (a assetStub) ValidateWithdrawal() error               { return nil }
 func (a assetStub) SignWithdrawal() ([]byte, error)         { return nil, nil }
 func (a assetStub) ValidateDeposit() error                  { return nil }

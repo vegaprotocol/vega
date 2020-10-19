@@ -418,7 +418,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// at this point the action was either rejected, so we do no need
 		// need to keep waiting for its validation, or accepted. in the case
 		// it's accepted it's then sent to the given collateral function
-		// (deposit, withdraw, whitelist), then an error can occur down the
+		// (deposit, withdraw, allowlist), then an error can occur down the
 		// line in the collateral but if that happend there's no way for
 		// us to recover for this event, so we have no real reason to keep
 		// it in memory

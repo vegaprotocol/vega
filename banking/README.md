@@ -4,7 +4,7 @@ banking
 This package provide an engine which is an abstraction on top of the Collateral engined and the External Resource checker.
 
 One method will be provided for each type of ChainEvent dealing with Collateral and for each asset supported, as of now:
-- Asset_Whitelisted
+- Asset_Allowlisted
 - Asset_Deposited
 - Asset_Withdrawn
 

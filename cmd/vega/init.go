@@ -134,9 +134,9 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 		if err != nil {
 			return err
 		}
-		// add the pubkey to the whitelis
-		cfg.EvtForward.BlockchainQueueWhitelist = append(
-			cfg.EvtForward.BlockchainQueueWhitelist, pubkey)
+		// add the pubkey to the allowlist
+		cfg.EvtForward.BlockchainQueueAllowlist = append(
+			cfg.EvtForward.BlockchainQueueAllowlist, pubkey)
 	}
 
 	// setup the defaults markets

@@ -1023,11 +1023,11 @@ message SignedBundle {
   Signature sig = 2;
 }
 
-// The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.
+// The kind of the signature created by a node, for example, allowlisting a new asset, withdrawal etc.
 enum NodeSignatureKind {
   // represents a unspecified / missing value from the input
   NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
-  // represents a signature for a new asset whitelisting
+  // represents a signature for a new asset allowlisting
   NODE_SIGNATURE_KIND_ASSET_NEW = 1;
   // represents a signature for a asset withdrawal
   NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;
