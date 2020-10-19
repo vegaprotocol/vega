@@ -1706,6 +1706,30 @@ input DiscreteTradingInput {
 }
 
 """
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+"""
+input PriceMonitoringParametersInput {
+  "Price monitoring projection horizon τ in seconds (> 0)."
+  horizonSecs: Int!
+  "Price monitoring probability level p. (>0 and < 1)"
+  probability: Float!
+  """
+  Price monitoring auction extension duration in seconds should the price
+  breach it's theoretical level over the specified horizon at the specified
+  probability level (> 0)
+  """
+  auctionExtensionSecs: Int!
+}
+
+"Configuration of a market price monitorings auctions triggers"
+input PriceMonitoringSettingsInput {
+  "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
+  parameters: [PriceMonitoringParametersInput!]
+  "How often (in seconds) the price monitoring bounds should be updated"
+  updateFrequencySecs: Int
+}
+
+"""
 Allows creating new markets on the network
 """
 input NewMarketInput {
@@ -1719,6 +1743,8 @@ input NewMarketInput {
   metadata: [String!]
   "The proposed duration for the opening auction for this market in seconds"
   openingAuctionDurationSecs: Int
+  "Price monitoring configuration"
+  priceMonitoringSettings: PriceMonitoringSettingsInput
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput

@@ -504,6 +504,8 @@ type NewMarketInput struct {
 	Metadata []string `json:"metadata"`
 	// The proposed duration for the opening auction for this market in seconds
 	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
+	// Price monitoring configuration
+	PriceMonitoringSettings *PriceMonitoringSettingsInput `json:"priceMonitoringSettings"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -579,12 +581,32 @@ type PriceMonitoringParameters struct {
 	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringParametersInput struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
 // Configuration of a market price monitorings auctions triggers
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
 	Parameters []*PriceMonitoringParameters `json:"parameters"`
 	// How often (in seconds) the price monitoring bounds should be updated
 	UpdateFrequencySecs int `json:"updateFrequencySecs"`
+}
+
+// Configuration of a market price monitorings auctions triggers
+type PriceMonitoringSettingsInput struct {
+	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
+	Parameters []*PriceMonitoringParametersInput `json:"parameters"`
+	// How often (in seconds) the price monitoring bounds should be updated
+	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
 }
 
 type ProposalTerms struct {

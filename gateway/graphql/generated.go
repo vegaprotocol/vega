@@ -5438,6 +5438,30 @@ input DiscreteTradingInput {
 }
 
 """
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+"""
+input PriceMonitoringParametersInput {
+  "Price monitoring projection horizon τ in seconds (> 0)."
+  horizonSecs: Int!
+  "Price monitoring probability level p. (>0 and < 1)"
+  probability: Float!
+  """
+  Price monitoring auction extension duration in seconds should the price
+  breach it's theoretical level over the specified horizon at the specified
+  probability level (> 0)
+  """
+  auctionExtensionSecs: Int!
+}
+
+"Configuration of a market price monitorings auctions triggers"
+input PriceMonitoringSettingsInput {
+  "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
+  parameters: [PriceMonitoringParametersInput!]
+  "How often (in seconds) the price monitoring bounds should be updated"
+  updateFrequencySecs: Int
+}
+
+"""
 Allows creating new markets on the network
 """
 input NewMarketInput {
@@ -5451,6 +5475,8 @@ input NewMarketInput {
   metadata: [String!]
   "The proposed duration for the opening auction for this market in seconds"
   openingAuctionDurationSecs: Int
+  "Price monitoring configuration"
+  priceMonitoringSettings: PriceMonitoringSettingsInput
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -21048,6 +21074,12 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "priceMonitoringSettings":
+			var err error
+			it.PriceMonitoringSettings, err = ec.unmarshalOPriceMonitoringSettingsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "continuousTrading":
 			var err error
 			it.ContinuousTrading, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
@@ -21057,6 +21089,60 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 		case "discreteTrading":
 			var err error
 			it.DiscreteTrading, err = ec.unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPriceMonitoringParametersInput(ctx context.Context, obj interface{}) (PriceMonitoringParametersInput, error) {
+	var it PriceMonitoringParametersInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "horizonSecs":
+			var err error
+			it.HorizonSecs, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "probability":
+			var err error
+			it.Probability, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "auctionExtensionSecs":
+			var err error
+			it.AuctionExtensionSecs, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPriceMonitoringSettingsInput(ctx context.Context, obj interface{}) (PriceMonitoringSettingsInput, error) {
+	var it PriceMonitoringSettingsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "parameters":
+			var err error
+			it.Parameters, err = ec.unmarshalOPriceMonitoringParametersInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "updateFrequencySecs":
+			var err error
+			it.UpdateFrequencySecs, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -27120,6 +27206,18 @@ func (ec *executionContext) marshalNPriceMonitoringParameters2ᚖcodeᚗvegaprot
 	return ec._PriceMonitoringParameters(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (PriceMonitoringParametersInput, error) {
+	return ec.unmarshalInputPriceMonitoringParametersInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (*PriceMonitoringParametersInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalNPriceMonitoringSettings2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringSettings) graphql.Marshaler {
 	return ec._PriceMonitoringSettings(ctx, sel, &v)
 }
@@ -28656,6 +28754,38 @@ func (ec *executionContext) marshalOPriceMonitoringParameters2ᚕᚖcodeᚗvegap
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) unmarshalOPriceMonitoringParametersInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInputᚄ(ctx context.Context, v interface{}) ([]*PriceMonitoringParametersInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*PriceMonitoringParametersInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOPriceMonitoringSettingsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx context.Context, v interface{}) (PriceMonitoringSettingsInput, error) {
+	return ec.unmarshalInputPriceMonitoringSettingsInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOPriceMonitoringSettingsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx context.Context, v interface{}) (*PriceMonitoringSettingsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPriceMonitoringSettingsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOProposal2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v proto.GovernanceData) graphql.Marshaler {

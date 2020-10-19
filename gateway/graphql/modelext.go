@@ -969,6 +969,40 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 	return assetSource, nil
 }
 
+func (p *PriceMonitoringParametersInput) IntoProto() (*types.PriceMonitoringParameters, error) {
+	return &types.PriceMonitoringParameters{
+		Horizon:          int64(p.HorizonSecs),
+		Probability:      p.Probability,
+		AuctionExtension: int64(p.AuctionExtensionSecs),
+	}, nil
+}
+
+func (p *PriceMonitoringSettingsInput) IntoProto() (*types.PriceMonitoringSettings, error) {
+	if len(p.Parameters) <= 0 {
+		return &types.PriceMonitoringSettings{}, nil
+	}
+
+	params := []*types.PriceMonitoringParameters{}
+	for _, v := range p.Parameters {
+		if v != nil {
+			param, err := v.IntoProto()
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, param)
+		}
+	}
+	var freq int
+	if p.UpdateFrequencySecs != nil {
+		freq = *p.UpdateFrequencySecs
+	}
+
+	return &types.PriceMonitoringSettings{
+		PriceMonitoringParameters: params,
+		UpdateFrequency:           int64(freq),
+	}, nil
+}
+
 // IntoProto ...
 func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.DecimalPlaces < 0 {
@@ -996,6 +1030,15 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.OpeningAuctionDurationSecs != nil {
 		result.OpeningAuctionDuration = int64(*n.OpeningAuctionDurationSecs)
 	}
+	if n.PriceMonitoringSettings != nil {
+		result.PriceMonitoringSettings, err = n.PriceMonitoringSettings.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		result.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+	}
+
 	return result, nil
 }
 
