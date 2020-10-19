@@ -426,28 +426,17 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 
 	var (
-		trades                  []*types.Trade
-		impactedOrders          []*types.Order
-		lastTradedPrice         uint64
-		totalVolumeToFill       uint64
-		totalPrice, totalVolume uint64
+		trades            []*types.Trade
+		impactedOrders    []*types.Order
+		lastTradedPrice   uint64
+		totalVolumeToFill uint64
 	)
 
 	if agg.TimeInForce == types.Order_TIF_FOK {
-		totalVolume = agg.Remaining
-
 		if agg.Side == types.Side_SIDE_SELL {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
-				if agg.Type == types.Order_TYPE_NETWORK {
-					totalVolumeToFill += level.volume
-					factor := totalVolume
-					if level.volume < totalVolume {
-						factor = level.volume
-						totalVolume -= level.volume
-					}
-					totalPrice += level.price * factor
-				} else if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
 					totalVolumeToFill += level.volume
 				}
 				// No need to keep looking once we pass the required amount
@@ -460,15 +449,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		if agg.Side == types.Side_SIDE_BUY {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
-				if agg.Type == types.Order_TYPE_NETWORK {
-					totalVolumeToFill += level.volume
-					factor := totalVolume
-					if level.volume < totalVolume {
-						factor = level.volume
-						totalVolume -= level.volume
-					}
-					totalPrice += level.price * factor
-				} else if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
 					totalVolumeToFill += level.volume
 				}
 				// No need to keep looking once we pass the required amount
@@ -496,7 +477,6 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		err     error
 	)
 
-	totalPrice = 0
 	if agg.Side == types.Side_SIDE_SELL {
 		// in here we iterate from the end, as it's easier to remove the
 		// price levels from the back of the slice instead of from the front
@@ -570,6 +550,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	}
 
 	if agg.Type == types.Order_TYPE_NETWORK {
+		var totalPrice uint64
 		for _, t := range trades {
 			totalPrice += t.Price * t.Size
 		}
