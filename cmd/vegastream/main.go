@@ -1,18 +1,3 @@
-/*
-Command vegastream connects to a gRPC server and subscribes to various streams (accounts, orders, trades etc).
-
-For the accounts subscription, specify account type, and optionally market and/or party.
-
-For the orders and trades subscriptions, specify market and party.
-
-For the positions subscription, specify party.
-
-For the candles and (market) depth subscriptions, specify market.
-
-Syntax:
-
-    vegastream -addr somenode.somenet.vega.xyz:3002 [plus other options...]
-*/
 package main
 
 import (
@@ -36,36 +21,51 @@ var (
 	party      string
 	market     string
 	serverAddr string
+	batchSize  int64
 )
 
 func init() {
+	flag.Int64Var(&batchSize, "batch", 0, "size of the batch")
 	flag.StringVar(&party, "party", "", "name of the party to listen for updates")
 	flag.StringVar(&market, "market", "", "id of the market to listen for updates")
 	flag.StringVar(&serverAddr, "addr", "127.0.0.1:3002", "address of the grpc server")
 }
 
-func run(ctx context.Context, wg *sync.WaitGroup) error {
-	wg.Add(1)
+func run(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) error {
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
 
 	client := api.NewTradingDataClient(conn)
-	stream, err := client.ObserveEventBus(ctx, &api.ObserveEventsRequest{
-		MarketID:  market,
-		PartyID:   party,
-		BatchSize: 10000,
-		Type:      []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
-	})
+	stream, err := client.ObserveEventBus(ctx)
 	if err != nil {
 		conn.Close()
 		return err
 	}
 
+	req := &api.ObserveEventsRequest{
+		MarketID:  market,
+		PartyID:   party,
+		BatchSize: batchSize,
+		Type:      []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
+	}
+
+	if err := stream.Send(req); err != nil {
+		return fmt.Errorf("error when sending initial message in stream: %w", err)
+	}
+
+	poll := &api.ObserveEventsRequest{
+		BatchSize: batchSize,
+	}
+
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		defer conn.Close()
+		defer stream.CloseSend()
+		defer cancel()
+
 		m := jsonpb.Marshaler{}
 		for {
 			o, err := stream.Recv()
@@ -85,6 +85,12 @@ func run(ctx context.Context, wg *sync.WaitGroup) error {
 
 				fmt.Printf("%v\n", estr)
 			}
+			if batchSize > 0 {
+				if err := stream.SendMsg(poll); err != nil {
+					log.Printf("failed to poll next event batch err=%v", err)
+					return
+				}
+			}
 		}
 
 	}()
@@ -103,19 +109,26 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	run(ctx, &wg)
+	if err := run(ctx, cancel, &wg); err != nil {
+		log.Printf("error when starting the stream: %v", err)
+		os.Exit(1)
+	}
 
-	waitSig(cancel)
+	waitSig(ctx, cancel)
 	wg.Wait()
 }
 
-func waitSig(cancel func()) {
+func waitSig(ctx context.Context, cancel func()) {
 	var gracefulStop = make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 
-	sig := <-gracefulStop
-	log.Printf("Caught signal name=%v", sig)
-	log.Printf("closing client connections")
-	cancel()
+	select {
+	case sig := <-gracefulStop:
+		log.Printf("Caught signal name=%v", sig)
+		log.Printf("closing client connections")
+		cancel()
+	case <-ctx.Done():
+		return
+	}
 }

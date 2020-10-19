@@ -66,7 +66,6 @@
     - [MarketsResponse](#api.MarketsResponse)
     - [NetworkParametersRequest](#api.NetworkParametersRequest)
     - [NetworkParametersResponse](#api.NetworkParametersResponse)
-    - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
@@ -1258,22 +1257,6 @@ vega network parameters
 
 
 
-<a name="api.ObserveEventBatch"></a>
-
-### ObserveEventBatch
-Used when subscribed to observe events from the event bus
-This message is used to update the batch size (only for gRPC bi-directional streaming)
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| batchSize | [int64](#int64) |  | Batch size. Required field. Default: 0, send any and all events when they are available. |
-
-
-
-
-
-
 <a name="api.ObserveEventsRequest"></a>
 
 ### ObserveEventsRequest
@@ -2217,7 +2200,7 @@ The response for a list of withdrawals
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
-| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
+| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) stream | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |

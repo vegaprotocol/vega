@@ -427,10 +427,6 @@
                 </li>
 
                 <li>
-                  <a href="#api.ObserveEventBatch"><span class="badge">M</span>ObserveEventBatch</a>
-                </li>
-
-                <li>
                   <a href="#api.ObserveEventsRequest"><span class="badge">M</span>ObserveEventsRequest</a>
                 </li>
 
@@ -3526,58 +3522,6 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
 
 
-        <h3 id="api.ObserveEventBatch">ObserveEventBatch</h3>
-        <p>Used when subscribed to observe events from the event bus</p><p>This message is used to update the batch size (only for gRPC bi-directional streaming)</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>batchSize</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Batch size. Required field.
-Default: 0, send any and all events when they are available. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>batchSize</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: -1</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
-
-
-
-
-
         <h3 id="api.ObserveEventsRequest">ObserveEventsRequest</h3>
         <p>Request to subscribe to a stream of one or more event types from the Vega event bus</p>
 
@@ -5890,7 +5834,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
               <tr>
                 <td>ObserveEventBus</td>
-                <td><a href="#api.ObserveEventsRequest">ObserveEventsRequest</a></td>
+                <td><a href="#api.ObserveEventsRequest">ObserveEventsRequest</a> stream</td>
                 <td><a href="#api.ObserveEventsResponse">ObserveEventsResponse</a> stream</td>
                 <td><p>Subscribe to a stream of events from the core</p></td>
               </tr>

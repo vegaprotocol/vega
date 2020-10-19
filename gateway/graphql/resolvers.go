@@ -122,7 +122,7 @@ type TradingDataClient interface {
 	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
 	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
 
-	ObserveEventBus(ctx context.Context, in *protoapi.ObserveEventsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
+	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -2720,7 +2720,7 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		BatchSize: int64(batchSize),
 	}
 	if req.BatchSize == 0 {
-		req.BatchSize = -1 // sending this with -1 to indicate to underlying gRPC call this is a special case: GQL
+		// req.BatchSize = -1 // sending this with -1 to indicate to underlying gRPC call this is a special case: GQL
 		batchSize = 0
 	}
 	if marketID != nil {
@@ -2732,40 +2732,84 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	mb := 10
 	// about 10MB message size allowed
 	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
-	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req, msgSize)
+
+	// build the bidirectionnal stream connection
+	stream, err := r.tradingDataClient.ObserveEventBus(ctx, msgSize)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
-	poll := &protoapi.ObserveEventBatch{
-		BatchSize: int64(batchSize),
+
+	// send our initial message to initialize the connection
+	if err := stream.Send(&req); err != nil {
+		return nil, customErrorFromStatus(err)
 	}
+
 	// we no longer buffer this channel. Client receives batch, then we request the next batch
 	out := make(chan []*BusEvent)
+
 	go func() {
 		defer func() {
 			stream.CloseSend()
 			close(out)
 		}()
-		for {
-			// receive batch
-			data, err := stream.Recv()
-			if isStreamClosed(err, r.log) {
-				return
-			}
-			if err != nil {
-				r.log.Error("Event bus stream error", logging.Error(err))
-				return
-			}
-			be := busEventFromProto(data.Events...)
-			out <- be
-			// send request for the next batch
-			if err := stream.SendMsg(poll); err != nil {
-				r.log.Error("Failed to poll next event batch", logging.Error(err))
-				return
-			}
+
+		if batchSize == 0 {
+			r.busEvents(ctx, stream, out)
+		} else {
+			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
 		}
 	}()
+
 	return out, nil
+}
+
+func (r *mySubscriptionResolver) busEvents(
+	ctx context.Context,
+	stream protoapi.TradingData_ObserveEventBusClient,
+	out chan []*BusEvent,
+) {
+	for {
+		// receive batch
+		data, err := stream.Recv()
+		if isStreamClosed(err, r.log) {
+			return
+		}
+		if err != nil {
+			r.log.Error("Event bus stream error", logging.Error(err))
+			return
+		}
+		be := busEventFromProto(data.Events...)
+		out <- be
+	}
+}
+
+func (r *mySubscriptionResolver) busEventsWithBatch(
+	ctx context.Context,
+	batchSize int64, // always non-0 here
+	stream protoapi.TradingData_ObserveEventBusClient,
+	out chan []*BusEvent,
+) {
+	poll := &protoapi.ObserveEventsRequest{
+		BatchSize: batchSize,
+	}
+	for {
+		// receive batch
+		data, err := stream.Recv()
+		if isStreamClosed(err, r.log) {
+			return
+		}
+		if err != nil {
+			r.log.Error("Event bus stream error", logging.Error(err))
+			return
+		}
+		be := busEventFromProto(data.Events...)
+		out <- be
+		// send request for the next batch
+		if err := stream.SendMsg(poll); err != nil {
+			r.log.Error("Failed to poll next event batch", logging.Error(err))
+			return
+		}
+	}
 }
 
 // START: Account Resolver

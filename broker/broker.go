@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/events"
 )
@@ -54,20 +55,16 @@ func New(ctx context.Context) *Broker {
 	}
 }
 
-func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) bool {
-	// assign before select to remove overhead of call in select (it's implicit anyway)
-	// but this way we ensure that more recent states of ctx, Skip and Closed are checked
+func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
+	ctx, cfunc := context.WithTimeout(b.ctx, time.Second)
+	defer cfunc()
 	select {
-	case <-b.ctx.Done():
-		return false
-	case <-sub.Skip():
-		return false
+	case <-ctx.Done():
+		return
 	case <-sub.Closed():
-		return true
+		return
 	case sub.C() <- evts:
-		return false
-	default:
-		return false
+		return
 	}
 }
 
@@ -113,8 +110,8 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 					default:
 						if sub.required {
 							sub.Push(events...)
-						} else if rm := b.sendChannel(sub, events); rm {
-							unsub = append(unsub, k)
+						} else {
+							go b.sendChannel(sub, events)
 						}
 					}
 				}
