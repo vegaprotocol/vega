@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -38,7 +39,7 @@ func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pub
 	case *types.ChainEvent_Btc:
 		return errors.New("BTC Event not implemented")
 	case *types.ChainEvent_Validator:
-		return errors.New("Validator Event not implemented")
+		return errors.New("validator Event not implemented")
 	default:
 		return ErrUnsupportedChainEvent
 	}
@@ -88,12 +89,18 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
-		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetList"); err != nil {
+		act.Deposit.VegaAssetID = strings.TrimPrefix(act.Deposit.VegaAssetID, "0x")
+
+		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
 		return app.banking.DepositERC20(ctx, act.Deposit, evt.Block, evt.Index)
 	case *types.ERC20Event_Withdrawal:
-		return errors.New("ERC20.Withdrawal not implemented")
+		act.Withdrawal.VegaAssetID = strings.TrimPrefix(act.Withdrawal.VegaAssetID, "0x")
+		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
+			return err
+		}
+		return app.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index)
 	default:
 		return ErrUnsupportedEventAction
 	}

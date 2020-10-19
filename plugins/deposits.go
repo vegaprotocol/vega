@@ -79,14 +79,14 @@ func (w *Deposit) consume() {
 	}
 }
 
-func (w *Deposit) GetByID(id string) (types.Deposit, error) {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
+func (d *Deposit) GetByID(id string) (types.Deposit, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
 	// FIXME(jeremy): this is very naive, and will require
 	// a lookup table over the dephposit id -> party
-	for _, deposits := range w.deposits {
-		for wid, deposit := range deposits {
-			if wid == id {
+	for _, deposits := range d.deposits {
+		for did, deposit := range deposits {
+			if did == id {
 				return deposit, nil
 			}
 		}
@@ -94,16 +94,16 @@ func (w *Deposit) GetByID(id string) (types.Deposit, error) {
 	return types.Deposit{}, ErrNoDepositForID
 }
 
-func (w *Deposit) GetByParty(party string, openOnly bool) []types.Deposit {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
+func (d *Deposit) GetByParty(party string, openOnly bool) []types.Deposit {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
 	out := []types.Deposit{}
-	deposits := w.deposits[party]
-	for _, w := range deposits {
-		if openOnly && w.Status != types.Deposit_DEPOSIT_STATUS_OPEN {
+	deposits := d.deposits[party]
+	for _, dep := range deposits {
+		if openOnly && dep.Status != types.Deposit_DEPOSIT_STATUS_OPEN {
 			continue
 		}
-		out = append(out, w)
+		out = append(out, dep)
 	}
 	return out
 }
