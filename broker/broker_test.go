@@ -299,7 +299,7 @@ func testSendBatchChannel(t *testing.T) {
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 	}
-	events := []events.Event{
+	evts := []events.Event{
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
@@ -317,7 +317,7 @@ func testSendBatchChannel(t *testing.T) {
 	})
 
 	// send events
-	tstBroker.SendBatch(events)
+	tstBroker.SendBatch(evts)
 	tstBroker.SendBatch(batch2)
 	wg.Wait()
 	// we've tried to send 2 batches of events, subscriber could only accept one. Check state of all the things
@@ -326,25 +326,35 @@ func testSendBatchChannel(t *testing.T) {
 	tstBroker.Unsubscribe(k1)
 	// ensure unsubscribe has returned
 	twg.Wait()
-	batch := <-cCh
-	assert.Equal(t, events, batch)
-	// make sure the channel is empty (no writes were pending)
-	assert.Equal(t, 0, len(cCh))
-	// ensure sequence ID's are set and are unique
-	seqIDs := make([]uint64, 0, len(events))
-	for _, e := range events {
-		sID := e.Sequence()
-		assert.NotZero(t, sID)
-		seqIDs = append(seqIDs, sID)
+
+	// get our batches
+	batches := [][]events.Event{
+		<-cCh, <-cCh,
 	}
-	last := len(seqIDs) - 1
-	for i := 0; i < last-1; i++ {
-		for j := i + 1; j < last; j++ {
-			assert.NotEqual(t, seqIDs[i], seqIDs[j])
+
+	// assert we have all events now.
+	batchSizes := map[int]struct{}{}
+	evtSeq := map[uint64]struct{}{}
+	for _, batch := range batches {
+		batchSizes[len(batch)] = struct{}{}
+		for _, v := range batch {
+			evtSeq[v.Sequence()] = struct{}{}
 		}
 	}
-	// this one isn't verified in the loop above
-	assert.NotEqual(t, seqIDs[last-1], seqIDs[last])
+
+	// now ensure we have the batch with right sizes
+	_, ok := batchSizes[len(batch2)]
+	assert.True(t, ok, "missing batch of size ", len(batch2))
+	_, ok = batchSizes[len(evts)]
+	assert.True(t, ok, "missing batch of size ", len(evts))
+
+	// now ensure we got all sequence IDs
+	for _, v := range append(evts, batch2...) {
+		_, ok := evtSeq[v.Sequence()]
+		if !ok {
+			t.Fatalf("missing event sequence from batches %v", v.Sequence())
+		}
+	}
 }
 
 func testSkipOptional(t *testing.T) {
