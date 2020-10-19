@@ -147,9 +147,9 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	name := "BTC/DEC19"
 	vMarkets, err := root.Query().Markets(ctx, &name)
-	assert.NotNil(t, err)
-	assert.Nil(t, vMarkets)
-	assert.Len(t, vMarkets, 0)
+	assert.Nil(t, err)
+	assert.NotNil(t, vMarkets)
+	assert.Len(t, vMarkets, 1)
 
 	name = "ETH/USD18"
 	vMarkets, err = root.Query().Markets(ctx, &name)
