@@ -392,9 +392,25 @@ func testSkipOptional(t *testing.T) {
 	tstBroker.Unsubscribe(k1)
 	// ensure unsubscribe has returned
 	twg.Wait()
-	first := <-cCh
-	assert.NotEmpty(t, first)
-	assert.Equal(t, evts[0], first[0])
+
+	// make a map to check all sequences
+	seq := map[uint64]struct{}{}
+	for i := 3; i != 0; i-- {
+		ev := <-cCh
+		assert.NotEmpty(t, ev)
+		for _, e := range ev {
+			seq[e.Sequence()] = struct{}{}
+		}
+	}
+
+	// no verify all ev sequence are received
+	for _, ev := range evts {
+		_, ok := seq[ev.Sequence()]
+		if !ok {
+			t.Fatalf("missing event sequence from received events %v", ev.Sequence())
+		}
+	}
+
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
 }
