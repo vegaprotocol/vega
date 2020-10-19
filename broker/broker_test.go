@@ -405,7 +405,7 @@ func testSkipOptional(t *testing.T) {
 
 	// make a map to check all sequences
 	seq := map[uint64]struct{}{}
-	for i := 3; i != 0; i-- {
+	for i := len(evts); i != 0; i-- {
 		ev := <-cCh
 		assert.NotEmpty(t, ev)
 		for _, e := range ev {
