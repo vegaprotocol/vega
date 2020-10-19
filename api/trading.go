@@ -254,7 +254,7 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 			logging.String("pubkey", req.PubKey),
 			logging.Error(err))
 		if err != evtforward.ErrEvtAlreadyExist {
-			return nil, apiError(codes.AlreadyExists, err)
+			return nil, apiError(codes.PermissionDenied, err)
 		}
 		ok = false
 	}
