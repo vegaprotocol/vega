@@ -588,7 +588,7 @@ func FeesFromProto(pf *types.Fees) (*Fees, error) {
 
 func AuctionDurationFromProto(pad *types.AuctionDuration) (*AuctionDuration, error) {
 	if pad == nil {
-		return nil, ErrNilAuctionDuration
+		return &AuctionDuration{}, nil
 	}
 
 	return &AuctionDuration{
