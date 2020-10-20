@@ -157,6 +157,6 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		Remaining:   1,
 		TimeInForce: types.Order_TIF_GTC,
 	}
-	side.uncross(aggressiveOrder)
+	side.uncross(aggressiveOrder, true)
 	assert.Len(t, side.levels, 1)
 }

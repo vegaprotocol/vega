@@ -187,3 +187,9 @@ func (t trStub) TraceID() string {
 func (t trStub) TransferResponses() []*types.TransferResponse {
 	return t.r
 }
+
+func (t trStub) SetSequenceID(s uint64) {}
+func (t trStub) Sequence() uint64       { return 0 }
+
+func (t timeStub) SetSequenceID(s uint64) {}
+func (t timeStub) Sequence() uint64       { return 0 }

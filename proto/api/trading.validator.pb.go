@@ -798,12 +798,6 @@ func (this *EstimateMarginResponse) Validate() error {
 func (this *ObserveEventsRequest) Validate() error {
 	return nil
 }
-func (this *ObserveEventBatch) Validate() error {
-	if !(this.BatchSize > -1) {
-		return github_com_mwitkow_go_proto_validators.FieldError("BatchSize", fmt.Errorf(`value '%v' must be greater than '-1'`, this.BatchSize))
-	}
-	return nil
-}
 func (this *ObserveEventsResponse) Validate() error {
 	for _, item := range this.Events {
 		if item != nil {

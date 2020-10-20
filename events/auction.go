@@ -20,10 +20,13 @@ type Auction struct {
 	openingAuction bool
 	// are we leaving the auction (=true) or entering an auction (=false)
 	leave bool
+	// what precisely triggered the auction
+	trigger types.AuctionTrigger
 }
 
 // NewAuctionEvent creates a new auction event object
-func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, stop int64, opening bool) *Auction {
+func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, stop int64, trigger types.AuctionTrigger) *Auction {
+	opening := (trigger == types.AuctionTrigger_AUCTION_TRIGGER_OPENING)
 	return &Auction{
 		Base:           newBase(ctx, AuctionEvent),
 		marketID:       marketID,
@@ -31,6 +34,7 @@ func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, st
 		auctionStop:    stop,
 		openingAuction: opening,
 		leave:          leave,
+		trigger:        trigger,
 	}
 }
 
@@ -54,19 +58,19 @@ func (a Auction) MarketEvent() string {
 		}
 		stop := stopT.Format(time.RFC3339Nano)
 		if a.openingAuction {
-			return fmt.Sprintf("Market %s left opening auction started at %s at %s", a.marketID, start, stop)
+			return fmt.Sprintf("Market %s left opening auction started at %s at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 		}
-		return fmt.Sprintf("Market %s left auction started at %s at %s", a.marketID, start, stop)
+		return fmt.Sprintf("Market %s left auction started at %s at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 	}
 	if a.openingAuction {
 		// an opening auction will always have a STOP time
 		stop := stopT.Format(time.RFC3339Nano)
-		return fmt.Sprintf("Market %s entered opening auction at %s, will close at %s", a.marketID, start, stop)
+		return fmt.Sprintf("Market %s entered opening auction at %s, will close at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 	}
 	if a.auctionStop == 0 {
-		return fmt.Sprintf("Market %s entered auction mode at %s", a.marketID, start)
+		return fmt.Sprintf("Market %s entered auction mode at %s (trigger: %s)", a.marketID, start, a.trigger)
 	}
-	return fmt.Sprintf("Market %s entered auction mode at %s, auction closes at %s", a.marketID, start, stopT.Format(time.RFC3339Nano))
+	return fmt.Sprintf("Market %s entered auction mode at %s, auction closes at %s (trigger: %s)", a.marketID, start, stopT.Format(time.RFC3339Nano), a.trigger)
 }
 
 // Proto wrap event data in a proto message
@@ -77,6 +81,7 @@ func (a Auction) Proto() types.AuctionEvent {
 		Leave:          a.leave,
 		Start:          a.auctionStart,
 		End:            a.auctionStop,
+		Trigger:        a.trigger,
 	}
 }
 

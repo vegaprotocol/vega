@@ -22,6 +22,7 @@ var (
 type Model interface {
 	CalculationInterval() time.Duration
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
+	PriceRange(price float64, yearFraction float64, probability float64) (minPrice float64, maxPrice float64)
 }
 
 // NewModel instantiate a new risk model from a market framework configuration

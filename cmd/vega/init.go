@@ -316,6 +316,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				Duration: int64(auctionDuration.Seconds()),
 				Volume:   0,
 			},
+			PriceMonitoringSettings: &proto.PriceMonitoringSettings{
+				PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+				UpdateFrequency:           60,
+			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
 		err = createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
@@ -329,7 +333,8 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 
 func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
 	m := jsonpb.Marshaler{
-		Indent: "  ",
+		Indent:       "  ",
+		EmitDefaults: true,
 	}
 	buf, err := m.MarshalToString(mkt)
 	if err != nil {

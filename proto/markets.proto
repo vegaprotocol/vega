@@ -128,6 +128,10 @@ message SimpleModelParams {
   double factorLong = 1;
   // Pre-defined risk factor value for short.
   double factorShort = 2;
+  // Pre-defined maximum price move up that the model considers as valid.
+  double maxMoveUp = 3 [(validator.field) = {float_gte: 0}];
+  // Pre-defined minimum price move down that the model considers as valid.
+  double minMoveDown = 4 [(validator.field) = {float_lte: 0}];
 }
 
 // Risk model for external modelling.
@@ -193,6 +197,27 @@ message Fees {
   FeeFactors factors = 1;
 }
 
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+message PriceMonitoringParameters {
+  // Price monitoring projection horizon τ in seconds.
+  int64 horizon = 1 [(validator.field) = {int_gt: 0}];
+  // Price monitoirng probability level p.
+  double probability = 2 [(validator.field) = {float_gt: 0, float_lt: 1}];
+  // Price monitoring auction extension duration in seconds should the price
+  // breach it's theoretical level over the specified horizon at the specified
+  // probability level.
+  int64 auctionExtension = 3 [(validator.field) = {int_gt: 0}];
+}
+
+message PriceMonitoringSettings {
+  // Specifies a set of PriceMonitoringParameters to be used for price
+  // monitoring purposes
+  repeated PriceMonitoringParameters priceMonitoringParameters = 1;
+
+  // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
+  int64 updateFrequency = 2;
+}
+
 // Market definition.
 message Market {
 
@@ -200,12 +225,14 @@ message Market {
   string id = 1;
   // Tradable instrument configuration.
   TradableInstrument tradableInstrument = 2;
-  // Number of decimal places that a price must be shifted by in order to get a correct price denominated in the currency of the market.
-  // For example: `realPrice = price / 10^decimalPlaces`
+  // Number of decimal places that a price must be shifted by in order to get a
+  // correct price denominated in the currency of the market. For example:
+  // `realPrice = price / 10^decimalPlaces`
   uint64 decimalPlaces = 3;
   // Fees configuration.
   Fees fees = 4;
-  // Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume).
+  // Auction duration specifies how long the opening auction will run (minimum
+  // duration and optionally a minimum traded volume).
   AuctionDuration openingAuction = 5;
   // Trading mode for the market.
   oneof tradingMode {
@@ -214,4 +241,6 @@ message Market {
     // Discrete.
     DiscreteTrading discrete = 101;
   }
+  // PriceMonitoringSettings for the market.
+  PriceMonitoringSettings priceMonitoringSettings = 6;
 }

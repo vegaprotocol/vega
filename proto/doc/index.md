@@ -66,7 +66,6 @@
     - [MarketsResponse](#api.MarketsResponse)
     - [NetworkParametersRequest](#api.NetworkParametersRequest)
     - [NetworkParametersResponse](#api.NetworkParametersResponse)
-    - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
@@ -203,6 +202,8 @@
     - [LogNormalRiskModel](#vega.LogNormalRiskModel)
     - [MarginCalculator](#vega.MarginCalculator)
     - [Market](#vega.Market)
+    - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
+    - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -282,6 +283,7 @@
     - [Withdrawal](#vega.Withdrawal)
 
     - [AccountType](#vega.AccountType)
+    - [AuctionTrigger](#vega.AuctionTrigger)
     - [ChainStatus](#vega.ChainStatus)
     - [Deposit.Status](#vega.Deposit.Status)
     - [Interval](#vega.Interval)
@@ -1255,22 +1257,6 @@ vega network parameters
 
 
 
-<a name="api.ObserveEventBatch"></a>
-
-### ObserveEventBatch
-Used when subscribed to observe events from the event bus
-This message is used to update the batch size (only for gRPC bi-directional streaming)
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| batchSize | [int64](#int64) |  | Batch size. Required field. Default: 0, send any and all events when they are available. |
-
-
-
-
-
-
 <a name="api.ObserveEventsRequest"></a>
 
 ### ObserveEventsRequest
@@ -2214,7 +2200,7 @@ The response for a list of withdrawals
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
-| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
+| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) stream | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
@@ -2680,6 +2666,7 @@ An auction event indicating a change in auction state, for example starting or e
 | leave | [bool](#bool) |  | True if the event indicates leaving auction mode and False otherwise |
 | start | [int64](#int64) |  | Timestamp containing the start time for an auction |
 | end | [int64](#int64) |  | Timestamp containing the end time for an auction |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | the reason this market is/was in auction |
 
 
 
@@ -2747,7 +2734,8 @@ A loss socialization event contains details on the amount of wins unable to be d
 <a name="vega.MarketEvent"></a>
 
 ### MarketEvent
-A market event is a common structure for market updates
+MarketEvent - the common denominator for all market events
+interface has a method to return a string for logging
 
 
 | Field | Type | Label | Description |
@@ -3061,6 +3049,7 @@ Configuration for a new market on Vega.
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags. |
 | openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | price monitoring configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous trading. |
@@ -3211,6 +3200,8 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY | 19 | Invalid key in update network parameter proposal |
 | PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE | 20 | Invalid valid in update network parameter proposal |
 | PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL | 22 | Opening auction duration is less than the network minimum opening auction time |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE | 23 | Opening auction duration is more than the network minimum opening auction time |
 
 
 
@@ -3495,6 +3486,40 @@ Market definition.
 | openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | PriceMonitoringSettings for the market. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringParameters"></a>
+
+### PriceMonitoringParameters
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
+| probability | [double](#double) |  | Price monitoirng probability level p. |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringSettings"></a>
+
+### PriceMonitoringSettings
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| updateFrequency | [int64](#int64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
 
 
 
@@ -3528,6 +3553,8 @@ Risk model parameters for simple modelling.
 | ----- | ---- | ----- | ----------- |
 | factorLong | [double](#double) |  | Pre-defined risk factor value for long. |
 | factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
+| maxMoveUp | [double](#double) |  | Pre-defined maximum price move up that the model considers as valid. |
+| minMoveDown | [double](#double) |  | Pre-defined minimum price move down that the model considers as valid. |
 
 
 
@@ -4182,6 +4209,7 @@ Represents data generated by a market when open.
 | indicativePrice | [uint64](#uint64) |  | indicative price (zero if not in auction) |
 | indicativeVolume | [uint64](#uint64) |  | indicative volume (zero if not in auction) |
 | marketState | [MarketState](#vega.MarketState) |  | the current state of the market |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | if the market is in auction state, this field indicates what triggered the auction |
 
 
 
@@ -4882,6 +4910,21 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 
 
 
+<a name="vega.AuctionTrigger"></a>
+
+### AuctionTrigger
+What triggered an auction (if any)
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| AUCTION_TRIGGER_UNSPECIFIED | 0 | No auction triggered |
+| AUCTION_TRIGGER_BATCH | 1 | Batch auction |
+| AUCTION_TRIGGER_OPENING | 2 | Opening auction |
+| AUCTION_TRIGGER_PRICE | 3 | Price monitoring trigger |
+| AUCTION_TRIGGER_LIQUIDITY | 4 | liquidity monitoring trigger |
+
+
+
 <a name="vega.ChainStatus"></a>
 
 ### ChainStatus
@@ -4936,7 +4979,9 @@ What mode is the market currently running, also known as market state.
 | ---- | ------ | ----------- |
 | MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
 | MARKET_STATE_CONTINUOUS | 1 | Normal trading |
-| MARKET_STATE_AUCTION | 2 | Auction trading |
+| MARKET_STATE_BATCH_AUCTION | 2 | Auction trading (FBA) |
+| MARKET_STATE_OPENING_AUCTION | 3 | Opening auction |
+| MARKET_STATE_MONITORING_AUCTION | 4 | Auction triggered by monitoring |
 
 
 

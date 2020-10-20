@@ -34,6 +34,8 @@ func TestPrepareAmendOrder(t *testing.T) {
 	t.Run("Prepare amend order empty - fail", testPrepareAmendOrderEmptyFail)
 	t.Run("Prepare amend order nil - fail", testPrepareAmendOrderNilFail)
 	t.Run("Prepare amend order invalid expiry type - fail", testPrepareAmendOrderInvalidExpiryFail)
+	t.Run("Prepare amend order tif to GFA - fail", testPrepareAmendOrderToGFA)
+	t.Run("Prepare amend order tif to GFN - fail", testPrepareAmendOrderToGFN)
 }
 
 func testPrepareAmendOrderJustPriceSuccess(t *testing.T) {
@@ -166,4 +168,32 @@ func testPrepareAmendOrderPastExpiry(t *testing.T) {
 
 	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.NoError(t, err)
+}
+
+func testPrepareAmendOrderToGFN(t *testing.T) {
+	arg := proto.OrderAmendment{
+		OrderID:     "orderid",
+		PartyID:     "partyid",
+		TimeInForce: proto.Order_TIF_GFN,
+		ExpiresAt:   &proto.Timestamp{Value: 10},
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.Error(t, err)
+}
+
+func testPrepareAmendOrderToGFA(t *testing.T) {
+	arg := proto.OrderAmendment{
+		OrderID:     "orderid",
+		PartyID:     "partyid",
+		TimeInForce: proto.Order_TIF_GFA,
+		ExpiresAt:   &proto.Timestamp{Value: 10},
+	}
+	svc := getTestService(t)
+	defer svc.ctrl.Finish()
+
+	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
+	assert.Error(t, err)
 }
