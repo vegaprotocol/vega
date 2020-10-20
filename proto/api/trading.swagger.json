@@ -824,6 +824,33 @@
         ]
       }
     },
+    "/parties/prepare/withdraw": {
+      "post": {
+        "summary": "Request a withdrawal",
+        "operationId": "PrepareWithdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPrepareWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/parties/{partyID}": {
       "get": {
         "summary": "Get a Party by ID",
@@ -1975,6 +2002,16 @@
         }
       },
       "description": "Response to prepare a governance vote."
+    },
+    "apiPrepareWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdrawSubmission",
+          "description": "An asset withdrawal."
+        }
+      },
+      "description": "Request for preparing a withdrawal."
     },
     "apiPrepareWithdrawResponse": {
       "type": "object",
