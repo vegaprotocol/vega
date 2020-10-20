@@ -33,7 +33,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.1-dev3.0.20200615111712-b8b50733f0a8
 	github.com/vegaprotocol/modvendor v0.0.2 // indirect
-	github.com/vektah/gqlparser v1.3.1
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.8.0
