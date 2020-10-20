@@ -17,6 +17,7 @@ These two fixes combined make both the gRPC and GraphQL streams much more reliab
 - [#2343](https://github.com/vegaprotocol/vega/pull/2343) 🔥 Add batching support to stream subscribers
 
 ### Improvements
+- [#2229](https://github.com/vegaprotocol/vega/pull/2229) Add Price Monitoring module
 - [#2246](https://github.com/vegaprotocol/vega/pull/2246) Add new market depth subscription methods
 - [#2298](https://github.com/vegaprotocol/vega/pull/2298) Improve error messages for Good For Auction/Good For Normal rejections
 - [#2301](https://github.com/vegaprotocol/vega/pull/2301) Add validation for GFA/GFN orders
@@ -28,7 +29,6 @@ These two fixes combined make both the gRPC and GraphQL streams much more reliab
 - [#2316](https://github.com/vegaprotocol/vega/pull/2316) Documentation: Improve documentation for fee estimate endpoint
 - [#2318](https://github.com/vegaprotocol/vega/pull/2318) Documentation: Improve documentation for governance data endpoints
 - [#2324](https://github.com/vegaprotocol/vega/pull/2324) Cache transactions already seen by `checkTX`
-- [#2327](https://github.com/vegaprotocol/vega/pull/2327) Remove `AllEvent` from GraphQL event bus, and limit to max 1 event
 - [#2328](https://github.com/vegaprotocol/vega/pull/2328) Add test covering context cancellation mid data-sending
 - [#2331](https://github.com/vegaprotocol/vega/pull/2331) Internal refactor of network parameter storage
 - [#2334](https://github.com/vegaprotocol/vega/pull/2334) Rewrite `vegastream` to use the event bus
@@ -44,7 +44,27 @@ These two fixes combined make both the gRPC and GraphQL streams much more reliab
 - [#2358](https://github.com/vegaprotocol/vega/pull/2358) Add documentation and comments for `events.proto`
 - [#2359](https://github.com/vegaprotocol/vega/pull/2359) Fix out of bounds index crash
 - [#2364](https://github.com/vegaprotocol/vega/pull/2364) Add mutex to protect map access
+- [#2366](https://github.com/vegaprotocol/vega/pull/2366) Auctions: Reject IOC/FOK orders
+- [#2368](https://github.com/vegaprotocol/vega/pull/2370) Tidy up genesis market instantiation
+- [#2369](https://github.com/vegaprotocol/vega/pull/2369) Optimise event bus to reduce CPU usage
 - [#2370](https://github.com/vegaprotocol/vega/pull/2370) Event stream: Send batches instead of single events
+- [#2376](https://github.com/vegaprotocol/vega/pull/2376) GraphQL: Remove verbose logging
+- [#2377](https://github.com/vegaprotocol/vega/pull/2377) Update tendermint stats less frequently for Vega stats API endpoint
+- [#2381](https://github.com/vegaprotocol/vega/pull/2381) Event stream: Reduce CPU load, depending on batch size
+- [#2382](https://github.com/vegaprotocol/vega/pull/2382) GraphQL: Make event stream batch size mandatory
+- [#2401](https://github.com/vegaprotocol/vega/pull/2401) Event stream: Fix CPU spinning after stream close
+- [#2404](https://github.com/vegaprotocol/vega/pull/2404) Auctions: Add fix for crash during auction exit
+- [#2419](https://github.com/vegaprotocol/vega/pull/2419) Make the pricelevel wash trade check configurable
+- [#2432](https://github.com/vegaprotocol/vega/pull/2432) Use `EmitDefaults` on `jsonpb.Marshaler`
+- [#2431](https://github.com/vegaprotocol/vega/pull/2431) GraphQL: Add price monitoring
+- [#2433](https://github.com/vegaprotocol/vega/pull/2433) Validate amend orders with GFN and GFA
+- [#2436](https://github.com/vegaprotocol/vega/pull/2436) Return a permission denied error for a non-allowlisted public key
+- [#2437](https://github.com/vegaprotocol/vega/pull/2437) Undo accidental code removal
+- [#2438](https://github.com/vegaprotocol/vega/pull/2438) GraphQL: Fix a resolver error when markets are in auction mode
+- [#2441](https://github.com/vegaprotocol/vega/pull/2441) GraphQL: Remove unnecessary validations
+- [#2442](https://github.com/vegaprotocol/vega/pull/2442) GraphQL: Update library; improve error responses
+- [#2447](https://github.com/vegaprotocol/vega/pull/2447) REST: Fix HTTP verb for network parameters query
+- [#2443](https://github.com/vegaprotocol/vega/pull/2443) Auctions: Add check for opening auction duration during market creation
 
 ## 0.25.1
 
