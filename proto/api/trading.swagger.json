@@ -554,7 +554,7 @@
       }
     },
     "/network/parameters": {
-      "post": {
+      "get": {
         "summary": "Get the network parameters",
         "operationId": "NetworkParameters",
         "responses": {
@@ -565,16 +565,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiNetworkParametersRequest"
-            }
-          }
-        ],
         "tags": [
           "trading_data"
         ]
@@ -1713,10 +1703,6 @@
         }
       },
       "description": "Response for a list of markets on Vega."
-    },
-    "apiNetworkParametersRequest": {
-      "type": "object",
-      "title": "A message requesting for the list\nof all network parameters"
     },
     "apiNetworkParametersResponse": {
       "type": "object",
