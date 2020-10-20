@@ -132,7 +132,7 @@ func createMarket(
 	currentTime time.Time,
 	assets Assets,
 ) (*types.Market, types.ProposalError, error) {
-	if perr, err := validateNewMarket(currentTime, definition, assets, true); err != nil {
+	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp); err != nil {
 		return nil, perr, err
 	}
 	instrument, err := createInstrument(netp, definition.Instrument, definition.Metadata)
@@ -255,16 +255,33 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	}
 }
 
+func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (types.ProposalError, error) {
+	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
+	if proposedDuration < minAuctionDuration {
+		// Auction duration is too small
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL, ErrProposalOpeningAuctionDurationTooShort
+	}
+
+	maxAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMaximumDuration)
+	if proposedDuration > maxAuctionDuration {
+		// Auction duration is too large
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE, ErrProposalOpeningAuctionDurationTooLong
+	}
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+}
+
 // ValidateNewMarket checks new market proposal terms
-func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration, assets Assets, deepCheck bool, netp NetParams) (types.ProposalError, error) {
 	if perr, err := validateInstrument(currentTime, terms.Instrument, assets, deepCheck); err != nil {
 		return perr, err
 	}
 	if perr, err := validateTradingMode(terms); err != nil {
 		return perr, err
 	}
-
 	if perr, err := validateRiskParameters(terms.RiskParameters); err != nil {
+		return perr, err
+	}
+	if perr, err := validateAuctionDuration(time.Duration(terms.OpeningAuctionDuration)*time.Second, netp); err != nil {
 		return perr, err
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
