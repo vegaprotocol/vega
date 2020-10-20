@@ -3200,6 +3200,8 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY | 19 | Invalid key in update network parameter proposal |
 | PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE | 20 | Invalid valid in update network parameter proposal |
 | PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL | 22 | Opening auction duration is less than the network minimum opening auction time |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE | 23 | Opening auction duration is more than the network minimum opening auction time |
 
 
 

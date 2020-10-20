@@ -35,6 +35,8 @@ var (
 	ErrNoNetworkParams                         = errors.New("network parameters were not configured for this proposal type")
 	ErrIncompatibleTimestamps                  = errors.New("incompatible timestamps")
 	ErrUnsupportedProposalType                 = errors.New("unsupported proposal type")
+	ErrProposalOpeningAuctionDurationTooShort  = errors.New("proposal opening auction duration is too short")
+	ErrProposalOpeningAuctionDurationTooLong   = errors.New("proposal opening auction duration is too long")
 )
 
 // Broker - event bus
@@ -357,7 +359,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch change := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true)
+		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true, e.netp)
 	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
 	case *types.ProposalTerms_UpdateNetworkParameter:
