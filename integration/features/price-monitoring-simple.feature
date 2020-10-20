@@ -1,25 +1,375 @@
 Feature: Price monitoring test using simple risk model
 
   Background:
-    Given the insurance pool initial balance for the markets is "0":
+    Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
     And the executon engine have these markets:
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations |
-      | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |      0.11 |       0.1 |             10 |              -5 |     0 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 60                 |         60,120 |   0.95,0.99 |          90,180 |
+      | ETH/DEC20 | BTC      | ETH       | ETH   |      1000 | simple     |      0.11 |       0.1 |             10 |              -11 |     0 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 60                 |         60,120 |   0.95,0.99 |         240,360 |
 
-  Scenario: a trader place a new order in the system, margin are calculated, then the order is stopped, the margin is released
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+  Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the following traders:
       | name    | amount |
       | trader1 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
-    And "trader1" general accounts balance is "10000"
+      | trader2 | 10000  |
+
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type  | tif |
-      | trader1 | ETH/DEC19 | sell |      1 |  1000 |                0 | TYPE_LIMIT | TIF_FOK |
-    Then the margins levels for the traders are:
-      | trader  | id        | maintenance | search | initial | release |
-      | trader1 | ETH/DEC19 |         100 |    110 |     120 |     140 |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |      0 |   10000 |
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+      | buyer   | seller   | price | volume |
+      | trader2 | trader1  |   100 |      1 |
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+        Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+    #T0 + 10min
+    Then the time is updated to "2020-10-16T00:10:00Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    #T0 + 10min01s
+    Then the time is updated to "2020-10-16T00:10:01Z"
+
+        
+    Then the following trades happened:
+      | buyer   | seller   | price | volume |
+      | trader2 | trader1  |   111 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "111"
+
+
+  Scenario: Non-persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates.
+    Given the following traders:
+      | name    | amount |
+      | trader1 | 10000  |
+      | trader2 | 10000  |
+
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+      | buyer   | seller   | price | volume |
+      | trader2 | trader1  |   100 |      1 |
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+        Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   111 |                0 | TYPE_LIMIT | TIF_FOK |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+    #T0 + 10min
+    Then the time is updated to "2020-10-16T00:10:00Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    #T0 + 10min01s
+    Then the time is updated to "2020-10-16T00:10:01Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+    Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
+
+    Given the following traders:
+      | name    | amount |
+      | trader1 | 10000  |
+      | trader2 | 10000  |
+
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |   100 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+      | buyer   | seller   | price | volume |
+      | trader2 | trader1  |   100 |      1 |
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   111 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   111 |                0 | TYPE_LIMIT | TIF_FOK |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume  | price | resulting trades | type       | tif     |
+    | trader2 | ETH/DEC20 | buy  |      1  |  112  |                0 | TYPE_LIMIT | TIF_GTC |
+
+    #T0 + 10min
+    Then the time is updated to "2020-10-16T00:10:00Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "100"
+
+    #T0 + 10min01s
+    Then the time is updated to "2020-10-16T00:10:01Z"
+
+    Then the following trades happened:
+    | buyer   | seller   | price | volume |
+    | trader2 | trader1  |   112 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "112"
+
+  Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates with a trade from order that originally triggered the auction.
+   
+    Given the following traders:
+      | name    | amount |
+      | trader1 | 10000  |
+      | trader2 | 10000  |
+
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |    110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |    110 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+      | buyer   | seller   | price | volume |
+      | trader2 | trader1  |   110  |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "110"
+
+    #T0 + 10s
+    Then the time is updated to "2020-10-16T00:00:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   115 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   115 |                1 | TYPE_LIMIT | TIF_FOK |
+
+    Then the following trades happened:
+    | buyer   | seller   | price | volume |
+    | trader2 | trader1  |   115 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "115"
+
+    #T0 + 01min10s
+    Then the time is updated to "2020-10-16T00:01:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   105 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   105 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+    | buyer   | seller   | price | volume |
+    | trader2 | trader1  |   105 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+
+    #T1 = T0 + 02min10s (auction start)
+    Then the time is updated to "2020-10-16T00:02:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   120 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   120 |                0 | TYPE_LIMIT | TIF_GTT |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+
+    #T1 + 04min00s (last second of the auction)
+    Then the time is updated to "2020-10-16T00:06:10Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    #T1 + 04min01s
+    Then the time is updated to "2020-10-16T00:06:11Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "120"
+
+  Scenario: Non-persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates
+   
+    Given the following traders:
+      | name    | amount |
+      | trader1 | 10000  |
+      | trader2 | 10000  |
+
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |    110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |    110 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+      | buyer   | seller   | price | volume |
+      | trader2 | trader1  |   110  |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "110"
+
+    #T0 + 10s
+    Then the time is updated to "2020-10-16T00:00:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   115 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   115 |                1 | TYPE_LIMIT | TIF_FOK |
+
+    Then the following trades happened:
+    | buyer   | seller   | price | volume |
+    | trader2 | trader1  |   115 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "115"
+
+    #T0 + 01min10s
+    Then the time is updated to "2020-10-16T00:01:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   105 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   105 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+    | buyer   | seller   | price | volume |
+    | trader2 | trader1  |   105 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+
+    #T1 = T0 + 02min10s (auction start)
+    Then the time is updated to "2020-10-16T00:02:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   120 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   120 |                0 | TYPE_LIMIT | TIF_FOK |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+
+    #T1 + 04min00s (last second of the auction)
+    Then the time is updated to "2020-10-16T00:06:10Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    #T1 + 04min01s
+    Then the time is updated to "2020-10-16T00:06:11Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+
+    Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
+     
+    Given the following traders:
+      | name    | amount |
+      | trader1 | 100000  |
+      | trader2 | 100000  |
+
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |    110 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |    110 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+      | buyer   | seller   | price | volume |
+      | trader2 | trader1  |   110  |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "110"
+
+    #T0 + 10s
+    Then the time is updated to "2020-10-16T00:00:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   115 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   115 |                1 | TYPE_LIMIT | TIF_FOK |
+
+    Then the following trades happened:
+    | buyer   | seller   | price | volume |
+    | trader2 | trader1  |   115 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "115"
+
+    #T0 + 01min10s
+    Then the time is updated to "2020-10-16T00:01:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   105 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   105 |                1 | TYPE_LIMIT | TIF_FOK |
+    
+    Then the following trades happened:
+    | buyer   | seller   | price | volume |
+    | trader2 | trader1  |   105 |      1 |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+
+    #T1 = T0 + 02min10s (auction start)
+    Then the time is updated to "2020-10-16T00:02:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      1 |   120 |                0 | TYPE_LIMIT | TIF_GTC |
+    | trader2 | ETH/DEC20 | buy  |      1 |   120 |                0 | TYPE_LIMIT | TIF_FOK |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+
+    #T1 + 04min00s (last second of the auction)
+    Then the time is updated to "2020-10-16T00:06:10Z"
+
+    Then traders place following orders:
+    | trader  | id        | type | volume  | price | resulting trades | type       | tif     |
+    | trader1 | ETH/DEC20 | sell |      10 |   300 |                0 | TYPE_LIMIT | TIF_GFA |
+    | trader2 | ETH/DEC20 | buy  |      10 |   300 |                0 | TYPE_LIMIT | TIF_GFA |
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    #T1 + 04min01s
+    Then the time is updated to "2020-10-16T00:06:11Z"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    And the mark price for the market "ETH/DEC20" is "105"
+    
+    Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes. 

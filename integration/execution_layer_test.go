@@ -740,6 +740,24 @@ func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
 	return nil
 }
 
+func theMarketStateIs(market, marketStateStr string) error {
+	ms, ok := proto.MarketState_value[marketStateStr]
+	if !ok {
+		return fmt.Errorf("invalid market state: %v", marketStateStr)
+	}
+	marketState := proto.MarketState(ms)
+
+	mktdata, err := execsetup.engine.GetMarketData(market)
+	if err != nil {
+		return fmt.Errorf("unable to get marked data for market(%v), err(%v)", market, err)
+	}
+
+	if mktdata.MarketState != marketState {
+		return fmt.Errorf("market state is wrong for market(%v), expected(%v) got(%v)", market, marketState, mktdata.MarketState)
+	}
+	return nil
+}
+
 func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	var err error
 	for _, row := range trades.Rows {
