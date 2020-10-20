@@ -48,7 +48,7 @@ message NewMarketConfiguration {
   // Time duration for the opening auction to last.
   int64 openingAuctionDuration = 4;
   // price monitoring configuration
-  PriceMonitoringSettings priceMonitoringSettings = 5 [(validator.field) = {msg_exists: true}];
+  PriceMonitoringSettings priceMonitoringSettings = 5;
   // New market risk model parameters
   oneof riskParameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
