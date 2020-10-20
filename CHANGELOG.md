@@ -2,7 +2,7 @@
 
 ## 0.26.0
 
-*2020–10-08*
+*2020–10-20*
 
 The events API added in 0.25.0 had some reliability issues when a large volume of events were being emitted. This release addresses that in two ways:
  - The gRPC event stream now takes a parameter that sets a batch size. A client will receive the events when the batch limit is hit.
@@ -54,7 +54,7 @@ These two fixes combined make both the gRPC and GraphQL streams much more reliab
 - [#2382](https://github.com/vegaprotocol/vega/pull/2382) GraphQL: Make event stream batch size mandatory
 - [#2401](https://github.com/vegaprotocol/vega/pull/2401) Event stream: Fix CPU spinning after stream close
 - [#2404](https://github.com/vegaprotocol/vega/pull/2404) Auctions: Add fix for crash during auction exit
-- [#2419](https://github.com/vegaprotocol/vega/pull/2419) Make the pricelevel wash trade check configurable
+- [#2419](https://github.com/vegaprotocol/vega/pull/2419) Make the price level wash trade check configurable
 - [#2432](https://github.com/vegaprotocol/vega/pull/2432) Use `EmitDefaults` on `jsonpb.Marshaler`
 - [#2431](https://github.com/vegaprotocol/vega/pull/2431) GraphQL: Add price monitoring
 - [#2433](https://github.com/vegaprotocol/vega/pull/2433) Validate amend orders with GFN and GFA
