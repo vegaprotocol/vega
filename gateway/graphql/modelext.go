@@ -1024,9 +1024,7 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if err := n.TradingModeIntoProto(result); err != nil {
 		return nil, err
 	}
-	for _, tag := range n.Metadata {
-		result.Metadata = append(result.Metadata, tag)
-	}
+	result.Metadata = append(result.Metadata, n.Metadata...)
 	if n.OpeningAuctionDurationSecs != nil {
 		result.OpeningAuctionDuration = int64(*n.OpeningAuctionDurationSecs)
 	}
