@@ -2,8 +2,8 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -135,8 +135,6 @@ type NodeCommand struct {
 	withPPROF    bool
 	noChain      bool
 	noStores     bool
-	record       string
-	replay       string
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
@@ -191,7 +189,11 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWallet
 		}
 	}
 	l.conf, l.configPath = cfgwatchr.Get(), configPath
-	log.Printf("l.conf.Gateway = %+v\n", l.conf.Gateway.REST)
+
+	tmCfg := l.conf.Blockchain.Tendermint
+	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
+		return errors.New("you can't specify both abci-record and abci-replay flags")
+	}
 
 	stages := []func([]string) error{
 		l.persistentPre,

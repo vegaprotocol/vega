@@ -374,10 +374,6 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 }
 
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
-	if l.record != "" && l.replay != "" {
-		return nil, errors.New("you can't specify both record and replay flags")
-	}
-
 	app, err := processor.NewApp(
 		l.Log,
 		l.conf.Processor,
@@ -402,8 +398,9 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	}
 
 	var abciApp tmtypes.Application
-	if l.record != "" {
-		rec, err := recorder.NewRecord(l.record, afero.NewOsFs())
+	tmCfg := l.conf.Blockchain.Tendermint
+	if path := tmCfg.ABCIRecordDir; path != "" {
+		rec, err := recorder.NewRecord(path, afero.NewOsFs())
 		if err != nil {
 			return nil, err
 		}
@@ -425,8 +422,8 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	}
 	l.abciServer = srv
 
-	if l.replay != "" {
-		rec, err := recorder.NewReplay(l.replay, afero.NewOsFs())
+	if path := tmCfg.ABCIReplayFile; path != "" {
+		rec, err := recorder.NewReplay(path, afero.NewOsFs())
 		if err != nil {
 			return nil, err
 		}

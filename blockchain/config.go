@@ -43,6 +43,8 @@ type TendermintConfig struct {
 	ClientEndpoint string            `long:"client-endpoint" description:" "`
 	ServerPort     int               `long:"server-port" description:" "`
 	ServerAddr     string            `long:"server-addr" description:" "`
+	ABCIRecordDir  string            `long:"abci-record-dir" description:"ABCI recording directory. If set, it will record ABCI operations into <dir>/abci-record-<now()>."`
+	ABCIReplayFile string            `long:"abci-replay-file" description:"ABCI replaying file. If set, it will replay ABCI operations from this file."`
 }
 
 // NewDefaultTendermintConfig creates an instance of the package specific configuration, given a
@@ -55,5 +57,9 @@ func NewDefaultTendermintConfig() TendermintConfig {
 		ClientAddr:     "tcp://0.0.0.0:26657",
 		ClientEndpoint: "/websocket",
 		LogTimeDebug:   true,
+
+		// Both empty mean that neither record or replay will be activated
+		ABCIRecordDir:  "",
+		ABCIReplayFile: "",
 	}
 }
