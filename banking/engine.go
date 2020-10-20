@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -433,7 +434,8 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	case aa.IsERC20Deposit():
 		// here the event queue send us a 0x... pubkey
 		// we do the slice operation to remove it ([2:]
-		aa.deposit.partyID = aa.deposit.partyID[2:]
+
+		aa.deposit.partyID = strings.TrimPrefix(aa.deposit.partyID, "0x")
 		return e.finalizeDeposit(ctx, aa.deposit, aa.id)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
@@ -472,6 +474,7 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit, id string) error {
 	dep := e.deposits[id]
+	dep.Amount = fmt.Sprintf("%v", d.amount)
 	dep.Status = types.Deposit_DEPOSIT_STATUS_FINALIZED
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
 	return e.col.Deposit(ctx, d.partyID, d.assetID, d.amount)
@@ -501,6 +504,8 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 }
 
 func (e *Engine) newWithdrawal(partyID, asset string, amount uint64, expiry time.Time, now time.Time, wext *types.WithdrawExt) (w *types.Withdrawal, ref *big.Int) {
+	partyID = strings.TrimPrefix(partyID, "0x")
+	asset = strings.TrimPrefix(asset, "0x")
 	w = &types.Withdrawal{
 		Status:           types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
 		PartyID:          partyID,
@@ -515,6 +520,8 @@ func (e *Engine) newWithdrawal(partyID, asset string, amount uint64, expiry time
 
 func (e *Engine) newDeposit(partyID, asset string, amount uint64) (d *types.Deposit) {
 	now, _ := e.tsvc.GetTimeNow()
+	partyID = strings.TrimPrefix(partyID, "0x")
+	asset = strings.TrimPrefix(asset, "0x")
 	d = &types.Deposit{
 		Status:           types.Deposit_DEPOSIT_STATUS_OPEN,
 		PartyID:          partyID,

@@ -270,7 +270,7 @@ service trading_data {
   rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
 
   // Subscribe to a stream of events from the core
-  rpc ObserveEventBus(ObserveEventsRequest) returns (stream ObserveEventsResponse);
+  rpc ObserveEventBus(stream ObserveEventsRequest) returns (stream ObserveEventsResponse);
 
   // -- Misc --
 
@@ -1092,14 +1092,6 @@ message ObserveEventsRequest {
   // If no message is received in 5 seconds, the stream is closed.
   // Default: 0, send any and all events when they are available.
   int64 batchSize = 4;
-}
-
-// Used when subscribed to observe events from the event bus
-// This message is used to update the batch size (only for gRPC bi-directional streaming)
-message ObserveEventBatch {
-  // Batch size. Required field.
-  // Default: 0, send any and all events when they are available.
-  int64 batchSize = 1 [(validator.field) = {int_gt: -1}];
 }
 
 // Response to a subscribed stream of events from the Vega event bus

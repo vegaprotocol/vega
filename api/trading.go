@@ -253,10 +253,13 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 		s.log.Error("unable to forward chain event",
 			logging.String("pubkey", req.PubKey),
 			logging.Error(err))
-		if err != evtforward.ErrEvtAlreadyExist {
+		if err == evtforward.ErrEvtAlreadyExist {
 			return nil, apiError(codes.AlreadyExists, err)
+		} else if err == evtforward.ErrPubKeyNotWhitelisted {
+			return nil, apiError(codes.PermissionDenied, err)
+		} else {
+			return nil, apiError(codes.Internal, err)
 		}
-		ok = false
 	}
 
 	return &protoapi.PropagateChainEventResponse{

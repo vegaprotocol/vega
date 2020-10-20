@@ -2942,7 +2942,7 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction()
+	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
