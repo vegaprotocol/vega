@@ -2119,7 +2119,6 @@ func (r *myMutationResolver) PrepareProposal(
 		Proposal:  terms,
 	})
 	if err != nil {
-		fmt.Printf("ERORR: %v\n", err)
 		return nil, customErrorFromStatus(err)
 	}
 	return &PreparedProposal{
