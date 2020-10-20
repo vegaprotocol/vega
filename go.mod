@@ -13,6 +13,7 @@ require (
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/ethereum/go-ethereum v1.9.12
 	github.com/fsnotify/fsnotify v1.4.7
+	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.4.0
 	github.com/google/btree v1.0.0
@@ -34,6 +35,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.1-dev3.0.20200615111712-b8b50733f0a8
 	github.com/vegaprotocol/modvendor v0.0.2 // indirect
+	github.com/vektah/gqlparser v1.3.1 // indirect
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.8.0
