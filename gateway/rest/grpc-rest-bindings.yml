@@ -80,8 +80,7 @@ http:
 
       # Network parameters
     - selector: api.trading_data.NetworkParameters
-      post: '/network/parameters'
-      body: "*"
+      get: '/network/parameters'
 
     # Parties
     - selector: api.trading_data.Parties
