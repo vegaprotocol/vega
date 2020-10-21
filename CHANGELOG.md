@@ -1,5 +1,71 @@
 # Changelog
 
+## 0.26.0
+
+*2020–10-20*
+
+The events API added in 0.25.0 had some reliability issues when a large volume of events were being emitted. This release addresses that in two ways:
+ - The gRPC event stream now takes a parameter that sets a batch size. A client will receive the events when the batch limit is hit.
+ - GraphQL is now limited to one event type per subscription, and we also removed the ALL event type as an option. This was due to the GraphQL gateway layer taking too long to process the full event stream, leading to sporadic disconnections.
+
+These two fixes combined make both the gRPC and GraphQL streams much more reliable under reasonably heavy load. Let us know if you see any other issues. The release also adds some performance improvements to the way the core processes Tendermint events, some documentation improvements, and some additional debug tools.
+
+### New
+- [#2319](https://github.com/vegaprotocol/vega/pull/2319) Add fee estimate API endpoints to remaining APIs
+- [#2321](https://github.com/vegaprotocol/vega/pull/2321) 🔥 Change `estimateFee` to `estimateOrder` in GraphQL
+- [#2327](https://github.com/vegaprotocol/vega/pull/2327) 🔥 GraphQL: Event bus API - remove ALL type & limit subscription to one event type
+- [#2343](https://github.com/vegaprotocol/vega/pull/2343) 🔥 Add batching support to stream subscribers
+
+### Improvements
+- [#2229](https://github.com/vegaprotocol/vega/pull/2229) Add Price Monitoring module
+- [#2246](https://github.com/vegaprotocol/vega/pull/2246) Add new market depth subscription methods
+- [#2298](https://github.com/vegaprotocol/vega/pull/2298) Improve error messages for Good For Auction/Good For Normal rejections
+- [#2301](https://github.com/vegaprotocol/vega/pull/2301) Add validation for GFA/GFN orders
+- [#2307](https://github.com/vegaprotocol/vega/pull/2307) Implement app state hash
+- [#2312](https://github.com/vegaprotocol/vega/pull/2312) Add validation for market proposal risk parameters
+- [#2313](https://github.com/vegaprotocol/vega/pull/2313) Add transaction replay protection
+- [#2314](https://github.com/vegaprotocol/vega/pull/2314) GraphQL: Improve response when market does not exist
+- [#2315](https://github.com/vegaprotocol/vega/pull/2315) GraphQL: Improve response when party does not exist
+- [#2316](https://github.com/vegaprotocol/vega/pull/2316) Documentation: Improve documentation for fee estimate endpoint
+- [#2318](https://github.com/vegaprotocol/vega/pull/2318) Documentation: Improve documentation for governance data endpoints
+- [#2324](https://github.com/vegaprotocol/vega/pull/2324) Cache transactions already seen by `checkTX`
+- [#2328](https://github.com/vegaprotocol/vega/pull/2328) Add test covering context cancellation mid data-sending
+- [#2331](https://github.com/vegaprotocol/vega/pull/2331) Internal refactor of network parameter storage
+- [#2334](https://github.com/vegaprotocol/vega/pull/2334) Rewrite `vegastream` to use the event bus
+- [#2333](https://github.com/vegaprotocol/vega/pull/2333) Fix context for events, add block hash and event id
+- [#2335](https://github.com/vegaprotocol/vega/pull/2335) Add ABCI event recorder
+- [#2341](https://github.com/vegaprotocol/vega/pull/2341) Ensure event slices cannot be empty
+- [#2345](https://github.com/vegaprotocol/vega/pull/2345) Handle filled orders in the market depth service before new orders are added
+- [#2346](https://github.com/vegaprotocol/vega/pull/2346) CI: Add missing environment variables
+- [#2348](https://github.com/vegaprotocol/vega/pull/2348) Use cached transactions in `checkTX`
+- [#2349](https://github.com/vegaprotocol/vega/pull/2349) Optimise accounts map accesses
+- [#2351](https://github.com/vegaprotocol/vega/pull/2351) Fix sequence ID related to market `OnChainTimeUpdate`
+- [#2355](https://github.com/vegaprotocol/vega/pull/2355) Update coding style doc with info on log levels
+- [#2358](https://github.com/vegaprotocol/vega/pull/2358) Add documentation and comments for `events.proto`
+- [#2359](https://github.com/vegaprotocol/vega/pull/2359) Fix out of bounds index crash
+- [#2364](https://github.com/vegaprotocol/vega/pull/2364) Add mutex to protect map access
+- [#2366](https://github.com/vegaprotocol/vega/pull/2366) Auctions: Reject IOC/FOK orders
+- [#2368](https://github.com/vegaprotocol/vega/pull/2370) Tidy up genesis market instantiation
+- [#2369](https://github.com/vegaprotocol/vega/pull/2369) Optimise event bus to reduce CPU usage
+- [#2370](https://github.com/vegaprotocol/vega/pull/2370) Event stream: Send batches instead of single events
+- [#2376](https://github.com/vegaprotocol/vega/pull/2376) GraphQL: Remove verbose logging
+- [#2377](https://github.com/vegaprotocol/vega/pull/2377) Update tendermint stats less frequently for Vega stats API endpoint
+- [#2381](https://github.com/vegaprotocol/vega/pull/2381) Event stream: Reduce CPU load, depending on batch size
+- [#2382](https://github.com/vegaprotocol/vega/pull/2382) GraphQL: Make event stream batch size mandatory
+- [#2401](https://github.com/vegaprotocol/vega/pull/2401) Event stream: Fix CPU spinning after stream close
+- [#2404](https://github.com/vegaprotocol/vega/pull/2404) Auctions: Add fix for crash during auction exit
+- [#2419](https://github.com/vegaprotocol/vega/pull/2419) Make the price level wash trade check configurable
+- [#2432](https://github.com/vegaprotocol/vega/pull/2432) Use `EmitDefaults` on `jsonpb.Marshaler`
+- [#2431](https://github.com/vegaprotocol/vega/pull/2431) GraphQL: Add price monitoring
+- [#2433](https://github.com/vegaprotocol/vega/pull/2433) Validate amend orders with GFN and GFA
+- [#2436](https://github.com/vegaprotocol/vega/pull/2436) Return a permission denied error for a non-allowlisted public key
+- [#2437](https://github.com/vegaprotocol/vega/pull/2437) Undo accidental code removal
+- [#2438](https://github.com/vegaprotocol/vega/pull/2438) GraphQL: Fix a resolver error when markets are in auction mode
+- [#2441](https://github.com/vegaprotocol/vega/pull/2441) GraphQL: Remove unnecessary validations
+- [#2442](https://github.com/vegaprotocol/vega/pull/2442) GraphQL: Update library; improve error responses
+- [#2447](https://github.com/vegaprotocol/vega/pull/2447) REST: Fix HTTP verb for network parameters query
+- [#2443](https://github.com/vegaprotocol/vega/pull/2443) Auctions: Add check for opening auction duration during market creation
+
 ## 0.25.1
 
 *2020-10-14*
