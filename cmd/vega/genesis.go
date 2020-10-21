@@ -16,7 +16,12 @@ import (
 )
 
 type genesisCmd struct {
-	config.PassphraseFlag
+	// We've unified the passphrase flag as config.PassphraseFlag, which uses --passphrase.
+	// As systemtests uses --vega-wallet-passphrase we'll define the flag directly here
+	// TODO: uncomment this line and remove the Passphrase field.
+	// config.PassphraseFlag
+	Passphrase config.Passphrase `short:"p" long:"vega-wallet-passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+
 	InPlace    bool   `short:"i" long:"in-place" description:"Edit the genesis file in-place"`
 	TmRoot     string `short:"t" long:"tm-root" description:"The root path of tendermint"`
 	WalletPath string `short:"v" long:"vega-wallet-path" description:"The path of vega wallet" required:"true"`

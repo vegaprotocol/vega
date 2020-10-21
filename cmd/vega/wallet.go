@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"code.vegaprotocol.io/vega/config"
@@ -322,7 +321,6 @@ type walletServiceInit struct {
 }
 
 func (opts *walletServiceInit) Execute(_ []string) error {
-	log.Printf("opts = %+v\n", opts)
 	if ok, err := fsutil.PathExists(walletCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %v", err)
 	}
