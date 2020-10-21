@@ -64,20 +64,29 @@ func (tx *Tx) Unmarshal(i interface{}) error {
 
 // toProto decodes a tx given its command into the respective proto type
 func (t *Tx) toProto() (interface{}, error) {
-	msgs := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand:   &types.OrderSubmission{},
-		txn.CancelOrderCommand:   &types.OrderCancellation{},
-		txn.AmendOrderCommand:    &types.OrderAmendment{},
-		txn.ProposeCommand:       &types.Proposal{},
-		txn.VoteCommand:          &types.Vote{},
-		txn.NodeVoteCommand:      &types.NodeVote{},
-		txn.WithdrawCommand:      &types.WithdrawSubmission{},
-		txn.RegisterNodeCommand:  &types.NodeRegistration{},
-		txn.NodeSignatureCommand: &types.NodeSignature{},
-		txn.ChainEventCommand:    &types.ChainEvent{},
-	}
-	msg, ok := msgs[t.Command()]
-	if !ok {
+	var msg proto.Message
+	switch t.Command() {
+	case txn.SubmitOrderCommand:
+		msg = &types.OrderSubmission{}
+	case txn.CancelOrderCommand:
+		msg = &types.OrderCancellation{}
+	case txn.AmendOrderCommand:
+		msg = &types.OrderAmendment{}
+	case txn.ProposeCommand:
+		msg = &types.Proposal{}
+	case txn.VoteCommand:
+		msg = &types.Vote{}
+	case txn.NodeVoteCommand:
+		msg = &types.NodeVote{}
+	case txn.WithdrawCommand:
+		msg = &types.WithdrawSubmission{}
+	case txn.RegisterNodeCommand:
+		msg = &types.NodeRegistration{}
+	case txn.NodeSignatureCommand:
+		msg = &types.NodeSignature{}
+	case txn.ChainEventCommand:
+		msg = &types.ChainEvent{}
+	default:
 		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", t.Command().String())
 	}
 
