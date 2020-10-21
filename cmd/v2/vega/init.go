@@ -18,7 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
-	"github.com/gogo/protobuf/jsonpb"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/jessevdk/go-flags"
 	"github.com/zannen/toml"
 )
