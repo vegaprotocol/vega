@@ -1,4 +1,4 @@
-package blockchain
+package txn
 
 // Command ...
 type Command byte

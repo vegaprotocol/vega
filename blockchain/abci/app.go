@@ -3,8 +3,7 @@ package abci
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/blockchain"
-
+	"code.vegaprotocol.io/vega/txn"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -29,8 +28,8 @@ type App struct {
 	OnCommit     OnCommitHandler
 
 	// These are Tx handlers
-	checkTxs   map[blockchain.Command]TxHandler
-	deliverTxs map[blockchain.Command]TxHandler
+	checkTxs   map[txn.Command]TxHandler
+	deliverTxs map[txn.Command]TxHandler
 
 	// checkedTxs holds a map of valid transactions (validated by CheckTx)
 	// They are consumed by DeliverTx to avoid double validation.
@@ -41,24 +40,21 @@ type App struct {
 }
 
 func New(codec Codec) *App {
-	app := &App{
+	return &App{
 		codec:           codec,
 		replayProtector: &replayProtectorNoop{},
-		checkTxs:        map[blockchain.Command]TxHandler{},
-		deliverTxs:      map[blockchain.Command]TxHandler{},
+		checkTxs:        map[txn.Command]TxHandler{},
+		deliverTxs:      map[txn.Command]TxHandler{},
 		checkedTxs:      map[string]Tx{},
-		ctx:             context.Background(),
 	}
-
-	return app
 }
 
-func (app *App) HandleCheckTx(cmd blockchain.Command, fn TxHandler) *App {
+func (app *App) HandleCheckTx(cmd txn.Command, fn TxHandler) *App {
 	app.checkTxs[cmd] = fn
 	return app
 }
 
-func (app *App) HandleDeliverTx(cmd blockchain.Command, fn TxHandler) *App {
+func (app *App) HandleDeliverTx(cmd txn.Command, fn TxHandler) *App {
 	app.deliverTxs[cmd] = fn
 	return app
 }

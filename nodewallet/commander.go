@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -24,7 +25,7 @@ type Commander struct {
 }
 
 var (
-	unsigned = map[blockchain.Command]struct{}{}
+	unsigned = map[txn.Command]struct{}{}
 
 	ErrCommandMustBeSigned        = errors.New("command requires a signature")
 	ErrPayloadNotNodeRegistration = errors.New("expected node registration payload")
@@ -51,12 +52,12 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(cmd blockchain.Command, payload proto.Message) error {
+func (c *Commander) Command(cmd txn.Command, payload proto.Message) error {
 	raw, err := proto.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	encodedCmd, err := blockchain.TxEncode(raw, cmd)
+	encodedCmd, err := txn.Encode(raw, cmd)
 	if err != nil {
 		return err
 	}
