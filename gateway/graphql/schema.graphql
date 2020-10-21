@@ -32,6 +32,8 @@ type Mutation {
     type: OrderType!
     "client reference for the order"
     reference: String
+    "pegged order details"
+    peggedOrder: PeggedOrder
   ): PreparedSubmitOrder!
 
   """
@@ -124,6 +126,13 @@ type Mutation {
     sig: SignatureInput!
   ): TransactionSubmitted!
 
+}
+
+input PeggedOrder {
+  "Pegged price"
+  reference: PeggedReference!
+  "Price offset"
+  offset: String!
 }
 
 "ERC20 specific details to start a withdrawal"
@@ -1363,6 +1372,16 @@ enum OrderTimeInForce {
 
     "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
     GFN
+}
+
+"Valid references used for pegged orders."
+enum PeggedReference {
+  "Peg the order against the mid price of the order book"
+  Mid
+  "Peg the order against the best bid price of the order book"
+  BestBid
+  "Peg the order against the best ask price of the order book"
+  BestAsk
 }
 
 "Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."

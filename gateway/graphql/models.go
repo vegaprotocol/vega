@@ -522,6 +522,13 @@ type OrderEstimate struct {
 	MarginLevels *proto.MarginLevels `json:"marginLevels"`
 }
 
+type PeggedOrder struct {
+	// Pegged price
+	Reference PeggedReference `json:"reference"`
+	// Price offset
+	Offset string `json:"offset"`
+}
+
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketID"`
@@ -1552,6 +1559,53 @@ func (e *OrderType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Valid references used for pegged orders.
+type PeggedReference string
+
+const (
+	// Peg the order against the mid price of the order book
+	PeggedReferenceMid PeggedReference = "Mid"
+	// Peg the order against the best bid price of the order book
+	PeggedReferenceBestBid PeggedReference = "BestBid"
+	// Peg the order against the best ask price of the order book
+	PeggedReferenceBestAsk PeggedReference = "BestAsk"
+)
+
+var AllPeggedReference = []PeggedReference{
+	PeggedReferenceMid,
+	PeggedReferenceBestBid,
+	PeggedReferenceBestAsk,
+}
+
+func (e PeggedReference) IsValid() bool {
+	switch e {
+	case PeggedReferenceMid, PeggedReferenceBestBid, PeggedReferenceBestAsk:
+		return true
+	}
+	return false
+}
+
+func (e PeggedReference) String() string {
+	return string(e)
+}
+
+func (e *PeggedReference) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PeggedReference(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PeggedReference", str)
+	}
+	return nil
+}
+
+func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -589,6 +589,34 @@ func convertSideFromProto(x types.Side) (Side, error) {
 	}
 }
 
+func convertPeggedReferenceToProto(x PeggedReference) (types.PeggedReference, error) {
+	switch x {
+	case PeggedReferenceMid:
+		return types.PeggedReference_PEGGED_REFERENCE_MID, nil
+	case PeggedReferenceBestBid:
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID, nil
+	case PeggedReferenceBestAsk:
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, nil
+	default:
+		err := fmt.Errorf("failed to convert PeggedReference from GraphQL to Proto: %v", x)
+		return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED, err
+	}
+}
+
+func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, error) {
+	switch x {
+	case types.PeggedReference_PEGGED_REFERENCE_MID:
+		return PeggedReferenceMid, nil
+	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+		return PeggedReferenceBestBid, nil
+	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+		return PeggedReferenceBestAsk, nil
+	default:
+		err := fmt.Errorf("failed to convert PeggedReference from Proto to GraphQL: %v", x)
+		return PeggedReferenceMid, err
+	}
+}
+
 // convertOrderTimeInForceToProto converts a GraphQL enum to a Proto enum
 func convertOrderTimeInForceToProto(x OrderTimeInForce) (types.Order_TimeInForce, error) {
 	switch x {

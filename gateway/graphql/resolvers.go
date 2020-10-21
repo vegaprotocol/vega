@@ -2001,7 +2001,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 }
 
 func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string) (*PreparedSubmitOrder, error) {
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrder) (*PreparedSubmitOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -2040,6 +2040,19 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}
 	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
 		return nil, err
+	}
+
+	if po != nil {
+		pegreference, err := convertPeggedReferenceToProto(po.Reference)
+		if err != nil {
+			return nil, err
+		}
+		offset, err := safeStringInt64(po.Offset)
+		if err != nil {
+			return nil, err
+		}
+		order.PeggedOrder = &types.PeggedOrder{Reference: pegreference,
+			Offset: offset}
 	}
 
 	// GTT must have an expiration value
