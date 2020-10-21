@@ -12,9 +12,10 @@ import (
 )
 
 type NodeCmd struct {
-	config.Passphrase
+	config.Passphrase `long:"nodewallet-passphrase"`
+	OldPath           string `short:"C" description:"[deprecated (use -r)] Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
 	config.RootPathFlag
-	OldPath string `short:"C" description:"[deprecated (use -r)] Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
+
 	config.Config
 }
 
@@ -34,7 +35,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	// we define this option to parse the cli args each time the config is
 	// loaded. So that we can respect the cli flag presedence.
 	parseFlagOpt := func(cfg *config.Config) error {
-		_, err := flags.Parse(cfg)
+		_, err := flags.NewParser(cfg, flags.Default|flags.IgnoreUnknown).Parse()
 		return err
 	}
 
