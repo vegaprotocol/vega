@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -25,7 +26,7 @@ import (
 
 type InitCmd struct {
 	config.RootPathFlag
-	config.PassphraseFlag
+	Passphrase config.Passphrase `short:"p" long:"nodewallet-passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 
 	Force      bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
 	GenDev     bool `short:"g" long:"gen-dev-nodewallet" description:"Generate dev wallet for all vega supported chains (not for production)"`
@@ -35,6 +36,7 @@ type InitCmd struct {
 var initCmd InitCmd
 
 func (opts *InitCmd) Execute(_ []string) error {
+	log.Printf("opts = %+v\n", opts)
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
