@@ -5,116 +5,58 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/gateway"
-	gql "code.vegaprotocol.io/vega/gateway/graphql"
-	"code.vegaprotocol.io/vega/gateway/rest"
+	"code.vegaprotocol.io/vega/gateway/server"
 	"code.vegaprotocol.io/vega/logging"
 
-	"github.com/spf13/cobra"
+	"github.com/jessevdk/go-flags"
 )
 
-type gatewaySrv interface {
-	Start()
-	Stop()
+type gatewayCmd struct {
+	ctx context.Context
+	gateway.Config
+	config.RootPathFlag
 }
 
-type gatewayCommand struct {
-	command
+func (opts *gatewayCmd) Execute(args []string) error {
+	ctx, cancel := context.WithCancel(opts.ctx)
+	defer cancel()
 
-	rootPath string
-	Log      *logging.Logger
-}
+	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
+	defer log.AtExit()
 
-func (g *gatewayCommand) Init(c *Cli) {
-	g.cli = c
-	g.cmd = &cobra.Command{
-		Use:   "gateway",
-		Short: "Start the vega gateway",
-		Long:  "Start up the vega gateway to the node api (rest and graphql)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return g.runGateway(args)
-		},
-	}
-
-	fs := g.cmd.Flags()
-	fs.StringVarP(&g.rootPath, "c", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-}
-
-func (g *gatewayCommand) runGateway(args []string) error {
-	ctx, cfunc := context.WithCancel(context.Background())
-	defer cfunc()
-
-	configPath := g.rootPath
-	if configPath == "" {
-		// Use configPath from ENV
-		configPath = envConfigPath()
-		if configPath == "" {
-			// Default directory ($HOME/.vega)
-			configPath = fsutil.DefaultVegaDir()
-		}
-	}
-
-	// VEGA config (holds all package level configs)
-	cfgwatchr, err := config.NewFromFile(ctx, g.Log, configPath, configPath)
+	cfgwatchr, err := config.NewFromFile(ctx, log, opts.RootPath, opts.RootPath)
 	if err != nil {
-		g.Log.Error("unable to start config watcher", logging.Error(err))
+		log.Error("unable to start config watcher", logging.Error(err))
 		return errors.New("unable to start config watcher")
 	}
-	conf := cfgwatchr.Get()
 
-	gty, err := startGateway(g.Log, conf.Gateway)
-	if err != nil {
+	conf := cfgwatchr.Get()
+	opts.Config = conf.Gateway
+
+	// parse the remaining command line options again to ensure they
+	// take precedence.
+	if _, err := flags.Parse(opts); err != nil {
 		return err
 	}
 
-	waitSig(ctx, g.Log)
-	gty.stop()
+	srv := server.New(opts.Config, log)
+	if err := srv.Start(); err != nil {
+		return err
+	}
+	defer srv.Stop()
 
+	waitSig(ctx, log)
 	return nil
 }
 
-// Gateway contains all the gateway objects, currently GraphQL and REST.
-type Gateway struct {
-	gqlSrv  gatewaySrv
-	restSrv gatewaySrv
-}
-
-func startGateway(log *logging.Logger, cfg gateway.Config) (*Gateway, error) {
-	var (
-		restSrv, gqlSrv gatewaySrv
-		err             error
-	)
-	if cfg.REST.Enabled {
-		restSrv = rest.NewProxyServer(log, cfg)
+func Gateway(ctx context.Context, parser *flags.Parser) error {
+	opts := &gatewayCmd{
+		ctx:          ctx,
+		Config:       gateway.NewDefaultConfig(),
+		RootPathFlag: config.NewRootPathFlag(),
 	}
 
-	if cfg.GraphQL.Enabled {
-		gqlSrv, err = gql.New(log, cfg)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if restSrv != nil {
-		go restSrv.Start()
-	}
-	if gqlSrv != nil {
-		go gqlSrv.Start()
-	}
-
-	return &Gateway{
-		gqlSrv:  gqlSrv,
-		restSrv: restSrv,
-	}, nil
-
-}
-
-func (g *Gateway) stop() {
-	if g.restSrv != nil {
-		g.restSrv.Stop()
-	}
-	if g.gqlSrv != nil {
-		g.gqlSrv.Stop()
-	}
+	_, err := parser.AddCommand("gateway", "short", "long", opts)
+	return err
 }

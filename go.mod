@@ -29,8 +29,8 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/afero v1.1.2
-	github.com/spf13/cobra v1.0.0
-	github.com/spf13/viper v1.7.0
+	github.com/spf13/cobra v1.0.0 // indirect
+	github.com/spf13/viper v1.7.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.1-dev3.0.20200615111712-b8b50733f0a8
 	github.com/vegaprotocol/modvendor v0.0.2 // indirect
