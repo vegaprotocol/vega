@@ -1,4 +1,4 @@
-Feature: Price monitoring test using forward risk model (bounds for the price moves for the two horizons are roughly: (-0.6,0.6), (-1.1,1.0))
+Feature: Price monitoring test using forward risk model (bounds for the price moves around price of 100 for the two horizons are roughly: (-0.6,0.6), (-1.1,1.0))
 
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
