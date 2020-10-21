@@ -259,6 +259,7 @@
     - [OrderConfirmation](#vega.OrderConfirmation)
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
+    - [PeggedOrder](#vega.PeggedOrder)
     - [Position](#vega.Position)
     - [PositionTrade](#vega.PositionTrade)
     - [Price](#vega.Price)
@@ -293,6 +294,7 @@
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
     - [OrderError](#vega.OrderError)
+    - [PeggedReference](#vega.PeggedReference)
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
@@ -4441,6 +4443,7 @@ An order submission is a request to submit or create a new order on Vega.
 | expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
 | type | [Order.Type](#vega.Order.Type) |  | Type for the order. See [`Order.Type`](#vega.Order.Type). Required field. |
 | reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. |
+| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order |
 
 
 
@@ -4456,6 +4459,22 @@ A party represents an entity who wishes to trade on or query a Vega network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | A unique identifier for the party, typically represented by a public key. |
+
+
+
+
+
+
+<a name="vega.PeggedOrder"></a>
+
+### PeggedOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [PeggedReference](#vega.PeggedReference) |  | Which price point are we linked to |
+| offset | [int64](#int64) |  | Offset from the price reference |
 
 
 
@@ -5091,6 +5110,20 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
 | ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION | 32 | IOC orders are not allowed during auction |
 | ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION | 33 | FOK orders are not allowed during auction |
+
+
+
+<a name="vega.PeggedReference"></a>
+
+### PeggedReference
+Which price point is the pegged order linked to
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PEGGED_REFERENCE_UNSPECIFIED | 0 | No reference given |
+| PEGGED_REFERENCE_MID | 1 | MID price |
+| PEGGED_REFERENCE_BEST_BID | 2 | BEST BID price |
+| PEGGED_REFERENCE_BEST_ASK | 3 | BEST BID price |
 
 
 

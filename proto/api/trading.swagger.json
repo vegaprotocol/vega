@@ -3905,6 +3905,10 @@
         "reference": {
           "type": "string",
           "description": "Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently\nset internally by the node to return a unique reference identifier for the order submission."
+        },
+        "peggedOrder": {
+          "$ref": "#/definitions/vegaPeggedOrder",
+          "title": "Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order"
         }
       },
       "description": "An order submission is a request to submit or create a new order on Vega."
@@ -3929,6 +3933,32 @@
         }
       },
       "description": "A party represents an entity who wishes to trade on or query a Vega network."
+    },
+    "vegaPeggedOrder": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "$ref": "#/definitions/vegaPeggedReference",
+          "title": "Which price point are we linked to"
+        },
+        "offset": {
+          "type": "string",
+          "format": "int64",
+          "title": "Offset from the price reference"
+        }
+      }
+    },
+    "vegaPeggedReference": {
+      "type": "string",
+      "enum": [
+        "PEGGED_REFERENCE_UNSPECIFIED",
+        "PEGGED_REFERENCE_MID",
+        "PEGGED_REFERENCE_BEST_BID",
+        "PEGGED_REFERENCE_BEST_ASK"
+      ],
+      "default": "PEGGED_REFERENCE_UNSPECIFIED",
+      "description": "- PEGGED_REFERENCE_UNSPECIFIED: No reference given\n - PEGGED_REFERENCE_MID: MID price\n - PEGGED_REFERENCE_BEST_BID: BEST BID price\n - PEGGED_REFERENCE_BEST_ASK: BEST BID price",
+      "title": "Which price point is the pegged order linked to"
     },
     "vegaPosition": {
       "type": "object",

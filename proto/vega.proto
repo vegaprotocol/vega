@@ -114,6 +114,25 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_LIQUIDITY = 4;
 }
 
+// Which price point is the pegged order linked to
+enum PeggedReference {
+  // No reference given
+  PEGGED_REFERENCE_UNSPECIFIED = 0;
+  // MID price
+  PEGGED_REFERENCE_MID = 1;
+  // BEST BID price
+  PEGGED_REFERENCE_BEST_BID = 2;
+  // BEST BID price
+  PEGGED_REFERENCE_BEST_ASK = 3;
+}
+
+message PeggedOrder {
+  // Which price point are we linked to
+  PeggedReference reference = 1;
+  // Offset from the price reference
+  int64 offset = 2;
+}
+
 // An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties.
 message Order {
 
@@ -728,6 +747,8 @@ message OrderSubmission {
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
   // set internally by the node to return a unique reference identifier for the order submission.
   string reference = 10;
+  // Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order
+  PeggedOrder peggedOrder = 11;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega.

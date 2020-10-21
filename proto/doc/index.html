@@ -1204,6 +1204,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.PeggedOrder"><span class="badge">M</span>PeggedOrder</a>
+                </li>
+
+                <li>
                   <a href="#vega.Position"><span class="badge">M</span>Position</a>
                 </li>
 
@@ -1334,6 +1338,10 @@
 
                 <li>
                   <a href="#vega.OrderError"><span class="badge">E</span>OrderError</a>
+                </li>
+
+                <li>
+                  <a href="#vega.PeggedReference"><span class="badge">E</span>PeggedReference</a>
                 </li>
 
                 <li>
@@ -11966,6 +11974,13 @@ Required field only for <a href="#vega.Order.TimeInForce"><tt>Order.TimeInForce<
 set internally by the node to return a unique reference identifier for the order submission. </p></td>
                 </tr>
 
+                <tr>
+                  <td>peggedOrder</td>
+                  <td><a href="#vega.PeggedOrder">PeggedOrder</a></td>
+                  <td></td>
+                  <td><p>Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -12112,6 +12127,37 @@ set internally by the node to return a unique reference identifier for the order
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="vega.PeggedOrder">PeggedOrder</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#vega.PeggedReference">PeggedReference</a></td>
+                  <td></td>
+                  <td><p>Which price point are we linked to </p></td>
+                </tr>
+
+                <tr>
+                  <td>offset</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Offset from the price reference </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -13962,6 +14008,41 @@ with an expiration that was badly formatted or otherwise invalid.</p></td>
                 <td>ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION</td>
                 <td>33</td>
                 <td><p>FOK orders are not allowed during auction</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.PeggedReference">PeggedReference</h3>
+        <p>Which price point is the pegged order linked to</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>PEGGED_REFERENCE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>No reference given</p></td>
+              </tr>
+
+              <tr>
+                <td>PEGGED_REFERENCE_MID</td>
+                <td>1</td>
+                <td><p>MID price</p></td>
+              </tr>
+
+              <tr>
+                <td>PEGGED_REFERENCE_BEST_BID</td>
+                <td>2</td>
+                <td><p>BEST BID price</p></td>
+              </tr>
+
+              <tr>
+                <td>PEGGED_REFERENCE_BEST_ASK</td>
+                <td>3</td>
+                <td><p>BEST BID price</p></td>
               </tr>
 
           </tbody>
