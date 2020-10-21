@@ -117,6 +117,7 @@ func NewApp(
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey)
 
 	app.abci.
@@ -126,7 +127,7 @@ func NewApp(
 		HandleDeliverTx(txn.WithdrawCommand, app.DeliverWithdraw).
 		HandleDeliverTx(txn.ProposeCommand, app.DeliverPropose).
 		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
-		HandleDeliverTx(txn.RegisterNodeCommand, app.DeliverRegisterNode).
+		HandleDeliverTx(txn.NodeSignatureCommand, app.DeliverNodeSignature).
 		HandleDeliverTx(txn.NodeVoteCommand, app.DeliverNodeVote).
 		HandleDeliverTx(txn.ChainEventCommand, app.DeliverChainEvent)
 
