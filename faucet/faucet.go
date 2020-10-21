@@ -40,12 +40,13 @@ var (
 type Faucet struct {
 	*httprouter.Router
 
-	log   *logging.Logger
-	cfg   Config
-	wal   *wallet.Wallet
-	s     *http.Server
-	rl    *RateLimit
-	cfunc context.CancelFunc
+	log    *logging.Logger
+	cfg    Config
+	wal    *wallet.Wallet
+	s      *http.Server
+	rl     *RateLimit
+	cfunc  context.CancelFunc
+	stopCh chan struct{}
 
 	// node connections stuff
 	clt     api.TradingClient
@@ -90,6 +91,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		cltdata: clientData,
 		conn:    conn,
 		cfunc:   cfunc,
+		stopCh:  make(chan struct{}),
 		rl:      NewRateLimit(ctx, cfg),
 	}
 
@@ -226,14 +228,30 @@ func (f *Faucet) Start() error {
 	}
 
 	f.log.Info("starting faucet server", logging.String("address", f.s.Addr))
-	return f.s.ListenAndServe()
+
+	errCh := make(chan error)
+	go func() {
+		errCh <- f.s.ListenAndServe()
+	}()
+
+	defer func() {
+		f.cfunc()
+		f.conn.Close()
+	}()
+
+	// close the rate limit
+	select {
+	case err := <-errCh:
+		return err
+	case <-f.stopCh:
+		f.s.Shutdown(context.Background())
+		return nil
+	}
 }
 
 func (f *Faucet) Stop() error {
-	// close the rate limit
-	f.cfunc()
-	f.conn.Close()
-	return f.s.Shutdown(context.Background())
+	f.stopCh <- struct{}{}
+	return nil
 }
 
 func Init(path, passphrase string) (string, error) {

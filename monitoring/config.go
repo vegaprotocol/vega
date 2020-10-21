@@ -13,9 +13,9 @@ const (
 
 // Config represents the configuration of the monitoring package
 type Config struct {
-	Level    encoding.LogLevel
-	Interval encoding.Duration
-	Retries  uint8
+	Level    encoding.LogLevel `long:"log-level" description:" "`
+	Interval encoding.Duration `long:"interval" description:" "`
+	Retries  uint8             `long:"retries" description:" "`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

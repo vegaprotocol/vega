@@ -14,8 +14,8 @@ const (
 // Config represents governance specific configuration
 type Config struct {
 	// logging level
-	Level            encoding.LogLevel
-	WithdrawalExpiry encoding.Duration
+	Level            encoding.LogLevel `long:"log-level"`
+	WithdrawalExpiry encoding.Duration `long:"withdrawal-expiry"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.

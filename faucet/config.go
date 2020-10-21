@@ -22,18 +22,18 @@ const (
 )
 
 type Config struct {
-	Level      encoding.LogLevel
-	CoolDown   encoding.Duration
-	WalletPath string
-	Port       int
-	IP         string
-	Node       NodeConfig
+	Level      encoding.LogLevel `long:"level" description:"Log level"`
+	CoolDown   encoding.Duration `long:"cooldown" description:" "`
+	WalletPath string            `long:"wallet-path" description:" "`
+	Port       int               `long:"port" description:"Listen for connections on port <port>"`
+	IP         string            `long:"ip" description:"Bind to address <ip>"`
+	Node       NodeConfig        `group:"Node" namespace:"node"`
 }
 
 type NodeConfig struct {
-	Port    int
-	IP      string
-	Retries uint64
+	Port    int    `long:"port" description:"Connect to Node on port <port>"`
+	IP      string `long:"ip" description:"Connect to Node on address <ip>"`
+	Retries uint64 `long:"retries" description:"Connection retries before fail"`
 }
 
 func NewDefaultConfig(defaultDirPath string) Config {
