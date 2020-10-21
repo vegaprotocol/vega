@@ -59,8 +59,9 @@ func (l LossSoc) Proto() types.LossSocialization {
 func (l LossSoc) StreamMessage() *types.BusEvent {
 	p := l.Proto()
 	return &types.BusEvent{
-		ID:   l.eventID(),
-		Type: l.et.ToProto(),
+		ID:    l.eventID(),
+		Block: l.TraceID(),
+		Type:  l.et.ToProto(),
 		Event: &types.BusEvent_LossSocialization{
 			LossSocialization: &p,
 		},

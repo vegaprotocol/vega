@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"google.golang.org/grpc/status"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -30,14 +30,12 @@ func customErrorFromStatus(err error) error {
 		customInner := ""
 		customMessage := st.Message()
 		errorDetails := st.Details()
-		if errorDetails != nil {
-			for _, s := range errorDetails {
-				det := s.(*types.ErrorDetail)
-				customDetail = det.Message
-				customCode = fmt.Sprintf("%d", det.Code)
-				customInner = det.Inner
-				break
-			}
+		for _, s := range errorDetails {
+			det := s.(*types.ErrorDetail)
+			customDetail = det.Message
+			customCode = fmt.Sprintf("%d", det.Code)
+			customInner = det.Inner
+			break
 		}
 		return &gqlerror.Error{
 			Message: customMessage,

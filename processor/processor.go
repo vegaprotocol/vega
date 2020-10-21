@@ -55,6 +55,7 @@ type ExecutionEngine interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine

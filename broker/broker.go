@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/events"
 )
@@ -14,7 +15,7 @@ type Subscriber interface {
 	Push(val ...events.Event)
 	Skip() <-chan struct{}
 	Closed() <-chan struct{}
-	C() chan<- events.Event
+	C() chan<- []events.Event
 	Types() []events.Type
 	SetID(id int)
 	ID() int
@@ -54,23 +55,17 @@ func New(ctx context.Context) *Broker {
 	}
 }
 
-func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) (unsub bool) {
-	for _, e := range evts {
-		select {
-		case <-b.ctx.Done():
-			return
-		case <-sub.Skip():
-			return
-		case <-sub.Closed():
-			unsub = true
-			return
-		case sub.C() <- e:
-			continue
-		default:
-			continue
-		}
+func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
+	ctx, cfunc := context.WithTimeout(b.ctx, time.Second)
+	defer cfunc()
+	select {
+	case <-ctx.Done():
+		return
+	case <-sub.Closed():
+		return
+	case sub.C() <- evts:
+		return
 	}
-	return
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
@@ -115,8 +110,8 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 					default:
 						if sub.required {
 							sub.Push(events...)
-						} else if rm := b.sendChannel(sub, events); rm {
-							unsub = append(unsub, k)
+						} else {
+							go b.sendChannel(sub, events)
 						}
 					}
 				}

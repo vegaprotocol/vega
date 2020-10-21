@@ -15,7 +15,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).MinTimes(11)
@@ -118,7 +118,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -173,7 +173,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -214,7 +214,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -266,7 +266,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 
@@ -290,7 +290,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Move the current time forward
-	tm.market.OnChainTimeUpdate(time.Unix(10, 100))
+	tm.market.OnChainTimeUpdate(context.Background(), time.Unix(10, 100))
 
 	amend := &types.OrderAmendment{
 		OrderID:     buyConfirmation.GetOrder().GetId(),
@@ -316,7 +316,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -377,7 +377,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -418,7 +418,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -538,7 +538,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 func TestAmendToFill(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
 	addAccount(tm, "party1")
 	addAccount(tm, "party2")
@@ -550,4 +550,32 @@ func TestAmendToFill(t *testing.T) {
 	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120)  // 1 - a8
 	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50)    // 1 - a8
 	amendOrder(t, tm, "party2", orderId, 0, 500, types.Order_TIF_UNSPECIFIED, 0, true)
+}
+
+func TestUnableToAmendGFAGFN(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// test_AmendMarketOrderFail
+	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	amendOrder(t, tm, "party1", orderId, 0, 0, types.Order_TIF_GFA, 0, false)
+	amendOrder(t, tm, "party1", orderId, 0, 0, types.Order_TIF_GFN, 0, false)
+
+	orderId2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GTC, 0, false)
+	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GFA, 0, false)
+
+	// EnterAuction should actually trigger an auction here...
+	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
+		Duration: closeSec / 10, // some time in the future, before closing
+	})
+	tm.market.EnterAuction(context.Background())
+	orderId3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GTC, 0, false)
+	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GFN, 0, false)
 }

@@ -171,7 +171,9 @@ type Subscription {
   "Subscribe to the positions updates"
   positions(
     "ID of the party from we want updates for"
-    partyId: String!
+    partyId: String
+    "ID of the market from which we want postion updates"
+    marketId: String
   ): Position!
 
   "Subscribe to the market depths update"
@@ -179,6 +181,12 @@ type Subscription {
     "ID of the market we want to receive market depth updates for"
     marketId: String!
   ): MarketDepth!
+
+  "Subscribe to price level market depth updates"
+  marketDepthUpdate(
+    "ID of the market we want to receive market depth pricelevel updates for"
+    marketId: String!
+  ): MarketDepthUpdate!
 
   "Subscribe to the accounts updates"
   accounts(
@@ -228,6 +236,8 @@ type Subscription {
     marketID: String
     "optional filter by party ID"
     partyID: String
+    "Specifies the size that the client will receive events in. Using 0 results in a variable batch size being sent. The stream will be closed if the client fails to read a batch within 5 seconds"
+    batchSize: Int!
   ): [BusEvent!]
 }
 
@@ -286,6 +296,8 @@ type MarketData {
   indicativeVolume: String!
   "what state the market is in (auction, continuous etc)"
   marketState: MarketState!
+  "what triggered an auction (if an auction was started)"
+  trigger: AuctionTrigger!
 }
 
 type PreparedWithdrawal {
@@ -423,8 +435,8 @@ type Query {
   "The list of all assets in use in the vega network"
   assets: [Asset!]
 
-  "return an estiamation of fee it the order was to trade"
-  estimateFeeForOrder(
+  "return an estiamation of the potential cost for a new order"
+  estimateOrder(
     "ID of the market to place the order"
     marketId: String!
     "ID of the party placing the order"
@@ -441,7 +453,7 @@ type Query {
     expiration: String
     "type of the order"
     type: OrderType!
-  ): OrderFeeEstimate!
+  ): OrderEstimate!
 
   "find a withdrawal using its id"
   withdrawal(
@@ -460,6 +472,9 @@ type Query {
     "id of the Deposit"
     id: String!
   ): Deposit
+
+  "return the full list of network parameters"
+  networkParameters: [NetworkParameter!]
 }
 
 "Represents an asset in vega"
@@ -619,6 +634,9 @@ type Statistics {
 
   "Number of market depth subscriptions"
   marketDepthSubscriptions: Int!
+
+  "Number of market depth update subscriptions"
+  marketDepthUpdateSubscriptions: Int!
 
   "Number of positions subscriptions"
   positionsSubscriptions: Int!
@@ -780,6 +798,46 @@ type Fees {
   factors: FeeFactors!
 }
 
+"""
+An auction duration is used to configure 3 auction periods:
+1. `duration > 0`, `volume == 0`:
+  The auction will last for at least N seconds.
+2. `duration == 0`, `volume > 0`:
+  The auction will end once we can close with given traded volume.
+3. `duration > 0`, `volume > 0`:
+  The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+"""
+type AuctionDuration {
+  "Duration of the auction in seconds"
+  durationSecs: Int!
+  "Target uncrossing trading volume"
+  volume: Int!
+}
+
+"""
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+"""
+type PriceMonitoringParameters {
+  "Price monitoring projection horizon τ in seconds (> 0)."
+  horizonSecs: Int!
+  "Price monitoring probability level p. (>0 and < 1)"
+  probability: Float!
+  """
+  Price monitoring auction extension duration in seconds should the price
+  breach it's theoretical level over the specified horizon at the specified
+  probability level (> 0)
+  """
+  auctionExtensionSecs: Int!
+}
+
+"Configuration of a market price monitorings auctions triggers"
+type PriceMonitoringSettings {
+  "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
+  parameters: [PriceMonitoringParameters!]
+  "How often (in seconds) the price monitoring bounds should be updated"
+  updateFrequencySecs: Int!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
@@ -815,6 +873,15 @@ type Market {
     GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
   """
   decimalPlaces: Int!
+
+  """
+  Auction duration specifies how long the opening auction will run (minimum
+  duration and optionally a minimum traded volume).
+  """
+  openingAuction: AuctionDuration!
+
+  "Price monitoring settings for the market"
+  priceMonitoringSettings: PriceMonitoringSettings!
 
   "Orders on a market"
   orders (
@@ -875,6 +942,28 @@ type MarketDepth {
 
     "Last trade for the given market (if available)"
     lastTrade: Trade
+
+    "Sequence number for the current snapshot of the market depth"
+    sequenceNumber: String!
+}
+
+"""
+Market Depth Update is a delta to the current market depth which can be used to update the
+market depth structure to keep it correct
+"""
+type MarketDepthUpdate {
+
+    "Market id"
+    market: Market!
+
+    "Buy side price levels (if available)"
+    buy: [PriceLevel!]
+
+    "Sell side price levels (if available)"
+    sell: [PriceLevel!]
+
+    "Sequence number for the current snapshot of the market depth"
+    sequenceNumber: String!
 }
 
 "Represents a price on either the buy or sell side and all the orders at that price"
@@ -1062,12 +1151,15 @@ type Order {
 }
 
 "An estimate of the fee to be paid by the order"
-type OrderFeeEstimate {
+type OrderEstimate {
   "The estimated fee if the order was to trade"
   fee: TradeFee!
 
   "The total estimated amount of fee if the order was to trade"
   totalFeeAmount: String!
+
+  "The margin requirement for this order"
+  marginLevels: MarginLevels!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -1337,6 +1429,14 @@ enum ProposalRejectionReason {
   InvalidAsset
   "proposal terms timestamps are not compatible (Validation < Closing < Enactment)"
   IncompatibleTimestamps
+  "Risk parameters are missing from the market proposal"
+  NoRiskParameters
+  "Invalid key in update network parameter proposal"
+  NetworkParameterInvalidKey
+  "Invalid valid in update network parameter proposal"
+  NetworkParameterInvalidValue
+  "Validation failed for network parameter proposal"
+  NetworkParameterValidationFailed
 }
 
 "Reason for the order beeing rejected by the core node"
@@ -1407,6 +1507,38 @@ enum OrderRejectionReason {
 
   "Invalid Time In Force"
   InvalidTimeInForce
+
+  "Attempt to amend order to GTT without ExpiryAt"
+  AmendToGTTWithoutExpiryAt
+
+  "Attempt to amend ExpiryAt to a value before CreatedAt"
+  ExpiryAtBeforeCreatedAt
+
+  "Attempt to amend to GTC without an ExpiryAt value"
+  GTCWithExpiryAtNotValid
+
+  "Amending to FOK or IOC is invalid"
+  CannotAmendToFOKOrIOC
+
+  "Amending to GFA or GFN is invalid"
+  CannotAmendToGFAOrGFN
+
+  "Amending from GFA or GFN is invalid"
+  CannotAmendFromGFAOrGFN
+
+  "Invalid Market Type"
+  InvalidMarketType
+
+  "Good for normal order received during an auction"
+  GFAOrderDuringAuction
+
+  "Good for auction order received during continuous trading"
+  GFNOrderDuringContinuousTrading
+
+  "IOC orders are not allowed during auction"
+  IOCOrderDuringAuction
+  "FOK orders are not allowed during auction"
+  FOKOrderDuringAuction
 }
 
 enum OrderType {
@@ -1428,8 +1560,14 @@ enum MarketState {
   "Continuous trading where orders are processed and potentially matched on arrival"
   CONTINUOUS
 
-  "Auction trading where orders are uncrossed at the end of the auction period"
-  AUCTION
+  "Auction trading where orders are uncrossed at the end of the opening auction period"
+  OPENING_AUCTION
+
+  "Auction as normal trading mode for the market, where orders are uncrossed periodically"
+  BATCH_AUCTION
+
+  "Auction triggered by price/liquidity monitoring"
+  MONITORING_AUCTION
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -1568,6 +1706,30 @@ input DiscreteTradingInput {
 }
 
 """
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+"""
+input PriceMonitoringParametersInput {
+  "Price monitoring projection horizon τ in seconds (> 0)."
+  horizonSecs: Int!
+  "Price monitoring probability level p. (>0 and < 1)"
+  probability: Float!
+  """
+  Price monitoring auction extension duration in seconds should the price
+  breach it's theoretical level over the specified horizon at the specified
+  probability level (> 0)
+  """
+  auctionExtensionSecs: Int!
+}
+
+"Configuration of a market price monitorings auctions triggers"
+input PriceMonitoringSettingsInput {
+  "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
+  parameters: [PriceMonitoringParametersInput!]
+  "How often (in seconds) the price monitoring bounds should be updated"
+  updateFrequencySecs: Int
+}
+
+"""
 Allows creating new markets on the network
 """
 input NewMarketInput {
@@ -1581,6 +1743,8 @@ input NewMarketInput {
   metadata: [String!]
   "The proposed duration for the opening auction for this market in seconds"
   openingAuctionDurationSecs: Int
+  "Price monitoring configuration"
+  priceMonitoringSettings: PriceMonitoringSettingsInput
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -1618,106 +1782,33 @@ type NewAsset {
   source: AssetSource!
 }
 
-"Allows submitting a proposal for changing governance network parameters"
-type UpdateNetwork {
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  minCloseInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  maxCloseInSeconds: Int
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  minEnactInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  maxEnactInSeconds: Int
-
-  """
-  Network parameter that sets participation level required for any proposal to pass.
-  Value from 0 to 1.
-  """
-  requiredParticipation: Float
-  """
-  Network parameter that sets majority level required for any proposal to pass.
-  Value from 0.5 to 1.
-  """
-  requiredMajority: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to submit a new proposal. Value greater than 0 to 1.
-  """
-  minProposerBalance: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to cast a vote.  Value greater than 0 to 1.
-  """
-  minVoterBalance: Float
+"Allows submitting a proposal for changing network parameters"
+type UpdateNetworkParameter {
+  networkParameter: NetworkParameter!
 }
 
-"Allows submitting a proposal for changing governance network parameters"
-input UpdateNetworkInput {
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  minCloseInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to close voting. Value represents duration in seconds.
-  """
-  maxCloseInSeconds: Int
-  """
-  Network parameter that restricts when the earliest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  minEnactInSeconds: Int
-  """
-  Network parameter that restricts when the latest a proposal
-  can be set to be executed (if that proposal passed).
-  Value represents duration in seconds.
-  """
-  maxEnactInSeconds: Int
-
-  """
-  Network parameter that sets participation level required for any proposal to pass.
-  Value from 0 to 1.
-  """
-  requiredParticipation: Float
-  """
-  Network parameter that sets majority level required for any proposal to pass.
-  Value from 0.5 to 1.
-  """
-  requiredMajority: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to submit a new proposal. Value greater than 0 to 1.
-  """
-  minProposerBalance: Float
-
-  """
-  Network parameter that sets minimum balance required for a party
-  to be able to cast a vote.  Value greater than 0 to 1.
-  """
-  minVoterBalance: Float
+"Allows submitting a proposal for changing network parameters"
+input UpdateNetworkParameterInput {
+  networkParameter: NetworkParameterInput!
 }
 
+"Representation of a network parameter"
+type NetworkParameter {
+  "The name of the network parameter"
+  key: String!
+  "The value of the network parameter"
+  value: String!
+}
 
-union ProposalChange = NewMarket | UpdateMarket | UpdateNetwork | NewAsset
+"Representation of a network parameter"
+input NetworkParameterInput {
+  "The name of the network parameter"
+  key: String!
+  "The value of the network parameter"
+  value: String!
+}
+
+union ProposalChange = NewMarket | UpdateMarket | UpdateNetworkParameter | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -1769,7 +1860,7 @@ input ProposalTermsInput {
   It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
   One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
   """
-  updateNetwork: UpdateNetworkInput
+  updateNetworkParameter: UpdateNetworkParameterInput
 
   "a new Asset proposal, this will create a new asset to be used in the vega network"
   newAsset: NewAssetInput
@@ -2009,11 +2100,24 @@ type AuctionEvent {
   auctionStart: String!
   "optional end time of auction"
   auctionEnd: String!
+  "What triggered the auction"
+  trigger: AuctionTrigger!
+}
+
+enum AuctionTrigger {
+  "Invalid trigger (or no auction)"
+  Unspecified
+  "Auction because market is trading FBA"
+  Batch
+  "Opening auction"
+  Opening
+  "Price monitoring"
+  Price
+  "Liquidity monitoring"
+  Liquidity
 }
 
 enum BusEventType {
-  "all events"
-  All
   "event type indicating TimeUpdate"
   TimeUpdate
   "transfer response event"
@@ -2052,19 +2156,33 @@ enum BusEventType {
   MarketTick
   "auction event"
   Auction
+  "risk factor event"
+  RiskFactor
 
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor
 
 type BusEvent {
   "the id for this event"
   eventID: String!
+  "the block hash"
+  block: String!
   "the type of event we're dealing with"
   type: BusEventType!
   "the payload - the wrapped event"
   event: Event!
+}
+
+"A risk factor emitted by the risk model for a given market"
+type RiskFactor {
+  "market the risk factor was emitted for"
+  market: String!
+  "short factor"
+  short: Float!
+  "long factor"
+  long: Float!
 }

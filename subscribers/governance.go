@@ -99,7 +99,7 @@ func (g *GovernanceSub) loop(ctx context.Context) {
 			return
 		case e := <-g.ch:
 			if g.isRunning() {
-				g.Push(e)
+				g.Push(e...)
 			}
 		}
 	}

@@ -44,7 +44,7 @@ func (a *AccountSub) loop(ctx context.Context) {
 			return
 		case e := <-a.ch:
 			if a.isRunning() {
-				a.Push(e)
+				a.Push(e...)
 			}
 		}
 	}

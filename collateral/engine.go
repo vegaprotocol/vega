@@ -2,10 +2,13 @@ package collateral
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -77,9 +80,10 @@ type Engine struct {
 	log   *logging.Logger
 	cfgMu sync.Mutex
 
-	accs        map[string]*types.Account
-	broker      Broker
-	totalTokens uint64
+	accs         map[string]*types.Account
+	hashableAccs []*types.Account
+	broker       Broker
+	totalTokens  uint64
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
 
@@ -98,6 +102,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 		log:           log,
 		Config:        conf,
 		accs:          make(map[string]*types.Account, initialAccountSize),
+		hashableAccs:  []*types.Account{},
 		broker:        broker,
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
@@ -107,8 +112,44 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 
 // OnChainTimeUpdate is used to be specified as a callback in over services
 // in order to be called when the chain time is updated (basically EndBlock)
-func (e *Engine) OnChainTimeUpdate(t time.Time) {
+func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 	e.currentTime = t.UnixNano()
+}
+
+func (e *Engine) removeAccountFromHashableSlice(id string) {
+	i := sort.Search(len(e.hashableAccs), func(i int) bool {
+		return e.hashableAccs[i].Id >= id
+	})
+
+	copy(e.hashableAccs[i:], e.hashableAccs[i+1:])
+	e.hashableAccs = e.hashableAccs[:len(e.hashableAccs)-1]
+}
+
+func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
+	// sell side levels should be ordered in ascending
+	i := sort.Search(len(e.hashableAccs), func(i int) bool {
+		return e.hashableAccs[i].Id >= acc.Id
+	})
+
+	if i < len(e.hashableAccs) && e.hashableAccs[i].Id == acc.Id {
+		// for some reason it was already there, return now
+		return
+	}
+
+	e.hashableAccs = append(e.hashableAccs, nil)
+	copy(e.hashableAccs[i+1:], e.hashableAccs[i:])
+	e.hashableAccs[i] = acc
+}
+
+func (e *Engine) Hash() []byte {
+	output := make([]byte, len(e.hashableAccs)*8)
+	var i int
+	for _, k := range e.hashableAccs {
+		binary.BigEndian.PutUint64(output[i:], k.Balance)
+		i += 8
+	}
+
+	return crypto.Hash(output)
 }
 
 // ReloadConf updates the internal configuration of the collateral engine
@@ -151,6 +192,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
 		}
 		e.accs[infraFeeID] = infraFeeAcc
+		e.addAccountToHashableSlice(infraFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *infraFeeAcc))
 	}
 	e.log.Info("new asset added successfully",
@@ -1202,6 +1244,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 		}
 		e.accs[marginID] = &acc
+		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 	return marginID, nil
@@ -1224,6 +1267,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
+		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
@@ -1238,6 +1282,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[tID] = &acc
+		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 
@@ -1265,6 +1310,7 @@ func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyI
 			Type:     types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
 		}
 		e.accs[id] = acc
+		e.addAccountToHashableSlice(acc)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
@@ -1369,6 +1415,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountType_ACCOUNT_TYPE_INSURANCE,
 		}
 		e.accs[insuranceID] = insAcc
+		e.addAccountToHashableSlice(insAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
 
 	}
@@ -1384,6 +1431,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountType_ACCOUNT_TYPE_SETTLEMENT,
 		}
 		e.accs[settleID] = setAcc
+		e.addAccountToHashableSlice(setAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
 	}
 
@@ -1400,6 +1448,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
 		}
 		e.accs[liquidityFeeID] = liquidityFeeAcc
+		e.addAccountToHashableSlice(liquidityFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *liquidityFeeAcc))
 	}
 	makerFeeID := e.accountID(marketID, "", asset, types.AccountType_ACCOUNT_TYPE_FEES_MAKER)
@@ -1414,6 +1463,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_MAKER,
 		}
 		e.accs[makerFeeID] = makerFeeAcc
+		e.addAccountToHashableSlice(makerFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
 
@@ -1573,6 +1623,7 @@ func (e *Engine) GetTotalTokens() uint64 {
 
 func (e *Engine) removeAccount(id string) error {
 	delete(e.accs, id)
+	e.removeAccountFromHashableSlice(id)
 	return nil
 }
 

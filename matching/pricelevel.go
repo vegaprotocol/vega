@@ -95,7 +95,7 @@ func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*ty
 	return
 }
 
-func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Trade, impactedOrders []*types.Order, err error) {
+func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled bool, trades []*types.Trade, impactedOrders []*types.Order, err error) {
 	// for some reason sometimes it seems the pricelevels are not deleted when getting empty
 	// no big deal, just return early
 	if len(l.orders) <= 0 {
@@ -110,14 +110,17 @@ func (l *PriceLevel) uncross(agg *types.Order) (filled bool, trades []*types.Tra
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
 	for i, order := range l.orders {
 		// prevent wash trade
-		if order.PartyID == agg.PartyID {
-			err = ErrWashTrade
-			break
+		if checkWashTrades {
+			if order.PartyID == agg.PartyID {
+				err = ErrWashTrade
+				break
+			}
 		}
 
 		// Get size and make newTrade
 		size := l.getVolumeAllocation(agg, order)
 		if size <= 0 {
+
 			panic("Trade.size > order.remaining")
 		}
 

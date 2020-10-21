@@ -17,22 +17,6 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-func (this *NetworkConfiguration) Validate() error {
-	if this.MarginConfiguration != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarginConfiguration); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("MarginConfiguration", err)
-		}
-	}
-	if this.FeeFactorsConfiguration != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.FeeFactorsConfiguration); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("FeeFactorsConfiguration", err)
-		}
-	}
-	return nil
-}
-func (this *FeeFactorsConfiguration) Validate() error {
-	return nil
-}
 func (this *FutureProduct) Validate() error {
 	if this.Maturity == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Maturity", fmt.Errorf(`value '%v' must not be an empty string`, this.Maturity))
@@ -75,6 +59,11 @@ func (this *NewMarketConfiguration) Validate() error {
 	}
 	if !(this.DecimalPlaces < 150) {
 		return github_com_mwitkow_go_proto_validators.FieldError("DecimalPlaces", fmt.Errorf(`value '%v' must be less than '150'`, this.DecimalPlaces))
+	}
+	if this.PriceMonitoringSettings != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PriceMonitoringSettings); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
+		}
 	}
 	if oneOfNester, ok := this.GetRiskParameters().(*NewMarketConfiguration_Simple); ok {
 		if oneOfNester.Simple != nil {
@@ -120,7 +109,7 @@ func (this *NewMarket) Validate() error {
 func (this *UpdateMarket) Validate() error {
 	return nil
 }
-func (this *UpdateNetwork) Validate() error {
+func (this *UpdateNetworkParameter) Validate() error {
 	if nil == this.Changes {
 		return github_com_mwitkow_go_proto_validators.FieldError("Changes", fmt.Errorf("message must exist"))
 	}
@@ -163,10 +152,10 @@ func (this *ProposalTerms) Validate() error {
 			}
 		}
 	}
-	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateNetwork); ok {
-		if oneOfNester.UpdateNetwork != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UpdateNetwork); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("UpdateNetwork", err)
+	if oneOfNester, ok := this.GetChange().(*ProposalTerms_UpdateNetworkParameter); ok {
+		if oneOfNester.UpdateNetworkParameter != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UpdateNetworkParameter); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("UpdateNetworkParameter", err)
 			}
 		}
 	}

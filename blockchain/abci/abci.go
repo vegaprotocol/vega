@@ -1,25 +1,33 @@
 package abci
 
 import (
-	"context"
-
 	"github.com/tendermint/tendermint/abci/types"
 )
 
 const (
 	// AbciTxnValidationFailure ...
 	AbciTxnValidationFailure uint32 = 51
+
 	// AbciTxnDecodingFailure code is returned when CheckTx or DeliverTx fail to decode the Txn.
 	AbciTxnDecodingFailure uint32 = 60
 
 	// AbciTxnInternalError code is returned when CheckTx or DeliverTx fail to process the Txn.
 	AbciTxnInternalError uint32 = 70
 
-	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command
+	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
 	AbciUnknownCommandError uint32 = 80
 )
 
 func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
+	state, err := LoadGenesisState(req.AppStateBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	if t := state.ReplayAttackThreshold; t != 0 {
+		app.replayProtector = NewReplayProtector(t)
+	}
+
 	if fn := app.OnInitChain; fn != nil {
 		return fn(req)
 	}
@@ -27,8 +35,13 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 }
 
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
+	height := uint64(req.Header.Height)
+	if app.replayProtector != nil {
+		app.replayProtector.SetHeight(height)
+	}
+
 	if fn := app.OnBeginBlock; fn != nil {
-		return fn(req)
+		app.ctx, resp = fn(req)
 	}
 	return
 }
@@ -41,16 +54,12 @@ func (app *App) Commit() (resp types.ResponseCommit) {
 }
 
 func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
-	tx, err := app.codec.Decode(req.GetTx())
+	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		return NewResponseCheckTx(AbciTxnDecodingFailure, err.Error())
+		return NewResponseCheckTx(code, err.Error())
 	}
 
-	if err := tx.Validate(); err != nil {
-		return NewResponseCheckTx(AbciTxnValidationFailure, err.Error())
-	}
-
-	ctx := context.Background()
+	ctx := app.ctx
 	if fn := app.OnCheckTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {
@@ -65,17 +74,27 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		}
 	}
 
+	// at this point we consider the Tx as valid, so we add it to
+	// the cache to be consumed by DeliveryTx
+	if resp.IsOK() {
+		app.cacheTx(req.Tx, tx)
+	}
 	return resp
 }
 
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
-	tx, err := app.codec.Decode(req.GetTx())
+	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		return NewResponseDeliverTx(AbciTxnDecodingFailure, err.Error())
+		return NewResponseDeliverTx(code, err.Error())
 	}
 
+	if err := app.replayProtector.DeliverTx(tx); err != nil {
+		return NewResponseDeliverTx(AbciTxnValidationFailure, err.Error())
+	}
+	app.removeTxFromCache(req.GetTx())
+
 	// It's been validated by CheckTx so we can skip the validation here
-	ctx := context.Background()
+	ctx := app.ctx
 	if fn := app.OnDeliverTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)
 		if resp.IsErr() {

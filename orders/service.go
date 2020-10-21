@@ -49,6 +49,10 @@ var (
 	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
 	// ErrCancelOrderWithOrderIDRequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
 	ErrCancelOrderWithOrderIDRequireMarketID = errors.New("cancel order with orderID require marketID")
+	// ErrCannotAmendToGFA it is not allowed to amend an order to GFA time in force
+	ErrCannotAmendToGFA = errors.New("cannot amend to time in force GFA")
+	// ErrCannotAmendToGFN it is not allowed to amend an order to GFN time in force
+	ErrCannotAmendToGFN = errors.New("cannot amend to time in force GFN")
 )
 
 // TimeService ...
@@ -189,6 +193,16 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	}
 	if err := amendment.Validate(); err != nil {
 		return errors.Wrap(err, "order amendment validation failed")
+	}
+
+	// Check we are not trying to amend to a GFA
+	if amendment.TimeInForce == types.Order_TIF_GFA {
+		return ErrCannotAmendToGFA
+	}
+
+	// Check we are not trying to amend to a GFN
+	if amendment.TimeInForce == types.Order_TIF_GFN {
+		return ErrCannotAmendToGFN
 	}
 
 	// Check we have at least one field to update

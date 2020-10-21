@@ -49,10 +49,11 @@ type Svc struct {
 	bus   EventBus
 	gov   GovernanceDataSub
 	votes VoteSub
+	netp  NetParams
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub) *Svc {
+func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub, netp NetParams) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -62,6 +63,7 @@ func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDat
 		bus:    bus,
 		gov:    gov,
 		votes:  votes,
+		netp:   netp,
 	}
 }
 
@@ -350,7 +352,7 @@ func (s *Svc) GetUpdateMarketProposals(marketID string, inState *types.Proposal_
 // GetNetworkParametersProposals returns proposals aiming to update network
 func (s *Svc) GetNetworkParametersProposals(inState *types.Proposal_State) []*types.GovernanceData {
 	filters := []subscribers.ProposalFilter{
-		subscribers.ProposalByChange(subscribers.UpdateNetworkProposal),
+		subscribers.ProposalByChange(subscribers.UpdateNetworkParameterProposal),
 	}
 	if inState != nil {
 		filters = append(filters, subscribers.ProposalByState(*inState))
@@ -412,5 +414,27 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return ErrIncompatibleTimestamps
 	}
 
-	return nil
+	return s.validateProposalChanges(terms.Change)
+}
+
+func (s *Svc) validateProposalChanges(changes interface{}) error {
+	switch c := changes.(type) {
+	case *types.ProposalTerms_NewMarket:
+		return s.validateNewMarketChanges(c.NewMarket)
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		return s.validateUpdateNetworkParameterChanges(c.UpdateNetworkParameter)
+	default:
+		return nil
+	}
+}
+
+func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParameter) (err error) {
+	_, err = validateNetworkParameterUpdate(s.netp, np.Changes)
+	return
+}
+
+func (s *Svc) validateNewMarketChanges(nm *types.NewMarket) (err error) {
+	// just validate things which cannot be done straigh with
+	_, err = validateNewMarket(time.Time{}, nm.Changes, nil, false, s.netp)
+	return
 }

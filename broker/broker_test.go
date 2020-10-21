@@ -116,12 +116,8 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 	seqH1 := []uint64{}
 	seqH2 := []uint64{}
 	for i := range dataH1 {
-		e1, ok := dataH1[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH1 = append(seqH1, e1.Sequence())
-		e2, ok := dataH2[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH2 = append(seqH2, e2.Sequence())
+		seqH1 = append(seqH1, dataH1[i].Sequence())
+		seqH2 = append(seqH2, dataH2[i].Sequence())
 	}
 	assert.Equal(t, seqH1, seqH2)
 	<-done
@@ -168,12 +164,8 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 	seqH1 := []uint64{}
 	seqH2 := []uint64{}
 	for i := range dataH1 {
-		e1, ok := dataH1[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH1 = append(seqH1, e1.Sequence())
-		e2, ok := dataH2[i].(broker.SeqEvent)
-		assert.True(t, ok)
-		seqH2 = append(seqH2, e2.Sequence())
+		seqH1 = append(seqH1, dataH1[i].Sequence())
+		seqH2 = append(seqH2, dataH2[i].Sequence())
 	}
 	assert.Equal(t, seqH1, seqH2)
 	<-done
@@ -289,7 +281,7 @@ func testSendBatch(t *testing.T) {
 func testSendBatchChannel(t *testing.T) {
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
+	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
 	defer func() {
 		tstBroker.Finish()
 		close(closedCh)
@@ -303,57 +295,72 @@ func testSendBatchChannel(t *testing.T) {
 	sub.EXPECT().Ack().AnyTimes().Return(false)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
-	events := []events.Event{
+	batch2 := []events.Event{
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+	}
+	evts := []events.Event{
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 	}
-	// ensure all 3 events are being sent (wait for routine to spawn)
+	// ensure both batches are sent
 	wg := sync.WaitGroup{}
-	wg.Add(len(events))
+	// 2 calls, only the first batch will be sent
+	wg.Add(2)
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	// we try to get the channel 3 times, only 1 of the attempts will actually publish the event
-	sub.EXPECT().C().Times(len(events)).Return(cCh).Do(func() {
+	// we try to get the channel 2 times, only 1 of the attempts will actually publish the events
+	sub.EXPECT().C().Times(2).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})
 
 	// send events
-	tstBroker.SendBatch(events)
+	tstBroker.SendBatch(evts)
+	tstBroker.SendBatch(batch2)
 	wg.Wait()
-	// we've tried to send 3 events, subscriber could only accept one. Check state of all the things
+	// we've tried to send 2 batches of events, subscriber could only accept one. Check state of all the things
 	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
 	// because there's a loop calling functions that are returning the channels we're closing here
 	tstBroker.Unsubscribe(k1)
 	// ensure unsubscribe has returned
 	twg.Wait()
-	assert.Equal(t, events[0], <-cCh)
-	// make sure the channel is empty (no writes were pending)
-	assert.Equal(t, 0, len(cCh))
-	// ensure sequence ID's are set and are unique
-	seqIDs := make([]uint64, 0, len(events))
-	for _, e := range events {
-		se, ok := e.(broker.SeqEvent)
-		assert.True(t, ok)
-		sID := se.Sequence()
-		assert.NotZero(t, sID)
-		seqIDs = append(seqIDs, sID)
+
+	// get our batches
+	batches := [][]events.Event{
+		<-cCh, <-cCh,
 	}
-	last := len(seqIDs) - 1
-	for i := 0; i < last-1; i++ {
-		for j := i + 1; j < last; j++ {
-			assert.NotEqual(t, seqIDs[i], seqIDs[j])
+
+	// assert we have all events now.
+	batchSizes := map[int]struct{}{}
+	evtSeq := map[uint64]struct{}{}
+	for _, batch := range batches {
+		batchSizes[len(batch)] = struct{}{}
+		for _, v := range batch {
+			evtSeq[v.Sequence()] = struct{}{}
 		}
 	}
-	// this one isn't verified in the loop above
-	assert.NotEqual(t, seqIDs[last-1], seqIDs[last])
+
+	// now ensure we have the batch with right sizes
+	_, ok := batchSizes[len(batch2)]
+	assert.True(t, ok, "missing batch of size ", len(batch2))
+	_, ok = batchSizes[len(evts)]
+	assert.True(t, ok, "missing batch of size ", len(evts))
+
+	// now ensure we got all sequence IDs
+	for _, v := range append(evts, batch2...) {
+		_, ok := evtSeq[v.Sequence()]
+		if !ok {
+			t.Fatalf("missing event sequence from batches %v", v.Sequence())
+		}
+	}
 }
 
 func testSkipOptional(t *testing.T) {
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan events.Event, 1)
+	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
 	defer func() {
 		tstBroker.Finish()
 		close(closedCh)
@@ -368,24 +375,24 @@ func testSkipOptional(t *testing.T) {
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 
-	events := []*evt{
+	evts := []*evt{
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 		tstBroker.randomEvt(),
 	}
 	// ensure all 3 events are being sent (wait for routine to spawn)
 	wg := sync.WaitGroup{}
-	wg.Add(len(events))
+	wg.Add(len(evts))
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
 	// we try to get the channel 3 times, only 1 of the attempts will actually publish the event
-	sub.EXPECT().C().Times(len(events)).Return(cCh).Do(func() {
+	sub.EXPECT().C().Times(len(evts)).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})
 
 	// send events
-	for _, e := range events {
+	for _, e := range evts {
 		tstBroker.Send(e)
 	}
 	wg.Wait()
@@ -395,7 +402,25 @@ func testSkipOptional(t *testing.T) {
 	tstBroker.Unsubscribe(k1)
 	// ensure unsubscribe has returned
 	twg.Wait()
-	assert.Equal(t, events[0], <-cCh)
+
+	// make a map to check all sequences
+	seq := map[uint64]struct{}{}
+	for i := len(evts); i != 0; i-- {
+		ev := <-cCh
+		assert.NotEmpty(t, ev)
+		for _, e := range ev {
+			seq[e.Sequence()] = struct{}{}
+		}
+	}
+
+	// no verify all ev sequence are received
+	for _, ev := range evts {
+		_, ok := seq[ev.Sequence()]
+		if !ok {
+			t.Fatalf("missing event sequence from received events %v", ev.Sequence())
+		}
+	}
+
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
 }

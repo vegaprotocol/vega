@@ -21,7 +21,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/risk Orderbook
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
-	GetMarketState() types.MarketState
+	InAuction() bool
 }
 
 // Broker the event bus broker
@@ -111,7 +111,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // CalculateFactors trigger the calculation of the risk factors
-func (e *Engine) CalculateFactors(now time.Time) {
+func (e *Engine) CalculateFactors(ctx context.Context, now time.Time) {
 	// don't calculate risk factors if we are before or at the next update time (calcs are before
 	// processing and we calc factors after the time so we wait for time > nextUpdateTime) OR if we are
 	// already waiting on risk calcs
@@ -127,6 +127,16 @@ func (e *Engine) CalculateFactors(now time.Time) {
 			result.NextUpdateTimestamp = now.Add(e.model.CalculationInterval()).UnixNano()
 		}
 		e.factors = result
+		// FIXME(jeremy): here we are iterating over the risk factors map
+		// although we know there's only one asset in the map, we should probably
+		// refactor the returned values from the model.
+		var rf types.RiskFactor
+		for _, v := range result.RiskFactors {
+			rf = *v
+		}
+		rf.Market = e.mktID
+		// then we can send in the broker
+		e.broker.Send(events.NewRiskFactorEvent(ctx, rf))
 	} else {
 		e.waiting = true
 	}
@@ -141,7 +151,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	var margins *types.MarginLevels
-	if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+	if !e.ob.InAuction() {
 		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 	} else {
 		margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -149,13 +159,6 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	// no margins updates, nothing to do then
 	if margins == nil {
 		return nil, nil
-	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("margins calculated on new order",
-			logging.String("party-id", evt.Party()),
-			logging.String("market-id", evt.MarketID()),
-			logging.Reflect("margins", *margins),
-		)
 	}
 
 	// update other fields for the margins
@@ -218,7 +221,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
-		if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+		if !e.ob.InAuction() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -307,7 +310,7 @@ func (e *Engine) ExpectMargins(
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	for _, evt := range evts {
 		var margins *types.MarginLevels
-		if e.ob.GetMarketState() == types.MarketState_MARKET_STATE_CONTINUOUS {
+		if !e.ob.InAuction() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])

@@ -22,6 +22,8 @@
     - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
     - [EstimateFeeRequest](#api.EstimateFeeRequest)
     - [EstimateFeeResponse](#api.EstimateFeeResponse)
+    - [EstimateMarginRequest](#api.EstimateMarginRequest)
+    - [EstimateMarginResponse](#api.EstimateMarginResponse)
     - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
     - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
     - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
@@ -58,9 +60,12 @@
     - [MarketDepthRequest](#api.MarketDepthRequest)
     - [MarketDepthResponse](#api.MarketDepthResponse)
     - [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest)
+    - [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest)
     - [MarketsDataResponse](#api.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
     - [MarketsResponse](#api.MarketsResponse)
+    - [NetworkParametersRequest](#api.NetworkParametersRequest)
+    - [NetworkParametersResponse](#api.NetworkParametersResponse)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
@@ -163,20 +168,18 @@
     - [BusEventType](#vega.BusEventType)
 
 - [proto/governance.proto](#proto/governance.proto)
-    - [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration)
     - [FutureProduct](#vega.FutureProduct)
     - [GovernanceData](#vega.GovernanceData)
     - [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry)
     - [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry)
     - [InstrumentConfiguration](#vega.InstrumentConfiguration)
-    - [NetworkConfiguration](#vega.NetworkConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
     - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
     - [UpdateMarket](#vega.UpdateMarket)
-    - [UpdateNetwork](#vega.UpdateNetwork)
+    - [UpdateNetworkParameter](#vega.UpdateNetworkParameter)
     - [Vote](#vega.Vote)
 
     - [Proposal.State](#vega.Proposal.State)
@@ -199,6 +202,8 @@
     - [LogNormalRiskModel](#vega.LogNormalRiskModel)
     - [MarginCalculator](#vega.MarginCalculator)
     - [Market](#vega.Market)
+    - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
+    - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -243,6 +248,7 @@
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
     - [MarketDepthUpdate](#vega.MarketDepthUpdate)
+    - [NetworkParameter](#vega.NetworkParameter)
     - [NodeRegistration](#vega.NodeRegistration)
     - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
@@ -277,6 +283,7 @@
     - [Withdrawal](#vega.Withdrawal)
 
     - [AccountType](#vega.AccountType)
+    - [AuctionTrigger](#vega.AuctionTrigger)
     - [ChainStatus](#vega.ChainStatus)
     - [Deposit.Status](#vega.Deposit.Status)
     - [Interval](#vega.Interval)
@@ -558,7 +565,7 @@ Request to fetch the estimated fee if an order were to trade immediately
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| order | [vega.Order](#vega.Order) |  | Order to estimate fees for |
+| order | [vega.Order](#vega.Order) |  | Order to estimate fees for the following fields in the order are required: MarketID (used to specify the fee factors) Price (the price at which the order could trade) Size (the size at which the order could eventually trade) |
 
 
 
@@ -574,6 +581,36 @@ Response to a EstimateFeeRequest, containing the estimated fees for a given orde
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | fee | [vega.Fee](#vega.Fee) |  | Summary of the estimated fees for this order if it were to trade now |
+
+
+
+
+
+
+<a name="api.EstimateMarginRequest"></a>
+
+### EstimateMarginRequest
+Request to fetch the estimated MarginLevels if an order were to trade immediately
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| order | [vega.Order](#vega.Order) |  | Order to estimate fees for |
+
+
+
+
+
+
+<a name="api.EstimateMarginResponse"></a>
+
+### EstimateMarginResponse
+Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marginLevels | [vega.MarginLevels](#vega.MarginLevels) |  | Summary of the estimated margins for this order if it were to trade now |
 
 
 
@@ -1110,6 +1147,7 @@ Response for the market depth/order book price levels on a market.
 | buy | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the buy side of the market depth data. |
 | sell | [vega.PriceLevel](#vega.PriceLevel) | repeated | Zero or more price levels for the sell side of the market depth data. |
 | lastTrade | [vega.Trade](#vega.Trade) |  | Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`. |
+| sequenceNumber | [uint64](#uint64) |  | Sequence number incremented after each update |
 
 
 
@@ -1120,6 +1158,21 @@ Response for the market depth/order book price levels on a market.
 
 ### MarketDepthSubscribeRequest
 Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier. Required field. |
+
+
+
+
+
+
+<a name="api.MarketDepthUpdatesSubscribeRequest"></a>
+
+### MarketDepthUpdatesSubscribeRequest
+Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data.
 
 
 | Field | Type | Label | Description |
@@ -1177,17 +1230,45 @@ Response for a list of markets on Vega.
 
 
 
-<a name="api.ObserveEventsRequest"></a>
+<a name="api.NetworkParametersRequest"></a>
 
-### ObserveEventsRequest
-Request to observe some/all events (raw). All parameters are optional filters (one or more event types, by marketID and/or partyID)
+### NetworkParametersRequest
+A message requesting for the list
+of all network parameters
+
+
+
+
+
+
+<a name="api.NetworkParametersResponse"></a>
+
+### NetworkParametersResponse
+A response containing all of the
+vega network parameters
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| type | [vega.BusEventType](#vega.BusEventType) | repeated |  |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
+| networkParameters | [vega.NetworkParameter](#vega.NetworkParameter) | repeated |  |
+
+
+
+
+
+
+<a name="api.ObserveEventsRequest"></a>
+
+### ObserveEventsRequest
+Request to subscribe to a stream of one or more event types from the Vega event bus
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [vega.BusEventType](#vega.BusEventType) | repeated | One or more types of event. Required field. |
+| marketID | [string](#string) |  | Market identifier. Optional field. |
+| partyID | [string](#string) |  | Party identifier. Optional field. |
+| batchSize | [int64](#int64) |  | Batch size. Optional field. If not specified, any events received will be sent immediately. If the client is not ready for the next data-set, data may be dropped a number of times, and eventually the stream is closed. if specified, the first batch will be sent when ready. To receive the next set of events, the client must write an `ObserveEventBatch` message on the stream to flush the buffer. If no message is received in 5 seconds, the stream is closed. Default: 0, send any and all events when they are available. |
 
 
 
@@ -1197,12 +1278,12 @@ Request to observe some/all events (raw). All parameters are optional filters (o
 <a name="api.ObserveEventsResponse"></a>
 
 ### ObserveEventsResponse
-Response type streamed back when observing events. Slice of wrapped events
+Response to a subscribed stream of events from the Vega event bus
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| events | [vega.BusEvent](#vega.BusEvent) | repeated |  |
+| events | [vega.BusEvent](#vega.BusEvent) | repeated | One or more events |
 
 
 
@@ -1612,7 +1693,8 @@ Request to subscribe to a stream of (Positions)[#vega.Position].
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| partyID | [string](#string) |  | Party identifier. Required field. |
+| partyID | [string](#string) |  | Party identifier. Optional field. |
+| marketID | [string](#string) |  | Market identifier. Optional field. |
 
 
 
@@ -2118,13 +2200,14 @@ The response for a list of withdrawals
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
-| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
+| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) stream | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
 | CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream | Subscribe to a stream of Candles |
 | MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream | Subscribe to a stream of Margin Levels |
 | MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream | Subscribe to a stream of Market Depth |
+| MarketDepthUpdatesSubscribe | [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest) | [.vega.MarketDepthUpdate](#vega.MarketDepthUpdate) stream | Subscribe to a stream of Market Depth PriceLevel Updates |
 | MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream | Subscribe to a stream of Markets Data |
 | OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream | Subscribe to a stream of Orders |
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
@@ -2134,11 +2217,13 @@ The response for a list of withdrawals
 | AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier. |
 | Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega. |
 | EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
+| EstimateMargin | [EstimateMarginRequest](#api.EstimateMarginRequest) | [EstimateMarginResponse](#api.EstimateMarginResponse) | Get an estimate for the margin required for a new order |
 | ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal these data are being used to bundle the call to the smart contract on the ethereum bridge |
 | Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its ID |
 | Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
 | Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
 | Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
+| NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
 
 
 
@@ -2571,16 +2656,17 @@ An event related to validator management with foreign networks.
 <a name="vega.AuctionEvent"></a>
 
 ### AuctionEvent
-
+An auction event indicating a change in auction state, for example starting or ending an auction
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| openingAuction | [bool](#bool) |  |  |
-| leave | [bool](#bool) |  |  |
-| start | [int64](#int64) |  |  |
-| end | [int64](#int64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| openingAuction | [bool](#bool) |  | True if the event indicates an auction opening and False otherwise |
+| leave | [bool](#bool) |  | True if the event indicates leaving auction mode and False otherwise |
+| start | [int64](#int64) |  | Timestamp containing the start time for an auction |
+| end | [int64](#int64) |  | Timestamp containing the end time for an auction |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | the reason this market is/was in auction |
 
 
 
@@ -2590,36 +2676,38 @@ An event related to validator management with foreign networks.
 <a name="vega.BusEvent"></a>
 
 ### BusEvent
-BusEvent wraps around the event data emited by the core. All messages have the event ID, and the type flag.
-the actual data is set as a oneof field
+A bus event is a container for event bus events emitted by Vega
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| type | [BusEventType](#vega.BusEventType) |  |  |
-| timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  |  |
-| transferResponses | [TransferResponses](#vega.TransferResponses) |  |  |
-| positionResolution | [PositionResolution](#vega.PositionResolution) |  |  |
-| order | [Order](#vega.Order) |  |  |
-| account | [Account](#vega.Account) |  |  |
-| party | [Party](#vega.Party) |  |  |
-| trade | [Trade](#vega.Trade) |  |  |
-| marginLevels | [MarginLevels](#vega.MarginLevels) |  |  |
-| proposal | [Proposal](#vega.Proposal) |  |  |
-| vote | [Vote](#vega.Vote) |  |  |
-| marketData | [MarketData](#vega.MarketData) |  |  |
-| nodeSignature | [NodeSignature](#vega.NodeSignature) |  |  |
-| lossSocialization | [LossSocialization](#vega.LossSocialization) |  |  |
-| settlePosition | [SettlePosition](#vega.SettlePosition) |  |  |
-| settleDistressed | [SettleDistressed](#vega.SettleDistressed) |  |  |
-| marketCreated | [Market](#vega.Market) |  |  |
-| asset | [Asset](#vega.Asset) |  |  |
-| marketTick | [MarketTick](#vega.MarketTick) |  |  |
-| withdrawal | [Withdrawal](#vega.Withdrawal) |  |  |
-| deposit | [Deposit](#vega.Deposit) |  |  |
-| auction | [AuctionEvent](#vega.AuctionEvent) |  |  |
-| market | [MarketEvent](#vega.MarketEvent) |  |  |
+| ID | [string](#string) |  | A unique event identifier for the message |
+| block | [string](#string) |  | The batch (or block) of transactions that the events relate to |
+| type | [BusEventType](#vega.BusEventType) |  | The type of bus event (one of the list below) |
+| timeUpdate | [TimeUpdate](#vega.TimeUpdate) |  | Time update events, see [TimeUpdate](#vega.TimeUpdate) |
+| transferResponses | [TransferResponses](#vega.TransferResponses) |  | Transfer responses update events, see [TransferResponses](#vega.TransferResponses) |
+| positionResolution | [PositionResolution](#vega.PositionResolution) |  | Position resolution events, see [PositionResolution](#vega.PositionResolution) |
+| order | [Order](#vega.Order) |  | Order events |
+| account | [Account](#vega.Account) |  | Account events |
+| party | [Party](#vega.Party) |  | Party events |
+| trade | [Trade](#vega.Trade) |  | Trade events |
+| marginLevels | [MarginLevels](#vega.MarginLevels) |  | Margin level update events |
+| proposal | [Proposal](#vega.Proposal) |  | Proposal events (for governance) |
+| vote | [Vote](#vega.Vote) |  | Vote events (for governance) |
+| marketData | [MarketData](#vega.MarketData) |  | Market data events |
+| nodeSignature | [NodeSignature](#vega.NodeSignature) |  | Node signature events |
+| lossSocialization | [LossSocialization](#vega.LossSocialization) |  | Loss socialization events, see [LossSocialization](#vega.LossSocialization) |
+| settlePosition | [SettlePosition](#vega.SettlePosition) |  | Position settlement events, see [SettlePosition](#vega.SettlePosition) |
+| settleDistressed | [SettleDistressed](#vega.SettleDistressed) |  | Position distressed events, see [SettleDistressed](#vega.SettleDistressed) |
+| marketCreated | [Market](#vega.Market) |  | Market created events |
+| asset | [Asset](#vega.Asset) |  | Asset events |
+| marketTick | [MarketTick](#vega.MarketTick) |  | Market tick events, see [MarketTick](#vega.MarketTick) |
+| withdrawal | [Withdrawal](#vega.Withdrawal) |  | Withdrawal events |
+| deposit | [Deposit](#vega.Deposit) |  | Deposit events |
+| auction | [AuctionEvent](#vega.AuctionEvent) |  | Auction events, see [AuctionEvent](#vega.AuctionEvent) |
+| riskFactor | [RiskFactor](#vega.RiskFactor) |  | Risk factor events |
+| networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
+| market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
 
 
 
@@ -2629,14 +2717,14 @@ the actual data is set as a oneof field
 <a name="vega.LossSocialization"></a>
 
 ### LossSocialization
-LossSocialization event amount of wins unable to be distributed
+A loss socialization event contains details on the amount of wins unable to be distributed
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| amount | [int64](#int64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| partyID | [string](#string) |  | Party identifier (public key) for the event |
+| amount | [int64](#int64) |  | Amount distributed |
 
 
 
@@ -2652,8 +2740,8 @@ interface has a method to return a string for logging
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| payload | [string](#string) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| payload | [string](#string) |  | Payload is a unique information string. |
 
 
 
@@ -2663,13 +2751,13 @@ interface has a method to return a string for logging
 <a name="vega.MarketTick"></a>
 
 ### MarketTick
-Time update for each market, can be used to see when new markets actually started in terms of block-time
+A market ticket event contains the time value for when a particular market was last processed on Vega
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| ID | [string](#string) |  |  |
-| time | [int64](#int64) |  |  |
+| ID | [string](#string) |  | Market identifier for the event |
+| time | [int64](#int64) |  | Timestamp containing latest update from Vega blockchain aka Vega-time |
 
 
 
@@ -2679,15 +2767,15 @@ Time update for each market, can be used to see when new markets actually starte
 <a name="vega.PositionResolution"></a>
 
 ### PositionResolution
-PositionResolution event, a market event indicating number of distressed traders, closed out, at what mark price on which market
+A position resolution event contains information on distressed trades
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| distressed | [int64](#int64) |  |  |
-| closed | [int64](#int64) |  |  |
-| markPrice | [uint64](#uint64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| distressed | [int64](#int64) |  | Number of distressed traders |
+| closed | [int64](#int64) |  | Number of close outs |
+| markPrice | [uint64](#uint64) |  | Mark price, as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
 
 
 
@@ -2697,16 +2785,17 @@ PositionResolution event, a market event indicating number of distressed traders
 <a name="vega.SettleDistressed"></a>
 
 ### SettleDistressed
-SettleDistressed event per distressed trader who was closed out, any PositionResolution event (market level) will most likely
-be followed by a number of these events
+A settle distressed event contains information on distressed trading parties who are closed out
+
+Note: Any PositionResolution event (market level) will most likely be followed by a number of these events
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| margin | [uint64](#uint64) |  |  |
-| price | [uint64](#uint64) |  |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| partyID | [string](#string) |  | Party identifier (public key) for the event |
+| margin | [uint64](#uint64) |  | Margin value as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
+| price | [uint64](#uint64) |  | Price as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
 
 
 
@@ -2716,15 +2805,15 @@ be followed by a number of these events
 <a name="vega.SettlePosition"></a>
 
 ### SettlePosition
-SettlePosition data for party: position settlements (part of trader position information)
+A settle position event contains position settlement information for a party
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| marketID | [string](#string) |  |  |
-| partyID | [string](#string) |  |  |
-| price | [uint64](#uint64) |  |  |
-| tradeSettlements | [TradeSettlement](#vega.TradeSettlement) | repeated |  |
+| marketID | [string](#string) |  | Market identifier for the event |
+| partyID | [string](#string) |  | Party identifier (public key) for the event |
+| price | [uint64](#uint64) |  | Price of settlement as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
+| tradeSettlements | [TradeSettlement](#vega.TradeSettlement) | repeated | A collection of 1 or more trade settlements |
 
 
 
@@ -2734,12 +2823,12 @@ SettlePosition data for party: position settlements (part of trader position inf
 <a name="vega.TimeUpdate"></a>
 
 ### TimeUpdate
-TimeUpdate - event containing the latest block time
+A time update event contains the latest time update from Vega blockchain
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  |  |
+| timestamp | [int64](#int64) |  | Timestamp containing latest update from Vega blockchain aka Vega-time |
 
 
 
@@ -2749,13 +2838,13 @@ TimeUpdate - event containing the latest block time
 <a name="vega.TradeSettlement"></a>
 
 ### TradeSettlement
-TradeSettlement data, part of settle position event
+A trade settlement is part of the settle position event
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| size | [int64](#int64) |  |  |
-| price | [uint64](#uint64) |  |  |
+| size | [int64](#int64) |  | Size of trade settlement |
+| price | [uint64](#uint64) |  | Price of settlement as an integer, for example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places |
 
 
 
@@ -2765,12 +2854,12 @@ TradeSettlement data, part of settle position event
 <a name="vega.TransferResponses"></a>
 
 ### TransferResponses
-TransferResponses - a slice of transfer response objects
+A transfer responses event contains a collection of transfer information
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| responses | [TransferResponse](#vega.TransferResponse) | repeated |  |
+| responses | [TransferResponse](#vega.TransferResponse) | repeated | 1 or more entries containing internal transfer information |
 
 
 
@@ -2782,34 +2871,39 @@ TransferResponses - a slice of transfer response objects
 <a name="vega.BusEventType"></a>
 
 ### BusEventType
-event types, 2 groups: actual single values, and then some events that capture a group of events
+An (event) bus event type is used to specify a type of event
+It has 2 styles of event:
+Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
+Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| BUS_EVENT_TYPE_UNSPECIFIED | 0 |  |
-| BUS_EVENT_TYPE_ALL | 1 |  |
-| BUS_EVENT_TYPE_TIME_UPDATE | 2 |  |
-| BUS_EVENT_TYPE_TRANSFER_RESPONSES | 3 |  |
-| BUS_EVENT_TYPE_POSITION_RESOLUTION | 4 |  |
-| BUS_EVENT_TYPE_ORDER | 5 |  |
-| BUS_EVENT_TYPE_ACCOUNT | 6 |  |
-| BUS_EVENT_TYPE_PARTY | 7 |  |
-| BUS_EVENT_TYPE_TRADE | 8 |  |
-| BUS_EVENT_TYPE_MARGIN_LEVELS | 9 |  |
-| BUS_EVENT_TYPE_PROPOSAL | 10 |  |
-| BUS_EVENT_TYPE_VOTE | 11 |  |
-| BUS_EVENT_TYPE_MARKET_DATA | 12 |  |
-| BUS_EVENT_TYPE_NODE_SIGNATURE | 13 |  |
-| BUS_EVENT_TYPE_LOSS_SOCIALIZATION | 14 |  |
-| BUS_EVENT_TYPE_SETTLE_POSITION | 15 |  |
-| BUS_EVENT_TYPE_SETTLE_DISTRESSED | 16 |  |
-| BUS_EVENT_TYPE_MARKET_CREATED | 17 |  |
-| BUS_EVENT_TYPE_ASSET | 18 |  |
-| BUS_EVENT_TYPE_MARKET_TICK | 19 |  |
-| BUS_EVENT_TYPE_WITHDRAWAL | 20 |  |
-| BUS_EVENT_TYPE_DEPOSIT | 21 |  |
-| BUS_EVENT_TYPE_AUCTION | 22 |  |
-| BUS_EVENT_TYPE_MARKET | 101 | special event for all events implementing a specific interface |
+| BUS_EVENT_TYPE_UNSPECIFIED | 0 | Default value, always invalid |
+| BUS_EVENT_TYPE_ALL | 1 | Events of ALL event types, used when filtering stream from event bus |
+| BUS_EVENT_TYPE_TIME_UPDATE | 2 | Event for blockchain time updates |
+| BUS_EVENT_TYPE_TRANSFER_RESPONSES | 3 | Event for when a transfer happens internally, contains the transfer information |
+| BUS_EVENT_TYPE_POSITION_RESOLUTION | 4 | Event indicating position resolution has occurred |
+| BUS_EVENT_TYPE_ORDER | 5 | Event for order updates, both new and existing orders |
+| BUS_EVENT_TYPE_ACCOUNT | 6 | Event for account updates |
+| BUS_EVENT_TYPE_PARTY | 7 | Event for party updates |
+| BUS_EVENT_TYPE_TRADE | 8 | Event indicating a new trade has occurred |
+| BUS_EVENT_TYPE_MARGIN_LEVELS | 9 | Event indicating margin levels have changed for a party |
+| BUS_EVENT_TYPE_PROPOSAL | 10 | Event for proposal updates (for governance) |
+| BUS_EVENT_TYPE_VOTE | 11 | Event indicating a new vote has occurred (for governance) |
+| BUS_EVENT_TYPE_MARKET_DATA | 12 | Event for market data updates |
+| BUS_EVENT_TYPE_NODE_SIGNATURE | 13 | Event for a new signature for a Vega node |
+| BUS_EVENT_TYPE_LOSS_SOCIALIZATION | 14 | Event indicating loss socialisation occurred for a party |
+| BUS_EVENT_TYPE_SETTLE_POSITION | 15 | Event for when a position is being settled |
+| BUS_EVENT_TYPE_SETTLE_DISTRESSED | 16 | Event for when a position is distressed |
+| BUS_EVENT_TYPE_MARKET_CREATED | 17 | Event indicating a new market was created |
+| BUS_EVENT_TYPE_ASSET | 18 | Event for when an asset is added to Vega |
+| BUS_EVENT_TYPE_MARKET_TICK | 19 | Event indicating a market tick event |
+| BUS_EVENT_TYPE_WITHDRAWAL | 20 | Event for when a withdrawal occurs |
+| BUS_EVENT_TYPE_DEPOSIT | 21 | Event for when a deposit occurs |
+| BUS_EVENT_TYPE_AUCTION | 22 | Event indicating a change in auction state, for example starting or ending an auction |
+| BUS_EVENT_TYPE_RISK_FACTOR | 23 | Event indicating a risk factor has been updated |
+| BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
+| BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
 
 
 
@@ -2824,23 +2918,6 @@ event types, 2 groups: actual single values, and then some events that capture a
 <p align="right"><a href="#top">Top</a></p>
 
 ## proto/governance.proto
-
-
-
-<a name="vega.FeeFactorsConfiguration"></a>
-
-### FeeFactorsConfiguration
-FeeFactors set at the network level.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| infrastructureFee | [string](#string) |  | Infrastructure fee, needs to be a valid float. |
-| makerFee | [string](#string) |  | Maker fee, needs to be a valid float. |
-| liquidityFee | [string](#string) |  | Liquidity fee, it needs to be a valid float. |
-
-
-
 
 
 
@@ -2871,8 +2948,8 @@ Governance data.
 | proposal | [Proposal](#vega.Proposal) |  | Proposal. |
 | yes | [Vote](#vega.Vote) | repeated | All &#34;yes&#34; votes in favour of the proposal above. |
 | no | [Vote](#vega.Vote) | repeated | All &#34;no&#34; votes against the proposal above. |
-| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique). |
-| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (unique). |
+| yesParty | [GovernanceData.YesPartyEntry](#vega.GovernanceData.YesPartyEntry) | repeated | All latest YES votes by party (guaranteed to be unique). key (string) is the party ID (public key) value (Vote) is the vote cast by the given party |
+| noParty | [GovernanceData.NoPartyEntry](#vega.GovernanceData.NoPartyEntry) | repeated | All latest NO votes by party (guaranteed to be unique). key (string) is the party ID (public key) value (Vote) is the vote cast by the given party |
 
 
 
@@ -2930,30 +3007,6 @@ Instrument configuration.
 
 
 
-<a name="vega.NetworkConfiguration"></a>
-
-### NetworkConfiguration
-Network configuration options.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| minCloseInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| maxCloseInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when vote closing time is allowed to be set for a proposal. |
-| minEnactInSeconds | [int64](#int64) |  | Constrains minimum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| maxEnactInSeconds | [int64](#int64) |  | Constrains maximum duration since submission (in seconds) when enactment is allowed to be set for a proposal. |
-| requiredParticipation | [float](#float) |  | Participation level required for any proposal to pass. Value from `0` to `1`. |
-| requiredMajority | [float](#float) |  | Majority level required for any proposal to pass. Value from `0.5` to `1`. |
-| minProposerBalance | [float](#float) |  | Minimum balance required for a party to be able to submit a new proposal. Value greater than `0` to `1`. |
-| minVoterBalance | [float](#float) |  | Minimum balance required for a party to be able to cast a vote. Value greater than `0` to `1`. |
-| marginConfiguration | [ScalingFactors](#vega.ScalingFactors) |  | Scaling factors for all markets created via governance. |
-| feeFactorsConfiguration | [FeeFactorsConfiguration](#vega.FeeFactorsConfiguration) |  | FeeFactors which are not set via proposal. |
-
-
-
-
-
-
 <a name="vega.NewAsset"></a>
 
 ### NewAsset
@@ -2996,6 +3049,7 @@ Configuration for a new market on Vega.
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags. |
 | openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | price monitoring configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous trading. |
@@ -3040,7 +3094,7 @@ Terms for a governance proposal on Vega.
 | validationTimestamp | [int64](#int64) |  | Validation timestamp (Unix time in seconds). |
 | updateMarket | [UpdateMarket](#vega.UpdateMarket) |  | Proposal change for modifying an existing market on Vega. |
 | newMarket | [NewMarket](#vega.NewMarket) |  | Proposal change for creating new market on Vega. |
-| updateNetwork | [UpdateNetwork](#vega.UpdateNetwork) |  | Proposal change for updating Vega network parameters. |
+| updateNetworkParameter | [UpdateNetworkParameter](#vega.UpdateNetworkParameter) |  | Proposal change for updating Vega network parameters. |
 | newAsset | [NewAsset](#vega.NewAsset) |  | Proposal change for creating new assets on Vega. |
 
 
@@ -3058,15 +3112,15 @@ Update an existing market on Vega.
 
 
 
-<a name="vega.UpdateNetwork"></a>
+<a name="vega.UpdateNetworkParameter"></a>
 
-### UpdateNetwork
+### UpdateNetworkParameter
 Update network configuration on Vega.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| changes | [NetworkConfiguration](#vega.NetworkConfiguration) |  | Configuration. |
+| changes | [NetworkParameter](#vega.NetworkParameter) |  | The network parameter to update |
 
 
 
@@ -3142,6 +3196,12 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS | 15 | The contract address is missing in the ERC20 asset source. |
 | PROPOSAL_ERROR_INVALID_ASSET | 16 | The asset id refer to no assets in vega. |
 | PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS | 17 | Proposal terms timestamps are not compatible (Validation &lt; Closing &lt; Enactment). |
+| PROPOSAL_ERROR_NO_RISK_PARAMETERS | 18 | No risk parameteres were specified |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY | 19 | Invalid key in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE | 20 | Invalid valid in update network parameter proposal |
+| PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL | 22 | Opening auction duration is less than the network minimum opening auction time |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE | 23 | Opening auction duration is more than the network minimum opening auction time |
 
 
 
@@ -3426,6 +3486,40 @@ Market definition.
 | openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | PriceMonitoringSettings for the market. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringParameters"></a>
+
+### PriceMonitoringParameters
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
+| probability | [double](#double) |  | Price monitoirng probability level p. |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringSettings"></a>
+
+### PriceMonitoringSettings
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| updateFrequency | [int64](#int64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
 
 
 
@@ -3459,6 +3553,8 @@ Risk model parameters for simple modelling.
 | ----- | ---- | ----- | ----------- |
 | factorLong | [double](#double) |  | Pre-defined risk factor value for long. |
 | factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
+| maxMoveUp | [double](#double) |  | Pre-defined maximum price move up that the model considers as valid. |
+| minMoveDown | [double](#double) |  | Pre-defined minimum price move down that the model considers as valid. |
 
 
 
@@ -4113,6 +4209,7 @@ Represents data generated by a market when open.
 | indicativePrice | [uint64](#uint64) |  | indicative price (zero if not in auction) |
 | indicativeVolume | [uint64](#uint64) |  | indicative volume (zero if not in auction) |
 | marketState | [MarketState](#vega.MarketState) |  | the current state of the market |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | if the market is in auction state, this field indicates what triggered the auction |
 
 
 
@@ -4149,6 +4246,22 @@ Represents the changed market depth since the last update
 | buy | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the buy side of the book. |
 | sell | [PriceLevel](#vega.PriceLevel) | repeated | Collection of updated price levels for the sell side of the book. |
 | sequenceNumber | [uint64](#uint64) |  | Sequence number for the market depth update |
+
+
+
+
+
+
+<a name="vega.NetworkParameter"></a>
+
+### NetworkParameter
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| Key | [string](#string) |  |  |
+| Value | [string](#string) |  |  |
 
 
 
@@ -4558,6 +4671,7 @@ Vega domain specific statistics as reported by the node the caller is connected 
 | blockDuration | [uint64](#uint64) |  | Current block duration, in nanoseconds. |
 | uptime | [string](#string) |  | Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision. |
 | chainID | [string](#string) |  | Unique identifier for the underlying Vega blockchain. |
+| marketDepthUpdatesSubscriptions | [uint32](#uint32) |  | Current number of stream subscribers to market depth update data. |
 
 
 
@@ -4634,6 +4748,7 @@ Represents a transaction to be sent to Vega.
 | ----- | ---- | ----- | ----------- |
 | inputData | [bytes](#bytes) |  | One of the set of Vega commands (proto marshalled). |
 | nonce | [uint64](#uint64) |  | A random number used to provided uniqueness and prevents against replay attack. |
+| blockHeight | [uint64](#uint64) |  | The block height associated to the transaction. This should always be current height of the node at the time of sending the Tx. BlockHeight is used as a mechanism for replay protection. |
 | address | [bytes](#bytes) |  | The address of the sender. |
 | pubKey | [bytes](#bytes) |  | The public key of the sender. |
 
@@ -4795,6 +4910,21 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 
 
 
+<a name="vega.AuctionTrigger"></a>
+
+### AuctionTrigger
+What triggered an auction (if any)
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| AUCTION_TRIGGER_UNSPECIFIED | 0 | No auction triggered |
+| AUCTION_TRIGGER_BATCH | 1 | Batch auction |
+| AUCTION_TRIGGER_OPENING | 2 | Opening auction |
+| AUCTION_TRIGGER_PRICE | 3 | Price monitoring trigger |
+| AUCTION_TRIGGER_LIQUIDITY | 4 | liquidity monitoring trigger |
+
+
+
 <a name="vega.ChainStatus"></a>
 
 ### ChainStatus
@@ -4849,7 +4979,9 @@ What mode is the market currently running, also known as market state.
 | ---- | ------ | ----------- |
 | MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
 | MARKET_STATE_CONTINUOUS | 1 | Normal trading |
-| MARKET_STATE_AUCTION | 2 | Auction trading |
+| MARKET_STATE_BATCH_AUCTION | 2 | Auction trading (FBA) |
+| MARKET_STATE_OPENING_AUCTION | 3 | Opening auction |
+| MARKET_STATE_MONITORING_AUCTION | 4 | Auction triggered by monitoring |
 
 
 
@@ -4949,6 +5081,16 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES | 21 | Order was submitted, but the party did not have enough collateral to cover the fees for the order. |
 | ORDER_ERROR_INCORRECT_MARKET_TYPE | 22 | Order was submitted with an incorrect or invalid market type. |
 | ORDER_ERROR_INVALID_TIME_IN_FORCE | 23 | Order was submitted with invalid time in force |
+| ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION | 24 | A GFN order has got to the market when it is in auction mode |
+| ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING | 25 | A GFA order has got to the market when it is in continuous trading mode |
+| ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT | 26 | Attempt to amend order to GTT without ExpiryAt |
+| ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT | 27 | Attempt to amend ExpiryAt to a value before CreatedAt |
+| ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT | 28 | Attempt to amend to GTC without an ExpiryAt value |
+| ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 29 | Amending to FOK or IOC is invalid |
+| ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 30 | Amending to GFA or GFN is invalid |
+| ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
+| ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION | 32 | IOC orders are not allowed during auction |
+| ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION | 33 | FOK orders are not allowed during auction |
 
 
 

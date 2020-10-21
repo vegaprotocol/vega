@@ -83,3 +83,6 @@ func (m meStub) Type() events.Type {
 func (m meStub) MarketEvent() string {
 	return m.str
 }
+
+func (m meStub) SetSequenceID(s uint64) {}
+func (m meStub) Sequence() uint64       { return 0 }

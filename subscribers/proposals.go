@@ -17,7 +17,7 @@ const (
 	NewMarketProposal ProposalType = iota
 	NewAssetPropopsal
 	UpdateMarketProposal
-	UpdateNetworkProposal
+	UpdateNetworkParameterProposal
 )
 
 type ProposalFilteredSub struct {
@@ -83,8 +83,8 @@ func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
 				if um := p.Terms.GetUpdateMarket(); um != nil {
 					return true
 				}
-			case UpdateNetworkProposal:
-				if un := p.Terms.GetUpdateNetwork(); un != nil {
+			case UpdateNetworkParameterProposal:
+				if un := p.Terms.GetUpdateNetworkParameter(); un != nil {
 					return true
 				}
 			}

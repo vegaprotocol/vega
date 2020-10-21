@@ -139,6 +139,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		}
 		return &protoapi.MarketByIDResponse{Market: m}, nil
 	})
+
 	incompleteMarket := &types.Market{
 		Id: "foobar",
 	}
@@ -210,6 +211,7 @@ type resolverRoot interface {
 	Mutation() gql.MutationResolver
 	Candle() gql.CandleResolver
 	MarketDepth() gql.MarketDepthResolver
+	MarketDepthUpdate() gql.MarketDepthUpdateResolver
 	PriceLevel() gql.PriceLevelResolver
 	Market() gql.MarketResolver
 	Order() gql.OrderResolver

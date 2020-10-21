@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/contextutil"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
@@ -160,6 +160,11 @@ func (app *App) cancel() {
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+	hash := hex.EncodeToString(crypto.Hash(req.AppStateBytes))
+	// let's assume genesis block is block 0
+	ctx := contextutil.WithBlockHeight(context.Background(), 0)
+	ctx = contextutil.WithTraceID(ctx, hash)
+
 	vators := make([][]byte, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -175,7 +180,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	}
 
 	app.top.UpdateValidatorSet(vators)
-	if err := app.ghandler.OnGenesis(req.Time, req.AppStateBytes, vators); err != nil {
+	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes, vators); err != nil {
 		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
 	}
 
@@ -184,9 +189,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block
-func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (resp tmtypes.ResponseBeginBlock) {
+func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
-	ctx := contextutil.WithTraceID(context.Background(), hash)
+	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
 
 	now := req.Header.Time
 	app.time.SetTimeNow(ctx, now)
@@ -218,8 +223,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	defer app.log.Debug("Processor COMMIT completed")
 
 	// Compute the AppHash and update the response
-	resp.Data = make([]byte, 8)
-	binary.BigEndian.PutUint64(resp.Data, uint64(app.size))
+	resp.Data = app.exec.Hash()
 
 	app.updateStats()
 	app.setBatchStats()
@@ -261,10 +265,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	app.size++
 	app.setTxStats(len(req.Tx))
 
-	// update the context with Tracing Info.
-	hash := hex.EncodeToString(tx.Hash())
-	ctx = contextutil.WithTraceID(ctx, hash)
-
+	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
 	return ctx, tmtypes.ResponseDeliverTx{}
 }
 

@@ -208,6 +208,20 @@ func (this *BusEvent) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_RiskFactor); ok {
+		if oneOfNester.RiskFactor != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.RiskFactor); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("RiskFactor", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_NetworkParameter); ok {
+		if oneOfNester.NetworkParameter != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.NetworkParameter); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("NetworkParameter", err)
+			}
+		}
+	}
 	if oneOfNester, ok := this.GetEvent().(*BusEvent_Market); ok {
 		if oneOfNester.Market != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Market); err != nil {

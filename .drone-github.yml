@@ -183,6 +183,10 @@ steps:
         from_secret: DEVNET_DEPLOY_SSH_PRIVATE_KEY
       DEVNET_DEPLOY_HOSTS:
         from_secret: DEVNET_DEPLOY_HOSTS
+      DEVNET_DEPLOY_HOSTS_VALIDATORS:
+        from_secret: DEVNET_DEPLOY_HOSTS_VALIDATORS
+      DEVNET_DEPLOY_HOSTS_NONVALIDATORS:
+        from_secret: DEVNET_DEPLOY_HOSTS_NONVALIDATORS
       DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       DEVNET_FAUCET_SERVER:
@@ -202,6 +206,8 @@ steps:
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
       # The deploy script requires vars:
       # - DEVNET_DEPLOY_HOSTS
+      # - DEVNET_DEPLOY_HOSTS_VALIDATORS
+      # - DEVNET_DEPLOY_HOSTS_NONVALIDATORS
       # - DEVNET_DEPLOY_SSH_KNOWN_HOSTS
       # - DEVNET_DEPLOY_SSH_PRIVATE_KEY
       # - SLACK_HOOK_URL

@@ -151,6 +151,21 @@ func (mr *MockMarketServiceMockRecorder) ObserveDepth(arg0, arg1, arg2 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDepth", reflect.TypeOf((*MockMarketService)(nil).ObserveDepth), arg0, arg1, arg2)
 }
 
+// ObserveDepthUpdates mocks base method
+func (m *MockMarketService) ObserveDepthUpdates(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.MarketDepthUpdate, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObserveDepthUpdates", arg0, arg1, arg2)
+	ret0, _ := ret[0].(<-chan *proto.MarketDepthUpdate)
+	ret1, _ := ret[1].(uint64)
+	return ret0, ret1
+}
+
+// ObserveDepthUpdates indicates an expected call of ObserveDepthUpdates
+func (mr *MockMarketServiceMockRecorder) ObserveDepthUpdates(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDepthUpdates", reflect.TypeOf((*MockMarketService)(nil).ObserveDepthUpdates), arg0, arg1, arg2)
+}
+
 // ObserveMarketsData mocks base method
 func (m *MockMarketService) ObserveMarketsData(arg0 context.Context, arg1 int, arg2 string) (<-chan []proto.MarketData, uint64) {
 	m.ctrl.T.Helper()

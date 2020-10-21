@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/pkg/errors"
 )
@@ -33,10 +34,12 @@ var (
 
 	// ErrRiskParametersNotSupported is returned if risk parameters supplied via governance are not yet supported
 	ErrRiskParametersNotSupported = errors.New("risk model parameters are not supported")
+	// ErrMissingRiskParameters ...
+	ErrMissingRiskParameters = errors.New("missing risk parameters")
 )
 
 func assignProduct(
-	parameters *NetworkParameters,
+	netp NetParams,
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
 ) error {
@@ -48,10 +51,13 @@ func assignProduct(
 				Asset:    product.Future.Asset,
 				Maturity: product.Future.Maturity,
 				Oracle: &types.Future_EthereumEvent{
+					// FIXME(): this should probably disapear / be removed
+					// or take another forms.
+					// it's totally unused as of now, so it does not matter
 					EthereumEvent: &types.EthereumEvent{
-						ContractID: parameters.FutureOracle.ContractID,
-						Event:      parameters.FutureOracle.Event,
-						Value:      parameters.FutureOracle.Value,
+						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+						Event:      "price_changed",
+						Value:      1500000,
 					},
 				},
 			},
@@ -79,11 +85,11 @@ func assignTradingMode(definition *types.NewMarketConfiguration, target *types.M
 }
 
 func createInstrument(
-	parameters *NetworkParameters,
+	netp NetParams,
 	input *types.InstrumentConfiguration,
 	tags []string,
 ) (*types.Instrument, error) {
-
+	intialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
 	result := &types.Instrument{
 		Name:      input.Name,
 		Code:      input.Code,
@@ -92,10 +98,10 @@ func createInstrument(
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
 		},
-		InitialMarkPrice: parameters.InitialMarkPrice,
+		InitialMarkPrice: uint64(intialMarkPrice),
 	}
 
-	if err := assignProduct(parameters, input, result); err != nil {
+	if err := assignProduct(netp, input, result); err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -122,25 +128,35 @@ func assignRiskModel(definition *types.NewMarketConfiguration, target *types.Tra
 func createMarket(
 	marketID string,
 	definition *types.NewMarketConfiguration,
-	parameters *NetworkParameters,
+	netp NetParams,
 	currentTime time.Time,
 	assets Assets,
 ) (*types.Market, types.ProposalError, error) {
-	if perr, err := validateNewMarket(currentTime, definition, assets); err != nil {
+	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp); err != nil {
 		return nil, perr, err
 	}
-	instrument, err := createInstrument(parameters, definition.Instrument, definition.Metadata)
+	instrument, err := createInstrument(netp, definition.Instrument, definition.Metadata)
 	if err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
+
+	// get factors for the market
+	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
+	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
+	liquiFee, _ := netp.Get(netparams.MarketFeeFactorsLiquidityFee)
+	// get the margin scaling factors
+	searchLevel, _ := netp.GetFloat(netparams.MarketMarginScalingFactorSearchLevel)
+	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
+	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
+
 	market := &types.Market{
 		Id:            marketID,
 		DecimalPlaces: definition.DecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				MakerFee:          parameters.FeeFactors.MakerFee,
-				InfrastructureFee: parameters.FeeFactors.InfrastructureFee,
-				LiquidityFee:      parameters.FeeFactors.LiquidityFee,
+				MakerFee:          makerFee,
+				InfrastructureFee: infraFee,
+				LiquidityFee:      liquiFee,
 			},
 		},
 		OpeningAuction: &types.AuctionDuration{
@@ -150,12 +166,13 @@ func createMarket(
 			Instrument: instrument,
 			MarginCalculator: &types.MarginCalculator{
 				ScalingFactors: &types.ScalingFactors{
-					CollateralRelease: parameters.MarginConfiguration.CollateralRelease,
-					InitialMargin:     parameters.MarginConfiguration.InitialMargin,
-					SearchLevel:       parameters.MarginConfiguration.SearchLevel,
+					CollateralRelease: collateralRelease,
+					InitialMargin:     intialMargin,
+					SearchLevel:       searchLevel,
 				},
 			},
 		},
+		PriceMonitoringSettings: definition.PriceMonitoringSettings,
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -166,7 +183,16 @@ func createMarket(
 	return market, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateAsset(assetID string, assets Assets) (types.ProposalError, error) {
+func validateAsset(assetID string, assets Assets, deepCheck bool) (types.ProposalError, error) {
+	if len(assetID) <= 0 {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
+			errors.New("missing asset ID")
+	}
+
+	if !deepCheck {
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	}
+
 	_, err := assets.Get(assetID)
 	if err != nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, err
@@ -179,18 +205,19 @@ func validateAsset(assetID string, assets Assets) (types.ProposalError, error) {
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateFuture(currentTime time.Time, future *types.FutureProduct, assets Assets) (types.ProposalError, error) {
+func validateFuture(currentTime time.Time, future *types.FutureProduct, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	maturity, err := time.Parse(time.RFC3339, future.Maturity)
 	if err != nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, errors.Wrap(err, "future product maturity timestamp")
 	}
-	if maturity.UnixNano() < currentTime.UnixNano() {
+
+	if deepCheck && maturity.UnixNano() < currentTime.UnixNano() {
 		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
-	return validateAsset(future.Asset, assets)
+	return validateAsset(future.Asset, assets, deepCheck)
 }
 
-func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets) (types.ProposalError, error) {
+func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	if instrument.BaseName == instrument.QuoteName {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, ErrInvalidSecurity
 	}
@@ -199,7 +226,7 @@ func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfi
 	case nil:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
 	case *types.InstrumentConfiguration_Future:
-		return validateFuture(currentTime, product.Future, assets)
+		return validateFuture(currentTime, product.Future, assets, deepCheck)
 	default:
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductInvalid
 	}
@@ -216,12 +243,45 @@ func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalErr
 	}
 }
 
+func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
+	switch rp.(type) {
+	case *types.NewMarketConfiguration_Simple,
+		*types.NewMarketConfiguration_LogNormal:
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	case nil:
+		return types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, ErrMissingRiskParameters
+	default:
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrRiskParametersNotSupported
+	}
+}
+
+func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (types.ProposalError, error) {
+	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
+	if proposedDuration < minAuctionDuration {
+		// Auction duration is too small
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL, ErrProposalOpeningAuctionDurationTooShort
+	}
+
+	maxAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMaximumDuration)
+	if proposedDuration > maxAuctionDuration {
+		// Auction duration is too large
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE, ErrProposalOpeningAuctionDurationTooLong
+	}
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+}
+
 // ValidateNewMarket checks new market proposal terms
-func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration, assets Assets) (types.ProposalError, error) {
-	if perr, err := validateInstrument(currentTime, terms.Instrument, assets); err != nil {
+func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration, assets Assets, deepCheck bool, netp NetParams) (types.ProposalError, error) {
+	if perr, err := validateInstrument(currentTime, terms.Instrument, assets, deepCheck); err != nil {
 		return perr, err
 	}
 	if perr, err := validateTradingMode(terms); err != nil {
+		return perr, err
+	}
+	if perr, err := validateRiskParameters(terms.RiskParameters); err != nil {
+		return perr, err
+	}
+	if perr, err := validateAuctionDuration(time.Duration(terms.OpeningAuctionDuration)*time.Second, netp); err != nil {
 		return perr, err
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil

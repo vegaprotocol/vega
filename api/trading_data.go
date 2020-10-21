@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -56,7 +58,7 @@ type TradeService interface {
 	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, marketID *string) (trades []*types.Trade, err error)
 	GetPositionsByParty(ctx context.Context, party, marketID string) (positions []*types.Position, err error)
 	ObserveTrades(ctx context.Context, retries int, market *string, party *string) (orders <-chan []types.Trade, ref uint64)
-	ObservePositions(ctx context.Context, retries int, party string) (positions <-chan *types.Position, ref uint64)
+	ObservePositions(ctx context.Context, retries int, party, market string) (positions <-chan *types.Position, ref uint64)
 	GetTradeSubscribersCount() int32
 	GetPositionsSubscribersCount() int32
 }
@@ -76,6 +78,7 @@ type MarketService interface {
 	GetAll(ctx context.Context) ([]*types.Market, error)
 	GetDepth(ctx context.Context, market string, limit uint64) (marketDepth *types.MarketDepth, err error)
 	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepth, ref uint64)
+	ObserveDepthUpdates(ctx context.Context, retries int, market string) (depth <-chan *types.MarketDepthUpdate, ref uint64)
 	GetMarketDepthSubscribersCount() int32
 	ObserveMarketsData(ctx context.Context, retries int, marketID string) (<-chan []types.MarketData, uint64)
 	GetMarketDataSubscribersCount() int32
@@ -148,6 +151,7 @@ type RiskService interface {
 	) (<-chan []types.MarginLevels, uint64)
 	GetMarginLevelsSubscribersCount() int32
 	GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error)
+	EstimateMargin(ctx context.Context, order *types.Order) (*types.MarginLevels, error)
 }
 
 // Notary ...
@@ -183,9 +187,15 @@ type FeeService interface {
 	EstimateFee(context.Context, *types.Order) (*types.Fee, error)
 }
 
+// NetParamsService Provides apis to estimate fees
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/net_params_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NetParamsService
+type NetParamsService interface {
+	GetAll() []types.NetworkParameter
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/api EventService
 type EventService interface {
-	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, filters ...subscribers.EventFilter) <-chan []*types.BusEvent
+	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*types.BusEvent, chan<- int)
 }
 
 type tradingDataService struct {
@@ -210,7 +220,47 @@ type tradingDataService struct {
 	statusChecker           *monitoring.Status
 	WithdrawalService       WithdrawalService
 	DepositService          DepositService
+	MarketDepthService      *subscribers.MarketDepthBuilder
+	NetParamsService        NetParamsService
 	ctx                     context.Context
+
+	chainID                  string
+	genesisTime              time.Time
+	hasGenesisTimeAndChainID uint32
+	mu                       sync.Mutex
+
+	netInfo           *tmctypes.ResultNetInfo
+	netInfoMu         sync.RWMutex
+	netInfoLastUpdate time.Time
+}
+
+func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters")()
+	nps := t.NetParamsService.GetAll()
+	out := make([]*types.NetworkParameter, 0, len(nps))
+	for _, v := range nps {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.NetworkParametersResponse{
+		NetworkParameters: out,
+	}, nil
+}
+
+func (t *tradingDataService) EstimateMargin(ctx context.Context, req *protoapi.EstimateMarginRequest) (*protoapi.EstimateMarginResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin")()
+	if req.Order == nil {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing order"))
+	}
+
+	margin, err := t.RiskService.EstimateMargin(ctx, req.Order)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.EstimateMarginResponse{
+		MarginLevels: margin,
+	}, nil
 }
 
 func (t *tradingDataService) EstimateFee(ctx context.Context, req *protoapi.EstimateFeeRequest) (*protoapi.EstimateFeeResponse, error) {
@@ -554,9 +604,10 @@ func (t *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 
 	// Build market depth response, including last trade (if available)
 	resp := &protoapi.MarketDepthResponse{
-		Buy:      depth.Buy,
-		MarketID: depth.MarketID,
-		Sell:     depth.Sell,
+		Buy:            depth.Buy,
+		MarketID:       depth.MarketID,
+		Sell:           depth.Sell,
+		SequenceNumber: depth.SequenceNumber,
 	}
 	if len(ts) > 0 && ts[0] != nil {
 		resp.LastTrade = ts[0]
@@ -1241,7 +1292,7 @@ func (t *tradingDataService) MarketDepthSubscribe(
 			err = srv.Send(depth)
 			if err != nil {
 				if t.log.GetLevel() == logging.DebugLevel {
-					t.log.Error("Depth subscriber - rpc stream error",
+					t.log.Debug("Depth subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
 					)
@@ -1270,6 +1321,72 @@ func (t *tradingDataService) MarketDepthSubscribe(
 	}
 }
 
+// MarketDepthUpdatesSubscribe opens a subscription to the MarketDepth Updates service.
+func (t *tradingDataService) MarketDepthUpdatesSubscribe(
+	req *protoapi.MarketDepthUpdatesSubscribeRequest,
+	srv protoapi.TradingData_MarketDepthUpdatesSubscribeServer,
+) error {
+	defer metrics.StartAPIRequestAndTimeGRPC("MarketDepthUpdatesSubscribe")()
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	_, err := validateMarket(ctx, req.MarketID, t.MarketService)
+	if err != nil {
+		return err // validateMarket already returns an API error, no additional wrapping needed
+	}
+
+	depthChan, ref := t.MarketService.ObserveDepthUpdates(
+		ctx, t.Config.StreamRetries, req.MarketID)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Depth updates subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	for {
+		select {
+		case depth := <-depthChan:
+			if depth == nil {
+				err = ErrChannelClosed
+				if t.log.GetLevel() == logging.DebugLevel {
+					t.log.Debug("Depth updates subscriber closed",
+						logging.Error(err),
+						logging.Uint64("ref", ref))
+				}
+				return apiError(codes.Internal, err)
+			}
+			err = srv.Send(depth)
+			if err != nil {
+				if t.log.GetLevel() == logging.DebugLevel {
+					t.log.Debug("Depth updates subscriber - rpc stream error",
+						logging.Error(err),
+						logging.Uint64("ref", ref),
+					)
+				}
+				return apiError(codes.Internal, ErrStreamInternal, err)
+			}
+		case <-ctx.Done():
+			err = ctx.Err()
+			if t.log.GetLevel() == logging.DebugLevel {
+				t.log.Debug("Depth updates subscriber - rpc stream ctx error",
+					logging.Error(err),
+					logging.Uint64("ref", ref),
+				)
+			}
+			return apiError(codes.Internal, ErrStreamInternal, err)
+		case <-t.ctx.Done():
+			return apiError(codes.Internal, ErrServerShutdown)
+		}
+
+		if depthChan == nil {
+			if t.log.GetLevel() == logging.DebugLevel {
+				t.log.Debug("Depth updates subscriber - rpc stream closed", logging.Uint64("ref", ref))
+			}
+			return apiError(codes.Internal, ErrStreamClosed)
+		}
+	}
+}
+
 // PositionsSubscribe opens a subscription to the Positions service.
 func (t *tradingDataService) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
@@ -1280,7 +1397,7 @@ func (t *tradingDataService) PositionsSubscribe(
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	positionsChan, ref := t.TradeService.ObservePositions(ctx, t.Config.StreamRetries, req.PartyID)
+	positionsChan, ref := t.TradeService.ObservePositions(ctx, t.Config.StreamRetries, req.PartyID, req.MarketID)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Positions subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -1458,18 +1575,16 @@ func validateMarket(ctx context.Context, marketID string, marketService MarketSe
 	}
 	mkt, err = marketService.GetByID(ctx, marketID)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMarketServiceGetByID, err)
+		// We return nil for error as we do not want
+		// to return an error when a market is not found
+		// but just a nil value.
+		return nil, nil
 	}
 	return mkt, nil
 }
 
 func validateParty(ctx context.Context, log *logging.Logger, partyID string, partyService PartyService) (*types.Party, error) {
-	var pty *types.Party
-	var err error
-	if len(partyID) == 0 {
-		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
-	}
-	pty, err = partyService.GetByID(ctx, partyID)
+	pty, err := partyService.GetByID(ctx, partyID)
 	if err != nil {
 		// we just log the error here, then return an nil error.
 		// right now the only error possible is about not finding a party
@@ -1482,14 +1597,20 @@ func validateParty(ctx context.Context, log *logging.Logger, partyID string, par
 	return pty, err
 }
 
-func (t *tradingDataService) getTendermintStats(ctx context.Context) (backlogLength int,
-	numPeers int, genesis *time.Time, chainID string, err error) {
+func (t *tradingDataService) getTendermintStats(
+	ctx context.Context,
+) (
+	backlogLength, numPeers int,
+	genesis *time.Time,
+	chainID string,
+	err error,
+) {
 
 	if t.Stats == nil || t.Stats.Blockchain == nil {
 		return 0, 0, nil, "", apiError(codes.Internal, ErrChainNotConnected)
 	}
 
-	refused := "connection refused"
+	const refused = "connection refused"
 
 	// Unconfirmed TX count == current transaction backlog length
 	backlogLength, err = t.Client.GetUnconfirmedTxCount(ctx)
@@ -1500,30 +1621,76 @@ func (t *tradingDataService) getTendermintStats(ctx context.Context) (backlogLen
 		return 0, 0, nil, "", apiError(codes.Internal, ErrBlockchainBacklogLength, err)
 	}
 
+	if atomic.LoadUint32(&t.hasGenesisTimeAndChainID) == 0 {
+		if err = t.getGenesisTimeAndChainID(ctx); err != nil {
+			return 0, 0, nil, "", err
+		}
+	}
+
 	// Net info provides peer stats etc (block chain network info) == number of peers
-	netInfo, err := t.Client.GetNetworkInfo(ctx)
+	netInfo, err := t.getTMNetInfo(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), refused) {
-			return backlogLength, 0, nil, "", nil
-		}
-		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainNetworkInfo, err)
+		return backlogLength, 0, &t.genesisTime, t.chainID, nil
 	}
 
+	return backlogLength, netInfo.NPeers, &t.genesisTime, t.chainID, nil
+}
+
+func (t *tradingDataService) getTMNetInfo(ctx context.Context) (tmctypes.ResultNetInfo, error) {
+	t.netInfoMu.RLock()
+	defer t.netInfoMu.RUnlock()
+
+	if t.netInfo == nil {
+		return tmctypes.ResultNetInfo{}, apiError(codes.Internal, ErrBlockchainNetworkInfo)
+	}
+
+	return *t.netInfo, nil
+}
+
+func (t *tradingDataService) updateNetInfo(ctx context.Context) {
+	// update the net info every 1 minutes
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			netInfo, err := t.Client.GetNetworkInfo(ctx)
+			if err != nil {
+				continue
+			}
+			t.netInfoMu.Lock()
+			t.netInfo = netInfo
+			t.netInfoMu.Unlock()
+		}
+	}
+}
+
+func (t *tradingDataService) getGenesisTimeAndChainID(ctx context.Context) error {
+	const refused = "connection refused"
+	// just lock in here, ideally we'ill come here only once, so not a big issue to lock
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	var err error
 	// Genesis retrieves the current genesis date/time for the blockchain
-	genesisTime, err := t.Client.GetGenesisTime(ctx)
+	t.genesisTime, err = t.Client.GetGenesisTime(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
-			return backlogLength, 0, nil, "", nil
+			return nil
 		}
-		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainGenesisTime, err)
+		return apiError(codes.Internal, ErrBlockchainGenesisTime, err)
 	}
 
-	chainId, err := t.Client.GetChainID(ctx)
+	t.chainID, err = t.Client.GetChainID(ctx)
 	if err != nil {
-		return backlogLength, 0, nil, "", apiError(codes.Internal, ErrBlockchainChainID, err)
+		return apiError(codes.Internal, ErrBlockchainChainID, err)
 	}
 
-	return backlogLength, netInfo.NPeers, &genesisTime, chainId, nil
+	atomic.StoreUint32(&t.hasGenesisTimeAndChainID, 1)
+	return nil
 }
 
 func (t *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest) (*types.Order, error) {
@@ -1863,30 +2030,60 @@ func (t *tradingDataService) ObserveProposalVotes(
 	}
 }
 
-func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, stream protoapi.TradingData_ObserveEventBusServer) error {
+func (t *tradingDataService) ObserveEventBus(
+	stream protoapi.TradingData_ObserveEventBusServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
-	if err := in.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
+
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
-	types, err := events.ProtoToInternal(in.Type...)
+
+	// now we start listening for a few seconds in order to get at least the very first message
+	// this will be blocking until the connection by the client is closed
+	// and we will not start processing any events until we receive the original request
+	// indicating filters and batch size.
+	req, err := t.recvEventRequest(stream)
+	if err != nil {
+		// client exited, nothing to do
+		return nil
+	}
+
+	if err := req.Validate(); err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
+	// now we will aggregaate filter out of the initial reuqest
+	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	filters := []subscribers.EventFilter{}
-	if len(in.MarketID) > 0 && len(in.PartyID) > 0 {
-		filters = append(filters, events.GetPartyAndMarketFilter(in.MarketID, in.PartyID))
+	if len(req.MarketID) > 0 && len(req.PartyID) > 0 {
+		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketID, req.PartyID))
 	} else {
-		if len(in.MarketID) > 0 {
-			filters = append(filters, events.GetMarketIDFilter(in.MarketID))
+		if len(req.MarketID) > 0 {
+			filters = append(filters, events.GetMarketIDFilter(req.MarketID))
 		}
-		if len(in.PartyID) > 0 {
-			filters = append(filters, events.GetPartyIDFilter(in.PartyID))
+		if len(req.PartyID) > 0 {
+			filters = append(filters, events.GetPartyIDFilter(req.PartyID))
 		}
 	}
+
 	// number of retries to -1 to have pretty much unlimited retries
-	ch := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, filters...)
+	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(req.BatchSize), filters...)
+
+	if req.BatchSize > 0 {
+		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
+		return err
+
+	}
+	return t.observeEvents(ctx, stream, ch)
+}
+
+func (t *tradingDataService) observeEvents(
+	ctx context.Context,
+	stream protoapi.TradingData_ObserveEventBusServer,
+	ch <-chan []*types.BusEvent,
+) error {
 	for {
 		select {
 		case data, ok := <-ch:
@@ -1908,5 +2105,69 @@ func (t *tradingDataService) ObserveEventBus(in *protoapi.ObserveEventsRequest, 
 	}
 }
 
-// func (t *tradingDataService) TransferResponsesSubscribe(
-// req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {
+func (t *tradingDataService) recvEventRequest(
+	stream protoapi.TradingData_ObserveEventBusServer,
+) (*protoapi.ObserveEventsRequest, error) {
+	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
+	oebCh := make(chan protoapi.ObserveEventsRequest)
+	defer close(oebCh)
+	var err error
+	go func() {
+		nb := protoapi.ObserveEventsRequest{}
+		if err = stream.RecvMsg(&nb); err != nil {
+			cfunc()
+			return
+		}
+		oebCh <- nb
+	}()
+	select {
+	case <-readCtx.Done():
+		if err != nil {
+			// this means the client disconnectd
+			return nil, err
+		}
+		// this mean we timedout
+		return nil, readCtx.Err()
+	case nb := <-oebCh:
+		return &nb, nil
+	}
+}
+
+func (t *tradingDataService) observeEventsWithAck(
+	ctx context.Context,
+	stream protoapi.TradingData_ObserveEventBusServer,
+	batchSize int64,
+	ch <-chan []*types.BusEvent,
+	bCh chan<- int,
+) error {
+	for {
+		select {
+		case data, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			resp := &protoapi.ObserveEventsResponse{
+				Events: data,
+			}
+			if err := stream.Send(resp); err != nil {
+				t.log.Error("Error sending event on stream", logging.Error(err))
+				return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		case <-t.ctx.Done():
+			return apiError(codes.Aborted, ErrServerShutdown)
+		}
+
+		// now we try to read again the new size / ack
+		req, err := t.recvEventRequest(stream)
+		if err != nil {
+			return err
+		}
+
+		if req.BatchSize != batchSize {
+			batchSize = req.BatchSize
+			bCh <- int(batchSize)
+		}
+	}
+}

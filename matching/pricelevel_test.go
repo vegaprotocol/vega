@@ -78,7 +78,7 @@ func TestUncross(t *testing.T) {
 		TimeInForce: types.Order_TIF_GTC,
 		CreatedAt:   0,
 	}
-	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder)
+	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)
 	assert.Equal(t, true, filled)
 	assert.Equal(t, 1, len(trades))
 	assert.Equal(t, 1, len(impactedOrders))

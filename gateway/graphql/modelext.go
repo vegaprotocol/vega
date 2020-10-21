@@ -74,6 +74,10 @@ var (
 	ErrNilFeeFactors = errors.New("nil fee factors")
 	// ErrNilFees is raised when the fees are missing from the market
 	ErrNilFees = errors.New("nil fees")
+	// ErrNilAuctionDuration is raised when auction duration is missing from the market
+	ErrNilAuctionDuration = errors.New("nil auction duration")
+	// ErrNilPriceMonitoringParameters ...
+	ErrNilPriceMonitoringParameters = errors.New("nil price monitoring parameters")
 )
 
 type MarketLogEvent interface {
@@ -582,6 +586,50 @@ func FeesFromProto(pf *types.Fees) (*Fees, error) {
 	}, nil
 }
 
+func AuctionDurationFromProto(pad *types.AuctionDuration) (*AuctionDuration, error) {
+	if pad == nil {
+		return &AuctionDuration{}, nil
+	}
+
+	return &AuctionDuration{
+		Volume:       int(pad.Volume),
+		DurationSecs: int(pad.Duration),
+	}, nil
+}
+
+func PriceMonitoringParametersFromProto(ppmp *types.PriceMonitoringParameters) (*PriceMonitoringParameters, error) {
+	if ppmp == nil {
+		return nil, ErrNilPriceMonitoringParameters
+	}
+
+	return &PriceMonitoringParameters{
+		HorizonSecs:          int(ppmp.Horizon),
+		Probability:          ppmp.Probability,
+		AuctionExtensionSecs: int(ppmp.AuctionExtension),
+	}, nil
+}
+
+func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*PriceMonitoringSettings, error) {
+	if ppmst == nil {
+		// these are not mandatoryu anyway for now, so if nil we return an empty one
+		return &PriceMonitoringSettings{}, nil
+	}
+
+	params := []*PriceMonitoringParameters{}
+	for _, v := range ppmst.PriceMonitoringParameters {
+		p, err := PriceMonitoringParametersFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		params = append(params, p)
+	}
+
+	return &PriceMonitoringSettings{
+		Parameters:          params,
+		UpdateFrequencySecs: int(ppmst.UpdateFrequency),
+	}, nil
+}
+
 // MarketFromProto ...
 func MarketFromProto(pmkt *types.Market) (*Market, error) {
 	if pmkt == nil {
@@ -604,6 +652,17 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 		return nil, err
 	}
 	mkt.TradableInstrument = tradableInstrument
+
+	mkt.OpeningAuction, err = AuctionDurationFromProto(pmkt.OpeningAuction)
+	if err != nil {
+		return nil, err
+	}
+
+	mkt.PriceMonitoringSettings, err = PriceMonitoringSettingsFromProto(pmkt.PriceMonitoringSettings)
+	if err != nil {
+		return nil, err
+	}
+
 	return mkt, nil
 }
 
@@ -695,8 +754,10 @@ func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) 
 			return nil, err
 		}
 		result.Change = marketConfig
-	} else if terms.GetUpdateNetwork() != nil {
-		result.Change = nil
+	} else if netParam := terms.GetUpdateNetworkParameter(); netParam != nil {
+		result.Change = UpdateNetworkParameter{
+			NetworkParameter: netParam.Changes,
+		}
 	} else if newAsset := terms.GetNewAsset(); newAsset != nil {
 		newAsset, err := NewAssetFromProto(newAsset)
 		if err != nil {
@@ -908,6 +969,40 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 	return assetSource, nil
 }
 
+func (p *PriceMonitoringParametersInput) IntoProto() (*types.PriceMonitoringParameters, error) {
+	return &types.PriceMonitoringParameters{
+		Horizon:          int64(p.HorizonSecs),
+		Probability:      p.Probability,
+		AuctionExtension: int64(p.AuctionExtensionSecs),
+	}, nil
+}
+
+func (p *PriceMonitoringSettingsInput) IntoProto() (*types.PriceMonitoringSettings, error) {
+	if len(p.Parameters) <= 0 {
+		return &types.PriceMonitoringSettings{}, nil
+	}
+
+	params := []*types.PriceMonitoringParameters{}
+	for _, v := range p.Parameters {
+		if v != nil {
+			param, err := v.IntoProto()
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, param)
+		}
+	}
+	var freq int
+	if p.UpdateFrequencySecs != nil {
+		freq = *p.UpdateFrequencySecs
+	}
+
+	return &types.PriceMonitoringSettings{
+		PriceMonitoringParameters: params,
+		UpdateFrequency:           int64(freq),
+	}, nil
+}
+
 // IntoProto ...
 func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.DecimalPlaces < 0 {
@@ -929,12 +1024,19 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if err := n.TradingModeIntoProto(result); err != nil {
 		return nil, err
 	}
-	for _, tag := range n.Metadata {
-		result.Metadata = append(result.Metadata, tag)
-	}
+	result.Metadata = append(result.Metadata, n.Metadata...)
 	if n.OpeningAuctionDurationSecs != nil {
 		result.OpeningAuctionDuration = int64(*n.OpeningAuctionDurationSecs)
 	}
+	if n.PriceMonitoringSettings != nil {
+		result.PriceMonitoringSettings, err = n.PriceMonitoringSettings.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		result.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+	}
+
 	return result, nil
 }
 
@@ -997,18 +1099,29 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 		}
 	}
 
-	if p.UpdateNetwork != nil {
+	if p.UpdateNetworkParameter != nil {
 		if isSet {
 			return nil, ErrMultipleProposalChangesSpecified
 		}
 		isSet = true
-		result.Change = &types.ProposalTerms_UpdateMarket{}
+		result.Change = &types.ProposalTerms_UpdateNetworkParameter{
+			UpdateNetworkParameter: &types.UpdateNetworkParameter{
+				Changes: p.UpdateNetworkParameter.NetworkParameter.IntoProto(),
+			},
+		}
 	}
 	if !isSet {
 		return nil, ErrInvalidChange
 	}
 
 	return result, nil
+}
+
+func (n *NetworkParameterInput) IntoProto() *types.NetworkParameter {
+	return &types.NetworkParameter{
+		Key:   n.Key,
+		Value: n.Value,
+	}
 }
 
 // ToOptionalProposalState ...
@@ -1215,9 +1328,16 @@ func busEventFromProto(events ...*types.BusEvent) []*BusEvent {
 			// in the future though
 			continue
 		}
+		et, err := eventTypeFromProto(e.Type)
+		if err != nil {
+			// @TODO for now just skip unmapped event types, probably better to handle some kind of error
+			// in the future though
+			continue
+		}
 		be := BusEvent{
 			EventID: e.ID,
-			Type:    eventTypeFromProto(e.Type),
+			Type:    et,
+			Block:   e.Block,
 			Event:   evt,
 		}
 		r = append(r, &be)
@@ -1252,11 +1372,13 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 }
 
 func auctionEventFromProto(ae *types.AuctionEvent) *AuctionEvent {
+	t, _ := convertAuctionTriggerFromProto(ae.Trigger)
 	r := &AuctionEvent{
 		MarketID:       ae.MarketID,
 		Leave:          ae.Leave,
 		OpeningAuction: ae.OpeningAuction,
 		AuctionStart:   nanoTSToDatetime(ae.Start),
+		Trigger:        t,
 	}
 	if ae.End != 0 {
 		r.AuctionEnd = nanoTSToDatetime(ae.End)
@@ -1375,6 +1497,8 @@ func eventFromProto(e *types.BusEvent) Event {
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
 		return auctionEventFromProto(e.GetAuction())
+	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
+		return e.GetRiskFactor()
 	}
 	return nil
 }
@@ -1385,8 +1509,6 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 	r := make([]types.BusEventType, 0, len(btypes))
 	for _, t := range btypes {
 		switch t {
-		case BusEventTypeAll:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ALL)
 		case BusEventTypeTimeUpdate:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
 		case BusEventTypeTransferResponses:
@@ -1427,56 +1549,57 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET)
 		case BusEventTypeAuction:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_AUCTION)
+		case BusEventTypeRiskFactor:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR)
 		}
 	}
 	return r
 }
 
-func eventTypeFromProto(t types.BusEventType) BusEventType {
+func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 	switch t {
-	case types.BusEventType_BUS_EVENT_TYPE_ALL:
-		return BusEventTypeAll
 	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
-		return BusEventTypeTimeUpdate
+		return BusEventTypeTimeUpdate, nil
 	case types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
-		return BusEventTypeTransferResponses
+		return BusEventTypeTransferResponses, nil
 	case types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
-		return BusEventTypePositionResolution
+		return BusEventTypePositionResolution, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ORDER:
-		return BusEventTypeOrder
+		return BusEventTypeOrder, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
-		return BusEventTypeAccount
+		return BusEventTypeAccount, nil
 	case types.BusEventType_BUS_EVENT_TYPE_PARTY:
-		return BusEventTypeParty
+		return BusEventTypeParty, nil
 	case types.BusEventType_BUS_EVENT_TYPE_TRADE:
-		return BusEventTypeTrade
+		return BusEventTypeTrade, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
-		return BusEventTypeMarginLevels
+		return BusEventTypeMarginLevels, nil
 	case types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
-		return BusEventTypeProposal
+		return BusEventTypeProposal, nil
 	case types.BusEventType_BUS_EVENT_TYPE_VOTE:
-		return BusEventTypeVote
+		return BusEventTypeVote, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
-		return BusEventTypeMarketData
+		return BusEventTypeMarketData, nil
 	case types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
-		return BusEventTypeNodeSignature
+		return BusEventTypeNodeSignature, nil
 	case types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
-		return BusEventTypeLossSocialization
+		return BusEventTypeLossSocialization, nil
 	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
-		return BusEventTypeSettlePosition
+		return BusEventTypeSettlePosition, nil
 	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
-		return BusEventTypeSettleDistressed
+		return BusEventTypeSettleDistressed, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
-		return BusEventTypeMarketCreated
+		return BusEventTypeMarketCreated, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
-		return BusEventTypeAsset
+		return BusEventTypeAsset, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
-		return BusEventTypeMarketTick
+		return BusEventTypeMarketTick, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
-		return BusEventTypeMarket
+		return BusEventTypeMarket, nil
 	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
-		return BusEventTypeAuction
+		return BusEventTypeAuction, nil
+	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
+		return BusEventTypeRiskFactor, nil
 	}
-	// @TODO this should be an error, but no event should ever be returned with this value anyway
-	return BusEventTypeAll
+	return "", errors.New("unsupported proto event type")
 }

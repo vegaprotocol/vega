@@ -28,8 +28,9 @@ func (a Asset) Proto() types.Asset {
 
 func (a Asset) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:   a.eventID(),
-		Type: a.et.ToProto(),
+		ID:    a.eventID(),
+		Block: a.TraceID(),
+		Type:  a.et.ToProto(),
 		Event: &types.BusEvent_Asset{
 			Asset: &a.a,
 		},

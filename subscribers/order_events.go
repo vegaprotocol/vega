@@ -52,7 +52,7 @@ func (o *OrderEvent) loop(ctx context.Context) {
 			return
 		case e := <-o.ch:
 			if o.isRunning() {
-				o.Push(e)
+				o.Push(e...)
 			}
 		}
 	}
@@ -74,11 +74,13 @@ func (o *OrderEvent) write(e OE) {
 	o.mu.Lock()
 	o.buf = append(o.buf, *e.Order())
 	o.mu.Unlock()
-	o.log.Debug("ORDER EVENT",
-		logging.String("trace-id", e.TraceID()),
-		logging.String("type", e.Type().String()),
-		logging.Order(*e.Order()),
-	)
+	if o.log.GetLevel() <= logging.DebugLevel {
+		o.log.Debug("ORDER EVENT",
+			logging.String("trace-id", e.TraceID()),
+			logging.String("type", e.Type().String()),
+			logging.Order(*e.Order()),
+		)
+	}
 }
 
 func (o *OrderEvent) flush() {

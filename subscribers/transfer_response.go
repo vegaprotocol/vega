@@ -52,7 +52,7 @@ func (t *TransferResponse) loop() {
 			return
 		case e := <-t.ch:
 			if t.isRunning() {
-				t.Push(e)
+				t.Push(e...)
 			}
 		}
 	}

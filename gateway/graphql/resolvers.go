@@ -85,6 +85,7 @@ type TradingDataClient interface {
 	TradesSubscribe(ctx context.Context, in *protoapi.TradesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_TradesSubscribeClient, error)
 	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
 	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
+	MarketDepthUpdatesSubscribe(ctx context.Context, in *protoapi.MarketDepthUpdatesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthUpdatesSubscribeClient, error)
 	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
 	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
 	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarginLevelsSubscribeClient, error)
@@ -113,13 +114,15 @@ type TradingDataClient interface {
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
 	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
 	EstimateFee(ctx context.Context, in *protoapi.EstimateFeeRequest, opts ...grpc.CallOption) (*protoapi.EstimateFeeResponse, error)
+	EstimateMargin(ctx context.Context, in *protoapi.EstimateMarginRequest, opts ...grpc.CallOption) (*protoapi.EstimateMarginResponse, error)
 	Withdrawal(ctx context.Context, in *protoapi.WithdrawalRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalResponse, error)
 	Withdrawals(ctx context.Context, in *protoapi.WithdrawalsRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalsResponse, error)
 	ERC20WithdrawalApproval(ctx context.Context, in *protoapi.ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*protoapi.ERC20WithdrawalApprovalResponse, error)
 	Deposit(ctx context.Context, in *protoapi.DepositRequest, opts ...grpc.CallOption) (*protoapi.DepositResponse, error)
 	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
+	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
 
-	ObserveEventBus(ctx context.Context, in *protoapi.ObserveEventsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
+	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -165,6 +168,11 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 // MarketDepth returns the market depth resolver
 func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
+}
+
+// MarketDepth returns the market depth update resolver
+func (r *VegaResolverRoot) MarketDepthUpdate() MarketDepthUpdateResolver {
+	return (*myMarketDepthUpdateResolver)(r)
 }
 
 // MarketData returns the market data resolver
@@ -314,6 +322,17 @@ func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Ass
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) NetworkParameters(ctx context.Context) ([]*types.NetworkParameter, error) {
+	res, err := r.tradingDataClient.NetworkParameters(
+		ctx, &protoapi.NetworkParametersRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.NetworkParameters, nil
+}
+
 func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid string) (*Erc20WithdrawalApproval, error) {
 	res, err := r.tradingDataClient.ERC20WithdrawalApproval(
 		ctx, &protoapi.ERC20WithdrawalApprovalRequest{WithdrawalID: wid},
@@ -364,8 +383,8 @@ func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Depos
 	return res.Deposit, nil
 }
 
-func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderFeeEstimate, error) {
+func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party string, price *string, size string, side Side,
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderEstimate, error) {
 	order := &types.Order{}
 
 	var (
@@ -424,7 +443,7 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
 	resp, err := r.tradingDataClient.EstimateFee(ctx, &req)
 	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
+		r.log.Error("Failed to get fee estimates using rpc client in graphQL resolver", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
 
@@ -437,9 +456,22 @@ func (r *myQueryResolver) EstimateFeeForOrder(ctx context.Context, market, party
 		LiquidityFee:      fmt.Sprintf("%d", resp.Fee.LiquidityFee),
 	}
 
-	return &OrderFeeEstimate{
+	// now we calculate the margins
+	reqm := protoapi.EstimateMarginRequest{
+		Order: order,
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	respm, err := r.tradingDataClient.EstimateMargin(ctx, &reqm)
+	if err != nil {
+		r.log.Error("Failed to get margin estimates using rpc client in graphQL resolver", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return &OrderEstimate{
 		Fee:            &fee,
 		TotalFeeAmount: fmt.Sprintf("%d", ttf),
+		MarginLevels:   respm.MarginLevels,
 	}, nil
 
 }
@@ -498,6 +530,9 @@ func (r *myQueryResolver) Markets(ctx context.Context, id *string) ([]*Market, e
 		if err != nil {
 			return nil, err
 		}
+		if mkt == nil {
+			return []*Market{}, nil
+		}
 		return []*Market{mkt}, nil
 	}
 	res, err := r.tradingDataClient.Markets(ctx, &empty.Empty{})
@@ -540,6 +575,10 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*Market, error
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
+	}
+	// no error / no market = we did not find it
+	if res.Market == nil {
+		return nil, nil
 	}
 	market, err := MarketFromProto(res.Market)
 	if err != nil {
@@ -814,9 +853,10 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *Market, maxDepth *
 	}
 
 	return &types.MarketDepth{
-		MarketID: res.MarketID,
-		Buy:      res.Buy,
-		Sell:     res.Sell,
+		MarketID:       res.MarketID,
+		Buy:            res.Buy,
+		Sell:           res.Sell,
+		SequenceNumber: res.SequenceNumber,
 	}, nil
 }
 
@@ -1407,6 +1447,11 @@ func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) 
 	return market, nil
 }
 
+// Trigger...
+func (r *myMarketDataResolver) Trigger(_ context.Context, m *types.MarketData) (AuctionTrigger, error) {
+	return convertAuctionTriggerFromProto(m.Trigger)
+}
+
 // END: MarketData resolver
 
 // BEGIN: Market Depth Resolver
@@ -1439,8 +1484,11 @@ func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketD
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-
 	return res.Trade, nil
+}
+
+func (r *myMarketDepthResolver) SequenceNumber(ctx context.Context, md *types.MarketDepth) (string, error) {
+	return strconv.FormatUint(md.SequenceNumber, 10), nil
 }
 
 func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDepth) (*Market, error) {
@@ -1470,6 +1518,55 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 }
 
 // END: Market Depth Resolver
+
+// BEGIN: Market Depth Update Resolver
+
+type myMarketDepthUpdateResolver VegaResolverRoot
+
+func (r *myMarketDepthUpdateResolver) Buy(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
+	valBuyLevels := make([]types.PriceLevel, 0)
+	for _, v := range obj.Buy {
+		valBuyLevels = append(valBuyLevels, *v)
+	}
+	return valBuyLevels, nil
+}
+func (r *myMarketDepthUpdateResolver) Sell(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
+	valBuyLevels := make([]types.PriceLevel, 0)
+	for _, v := range obj.Sell {
+		valBuyLevels = append(valBuyLevels, *v)
+	}
+	return valBuyLevels, nil
+}
+
+func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
+	return strconv.FormatUint(md.SequenceNumber, 10), nil
+}
+
+func (r *myMarketDepthUpdateResolver) Market(ctx context.Context, md *types.MarketDepthUpdate) (*Market, error) {
+	if md == nil {
+		return nil, errors.New("Market depth update is nil")
+	}
+
+	req := protoapi.MarketByIDRequest{MarketID: md.MarketID}
+	res, err := r.tradingDataClient.MarketByID(ctx, &req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+	market, err := MarketFromProto(res.Market)
+	// set Asset here too as well
+	switch p := market.TradableInstrument.Instrument.Product.(type) {
+	case *Future:
+		req := protoapi.AssetByIDRequest{ID: p.Asset.ID}
+		res, err := r.tradingDataClient.AssetByID(ctx, &req)
+		if err != nil {
+			return nil, customErrorFromStatus(err)
+		}
+		p.Asset, err = AssetFromProto(res.Asset)
+	}
+	return market, err
+}
+
+// END: Market Depth Update Resolver
 
 // BEGIN: Order Resolver
 
@@ -2343,9 +2440,13 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Positions(ctx context.Context, party string) (<-chan *types.Position, error) {
-	req := &protoapi.PositionsSubscribeRequest{
-		PartyID: party,
+func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *string) (<-chan *types.Position, error) {
+	req := &protoapi.PositionsSubscribeRequest{}
+	if party != nil {
+		req.PartyID = *party
+	}
+	if market != nil {
+		req.MarketID = *market
 	}
 	stream, err := r.tradingDataClient.PositionsSubscribe(ctx, req)
 	if err != nil {
@@ -2398,6 +2499,42 @@ func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 			}
 			if err != nil {
 				r.log.Error("marketDepth: stream closed", logging.Error(err))
+				break
+			}
+			c <- md
+		}
+	}()
+
+	return c, nil
+}
+
+func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market string) (<-chan *types.MarketDepthUpdate, error) {
+	req := &protoapi.MarketDepthUpdatesSubscribeRequest{
+		MarketID: market,
+	}
+	stream, err := r.tradingDataClient.MarketDepthUpdatesSubscribe(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	c := make(chan *types.MarketDepthUpdate)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(c)
+		}()
+		for {
+			md, err := stream.Recv()
+			if err == io.EOF {
+				if r.log.GetLevel() == logging.DebugLevel {
+					r.log.Debug("marketDepthUpdates: stream closed by server", logging.Error(err))
+				}
+				break
+			}
+			if err != nil {
+				if r.log.GetLevel() == logging.DebugLevel {
+					r.log.Debug("marketDepthUpdates: stream closed", logging.Error(err))
+				}
 				break
 			}
 			c <- md
@@ -2570,10 +2707,21 @@ func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, 
 	return nil, ErrInvalidVotesSubscription
 }
 
-func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string) (<-chan []*BusEvent, error) {
+func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEventType, marketID, partyID *string, batchSize int) (<-chan []*BusEvent, error) {
+	if len(types) > 1 {
+		return nil, errors.New("busEvents subscription support streaming 1 event at a time for now")
+	}
+	if len(types) <= 0 {
+		return nil, errors.New("busEvents subscription requires 1 event type")
+	}
 	t := eventTypeToProto(types...)
 	req := protoapi.ObserveEventsRequest{
-		Type: t,
+		Type:      t,
+		BatchSize: int64(batchSize),
+	}
+	if req.BatchSize == 0 {
+		// req.BatchSize = -1 // sending this with -1 to indicate to underlying gRPC call this is a special case: GQL
+		batchSize = 0
 	}
 	if marketID != nil {
 		req.MarketID = *marketID
@@ -2581,30 +2729,87 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	if partyID != nil {
 		req.PartyID = *partyID
 	}
-	stream, err := r.tradingDataClient.ObserveEventBus(ctx, &req)
+	mb := 10
+	// about 10MB message size allowed
+	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
+
+	// build the bidirectionnal stream connection
+	stream, err := r.tradingDataClient.ObserveEventBus(ctx, msgSize)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
+
+	// send our initial message to initialize the connection
+	if err := stream.Send(&req); err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	// we no longer buffer this channel. Client receives batch, then we request the next batch
 	out := make(chan []*BusEvent)
+
 	go func() {
 		defer func() {
 			stream.CloseSend()
 			close(out)
 		}()
-		for {
-			data, err := stream.Recv()
-			if isStreamClosed(err, r.log) {
-				return
-			}
-			if err != nil {
-				r.log.Error("Event bus stream error", logging.Error(err))
-				return
-			}
-			be := busEventFromProto(data.Events...)
-			out <- be
+
+		if batchSize == 0 {
+			r.busEvents(ctx, stream, out)
+		} else {
+			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
 		}
 	}()
+
 	return out, nil
+}
+
+func (r *mySubscriptionResolver) busEvents(
+	ctx context.Context,
+	stream protoapi.TradingData_ObserveEventBusClient,
+	out chan []*BusEvent,
+) {
+	for {
+		// receive batch
+		data, err := stream.Recv()
+		if isStreamClosed(err, r.log) {
+			return
+		}
+		if err != nil {
+			r.log.Error("Event bus stream error", logging.Error(err))
+			return
+		}
+		be := busEventFromProto(data.Events...)
+		out <- be
+	}
+}
+
+func (r *mySubscriptionResolver) busEventsWithBatch(
+	ctx context.Context,
+	batchSize int64, // always non-0 here
+	stream protoapi.TradingData_ObserveEventBusClient,
+	out chan []*BusEvent,
+) {
+	poll := &protoapi.ObserveEventsRequest{
+		BatchSize: batchSize,
+	}
+	for {
+		// receive batch
+		data, err := stream.Recv()
+		if isStreamClosed(err, r.log) {
+			return
+		}
+		if err != nil {
+			r.log.Error("Event bus stream error", logging.Error(err))
+			return
+		}
+		be := busEventFromProto(data.Events...)
+		out <- be
+		// send request for the next batch
+		if err := stream.SendMsg(poll); err != nil {
+			r.log.Error("Failed to poll next event batch", logging.Error(err))
+			return
+		}
+	}
 }
 
 // START: Account Resolver
@@ -2744,6 +2949,10 @@ func (r *myStatisticsResolver) MarketDepthSubscriptions(ctx context.Context, obj
 	return int(obj.MarketDepthSubscriptions), nil
 }
 
+func (r *myStatisticsResolver) MarketDepthUpdateSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
+	return int(obj.MarketDepthUpdatesSubscriptions), nil
+}
+
 func (r *myStatisticsResolver) OrderSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
 	return int(obj.OrderSubscriptions), nil
 }
@@ -2758,7 +2967,7 @@ func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *type
 
 func getParty(ctx context.Context, log *logging.Logger, client TradingDataClient, id string) (*types.Party, error) {
 	if len(id) == 0 {
-		return nil, errors.New("invalid party id")
+		return nil, nil
 	}
 	res, err := client.PartyByID(ctx, &protoapi.PartyByIDRequest{PartyID: id})
 	if err != nil {
