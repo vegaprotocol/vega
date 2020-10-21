@@ -3205,10 +3205,6 @@
           "type": "string",
           "description": "Name of the instrument."
         },
-        "baseName": {
-          "type": "string",
-          "description": "Base name of the instrument."
-        },
         "quoteName": {
           "type": "string",
           "description": "Quote name of the instrument."
@@ -3239,10 +3235,6 @@
         "code": {
           "type": "string",
           "description": "Instrument code."
-        },
-        "baseName": {
-          "type": "string",
-          "description": "Base security used as the reference."
         },
         "quoteName": {
           "type": "string",

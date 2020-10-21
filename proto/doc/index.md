@@ -3075,7 +3075,6 @@ Instrument configuration.
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | Instrument name. |
 | code | [string](#string) |  | Instrument code. |
-| baseName | [string](#string) |  | Base security used as the reference. |
 | quoteName | [string](#string) |  | Quote (secondary) security. |
 | future | [FutureProduct](#vega.FutureProduct) |  | Futures. |
 
@@ -3439,7 +3438,6 @@ Instrument definition.
 | id | [string](#string) |  | Instrument identifier. |
 | code | [string](#string) |  | Code for the instrument. |
 | name | [string](#string) |  | Name of the instrument. |
-| baseName | [string](#string) |  | Base name of the instrument. |
 | quoteName | [string](#string) |  | Quote name of the instrument. |
 | metadata | [InstrumentMetadata](#vega.InstrumentMetadata) |  | A collection of instrument meta-data. |
 | initialMarkPrice | [uint64](#uint64) |  | An initial mark price for the instrument. |

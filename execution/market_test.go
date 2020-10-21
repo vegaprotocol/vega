@@ -118,7 +118,6 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 				Id:        "Crypto/ETHUSD/Futures/Dec19",
 				Code:      "CRYPTO:ETHUSD/DEC19",
 				Name:      "December 2019 ETH vs USD future",
-				BaseName:  "ETH",
 				QuoteName: "USD",
 				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
