@@ -5288,8 +5288,36 @@ enum OrderRejectionReason {
 
   "IOC orders are not allowed during auction"
   IOCOrderDuringAuction
+
   "FOK orders are not allowed during auction"
   FOKOrderDuringAuction
+
+  "Pegged orders must be LIMIT orders"
+  PeggedOrderMustBeLimitOrder
+
+  "Pegged orders can only have TIF GTC or GTT"
+  PeggedOrderMustBeGTTOrGTC
+
+  "Pegged order must have a reference price"
+  PeggedOrderWithoutReferencePrice
+
+  "Buy pegged order cannot reference best ask price"
+  PeggedOrderBuyCannotReferenceBestAskPrice
+
+  "Pegged order offset must be <= 0"
+  PeggedOrderOffsetMustBeLessOrEqualToZero
+
+  "Pegged order offset must be < 0"
+  PeggedOrderOffsetMustBeLessThanZero
+
+  "Pegged order offset must be >= 0"
+  PeggedOrderOffsetMustBeGreaterOrEqualToZero
+
+  "Sell pegged order cannot reference best bid price"
+  PeggedOrderSellCannotReferenceBestBidPrice
+
+  "Pegged order offset must be > zero"
+	PeggedOrderOffsetMustBeGreaterThanZero
 }
 
 enum OrderType {

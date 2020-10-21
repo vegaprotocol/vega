@@ -11645,6 +11645,13 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 to keep track of the auction batch this order falls under (required for fees calculation). </p></td>
                 </tr>
 
+                <tr>
+                  <td>peggedOrder</td>
+                  <td><a href="#vega.PeggedOrder">PeggedOrder</a></td>
+                  <td></td>
+                  <td><p>If this order represents a pegged order, the details are supplied here </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -14008,6 +14015,60 @@ with an expiration that was badly formatted or otherwise invalid.</p></td>
                 <td>ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION</td>
                 <td>33</td>
                 <td><p>FOK orders are not allowed during auction</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_MUST_BE_LIMIT_ORDER</td>
+                <td>34</td>
+                <td><p>Pegged orders must be LIMIT orders</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_MUST_BE_GTT_OR_GTC</td>
+                <td>35</td>
+                <td><p>Pegged orders can only have TIF GTC or GTT</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_WITHOUT_REFERENCE_PRICE</td>
+                <td>36</td>
+                <td><p>Pegged order must have a reference price</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE</td>
+                <td>37</td>
+                <td><p>Buy pegged order cannot reference best ask price</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO</td>
+                <td>38</td>
+                <td><p>Pegged order offset must be &lt;= 0</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO</td>
+                <td>39</td>
+                <td><p>Pegged order offset must be &lt; 0</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO</td>
+                <td>40</td>
+                <td><p>Pegged order offset must be &gt;= 0</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE</td>
+                <td>41</td>
+                <td><p>Sell pegged order cannot reference best bid price</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO</td>
+                <td>42</td>
+                <td><p>Pegged order offset must be &gt; zero</p></td>
               </tr>
 
           </tbody>

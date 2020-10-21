@@ -492,6 +492,25 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION, nil
 	case OrderRejectionReasonFOKOrderDuringAuction:
 		return types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION, nil
+	case OrderRejectionReasonPeggedOrderMustBeLimitOrder:
+		return types.OrderError_ORDER_ERROR_MUST_BE_LIMIT_ORDER, nil
+	case OrderRejectionReasonPeggedOrderMustBeGTTOrGtc:
+		return types.OrderError_ORDER_ERROR_MUST_BE_GTT_OR_GTC, nil
+	case OrderRejectionReasonPeggedOrderWithoutReferencePrice:
+		return types.OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE, nil
+	case OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice:
+		return types.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO, nil
+	case OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice:
+		return types.OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO, nil
+
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err

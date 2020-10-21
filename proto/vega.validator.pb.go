@@ -38,6 +38,11 @@ func (this *PeggedOrder) Validate() error {
 	return nil
 }
 func (this *Order) Validate() error {
+	if this.PeggedOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PeggedOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PeggedOrder", err)
+		}
+	}
 	return nil
 }
 func (this *OrderCancellationConfirmation) Validate() error {

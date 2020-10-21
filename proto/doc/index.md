@@ -4345,6 +4345,7 @@ An order can be submitted, amended and cancelled on Vega in an attempt to make t
 | updatedAt | [int64](#int64) |  | Timestamp for when the Order was last updated, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | version | [uint64](#uint64) |  | The version for the order, initial value is version 1 and is incremented after each successful amend |
 | batchID | [uint64](#uint64) |  | Batch identifier for the order, used internally for orders submitted during auctions to keep track of the auction batch this order falls under (required for fees calculation). |
+| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | If this order represents a pegged order, the details are supplied here |
 
 
 
@@ -5110,6 +5111,15 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
 | ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION | 32 | IOC orders are not allowed during auction |
 | ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION | 33 | FOK orders are not allowed during auction |
+| ORDER_ERROR_MUST_BE_LIMIT_ORDER | 34 | Pegged orders must be LIMIT orders |
+| ORDER_ERROR_MUST_BE_GTT_OR_GTC | 35 | Pegged orders can only have TIF GTC or GTT |
+| ORDER_ERROR_WITHOUT_REFERENCE_PRICE | 36 | Pegged order must have a reference price |
+| ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE | 37 | Buy pegged order cannot reference best ask price |
+| ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO | 38 | Pegged order offset must be &lt;= 0 |
+| ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO | 39 | Pegged order offset must be &lt; 0 |
+| ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO | 40 | Pegged order offset must be &gt;= 0 |
+| ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE | 41 | Sell pegged order cannot reference best bid price |
+| ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO | 42 | Pegged order offset must be &gt; zero |
 
 
 
