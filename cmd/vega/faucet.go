@@ -80,7 +80,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 		return err
 	}
 	opts.Config = *cfg
-	if _, err := flags.Parse(opts); err != nil {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
