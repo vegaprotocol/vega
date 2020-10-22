@@ -521,6 +521,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
 	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.netParams.UponGenesis)
 	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
@@ -590,10 +591,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
-	)
-
-	l.genesisHandler.OnGenesisAppStateLoaded(
-		l.UponGenesis,
 	)
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
