@@ -46,6 +46,7 @@ func New(codec Codec) *App {
 		checkTxs:        map[txn.Command]TxHandler{},
 		deliverTxs:      map[txn.Command]TxHandler{},
 		checkedTxs:      map[string]Tx{},
+		ctx:             context.Background(),
 	}
 }
 
