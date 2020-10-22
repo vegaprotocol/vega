@@ -160,8 +160,12 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	s.changeCount += len(save)
 	s.data = append(s.data, save...)
 	if closeUpdate && ((s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0)) {
-		close(s.updated)
-		s.updated = make(chan struct{})
+		select {
+		case <-s.updated:
+		default:
+			close(s.updated)
+		}
+		//s.updated = make(chan struct{})
 	}
 	s.mu.Unlock()
 }
@@ -218,7 +222,7 @@ func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
 	case <-s.updated:
 		s.mu.Lock()
 		// create new channel
-		//s.updated = make(chan struct{})
+		s.updated = make(chan struct{})
 	}
 	dl := len(s.data)
 	// this seems to happen with a buffer of 1 sometimes
