@@ -128,10 +128,11 @@ type Mutation {
 
 }
 
+"Create an order linked to an index rather than a price"
 input PeggedOrder {
-  "Pegged price"
+  "Index to link this order to"
   reference: PeggedReference!
-  "Price offset"
+  "Price offset from the peg"
   offset: String!
 }
 
