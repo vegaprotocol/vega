@@ -100,7 +100,11 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 func (s *StreamSub) Halt() {
 	s.mu.Lock()
 	if s.changeCount == 0 || s.changeCount < s.bufSize {
-		close(s.updated)
+		select {
+		case <-s.updated:
+		default:
+			close(s.updated)
+		}
 	}
 	s.mu.Unlock()
 	s.Base.Halt() // close channel outside of the lock. to avoid race
