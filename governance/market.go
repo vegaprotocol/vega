@@ -149,6 +149,12 @@ func createMarket(
 	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
 	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
 
+	// TODO(): as of now the priceMonitoringSettings can be null
+	// we protect against this in here.
+	if definition.PriceMonitoringSettings == nil {
+		definition.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+	}
+
 	market := &types.Market{
 		Id:            marketID,
 		DecimalPlaces: definition.DecimalPlaces,
