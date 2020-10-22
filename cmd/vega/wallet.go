@@ -344,7 +344,7 @@ func (opts *walletServiceRun) Execute(_ []string) error {
 	}
 
 	opts.Config = *cfg
-	if _, err := flags.Parse(opts); err != nil {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
