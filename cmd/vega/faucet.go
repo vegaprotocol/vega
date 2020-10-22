@@ -56,7 +56,7 @@ func (opts *faucetInit) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", pubkey)
+	fmt.Printf("pubkey: %s\n", pubkey)
 	return nil
 }
 
