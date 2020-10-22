@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"code.vegaprotocol.io/vega/fsutil"
 	"golang.org/x/crypto/ssh/terminal"
@@ -69,5 +70,6 @@ func (p Passphrase) getFromFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(buf), nil
+
+	return strings.TrimRight(string(buf), "\n"), nil
 }
