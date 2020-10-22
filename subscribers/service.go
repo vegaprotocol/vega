@@ -2,7 +2,6 @@ package subscribers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/broker"
@@ -34,13 +33,14 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 	// use buffer size of 0 for the time being
 	sub := NewStreamSub(ctx, eTypes, batchSize, filters...)
 	id := s.broker.Subscribe(sub)
+
+	// makes the tick duration 2000ms max to wait basically
 	tickDuration := 10 * time.Millisecond
 	retries = 200
+
 	go func() {
 		data := []*types.BusEvent{}
-		t := time.NewTicker(tickDuration)
 		defer func() {
-			t.Stop()
 			s.broker.Unsubscribe(id)
 			close(out)
 			close(in)
@@ -49,17 +49,16 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 		ret := retries
 
 		trySend := func() {
-			t.Reset(tickDuration)
+			t := time.NewTicker(tickDuration)
+			defer t.Stop()
 			select {
 			case <-ctx.Done():
-				fmt.Printf("CONTEXGT IS DONE 2: %v\n", ctx.Err())
 				return
 			case out <- data:
 				data = []*types.BusEvent{}
 				ret = retries
 			case <-t.C:
 				if ret == 0 {
-					fmt.Printf("RETRY IS ZERO: %v\n", ret)
 					return
 				}
 				ret--
@@ -67,10 +66,8 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 		}
 
 		for {
-			fmt.Printf("RETRIES COUNT: %v\n", ret)
 			select {
 			case <-ctx.Done():
-				fmt.Printf("CONTEXT DONE: %v\n", ctx.Err())
 				return
 			case bs := <-in:
 				// batch size changed: drain buffer and send data
@@ -80,14 +77,11 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 				}
 			default:
 				// wait for actual changes
-				fmt.Printf("GETTING DATA\n")
 				data = append(data, sub.GetData(ctx)...)
 				// this is a very rare thing, but it can happen
 				if len(data) > 0 {
-					fmt.Printf("NO DATA\n")
 					trySend()
 				}
-				fmt.Printf("GOT DATA\n")
 			}
 		}
 	}()
