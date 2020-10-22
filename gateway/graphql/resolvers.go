@@ -2753,8 +2753,6 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 			close(out)
 		}()
 
-		fmt.Printf("BATCH SIZE: %v\n", batchSize)
-
 		if batchSize == 0 {
 			r.busEvents(ctx, stream, out)
 		} else {
