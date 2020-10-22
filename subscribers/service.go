@@ -2,7 +2,6 @@ package subscribers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/broker"
@@ -67,7 +66,6 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 		}
 
 		for {
-			fmt.Printf("RETRIES: %v\n", ret)
 			select {
 			case <-ctx.Done():
 				return

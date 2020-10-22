@@ -2,7 +2,6 @@ package broker
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -257,11 +256,9 @@ func (b *Broker) rmSubs(keys ...int) {
 			return
 		}
 		types := s.Types()
-		fmt.Printf("REMOVING TYPES: %v\n", types)
 		if len(types) == 0 {
 			types = []events.Type{events.All}
 		}
-		fmt.Printf("\ntsubs: %#v\n", b.tSubs)
 		if len(types) == 0 || len(types) == 1 && types[0] == events.All {
 			// remove in all subscribers then
 			for _, v := range b.tSubs {
@@ -272,12 +269,7 @@ func (b *Broker) rmSubs(keys ...int) {
 				delete(b.tSubs[t], k) // remove key from typed subs map
 			}
 		}
-		fmt.Printf("\ntsubs: %#v\n", b.tSubs)
-		fmt.Printf("\nsubs: %#v\n", b.subs)
 		delete(b.subs, k)
-		fmt.Printf("\nsubs: %#v\n", b.subs)
-		fmt.Printf("\nkeys: %#v\n", b.keys)
 		b.keys = append(b.keys, k)
-		fmt.Printf("\nkeys: %#v\n", b.keys)
 	}
 }

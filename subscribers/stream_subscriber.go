@@ -2,7 +2,6 @@ package subscribers
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -132,7 +131,6 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	// update channel is eligible for closing if no events are in buffer, or the nr of changes are less than the buffer size
 	// closeUpdate := (s.changeCount == 0 || s.changeCount >= s.bufSize)
 	closeUpdate := true
-	// fmt.Printf("BEFORE: clolseUpdate(%v) | bufSize(%v) | changeCount(%v)\n", closeUpdate, s.bufSize, s.changeCount)
 	save := make([]StreamEvent, 0, len(evts))
 	for _, e := range evts {
 		var se StreamEvent
@@ -161,9 +159,7 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.changeCount += len(save)
 	s.data = append(s.data, save...)
-	fmt.Printf("clolseUpdate(%v) | bufSize(%v) | changeCount(%v)\n", closeUpdate, s.bufSize, s.changeCount)
 	if closeUpdate && ((s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0)) {
-		fmt.Printf("CLOSING UPDATED\n")
 		close(s.updated)
 		s.updated = make(chan struct{})
 	}

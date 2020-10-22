@@ -213,16 +213,20 @@ func testBatchedStreamSubscriber(t *testing.T) {
 		sub.C() <- set
 		close(ch)
 	}
+
+	var data []*types.BusEvent
+	go func() {
+		rec <- struct{}{}
+		data = sub.GetData(context.Background())
+		close(rec)
+	}()
+	<-rec
+
 	go sendRoutine(sent, sub, set1)
 	// ensure all events were sent
 	<-sent
 	// now start receiving, this should not receive any events:
 	fmt.Printf("2\n")
-	var data []*types.BusEvent
-	go func() {
-		data = sub.GetData(context.Background())
-		close(rec)
-	}()
 	fmt.Printf("3\n")
 	// let's send a new batch, this ought to fill the buffer
 	sent = make(chan struct{})
