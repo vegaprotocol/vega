@@ -2073,10 +2073,13 @@ func (t *tradingDataService) ObserveEventBus(
 
 	if req.BatchSize > 0 {
 		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
+		fmt.Printf("ERR EVENT BUS ACK: %v\n", err)
 		return err
 
 	}
-	return t.observeEvents(ctx, stream, ch)
+	err = t.observeEvents(ctx, stream, ch)
+	fmt.Printf("ERR EVENT BUS ACK: %v\n", err)
+	return err
 }
 
 func (t *tradingDataService) observeEvents(

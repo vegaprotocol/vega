@@ -2,6 +2,7 @@ package subscribers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
@@ -129,7 +130,7 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.mu.Lock()
 	// update channel is eligible for closing if no events are in buffer, or the nr of changes are less than the buffer size
-	closeUpdate := (s.changeCount == 0 || s.changeCount < s.bufSize)
+	closeUpdate := (s.changeCount == 0 || s.changeCount > s.bufSize)
 	save := make([]StreamEvent, 0, len(evts))
 	for _, e := range evts {
 		var se StreamEvent
@@ -158,8 +159,11 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.changeCount += len(save)
 	s.data = append(s.data, save...)
+	fmt.Printf("bufSize(%v) | changeCount(%v)\n", s.bufSize, s.changeCount)
 	if closeUpdate && ((s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0)) {
+		fmt.Printf("CLOSING UPDATED\n")
 		close(s.updated)
+		s.updated = make(chan struct{})
 	}
 	s.mu.Unlock()
 }
@@ -216,7 +220,7 @@ func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
 	case <-s.updated:
 		s.mu.Lock()
 		// create new channel
-		s.updated = make(chan struct{})
+		//s.updated = make(chan struct{})
 	}
 	dl := len(s.data)
 	// this seems to happen with a buffer of 1 sometimes
