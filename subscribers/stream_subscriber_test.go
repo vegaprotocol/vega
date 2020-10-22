@@ -2,7 +2,6 @@ package subscribers_test
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -102,6 +101,7 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 		data = sub.GetData(context.Background())
 		done <- struct{}{}
 	}
+
 	go getData()
 
 	<-done
@@ -208,7 +208,6 @@ func testBatchedStreamSubscriber(t *testing.T) {
 			MarketID: "other-market",
 		}),
 	}
-	fmt.Printf("1\n")
 	sendRoutine := func(ch chan struct{}, sub *tstStreamSub, set []events.Event) {
 		sub.C() <- set
 		close(ch)
@@ -226,20 +225,14 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	// ensure all events were sent
 	<-sent
 	// now start receiving, this should not receive any events:
-	fmt.Printf("2\n")
-	fmt.Printf("3\n")
 	// let's send a new batch, this ought to fill the buffer
 	sent = make(chan struct{})
-	fmt.Printf("4\n")
 	go sendRoutine(sent, sub, set1)
-	fmt.Printf("5\n")
 	<-rec
-	fmt.Printf("6\n")
 	// buffer max reached, data sent
 	assert.Equal(t, 5, len(data))
 	// a total of 6 events were now sent to the subscriber, changing the buffer size ought to return 1 event
 	<-sent
-	fmt.Printf("yolo\n")
 	data = sub.UpdateBatchSize(sub.ctx, len(set1)) // set batch size to match test-data set
 	assert.Equal(t, 1, len(data))                  // we should have drained the buffer
 	sent = make(chan struct{})
