@@ -522,10 +522,11 @@ type OrderEstimate struct {
 	MarginLevels *proto.MarginLevels `json:"marginLevels"`
 }
 
+// Create an order linked to an index rather than a price
 type PeggedOrder struct {
-	// Pegged price
+	// Index to link this order to
 	Reference PeggedReference `json:"reference"`
-	// Price offset
+	// Price offset from the peg
 	Offset string `json:"offset"`
 }
 
