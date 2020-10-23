@@ -1,51 +1,40 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet/vega"
-
-	"github.com/spf13/cobra"
+	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 )
 
-type genesisCommand struct {
-	command
+type genesisCmd struct {
+	// We've unified the passphrase flag as config.PassphraseFlag, which uses --passphrase.
+	// As systemtests uses --vega-wallet-passphrase we'll define the flag directly here
+	// TODO: uncomment this line and remove the Passphrase field.
+	// config.PassphraseFlag
+	Passphrase config.Passphrase `short:"p" long:"vega-wallet-passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 
-	log              *logging.Logger
-	tmRoot           string
-	vegaWalletPath   string
-	inPlace          bool
-	walletPassphrase string
+	InPlace    bool   `short:"i" long:"in-place" description:"Edit the genesis file in-place"`
+	TmRoot     string `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	WalletPath string `short:"v" long:"vega-wallet-path" description:"The path of vega wallet" required:"true"`
 }
 
-func (g *genesisCommand) Init(c *Cli) {
-	g.cli = c
-	g.cmd = &cobra.Command{
-		Use:   "genesis",
-		Short: "The genesis subcommand",
-		Long:  "Generate a default genesis state for a vega network",
-		RunE:  g.Run,
-	}
-
-	g.cmd.Flags().StringVarP(&g.tmRoot, "tm-root", "t", "$HOME/.tendermint", "The root path of tendermint")
-	g.cmd.Flags().StringVarP(&g.vegaWalletPath, "vega-wallet-path", "v", "", "The path of vega wallet")
-	g.cmd.Flags().StringVarP(&g.walletPassphrase, "vega-wallet-passphrase", "p", "", "Vega wallet passphrase")
-	g.cmd.Flags().BoolVarP(&g.inPlace, "in-place", "i", false, "Edit the genesis file in-place")
-
-	g.cmd.MarkFlagRequired("vega-wallet-path")
-}
-
-func (g *genesisCommand) Run(cmd *cobra.Command, args []string) error {
-	// Load the TM config with the defined path
+func (opts *genesisCmd) Execute(_ []string) error {
 	tmCfg := tmconfig.DefaultConfig()
-	tmCfg.SetRoot(os.ExpandEnv(g.tmRoot))
+	tmCfg.SetRoot(os.ExpandEnv(opts.TmRoot))
+
+	pass, err := opts.Passphrase.Get("vega wallet")
+	if err != nil {
+		return err
+	}
 
 	// load tm pubkey
 	tmKey, err := loadTMPubkey(tmCfg)
@@ -53,8 +42,7 @@ func (g *genesisCommand) Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// load vega pubkey
-	vegaKey, err := loadVegaPubKey(g.vegaWalletPath, g.walletPassphrase)
+	vegaKey, err := loadVegaPubKey(opts.WalletPath, pass)
 	if err != nil {
 		return err
 	}
@@ -64,7 +52,7 @@ func (g *genesisCommand) Run(cmd *cobra.Command, args []string) error {
 	gs.Validators[tmKey] = vegaKey
 
 	// dump or write
-	if g.inPlace {
+	if opts.InPlace {
 		return genesis.UpdateInPlace(&gs, tmCfg.BaseConfig.GenesisFile())
 	}
 	dump, err := genesis.Dump(&gs)
@@ -104,4 +92,16 @@ func loadVegaPubKey(path, pass string) (string, error) {
 
 	vegaKey := w.PubKeyOrAddress()
 	return hex.EncodeToString(vegaKey), nil
+}
+
+func Genesis(ctx context.Context, parser *flags.Parser) error {
+	_, err := parser.AddCommand(
+		"genesis",
+		"Generates the genesis file",
+		"Generate a default genesis state for a vega network",
+		&genesisCmd{
+			TmRoot: "$HOME/.tendermint",
+		},
+	)
+	return err
 }

@@ -76,7 +76,7 @@ set_version() {
 }
 
 set_ldflags() {
-    ldflags="-X main.Version=$version -X main.VersionHash=$version_hash"
+    ldflags="-X main.CLIVersion=$version -X main.CLIVersionHash=$version_hash"
 }
 
 parse_args() {
