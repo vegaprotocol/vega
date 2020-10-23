@@ -27,6 +27,7 @@ var (
 	ErrIncorrectMarketType             = OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 	ErrGFNOrderInAuction               = OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 	ErrGFAOrderInContinuousTrading     = OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
+	ErrInsufficientAssetBalance        = OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -102,6 +103,8 @@ func (err OrderError) Error() string {
 		return "OrderError: IOC orders are not allowed during auction"
 	case OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION:
 		return "orderError: FOK orders are not allowed during auction"
+	case OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
+		return "orderError: insufficient asset balance to submit order"
 	default:
 		return "invalid OrderError"
 	}
