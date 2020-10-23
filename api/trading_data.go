@@ -2076,7 +2076,8 @@ func (t *tradingDataService) ObserveEventBus(
 		return err
 
 	}
-	return t.observeEvents(ctx, stream, ch)
+	err = t.observeEvents(ctx, stream, ch)
+	return err
 }
 
 func (t *tradingDataService) observeEvents(
