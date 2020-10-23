@@ -11,6 +11,8 @@ const (
 	MarketAuctionMinimumDuration               = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration               = "market.auction.maximumDuration"
 	MarketInitialMarkPrice                     = "market.initialMarkPrice"
+	MarketPriceMonitoringUpdateFrequency       = "market.monitoring.price.updateFrequency"
+	MarketPriceMonitoringDefaultParameters     = "market.monitoring.price.default"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"

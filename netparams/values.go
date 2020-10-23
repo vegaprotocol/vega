@@ -1,10 +1,15 @@
 package netparams
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
+
+	validators "github.com/mwitkow/go-proto-validators"
 )
 
 type baseValue struct{}
@@ -401,4 +406,91 @@ func DurationLT(i time.Duration) func(time.Duration) error {
 		}
 		return fmt.Errorf("expect < %v got %v", i, val)
 	}
+}
+
+type StringRule func(string) error
+
+type String struct {
+	*baseValue
+	value   string
+	rules   []StringRule
+	mutable bool
+}
+
+func NewString(rules ...StringRule) *String {
+	return &String{
+		baseValue: &baseValue{},
+		rules:     rules,
+	}
+}
+
+func (s *String) String() string {
+	return s.value
+}
+
+func StringValidJSON(t interface{}) func(string) error {
+	return func(s string) error {
+		dec := json.NewDecoder(bytes.NewReader([]byte(s)))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(t); err != nil {
+			return err
+		}
+		// kind := reflect.TypeOf(t).Kind()
+		// if kind == reflect.Slice {
+		arr := reflect.ValueOf(t)
+		for i := 0; i < arr.Len(); i++ {
+			if err := validators.CallValidatorIfExists(arr.Index(i)); err != nil {
+				return err
+			}
+		}
+		return nil
+
+		return validators.CallValidatorIfExists(t)
+	}
+}
+
+func (s *String) Validate(value string) error {
+	if !s.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	var err error
+
+	for _, fn := range s.rules {
+		if newerr := fn(value); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	return err
+}
+
+func (s *String) Update(value string) error {
+	err := s.Validate(value)
+	if err == nil {
+		s.value = value
+	}
+
+	return err
+}
+
+func (s *String) Mutable(b bool) *String {
+	s.mutable = b
+	return s
+}
+
+func (s *String) MustUpdate(value string) *String {
+	err := s.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func (s *String) ToString() (string, error) {
+	return s.value, nil
 }

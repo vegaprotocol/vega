@@ -37,10 +37,13 @@ func TestNetParams(t *testing.T) {
 	t.Run("test update - success", testUpdateSuccess)
 	t.Run("test update - unknown key", testUpdateUnknownKey)
 	t.Run("test update - validation failed", testUpdateValidationFailed)
+	t.Run("test update - JSON array string", testUpdateMarketPriceMonitoringDefaultParameters)
 	t.Run("test exists - sucess", testExistsSuccess)
 	t.Run("test exists - failure", testExistsFailure)
 	t.Run("get float", testGetFloat)
 	t.Run("get duration", testGetDuration)
+	t.Run("get string", testGetString)
+
 }
 
 func testValidateSuccess(t *testing.T) {
@@ -144,4 +147,45 @@ func testGetDuration(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = netp.GetDuration(netparams.GovernanceProposalAssetMinProposerBalance)
 	assert.EqualError(t, err, "not a time.Duration value")
+}
+
+func testGetString(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+
+	_, err := netp.GetString(netparams.MarketPriceMonitoringDefaultParameters)
+	assert.NoError(t, err)
+}
+
+func testUpdateMarketPriceMonitoringDefaultParameters(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	//Empty array
+	err := netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[]`)
+	assert.NoError(t, err)
+
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	assert.NoError(t, err)
+
+	//Expecting error with invalid horizon
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 0, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	assert.Error(t, err)
+
+	//Expecting error with invalid probability
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 60, "probability": 1, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	assert.Error(t, err)
+
+	//Expecting error with invalid auctionExtension
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 60, "probability": 0.95, "auctionExtension": 0},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	assert.Error(t, err)
+
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, "")
+	assert.Error(t, err)
+
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, "non empty, non-JSON string")
+	assert.Error(t, err)
+
 }

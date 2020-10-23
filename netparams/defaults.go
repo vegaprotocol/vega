@@ -1,6 +1,10 @@
 package netparams
 
-import "time"
+import (
+	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
 
 func defaultNetParams() map[string]value {
 	return map[string]value{
@@ -14,6 +18,9 @@ func defaultNetParams() map[string]value {
 		MarketAuctionMinimumDuration:               NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
 		MarketAuctionMaximumDuration:               NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("168h0m0s"),
 		MarketInitialMarkPrice:                     NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
+		MarketPriceMonitoringUpdateFrequency:       NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m0s"),
+		//MarketPriceMonitoringDefaultParameters:     NewString(StringValidJSON(&types.PriceMonitoringSettings{})).Mutable(true).MustUpdate(`{"priceMonitoringParameters": [], "updateFrequency": 60}`),
+		MarketPriceMonitoringDefaultParameters: NewString(StringValidJSON(&[]types.PriceMonitoringParameters{})).Mutable(true).MustUpdate(`[]`),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
