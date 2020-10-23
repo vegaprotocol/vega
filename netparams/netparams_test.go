@@ -163,28 +163,34 @@ func testUpdateMarketPriceMonitoringDefaultParameters(t *testing.T) {
 
 	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Empty array
-	err := netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": []}`)
+	err := netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.NoError(t, err)
 
-	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
+	//Empty array should work fine
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": []}`)
 	assert.NoError(t, err)
 
-	//Expecting error with invalid horizon
+	//Expecting an error with invalid horizon
 	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": [{"horizon": 0, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.Error(t, err)
 
-	//Expecting error with invalid probability
+	//Expecting an error with invalid probability
 	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": [{"horizon": 60, "probability": 1, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.Error(t, err)
 
-	//Expecting error with invalid auctionExtension
+	//Expecting an error with invalid auctionExtension
 	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": [{"horizon": 60, "probability": 0.95, "auctionExtension": 0},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.Error(t, err)
 
+	//Expecting an error with additional, unkown field.
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, `{"triggers": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90, "unknownField": "???"},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
+	assert.Error(t, err)
+
+	//Expecting an error with empty string
 	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, "")
 	assert.Error(t, err)
 
+	//Expecting an error with non-JSON string
 	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultTriggerSet, "non empty, non-JSON string")
 	assert.Error(t, err)
 
