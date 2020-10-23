@@ -1,8 +1,19 @@
 # Changelog
 
+## 0.26.1
+
+*2020-10-23*
+
+Fixes a number of issues discovered during the testing of 0.26.0.
+
+### Improvements
+- [#2463](https://github.com/vegaprotocol/vega/pull/2463) Further reliability fixes for the event bus
+- [#2469](https://github.com/vegaprotocol/vega/pull/2469) Fix incorrect error returned when a trader places an order in an asset that they have no account for (was `InvalidPartyID`, now `InsufficientAssetBalance`)
+- [#2458](https://github.com/vegaprotocol/vega/pull/2458) REST: Fix a crasher when a market is proposed without specifying auction times
+
 ## 0.26.0
 
-*2020–10-20*
+*2020-10-20*
 
 The events API added in 0.25.0 had some reliability issues when a large volume of events were being emitted. This release addresses that in two ways:
  - The gRPC event stream now takes a parameter that sets a batch size. A client will receive the events when the batch limit is hit.
