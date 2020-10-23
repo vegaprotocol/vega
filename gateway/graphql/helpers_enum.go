@@ -492,6 +492,8 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION, nil
 	case OrderRejectionReasonFOKOrderDuringAuction:
 		return types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION, nil
+	case OrderRejectionReasonInsufficientAssetBalance:
+		return types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
@@ -557,6 +559,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonIOCOrderDuringAuction, nil
 	case types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION:
 		return OrderRejectionReasonFOKOrderDuringAuction, nil
+	case types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
+		return OrderRejectionReasonInsufficientAssetBalance, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err
