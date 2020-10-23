@@ -330,6 +330,10 @@ enum OrderError {
   ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION = 32;
   // FOK orders are not allowed during auction
   ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION = 33;
+  // The party have an insufficient balance, or don't have
+  // a general account to submit the order (no deposits made
+  // for the required asset).
+  ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE = 34;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

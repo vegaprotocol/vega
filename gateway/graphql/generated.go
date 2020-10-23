@@ -5271,6 +5271,8 @@ enum OrderRejectionReason {
   IOCOrderDuringAuction
   "FOK orders are not allowed during auction"
   FOKOrderDuringAuction
+  "Insufficient balance to submit the order (no deposit made)"
+  InsufficientAssetBalance
 }
 
 enum OrderType {

@@ -5091,6 +5091,7 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
 | ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION | 32 | IOC orders are not allowed during auction |
 | ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION | 33 | FOK orders are not allowed during auction |
+| ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 34 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
 
 
 
