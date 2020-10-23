@@ -6,7 +6,6 @@ package proto
 import (
 	fmt "fmt"
 	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
@@ -167,10 +166,10 @@ func (this *PriceMonitoringParameters) Validate() error {
 	return nil
 }
 func (this *PriceMonitoringSettings) Validate() error {
-	for _, item := range this.PriceMonitoringParameters {
+	for _, item := range this.Parameters {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringParameters", err)
+				return github_com_mwitkow_go_proto_validators.FieldError("Parameters", err)
 			}
 		}
 	}
