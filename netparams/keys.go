@@ -14,6 +14,8 @@ const (
 	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
 	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stateToCcySiskas"
+	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
+	MarketTargetStakeV                            = "market.stake.target.v"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
