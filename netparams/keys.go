@@ -12,7 +12,7 @@ const (
 	MarketAuctionMaximumDuration               = "market.auction.maximumDuration"
 	MarketInitialMarkPrice                     = "market.initialMarkPrice"
 	MarketPriceMonitoringUpdateFrequency       = "market.monitoring.price.updateFrequency"
-	MarketPriceMonitoringDefaultParameters     = "market.monitoring.price.default"
+	MarketPriceMonitoringDefaultTriggerSet     = "market.monitoring.price.triggerSet.default"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"

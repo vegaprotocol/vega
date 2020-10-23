@@ -19,7 +19,7 @@ func defaultNetParams() map[string]value {
 		MarketAuctionMaximumDuration:               NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("168h0m0s"),
 		MarketInitialMarkPrice:                     NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
 		MarketPriceMonitoringUpdateFrequency:       NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m0s"),
-		MarketPriceMonitoringDefaultParameters:     NewString(StringValidJSON(&types.PriceMonitoringSettings{})).Mutable(true).MustUpdate(`{"parameters": []}`),
+		MarketPriceMonitoringDefaultTriggerSet:     NewString(StringValidJSON(&types.PriceMonitoringTriggerSet{})).Mutable(true).MustUpdate(`{"triggers": []}`),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
