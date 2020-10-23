@@ -197,8 +197,8 @@ message Fees {
   FeeFactors factors = 1;
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
-message PriceMonitoringParameters {
+// PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
+message PriceMonitoringTrigger {
   // Price monitoring projection horizon τ in seconds.
   int64 horizon = 1 [(validator.field) = {int_gt: 0}];
   // Price monitoirng probability level p.
@@ -209,10 +209,20 @@ message PriceMonitoringParameters {
   int64 auctionExtension = 3 [(validator.field) = {int_gt: 0}];
 }
 
-message PriceMonitoringSettings {
-  // Specifies a set of PriceMonitoringParameters to be used for price
+// PriceMonitoringTriggerSet groups together a set of PriceMonitoringTriggers
+message PriceMonitoringTriggerSet {
+  // Specifies a set of PriceMonitoringTriggers to be used for price
   // monitoring purposes
-  repeated PriceMonitoringParameters parameters = 1;
+  repeated PriceMonitoringTrigger triggers = 1;
+}
+
+// PriceMonitoringSettings groups settings required to run price monitoring
+message PriceMonitoringSettings {
+  // Specifies a PriceMonitoringTriggerSet to be used for price monitoring purposes
+  PriceMonitoringTriggerSet triggerSet = 1;
+
+  // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
+  int64 updateFrequency = 2;
 }
 
 // Market definition.
