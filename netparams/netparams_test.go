@@ -164,22 +164,22 @@ func testUpdateMarketPriceMonitoringDefaultParameters(t *testing.T) {
 	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Empty array
-	err := netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[]`)
+	err := netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `{"parameters": []}`)
 	assert.NoError(t, err)
 
-	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `{"parameters": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.NoError(t, err)
 
 	//Expecting error with invalid horizon
-	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 0, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `{"parameters": [{"horizon": 0, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.Error(t, err)
 
 	//Expecting error with invalid probability
-	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 60, "probability": 1, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `{"parameters": [{"horizon": 60, "probability": 1, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.Error(t, err)
 
 	//Expecting error with invalid auctionExtension
-	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `[{"horizon": 60, "probability": 0.95, "auctionExtension": 0},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]`)
+	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, `{"parameters": [{"horizon": 60, "probability": 0.95, "auctionExtension": 0},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`)
 	assert.Error(t, err)
 
 	err = netp.Update(context.Background(), netparams.MarketPriceMonitoringDefaultParameters, "")

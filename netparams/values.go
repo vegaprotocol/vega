@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -435,16 +434,6 @@ func StringValidJSON(t interface{}) func(string) error {
 		if err := dec.Decode(t); err != nil {
 			return err
 		}
-		// kind := reflect.TypeOf(t).Kind()
-		// if kind == reflect.Slice {
-		arr := reflect.ValueOf(t)
-		for i := 0; i < arr.Len(); i++ {
-			if err := validators.CallValidatorIfExists(arr.Index(i)); err != nil {
-				return err
-			}
-		}
-		return nil
-
 		return validators.CallValidatorIfExists(t)
 	}
 }
