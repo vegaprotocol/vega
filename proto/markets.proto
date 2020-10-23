@@ -212,10 +212,7 @@ message PriceMonitoringParameters {
 message PriceMonitoringSettings {
   // Specifies a set of PriceMonitoringParameters to be used for price
   // monitoring purposes
-  repeated PriceMonitoringParameters priceMonitoringParameters = 1;
-
-  // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
-  int64 updateFrequency = 2;
+  repeated PriceMonitoringParameters parameters = 1;
 }
 
 // Market definition.
