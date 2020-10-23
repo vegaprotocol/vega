@@ -259,8 +259,15 @@ func (b *Broker) rmSubs(keys ...int) {
 		if len(types) == 0 {
 			types = []events.Type{events.All}
 		}
-		for _, t := range types {
-			delete(b.tSubs[t], k) // remove key from typed subs map
+		if len(types) == 0 || len(types) == 1 && types[0] == events.All {
+			// remove in all subscribers then
+			for _, v := range b.tSubs {
+				delete(v, k)
+			}
+		} else {
+			for _, t := range types {
+				delete(b.tSubs[t], k) // remove key from typed subs map
+			}
 		}
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
