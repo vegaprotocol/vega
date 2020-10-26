@@ -22,7 +22,7 @@ type watch struct {
 func (opts *watch) Execute(_ []string) error {
 	args := opts.Positional.Filters
 	if len(args) == 0 {
-		return errors.New("Error: watch requires at least one filter")
+		return errors.New("error: watch requires at least one filter")
 	}
 
 	c, err := abci.NewClient(opts.Address)
