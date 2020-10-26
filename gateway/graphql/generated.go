@@ -710,7 +710,8 @@ type MarketDataResolver interface {
 	MidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	Timestamp(ctx context.Context, obj *proto.MarketData) (string, error)
 	OpenInterest(ctx context.Context, obj *proto.MarketData) (string, error)
-
+	AuctionEnd(ctx context.Context, obj *proto.MarketData) (*string, error)
+	AuctionStart(ctx context.Context, obj *proto.MarketData) (*string, error)
 	IndicativePrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	IndicativeVolume(ctx context.Context, obj *proto.MarketData) (string, error)
 	MarketState(ctx context.Context, obj *proto.MarketData) (MarketState, error)
@@ -4018,10 +4019,10 @@ type MarketData {
   timestamp: String!
   "the sum of the size of all positions greater than 0."
   openInterest: String!
-  "time in seconds until the end of the current auction, 0 if not in auction mode"
-  auctionEnd: Int
-  "time in seconds until the start of the next auction (0 if no new auction scheduled)"
-  auctionStart: Int
+  "time at which the auction will stop (null if not in auction mode"
+  auctionEnd: String
+  "time at which the next auction will start (nul if none is scheduled)"
+  auctionStart: String
   "indicative price if the auction ended now, 0 if not in auction mode"
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
@@ -11433,13 +11434,13 @@ func (ec *executionContext) _MarketData_auctionEnd(ctx context.Context, field gr
 		Object:   "MarketData",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AuctionEnd, nil
+		return ec.resolvers.MarketData().AuctionEnd(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11448,9 +11449,9 @@ func (ec *executionContext) _MarketData_auctionEnd(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_auctionStart(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
@@ -11464,13 +11465,13 @@ func (ec *executionContext) _MarketData_auctionStart(ctx context.Context, field 
 		Object:   "MarketData",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AuctionStart, nil
+		return ec.resolvers.MarketData().AuctionStart(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11479,9 +11480,9 @@ func (ec *executionContext) _MarketData_auctionStart(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOInt2int64(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_indicativePrice(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
@@ -23225,9 +23226,27 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				return res
 			})
 		case "auctionEnd":
-			out.Values[i] = ec._MarketData_auctionEnd(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_auctionEnd(ctx, field, obj)
+				return res
+			})
 		case "auctionStart":
-			out.Values[i] = ec._MarketData_auctionStart(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_auctionStart(ctx, field, obj)
+				return res
+			})
 		case "indicativePrice":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -28192,14 +28211,6 @@ func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	return graphql.MarshalInt(v)
-}
-
-func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
-	return graphql.UnmarshalInt64(v)
-}
-
-func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	return graphql.MarshalInt64(v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

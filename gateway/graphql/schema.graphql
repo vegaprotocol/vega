@@ -286,10 +286,10 @@ type MarketData {
   timestamp: String!
   "the sum of the size of all positions greater than 0."
   openInterest: String!
-  "time in seconds until the end of the current auction, 0 if not in auction mode"
-  auctionEnd: Int
-  "time in seconds until the start of the next auction (0 if no new auction scheduled)"
-  auctionStart: Int
+  "time at which the auction will stop (null if not in auction mode"
+  auctionEnd: String
+  "time at which the next auction will start (nul if none is scheduled)"
+  auctionStart: String
   "indicative price if the auction ended now, 0 if not in auction mode"
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
