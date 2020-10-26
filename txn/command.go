@@ -23,6 +23,8 @@ const (
 	NodeVoteCommand Command = 0x48
 	// NodeSignatureCommand..
 	NodeSignatureCommand Command = 0x49
+	// LiquidityProvissionCommand
+	LiquidityProvissionCommand Command = 0x4A
 	// ChainEventCommand..
 	ChainEventCommand Command = 0x50
 )

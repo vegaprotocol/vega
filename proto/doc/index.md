@@ -244,6 +244,8 @@
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
+    - [LiquidityOrder](#vega.LiquidityOrder)
+    - [LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
@@ -4161,6 +4163,43 @@ Represents a ledger entry on Vega.
 | reference | [string](#string) |  | A reference for auditing purposes. |
 | type | [string](#string) |  | Type of ledger entry. |
 | timestamp | [int64](#int64) |  | Timestamp for the time the ledger entry was created, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+
+
+
+
+
+
+<a name="vega.LiquidityOrder"></a>
+
+### LiquidityOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [PeggedReference](#vega.PeggedReference) |  |  |
+| proportion | [uint32](#uint32) |  |  |
+| offset | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LiquidityProvisionSubmission"></a>
+
+### LiquidityProvisionSubmission
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | Unique identifier for the order (set by the system after consensus). |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [float](#float) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| Sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a ses of liquidity buy orders and liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| Buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated |  |
 
 
 

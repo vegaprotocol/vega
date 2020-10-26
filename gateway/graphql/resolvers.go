@@ -250,6 +250,14 @@ func (r *VegaResolverRoot) Deposit() DepositResolver {
 	return (*myDepositResolver)(r)
 }
 
+func (r *VegaResolverRoot) LiquidityOrder() LiquidityOrderResolver {
+	panic("not implemented")
+}
+
+func (r *VegaResolverRoot) LiquidityProvisionSubmission() LiquidityProvisionSubmissionResolver {
+	panic("not implemented")
+}
+
 // deposit resolver
 
 type myDepositResolver VegaResolverRoot

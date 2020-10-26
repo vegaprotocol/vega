@@ -84,6 +84,8 @@ func (t *Tx) toProto() (interface{}, error) {
 		msg = &types.NodeRegistration{}
 	case txn.NodeSignatureCommand:
 		msg = &types.NodeSignature{}
+	case txn.LiquidityProvissionCommand:
+		msg = &types.LiquidityProvisionSubmission{}
 	case txn.ChainEventCommand:
 		msg = &types.ChainEvent{}
 	default:
@@ -120,37 +122,4 @@ func (tx *Tx) Validate() error {
 	}
 
 	return nil
-}
-
-func (tx *Tx) asOrderSubmission() (*types.Order, error) {
-	submission := &types.OrderSubmission{}
-	err := proto.Unmarshal(tx.payload(), submission)
-	if err != nil {
-		return nil, err
-	}
-
-	var peggedOrder *types.PeggedOrder
-	if submission.PeggedOrder != nil {
-		peggedOrder = &types.PeggedOrder{Reference: submission.PeggedOrder.Reference,
-			Offset: submission.PeggedOrder.Offset}
-	}
-
-	order := types.Order{
-		Id:          submission.Id,
-		MarketID:    submission.MarketID,
-		PartyID:     submission.PartyID,
-		Price:       submission.Price,
-		Size:        submission.Size,
-		Side:        submission.Side,
-		TimeInForce: submission.TimeInForce,
-		Type:        submission.Type,
-		ExpiresAt:   submission.ExpiresAt,
-		Reference:   submission.Reference,
-		Status:      types.Order_STATUS_ACTIVE,
-		CreatedAt:   0,
-		Remaining:   submission.Size,
-		PeggedOrder: peggedOrder,
-	}
-
-	return &order, nil
 }

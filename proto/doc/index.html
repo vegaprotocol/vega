@@ -1144,6 +1144,14 @@
                 </li>
 
                 <li>
+                  <a href="#vega.LiquidityOrder"><span class="badge">M</span>LiquidityOrder</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LiquidityProvisionSubmission"><span class="badge">M</span>LiquidityProvisionSubmission</a>
+                </li>
+
+                <li>
                   <a href="#vega.MarginLevels"><span class="badge">M</span>MarginLevels</a>
                 </li>
 
@@ -11004,6 +11012,141 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="vega.LiquidityOrder">LiquidityOrder</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#vega.PeggedReference">PeggedReference</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>proportion</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>offset</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.LiquidityProvisionSubmission">LiquidityProvisionSubmission</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique identifier for the order (set by the system after consensus). </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Market identifier for the order. Required field. </p></td>
+                </tr>
+
+                <tr>
+                  <td>commitmentAmount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Specified as a unitless number that represents the amount of settlement asset of the market. </p></td>
+                </tr>
+
+                <tr>
+                  <td>fee</td>
+                  <td><a href="#float">float</a></td>
+                  <td></td>
+                  <td><p>nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. </p></td>
+                </tr>
+
+                <tr>
+                  <td>Sells</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a ses of liquidity buy orders and liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+
+                <tr>
+                  <td>Buys</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: false</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 

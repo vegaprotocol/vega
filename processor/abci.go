@@ -129,6 +129,7 @@ func NewApp(
 		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
 		HandleDeliverTx(txn.NodeSignatureCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+		HandleDeliverTx(txn.LiquidityProvissionCommand, app.DeliverLiquidityProvission).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -439,6 +440,10 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	}
 	_, _, err := app.notary.AddSig(ctx, tx.PubKey(), *ns)
 	return err
+}
+
+func (app *App) DeliverLiquidityProvission(ctx context.Context, tx abci.Tx) error {
+	panic("not implemented")
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
