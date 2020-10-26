@@ -84,7 +84,7 @@ func (t *Tx) toProto() (interface{}, error) {
 		msg = &types.NodeRegistration{}
 	case txn.NodeSignatureCommand:
 		msg = &types.NodeSignature{}
-	case txn.LiquidityProvissionCommand:
+	case txn.LiquidityProvisionCommand:
 		msg = &types.LiquidityProvisionSubmission{}
 	case txn.ChainEventCommand:
 		msg = &types.ChainEvent{}

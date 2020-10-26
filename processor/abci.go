@@ -129,7 +129,7 @@ func NewApp(
 		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
 		HandleDeliverTx(txn.NodeSignatureCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
-		HandleDeliverTx(txn.LiquidityProvissionCommand, app.DeliverLiquidityProvission).
+		HandleDeliverTx(txn.LiquidityProvisionCommand, app.DeliverLiquidityProvision).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -442,7 +442,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return err
 }
 
-func (app *App) DeliverLiquidityProvission(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx) error {
 	panic("not implemented")
 }
 
