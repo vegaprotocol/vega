@@ -288,7 +288,7 @@ type MarketData {
   openInterest: String!
   "time at which the auction will stop (null if not in auction mode"
   auctionEnd: String
-  "time at which the next auction will start (nul if none is scheduled)"
+  "time at which the next auction will start (null if none is scheduled)"
   auctionStart: String
   "indicative price if the auction ended now, 0 if not in auction mode"
   indicativePrice: String!
