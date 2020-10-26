@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -29,7 +29,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
-	Command(cmd blockchain.Command, payload proto.Message) error
+	Command(cmd txn.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -172,13 +172,10 @@ func (e *ExtResChecker) StartCheck(
 
 	e.resources[id] = rs
 
-	if e.top.IsValidator() {
-		go e.start(ctx, rs)
-	} else {
-		// if weare not a validator, let's just set to voteSent
-		// and wait for all validators to verify
-		atomic.StoreUint32(&rs.state, voteSent)
-	}
+	// validtor or not, we start the routine to validatate the
+	// internall data as th resource may require retrieve data from the
+	// foreign chains
+	go e.start(ctx, rs)
 	return nil
 }
 
@@ -224,7 +221,7 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 			e.log.Error("resource checking context done",
 				logging.Error(ctx.Err()))
 			return
-		case _ = <-ticker.C:
+		case <-ticker.C:
 		}
 	}
 }
@@ -267,7 +264,7 @@ func (e *ExtResChecker) OnTick(_ context.Context, t time.Time) {
 					PubKey:    e.top.SelfVegaPubKey(),
 					Reference: v.res.GetID(),
 				}
-				err := e.cmd.Command(blockchain.NodeVoteCommand, nv)
+				err := e.cmd.Command(txn.NodeVoteCommand, nv)
 				if err != nil {
 					e.log.Error("unable to send command", logging.Error(err))
 					continue

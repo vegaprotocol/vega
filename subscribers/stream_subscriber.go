@@ -100,7 +100,11 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 func (s *StreamSub) Halt() {
 	s.mu.Lock()
 	if s.changeCount == 0 || s.changeCount < s.bufSize {
-		close(s.updated)
+		select {
+		case <-s.updated:
+		default:
+			close(s.updated)
+		}
 	}
 	s.mu.Unlock()
 	s.Base.Halt() // close channel outside of the lock. to avoid race
@@ -129,7 +133,8 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.mu.Lock()
 	// update channel is eligible for closing if no events are in buffer, or the nr of changes are less than the buffer size
-	closeUpdate := (s.changeCount == 0 || s.changeCount < s.bufSize)
+	// closeUpdate := (s.changeCount == 0 || s.changeCount >= s.bufSize)
+	closeUpdate := true
 	save := make([]StreamEvent, 0, len(evts))
 	for _, e := range evts {
 		var se StreamEvent
@@ -159,7 +164,12 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	s.changeCount += len(save)
 	s.data = append(s.data, save...)
 	if closeUpdate && ((s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0)) {
-		close(s.updated)
+		select {
+		case <-s.updated:
+		default:
+			close(s.updated)
+		}
+		//s.updated = make(chan struct{})
 	}
 	s.mu.Unlock()
 }

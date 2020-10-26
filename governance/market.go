@@ -149,6 +149,19 @@ func createMarket(
 	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
 	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
 
+	// TODO(): as of now the priceMonitoringSettings can be null
+	// we protect against this in here.
+	if definition.PriceMonitoringSettings == nil {
+		definition.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+	}
+
+	// if the openingAuctionDuration == 0 we need to default
+	// to the network parameter
+	if definition.OpeningAuctionDuration == 0 {
+		minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
+		definition.OpeningAuctionDuration = int64(minAuctionDuration.Seconds())
+	}
+
 	market := &types.Market{
 		Id:            marketID,
 		DecimalPlaces: definition.DecimalPlaces,
@@ -257,11 +270,10 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 
 func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (types.ProposalError, error) {
 	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
-	if proposedDuration < minAuctionDuration {
+	if proposedDuration != 0 && proposedDuration < minAuctionDuration {
 		// Auction duration is too small
 		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL, ErrProposalOpeningAuctionDurationTooShort
 	}
-
 	maxAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMaximumDuration)
 	if proposedDuration > maxAuctionDuration {
 		// Auction duration is too large
@@ -284,5 +296,6 @@ func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguratio
 	if perr, err := validateAuctionDuration(time.Duration(terms.OpeningAuctionDuration)*time.Second, netp); err != nil {
 		return perr, err
 	}
+
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

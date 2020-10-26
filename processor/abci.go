@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
@@ -16,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -116,23 +116,38 @@ func NewApp(
 	app.abci.OnDeliverTx = app.OnDeliverTx
 
 	app.abci.
-		HandleCheckTx(blockchain.NodeSignatureCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(blockchain.ChainEventCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey)
 
 	app.abci.
-		HandleDeliverTx(blockchain.SubmitOrderCommand, app.DeliverSubmitOrder).
-		HandleDeliverTx(blockchain.CancelOrderCommand, app.DeliverCancelOrder).
-		HandleDeliverTx(blockchain.AmendOrderCommand, app.DeliverAmendOrder).
-		HandleDeliverTx(blockchain.WithdrawCommand, app.DeliverWithdraw).
-		HandleDeliverTx(blockchain.ProposeCommand, app.DeliverPropose).
-		HandleDeliverTx(blockchain.VoteCommand, app.DeliverVote).
-		HandleDeliverTx(blockchain.RegisterNodeCommand, app.DeliverRegisterNode).
-		HandleDeliverTx(blockchain.NodeVoteCommand, app.DeliverNodeVote).
-		HandleDeliverTx(blockchain.ChainEventCommand, app.DeliverChainEvent)
+		HandleDeliverTx(txn.SubmitOrderCommand, app.DeliverSubmitOrder).
+		HandleDeliverTx(txn.CancelOrderCommand, app.DeliverCancelOrder).
+		HandleDeliverTx(txn.AmendOrderCommand, app.DeliverAmendOrder).
+		HandleDeliverTx(txn.WithdrawCommand, app.DeliverWithdraw).
+		HandleDeliverTx(txn.ProposeCommand, app.DeliverPropose).
+		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
+		HandleDeliverTx(txn.NodeSignatureCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+		HandleDeliverTx(txn.NodeVoteCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
+		HandleDeliverTx(txn.ChainEventCommand,
+			app.RequireValidatorPubKeyW(app.DeliverChainEvent))
 
 	app.time.NotifyOnTick(app.onTick)
 
 	return app, nil
+}
+
+func (app *App) RequireValidatorPubKeyW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
+	}
 }
 
 // ReloadConf updates the internal configuration
@@ -277,11 +292,27 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
-	order, err := tx.(*Tx).asOrderSubmission()
-	if err != nil {
+	s := &types.OrderSubmission{}
+	if err := tx.Unmarshal(s); err != nil {
 		return err
 	}
-	order.CreatedAt = app.currentTimestamp.UnixNano()
+
+	order := &types.Order{
+		Id:          s.Id,
+		MarketID:    s.MarketID,
+		PartyID:     s.PartyID,
+		Price:       s.Price,
+		Size:        s.Size,
+		Side:        s.Side,
+		TimeInForce: s.TimeInForce,
+		Type:        s.Type,
+		ExpiresAt:   s.ExpiresAt,
+		Reference:   s.Reference,
+		Status:      types.Order_STATUS_ACTIVE,
+		CreatedAt:   app.currentTimestamp.UnixNano(),
+		Remaining:   s.Size,
+	}
+
 	app.stats.IncTotalCreateOrder()
 
 	// Submit the create order request to the execution engine
@@ -314,7 +345,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 	order := &types.OrderCancellation{}
-	if err := tx.(*Tx).Unmarshal(order); err != nil {
+	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
 
@@ -338,7 +369,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	order := &types.OrderAmendment{}
-	if err := tx.(*Tx).Unmarshal(order); err != nil {
+	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
 
@@ -360,7 +391,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx) error {
 	w := &types.WithdrawSubmission{}
-	if err := tx.(*Tx).Unmarshal(w); err != nil {
+	if err := tx.Unmarshal(w); err != nil {
 		return err
 	}
 
@@ -369,7 +400,7 @@ func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx) error {
 	prop := &types.Proposal{}
-	if err := tx.(*Tx).Unmarshal(prop); err != nil {
+	if err := tx.Unmarshal(prop); err != nil {
 		return err
 	}
 
@@ -388,7 +419,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 	vote := &types.Vote{}
-	if err := tx.(*Tx).Unmarshal(vote); err != nil {
+	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
 
@@ -401,18 +432,18 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 	return app.gov.AddVote(ctx, *vote)
 }
 
-func (app *App) DeliverRegisterNode(ctx context.Context, tx abci.Tx) error {
-	node := &types.NodeRegistration{}
-	if err := tx.(*Tx).Unmarshal(node); err != nil {
+func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
+	ns := &types.NodeSignature{}
+	if err := tx.Unmarshal(ns); err != nil {
 		return err
 	}
-
-	return app.top.AddNodeRegistration(node)
+	_, _, err := app.notary.AddSig(ctx, tx.PubKey(), *ns)
+	return err
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 	vote := &types.NodeVote{}
-	if err := tx.(*Tx).Unmarshal(vote); err != nil {
+	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
 
@@ -421,7 +452,7 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx) error {
 	ce := &types.ChainEvent{}
-	if err := tx.(*Tx).Unmarshal(ce); err != nil {
+	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
 
@@ -510,7 +541,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		Sig:  sig,
 		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
-	if err := app.cmd.Command(blockchain.NodeSignatureCommand, payload); err != nil {
+	if err := app.cmd.Command(txn.NodeSignatureCommand, payload); err != nil {
 		// do nothing for now, we'll need a retry mechanism for this and all command soon
 		app.log.Error("unable to send command for notary",
 			logging.Error(err))

@@ -2,10 +2,10 @@ package ratelimit
 
 type Config struct {
 	// How many requests
-	Requests int
+	Requests int `long:"requests" description:" "`
 
 	// In the last `PerNBlocks` blocks
-	PerNBlocks int
+	PerNBlocks int `long:"per-n-blocks" description:" "`
 }
 
 // NewDefaultConfig allows 500 requests in the last 10 blocks.

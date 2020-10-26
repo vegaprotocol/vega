@@ -5319,6 +5319,8 @@ enum OrderRejectionReason {
 
   "Pegged order offset must be > zero"
 	PeggedOrderOffsetMustBeGreaterThanZero
+  "Insufficient balance to submit the order (no deposit made)"
+  InsufficientAssetBalance
 }
 
 enum OrderType {

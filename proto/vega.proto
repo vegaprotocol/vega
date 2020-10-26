@@ -369,6 +369,10 @@ enum OrderError {
   ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE = 41;
   // Pegged order offset must be > zero
 	ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO = 42;
+  // The party have an insufficient balance, or don't have
+  // a general account to submit the order (no deposits made
+  // for the required asset).
+  ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE = 43;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

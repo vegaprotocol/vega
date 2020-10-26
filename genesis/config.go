@@ -8,7 +8,7 @@ import (
 const namedLogger = "genesis"
 
 type Config struct {
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"log-level"`
 }
 
 func NewDefaultConfig() Config {

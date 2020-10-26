@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
@@ -25,16 +25,12 @@ func concatBytes(bzs ...[]byte) []byte {
 	return buf.Bytes()
 }
 
-func txEncode(t *testing.T, cmd blockchain.Command, msg proto.Message) *types.Transaction {
-	var hash [processor.TxHashLen]byte // empty hash works for this
+func txEncode(t *testing.T, cmd txn.Command, msg proto.Message) *types.Transaction {
 	payload, err := proto.Marshal(msg)
 	require.NoError(t, err)
 
-	bz := concatBytes(
-		hash[:],
-		[]byte{byte(cmd)},
-		payload,
-	)
+	bz, err := txn.Encode(payload, cmd)
+	require.NoError(t, err)
 
 	return &types.Transaction{
 		InputData: bz,
@@ -47,23 +43,23 @@ type TxTestSuite struct {
 func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
-	msgs := map[blockchain.Command]proto.Message{
-		blockchain.SubmitOrderCommand: &types.OrderSubmission{
+	msgs := map[txn.Command]proto.Message{
+		txn.SubmitOrderCommand: &types.OrderSubmission{
 			PartyID: party,
 		},
-		blockchain.CancelOrderCommand: &types.OrderCancellation{
+		txn.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		blockchain.AmendOrderCommand: &types.OrderAmendment{
+		txn.AmendOrderCommand: &types.OrderAmendment{
 			PartyID: party,
 		},
-		blockchain.VoteCommand: &types.Vote{
+		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		blockchain.WithdrawCommand: &types.WithdrawSubmission{
+		txn.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
-		blockchain.ProposeCommand: &types.Proposal{
+		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 		},
 	}
@@ -84,23 +80,23 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString([]byte("another-party"))
-	msgs := map[blockchain.Command]proto.Message{
-		blockchain.SubmitOrderCommand: &types.OrderSubmission{
+	msgs := map[txn.Command]proto.Message{
+		txn.SubmitOrderCommand: &types.OrderSubmission{
 			PartyID: party,
 		},
-		blockchain.CancelOrderCommand: &types.OrderCancellation{
+		txn.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		blockchain.AmendOrderCommand: &types.OrderAmendment{
+		txn.AmendOrderCommand: &types.OrderAmendment{
 			PartyID: party,
 		},
-		blockchain.VoteCommand: &types.Vote{
+		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		blockchain.WithdrawCommand: &types.WithdrawSubmission{
+		txn.WithdrawCommand: &types.WithdrawSubmission{
 			PartyID: party,
 		},
-		blockchain.ProposeCommand: &types.Proposal{
+		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 		},
 	}
@@ -119,7 +115,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 }
 
 func (s *TxTestSuite) testValidateSignedInvalidCommand(t *testing.T) {
-	cmd := blockchain.VoteCommand
+	cmd := txn.VoteCommand
 	party := []byte("party-id")
 	// wrong type for this command
 	prop := &types.Proposal{
@@ -151,7 +147,7 @@ func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
 			&types.Transaction{
 				InputData: concatBytes(
 					hash[:],
-					[]byte{byte(blockchain.SubmitOrderCommand)},
+					[]byte{byte(txn.SubmitOrderCommand)},
 					[]byte("foobar"),
 				),
 			},

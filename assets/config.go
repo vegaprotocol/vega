@@ -10,12 +10,12 @@ const (
 )
 
 type Config struct {
-	Level encoding.LogLevel
-	ERC20 ERC20Config
+	Level encoding.LogLevel `long:"log-level"`
+	ERC20 ERC20Config       `group:"ERC20" namespace:"erc20"`
 }
 
 type ERC20Config struct {
-	BridgeAddress string
+	BridgeAddress string `long:"bridge-address"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

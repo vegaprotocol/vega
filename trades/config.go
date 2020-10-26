@@ -11,7 +11,7 @@ const namedLogger = "trades"
 
 // Config represent the configuration of the trades service
 type Config struct {
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"log-level"`
 
 	// PageSizeDefault sets the default page size
 	PageSizeDefault uint64

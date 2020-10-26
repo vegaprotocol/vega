@@ -14,8 +14,8 @@ const (
 // Config represents governance specific configuration
 type Config struct {
 	// logging level
-	Level                     encoding.LogLevel
-	SignaturesRequiredPercent float64
+	Level                     encoding.LogLevel `long:"log-level"`
+	SignaturesRequiredPercent float64           `long:"signature-required-percent"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.

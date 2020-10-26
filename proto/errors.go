@@ -38,6 +38,7 @@ var (
 	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
 	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
 	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
+	ErrInsufficientAssetBalance                    = OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -113,6 +114,8 @@ func (err OrderError) Error() string {
 		return "OrderError: IOC orders are not allowed during auction"
 	case OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION:
 		return "orderError: FOK orders are not allowed during auction"
+	case OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
+		return "orderError: insufficient asset balance to submit order"
 	default:
 		return "invalid OrderError"
 	}

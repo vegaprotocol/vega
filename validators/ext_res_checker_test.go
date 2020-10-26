@@ -30,7 +30,6 @@ func getTestExtResChecker(t *testing.T) *testExtResChecker {
 	tsvc := mocks.NewMockTimeService(ctrl)
 
 	now := time.Now()
-	top.EXPECT().IsValidator().AnyTimes().Return(true)
 	tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	nv := validators.NewExtResChecker(
@@ -56,6 +55,7 @@ func TestExtResCheck(t *testing.T) {
 	t.Run("add node vote - error duplicate vote", testNodeVoteDuplicateVote)
 	t.Run("add node vote - OK", testNodeVoteOK)
 	t.Run("on chain time update validated asset", testOnChainTimeUpdate)
+	t.Run("on chain time update validated asset - non validator", testOnChainTimeUpdateNonValidator)
 }
 
 func testStartErrorDuplicate(t *testing.T) {
@@ -63,6 +63,7 @@ func testStartErrorDuplicate(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
@@ -80,6 +81,7 @@ func testStartErrorCheckFailed(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
@@ -95,6 +97,7 @@ func testStartOK(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
@@ -110,6 +113,7 @@ func testNodeVoteInvalidProposalReference(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
@@ -128,6 +132,7 @@ func testNodeVoteNotAValidator(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
@@ -147,6 +152,7 @@ func testNodeVoteOK(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
@@ -166,6 +172,7 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
@@ -235,6 +242,47 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	// block to wait for the result
 	<-ch
+}
+
+func testOnChainTimeUpdateNonValidator(t *testing.T) {
+	erc := getTestExtResChecker(t)
+	defer erc.ctrl.Finish()
+	defer erc.Stop()
+
+	selfPubKey := []byte("selfPubKey")
+
+	erc.top.EXPECT().Len().AnyTimes().Return(2)
+	erc.top.EXPECT().IsValidator().AnyTimes().Return(false)
+	erc.top.EXPECT().SelfVegaPubKey().AnyTimes().Return(selfPubKey)
+
+	res := testRes{"resource-id-1", func() error {
+		return nil
+	}}
+
+	checkUntil := erc.startTime.Add(700 * time.Second)
+	cb := func(interface{}, bool) {}
+
+	err := erc.StartCheck(res, cb, checkUntil)
+	assert.NoError(t, err)
+
+	// first on chain time update, we send our own vote
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Times(0).Return(nil)
+	newNow := erc.startTime.Add(1 * time.Second)
+	erc.OnTick(context.Background(), newNow)
+
+	// then we propagate our own vote
+	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: selfPubKey})
+	assert.NoError(t, err)
+
+	// second vote from another validator
+	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
+	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	assert.NoError(t, err)
+
+	// call onTick again to get the callback called
+	newNow = newNow.Add(1 * time.Second)
+	erc.OnTick(context.Background(), newNow)
 }
 
 type testRes struct {

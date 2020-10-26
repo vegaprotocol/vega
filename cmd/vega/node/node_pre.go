@@ -1,4 +1,4 @@
-package main
+package node
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -23,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
@@ -52,7 +50,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/crypto/ssh/terminal"
@@ -62,7 +59,7 @@ func envConfigPath() string {
 	return os.Getenv("VEGA_CONFIG")
 }
 
-func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error) {
+func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this shouldn't happen...
 	if l.cancel != nil {
 		l.cancel()
@@ -74,26 +71,8 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		}
 	}()
 	l.ctx, l.cancel = context.WithCancel(context.Background())
-	// Use configPath from args
-	configPath := l.configPath
-	if configPath == "" {
-		// Use configPath from ENV
-		configPath = envConfigPath()
-		if configPath == "" {
-			// Default directory ($HOME/.vega)
-			configPath = fsutil.DefaultVegaDir()
-		}
-	}
-	l.configPath = configPath
 
-	// VEGA config (holds all package level configs)
-	cfgwatchr, err := config.NewFromFile(l.ctx, l.Log, configPath, configPath)
-	if err != nil {
-		l.Log.Error("unable to start config watcher", logging.Error(err))
-		return
-	}
-	conf := cfgwatchr.Get()
-	l.cfgwatchr = cfgwatchr
+	conf := l.cfgwatchr.Get()
 
 	if flagProvided("--no-chain") {
 		conf.Blockchain.ChainProvider = "noop"
@@ -101,18 +80,6 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 
 	if flagProvided("--no-stores") {
 		conf.StoresEnabled = false
-	}
-
-	// if theses is not specified, we then trigger a prompt
-	// for the user to type his password
-	var nodeWalletPassphrase string
-	if len(l.nodeWalletPassphrase) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
-	} else {
-		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
-	}
-	if err != nil {
-		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
 	}
 
 	// reload logger with the setup from configuration
@@ -127,12 +94,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	l.Log.Info("Starting Vega",
-		logging.String("config-path", configPath),
-		logging.String("version", Version),
-		logging.String("version-hash", VersionHash))
-
-	// assign config vars
-	l.configPath, l.conf = configPath, conf
+		logging.String("config-path", l.configPath),
+		logging.String("version", l.Version),
+		logging.String("version-hash", l.VersionHash))
 
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
@@ -150,7 +114,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = stats.New(l.Log, l.conf.Stats, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
@@ -171,7 +135,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	// nodewallet
-	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase, ethclt)
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt)
 	if err != nil {
 		return err
 	}
@@ -410,10 +374,6 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 }
 
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
-	if l.record != "" && l.replay != "" {
-		return nil, errors.New("you can't specify both record and replay flags")
-	}
-
 	app, err := processor.NewApp(
 		l.Log,
 		l.conf.Processor,
@@ -438,9 +398,8 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	}
 
 	var abciApp tmtypes.Application
-	if l.record != "" {
-		path := filepath.Join(l.record, fmt.Sprintf("abci-record-%s", time.Now().Format("2006-01-02-15-04-05")))
-		l.Log.Info("Recording mode", logging.String("path", path))
+	tmCfg := l.conf.Blockchain.Tendermint
+	if path := tmCfg.ABCIRecordDir; path != "" {
 		rec, err := recorder.NewRecord(path, afero.NewOsFs())
 		if err != nil {
 			return nil, err
@@ -463,8 +422,8 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	}
 	l.abciServer = srv
 
-	if l.replay != "" {
-		rec, err := recorder.NewReplay(l.replay, afero.NewOsFs())
+	if path := tmCfg.ABCIReplayFile; path != "" {
+		rec, err := recorder.NewReplay(path, afero.NewOsFs())
 		if err != nil {
 			return nil, err
 		}
@@ -493,7 +452,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node
-func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
+func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {
 		if err != nil {
@@ -518,7 +477,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService)
+		l.depositPlugin, l.marketDepthSub, l.riskFactorSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -548,7 +507,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, !l.noStores)
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
 
 	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
@@ -562,8 +521,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
 	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
-	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 	l.genesisHandler.OnGenesisAppStateLoaded(l.netParams.UponGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
@@ -632,10 +591,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
-	)
-
-	l.genesisHandler.OnGenesisAppStateLoaded(
-		l.UponGenesis,
 	)
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
