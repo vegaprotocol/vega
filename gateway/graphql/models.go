@@ -1448,6 +1448,8 @@ const (
 	OrderStatusRejected OrderStatus = "Rejected"
 	// This order was partially filled.
 	OrderStatusPartiallyFilled OrderStatus = "PartiallyFilled"
+	// This order has been removed from the order book and applies to pegged orders only
+	OrderStatusParked OrderStatus = "Parked"
 )
 
 var AllOrderStatus = []OrderStatus{
@@ -1458,11 +1460,12 @@ var AllOrderStatus = []OrderStatus{
 	OrderStatusFilled,
 	OrderStatusRejected,
 	OrderStatusPartiallyFilled,
+	OrderStatusParked,
 }
 
 func (e OrderStatus) IsValid() bool {
 	switch e {
-	case OrderStatusActive, OrderStatusExpired, OrderStatusCancelled, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected, OrderStatusPartiallyFilled:
+	case OrderStatusActive, OrderStatusExpired, OrderStatusCancelled, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected, OrderStatusPartiallyFilled, OrderStatusParked:
 		return true
 	}
 	return false

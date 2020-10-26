@@ -196,6 +196,8 @@ message Order {
     STATUS_REJECTED = 6;
     // Used for closed partially filled IOC orders.
     STATUS_PARTIALLY_FILLED = 7;
+    // The order ha been removed from the book and has been parked, applies to pegged order only
+    STATUS_PARKED = 8;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go

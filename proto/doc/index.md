@@ -5034,6 +5034,7 @@ See resulting status in [What order types are available to trade on Vega?](https
 | STATUS_FILLED | 5 | Used for closed fully filled orders. |
 | STATUS_REJECTED | 6 | Used for orders when not enough collateral was available to fill the margin requirements. |
 | STATUS_PARTIALLY_FILLED | 7 | Used for closed partially filled IOC orders. |
+| STATUS_PARKED | 8 | The order ha been removed from the book and has been parked, applies to pegged order only |
 
 
 
