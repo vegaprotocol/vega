@@ -771,7 +771,7 @@ message OrderSubmission {
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
   // set internally by the node to return a unique reference identifier for the order submission.
   string reference = 10;
-  // Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order
+  // Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order
   PeggedOrder peggedOrder = 11;
 }
 
