@@ -331,6 +331,12 @@ type LedgerEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
+type LiquidityOrderInput struct {
+	Reference  PeggedReference `json:"reference"`
+	Proportion int             `json:"proportion"`
+	Offset     int             `json:"offset"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
@@ -550,6 +556,10 @@ type PreparedAmendOrder struct {
 
 type PreparedCancelOrder struct {
 	// the raw transaction to sign & submit
+	Blob string `json:"blob"`
+}
+
+type PreparedLiquidityProvider struct {
 	Blob string `json:"blob"`
 }
 

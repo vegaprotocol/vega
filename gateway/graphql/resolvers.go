@@ -2259,6 +2259,10 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	}, nil
 }
 
+func (r *myMutationResolver) PrepareLiquidityProvision(context.Context, string, int, float64, []*LiquidityOrderInput, []*LiquidityOrderInput) (*PreparedLiquidityProvider, error) {
+	panic("not implemented")
+}
+
 // END: Mutation Resolver
 
 // BEGIN: Subscription Resolver
