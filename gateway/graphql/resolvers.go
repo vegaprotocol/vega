@@ -1375,6 +1375,22 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 
 type myMarketDataResolver VegaResolverRoot
 
+func (r *myMarketDataResolver) AuctionStart(_ context.Context, m *types.MarketData) (*string, error) {
+	if m.AuctionStart <= 0 {
+		return nil, nil
+	}
+	s := vegatime.Format(vegatime.UnixNano(m.AuctionStart))
+	return &s, nil
+}
+
+func (r *myMarketDataResolver) AuctionEnd(_ context.Context, m *types.MarketData) (*string, error) {
+	if m.AuctionEnd <= 0 {
+		return nil, nil
+	}
+	s := vegatime.Format(vegatime.UnixNano(m.AuctionEnd))
+	return &s, nil
+}
+
 func (r *myMarketDataResolver) MarketState(_ context.Context, m *types.MarketData) (MarketState, error) {
 	return convertMarketStateFromProto(m.MarketState)
 }
