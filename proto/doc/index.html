@@ -11088,7 +11088,7 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
                 <tr>
                   <td>fee</td>
-                  <td><a href="#float">float</a></td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. </p></td>
                 </tr>
@@ -11097,14 +11097,14 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td>Sells</td>
                   <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
                   <td>repeated</td>
-                  <td><p>a ses of liquidity buy orders and liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                  <td><p>a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
                 </tr>
 
                 <tr>
                   <td>Buys</td>
                   <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
                 </tr>
 
             </tbody>

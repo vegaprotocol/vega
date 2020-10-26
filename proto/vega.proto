@@ -1107,7 +1107,7 @@ message LiquidityProvisionSubmission {
   // Specified as a unitless number that represents the amount of settlement asset of the market.
   uint64 commitmentAmount = 3;
   // nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers.
-  float fee = 4;
+  string fee = 4;
   // a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
   repeated LiquidityOrder Sells = 5;
   // a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec.
