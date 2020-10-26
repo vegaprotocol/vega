@@ -4444,7 +4444,7 @@ An order submission is a request to submit or create a new order on Vega.
 | expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
 | type | [Order.Type](#vega.Order.Type) |  | Type for the order. See [`Order.Type`](#vega.Order.Type). Required field. |
 | reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. |
-| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order |
+| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order |
 
 
 

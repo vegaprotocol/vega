@@ -3130,7 +3130,7 @@ type OrderSubmission struct {
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently
 	// set internally by the node to return a unique reference identifier for the order submission.
 	Reference string `protobuf:"bytes,10,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order
+	// Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order
 	PeggedOrder          *PeggedOrder `protobuf:"bytes,11,opt,name=peggedOrder,proto3" json:"peggedOrder,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`

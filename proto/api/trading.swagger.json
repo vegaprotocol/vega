@@ -3922,7 +3922,7 @@
         },
         "peggedOrder": {
           "$ref": "#/definitions/vegaPeggedOrder",
-          "title": "Pegged order details. If this sub message is supplied then the fileds are usaed to configure a pegged order"
+          "title": "Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order"
         }
       },
       "description": "An order submission is a request to submit or create a new order on Vega."
