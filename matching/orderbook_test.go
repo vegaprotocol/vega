@@ -2915,3 +2915,35 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	assert.NotNil(t, order)
 	assert.Nil(t, err)
 }
+
+func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	bo1 := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 5)
+	bo1.TimeInForce = types.Order_TIF_GFA
+	book.SubmitOrder(bo1)
+
+	so1 := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 5)
+	so1.TimeInForce = types.Order_TIF_GFA
+	book.SubmitOrder(so1)
+
+	// Get indicative auction price and volume
+	price, volume, side := book.GetIndicativePriceAndVolume()
+	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, volume, uint64(5))
+	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	assert.Nil(t, err)
+	assert.Equal(t, len(uncrossedOrders), 1)
+	assert.Equal(t, len(cancels), 0)
+}

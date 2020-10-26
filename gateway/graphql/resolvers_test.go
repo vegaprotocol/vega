@@ -139,6 +139,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		}
 		return &protoapi.MarketByIDResponse{Market: m}, nil
 	})
+
 	incompleteMarket := &types.Market{
 		Id: "foobar",
 	}

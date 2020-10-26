@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/events"
 )
@@ -54,20 +55,16 @@ func New(ctx context.Context) *Broker {
 	}
 }
 
-func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) bool {
-	// assign before select to remove overhead of call in select (it's implicit anyway)
-	// but this way we ensure that more recent states of ctx, Skip and Closed are checked
+func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
+	ctx, cfunc := context.WithTimeout(b.ctx, time.Second)
+	defer cfunc()
 	select {
-	case <-b.ctx.Done():
-		return false
-	case <-sub.Skip():
-		return false
+	case <-ctx.Done():
+		return
 	case <-sub.Closed():
-		return true
+		return
 	case sub.C() <- evts:
-		return false
-	default:
-		return false
+		return
 	}
 }
 
@@ -113,8 +110,8 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 					default:
 						if sub.required {
 							sub.Push(events...)
-						} else if rm := b.sendChannel(sub, events); rm {
-							unsub = append(unsub, k)
+						} else {
+							go b.sendChannel(sub, events)
 						}
 					}
 				}
@@ -262,8 +259,15 @@ func (b *Broker) rmSubs(keys ...int) {
 		if len(types) == 0 {
 			types = []events.Type{events.All}
 		}
-		for _, t := range types {
-			delete(b.tSubs[t], k) // remove key from typed subs map
+		if len(types) == 0 || len(types) == 1 && types[0] == events.All {
+			// remove in all subscribers then
+			for _, v := range b.tSubs {
+				delete(v, k)
+			}
+		} else {
+			for _, t := range types {
+				delete(b.tSubs[t], k) // remove key from typed subs map
+			}
 		}
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)

@@ -48,7 +48,7 @@ message NewMarketConfiguration {
   // Time duration for the opening auction to last.
   int64 openingAuctionDuration = 4;
   // price monitoring configuration
-  PriceMonitoringSettings priceMonitoringSettings = 5 [(validator.field) = {msg_exists: true}];
+  PriceMonitoringSettings priceMonitoringSettings = 5;
   // New market risk model parameters
   oneof riskParameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
@@ -225,6 +225,10 @@ enum ProposalError {
   PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE = 20;
   // Validation failed for network parameter proposal
   PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED = 21;
+  // Opening auction duration is less than the network minimum opening auction time
+  PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL = 22;
+  // Opening auction duration is more than the network minimum opening auction time
+  PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE = 23;
 }
 
 // Governance vote.

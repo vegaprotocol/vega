@@ -427,10 +427,6 @@
                 </li>
 
                 <li>
-                  <a href="#api.ObserveEventBatch"><span class="badge">M</span>ObserveEventBatch</a>
-                </li>
-
-                <li>
                   <a href="#api.ObserveEventsRequest"><span class="badge">M</span>ObserveEventsRequest</a>
                 </li>
 
@@ -1208,6 +1204,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.PeggedOrder"><span class="badge">M</span>PeggedOrder</a>
+                </li>
+
+                <li>
                   <a href="#vega.Position"><span class="badge">M</span>Position</a>
                 </li>
 
@@ -1338,6 +1338,10 @@
 
                 <li>
                   <a href="#vega.OrderError"><span class="badge">E</span>OrderError</a>
+                </li>
+
+                <li>
+                  <a href="#vega.PeggedReference"><span class="badge">E</span>PeggedReference</a>
                 </li>
 
                 <li>
@@ -3521,58 +3525,6 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
 
             </tbody>
           </table>
-
-
-
-
-
-        <h3 id="api.ObserveEventBatch">ObserveEventBatch</h3>
-        <p>Used when subscribed to observe events from the event bus</p><p>This message is used to update the batch size (only for gRPC bi-directional streaming)</p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>batchSize</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Batch size. Required field.
-Default: 0, send any and all events when they are available. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>batchSize</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: -1</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
 
 
 
@@ -5890,7 +5842,7 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
               <tr>
                 <td>ObserveEventBus</td>
-                <td><a href="#api.ObserveEventsRequest">ObserveEventsRequest</a></td>
+                <td><a href="#api.ObserveEventsRequest">ObserveEventsRequest</a> stream</td>
                 <td><a href="#api.ObserveEventsResponse">ObserveEventsResponse</a> stream</td>
                 <td><p>Subscribe to a stream of events from the core</p></td>
               </tr>
@@ -8206,17 +8158,6 @@ value (Vote) is the vote cast by the given party </p></td>
                   </td>
                 </tr>
 
-                <tr>
-                  <td>priceMonitoringSettings</td>
-                  <td>
-                    <ul>
-
-                      <li>msg_exists: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
               </tbody>
             </table>
 
@@ -8796,6 +8737,18 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 <td>PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED</td>
                 <td>21</td>
                 <td><p>Validation failed for network parameter proposal</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL</td>
+                <td>22</td>
+                <td><p>Opening auction duration is less than the network minimum opening auction time</p></td>
+              </tr>
+
+              <tr>
+                <td>PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE</td>
+                <td>23</td>
+                <td><p>Opening auction duration is more than the network minimum opening auction time</p></td>
               </tr>
 
           </tbody>
@@ -9555,33 +9508,6 @@ monitoring purposes </p></td>
 
             </tbody>
           </table>
-
-
-
-
-            <h4>Validated Fields</h4>
-            <table>
-              <thead>
-                <tr>
-                  <td>Field</td>
-                  <td>Validations</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>updateFrequency</td>
-                  <td>
-                    <ul>
-
-                      <li>int_gt: 0</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-              </tbody>
-            </table>
 
 
 
@@ -11719,6 +11645,13 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 to keep track of the auction batch this order falls under (required for fees calculation). </p></td>
                 </tr>
 
+                <tr>
+                  <td>peggedOrder</td>
+                  <td><a href="#vega.PeggedOrder">PeggedOrder</a></td>
+                  <td></td>
+                  <td><p>If this order represents a pegged order, the details are supplied here </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -12048,6 +11981,13 @@ Required field only for <a href="#vega.Order.TimeInForce"><tt>Order.TimeInForce<
 set internally by the node to return a unique reference identifier for the order submission. </p></td>
                 </tr>
 
+                <tr>
+                  <td>peggedOrder</td>
+                  <td><a href="#vega.PeggedOrder">PeggedOrder</a></td>
+                  <td></td>
+                  <td><p>Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -12194,6 +12134,37 @@ set internally by the node to return a unique reference identifier for the order
 
               </tbody>
             </table>
+
+
+
+
+
+        <h3 id="vega.PeggedOrder">PeggedOrder</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#vega.PeggedReference">PeggedReference</a></td>
+                  <td></td>
+                  <td><p>Which price point are we linked to </p></td>
+                </tr>
+
+                <tr>
+                  <td>offset</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Offset from the price reference </p></td>
+                </tr>
+
+            </tbody>
+          </table>
 
 
 
@@ -14044,6 +14015,103 @@ with an expiration that was badly formatted or otherwise invalid.</p></td>
                 <td>ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION</td>
                 <td>33</td>
                 <td><p>FOK orders are not allowed during auction</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_MUST_BE_LIMIT_ORDER</td>
+                <td>34</td>
+                <td><p>Pegged orders must be LIMIT orders</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_MUST_BE_GTT_OR_GTC</td>
+                <td>35</td>
+                <td><p>Pegged orders can only have TIF GTC or GTT</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_WITHOUT_REFERENCE_PRICE</td>
+                <td>36</td>
+                <td><p>Pegged order must have a reference price</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE</td>
+                <td>37</td>
+                <td><p>Buy pegged order cannot reference best ask price</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO</td>
+                <td>38</td>
+                <td><p>Pegged order offset must be &lt;= 0</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO</td>
+                <td>39</td>
+                <td><p>Pegged order offset must be &lt; 0</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO</td>
+                <td>40</td>
+                <td><p>Pegged order offset must be &gt;= 0</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE</td>
+                <td>41</td>
+                <td><p>Sell pegged order cannot reference best bid price</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO</td>
+                <td>42</td>
+                <td><p>Pegged order offset must be &gt; zero</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE</td>
+                <td>43</td>
+                <td><p>The party have an insufficient balance, or don&#39;t have
+a general account to submit the order (no deposits made
+for the required asset).</p></td>
+              </tr>
+
+          </tbody>
+        </table>
+
+        <h3 id="vega.PeggedReference">PeggedReference</h3>
+        <p>Which price point is the pegged order linked to</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>PEGGED_REFERENCE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>No reference given</p></td>
+              </tr>
+
+              <tr>
+                <td>PEGGED_REFERENCE_MID</td>
+                <td>1</td>
+                <td><p>MID price</p></td>
+              </tr>
+
+              <tr>
+                <td>PEGGED_REFERENCE_BEST_BID</td>
+                <td>2</td>
+                <td><p>BEST BID price</p></td>
+              </tr>
+
+              <tr>
+                <td>PEGGED_REFERENCE_BEST_ASK</td>
+                <td>3</td>
+                <td><p>BEST BID price</p></td>
               </tr>
 
           </tbody>

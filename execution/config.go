@@ -22,22 +22,22 @@ const (
 
 // MarketConfig represents the configuration of the markets
 type MarketConfig struct {
-	Path    string
-	Configs []string
+	Path    string   `long:"path"`
+	Configs []string `long:"configs"`
 }
 
 // Config is the configuration of the execution package
 type Config struct {
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"log-level"`
 
-	Markets                     MarketConfig
-	InsurancePoolInitialBalance uint64
+	Markets                     MarketConfig `group:"Markets" namespace:"markets"`
+	InsurancePoolInitialBalance uint64       `long:"insurance-pool-initial-balance"`
 
-	Matching   matching.Config
-	Risk       risk.Config
-	Position   positions.Config
-	Settlement settlement.Config
-	Fee        fee.Config
+	Matching   matching.Config   `group:"Matching" namespace:"matching"`
+	Risk       risk.Config       `group:"Risk" namespace:"risk"`
+	Position   positions.Config  `group:"Position" namespace:"position"`
+	Settlement settlement.Config `group:"Settlement" namespace:"settlement"`
+	Fee        fee.Config        `group:"Fee" namespace:"fee"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

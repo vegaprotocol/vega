@@ -64,6 +64,20 @@ type Asset struct {
 
 func (Asset) IsEvent() {}
 
+// An auction duration is used to configure 3 auction periods:
+// 1. `duration > 0`, `volume == 0`:
+//   The auction will last for at least N seconds.
+// 2. `duration == 0`, `volume > 0`:
+//   The auction will end once we can close with given traded volume.
+// 3. `duration > 0`, `volume > 0`:
+//   The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+type AuctionDuration struct {
+	// Duration of the auction in seconds
+	DurationSecs int `json:"durationSecs"`
+	// Target uncrossing trading volume
+	Volume int `json:"volume"`
+}
+
 type AuctionEvent struct {
 	// the market ID
 	MarketID string `json:"marketID"`
@@ -400,6 +414,11 @@ type Market struct {
 	//   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
 	//   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
 	DecimalPlaces int `json:"decimalPlaces"`
+	// Auction duration specifies how long the opening auction will run (minimum
+	// duration and optionally a minimum traded volume).
+	OpeningAuction *AuctionDuration `json:"openingAuction"`
+	// Price monitoring settings for the market
+	PriceMonitoringSettings *PriceMonitoringSettings `json:"priceMonitoringSettings"`
 	// Orders on a market
 	Orders []*proto.Order `json:"orders"`
 	// Get account for a party or market
@@ -485,6 +504,8 @@ type NewMarketInput struct {
 	Metadata []string `json:"metadata"`
 	// The proposed duration for the opening auction for this market in seconds
 	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
+	// Price monitoring configuration
+	PriceMonitoringSettings *PriceMonitoringSettingsInput `json:"priceMonitoringSettings"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -499,6 +520,14 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *proto.MarginLevels `json:"marginLevels"`
+}
+
+// Create an order linked to an index rather than a price
+type PeggedOrder struct {
+	// Index to link this order to
+	Reference PeggedReference `json:"reference"`
+	// Price offset from the peg
+	Offset string `json:"offset"`
 }
 
 type PositionResolution struct {
@@ -546,6 +575,46 @@ type PreparedVote struct {
 type PreparedWithdrawal struct {
 	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
+}
+
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringParameters struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringParametersInput struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// Configuration of a market price monitorings auctions triggers
+type PriceMonitoringSettings struct {
+	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
+	Parameters []*PriceMonitoringParameters `json:"parameters"`
+	// How often (in seconds) the price monitoring bounds should be updated
+	UpdateFrequencySecs int `json:"updateFrequencySecs"`
+}
+
+// Configuration of a market price monitorings auctions triggers
+type PriceMonitoringSettingsInput struct {
+	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
+	Parameters []*PriceMonitoringParametersInput `json:"parameters"`
+	// How often (in seconds) the price monitoring bounds should be updated
+	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
 }
 
 type ProposalTerms struct {
@@ -1263,6 +1332,26 @@ const (
 	OrderRejectionReasonIOCOrderDuringAuction OrderRejectionReason = "IOCOrderDuringAuction"
 	// FOK orders are not allowed during auction
 	OrderRejectionReasonFOKOrderDuringAuction OrderRejectionReason = "FOKOrderDuringAuction"
+	// Pegged orders must be LIMIT orders
+	OrderRejectionReasonPeggedOrderMustBeLimitOrder OrderRejectionReason = "PeggedOrderMustBeLimitOrder"
+	// Pegged orders can only have TIF GTC or GTT
+	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc OrderRejectionReason = "PeggedOrderMustBeGTTOrGTC"
+	// Pegged order must have a reference price
+	OrderRejectionReasonPeggedOrderWithoutReferencePrice OrderRejectionReason = "PeggedOrderWithoutReferencePrice"
+	// Buy pegged order cannot reference best ask price
+	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice OrderRejectionReason = "PeggedOrderBuyCannotReferenceBestAskPrice"
+	// Pegged order offset must be <= 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessOrEqualToZero"
+	// Pegged order offset must be < 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessThanZero"
+	// Pegged order offset must be >= 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterOrEqualToZero"
+	// Sell pegged order cannot reference best bid price
+	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice OrderRejectionReason = "PeggedOrderSellCannotReferenceBestBidPrice"
+	// Pegged order offset must be > zero
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterThanZero"
+	// Insufficient balance to submit the order (no deposit made)
+	OrderRejectionReasonInsufficientAssetBalance OrderRejectionReason = "InsufficientAssetBalance"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1299,11 +1388,21 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonGFNOrderDuringContinuousTrading,
 	OrderRejectionReasonIOCOrderDuringAuction,
 	OrderRejectionReasonFOKOrderDuringAuction,
+	OrderRejectionReasonPeggedOrderMustBeLimitOrder,
+	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc,
+	OrderRejectionReasonPeggedOrderWithoutReferencePrice,
+	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice,
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero,
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero,
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero,
+	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice,
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero,
+	OrderRejectionReasonInsufficientAssetBalance,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance:
 		return true
 	}
 	return false
@@ -1491,6 +1590,53 @@ func (e *OrderType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Valid references used for pegged orders.
+type PeggedReference string
+
+const (
+	// Peg the order against the mid price of the order book
+	PeggedReferenceMid PeggedReference = "Mid"
+	// Peg the order against the best bid price of the order book
+	PeggedReferenceBestBid PeggedReference = "BestBid"
+	// Peg the order against the best ask price of the order book
+	PeggedReferenceBestAsk PeggedReference = "BestAsk"
+)
+
+var AllPeggedReference = []PeggedReference{
+	PeggedReferenceMid,
+	PeggedReferenceBestBid,
+	PeggedReferenceBestAsk,
+}
+
+func (e PeggedReference) IsValid() bool {
+	switch e {
+	case PeggedReferenceMid, PeggedReferenceBestBid, PeggedReferenceBestAsk:
+		return true
+	}
+	return false
+}
+
+func (e PeggedReference) String() string {
+	return string(e)
+}
+
+func (e *PeggedReference) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PeggedReference(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PeggedReference", str)
+	}
+	return nil
+}
+
+func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

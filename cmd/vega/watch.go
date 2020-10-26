@@ -3,45 +3,34 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
-
-	"github.com/spf13/cobra"
+	"github.com/jessevdk/go-flags"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-type watchCommand struct {
-	command
-
-	addr string
+type watch struct {
+	ctx        context.Context
+	Address    string `short:"a" long:"address" description:"Node address" default:"tcp://0.0.0.0:26657"`
+	Positional struct {
+		Filters []string `positional-arg-name:"<FILTERS>"`
+	} `positional-args:"true"`
 }
 
-func (w *watchCommand) Init(c *Cli) {
-	w.cli = c
-	w.cmd = &cobra.Command{
-		Use:     "watch",
-		Short:   "Watches events from the tendermint node",
-		Example: `watch "tm.event = 'NewBlock'" "tm.event = 'Tx'`,
-		Long: `Events results are encoded in JSON and can be filtered using a simple query language.
-You can one or more filters.
-See: https://docs.tendermint.com/master/app-dev/subscribing-to-events-via-websocket.html for more information about the query syntax.`,
-		RunE: w.run,
-		Args: cobra.MinimumNArgs(1),
+func (opts *watch) Execute(_ []string) error {
+	args := opts.Positional.Filters
+	if len(args) == 0 {
+		return errors.New("Error: watch requires at least one filter")
 	}
 
-	w.addr = blockchain.NewDefaultConfig().Tendermint.ClientAddr
-	w.cmd.Flags().StringVarP(&w.addr, "addr", "a", w.addr, "Node Address")
-}
-
-func (w *watchCommand) run(cmd *cobra.Command, args []string) error {
-	c, err := abci.NewClient(w.addr)
+	c, err := abci.NewClient(opts.Address)
 	if err != nil {
 		return err
 	}
 
-	ctx := context.Background()
+	ctx := opts.ctx
 	fn := func(e tmctypes.ResultEvent) error {
 		bz, err := json.Marshal(e.Data)
 		if err != nil {
@@ -55,4 +44,19 @@ func (w *watchCommand) run(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func Watch(ctx context.Context, parser *flags.Parser) error {
+	var (
+		shortDesc = "Watches events from Tendermint"
+		longDesc  = `Events results are encoded in JSON and can be filtered
+using a simple query language.  You can use one or more filters.
+See https://docs.tendermint.com/master/app-dev/subscribing-to-events-via-websocket.html
+for more information about the query syntax.
+
+Example:
+watch "tm.event = 'NewBlock'" "tm.event = 'Tx'"`
+	)
+	_, err := parser.AddCommand("watch", shortDesc, longDesc, &watch{})
+	return err
 }

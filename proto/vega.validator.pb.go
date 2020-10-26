@@ -34,7 +34,15 @@ func (this *RiskResult) Validate() error {
 	// Validation of proto3 map<> fields is unsupported.
 	return nil
 }
+func (this *PeggedOrder) Validate() error {
+	return nil
+}
 func (this *Order) Validate() error {
+	if this.PeggedOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PeggedOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PeggedOrder", err)
+		}
+	}
 	return nil
 }
 func (this *OrderCancellationConfirmation) Validate() error {
@@ -214,6 +222,11 @@ func (this *OrderSubmission) Validate() error {
 	}
 	if _, ok := Order_Type_name[int32(this.Type)]; !ok {
 		return github_com_mwitkow_go_proto_validators.FieldError("Type", fmt.Errorf(`value '%v' must be a valid Order_Type field`, this.Type))
+	}
+	if this.PeggedOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PeggedOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PeggedOrder", err)
+		}
 	}
 	return nil
 }

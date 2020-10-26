@@ -188,11 +188,11 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	e.markets[marketConfig.Id] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
+	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
+
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
-
-	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
 	return nil
 }
 
@@ -361,9 +361,11 @@ func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderC
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
+	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, v := range e.marketsCpy {
-		e.broker.Send(events.NewMarketDataEvent(ctx, v.GetMarketData()))
+		evts = append(evts, events.NewMarketDataEvent(ctx, v.GetMarketData()))
 	}
+	e.broker.SendBatch(evts)
 	evt := events.NewTime(ctx, t)
 	e.broker.Send(evt)
 
@@ -424,12 +426,13 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 		expiringOrders = append(
 			expiringOrders, orders...)
 	}
+	evts := make([]events.Event, 0, len(expiringOrders))
 	for _, order := range expiringOrders {
 		order := order
-		evt := events.NewOrderEvent(ctx, &order)
-		e.broker.Send(evt)
+		evts = append(evts, events.NewOrderEvent(ctx, &order))
 		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
 	}
+	e.broker.SendBatch(evts)
 	timer.EngineTimeCounterAdd()
 }
 

@@ -3,6 +3,8 @@
 # global dictionary is at the start, file overrides afterwards
 # one word per line, to define a file override use ' - filename'
 # where filename is relative to this configuration file
+allowlist
+allowlisted
 api
 barnabee
 base64
@@ -26,6 +28,7 @@ multisig
 mutex
 mutexes
 nodewallet
+non-allowlisted
 notarising
 proto
 protobuf

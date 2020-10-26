@@ -37,6 +37,10 @@ func RemoteIPAddrFromContext(ctx context.Context) (string, bool) {
 func TraceIDFromContext(ctx context.Context) (context.Context, string) {
 	tID := ctx.Value(traceIDKey)
 	if tID == nil {
+		if h, _ := BlockHeightFromContext(ctx); h == 0 {
+			ctx = context.WithValue(ctx, traceIDKey, "genesis")
+			return ctx, "genesis"
+		}
 		stID := uuid.NewV4().String()
 		ctx = context.WithValue(ctx, traceIDKey, stID)
 		return ctx, stID

@@ -74,6 +74,10 @@ var (
 	ErrNilFeeFactors = errors.New("nil fee factors")
 	// ErrNilFees is raised when the fees are missing from the market
 	ErrNilFees = errors.New("nil fees")
+	// ErrNilAuctionDuration is raised when auction duration is missing from the market
+	ErrNilAuctionDuration = errors.New("nil auction duration")
+	// ErrNilPriceMonitoringParameters ...
+	ErrNilPriceMonitoringParameters = errors.New("nil price monitoring parameters")
 )
 
 type MarketLogEvent interface {
@@ -582,6 +586,50 @@ func FeesFromProto(pf *types.Fees) (*Fees, error) {
 	}, nil
 }
 
+func AuctionDurationFromProto(pad *types.AuctionDuration) (*AuctionDuration, error) {
+	if pad == nil {
+		return &AuctionDuration{}, nil
+	}
+
+	return &AuctionDuration{
+		Volume:       int(pad.Volume),
+		DurationSecs: int(pad.Duration),
+	}, nil
+}
+
+func PriceMonitoringParametersFromProto(ppmp *types.PriceMonitoringParameters) (*PriceMonitoringParameters, error) {
+	if ppmp == nil {
+		return nil, ErrNilPriceMonitoringParameters
+	}
+
+	return &PriceMonitoringParameters{
+		HorizonSecs:          int(ppmp.Horizon),
+		Probability:          ppmp.Probability,
+		AuctionExtensionSecs: int(ppmp.AuctionExtension),
+	}, nil
+}
+
+func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*PriceMonitoringSettings, error) {
+	if ppmst == nil {
+		// these are not mandatoryu anyway for now, so if nil we return an empty one
+		return &PriceMonitoringSettings{}, nil
+	}
+
+	params := []*PriceMonitoringParameters{}
+	for _, v := range ppmst.PriceMonitoringParameters {
+		p, err := PriceMonitoringParametersFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+		params = append(params, p)
+	}
+
+	return &PriceMonitoringSettings{
+		Parameters:          params,
+		UpdateFrequencySecs: int(ppmst.UpdateFrequency),
+	}, nil
+}
+
 // MarketFromProto ...
 func MarketFromProto(pmkt *types.Market) (*Market, error) {
 	if pmkt == nil {
@@ -604,6 +652,17 @@ func MarketFromProto(pmkt *types.Market) (*Market, error) {
 		return nil, err
 	}
 	mkt.TradableInstrument = tradableInstrument
+
+	mkt.OpeningAuction, err = AuctionDurationFromProto(pmkt.OpeningAuction)
+	if err != nil {
+		return nil, err
+	}
+
+	mkt.PriceMonitoringSettings, err = PriceMonitoringSettingsFromProto(pmkt.PriceMonitoringSettings)
+	if err != nil {
+		return nil, err
+	}
+
 	return mkt, nil
 }
 
@@ -910,6 +969,40 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 	return assetSource, nil
 }
 
+func (p *PriceMonitoringParametersInput) IntoProto() (*types.PriceMonitoringParameters, error) {
+	return &types.PriceMonitoringParameters{
+		Horizon:          int64(p.HorizonSecs),
+		Probability:      p.Probability,
+		AuctionExtension: int64(p.AuctionExtensionSecs),
+	}, nil
+}
+
+func (p *PriceMonitoringSettingsInput) IntoProto() (*types.PriceMonitoringSettings, error) {
+	if len(p.Parameters) <= 0 {
+		return &types.PriceMonitoringSettings{}, nil
+	}
+
+	params := []*types.PriceMonitoringParameters{}
+	for _, v := range p.Parameters {
+		if v != nil {
+			param, err := v.IntoProto()
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, param)
+		}
+	}
+	var freq int
+	if p.UpdateFrequencySecs != nil {
+		freq = *p.UpdateFrequencySecs
+	}
+
+	return &types.PriceMonitoringSettings{
+		PriceMonitoringParameters: params,
+		UpdateFrequency:           int64(freq),
+	}, nil
+}
+
 // IntoProto ...
 func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.DecimalPlaces < 0 {
@@ -931,12 +1024,19 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if err := n.TradingModeIntoProto(result); err != nil {
 		return nil, err
 	}
-	for _, tag := range n.Metadata {
-		result.Metadata = append(result.Metadata, tag)
-	}
+	result.Metadata = append(result.Metadata, n.Metadata...)
 	if n.OpeningAuctionDurationSecs != nil {
 		result.OpeningAuctionDuration = int64(*n.OpeningAuctionDurationSecs)
 	}
+	if n.PriceMonitoringSettings != nil {
+		result.PriceMonitoringSettings, err = n.PriceMonitoringSettings.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		result.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+	}
+
 	return result, nil
 }
 

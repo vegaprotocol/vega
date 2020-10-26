@@ -4,122 +4,111 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/faucet"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
-
-	"github.com/spf13/cobra"
+	"github.com/jessevdk/go-flags"
 )
 
-type faucetCommand struct {
-	command
-
-	log        *logging.Logger
-	rootPath   string
-	passphrase string
-	force      bool
+type FaucetCmd struct {
+	Init faucetInit `command:"init" description:"Generates the faucet configuration"`
+	Run  faucetRun  `command:"run" description:"Runs the faucet"`
 }
 
-func (f *faucetCommand) Init(c *Cli) {
-	f.cli = c
-	f.cmd = &cobra.Command{
-		Use:   "faucet",
-		Short: "The faucet subcommand",
-		Long:  "Allow deposit of builtin asset",
+// faucetCmd is a global variable that holds generic options for the faucet
+// sub-commands.
+var faucetCmd FaucetCmd
+
+func Faucet(ctx context.Context, parser *flags.Parser) error {
+	defaultPath := config.NewRootPathFlag()
+	faucetCmd = FaucetCmd{
+		Init: faucetInit{
+			RootPathFlag: defaultPath,
+		},
+		Run: faucetRun{
+			ctx:          ctx,
+			RootPathFlag: defaultPath,
+			Config:       faucet.NewDefaultConfig(defaultPath.RootPath),
+		},
 	}
 
-	run := &cobra.Command{
-		Use:   "run",
-		Short: "Run the faucet",
-		RunE:  f.Run,
-	}
-
-	run.Flags().StringVarP(&f.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	run.Flags().StringVarP(&f.passphrase, "passphrase", "p", "", "A file containing the passphrase for the faucet wallet, if empty will prompt for input")
-	f.cmd.AddCommand(run)
-
-	init := &cobra.Command{
-		Use:   "init",
-		Short: "Generate the faucet configuration",
-		RunE:  f.CmdInit,
-	}
-
-	init.Flags().StringVarP(&f.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	init.Flags().StringVarP(&f.passphrase, "passphrase", "p", "", "A file containing the passphrase for the faucet wallet, if empty will prompt for input")
-	init.Flags().BoolVarP(&f.force, "force", "f", false, "Erase exiting faucet configuration at the specified path")
-	f.cmd.AddCommand(init)
-
+	_, err := parser.AddCommand("faucet", "Allow deposit of builtin asset", "", &faucetCmd)
+	return err
 }
 
-func (f *faucetCommand) Run(cmd *cobra.Command, args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+type faucetInit struct {
+	config.RootPathFlag
+	config.PassphraseFlag
+	Force bool `short:"f" long:"force" description:"Erase existing configuratio at specified path"`
+}
 
-	var (
-		passphrase string
-		err        error
+func (opts *faucetInit) Execute(_ []string) error {
+	logDefaultConfig := logging.NewDefaultConfig()
+	log := logging.NewLoggerFromConfig(logDefaultConfig)
+	defer log.AtExit()
+
+	pass, err := opts.Passphrase.Get("faucet")
+	if err != nil {
+		return err
+	}
+
+	pubkey, err := faucet.GenConfig(log, opts.RootPath, pass, opts.Force)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("pubkey: %s\n", pubkey)
+	return nil
+}
+
+type faucetRun struct {
+	ctx context.Context
+
+	config.RootPathFlag
+	config.PassphraseFlag
+
+	faucet.Config
+}
+
+func (opts *faucetRun) Execute(_ []string) error {
+	log := logging.NewLoggerFromConfig(
+		logging.NewDefaultConfig(),
 	)
-	if len(f.passphrase) <= 0 {
-		passphrase, err = getTerminalPassphrase("faucet")
-	} else {
-		passphrase, err = getFilePassphrase(f.passphrase)
+	defer log.AtExit()
+
+	cfg, err := faucet.LoadConfig(opts.RootPath)
+	if err != nil {
+		return err
+	}
+	opts.Config = *cfg
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
 	}
 
+	pass, err := opts.Passphrase.Get("faucet")
 	if err != nil {
 		return err
 	}
 
-	cfg, err := faucet.LoadConfig(f.rootPath)
+	f, err := faucet.New(log, opts.Config, pass)
 	if err != nil {
 		return err
 	}
-	fct, err := faucet.New(f.log, *cfg, passphrase)
-	if err != nil {
-		return err
-	}
+
+	ctx, cancel := context.WithCancel(opts.ctx)
 	go func() {
 		defer cancel()
-		err := fct.Start()
-		if err != nil {
-			f.log.Error("error starting faucet server", logging.Error(err))
+		if err := f.Start(); err != nil {
+			log.Error("error starting faucet server", logging.Error(err))
 		}
 	}()
 
-	waitSig(ctx, f.log)
+	waitSig(ctx, log)
 
-	err = fct.Stop()
-	if err != nil {
-		f.log.Error("error stopping faucet server", logging.Error(err))
+	if err := f.Stop(); err != nil {
+		log.Error("error stopping faucet server", logging.Error(err))
 	} else {
-		f.log.Info("faucet server stopped with success")
+		log.Info("faucet server stopped with success")
 	}
 
-	return nil
-
-}
-
-func (f *faucetCommand) CmdInit(cmd *cobra.Command, args []string) error {
-	if ok, err := fsutil.PathExists(f.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
-	}
-
-	var (
-		passphrase string
-		err        error
-	)
-	if len(f.passphrase) <= 0 {
-		passphrase, err = getTerminalPassphrase("faucet")
-	} else {
-		passphrase, err = getFilePassphrase(f.passphrase)
-	}
-	if err != nil {
-		return err
-	}
-
-	pubkey, err := faucet.GenConfig(f.log, f.rootPath, passphrase, f.force)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("pubkey: %v\n", pubkey)
 	return nil
 }

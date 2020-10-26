@@ -8,204 +8,82 @@ import (
 	"fmt"
 	"strings"
 
+	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
-
-	"github.com/spf13/cobra"
+	"github.com/jessevdk/go-flags"
 )
 
-type walletCommand struct {
-	command
+type WalletCmd struct {
+	config.RootPathFlag
 
-	rootPath    string
-	walletOwner string
-	passphrase  string
-	data        string
-	sig         string
-	pubkey      string
-	force       bool
-	genRsaKey   bool
-	metas       string
-	Log         *logging.Logger
+	Genkey  walletGenkey  `command:"genkey" description:"Generates a new keypar for a wallet" long-description:"Generate a new keypair for a wallet, this will implicitly generate a new wallet if none exist for the given name"`
+	List    walletList    `command:"list" description:"Lists keypairs of a wallet" long-description:"Lists all the keypairs for a given wallet"`
+	Sign    walletSign    `command:"sign" description:"Signs (base64 encoded) data" long-description:"Signs (base64 encoded) data given a public key"`
+	Verify  walletVerify  `command:"verify" description:"Verifies a signature" long-description:"Verifies a signature for a given data"`
+	Taint   walletTaint   `command:"taint" description:"Taints a public key" long-description:"Taints a public key"`
+	Meta    walletMeta    `command:"meta" description:"Adds metadata to a public key" long-description:"Adds a list of metadata to a public key"`
+	Service walletService `command:"service" description:"The wallet service" long-description:"Runs or initializes the wallet service"`
 }
 
-func (w *walletCommand) Init(c *Cli) {
-	w.cli = c
-	w.cmd = &cobra.Command{
-		Use:   "wallet",
-		Short: "The wallet subcommand",
-		Long:  "Create and manage wallets",
+// walletCmd is a global variable that holds generic options for the wallet
+// sub-commands.
+var walletCmd WalletCmd
+
+func Wallet(ctx context.Context, parser *flags.Parser) error {
+	// Build the walletCmd with default values and ctx where needed.
+	walletCmd = WalletCmd{
+		RootPathFlag: config.NewRootPathFlag(),
+		Service: walletService{
+			Run: walletServiceRun{
+				ctx:    ctx,
+				Config: wallet.NewDefaultConfig(),
+			},
+		},
 	}
 
-	genkey := &cobra.Command{
-		Use:   "genkey",
-		Short: "Generate a new keypair for a wallet",
-		Long:  "Generate a new keypair for a wallet, this will implicitly generate a new wallet if none exist for the given name",
-		RunE:  w.GenKey,
-	}
-	genkey.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	genkey.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
-	genkey.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	w.cmd.AddCommand(genkey)
-
-	list := &cobra.Command{
-		Use:   "list",
-		Short: "List keypairs of a wallet",
-		Long:  "List all the keypairs for a given wallet",
-		RunE:  w.List,
-	}
-	list.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	list.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
-	list.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	w.cmd.AddCommand(list)
-
-	sign := &cobra.Command{
-		Use:   "sign",
-		Short: "Sign a blob of data",
-		Long:  "Sign a blob of dara base64 encoded",
-		RunE:  w.Sign,
-	}
-	sign.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	sign.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
-	sign.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	sign.Flags().StringVarP(&w.data, "message", "m", "", "Message to be signed (base64)")
-	sign.Flags().StringVarP(&w.pubkey, "pubkey", "k", "", "Public key to be used (hex)")
-	w.cmd.AddCommand(sign)
-
-	verify := &cobra.Command{
-		Use:   "verify",
-		Short: "Verify the signature",
-		Long:  "Verify the signature for a blob of data",
-		RunE:  w.Verify,
-	}
-	verify.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	verify.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
-	verify.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	verify.Flags().StringVarP(&w.data, "message", "m", "", "Message to be verified (base64)")
-	verify.Flags().StringVarP(&w.sig, "signature", "s", "", "Signature to be verified (base64)")
-	verify.Flags().StringVarP(&w.pubkey, "pubkey", "k", "", "Public key to be used (hex)")
-	w.cmd.AddCommand(verify)
-
-	taint := &cobra.Command{
-		Use:   "taint",
-		Short: "Taint a public key",
-		Long:  "Taint a public key",
-		RunE:  w.Taint,
-	}
-	taint.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	taint.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
-	taint.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	taint.Flags().StringVarP(&w.pubkey, "pubkey", "k", "", "Public key to be used (hex)")
-	w.cmd.AddCommand(taint)
-
-	metas := &cobra.Command{
-		Use:   "meta",
-		Short: "Add metadata to a public key",
-		Long:  "Add a list of metadata to a public key",
-		RunE:  w.Metas,
-	}
-	metas.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	metas.Flags().StringVarP(&w.walletOwner, "name", "n", "", "Name of the wallet to use")
-	metas.Flags().StringVarP(&w.passphrase, "passphrase", "p", "", "Passphrase to access the wallet")
-	metas.Flags().StringVarP(&w.pubkey, "pubkey", "k", "", "Public key to be used (hex)")
-	metas.Flags().StringVarP(&w.metas, "metas", "m", "", `A list of metadata e.g: "primary:true;asset;BTC"`)
-	w.cmd.AddCommand(metas)
-
-	service := &cobra.Command{
-		Use:   "service",
-		Short: "The wallet service",
-		Long:  "Run or initialize the wallet service",
-	}
-	w.cmd.AddCommand(service)
-
-	serviceInit := &cobra.Command{
-		Use:   "init",
-		Short: "Generate the configuration",
-		Long:  "Generate the configuration for the wallet service",
-		RunE:  w.ServiceInit,
-	}
-	serviceInit.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	serviceInit.Flags().BoolVarP(&w.force, "force", "f", false, "Erase exiting wallet service configuration at the specified path")
-	serviceInit.Flags().BoolVarP(&w.genRsaKey, "genrsakey", "g", false, "Generate rsa keys for the jwt tokens")
-	service.AddCommand(serviceInit)
-
-	serviceRun := &cobra.Command{
-		Use:   "run",
-		Short: "Start the vega wallet service",
-		Long:  "Start a vega wallet service behind an http server",
-		RunE:  w.ServiceRun,
-	}
-	serviceRun.Flags().StringVarP(&w.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	service.AddCommand(serviceRun)
+	_, err := parser.AddCommand("wallet", "Create and manage wallets", "", &walletCmd)
+	return err
 }
 
-func (w *walletCommand) ServiceInit(cmd *cobra.Command, args []string) error {
-	if ok, err := fsutil.PathExists(w.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
+func readWallet(rootPath, name, pass string) (*wallet.Wallet, error) {
+	if ok, err := fsutil.PathExists(rootPath); !ok {
+		return nil, fmt.Errorf("invalid root directory path: %w", err)
 	}
 
-	return wallet.GenConfig(w.Log, w.rootPath, w.force, w.genRsaKey)
+	if err := wallet.EnsureBaseFolder(rootPath); err != nil {
+		return nil, err
+	}
+
+	w, err := wallet.Read(rootPath, name, pass)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decrypt wallet: %w", err)
+	}
+	return w, nil
 }
 
-func (w *walletCommand) ServiceRun(cmd *cobra.Command, args []string) error {
-	cfg, err := wallet.LoadConfig(w.rootPath)
+type walletGenkey struct {
+	config.PassphraseFlag
+	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+}
+
+func (opts *walletGenkey) Execute(_ []string) error {
+	name := opts.Name
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	srv, err := wallet.NewService(w.Log, cfg, w.rootPath)
-	if err != nil {
-		return err
-	}
-	go func() {
-		defer cancel()
-		err := srv.Start()
-		if err != nil {
-			w.Log.Error("error starting wallet http server", logging.Error(err))
-		}
-	}()
-
-	waitSig(ctx, w.Log)
-
-	err = srv.Stop()
-	if err != nil {
-		w.Log.Error("error stopping wallet http server", logging.Error(err))
-	} else {
-		w.Log.Info("wallet http server stopped with success")
-	}
-
-	return nil
-}
-
-func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
-	if len(w.walletOwner) <= 0 {
-		return errors.New("wallet name is required")
-	}
-	if len(w.passphrase) <= 0 {
-		return errors.New("passphrase is required")
-	}
-
-	if ok, err := fsutil.PathExists(w.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
-	}
-
-	if err := wallet.EnsureBaseFolder(w.rootPath); err != nil {
-		return fmt.Errorf("unable to initialization root folder: %v", err)
-	}
-
-	_, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
-	if err != nil {
-		if err != wallet.ErrWalletDoesNotExists {
+	if _, err := readWallet(walletCmd.RootPath, name, pass); err != nil {
+		if !errors.Is(err, wallet.ErrWalletDoesNotExists) {
 			// this an invalid key, returning error
-			return fmt.Errorf("unable to decrypt wallet: %v", err)
+			return err
 		}
 		// wallet do not exit, let's try to create it
-		_, err = wallet.Create(w.rootPath, w.walletOwner, w.passphrase)
+		_, err = wallet.Create(walletCmd.RootPath, name, pass)
 		if err != nil {
 			return fmt.Errorf("unable to create wallet: %v", err)
 		}
@@ -221,7 +99,7 @@ func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 	}
 
 	// now updating the wallet and saving it
-	_, err = wallet.AddKeypair(kp, w.rootPath, w.walletOwner, w.passphrase)
+	_, err = wallet.AddKeypair(kp, walletCmd.RootPath, opts.Name, pass)
 	if err != nil {
 		return fmt.Errorf("unable to add keypair to wallet: %v", err)
 	}
@@ -234,81 +112,71 @@ func (w *walletCommand) GenKey(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (w *walletCommand) List(cmd *cobra.Command, args []string) error {
-	if len(w.walletOwner) <= 0 {
-		return errors.New("wallet name is required")
-	}
-	if len(w.passphrase) <= 0 {
-		return errors.New("passphrase is required")
-	}
+type walletList struct {
+	config.PassphraseFlag
+	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+}
 
-	if ok, err := fsutil.PathExists(w.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
-	}
-
-	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
+func (opts *walletList) Execute(_ []string) error {
+	name := opts.Name
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v", err)
+		return err
 	}
 
-	buf, err := json.MarshalIndent(wal, " ", " ")
+	w, err := readWallet(walletCmd.RootPath, name, pass)
+	if err != nil {
+		return err
+	}
+
+	buf, err := json.MarshalIndent(w, " ", " ")
 	if err != nil {
 		return fmt.Errorf("unable to indent message: %v", err)
 	}
 
 	// print the new keys for user info
-	fmt.Printf("List of all your keypairs:\n")
 	fmt.Printf("%v\n", string(buf))
-
 	return nil
 }
 
-func (w *walletCommand) Sign(cmd *cobra.Command, args []string) error {
-	if len(w.walletOwner) <= 0 {
-		return errors.New("wallet name is required")
-	}
-	if len(w.passphrase) <= 0 {
-		return errors.New("passphrase is required")
-	}
-	if len(w.pubkey) <= 0 {
-		return errors.New("pubkey is required")
-	}
-	if len(w.data) <= 0 {
-		return errors.New("data is required")
-	}
+type walletSign struct {
+	config.PassphraseFlag
+	Name    string          `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
+	PubKey  string          `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
+}
 
-	if ok, err := fsutil.PathExists(w.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
-	}
-
-	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
+func (opts *walletSign) Execute(_ []string) error {
+	name := opts.Name
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v", err)
+		return err
 	}
 
-	dataBuf, err := base64.StdEncoding.DecodeString(w.data)
+	w, err := readWallet(walletCmd.RootPath, name, pass)
 	if err != nil {
-		return fmt.Errorf("invalid base64 encoded data: %v", err)
+		return err
 	}
 
 	var kp *wallet.Keypair
-	for i, v := range wal.Keypairs {
-		if v.Pub == w.pubkey {
-			kp = &wal.Keypairs[i]
+	for i, v := range w.Keypairs {
+		if v.Pub == opts.PubKey {
+			kp = &w.Keypairs[i]
+			break
 		}
 	}
 	if kp == nil {
-		return fmt.Errorf("unknown public key: %v", w.pubkey)
+		return fmt.Errorf("unknown public key: %v", opts.PubKey)
 	}
 	if kp.Tainted {
-		return fmt.Errorf("key is tainted: %v", w.pubkey)
+		return fmt.Errorf("key is tainted: %v", opts.PubKey)
 	}
 
 	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
 		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
 	}
-	sig, err := wallet.Sign(alg, kp, dataBuf)
+	sig, err := wallet.Sign(alg, kp, opts.Message)
 	if err != nil {
 		return fmt.Errorf("unable to sign: %v", err)
 	}
@@ -317,56 +185,42 @@ func (w *walletCommand) Sign(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (w *walletCommand) Verify(cmd *cobra.Command, args []string) error {
-	if len(w.walletOwner) <= 0 {
-		return errors.New("wallet name is required")
-	}
-	if len(w.passphrase) <= 0 {
-		return errors.New("passphrase is required")
-	}
-	if len(w.pubkey) <= 0 {
-		return errors.New("pubkey is required")
-	}
-	if len(w.data) <= 0 {
-		return errors.New("data is required")
-	}
-	if len(w.sig) <= 0 {
-		return errors.New("data is required")
+type walletVerify struct {
+	config.PassphraseFlag
+	Name    string          `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
+	PubKey  string          `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
+	Sig     encoding.Base64 `short:"s" long:"signature" description:"Signature to be verified (base64 encoded)" required:"true"`
+}
+
+func (opts *walletVerify) Execute(_ []string) error {
+	name := opts.Name
+	pass, err := opts.Passphrase.Get(name)
+	if err != nil {
+		return err
 	}
 
-	if ok, err := fsutil.PathExists(w.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
-	}
-
-	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
+	w, err := readWallet(walletCmd.RootPath, name, pass)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v", err)
-	}
-
-	dataBuf, err := base64.StdEncoding.DecodeString(w.data)
-	if err != nil {
-		return fmt.Errorf("invalid base64 encoded data: %v", err)
-	}
-	sigBuf, err := base64.StdEncoding.DecodeString(w.sig)
-	if err != nil {
-		return fmt.Errorf("invalid base64 encoded data: %v", err)
+		return err
 	}
 
 	var kp *wallet.Keypair
-	for i, v := range wal.Keypairs {
-		if v.Pub == w.pubkey {
-			kp = &wal.Keypairs[i]
+	for i, v := range w.Keypairs {
+		if v.Pub == opts.PubKey {
+			kp = &w.Keypairs[i]
+			break
 		}
 	}
 	if kp == nil {
-		return fmt.Errorf("unknown public key: %v", w.pubkey)
+		return fmt.Errorf("unknown public key: %v", opts.PubKey)
 	}
 
 	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
 		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
 	}
-	verified, err := wallet.Verify(alg, kp, dataBuf, sigBuf)
+	verified, err := wallet.Verify(alg, kp, opts.Message, opts.Sig)
 	if err != nil {
 		return fmt.Errorf("unable to verify: %v", err)
 	}
@@ -375,95 +229,156 @@ func (w *walletCommand) Verify(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (w *walletCommand) Taint(cmd *cobra.Command, args []string) error {
-	if len(w.walletOwner) <= 0 {
-		return errors.New("wallet name is required")
-	}
-	if len(w.passphrase) <= 0 {
-		return errors.New("passphrase is required")
-	}
+type walletTaint struct {
+	config.PassphraseFlag
+	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
+}
 
-	if ok, err := fsutil.PathExists(w.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
-	}
-
-	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
+func (opts *walletTaint) Execute(_ []string) error {
+	name := opts.Name
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v", err)
+		return err
 	}
 
+	w, err := readWallet(walletCmd.RootPath, name, pass)
+	if err != nil {
+		return err
+	}
 	var kp *wallet.Keypair
-	for i, v := range wal.Keypairs {
-		if v.Pub == w.pubkey {
-			kp = &wal.Keypairs[i]
+	for i, v := range w.Keypairs {
+		if v.Pub == opts.PubKey {
+			kp = &w.Keypairs[i]
+			break
 		}
 	}
 	if kp == nil {
-		return fmt.Errorf("unknown public key: %v", w.pubkey)
+		return fmt.Errorf("unknown public key: %v", opts.PubKey)
 	}
 
 	if kp.Tainted {
-		return fmt.Errorf("key %v is already tainted", w.pubkey)
+		return fmt.Errorf("key %v is already tainted", opts.PubKey)
 	}
-
 	kp.Tainted = true
 
-	_, err = wallet.Write(wal, w.rootPath, w.walletOwner, w.passphrase)
+	_, err = wallet.Write(w, walletCmd.RootPath, name, pass)
+	return err
+}
+
+type walletMeta struct {
+	config.PassphraseFlag
+	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
+	Metas  string `short:"m" long:"metas" description:"A list of metadata e.g:'primary:true;asset:BTC'" required:"true"`
+}
+
+func (opts *walletMeta) Execute(_ []string) error {
+	name := opts.Name
+	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
 		return err
+	}
+
+	w, err := readWallet(walletCmd.RootPath, name, pass)
+	if err != nil {
+		return err
+	}
+
+	var kp *wallet.Keypair
+	for i, v := range w.Keypairs {
+		if v.Pub == opts.PubKey {
+			kp = &w.Keypairs[i]
+			break
+		}
+	}
+	if kp == nil {
+		return fmt.Errorf("unknown public key: %v", opts.PubKey)
+	}
+
+	var meta []wallet.Meta
+	if len(opts.Metas) > 0 {
+		// expect ; separated metas
+		split := strings.Split(opts.Metas, ";")
+		for _, v := range split {
+			val := strings.Split(v, ":")
+			if len(val) != 2 {
+				return fmt.Errorf("invalid meta format")
+			}
+			meta = append(meta, wallet.Meta{Key: val[0], Value: val[1]})
+		}
+
+	}
+	kp.Meta = meta
+
+	_, err = wallet.Write(w, walletCmd.RootPath, name, pass)
+	return err
+}
+
+type walletServiceInit struct {
+	Force  bool `short:"f" long:"force" description:"Erase existing configuratio at specified path"`
+	GenRSA bool `short:"g" long:"genrsakey" description:"Generates RSA for the JWT tokens"`
+}
+
+func (opts *walletServiceInit) Execute(_ []string) error {
+	if ok, err := fsutil.PathExists(walletCmd.RootPath); !ok {
+		return fmt.Errorf("invalid root directory path: %v", err)
+	}
+
+	logDefaultConfig := logging.NewDefaultConfig()
+	log := logging.NewLoggerFromConfig(logDefaultConfig)
+	defer log.AtExit()
+
+	return wallet.GenConfig(log, walletCmd.RootPath, opts.Force, opts.GenRSA)
+}
+
+type walletServiceRun struct {
+	ctx    context.Context
+	Config wallet.Config
+}
+
+func (opts *walletServiceRun) Execute(_ []string) error {
+	cfg, err := wallet.LoadConfig(walletCmd.RootPath)
+	if err != nil {
+		return err
+	}
+
+	opts.Config = *cfg
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	logDefaultConfig := logging.NewDefaultConfig()
+	log := logging.NewLoggerFromConfig(logDefaultConfig)
+	defer log.AtExit()
+
+	srv, err := wallet.NewService(log, &opts.Config, walletCmd.RootPath)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(opts.ctx)
+	go func() {
+		defer cancel()
+		err := srv.Start()
+		if err != nil {
+			log.Error("error starting wallet http server", logging.Error(err))
+		}
+	}()
+
+	waitSig(ctx, log)
+
+	err = srv.Stop()
+	if err != nil {
+		log.Error("error stopping wallet http server", logging.Error(err))
+	} else {
+		log.Info("wallet http server stopped with success")
 	}
 
 	return nil
 }
 
-func (w *walletCommand) Metas(cmd *cobra.Command, args []string) error {
-	if len(w.walletOwner) <= 0 {
-		return errors.New("wallet name is required")
-	}
-	if len(w.passphrase) <= 0 {
-		return errors.New("passphrase is required")
-	}
-	if len(w.pubkey) <= 0 {
-		return errors.New("pubkey is required")
-	}
-	if ok, err := fsutil.PathExists(w.rootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %v", err)
-	}
-
-	wal, err := wallet.Read(w.rootPath, w.walletOwner, w.passphrase)
-	if err != nil {
-		return fmt.Errorf("unable to decrypt wallet: %v", err)
-	}
-
-	var kp *wallet.Keypair
-	for i, v := range wal.Keypairs {
-		if v.Pub == w.pubkey {
-			kp = &wal.Keypairs[i]
-		}
-	}
-	if kp == nil {
-		return fmt.Errorf("unknown public key: %v", w.pubkey)
-	}
-
-	var meta []wallet.Meta
-	if len(w.metas) > 0 {
-		// expect ; separated metas
-		metasSplit := strings.Split(w.metas, ";")
-		for _, v := range metasSplit {
-			metaVal := strings.Split(v, ":")
-			if len(metaVal) != 2 {
-				return fmt.Errorf("invalid meta format")
-			}
-			meta = append(meta, wallet.Meta{Key: metaVal[0], Value: metaVal[1]})
-		}
-
-	}
-
-	kp.Meta = meta
-	_, err = wallet.Write(wal, w.rootPath, w.walletOwner, w.passphrase)
-	if err != nil {
-		return err
-	}
-
-	return nil
+type walletService struct {
+	Init walletServiceInit `command:"init" description:"Generates the configuration" long-description:"Generates the configuration for the wallet service"`
+	Run  walletServiceRun  `command:"run" description:"Start the vega wallet service" long-description:"Start a vega wallet service behind an http server"`
 }

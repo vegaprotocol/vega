@@ -30,10 +30,10 @@ const (
 
 // Config represent the configuration of the pprof package
 type Config struct {
-	Level       encoding.LogLevel
-	Enabled     bool
-	Port        uint16
-	ProfilesDir string
+	Level       encoding.LogLevel `long:"level"`
+	Enabled     bool              `long:"enabled"`
+	Port        uint16            `long:"port"`
+	ProfilesDir string            `long:"profiles-dir"`
 }
 
 // Pprofhandler is handling pprof profile management
