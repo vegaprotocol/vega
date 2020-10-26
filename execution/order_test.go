@@ -504,6 +504,28 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	}
 }
 
+func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce,
+	expiresAt int64, side types.Side, party string, size uint64, price uint64) types.Order {
+	order := types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        orderType,
+		TimeInForce: tif,
+		Side:        side,
+		PartyID:     party,
+		MarketID:    tm.market.GetID(),
+		Size:        size,
+		Price:       price,
+		Remaining:   size,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "",
+	}
+
+	if expiresAt > 0 {
+		order.ExpiresAt = expiresAt
+	}
+	return order
+}
+
 func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce, expiresAt int64, side types.Side, party string,
 	size uint64, price uint64) string {
 	order := &types.Order{
@@ -578,4 +600,195 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	orderId3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
 	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GTC, 0, false)
 	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GFN, 0, false)
+}
+
+func TestPeggedOrders(t *testing.T) {
+	t.Run("pegged orders must be LIMIT orders ", testPeggedOrderTypes)
+	t.Run("pegged orders must be either GTT or GTC ", testPeggedOrderTIFs)
+	t.Run("pegged orders buy side validation", testPeggedOrderBuys)
+	t.Run("pegged orders sell side validation", testPeggedOrderSells)
+}
+
+func testPeggedOrderTypes(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Pegged order must be a LIMIT order
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Not MARKET
+	order.Type = types.Order_TYPE_MARKET
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+}
+
+func testPeggedOrderTIFs(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Pegged order must be a LIMIT order
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+
+	// Only allowed GTC
+	order.Type = types.Order_TYPE_LIMIT
+	order.TimeInForce = types.Order_TIF_GTC
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// and GTT
+	order.TimeInForce = types.Order_TIF_GTT
+	order.ExpiresAt = now.UnixNano() + 1000000000
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// but not IOC
+	order.ExpiresAt = 0
+	order.TimeInForce = types.Order_TIF_IOC
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	// or FOK
+	order.TimeInForce = types.Order_TIF_FOK
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+}
+
+func testPeggedOrderBuys(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
+
+	// BEST BID peg must be <= 0
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 0}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// MID peg must be < 0
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 0}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// BEST ASK peg not allowed
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: -3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 0}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+}
+
+func testPeggedOrderSells(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+
+	// BEST BID peg not allowed
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 0}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	// MID peg must be > 0
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 0}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	// BEST ASK peg mudst be >= 0
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: -3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 3}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 0}
+	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
 }

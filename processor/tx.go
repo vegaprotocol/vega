@@ -129,6 +129,12 @@ func (tx *Tx) asOrderSubmission() (*types.Order, error) {
 		return nil, err
 	}
 
+	var peggedOrder *types.PeggedOrder
+	if submission.PeggedOrder != nil {
+		peggedOrder = &types.PeggedOrder{Reference: submission.PeggedOrder.Reference,
+			Offset: submission.PeggedOrder.Offset}
+	}
+
 	order := types.Order{
 		Id:          submission.Id,
 		MarketID:    submission.MarketID,
@@ -143,6 +149,7 @@ func (tx *Tx) asOrderSubmission() (*types.Order, error) {
 		Status:      types.Order_STATUS_ACTIVE,
 		CreatedAt:   0,
 		Remaining:   submission.Size,
+		PeggedOrder: peggedOrder,
 	}
 
 	return &order, nil

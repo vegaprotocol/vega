@@ -259,6 +259,7 @@
     - [OrderConfirmation](#vega.OrderConfirmation)
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
+    - [PeggedOrder](#vega.PeggedOrder)
     - [Position](#vega.Position)
     - [PositionTrade](#vega.PositionTrade)
     - [Price](#vega.Price)
@@ -293,6 +294,7 @@
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
     - [OrderError](#vega.OrderError)
+    - [PeggedReference](#vega.PeggedReference)
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
@@ -4343,6 +4345,7 @@ An order can be submitted, amended and cancelled on Vega in an attempt to make t
 | updatedAt | [int64](#int64) |  | Timestamp for when the Order was last updated, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | version | [uint64](#uint64) |  | The version for the order, initial value is version 1 and is incremented after each successful amend |
 | batchID | [uint64](#uint64) |  | Batch identifier for the order, used internally for orders submitted during auctions to keep track of the auction batch this order falls under (required for fees calculation). |
+| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | If this order represents a pegged order, the details are supplied here |
 
 
 
@@ -4441,6 +4444,7 @@ An order submission is a request to submit or create a new order on Vega.
 | expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
 | type | [Order.Type](#vega.Order.Type) |  | Type for the order. See [`Order.Type`](#vega.Order.Type). Required field. |
 | reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. |
+| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order |
 
 
 
@@ -4456,6 +4460,22 @@ A party represents an entity who wishes to trade on or query a Vega network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | A unique identifier for the party, typically represented by a public key. |
+
+
+
+
+
+
+<a name="vega.PeggedOrder"></a>
+
+### PeggedOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [PeggedReference](#vega.PeggedReference) |  | Which price point are we linked to |
+| offset | [int64](#int64) |  | Offset from the price reference |
 
 
 
@@ -5091,7 +5111,30 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
 | ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION | 32 | IOC orders are not allowed during auction |
 | ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION | 33 | FOK orders are not allowed during auction |
-| ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 34 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
+| ORDER_ERROR_MUST_BE_LIMIT_ORDER | 34 | Pegged orders must be LIMIT orders |
+| ORDER_ERROR_MUST_BE_GTT_OR_GTC | 35 | Pegged orders can only have TIF GTC or GTT |
+| ORDER_ERROR_WITHOUT_REFERENCE_PRICE | 36 | Pegged order must have a reference price |
+| ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE | 37 | Buy pegged order cannot reference best ask price |
+| ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO | 38 | Pegged order offset must be &lt;= 0 |
+| ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO | 39 | Pegged order offset must be &lt; 0 |
+| ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO | 40 | Pegged order offset must be &gt;= 0 |
+| ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE | 41 | Sell pegged order cannot reference best bid price |
+| ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO | 42 | Pegged order offset must be &gt; zero |
+| ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
+
+
+
+<a name="vega.PeggedReference"></a>
+
+### PeggedReference
+Which price point is the pegged order linked to
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PEGGED_REFERENCE_UNSPECIFIED | 0 | No reference given |
+| PEGGED_REFERENCE_MID | 1 | MID price |
+| PEGGED_REFERENCE_BEST_BID | 2 | BEST BID price |
+| PEGGED_REFERENCE_BEST_ASK | 3 | BEST BID price |
 
 
 
