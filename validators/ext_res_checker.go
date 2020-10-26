@@ -172,13 +172,10 @@ func (e *ExtResChecker) StartCheck(
 
 	e.resources[id] = rs
 
-	if e.top.IsValidator() {
-		go e.start(ctx, rs)
-	} else {
-		// if weare not a validator, let's just set to voteSent
-		// and wait for all validators to verify
-		atomic.StoreUint32(&rs.state, voteSent)
-	}
+	// validtor or not, we start the routine to validatate the
+	// internall data as th resource may require retrieve data from the
+	// foreign chains
+	go e.start(ctx, rs)
 	return nil
 }
 
@@ -224,7 +221,7 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 			e.log.Error("resource checking context done",
 				logging.Error(ctx.Err()))
 			return
-		case _ = <-ticker.C:
+		case <-ticker.C:
 		}
 	}
 }
