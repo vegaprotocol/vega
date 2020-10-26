@@ -117,6 +117,7 @@ func NewApp(
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey)
 
 	app.abci.
@@ -126,13 +127,27 @@ func NewApp(
 		HandleDeliverTx(txn.WithdrawCommand, app.DeliverWithdraw).
 		HandleDeliverTx(txn.ProposeCommand, app.DeliverPropose).
 		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
-		HandleDeliverTx(txn.RegisterNodeCommand, app.DeliverRegisterNode).
-		HandleDeliverTx(txn.NodeVoteCommand, app.DeliverNodeVote).
-		HandleDeliverTx(txn.ChainEventCommand, app.DeliverChainEvent)
+		HandleDeliverTx(txn.NodeSignatureCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+		HandleDeliverTx(txn.NodeVoteCommand,
+			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
+		HandleDeliverTx(txn.ChainEventCommand,
+			app.RequireValidatorPubKeyW(app.DeliverChainEvent))
 
 	app.time.NotifyOnTick(app.onTick)
 
 	return app, nil
+}
+
+func (app *App) RequireValidatorPubKeyW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
+	}
 }
 
 // ReloadConf updates the internal configuration
@@ -417,13 +432,13 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 	return app.gov.AddVote(ctx, *vote)
 }
 
-func (app *App) DeliverRegisterNode(ctx context.Context, tx abci.Tx) error {
-	node := &types.NodeRegistration{}
-	if err := tx.Unmarshal(node); err != nil {
+func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
+	ns := &types.NodeSignature{}
+	if err := tx.Unmarshal(ns); err != nil {
 		return err
 	}
-
-	return app.top.AddNodeRegistration(node)
+	_, _, err := app.notary.AddSig(ctx, tx.PubKey(), *ns)
+	return err
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
