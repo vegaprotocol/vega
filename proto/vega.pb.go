@@ -191,7 +191,7 @@ const (
 	PeggedReference_PEGGED_REFERENCE_MID PeggedReference = 1
 	// BEST BID price
 	PeggedReference_PEGGED_REFERENCE_BEST_BID PeggedReference = 2
-	// BEST BID price
+	// BEST ASK price
 	PeggedReference_PEGGED_REFERENCE_BEST_ASK PeggedReference = 3
 )
 

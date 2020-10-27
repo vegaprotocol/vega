@@ -2949,3 +2949,36 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
 }
+
+// Add some pegged orders to the order book and check they are parked when going into auction
+func TestOrderBook_PeggedOrders(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// We need some orders on the book to get a valid bestbis/bestask/mid price
+	makeOrder(t, book, market, "PriceSetterBuy", types.Side_SIDE_BUY, 100, "party01", 1)
+	makeOrder(t, book, market, "PriceSetterSell", types.Side_SIDE_SELL, 101, "party01", 1)
+
+	assert.Equal(t, book.GetBestAskPrice(), uint64(101))
+	assert.Equal(t, book.GetBestBidPrice(), uint64(100))
+
+	bp1 := getOrder(t, book, market, "BuyPeg1", types.Side_SIDE_BUY, 100, "party01", 5)
+	bp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
+		Offset: -3}
+	book.SubmitOrder(bp1)
+
+	sp1 := getOrder(t, book, market, "SellPeg1", types.Side_SIDE_SELL, 100, "party01", 5)
+	sp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
+		Offset: +3}
+	book.SubmitOrder(bp1)
+
+	// Leave auction and uncross the book
+	cancels, parked, err := book.EnterAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(cancels), 0)
+	assert.Equal(t, len(parked), 2)
+}
