@@ -559,7 +559,7 @@ type PreparedCancelOrder struct {
 	Blob string `json:"blob"`
 }
 
-type PreparedLiquidityProvider struct {
+type PreparedLiquidityProvision struct {
 	Blob string `json:"blob"`
 }
 

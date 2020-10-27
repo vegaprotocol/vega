@@ -443,7 +443,13 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx) error {
-	panic("not implemented")
+	sub := &types.LiquidityProvisionSubmission{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+
+	partyId := hex.EncodeToString(tx.PubKey())
+	return app.exec.SubmitLiquidityProvision(ctx, partyId, sub)
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {

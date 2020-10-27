@@ -332,6 +332,39 @@ func (m *Market) IntoProto() (*types.Market, error) {
 	return pmkt, nil
 }
 
+func (o *LiquidityOrderInput) IntoProto() (*types.LiquidityOrder, error) {
+	if o.Proportion < 0 {
+		return nil, errors.New("proportion can't be negative")
+	}
+
+	ref, err := convertPeggedReferenceToProto(o.Reference)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.LiquidityOrder{
+		Offset:     int64(o.Offset),
+		Proportion: uint32(o.Proportion),
+		Reference:  ref,
+	}, nil
+}
+
+type LiquidityOrderInputs []*LiquidityOrderInput
+
+func (inputs LiquidityOrderInputs) IntoProto() ([]*types.LiquidityOrder, error) {
+	orders := make([]*types.LiquidityOrder, len(inputs))
+	for i, input := range inputs {
+		v, err := input.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		orders[i] = v
+	}
+
+	return orders, nil
+
+}
+
 // ContinuousTradingFromProto ...
 func ContinuousTradingFromProto(pct *types.ContinuousTrading) (*ContinuousTrading, error) {
 	return &ContinuousTrading{

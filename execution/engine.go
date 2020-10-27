@@ -443,3 +443,12 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 	}
 	return mkt.GetMarketData(), nil
 }
+
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, partyId string, sub *types.LiquidityProvisionSubmission) error {
+	mkt, ok := e.markets[sub.MarketID]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+
+	return mkt.SubmitLiquidityProvision(ctx, partyId, sub)
+}

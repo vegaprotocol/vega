@@ -96,6 +96,8 @@
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
     - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
     - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest)
+    - [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse)
     - [PrepareProposalRequest](#api.PrepareProposalRequest)
     - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
@@ -245,6 +247,7 @@
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
     - [LiquidityOrder](#vega.LiquidityOrder)
+    - [LiquidityProvision](#vega.LiquidityProvision)
     - [LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
@@ -1735,6 +1738,36 @@ Response for preparing an order cancellation.
 
 
 
+<a name="api.PrepareLiquidityProvisionRequest"></a>
+
+### PrepareLiquidityProvisionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| submission | [vega.LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareLiquidityProvisionResponse"></a>
+
+### PrepareLiquidityProvisionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="api.PrepareProposalRequest"></a>
 
 ### PrepareProposalRequest
@@ -2159,6 +2192,7 @@ The response for a list of withdrawals
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare a governance proposal |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a governance vote |
 | PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | Propagate a chain event |
+| PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse) |  |
 
 
 <a name="api.trading_data"></a>
@@ -4180,6 +4214,29 @@ Represents a ledger entry on Vega.
 | reference | [PeggedReference](#vega.PeggedReference) |  |  |
 | proportion | [uint32](#uint32) |  |  |
 | offset | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LiquidityProvision"></a>
+
+### LiquidityProvision
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | LiquidityProvision identifier |
+| partyId | [string](#string) |  | Party who created the provision |
+| createdAt | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| updatedAt | [int64](#int64) |  | Timestamp for when the order was updated at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| Sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| Buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
 
 
 

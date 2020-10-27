@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/gateway/server"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/metrics"
@@ -113,6 +114,7 @@ type NodeCommand struct {
 	tradeService      *trades.Svc
 	marketService     *markets.Svc
 	orderService      *orders.Svc
+	liquidityService  *liquidity.Svc
 	partyService      *parties.Svc
 	timeService       *vegatime.Svc
 	accountsService   *accounts.Svc
@@ -231,6 +233,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.marketService,
 		l.partyService,
 		l.orderService,
+		l.liquidityService,
 		l.tradeService,
 		l.candleService,
 		l.accountsService,

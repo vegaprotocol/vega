@@ -1930,6 +1930,15 @@
       },
       "description": "Response for preparing an order cancellation."
     },
+    "apiPrepareLiquidityProvisionResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "apiPrepareProposalRequest": {
       "type": "object",
       "properties": {
@@ -3232,6 +3241,54 @@
         }
       },
       "description": "Represents a ledger entry on Vega."
+    },
+    "vegaLiquidityOrder": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "$ref": "#/definitions/vegaPeggedReference"
+        },
+        "proportion": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "offset": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "vegaLiquidityProvisionSubmission": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string",
+          "description": "Market identifier for the order. Required field."
+        },
+        "commitmentAmount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Specified as a unitless number that represents the amount of settlement asset of the market."
+        },
+        "fee": {
+          "type": "string",
+          "description": "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers."
+        },
+        "Sells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+        },
+        "Buys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+        }
+      }
     },
     "vegaLogNormalModelParams": {
       "type": "object",

@@ -44,6 +44,7 @@ type TradingClient interface {
 	PrepareProposal(ctx context.Context, in *protoapi.PrepareProposalRequest, opts ...grpc.CallOption) (*protoapi.PrepareProposalResponse, error)
 
 	PrepareVote(ctx context.Context, in *protoapi.PrepareVoteRequest, opts ...grpc.CallOption) (*protoapi.PrepareVoteResponse, error)
+	PrepareLiquidityProvision(ctx context.Context, in *protoapi.PrepareLiquidityProvisionRequest, opts ...grpc.CallOption) (*protoapi.PrepareLiquidityProvisionResponse, error)
 	PrepareWithdraw(ctx context.Context, in *protoapi.PrepareWithdrawRequest, opts ...grpc.CallOption) (*protoapi.PrepareWithdrawResponse, error)
 	// unary calls - writes
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
@@ -2259,8 +2260,38 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareLiquidityProvision(context.Context, string, int, float64, []*LiquidityOrderInput, []*LiquidityOrderInput) (*PreparedLiquidityProvider, error) {
-	panic("not implemented")
+func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketId string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error) {
+	if commitmentAmount < 0 {
+		return nil, errors.New("commitmentAmount can't be negative")
+	}
+
+	pBuys, err := LiquidityOrderInputs(buys).IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
+	pSells, err := LiquidityOrderInputs(sells).IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
+	req := &protoapi.PrepareLiquidityProvisionRequest{
+		Submission: &types.LiquidityProvisionSubmission{
+			MarketID:         marketId,
+			CommitmentAmount: uint64(commitmentAmount),
+			Fee:              fee,
+			Buys:             pBuys,
+			Sells:            pSells,
+		},
+	}
+	resp, err := r.tradingClient.PrepareLiquidityProvision(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	return &PreparedLiquidityProvision{
+		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
+	}, nil
 }
 
 // END: Mutation Resolver

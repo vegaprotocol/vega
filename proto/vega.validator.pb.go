@@ -356,3 +356,23 @@ func (this *LiquidityProvisionSubmission) Validate() error {
 	}
 	return nil
 }
+func (this *LiquidityProvision) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	for _, item := range this.Sells {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Sells", err)
+			}
+		}
+	}
+	for _, item := range this.Buys {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Buys", err)
+			}
+		}
+	}
+	return nil
+}

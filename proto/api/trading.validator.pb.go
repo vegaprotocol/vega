@@ -742,6 +742,20 @@ func (this *PrepareVoteResponse) Validate() error {
 	}
 	return nil
 }
+func (this *PrepareLiquidityProvisionRequest) Validate() error {
+	if nil == this.Submission {
+		return github_com_mwitkow_go_proto_validators.FieldError("Submission", fmt.Errorf("message must exist"))
+	}
+	if this.Submission != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
+		}
+	}
+	return nil
+}
+func (this *PrepareLiquidityProvisionResponse) Validate() error {
+	return nil
+}
 func (this *OrderByIDRequest) Validate() error {
 	return nil
 }
