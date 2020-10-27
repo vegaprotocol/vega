@@ -20,8 +20,8 @@ type Config struct {
 	// logging level
 	Level     encoding.LogLevel `long:"log-level"`
 	RetryRate encoding.Duration `long:"retry-rate"`
-	// a list of whitelisted blockchain queue public keys
-	BlockchainQueueAllowlist []string `long:"blockchain-queue-allowlist" description:" "`
+	// a list of allowlisted blockchain queue public keys
+	BlockchainQueueAllowlist []string `long:"blockchain-queue-whitelist" description:" "`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
