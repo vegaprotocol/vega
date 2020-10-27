@@ -345,6 +345,9 @@ service trading_data {
 
   // Get the network parameters
   rpc NetworkParameters(NetworkParametersRequest) returns (NetworkParametersResponse);
+
+  // Get the liquidity provision orders
+  rpc LiquidityProvisions(LiquidityProvisionsRequest) returns (LiquidityProvisionsResponse);
 }
 
 // Request for a list of all assets enabled on Vega.
@@ -1192,3 +1195,18 @@ message NetworkParametersResponse {
   repeated vega.NetworkParameter networkParameters = 1;
 }
 
+// A message requesting for the list
+// of liquidity provisions orders for markets
+// one of the 2 filters is required or both
+message LiquidityProvisionsRequest {
+  // the market we want to get liquidity provision orders from
+  string market = 1;
+  // the party which submitted the liquidity provision orders
+  string party = 2;
+}
+
+// A response containing all of the
+// vega liquidity provisions orders
+message LiquidityProvisionsResponse {
+  repeated vega.LiquidityProvision liquidityProvisions = 1;
+}

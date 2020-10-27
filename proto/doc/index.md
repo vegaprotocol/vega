@@ -48,6 +48,8 @@
     - [GetVotesByPartyResponse](#api.GetVotesByPartyResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
+    - [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest)
+    - [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
     - [MarginLevelsResponse](#api.MarginLevelsResponse)
     - [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest)
@@ -982,6 +984,40 @@ Response for the latest trade that occurred on Vega for a given market.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | trade | [vega.Trade](#vega.Trade) |  | A trade, if found. |
+
+
+
+
+
+
+<a name="api.LiquidityProvisionsRequest"></a>
+
+### LiquidityProvisionsRequest
+A message requesting for the list
+of liquidity provisions orders for markets
+one of the 2 filters is required or both
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| market | [string](#string) |  | the market we want to get liquidity provision orders from |
+| party | [string](#string) |  | the party which submitted the liquidity provision orders |
+
+
+
+
+
+
+<a name="api.LiquidityProvisionsResponse"></a>
+
+### LiquidityProvisionsResponse
+A response containing all of the
+vega liquidity provisions orders
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| liquidityProvisions | [vega.LiquidityProvision](#vega.LiquidityProvision) | repeated |  |
 
 
 
@@ -2264,6 +2300,7 @@ The response for a list of withdrawals
 | Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
 | Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
 | NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
+| LiquidityProvisions | [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest) | [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse) | Get the liquidity provision orders |
 
 
 

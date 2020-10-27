@@ -904,3 +904,16 @@ func (this *NetworkParametersResponse) Validate() error {
 	}
 	return nil
 }
+func (this *LiquidityProvisionsRequest) Validate() error {
+	return nil
+}
+func (this *LiquidityProvisionsResponse) Validate() error {
+	for _, item := range this.LiquidityProvisions {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LiquidityProvisions", err)
+			}
+		}
+	}
+	return nil
+}

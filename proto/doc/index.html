@@ -355,6 +355,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.LiquidityProvisionsRequest"><span class="badge">M</span>LiquidityProvisionsRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.LiquidityProvisionsResponse"><span class="badge">M</span>LiquidityProvisionsResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.MarginLevelsRequest"><span class="badge">M</span>MarginLevelsRequest</a>
                 </li>
 
@@ -2889,6 +2897,61 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td></td>
                   <td><p>A trade, if found. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.LiquidityProvisionsRequest">LiquidityProvisionsRequest</h3>
+        <p>A message requesting for the list</p><p>of liquidity provisions orders for markets</p><p>one of the 2 filters is required or both</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>market</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the market we want to get liquidity provision orders from </p></td>
+                </tr>
+
+                <tr>
+                  <td>party</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the party which submitted the liquidity provision orders </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="api.LiquidityProvisionsResponse">LiquidityProvisionsResponse</h3>
+        <p>A response containing all of the</p><p>vega liquidity provisions orders</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>liquidityProvisions</td>
+                  <td><a href="#vega.LiquidityProvision">vega.LiquidityProvision</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -6117,6 +6180,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 <td><a href="#api.NetworkParametersRequest">NetworkParametersRequest</a></td>
                 <td><a href="#api.NetworkParametersResponse">NetworkParametersResponse</a></td>
                 <td><p>Get the network parameters</p></td>
+              </tr>
+
+              <tr>
+                <td>LiquidityProvisions</td>
+                <td><a href="#api.LiquidityProvisionsRequest">LiquidityProvisionsRequest</a></td>
+                <td><a href="#api.LiquidityProvisionsResponse">LiquidityProvisionsResponse</a></td>
+                <td><p>Get the liquidity provision orders</p></td>
               </tr>
 
           </tbody>

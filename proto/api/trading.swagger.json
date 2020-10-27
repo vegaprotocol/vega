@@ -1652,6 +1652,18 @@
       },
       "description": "Response for the latest trade that occurred on Vega for a given market."
     },
+    "apiLiquidityProvisionsResponse": {
+      "type": "object",
+      "properties": {
+        "liquidityProvisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityProvision"
+          }
+        }
+      },
+      "title": "A response containing all of the\nvega liquidity provisions orders"
+    },
     "apiMarginLevelsResponse": {
       "type": "object",
       "properties": {
