@@ -1542,6 +1542,32 @@ func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData)
 	return vegatime.Format(vegatime.UnixNano(m.Timestamp)), nil
 }
 
+func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketData) (*MarketDataCommitments, error) {
+	// get all the commitments for the given market
+	req := protoapi.LiquidityProvisionsRequest{
+		Market: m.Market,
+	}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	// now we split all the sells and buys
+	sells := []*types.LiquidityOrderReference{}
+	buys := []*types.LiquidityOrderReference{}
+
+	for _, v := range res.LiquidityProvisions {
+		sells = append(sells, v.Sells...)
+		buys = append(buys, v.Buys...)
+	}
+
+	return &MarketDataCommitments{
+		Sells: sells,
+		Buys:  buys,
+	}, nil
+}
+
 func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) (*Market, error) {
 	req := protoapi.MarketByIDRequest{MarketID: m.Market}
 	res, err := r.tradingDataClient.MarketByID(ctx, &req)

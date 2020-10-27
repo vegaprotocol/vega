@@ -322,6 +322,20 @@ type MarketData {
   marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
+  "the amount of stake targeted for this market"
+  targetStake: String
+  "the supplied stake for the market"
+  suppliedStake: String
+  "The liquidity commitments for a given market"
+  commitments: MarketDataCommitments!
+}
+
+"The MM commitments for this market"
+type MarketDataCommitments {
+  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  sells: [LiquidityOrderReference!]
+  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  buys:  [LiquidityOrderReference!]
 }
 
 type PreparedWithdrawal {

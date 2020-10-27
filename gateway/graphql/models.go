@@ -447,6 +447,14 @@ type Market struct {
 
 func (Market) IsEvent() {}
 
+// The MM commitments for this market
+type MarketDataCommitments struct {
+	// a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
+	Sells []*proto.LiquidityOrderReference `json:"sells"`
+	// a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec.
+	Buys []*proto.LiquidityOrderReference `json:"buys"`
+}
+
 type MarketEvent struct {
 	// the market ID
 	MarketID string `json:"marketID"`
