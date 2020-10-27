@@ -102,26 +102,26 @@ func (s *Svc) consume() {
 	}
 }
 
-func (s *Svc) Get(party, market *string) ([]types.LiquidityProvision, error) {
-	if party == nil && market == nil {
+func (s *Svc) Get(party, market string) ([]types.LiquidityProvision, error) {
+	if len(party) <= 0 && len(market) <= 0 {
 		return nil, ErrNoMarketOrPartyFilters
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	if market != nil {
-		return s.getByMarket(*market, party), nil
+	if len(market) > 0 {
+		return s.getByMarket(market, party), nil
 	}
-	return s.getByParty(*party), nil
+	return s.getByParty(party), nil
 }
 
-func (s *Svc) getByMarket(market string, party *string) []types.LiquidityProvision {
+func (s *Svc) getByMarket(market string, party string) []types.LiquidityProvision {
 	partiesLPs, ok := s.marketsLPs[market]
 	if !ok {
 		return nil
 	}
 
-	if party != nil {
-		partyLP, ok := partiesLPs[*party]
+	if len(party) > 0 {
+		partyLP, ok := partiesLPs[party]
 		if !ok {
 			return nil
 		}
