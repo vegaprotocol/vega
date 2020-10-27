@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,15 +35,15 @@ func (m *MockEvtForwarder) EXPECT() *MockEvtForwarderMockRecorder {
 }
 
 // Forward mocks base method
-func (m *MockEvtForwarder) Forward(arg0 *proto.ChainEvent, arg1 string) error {
+func (m *MockEvtForwarder) Forward(arg0 context.Context, arg1 *proto.ChainEvent, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Forward", arg0, arg1)
+	ret := m.ctrl.Call(m, "Forward", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Forward indicates an expected call of Forward
-func (mr *MockEvtForwarderMockRecorder) Forward(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockEvtForwarderMockRecorder) Forward(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Forward", reflect.TypeOf((*MockEvtForwarder)(nil).Forward), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Forward", reflect.TypeOf((*MockEvtForwarder)(nil).Forward), arg0, arg1, arg2)
 }
