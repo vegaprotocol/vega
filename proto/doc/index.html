@@ -7235,6 +7235,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>liquidityProvision</td>
+                  <td><a href="#vega.LiquidityProvision">LiquidityProvision</a></td>
+                  <td></td>
+                  <td><p>LiquidityProvision  events </p></td>
+                </tr>
+
+                <tr>
                   <td>market</td>
                   <td><a href="#vega.MarketEvent">MarketEvent</a></td>
                   <td></td>
@@ -7725,6 +7732,12 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 <td>BUS_EVENT_TYPE_NETWORK_PARAMETER</td>
                 <td>24</td>
                 <td><p>Event indicating a network parameter has been added or updated</p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_LIQUIDITY_PROVISION</td>
+                <td>25</td>
+                <td><p>Event indicating a liquidity provision has been created or updated</p></td>
               </tr>
 
               <tr>
@@ -11167,7 +11180,7 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                 </tr>
 
                 <tr>
-                  <td>partyId</td>
+                  <td>partyID</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party who created the provision </p></td>

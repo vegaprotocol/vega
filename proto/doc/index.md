@@ -2745,6 +2745,7 @@ A bus event is a container for event bus events emitted by Vega
 | auction | [AuctionEvent](#vega.AuctionEvent) |  | Auction events, see [AuctionEvent](#vega.AuctionEvent) |
 | riskFactor | [RiskFactor](#vega.RiskFactor) |  | Risk factor events |
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
+| liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
 
 
@@ -2941,6 +2942,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_AUCTION | 22 | Event indicating a change in auction state, for example starting or ending an auction |
 | BUS_EVENT_TYPE_RISK_FACTOR | 23 | Event indicating a risk factor has been updated |
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
+| BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
 
 
@@ -4229,7 +4231,7 @@ Represents a ledger entry on Vega.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | LiquidityProvision identifier |
-| partyId | [string](#string) |  | Party who created the provision |
+| partyID | [string](#string) |  | Party who created the provision |
 | createdAt | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | updatedAt | [int64](#int64) |  | Timestamp for when the order was updated at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | marketID | [string](#string) |  | Market identifier for the order. Required field. |

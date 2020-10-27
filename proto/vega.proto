@@ -1116,7 +1116,7 @@ message LiquidityProvision {
   // LiquidityProvision identifier
   string id = 1;
   // Party who created the provision
-  string partyId = 2;
+  string partyID = 2;
   // Timestamp for when the order was created at, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
   int64 createdAt = 3;
