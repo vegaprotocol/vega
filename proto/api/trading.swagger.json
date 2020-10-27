@@ -190,7 +190,47 @@
         ]
       }
     },
-    "/liquidity-provision/prepare/submit": {
+    "/liquidity-provisions": {
+      "get": {
+        "operationId": "PrepareLiquidityProvision2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareLiquidityProvisionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "submission.marketID",
+            "description": "Market identifier for the order. Required field.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "submission.commitmentAmount",
+            "description": "Specified as a unitless number that represents the amount of settlement asset of the market.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "submission.fee",
+            "description": "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/liquidity-provisions/prepare/submit": {
       "post": {
         "operationId": "PrepareLiquidityProvision",
         "responses": {

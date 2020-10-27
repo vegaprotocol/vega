@@ -128,8 +128,10 @@ http:
 
     # LiquidityProvision
     - selector: api.trading.PrepareLiquidityProvision
-      post: '/liquidity-provision/prepare/submit'
+      post: '/liquidity-provisions/prepare/submit'
       body: "*"
+    - selector: api.trading.PrepareLiquidityProvision
+      get: '/liquidity-provisions'
 
     # Miscellaneous
     - selector: api.trading_data.Statistics
