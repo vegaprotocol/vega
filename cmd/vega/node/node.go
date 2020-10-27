@@ -21,7 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/gateway/server"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
@@ -36,7 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
@@ -132,9 +130,6 @@ type NodeCommand struct {
 	configPath   string
 	conf         config.Config
 	stats        *stats.Stats
-	withPPROF    bool
-	noChain      bool
-	noStores     bool
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
@@ -143,7 +138,7 @@ type NodeCommand struct {
 	collateral      *collateral.Engine
 	netParams       *netparams.Store
 
-	mktscfg []proto.Market
+	mktscfg []types.Market
 
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
@@ -167,28 +162,11 @@ type NodeCommand struct {
 	VersionHash string
 }
 
-func NewCommand() *NodeCommand {
-	return &NodeCommand{}
-}
-
-func (l *NodeCommand) SetVersions(version, hash string) {
-	l.Version, l.VersionHash = version, hash
-}
-
 func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWalletPassphrase string, args []string) error {
 	l.cfgwatchr = cfgwatchr
 	l.nodeWalletPassphrase = nodeWalletPassphrase
 
-	configPath := rootPath
-	if configPath == "" {
-		// Use configPath from ENV
-		configPath = envConfigPath()
-		if configPath == "" {
-			// Default directory ($HOME/.vega)
-			configPath = fsutil.DefaultVegaDir()
-		}
-	}
-	l.conf, l.configPath = cfgwatchr.Get(), configPath
+	l.conf, l.configPath = cfgwatchr.Get(), rootPath
 
 	tmCfg := l.conf.Blockchain.Tendermint
 	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
@@ -286,12 +264,6 @@ func (l *NodeCommand) runNode(args []string) error {
 	}
 
 	return nil
-}
-
-// nodeExample shows examples for node command, and is used in auto-generated cli docs.
-func nodeExample() string {
-	return `$ vega node
-VEGA started successfully`
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.
