@@ -4186,7 +4186,7 @@
         "PEGGED_REFERENCE_BEST_ASK"
       ],
       "default": "PEGGED_REFERENCE_UNSPECIFIED",
-      "description": "- PEGGED_REFERENCE_UNSPECIFIED: No reference given\n - PEGGED_REFERENCE_MID: MID price\n - PEGGED_REFERENCE_BEST_BID: BEST BID price\n - PEGGED_REFERENCE_BEST_ASK: BEST BID price",
+      "description": "- PEGGED_REFERENCE_UNSPECIFIED: No reference given\n - PEGGED_REFERENCE_MID: MID price\n - PEGGED_REFERENCE_BEST_BID: BEST BID price\n - PEGGED_REFERENCE_BEST_ASK: BEST ASK price",
       "title": "Which price point is the pegged order linked to"
     },
     "vegaPosition": {

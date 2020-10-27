@@ -5267,7 +5267,7 @@ Which price point is the pegged order linked to
 | PEGGED_REFERENCE_UNSPECIFIED | 0 | No reference given |
 | PEGGED_REFERENCE_MID | 1 | MID price |
 | PEGGED_REFERENCE_BEST_BID | 2 | BEST BID price |
-| PEGGED_REFERENCE_BEST_ASK | 3 | BEST BID price |
+| PEGGED_REFERENCE_BEST_ASK | 3 | BEST ASK price |
 
 
 

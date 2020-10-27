@@ -122,7 +122,7 @@ enum PeggedReference {
   PEGGED_REFERENCE_MID = 1;
   // BEST BID price
   PEGGED_REFERENCE_BEST_BID = 2;
-  // BEST BID price
+  // BEST ASK price
   PEGGED_REFERENCE_BEST_ASK = 3;
 }
 
