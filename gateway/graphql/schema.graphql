@@ -118,6 +118,7 @@ type Mutation {
   """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
+
   """
   submitTransaction(
     "The signed transaction"
@@ -126,6 +127,7 @@ type Mutation {
     sig: SignatureInput!
   ): TransactionSubmitted!
 
+  "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
     "Market identifier for the order"
     marketID: String!
@@ -2249,18 +2251,27 @@ type RiskFactor {
   long: Float!
 }
 
+"A special order type for liquidity providers"
 type LiquidityOrder {
+  "The value to which this order is tied"
   reference: PeggedReference!
+  "The proportion of the commitment allocted to this order"
   proportion: Int!
+  "Offset from the pegged reference"
   offset: Int!
 }
 
+"A special order type for liquidity providers"
 input LiquidityOrderInput {
+  "The value to which this order is tied"
   reference: PeggedReference!
+  "The proportion of the commitment allocted to this order"
   proportion: Int!
+  "Offset from the pegged reference"
   offset: Int!
 }
 
+"The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvisionSubmission {
   "Unique identifier for the order (set by the system after consensus)"
   id: ID
@@ -2276,6 +2287,8 @@ type LiquidityProvisionSubmission {
   Buys:  [LiquidityOrder]
 }
 
+"A prepared LiquidityProvision command"
 type PreparedLiquidityProvision {
+  "The blob to be send to the wallet and to be signed"
   blob: String!
 }

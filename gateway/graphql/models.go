@@ -331,10 +331,14 @@ type LedgerEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// A special order type for liquidity providers
 type LiquidityOrderInput struct {
-	Reference  PeggedReference `json:"reference"`
-	Proportion int             `json:"proportion"`
-	Offset     int             `json:"offset"`
+	// The value to which this order is tied
+	Reference PeggedReference `json:"reference"`
+	// The proportion of the commitment allocted to this order
+	Proportion int `json:"proportion"`
+	// Offset from the pegged reference
+	Offset int `json:"offset"`
 }
 
 // Parameters for the log normal risk model
@@ -559,7 +563,9 @@ type PreparedCancelOrder struct {
 	Blob string `json:"blob"`
 }
 
+// A prepared LiquidityProvision command
 type PreparedLiquidityProvision struct {
+	// The blob to be send to the wallet and to be signed
 	Blob string `json:"blob"`
 }
 
