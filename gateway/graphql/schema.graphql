@@ -2182,51 +2182,51 @@ enum AuctionTrigger {
 }
 
 enum BusEventType {
-  "Vega Time has changed
+  "Vega Time has changed"
   TimeUpdate
-  "A balance has been transferred between accounts
+  "A balance has been transferred between accounts"
   TransferResponses
-  "A position resolution event has occurred
+  "A position resolution event has occurred"
   PositionResolution
-  "An order has been created or updated
+  "An order has been created or updated"
   Order
-  "An account has been updated
+  "An account has been updated"
   Account
-  "A party has been updated
+  "A party has been updated"
   Party
-  "A trade has been created
+  "A trade has been created"
   Trade
-  "Margin levels have changed for a position
+  "Margin levels have changed for a position"
   MarginLevels
-  "A governance proposal has been created or updated
+  "A governance proposal has been created or updated"
   Proposal
-  "A vote has been placed on a governance proposal
+  "A vote has been placed on a governance proposal"
   Vote
-  "Market data has been updated
+  "Market data has been updated"
   MarketData
-  "Validator nodes signatures for an event
+  "Validator nodes signatures for an event"
   NodeSignature
-  "A position has been closed without sufficient insurance pool balance to cover it
+  "A position has been closed without sufficient insurance pool balance to cover it"
   LossSocialization
-  "A position has been settled
+  "A position has been settled"
   SettlePosition
-  "A distressed position has been settled
+  "A distressed position has been settled"
   SettleDistressed
-  "A new market has been created
+  "A new market has been created"
   MarketCreated
-  "An asset has been created or update
+  "An asset has been created or update"
   Asset
-  "A market has progressed by one tick
+  "A market has progressed by one tick"
   MarketTick
-  "A market has either entered or exited auction
+  "A market has either entered or exited auction"
   Auction
-  "A risk factor adjustment was made
+  "A risk factor adjustment was made"
   RiskFactor
-  "A liquidity commitment change occurred
+  "A liquidity commitment change occurred"
   LiquidityProvision
-  "Collateral has deposited in to this Vega network via the bridge
+  "Collateral has deposited in to this Vega network via the bridge"
   Deposit
-  "Collateral has been withdrawn from this Vega network via the bridge
+  "Collateral has been withdrawn from this Vega network via the bridge"
   Withdrawal
   "constant for market events - mainly used for logging"
   Market
