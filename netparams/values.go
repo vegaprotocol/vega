@@ -1,8 +1,11 @@
 package netparams
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 )
@@ -31,6 +34,10 @@ func (b *baseValue) ToDuration() (time.Duration, error) {
 
 func (b *baseValue) ToString() (string, error) {
 	return "", errors.New("not a string value")
+}
+
+func (b *baseValue) ToJSONStruct(v interface{}) error {
+	return errors.New("not a JSON value")
 }
 
 type FloatRule func(float64) error
@@ -401,4 +408,98 @@ func DurationLT(i time.Duration) func(time.Duration) error {
 		}
 		return fmt.Errorf("expect < %v got %v", i, val)
 	}
+}
+
+type JSONValidate func(interface{}) error
+
+type JSON struct {
+	*baseValue
+	value   interface{ Reset() }
+	ty      reflect.Type
+	rawval  string
+	v       JSONValidate
+	mutable bool
+}
+
+func NewJSON(val interface{ Reset() }, validate JSONValidate) *JSON {
+	if val == nil {
+		panic("JSON values requires non nil pointers")
+	}
+	ty := reflect.TypeOf(val)
+	if ty.Kind() != reflect.Ptr {
+		panic("JSON values requires pointers")
+	}
+	return &JSON{
+		baseValue: &baseValue{},
+		v:         validate,
+		ty:        ty,
+		value:     val,
+	}
+
+}
+
+func (j *JSON) ToJSONStruct(v interface{ Reset() }) error {
+	if v == nil {
+		return errors.New("nil interface{}")
+	}
+	// just make sure types are compatible
+	if !reflect.TypeOf(v).AssignableTo(j.ty) {
+		return errors.New("incompatible type")
+	}
+
+	return json.Unmarshal([]byte(j.rawval), v)
+}
+
+func (j *JSON) validateValue(value []byte) error {
+	j.value.Reset()
+	d := json.NewDecoder(bytes.NewReader([]byte(value)))
+	d.DisallowUnknownFields()
+	return d.Decode(j.value)
+}
+
+func (j *JSON) Validate(value string) error {
+	err := j.validateValue([]byte(value))
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal value, %w", err)
+	}
+
+	if !j.mutable {
+		return errors.New("value is not mutable")
+	}
+	return j.v(j.value)
+}
+
+func (j *JSON) Update(value string) error {
+	err := j.validateValue([]byte(value))
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal value, %w", err)
+	}
+
+	if !j.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	if err = j.v(j.value); err != nil {
+		return err
+	}
+
+	j.rawval = value
+	return nil
+}
+
+func (j *JSON) Mutable(b bool) *JSON {
+	j.mutable = b
+	return j
+}
+
+func (j *JSON) MustUpdate(value string) *JSON {
+	err := j.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return j
+}
+
+func (j *JSON) String() string {
+	return j.rawval
 }
