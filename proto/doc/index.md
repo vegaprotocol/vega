@@ -4194,7 +4194,6 @@ Represents a ledger entry on Vega.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | Unique identifier for the order (set by the system after consensus). |
 | marketID | [string](#string) |  | Market identifier for the order. Required field. |
 | commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
 | fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
