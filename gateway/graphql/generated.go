@@ -226,7 +226,7 @@ type ComplexityRoot struct {
 		Buys             func(childComplexity int) int
 		CommitmentAmount func(childComplexity int) int
 		Fee              func(childComplexity int) int
-		Id               func(childComplexity int) int
+		ID               func(childComplexity int) int
 		MarketID         func(childComplexity int) int
 		Sells            func(childComplexity int) int
 	}
@@ -709,6 +709,8 @@ type LiquidityOrderResolver interface {
 	Proportion(ctx context.Context, obj *proto.LiquidityOrder) (int, error)
 }
 type LiquidityProvisionSubmissionResolver interface {
+	ID(ctx context.Context, obj *proto.LiquidityProvisionSubmission) (*string, error)
+
 	CommitmentAmount(ctx context.Context, obj *proto.LiquidityProvisionSubmission) (int, error)
 	Fee(ctx context.Context, obj *proto.LiquidityProvisionSubmission) (float64, error)
 }
@@ -1559,11 +1561,11 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.LiquidityProvisionSubmission.Fee(childComplexity), true
 
 	case "LiquidityProvisionSubmission.id":
-		if e.complexity.LiquidityProvisionSubmission.Id == nil {
+		if e.complexity.LiquidityProvisionSubmission.ID == nil {
 			break
 		}
 
-		return e.complexity.LiquidityProvisionSubmission.Id(childComplexity), true
+		return e.complexity.LiquidityProvisionSubmission.ID(childComplexity), true
 
 	case "LiquidityProvisionSubmission.marketID":
 		if e.complexity.LiquidityProvisionSubmission.MarketID == nil {
@@ -10377,13 +10379,13 @@ func (ec *executionContext) _LiquidityProvisionSubmission_id(ctx context.Context
 		Object:   "LiquidityProvisionSubmission",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Id, nil
+		return ec.resolvers.LiquidityProvisionSubmission().ID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10392,9 +10394,9 @@ func (ec *executionContext) _LiquidityProvisionSubmission_id(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvisionSubmission_marketID(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvisionSubmission) (ret graphql.Marshaler) {
@@ -23433,7 +23435,16 @@ func (ec *executionContext) _LiquidityProvisionSubmission(ctx context.Context, s
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LiquidityProvisionSubmission")
 		case "id":
-			out.Values[i] = ec._LiquidityProvisionSubmission_id(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvisionSubmission_id(ctx, field, obj)
+				return res
+			})
 		case "marketID":
 			out.Values[i] = ec._LiquidityProvisionSubmission_marketID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
