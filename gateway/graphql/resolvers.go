@@ -122,6 +122,7 @@ type TradingDataClient interface {
 	Deposit(ctx context.Context, in *protoapi.DepositRequest, opts ...grpc.CallOption) (*protoapi.DepositResponse, error)
 	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
 	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
+	LiquidityProvisions(ctx context.Context, in *protoapi.LiquidityProvisionsRequest, opts ...grpc.CallOption) (*protoapi.LiquidityProvisionsResponse, error)
 
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
@@ -252,11 +253,62 @@ func (r *VegaResolverRoot) Deposit() DepositResolver {
 }
 
 func (r *VegaResolverRoot) LiquidityOrder() LiquidityOrderResolver {
-	panic("not implemented")
+	return (*myLiquidityOrderResolver)(r)
 }
 
-func (r *VegaResolverRoot) LiquidityProvisionSubmission() LiquidityProvisionSubmissionResolver {
-	panic("not implemented")
+func (r *VegaResolverRoot) LiquidityOrderReference() LiquidityOrderReferenceResolver {
+	return (*myLiquidityOrderReferenceResolver)(r)
+}
+
+func (r *VegaResolverRoot) LiquidityProvision() LiquidityProvisionResolver {
+	return (*myLiquidityProvisionResolver)(r)
+}
+
+// LiquidityOrder resolver
+
+type myLiquidityOrderResolver VegaResolverRoot
+
+func (r *myLiquidityOrderResolver) Proportion(ctx context.Context, obj *types.LiquidityOrder) (int, error) {
+	return int(obj.Proportion), nil
+}
+
+func (r *myLiquidityOrderResolver) Reference(ctx context.Context, obj *types.LiquidityOrder) (PeggedReference, error) {
+	return convertPeggedReferenceFromProto(obj.Reference)
+}
+
+// LiquidityOrderRefernce resolver
+
+type myLiquidityOrderReferenceResolver VegaResolverRoot
+
+func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *types.LiquidityOrderReference) (*types.Order, error) {
+	var lor LiquidityOrderReferenceResolver = r
+	return lor.(QueryResolver).OrderByID(ctx, obj.OrderID, nil)
+}
+
+// LiquidityProvision resolver
+
+type myLiquidityProvisionResolver VegaResolverRoot
+
+func (r *myLiquidityProvisionResolver) Party(ctx context.Context, obj *types.LiquidityProvision) (*types.Party, error) {
+	return &types.Party{Id: obj.PartyID}, nil
+}
+
+func (r *myLiquidityProvisionResolver) CreatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+}
+func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+}
+func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*Market, error) {
+	var lp interface{} = r
+	return lp.(QueryResolver).Market(ctx, obj.MarketID)
+}
+func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (int, error) {
+	return int(obj.CommitmentAmount), nil
+}
+
+func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.LiquidityProvision) (LiquidityProvisionStatus, error) {
+	return convertLiquidityProvisionStatusFromProto(obj.Status)
 }
 
 // deposit resolver

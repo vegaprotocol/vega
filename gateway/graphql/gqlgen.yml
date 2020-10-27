@@ -40,6 +40,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.LiquidityOrder
   LiquidityProvision:
     model: code.vegaprotocol.io/vega/proto.LiquidityProvision
+  LiquidityOrderReference:
+    model: code.vegaprotocol.io/vega/proto.LiquidityOrderReference
   Market:
     fields:
       orders:

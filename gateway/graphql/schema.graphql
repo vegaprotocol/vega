@@ -2285,7 +2285,7 @@ enum LiquidityProvisionStatus {
 
 type LiquidityOrderReference {
   "The id of the pegged order generated to fullfill this commitment"
-  orderId: String!
+  order: Order!
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
 }
@@ -2295,13 +2295,13 @@ type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
   id: String
   "The Id of the party making this commitment"
-  partyId: Party!
+  party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
   createdAt: String!
   "When the liquidity provision was updated (formatted RFC3339)"
   updatedAt: String!
   "Market identifier for the order"
-  marketId: Market!
+  market: Market!
   "Specified as a unitless number that represents the amount of settlement asset of the market."
   commitmentAmount: Int!
   "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
@@ -2313,7 +2313,7 @@ type LiquidityProvision {
   "The version of this LiquidityProvision"
   version: String!
   "The current status of this liquidity provision"
-  status: LiquidityProvisionStatus
+  status: LiquidityProvisionStatus!
 }
 
 "A prepared LiquidityProvision command"

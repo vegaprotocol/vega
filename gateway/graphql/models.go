@@ -341,13 +341,6 @@ type LiquidityOrderInput struct {
 	Offset int `json:"offset"`
 }
 
-type LiquidityOrderReference struct {
-	// The id of the pegged order generated to fullfill this commitment
-	OrderID string `json:"orderId"`
-	// The liquidity order
-	LiquidityOrder *proto.LiquidityOrder `json:"liquidityOrder"`
-}
-
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
