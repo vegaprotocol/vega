@@ -2182,53 +2182,52 @@ enum AuctionTrigger {
 }
 
 enum BusEventType {
-  "event type indicating TimeUpdate"
+  "Vega Time has changed
   TimeUpdate
-  "transfer response event"
+  "A balance has been transferred between accounts
   TransferResponses
-  "position resolution event"
+  "A position resolution event has occurred
   PositionResolution
-  "order event"
+  "An order has been created or updated
   Order
-  "account event"
+  "An account has been updated
   Account
-  "party event"
+  "A party has been updated
   Party
-  "trade event"
+  "A trade has been created
   Trade
-  "margin levels event"
+  "Margin levels have changed for a position
   MarginLevels
-  "proposal event"
+  "A governance proposal has been created or updated
   Proposal
-  "vote event"
+  "A vote has been placed on a governance proposal
   Vote
-  "market data event"
+  "Market data has been updated
   MarketData
-  "node signature event"
+  "Validator nodes signatures for an event
   NodeSignature
-  "loss socialization event"
+  "A position has been closed without sufficient insurance pool balance to cover it
   LossSocialization
-  "settle position event"
+  "A position has been settled
   SettlePosition
-  "settle distressed event"
+  "A distressed position has been settled
   SettleDistressed
-  "market created event"
+  "A new market has been created
   MarketCreated
-  "asset event"
+  "An asset has been created or update
   Asset
-  "market tick event"
+  "A market has progressed by one tick
   MarketTick
-  "auction event"
+  "A market has either entered or exited auction
   Auction
-  "risk factor event"
+  "A risk factor adjustment was made
   RiskFactor
-  "liquidity provision event"
+  "A liquidity commitment change occurred
   LiquidityProvision
-  "Deposit event"
+  "Collateral has deposited in to this Vega network via the bridge
   Deposit
-  "Withdrawal event"
+  "Collateral has been withdrawn from this Vega network via the bridge
   Withdrawal
-
   "constant for market events - mainly used for logging"
   Market
 }
