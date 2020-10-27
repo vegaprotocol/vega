@@ -341,6 +341,13 @@ type LiquidityOrderInput struct {
 	Offset int `json:"offset"`
 }
 
+type LiquidityOrderReference struct {
+	// The id of the pegged order generated to fullfill this commitment
+	OrderID string `json:"orderId"`
+	// The liquidity order
+	LiquidityOrder *proto.LiquidityOrder `json:"liquidityOrder"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
@@ -1184,6 +1191,53 @@ func (e *Interval) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Interval) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Status of a liquidity provision order
+type LiquidityProvisionStatus string
+
+const (
+	// An active liquidity provision
+	LiquidityProvisionStatusActive LiquidityProvisionStatus = "Active"
+	// A liquidity provision stopped by the network
+	LiquidityProvisionStatusStopped LiquidityProvisionStatus = "Stopped"
+	// A Cancelled Liquidity provision
+	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
+)
+
+var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
+	LiquidityProvisionStatusActive,
+	LiquidityProvisionStatusStopped,
+	LiquidityProvisionStatusCancelled,
+}
+
+func (e LiquidityProvisionStatus) IsValid() bool {
+	switch e {
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled:
+		return true
+	}
+	return false
+}
+
+func (e LiquidityProvisionStatus) String() string {
+	return string(e)
+}
+
+func (e *LiquidityProvisionStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = LiquidityProvisionStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid LiquidityProvisionStatus", str)
+	}
+	return nil
+}
+
+func (e LiquidityProvisionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

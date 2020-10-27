@@ -38,8 +38,8 @@ models:
     model: code.vegaprotocol.io/vega/proto.NetworkParameter
   LiquidityOrder:
     model: code.vegaprotocol.io/vega/proto.LiquidityOrder
-  LiquidityProvisionSubmission:
-    model: code.vegaprotocol.io/vega/proto.LiquidityProvisionSubmission
+  LiquidityProvision:
+    model: code.vegaprotocol.io/vega/proto.LiquidityProvision
   Market:
     fields:
       orders:
