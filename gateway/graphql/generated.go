@@ -3979,7 +3979,7 @@ type Mutation {
     marketID: String!
     "Specified as a unitless number that represents the amount of settlement asset of the market."
     commitmentAmount: Int!
-    "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers."
+    "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
     fee: String!
     "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
     sells: [LiquidityOrderInput!]!
@@ -6116,7 +6116,7 @@ type LiquidityProvisionSubmission {
   marketID: String!
   "Specified as a unitless number that represents the amount of settlement asset of the market."
   commitmentAmount: Int!
-  "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers."
+  "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
   fee: Float!
   "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
   Sells: [LiquidityOrder]
