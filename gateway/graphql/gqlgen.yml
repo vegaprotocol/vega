@@ -58,6 +58,8 @@ models:
         resolver: true
       orderByReference:
         resolver: true
+      liquidityProvisions:
+        resolver: true
   Party:
     model: code.vegaprotocol.io/vega/proto.Party
     fields:

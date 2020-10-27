@@ -441,6 +441,8 @@ type Market struct {
 	Candles []*proto.Candle `json:"candles"`
 	// marketData for the given market
 	Data *proto.MarketData `json:"data"`
+	// The list of the liquidity provision commitment for this market
+	LiquidityProvisions []*proto.LiquidityProvision `json:"liquidityProvisions"`
 }
 
 func (Market) IsEvent() {}

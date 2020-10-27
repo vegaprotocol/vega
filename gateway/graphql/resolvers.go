@@ -848,6 +848,29 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 
 type myMarketResolver VegaResolverRoot
 
+func (r *myMarketResolver) LiquidityProvisions(
+	ctx context.Context,
+	market *Market,
+	party *string,
+) ([]*types.LiquidityProvision, error) {
+	var pid string
+	if party != nil {
+		pid = *party
+	}
+
+	req := protoapi.LiquidityProvisionsRequest{
+		Party:  pid,
+		Market: market.ID,
+	}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
 func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.MarketData, error) {
 	req := protoapi.MarketDataByIDRequest{
 		MarketID: market.ID,
@@ -1028,6 +1051,29 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 		Limit:      limit,
 		Descending: descending,
 	}
+}
+
+func (r *myPartyResolver) LiquidityProvisions(
+	ctx context.Context,
+	party *types.Party,
+	market *string,
+) ([]*types.LiquidityProvision, error) {
+	var mid string
+	if market != nil {
+		mid = *market
+	}
+
+	req := protoapi.LiquidityProvisionsRequest{
+		Party:  party.Id,
+		Market: mid,
+	}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
 }
 
 func (r *myPartyResolver) Margins(ctx context.Context,

@@ -947,6 +947,14 @@ type Market {
 
   "marketData for the given market"
   data: MarketData!
+
+  "The list of the liquidity provision commitment for this market"
+  liquidityProvisions(
+    "An optional party id"
+    party: String
+  ): [LiquidityProvision!]
+
+
 }
 
 """
@@ -1087,6 +1095,12 @@ type Party {
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!]
+
+  "The list of the liquidity provision commitment from this party"
+  liquidityProvisions(
+    "An optional market id"
+    market: String
+  ): [LiquidityProvision!]
 }
 
 """
