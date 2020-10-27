@@ -19,8 +19,11 @@ import (
 )
 
 var (
-	ErrEvtAlreadyExist      = errors.New("event already exist")
-	ErrMissingVegaWallet    = errors.New("missing vega wallet")
+	// ErrEvtAlreadyExist we have already handled this event
+	ErrEvtAlreadyExist = errors.New("event already exist")
+	// ErrMissingVegaWallet we cannot find the vega wallet
+	ErrMissingVegaWallet = errors.New("missing vega wallet")
+	// ErrPubKeyNotAllowlisted this pubkey is not part of the allowlist
 	ErrPubKeyNotAllowlisted = errors.New("pubkey not allowlisted")
 )
 
@@ -72,6 +75,7 @@ type nodeHash struct {
 	hash uint64
 }
 
+// New creates a new instance of the event forwarder
 func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) (*EvtForwarder, error) {
 	now, err := time.GetTimeNow()
 	if err != nil {
