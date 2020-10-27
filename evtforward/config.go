@@ -18,10 +18,10 @@ const (
 // Config represents governance specific configuration
 type Config struct {
 	// logging level
-	Level     encoding.LogLevel
-	RetryRate encoding.Duration
-	// a list of allowlisted blockchain queue public keys
-	BlockchainQueueAllowlist []string
+	Level     encoding.LogLevel `long:"log-level"`
+	RetryRate encoding.Duration `long:"retry-rate"`
+	// a list of whitelisted blockchain queue public keys
+	BlockchainQueueAllowlist []string `long:"blockchain-queue-allowlist" description:" "`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.

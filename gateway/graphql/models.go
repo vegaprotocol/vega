@@ -522,6 +522,14 @@ type OrderEstimate struct {
 	MarginLevels *proto.MarginLevels `json:"marginLevels"`
 }
 
+// Create an order linked to an index rather than a price
+type PeggedOrder struct {
+	// Index to link this order to
+	Reference PeggedReference `json:"reference"`
+	// Price offset from the peg
+	Offset string `json:"offset"`
+}
+
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketID"`
@@ -1324,6 +1332,26 @@ const (
 	OrderRejectionReasonIOCOrderDuringAuction OrderRejectionReason = "IOCOrderDuringAuction"
 	// FOK orders are not allowed during auction
 	OrderRejectionReasonFOKOrderDuringAuction OrderRejectionReason = "FOKOrderDuringAuction"
+	// Pegged orders must be LIMIT orders
+	OrderRejectionReasonPeggedOrderMustBeLimitOrder OrderRejectionReason = "PeggedOrderMustBeLimitOrder"
+	// Pegged orders can only have TIF GTC or GTT
+	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc OrderRejectionReason = "PeggedOrderMustBeGTTOrGTC"
+	// Pegged order must have a reference price
+	OrderRejectionReasonPeggedOrderWithoutReferencePrice OrderRejectionReason = "PeggedOrderWithoutReferencePrice"
+	// Buy pegged order cannot reference best ask price
+	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice OrderRejectionReason = "PeggedOrderBuyCannotReferenceBestAskPrice"
+	// Pegged order offset must be <= 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessOrEqualToZero"
+	// Pegged order offset must be < 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessThanZero"
+	// Pegged order offset must be >= 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterOrEqualToZero"
+	// Sell pegged order cannot reference best bid price
+	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice OrderRejectionReason = "PeggedOrderSellCannotReferenceBestBidPrice"
+	// Pegged order offset must be > zero
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterThanZero"
+	// Insufficient balance to submit the order (no deposit made)
+	OrderRejectionReasonInsufficientAssetBalance OrderRejectionReason = "InsufficientAssetBalance"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1360,11 +1388,21 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonGFNOrderDuringContinuousTrading,
 	OrderRejectionReasonIOCOrderDuringAuction,
 	OrderRejectionReasonFOKOrderDuringAuction,
+	OrderRejectionReasonPeggedOrderMustBeLimitOrder,
+	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc,
+	OrderRejectionReasonPeggedOrderWithoutReferencePrice,
+	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice,
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero,
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero,
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero,
+	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice,
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero,
+	OrderRejectionReasonInsufficientAssetBalance,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance:
 		return true
 	}
 	return false
@@ -1552,6 +1590,53 @@ func (e *OrderType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Valid references used for pegged orders.
+type PeggedReference string
+
+const (
+	// Peg the order against the mid price of the order book
+	PeggedReferenceMid PeggedReference = "Mid"
+	// Peg the order against the best bid price of the order book
+	PeggedReferenceBestBid PeggedReference = "BestBid"
+	// Peg the order against the best ask price of the order book
+	PeggedReferenceBestAsk PeggedReference = "BestAsk"
+)
+
+var AllPeggedReference = []PeggedReference{
+	PeggedReferenceMid,
+	PeggedReferenceBestBid,
+	PeggedReferenceBestAsk,
+}
+
+func (e PeggedReference) IsValid() bool {
+	switch e {
+	case PeggedReferenceMid, PeggedReferenceBestBid, PeggedReferenceBestAsk:
+		return true
+	}
+	return false
+}
+
+func (e PeggedReference) String() string {
+	return string(e)
+}
+
+func (e *PeggedReference) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PeggedReference(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PeggedReference", str)
+	}
+	return nil
+}
+
+func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

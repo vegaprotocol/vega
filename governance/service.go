@@ -435,6 +435,6 @@ func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParam
 
 func (s *Svc) validateNewMarketChanges(nm *types.NewMarket) (err error) {
 	// just validate things which cannot be done straigh with
-	_, err = validateNewMarket(time.Time{}, nm.Changes, nil, false)
+	_, err = validateNewMarket(time.Time{}, nm.Changes, nil, false, s.netp)
 	return
 }

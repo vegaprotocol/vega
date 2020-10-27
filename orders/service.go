@@ -53,6 +53,24 @@ var (
 	ErrCannotAmendToGFA = errors.New("cannot amend to time in force GFA")
 	// ErrCannotAmendToGFN it is not allowed to amend an order to GFN time in force
 	ErrCannotAmendToGFN = errors.New("cannot amend to time in force GFN")
+	// ErrPeggedOrderMustBeLimitOrder pegged order must be limit orders
+	ErrPeggedOrderMustBeLimitOrder = errors.New("pegged orders must be limit orders")
+	// ErrPeggedOrderMustBeGTTOrGTC pegged orders must be GTT or GTC orders
+	ErrPeggedOrderMustBeGTTOrGTC = errors.New("pegged orders must be GTT or GTC orders")
+	// ErrPeggedOrderWithoutReferencePrice pegged order message with no reference price
+	ErrPeggedOrderWithoutReferencePrice = errors.New("pegged order missing a reference price")
+	// ErrPeggedOrderBuyCannotReferenceBestAskPrice pegged buy order cannot refernce best ask
+	ErrPeggedOrderBuyCannotReferenceBestAskPrice = errors.New("pegged buy order cannot refernce best ask")
+	// ErrPeggedOrderOffsetMustBeLessOrEqualToZero pegged order offset must be <= 0
+	ErrPeggedOrderOffsetMustBeLessOrEqualToZero = errors.New("pegged order offset must be <= 0")
+	// ErrPeggedOrderOffsetMustBeLessThanZero pegged order offset must be < 0
+	ErrPeggedOrderOffsetMustBeLessThanZero = errors.New("pegged order offset must be < 0")
+	// ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero pegged order offset must be >= 0
+	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = errors.New("pegged order offset must be >= 0")
+	// ErrPeggedOrderSellCannotReferenceBestBidPrice pegged sell order cannot reference best bid
+	ErrPeggedOrderSellCannotReferenceBestBidPrice = errors.New("pegged sell order cannot reference best bid")
+	// ErrPeggedOrderOffsetMustBeGreaterThanZero pegged order offset must be > 0
+	ErrPeggedOrderOffsetMustBeGreaterThanZero = errors.New("pegged order offset must be > 0")
 )
 
 // TimeService ...
@@ -168,6 +186,51 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrUnAuthorizedOrderType
 	}
 
+	// Validation for pegged orders
+	if sub.PeggedOrder != nil {
+		if sub.Type != types.Order_TYPE_LIMIT {
+			// All pegged orders must be LIMIT orders
+			return ErrPeggedOrderMustBeLimitOrder
+		}
+
+		if sub.TimeInForce != types.Order_TIF_GTT && sub.TimeInForce != types.Order_TIF_GTC {
+			// Pegged orders can only be GTC or GTT
+			return ErrPeggedOrderMustBeGTTOrGTC
+		}
+
+		if sub.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+			// We must specify a valid reference
+			return ErrPeggedOrderWithoutReferencePrice
+		}
+
+		if sub.Side == types.Side_SIDE_BUY {
+			switch sub.PeggedOrder.Reference {
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				return ErrPeggedOrderBuyCannotReferenceBestAskPrice
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				if sub.PeggedOrder.Offset > 0 {
+					return ErrPeggedOrderOffsetMustBeLessOrEqualToZero
+				}
+			case types.PeggedReference_PEGGED_REFERENCE_MID:
+				if sub.PeggedOrder.Offset >= 0 {
+					return ErrPeggedOrderOffsetMustBeLessThanZero
+				}
+			}
+		} else {
+			switch sub.PeggedOrder.Reference {
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				if sub.PeggedOrder.Offset < 0 {
+					return ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
+				}
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				return ErrPeggedOrderSellCannotReferenceBestBidPrice
+			case types.PeggedReference_PEGGED_REFERENCE_MID:
+				if sub.PeggedOrder.Offset <= 0 {
+					return ErrPeggedOrderOffsetMustBeGreaterThanZero
+				}
+			}
+		}
+	}
 	return nil
 }
 

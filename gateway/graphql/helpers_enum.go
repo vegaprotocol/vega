@@ -492,6 +492,26 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION, nil
 	case OrderRejectionReasonFOKOrderDuringAuction:
 		return types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION, nil
+	case OrderRejectionReasonPeggedOrderMustBeLimitOrder:
+		return types.OrderError_ORDER_ERROR_MUST_BE_LIMIT_ORDER, nil
+	case OrderRejectionReasonPeggedOrderMustBeGTTOrGtc:
+		return types.OrderError_ORDER_ERROR_MUST_BE_GTT_OR_GTC, nil
+	case OrderRejectionReasonPeggedOrderWithoutReferencePrice:
+		return types.OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE, nil
+	case OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice:
+		return types.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO, nil
+	case OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice:
+		return types.OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE, nil
+	case OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero:
+		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO, nil
+	case OrderRejectionReasonInsufficientAssetBalance:
+		return types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
@@ -557,6 +577,26 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonIOCOrderDuringAuction, nil
 	case types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION:
 		return OrderRejectionReasonFOKOrderDuringAuction, nil
+	case types.OrderError_ORDER_ERROR_MUST_BE_LIMIT_ORDER:
+		return OrderRejectionReasonPeggedOrderMustBeLimitOrder, nil
+	case types.OrderError_ORDER_ERROR_MUST_BE_GTT_OR_GTC:
+		return OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, nil
+	case types.OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE:
+		return OrderRejectionReasonPeggedOrderWithoutReferencePrice, nil
+	case types.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE:
+		return OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, nil
+	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO:
+		return OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, nil
+	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO:
+		return OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, nil
+	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO:
+		return OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, nil
+	case types.OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE:
+		return OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, nil
+	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO:
+		return OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, nil
+	case types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
+		return OrderRejectionReasonInsufficientAssetBalance, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err
@@ -586,6 +626,34 @@ func convertSideFromProto(x types.Side) (Side, error) {
 	default:
 		err := fmt.Errorf("failed to convert Side from Proto to GraphQL: %v", x)
 		return SideBuy, err
+	}
+}
+
+func convertPeggedReferenceToProto(x PeggedReference) (types.PeggedReference, error) {
+	switch x {
+	case PeggedReferenceMid:
+		return types.PeggedReference_PEGGED_REFERENCE_MID, nil
+	case PeggedReferenceBestBid:
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID, nil
+	case PeggedReferenceBestAsk:
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, nil
+	default:
+		err := fmt.Errorf("failed to convert PeggedReference from GraphQL to Proto: %v", x)
+		return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED, err
+	}
+}
+
+func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, error) {
+	switch x {
+	case types.PeggedReference_PEGGED_REFERENCE_MID:
+		return PeggedReferenceMid, nil
+	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+		return PeggedReferenceBestBid, nil
+	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+		return PeggedReferenceBestAsk, nil
+	default:
+		err := fmt.Errorf("failed to convert PeggedReference from Proto to GraphQL: %v", x)
+		return PeggedReferenceMid, err
 	}
 }
 

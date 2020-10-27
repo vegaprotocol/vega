@@ -1,4 +1,4 @@
-package main
+package node
 
 import (
 	"strings"
@@ -6,12 +6,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 type errStack []error
 
-func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
+func (l *NodeCommand) postRun(_ []string) error {
 	var werr errStack
 	if l.candleStore != nil {
 		if err := l.candleStore.Close(); err != nil {
@@ -55,8 +54,8 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 	}
 
 	l.Log.Info("Vega shutdown complete",
-		logging.String("version", Version),
-		logging.String("version-hash", VersionHash))
+		logging.String("version", l.Version),
+		logging.String("version-hash", l.VersionHash))
 
 	l.Log.Sync()
 
@@ -67,8 +66,9 @@ func (l *NodeCommand) postRun(_ *cobra.Command, _ []string) error {
 	return werr
 }
 
-func (l *NodeCommand) persistentPost(_ *cobra.Command, _ []string) {
+func (l *NodeCommand) persistentPost(_ []string) error {
 	l.cancel()
+	return nil
 }
 
 // Error - implement the error interface on the errStack type

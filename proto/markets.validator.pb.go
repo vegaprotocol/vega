@@ -174,9 +174,6 @@ func (this *PriceMonitoringSettings) Validate() error {
 			}
 		}
 	}
-	if !(this.UpdateFrequency > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("UpdateFrequency", fmt.Errorf(`value '%v' must be greater than '0'`, this.UpdateFrequency))
-	}
 	return nil
 }
 func (this *Market) Validate() error {

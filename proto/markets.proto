@@ -215,7 +215,7 @@ message PriceMonitoringSettings {
   repeated PriceMonitoringParameters priceMonitoringParameters = 1;
 
   // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
-  int64 updateFrequency = 2 [(validator.field) = {int_gt: 0}];
+  int64 updateFrequency = 2;
 }
 
 // Market definition.

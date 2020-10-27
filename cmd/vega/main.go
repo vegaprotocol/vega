@@ -1,79 +1,85 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
+	"github.com/jessevdk/go-flags"
 )
 
-func main() {
-	// Set up the root logger
-	logDefaultConfig := logging.NewDefaultConfig()
-	log := logging.NewLoggerFromConfig(logDefaultConfig)
-	defer log.AtExit()
+var (
+	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
+	CLIVersionHash = ""
 
-	cli := NewCli()
+	// Version specifies the version used to build the application. See VERSION in Makefile for details.
+	CLIVersion = ""
+)
 
-	base := &command{cmd: cli.rootCmd, cli: cli}
-	base.Cmd().SilenceErrors = true
+// Subcommand is the signature of a sub command that can be registered.
+type Subcommand func(context.Context, *flags.Parser) error
 
-	cli.AddCommand(base, &NodeCommand{
-		Log: log,
-	})
-	cli.AddCommand(base, &initCommand{
-		Log: log,
-	})
-
-	cli.AddCommand(base, &gatewayCommand{
-		Log: log,
-	})
-
-	cli.AddCommand(base, &walletCommand{
-		Log: log,
-	})
-
-	cli.AddCommand(base, &faucetCommand{
-		log: log,
-	})
-
-	cli.AddCommand(base, &nodeWalletCommand{
-		Log: log,
-	})
-	cli.AddCommand(base, &genesisCommand{
-		log: log,
-	})
-
-	cli.AddCommand(base, &watchCommand{})
-
-	if err := cli.Run(); err != nil {
-		// deal with ExitError, which should be recognized as error, and should
-		// not exit with status 0.
-		if exitErr, ok := err.(ExitError); ok {
-			log.Error("Command returned an error",
-				logging.Int("code", exitErr.Code),
-				logging.String("status", exitErr.Status))
-			if exitErr.Code == 0 {
-				// when get error with ExitError, code should not be 0.
-				exitErr.Code = 1
-			}
-			os.Exit(exitErr.Code)
+// Register registers one or more subcommands.
+func Register(ctx context.Context, parser *flags.Parser, cmds ...Subcommand) error {
+	for _, fn := range cmds {
+		if err := fn(ctx, parser); err != nil {
+			return err
 		}
+	}
+	return nil
+}
 
-		// not ExitError, print error to os.Stderr, exit code 1.
-		log.Error("Command returned an unexpected error",
-			logging.Error(err))
-		os.Exit(1)
+func main() {
+	ctx := context.Background()
+	if err := Main(ctx); err != nil {
+		os.Exit(-1)
 	}
 }
 
-// ExitError defines exit error produce by cli commands.
-type ExitError struct {
-	Code   int
-	Status string
+func Main(ctx context.Context) error {
+	parser := flags.NewParser(&config.Empty{}, flags.Default)
+
+	if err := Register(ctx, parser,
+		Faucet,
+		Gateway,
+		Genesis,
+		Init,
+		Node,
+		NodeWallet,
+		Version,
+		Wallet,
+		Watch,
+	); err != nil {
+		fmt.Printf("%+v\n", err)
+		return err
+	}
+
+	if _, err := parser.Parse(); err != nil {
+		switch t := err.(type) {
+		case *flags.Error:
+			if t.Type != flags.ErrHelp {
+				parser.WriteHelp(os.Stdout)
+			}
+		}
+		return err
+	}
+	return nil
 }
 
-// Error implements the error interface.
-func (e ExitError) Error() string {
-	return fmt.Sprintf("Exit Code: %d, Status: %s", e.Code, e.Status)
+// waitSig will wait for a sigterm or sigint interrupt.
+func waitSig(ctx context.Context, log *logging.Logger) {
+	var gracefulStop = make(chan os.Signal, 1)
+	signal.Notify(gracefulStop, syscall.SIGTERM)
+	signal.Notify(gracefulStop, syscall.SIGINT)
+
+	select {
+	case sig := <-gracefulStop:
+		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+	case <-ctx.Done():
+		// nothing to do
+	}
 }

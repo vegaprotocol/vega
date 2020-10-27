@@ -10,7 +10,7 @@ const namedLogger = "governance"
 // Config represents governance specific configuration
 type Config struct {
 	// logging level
-	Level encoding.LogLevel
+	Level encoding.LogLevel `long:"log-level"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
