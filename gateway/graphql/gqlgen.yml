@@ -36,6 +36,10 @@ models:
     model: code.vegaprotocol.io/vega/proto.RiskFactor
   NetworkParameter:
     model: code.vegaprotocol.io/vega/proto.NetworkParameter
+  LiquidityOrder:
+    model: code.vegaprotocol.io/vega/proto.LiquidityOrder
+  LiquidityProvisionSubmission:
+    model: code.vegaprotocol.io/vega/proto.LiquidityProvisionSubmission
   Market:
     fields:
       orders:

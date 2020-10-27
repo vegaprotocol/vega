@@ -547,6 +547,14 @@
                 </li>
 
                 <li>
+                  <a href="#api.PrepareLiquidityProvisionRequest"><span class="badge">M</span>PrepareLiquidityProvisionRequest</a>
+                </li>
+
+                <li>
+                  <a href="#api.PrepareLiquidityProvisionResponse"><span class="badge">M</span>PrepareLiquidityProvisionResponse</a>
+                </li>
+
+                <li>
                   <a href="#api.PrepareProposalRequest"><span class="badge">M</span>PrepareProposalRequest</a>
                 </li>
 
@@ -1141,6 +1149,18 @@
 
                 <li>
                   <a href="#vega.LedgerEntry"><span class="badge">M</span>LedgerEntry</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LiquidityOrder"><span class="badge">M</span>LiquidityOrder</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LiquidityProvision"><span class="badge">M</span>LiquidityProvision</a>
+                </li>
+
+                <li>
+                  <a href="#vega.LiquidityProvisionSubmission"><span class="badge">M</span>LiquidityProvisionSubmission</a>
                 </li>
 
                 <li>
@@ -4680,6 +4700,81 @@ Default is true, if false the results will be returned in ascending order. </p><
 
 
 
+        <h3 id="api.PrepareLiquidityProvisionRequest">PrepareLiquidityProvisionRequest</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>submission</td>
+                  <td><a href="#vega.LiquidityProvisionSubmission">vega.LiquidityProvisionSubmission</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>submission</td>
+                  <td>
+                    <ul>
+
+                      <li>msg_exists: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="api.PrepareLiquidityProvisionResponse">PrepareLiquidityProvisionResponse</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>blob</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="api.PrepareProposalRequest">PrepareProposalRequest</h3>
         <p>Request to prepare a governance proposal.</p>
 
@@ -5574,6 +5669,13 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
                 <td><a href="#api.PropagateChainEventRequest">PropagateChainEventRequest</a></td>
                 <td><a href="#api.PropagateChainEventResponse">PropagateChainEventResponse</a></td>
                 <td><p>Propagate a chain event</p></td>
+              </tr>
+
+              <tr>
+                <td>PrepareLiquidityProvision</td>
+                <td><a href="#api.PrepareLiquidityProvisionRequest">PrepareLiquidityProvisionRequest</a></td>
+                <td><a href="#api.PrepareLiquidityProvisionResponse">PrepareLiquidityProvisionResponse</a></td>
+                <td><p></p></td>
               </tr>
 
           </tbody>
@@ -7133,6 +7235,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                 </tr>
 
                 <tr>
+                  <td>liquidityProvision</td>
+                  <td><a href="#vega.LiquidityProvision">LiquidityProvision</a></td>
+                  <td></td>
+                  <td><p>LiquidityProvision  events </p></td>
+                </tr>
+
+                <tr>
                   <td>market</td>
                   <td><a href="#vega.MarketEvent">MarketEvent</a></td>
                   <td></td>
@@ -7623,6 +7732,12 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 <td>BUS_EVENT_TYPE_NETWORK_PARAMETER</td>
                 <td>24</td>
                 <td><p>Event indicating a network parameter has been added or updated</p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_LIQUIDITY_PROVISION</td>
+                <td>25</td>
+                <td><p>Event indicating a liquidity provision has been created or updated</p></td>
               </tr>
 
               <tr>
@@ -11004,6 +11119,232 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="vega.LiquidityOrder">LiquidityOrder</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>reference</td>
+                  <td><a href="#vega.PeggedReference">PeggedReference</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>proportion</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>offset</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.LiquidityProvision">LiquidityProvision</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>LiquidityProvision identifier </p></td>
+                </tr>
+
+                <tr>
+                  <td>partyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Party who created the provision </p></td>
+                </tr>
+
+                <tr>
+                  <td>createdAt</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Timestamp for when the order was created at, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
+                </tr>
+
+                <tr>
+                  <td>updatedAt</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Timestamp for when the order was updated at, in nanoseconds since the epoch.
+See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp</tt>. </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Market identifier for the order. Required field. </p></td>
+                </tr>
+
+                <tr>
+                  <td>commitmentAmount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Specified as a unitless number that represents the amount of settlement asset of the market. </p></td>
+                </tr>
+
+                <tr>
+                  <td>fee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. </p></td>
+                </tr>
+
+                <tr>
+                  <td>Sells</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+
+                <tr>
+                  <td>Buys</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+
+
+
+
+        <h3 id="vega.LiquidityProvisionSubmission">LiquidityProvisionSubmission</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Market identifier for the order. Required field. </p></td>
+                </tr>
+
+                <tr>
+                  <td>commitmentAmount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Specified as a unitless number that represents the amount of settlement asset of the market. </p></td>
+                </tr>
+
+                <tr>
+                  <td>fee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. </p></td>
+                </tr>
+
+                <tr>
+                  <td>Sells</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+
+                <tr>
+                  <td>Buys</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>marketID</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 

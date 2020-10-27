@@ -1930,6 +1930,15 @@
       },
       "description": "Response for preparing an order cancellation."
     },
+    "apiPrepareLiquidityProvisionResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "apiPrepareProposalRequest": {
       "type": "object",
       "properties": {
@@ -2614,6 +2623,10 @@
           "$ref": "#/definitions/vegaNetworkParameter",
           "title": "Network parameter events"
         },
+        "liquidityProvision": {
+          "$ref": "#/definitions/vegaLiquidityProvision",
+          "title": "LiquidityProvision  events"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent",
           "title": "Market tick events, see [MarketEvent](#vega.MarketEvent)"
@@ -2649,10 +2662,11 @@
         "BUS_EVENT_TYPE_AUCTION",
         "BUS_EVENT_TYPE_RISK_FACTOR",
         "BUS_EVENT_TYPE_NETWORK_PARAMETER",
+        "BUS_EVENT_TYPE_LIQUIDITY_PROVISION",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
-      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens",
+      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens",
       "title": "An (event) bus event type is used to specify a type of event\nIt has 2 styles of event:\nSingle values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item\nGroup values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items"
     },
     "vegaCandle": {
@@ -3232,6 +3246,104 @@
         }
       },
       "description": "Represents a ledger entry on Vega."
+    },
+    "vegaLiquidityOrder": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "$ref": "#/definitions/vegaPeggedReference"
+        },
+        "proportion": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "offset": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "vegaLiquidityProvision": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "LiquidityProvision identifier"
+        },
+        "partyID": {
+          "type": "string",
+          "title": "Party who created the provision"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "int64",
+          "description": "Timestamp for when the order was created at, in nanoseconds since the epoch.\nSee [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "int64",
+          "description": "Timestamp for when the order was updated at, in nanoseconds since the epoch.\nSee [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
+        },
+        "marketID": {
+          "type": "string",
+          "description": "Market identifier for the order. Required field."
+        },
+        "commitmentAmount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Specified as a unitless number that represents the amount of settlement asset of the market."
+        },
+        "fee": {
+          "type": "string",
+          "description": "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers."
+        },
+        "Sells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+        },
+        "Buys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+        }
+      }
+    },
+    "vegaLiquidityProvisionSubmission": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string",
+          "description": "Market identifier for the order. Required field."
+        },
+        "commitmentAmount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Specified as a unitless number that represents the amount of settlement asset of the market."
+        },
+        "fee": {
+          "type": "string",
+          "description": "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers."
+        },
+        "Sells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+        },
+        "Buys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+        }
+      }
     },
     "vegaLogNormalModelParams": {
       "type": "object",

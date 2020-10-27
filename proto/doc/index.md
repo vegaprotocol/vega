@@ -96,6 +96,8 @@
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
     - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
     - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest)
+    - [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse)
     - [PrepareProposalRequest](#api.PrepareProposalRequest)
     - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
@@ -244,6 +246,9 @@
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
+    - [LiquidityOrder](#vega.LiquidityOrder)
+    - [LiquidityProvision](#vega.LiquidityProvision)
+    - [LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
@@ -1733,6 +1738,36 @@ Response for preparing an order cancellation.
 
 
 
+<a name="api.PrepareLiquidityProvisionRequest"></a>
+
+### PrepareLiquidityProvisionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| submission | [vega.LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareLiquidityProvisionResponse"></a>
+
+### PrepareLiquidityProvisionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="api.PrepareProposalRequest"></a>
 
 ### PrepareProposalRequest
@@ -2157,6 +2192,7 @@ The response for a list of withdrawals
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare a governance proposal |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a governance vote |
 | PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | Propagate a chain event |
+| PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse) |  |
 
 
 <a name="api.trading_data"></a>
@@ -2709,6 +2745,7 @@ A bus event is a container for event bus events emitted by Vega
 | auction | [AuctionEvent](#vega.AuctionEvent) |  | Auction events, see [AuctionEvent](#vega.AuctionEvent) |
 | riskFactor | [RiskFactor](#vega.RiskFactor) |  | Risk factor events |
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
+| liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
 
 
@@ -2905,6 +2942,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_AUCTION | 22 | Event indicating a change in auction state, for example starting or ending an auction |
 | BUS_EVENT_TYPE_RISK_FACTOR | 23 | Event indicating a risk factor has been updated |
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
+| BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
 
 
@@ -4161,6 +4199,65 @@ Represents a ledger entry on Vega.
 | reference | [string](#string) |  | A reference for auditing purposes. |
 | type | [string](#string) |  | Type of ledger entry. |
 | timestamp | [int64](#int64) |  | Timestamp for the time the ledger entry was created, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+
+
+
+
+
+
+<a name="vega.LiquidityOrder"></a>
+
+### LiquidityOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [PeggedReference](#vega.PeggedReference) |  |  |
+| proportion | [uint32](#uint32) |  |  |
+| offset | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LiquidityProvision"></a>
+
+### LiquidityProvision
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | LiquidityProvision identifier |
+| partyID | [string](#string) |  | Party who created the provision |
+| createdAt | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| updatedAt | [int64](#int64) |  | Timestamp for when the order was updated at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| Sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| Buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
+
+
+
+
+
+
+<a name="vega.LiquidityProvisionSubmission"></a>
+
+### LiquidityProvisionSubmission
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| Sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| Buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
 
 
 

@@ -331,6 +331,16 @@ type LedgerEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// A special order type for liquidity providers
+type LiquidityOrderInput struct {
+	// The value to which this order is tied
+	Reference PeggedReference `json:"reference"`
+	// The proportion of the commitment allocted to this order
+	Proportion int `json:"proportion"`
+	// Offset from the pegged reference
+	Offset int `json:"offset"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
@@ -550,6 +560,12 @@ type PreparedAmendOrder struct {
 
 type PreparedCancelOrder struct {
 	// the raw transaction to sign & submit
+	Blob string `json:"blob"`
+}
+
+// A prepared LiquidityProvision command
+type PreparedLiquidityProvision struct {
+	// The blob to be send to the wallet and to be signed
 	Blob string `json:"blob"`
 }
 
@@ -1008,6 +1024,8 @@ const (
 	BusEventTypeAuction BusEventType = "Auction"
 	// risk factor event
 	BusEventTypeRiskFactor BusEventType = "RiskFactor"
+	// liquidity provision event
+	BusEventTypeLiquidityProvision BusEventType = "LiquidityProvision"
 	// constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
@@ -1033,12 +1051,13 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeMarketTick,
 	BusEventTypeAuction,
 	BusEventTypeRiskFactor,
+	BusEventTypeLiquidityProvision,
 	BusEventTypeMarket,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeMarket:
 		return true
 	}
 	return false

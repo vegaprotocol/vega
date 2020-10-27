@@ -169,6 +169,8 @@ enum BusEventType {
     BUS_EVENT_TYPE_RISK_FACTOR = 23;
     // Event indicating a network parameter has been added or updated
     BUS_EVENT_TYPE_NETWORK_PARAMETER = 24;
+    // Event indicating a liquidity provision has been created or updated
+    BUS_EVENT_TYPE_LIQUIDITY_PROVISION = 25;
     // Event indicating a market related event, for example when a market opens
     BUS_EVENT_TYPE_MARKET = 101;
 }
@@ -228,6 +230,8 @@ message BusEvent {
     RiskFactor riskFactor = 122;
     // Network parameter events
     NetworkParameter networkParameter = 123;
+    // LiquidityProvision  events
+    LiquidityProvision liquidityProvision = 124;
     // Market tick events, see [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
   }

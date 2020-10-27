@@ -55,6 +55,7 @@ type ExecutionEngine interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	SubmitLiquidityProvision(ctx context.Context, partyId string, sub *types.LiquidityProvisionSubmission) error
 	Hash() []byte
 }
 

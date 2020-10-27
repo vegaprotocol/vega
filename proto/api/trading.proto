@@ -39,6 +39,8 @@ service trading {
 
   // Propagate a chain event
   rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
+
+  rpc PrepareLiquidityProvision(PrepareLiquidityProvisionRequest) returns (PrepareLiquidityProvisionResponse);
 }
 
 // Request for a new event sent by the blockchain queue to be propagated on Vega.
@@ -1021,6 +1023,14 @@ message PrepareVoteResponse {
   vega.Vote vote = 2;
 }
 
+message PrepareLiquidityProvisionRequest {
+  vega.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message PrepareLiquidityProvisionResponse {
+  bytes blob = 1;
+}
+
 // Request for an order with the specified order identifier.
 // Optionally, return a specific version of the order with the `version` field.
 message OrderByIDRequest {
@@ -1181,3 +1191,4 @@ message NetworkParametersRequest {}
 message NetworkParametersResponse {
   repeated vega.NetworkParameter networkParameters = 1;
 }
+

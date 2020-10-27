@@ -129,6 +129,7 @@ func NewApp(
 		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
 		HandleDeliverTx(txn.NodeSignatureCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+		HandleDeliverTx(txn.LiquidityProvisionCommand, app.DeliverLiquidityProvision).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -439,6 +440,16 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	}
 	_, _, err := app.notary.AddSig(ctx, tx.PubKey(), *ns)
 	return err
+}
+
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	sub := &types.LiquidityProvisionSubmission{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+
+	partyId := hex.EncodeToString(tx.PubKey())
+	return app.exec.SubmitLiquidityProvision(ctx, partyId, sub)
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {

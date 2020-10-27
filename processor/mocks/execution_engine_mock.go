@@ -78,6 +78,20 @@ func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockExecutionEngine)(nil).Hash))
 }
 
+// SubmitLiquidityProvision mocks base method
+func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 string, arg2 *proto.LiquidityProvisionSubmission) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitLiquidityProvision", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitLiquidityProvision indicates an expected call of SubmitLiquidityProvision
+func (mr *MockExecutionEngineMockRecorder) SubmitLiquidityProvision(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitLiquidityProvision), arg0, arg1, arg2)
+}
+
 // SubmitMarket mocks base method
 func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
 	m.ctrl.T.Helper()

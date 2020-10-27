@@ -32,6 +32,12 @@ type TradeOrderService interface {
 	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error
 }
 
+// LiquidityService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
+type LiquidityService interface {
+	PrepareLiquidityProvisionSubmission(context.Context, *types.LiquidityProvisionSubmission) error
+}
+
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
@@ -62,6 +68,7 @@ type tradingService struct {
 
 	blockchain        Blockchain
 	tradeOrderService TradeOrderService
+	liquidityService  LiquidityService
 	accountService    AccountService
 	marketService     MarketService
 	governanceService GovernanceService
@@ -220,6 +227,32 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 	return &protoapi.PrepareVoteResponse{
 		Blob: raw,
 		Vote: vote,
+	}, nil
+}
+
+func (s *tradingService) PrepareLiquidityProvision(ctx context.Context, req *protoapi.PrepareLiquidityProvisionRequest) (*protoapi.PrepareLiquidityProvisionResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PrepareLiquidity", startTime)
+
+	if err := req.Validate(); err != nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
+	if err := s.liquidityService.PrepareLiquidityProvisionSubmission(ctx, req.Submission); err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
+	}
+
+	raw, err := proto.Marshal(req.Submission)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
+	}
+
+	if raw, err = txn.Encode(raw, txn.LiquidityProvisionCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
+	}
+
+	return &protoapi.PrepareLiquidityProvisionResponse{
+		Blob: raw,
 	}, nil
 }
 

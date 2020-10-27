@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/netparams"
@@ -541,6 +542,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
 		return
 	}
+
 	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin); err != nil {
 		return
 	}
@@ -558,6 +560,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
+	l.liquidityService = liquidity.NewService(l.Log, l.conf.Liquidity)
 
 	l.cfgwatchr.OnConfigUpdate(
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
@@ -575,6 +578,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
 		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
+		func(cfg config.Config) { l.liquidityService.ReloadConf(cfg.Liquidity) },
 		func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) },
 		func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) },
 		func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) },
