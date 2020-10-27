@@ -49,7 +49,7 @@ func getBufSize(batch int, types []events.Type) int {
 	for _, t := range types {
 		// each one of these events are high volume, and ought to double the buffer size
 		switch t {
-		case events.TradeEvent, events.TransferResponses, events.AccountEvent:
+		case events.TradeEvent, events.TransferResponses, events.AccountEvent, events.OrderEvent:
 			multipliers++
 		}
 	}
@@ -58,8 +58,12 @@ func getBufSize(batch int, types []events.Type) int {
 		base = 100
 	}
 	base *= len(types) * multipliers
-	if base > 1000 && (multipliers > 1 || len(types) > 5) {
-		return 1000
+	// base less then 1k, but we have several multipliers (== high volume events), or more than 5 event types?
+	if base < 1000 && (multipliers > 1 || len(types) > 5) {
+		if multipliers > 1 {
+			return 500 * multipliers // 1k or more
+		}
+		return 1000 // 1k buffer
 	}
 	return base
 }
@@ -85,8 +89,9 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 	}
 	bufLen := getBufSize(batchSize, expandedTypes)
 	cbuf := bufLen
-	if fl := len(filters); fl > 0 {
-		bufLen *= cbuf
+	if len(filters) > 0 {
+		// basically  buffer length squared
+		cbuf += cbuf * len(filters) // double or tripple the buffer (len(filters) currently can be 0, 1, or 2)
 	}
 	s := &StreamSub{
 		Base:           NewBase(ctx, cbuf, false),
