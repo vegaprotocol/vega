@@ -126,6 +126,10 @@ http:
       post: '/governance/prepare/vote'
       body: "*"
 
+    # LiquidityProvision
+    - selector: api.trading.PrepareLiquidityProvision
+      post: '/liquidity-provision/prepare/submit'
+      body: "*"
 
     # Miscellaneous
     - selector: api.trading_data.Statistics

@@ -190,6 +190,32 @@
         ]
       }
     },
+    "/liquidity-provision/prepare/submit": {
+      "post": {
+        "operationId": "PrepareLiquidityProvision",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareLiquidityProvisionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPrepareLiquidityProvisionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/markets": {
       "get": {
         "summary": "Get a list of Markets",
@@ -1929,6 +1955,14 @@
         }
       },
       "description": "Response for preparing an order cancellation."
+    },
+    "apiPrepareLiquidityProvisionRequest": {
+      "type": "object",
+      "properties": {
+        "submission": {
+          "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
+        }
+      }
     },
     "apiPrepareLiquidityProvisionResponse": {
       "type": "object",
