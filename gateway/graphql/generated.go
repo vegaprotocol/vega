@@ -6072,13 +6072,17 @@ enum BusEventType {
   RiskFactor
   "liquidity provision event"
   LiquidityProvision
+  "Deposit event"
+  Deposit
+  "Withdrawal event"
+  Withdrawal
 
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor | Deposit | Withdrawal
 
 type BusEvent {
   "the id for this event"
@@ -22196,6 +22200,20 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._RiskFactor(ctx, sel, obj)
+	case proto.Deposit:
+		return ec._Deposit(ctx, sel, &obj)
+	case *proto.Deposit:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Deposit(ctx, sel, obj)
+	case Withdrawal:
+		return ec._Withdrawal(ctx, sel, &obj)
+	case *Withdrawal:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Withdrawal(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -22807,7 +22825,7 @@ func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var depositImplementors = []string{"Deposit"}
+var depositImplementors = []string{"Deposit", "Event"}
 
 func (ec *executionContext) _Deposit(ctx context.Context, sel ast.SelectionSet, obj *proto.Deposit) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, depositImplementors)
@@ -27064,7 +27082,7 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var withdrawalImplementors = []string{"Withdrawal"}
+var withdrawalImplementors = []string{"Withdrawal", "Event"}
 
 func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSet, obj *Withdrawal) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, withdrawalImplementors)

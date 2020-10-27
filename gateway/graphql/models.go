@@ -870,6 +870,8 @@ type Withdrawal struct {
 	Details WithdrawalDetails `json:"details"`
 }
 
+func (Withdrawal) IsEvent() {}
+
 // The various account types we have (used by collateral)
 type AccountType string
 
@@ -1026,6 +1028,10 @@ const (
 	BusEventTypeRiskFactor BusEventType = "RiskFactor"
 	// liquidity provision event
 	BusEventTypeLiquidityProvision BusEventType = "LiquidityProvision"
+	// Deposit event
+	BusEventTypeDeposit BusEventType = "Deposit"
+	// Withdrawal event
+	BusEventTypeWithdrawal BusEventType = "Withdrawal"
 	// constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
@@ -1052,12 +1058,14 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeAuction,
 	BusEventTypeRiskFactor,
 	BusEventTypeLiquidityProvision,
+	BusEventTypeDeposit,
+	BusEventTypeWithdrawal,
 	BusEventTypeMarket,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeMarket:
 		return true
 	}
 	return false
