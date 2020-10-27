@@ -6070,6 +6070,8 @@ enum BusEventType {
   Auction
   "risk factor event"
   RiskFactor
+  "liquidity provision event"
+  LiquidityProvision
 
   "constant for market events - mainly used for logging"
   Market

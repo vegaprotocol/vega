@@ -1584,6 +1584,8 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_AUCTION)
 		case BusEventTypeRiskFactor:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR)
+		case BusEventTypeLiquidityProvision:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION)
 		}
 	}
 	return r
@@ -1633,6 +1635,8 @@ func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 		return BusEventTypeAuction, nil
 	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
 		return BusEventTypeRiskFactor, nil
+	case types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
+		return BusEventTypeLiquidityProvision, nil
 	}
 	return "", errors.New("unsupported proto event type")
 }
