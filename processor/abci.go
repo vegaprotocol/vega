@@ -197,7 +197,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 
 	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes, vators); err != nil {
-		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
+		app.log.Fatal("something happened when initializing vega with the genesis block", logging.Error(err))
 	}
 
 	return tmtypes.ResponseInitChain{}

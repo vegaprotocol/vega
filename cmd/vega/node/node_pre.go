@@ -342,7 +342,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to instanciate new asset %v", err)
+		return fmt.Errorf("unable to instanciate new asset err=%v, asset-source=%s", err, v.String())
 	}
 	if err := l.assets.Enable(aid); err != nil {
 		return fmt.Errorf("unable to enable asset: %v", err)
