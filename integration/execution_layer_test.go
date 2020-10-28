@@ -931,16 +931,24 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 	}
 
 	if len(row.Cells) > 20 {
-		horizons := i64arr(row, 21, ",")
-		probs := f64arr(row, 22, ",")
-		durations := i64arr(row, 23, ",")
-
+		horizons, err := i64arr(row, 21, ",")
+		if err != nil {
+			log.Fatalf("Can't parse horizons (%v) to int64 array: %v", row.Cells[21].Value, err)
+		}
+		probs, err := f64arr(row, 22, ",")
+		if err != nil {
+			log.Fatalf("Can't parse probabilities (%v) to float64 array: %v", row.Cells[22].Value, err)
+		}
+		durations, err := i64arr(row, 23, ",")
+		if err != nil {
+			log.Fatalf("Can't parse durations (%v) to int64 array: %v", row.Cells[23].Value, err)
+		}
 		n := len(horizons)
 		if n != len(probs) || n != len(durations) {
-			log.Fatal(fmt.Sprintf("horizons (%v), probabilities (%v) and durations (%v) need to have the same number of elements",
+			log.Fatalf("horizons (%v), probabilities (%v) and durations (%v) need to have the same number of elements",
 				n,
 				len(probs),
-				len(durations)))
+				len(durations))
 		}
 
 		params := make([]*proto.PriceMonitoringParameters, 0, n)
