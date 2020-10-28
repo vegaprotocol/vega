@@ -19,7 +19,6 @@ type Chain interface {
 }
 
 type Commander struct {
-	ctx context.Context
 	bc  Chain
 	wal Wallet
 }
@@ -35,12 +34,11 @@ var (
 // NewCommander - used to sign and send transaction from core
 // e.g. NodeRegistration, NodeVote
 // chain argument can't be passed in in cmd package, but is used for tests
-func NewCommander(ctx context.Context, bc Chain, wal Wallet) (*Commander, error) {
+func NewCommander(bc Chain, wal Wallet) (*Commander, error) {
 	if Blockchain(wal.Chain()) != Vega {
 		return nil, ErrVegaWalletRequired
 	}
 	return &Commander{
-		ctx: ctx,
 		bc:  bc,
 		wal: wal,
 	}, nil
@@ -52,7 +50,7 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(cmd txn.Command, payload proto.Message) error {
+func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message) error {
 	raw, err := proto.Marshal(payload)
 	if err != nil {
 		return err
@@ -88,7 +86,7 @@ func (c *Commander) Command(cmd txn.Command, payload proto.Message) error {
 			Version: c.wal.Version(),
 		},
 	}
-	_, err = c.bc.SubmitTransaction(c.ctx, wrapped)
+	_, err = c.bc.SubmitTransaction(ctx, wrapped)
 	return err
 }
 

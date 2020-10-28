@@ -54,7 +54,7 @@ type GovernanceService interface {
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
 type EvtForwarder interface {
-	Forward(e *types.ChainEvent, pk string) error
+	Forward(ctx context.Context, e *types.ChainEvent, pk string) error
 }
 
 // Blockchain ...
@@ -281,7 +281,7 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	}
 
 	var ok = true
-	err = s.evtForwarder.Forward(req.Evt, req.PubKey)
+	err = s.evtForwarder.Forward(ctx, req.Evt, req.PubKey)
 	if err != nil {
 		s.log.Error("unable to forward chain event",
 			logging.String("pubkey", req.PubKey),

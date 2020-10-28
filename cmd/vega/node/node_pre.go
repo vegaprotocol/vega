@@ -497,7 +497,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
-	commander, err := nodewallet.NewCommander(l.ctx, nil, wal)
+	commander, err := nodewallet.NewCommander(nil, wal)
 	if err != nil {
 		return err
 	}

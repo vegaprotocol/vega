@@ -39,7 +39,7 @@ type Assets interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/banking Notary
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
-	SendSignature(id string, sig []byte, kind types.NodeSignatureKind) error
+	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
 	IsSigned(id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
@@ -368,7 +368,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 	}
 
 	err = e.notary.SendSignature(
-		w.Id, sig, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
+		ctx, w.Id, sig, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
 	if err != nil {
 		// we don't cancel it here
 		// we may not be able to sign for some reason, but other may be able
