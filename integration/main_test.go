@@ -92,6 +92,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
 	s.Step(`^dump transfers$`, dumpTransfers)
 	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, theMarkPriceForTheMarketIs)
+	s.Step(`^the market state for the market "([^"]*)" is "([^"]*)"$`, theMarketStateIs)
 	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
 	s.Step(`^traders amends the following orders reference:$`, tradersAmendsTheFollowingOrdersReference)
 	s.Step(`^the following trades happened:$`, theFollowingTradesHappened)
