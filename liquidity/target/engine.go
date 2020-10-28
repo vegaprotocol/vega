@@ -2,7 +2,10 @@ package target
 
 import (
 	"errors"
+	"math"
 	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -11,10 +14,8 @@ var (
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
-	tWindow time.Duration
-	v       float64
-
-	maxRf float64
+	tWindow       time.Duration
+	scalingFactor float64
 
 	now               time.Time
 	scheduledTruncate time.Time
@@ -63,12 +64,13 @@ func (e *Engine) getMaxFromCurrent() uint64 {
 	return m
 }
 
-func (e *Engine) GetTargetStake(now time.Time) float64 {
+func (e *Engine) GetTargetStake(now time.Time, rf types.RiskFactor) float64 {
 	minTime := now.Add(-e.tWindow)
 	if minTime.After(e.max.Time) {
 		e.computeMaxOI(now)
 	}
-	return float64(e.max.OI) * e.v * e.maxRf
+
+	return float64(e.max.OI) * e.scalingFactor * math.Max(rf.Short, rf.Long)
 }
 
 func (e *Engine) computeMaxOI(now time.Time) {
