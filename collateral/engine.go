@@ -52,6 +52,7 @@ var (
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
 	ErrAccountDoesNotExist                     = errors.New("account do not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
+	ErrNoGeneralAccountWhenCreateBondAccount   = errors.New("party general account missing when trying to create a bond account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
 	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
@@ -1212,6 +1213,42 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	}
 
 	return resps, nil
+}
+
+// CreatePartyBondAccount creates a bond account if it does not exist, will return an error
+// if no general account exist for the trader for the given asset
+func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (string, error) {
+	if !e.AssetExists(asset) {
+		return "", ErrInvalidAssetID
+	}
+	bondID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_BOND)
+	if _, ok := e.accs[bondID]; !ok {
+		// OK no bond ID, so let's try to get the general id then
+		// first check if generak account exists
+		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
+		if _, ok := e.accs[generalID]; !ok {
+			e.log.Error("Tried to create a bond account for a party with no general account",
+				logging.String("party-id", partyID),
+				logging.String("asset", asset),
+				logging.String("market-id", marketID),
+			)
+			return "", ErrNoGeneralAccountWhenCreateBondAccount
+		}
+
+		// general account id OK, let's create a margin account
+		acc := types.Account{
+			Id:       bondID,
+			Asset:    asset,
+			MarketID: marketID,
+			Balance:  0,
+			Owner:    partyID,
+			Type:     types.AccountType_ACCOUNT_TYPE_BOND,
+		}
+		e.accs[bondID] = &acc
+		e.addAccountToHashableSlice(&acc)
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
+	}
+	return bondID, nil
 }
 
 // CreatePartyMarginAccount creates a margin account if it does not exist, will return an error
