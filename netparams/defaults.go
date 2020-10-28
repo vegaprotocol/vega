@@ -14,9 +14,9 @@ func defaultNetParams() map[string]value {
 		MarketAuctionMinimumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
 		MarketAuctionMaximumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("168h0m0s"),
 		MarketInitialMarkPrice:                        NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
-		MarketLiquidityBondPenaltyParameter:           NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.1"),
-		MarketLiquidityMaximumLiquidityFeeFactorLevel: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.1"),
-		MarketLiquidityStakeToCCYSiskas:               NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.1"),
+		MarketLiquidityBondPenaltyParameter:           NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityMaximumLiquidityFeeFactorLevel: NewFloat(FloatGT(0), FloatLTE(1)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityStakeToCCYSiskas:               NewFloat(FloatGT(0)).Mutable(true).MustUpdate("1"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
