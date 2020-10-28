@@ -2,7 +2,6 @@ package execution_test
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -740,7 +739,9 @@ func TestPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
-	log.Printf("confirmation = %+v\n", confirmation)
+	assert.Equal(t,
+		types.Order_STATUS_PARTIALLY_FILLED.String(),
+		confirmation.Order.Status.String(), "When pegged price below zero (MIDPRICE - OFFSET) <= 0")
 }
 
 func testPeggedOrderTypes(t *testing.T) {
