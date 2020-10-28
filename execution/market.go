@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"math/big"
 	"sync"
 	"time"
 
@@ -495,28 +496,35 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) erro
 
 // Reprice a pegged order. If this is the first time we submit the resulting order into the book
 // otherwise we amend the existing order
+// If the resulting price is <= 0, the price will be set to zero and the order status will be parked.
 func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) error {
 	// Work out the new price of the order
+	var (
+		err   error
+		price uint64
+	)
+
 	switch order.PeggedOrder.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
-		mid, err := m.getMidPrice()
-		if err != nil {
-			return ErrUnableToReprice
-		}
-		order.Price = uint64(int64(mid) + order.PeggedOrder.Offset)
+		price, err = m.getMidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-		bestbid, err := m.getBestBidPrice()
-		if err != nil {
-			return ErrUnableToReprice
-		}
-		order.Price = uint64(int64(bestbid) + order.PeggedOrder.Offset)
+		price, err = m.getBestBidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-		bestask, err := m.getBestAskPrice()
-		if err != nil {
-			return ErrUnableToReprice
-		}
-		order.Price = uint64(int64(bestask) + order.PeggedOrder.Offset)
+		price, err = m.getBestAskPrice()
 	}
+	if err != nil {
+		return ErrUnableToReprice
+	}
+
+	bn := big.NewInt(0).SetUint64(price)
+	bn.Add(bn, big.NewInt(order.PeggedOrder.Offset))
+
+	// If the number is negative
+	if bn.Sign() <= 0 {
+		order.Status = types.Order_STATUS_PARKED
+		return nil
+	}
+	order.Price = bn.Uint64()
 	return nil
 }
 

@@ -2,6 +2,7 @@ package execution_test
 
 import (
 	"context"
+	"log"
 	"testing"
 	"time"
 
@@ -684,6 +685,33 @@ func TestPeggedOrderParkWhenInAuction(t *testing.T) {
 	// End the auction with no trades so we will not have any book related prices
 	// We should try to unpark orders but that will fail and will stay parked
 	tm.market.OnChainTimeUpdate(ctx, auctionClose)
+}
+
+func TestPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	for _, acc := range []string{"buyer", "seller", "pegged"} {
+		addAccount(tm, acc)
+		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	}
+
+	buy := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "buyer", 10, 4)
+	_, err := tm.market.SubmitOrder(ctx, &buy)
+	require.NoError(t, err)
+
+	sell := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "seller", 10, 8)
+	_, err = tm.market.SubmitOrder(ctx, &sell)
+	require.NoError(t, err)
+
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "pegged", 10, 4)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+	log.Printf("confirmation = %+v\n", confirmation)
 }
 
 func testPeggedOrderTypes(t *testing.T) {
