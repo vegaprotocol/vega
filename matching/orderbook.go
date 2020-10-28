@@ -535,6 +535,15 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		return types.ErrOrderOutOfSequence
 	}
 
+	var (
+		expiryChanged = originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
+			originalOrder.TimeInForce != amendedOrder.TimeInForce
+		ordcpy types.Order
+	)
+	if expiryChanged {
+		ordcpy = *originalOrder
+	}
+
 	if err := b.validateOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Order validation failure",
@@ -568,9 +577,8 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	// If we have changed the ExpiresAt or TIF then update Expiry table
-	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
-		originalOrder.TimeInForce != amendedOrder.TimeInForce {
-		b.removePendingGttOrder(*originalOrder)
+	if expiryChanged {
+		b.removePendingGttOrder(ordcpy)
 		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*amendedOrder)
 		}
