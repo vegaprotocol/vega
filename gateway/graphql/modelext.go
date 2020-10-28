@@ -1530,8 +1530,11 @@ func eventFromProto(e *types.BusEvent) Event {
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
 		return auctionEventFromProto(e.GetAuction())
-	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
-		return e.GetRiskFactor()
+	case types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
+		return e.GetDeposit()
+	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
+		w, _ := NewWithdrawalFromProto(e.GetWithdrawal())
+		return w
 	}
 	return nil
 }
@@ -1586,6 +1589,10 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR)
 		case BusEventTypeLiquidityProvision:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION)
+		case BusEventTypeDeposit:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_DEPOSIT)
+		case BusEventTypeWithdrawal:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL)
 		}
 	}
 	return r
@@ -1637,6 +1644,10 @@ func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 		return BusEventTypeRiskFactor, nil
 	case types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 		return BusEventTypeLiquidityProvision, nil
+	case types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
+		return BusEventTypeDeposit, nil
+	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
+		return BusEventTypeWithdrawal, nil
 	}
 	return "", errors.New("unsupported proto event type")
 }

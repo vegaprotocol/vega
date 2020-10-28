@@ -6138,55 +6138,58 @@ enum AuctionTrigger {
 }
 
 enum BusEventType {
-  "event type indicating TimeUpdate"
+  "Vega Time has changed"
   TimeUpdate
-  "transfer response event"
+  "A balance has been transferred between accounts"
   TransferResponses
-  "position resolution event"
+  "A position resolution event has occurred"
   PositionResolution
-  "order event"
+  "An order has been created or updated"
   Order
-  "account event"
+  "An account has been updated"
   Account
-  "party event"
+  "A party has been updated"
   Party
-  "trade event"
+  "A trade has been created"
   Trade
-  "margin levels event"
+  "Margin levels have changed for a position"
   MarginLevels
-  "proposal event"
+  "A governance proposal has been created or updated"
   Proposal
-  "vote event"
+  "A vote has been placed on a governance proposal"
   Vote
-  "market data event"
+  "Market data has been updated"
   MarketData
-  "node signature event"
+  "Validator nodes signatures for an event"
   NodeSignature
-  "loss socialization event"
+  "A position has been closed without sufficient insurance pool balance to cover it"
   LossSocialization
-  "settle position event"
+  "A position has been settled"
   SettlePosition
-  "settle distressed event"
+  "A distressed position has been settled"
   SettleDistressed
-  "market created event"
+  "A new market has been created"
   MarketCreated
-  "asset event"
+  "An asset has been created or update"
   Asset
-  "market tick event"
+  "A market has progressed by one tick"
   MarketTick
-  "auction event"
+  "A market has either entered or exited auction"
   Auction
-  "risk factor event"
+  "A risk factor adjustment was made"
   RiskFactor
-  "liquidity provision event"
+  "A liquidity commitment change occurred"
   LiquidityProvision
-
+  "Collateral has deposited in to this Vega network via the bridge"
+  Deposit
+  "Collateral has been withdrawn from this Vega network via the bridge"
+  Withdrawal
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor | Deposit | Withdrawal
 
 type BusEvent {
   "the id for this event"
@@ -22679,6 +22682,20 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._RiskFactor(ctx, sel, obj)
+	case proto.Deposit:
+		return ec._Deposit(ctx, sel, &obj)
+	case *proto.Deposit:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Deposit(ctx, sel, obj)
+	case Withdrawal:
+		return ec._Withdrawal(ctx, sel, &obj)
+	case *Withdrawal:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Withdrawal(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -23290,7 +23307,7 @@ func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var depositImplementors = []string{"Deposit"}
+var depositImplementors = []string{"Deposit", "Event"}
 
 func (ec *executionContext) _Deposit(ctx context.Context, sel ast.SelectionSet, obj *proto.Deposit) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, depositImplementors)
@@ -27668,7 +27685,7 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var withdrawalImplementors = []string{"Withdrawal"}
+var withdrawalImplementors = []string{"Withdrawal", "Event"}
 
 func (ec *executionContext) _Withdrawal(ctx context.Context, sel ast.SelectionSet, obj *Withdrawal) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, withdrawalImplementors)

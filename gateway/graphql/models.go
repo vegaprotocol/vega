@@ -872,6 +872,8 @@ type Withdrawal struct {
 	Details WithdrawalDetails `json:"details"`
 }
 
+func (Withdrawal) IsEvent() {}
+
 // The various account types we have (used by collateral)
 type AccountType string
 
@@ -986,48 +988,52 @@ func (e AuctionTrigger) MarshalGQL(w io.Writer) {
 type BusEventType string
 
 const (
-	// event type indicating TimeUpdate
+	// Vega Time has changed
 	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
-	// transfer response event
+	// A balance has been transferred between accounts
 	BusEventTypeTransferResponses BusEventType = "TransferResponses"
-	// position resolution event
+	// A position resolution event has occurred
 	BusEventTypePositionResolution BusEventType = "PositionResolution"
-	// order event
+	// An order has been created or updated
 	BusEventTypeOrder BusEventType = "Order"
-	// account event
+	// An account has been updated
 	BusEventTypeAccount BusEventType = "Account"
-	// party event
+	// A party has been updated
 	BusEventTypeParty BusEventType = "Party"
-	// trade event
+	// A trade has been created
 	BusEventTypeTrade BusEventType = "Trade"
-	// margin levels event
+	// Margin levels have changed for a position
 	BusEventTypeMarginLevels BusEventType = "MarginLevels"
-	// proposal event
+	// A governance proposal has been created or updated
 	BusEventTypeProposal BusEventType = "Proposal"
-	// vote event
+	// A vote has been placed on a governance proposal
 	BusEventTypeVote BusEventType = "Vote"
-	// market data event
+	// Market data has been updated
 	BusEventTypeMarketData BusEventType = "MarketData"
-	// node signature event
+	// Validator nodes signatures for an event
 	BusEventTypeNodeSignature BusEventType = "NodeSignature"
-	// loss socialization event
+	// A position has been closed without sufficient insurance pool balance to cover it
 	BusEventTypeLossSocialization BusEventType = "LossSocialization"
-	// settle position event
+	// A position has been settled
 	BusEventTypeSettlePosition BusEventType = "SettlePosition"
-	// settle distressed event
+	// A distressed position has been settled
 	BusEventTypeSettleDistressed BusEventType = "SettleDistressed"
-	// market created event
+	// A new market has been created
 	BusEventTypeMarketCreated BusEventType = "MarketCreated"
-	// asset event
+	// An asset has been created or update
 	BusEventTypeAsset BusEventType = "Asset"
-	// market tick event
+	// A market has progressed by one tick
 	BusEventTypeMarketTick BusEventType = "MarketTick"
-	// auction event
+	// A market has either entered or exited auction
 	BusEventTypeAuction BusEventType = "Auction"
-	// risk factor event
+	// A risk factor adjustment was made
 	BusEventTypeRiskFactor BusEventType = "RiskFactor"
-	// liquidity provision event
+	// A liquidity commitment change occurred
 	BusEventTypeLiquidityProvision BusEventType = "LiquidityProvision"
+	// Collateral has deposited in to this Vega network via the bridge
+	BusEventTypeDeposit BusEventType = "Deposit"
+	// Collateral has been withdrawn from this Vega network via the bridge
+	BusEventTypeWithdrawal BusEventType = "Withdrawal"
 	// constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
@@ -1054,12 +1060,14 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeAuction,
 	BusEventTypeRiskFactor,
 	BusEventTypeLiquidityProvision,
+	BusEventTypeDeposit,
+	BusEventTypeWithdrawal,
 	BusEventTypeMarket,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeMarket:
 		return true
 	}
 	return false
