@@ -2416,6 +2416,18 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 	}
 }
 
+func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
+	a, err := m.mkt.GetAsset()
+	if err != nil {
+		return nil, err
+	}
+	rf, err := m.risk.GetRiskFactors(a)
+	if err != nil {
+		return nil, err
+	}
+	return rf, nil
+}
+
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
 	return nil
 }
