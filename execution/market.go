@@ -70,6 +70,8 @@ var (
 	ErrGFAOrderReceivedDuringContinuousTrading = errors.New("gfa order received during continuous trading")
 	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state
 	ErrGFNOrderReceivedAuctionTrading = errors.New("gfn order received during auction trading")
+	// ErrUnableToReprice we are unable to get a price required to reprice
+	ErrUnableToReprice = errors.New("unable to reprice")
 
 	networkPartyID = "network"
 )
@@ -147,9 +149,9 @@ type Market struct {
 	parkedOrders []*types.Order
 
 	// Store the previous price values so we can see what has changed
-	lastBestBidPrice int64
-	lastBestAskPrice int64
-	lastMidPrice     int64
+	lastBestBidPrice uint64
+	lastBestAskPrice uint64
+	lastMidPrice     uint64
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -297,8 +299,8 @@ func (m *Market) Hash() []byte {
 }
 
 func (m *Market) GetMarketData() types.MarketData {
-	bestBidPrice, bestBidVolume := m.matching.BestBidPriceAndVolume()
-	bestOfferPrice, bestOfferVolume := m.matching.BestOfferPriceAndVolume()
+	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
+	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
 
 	// Auction related values
 	var indicativePrice, indicativeVolume uint64
@@ -471,40 +473,65 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
-func (m *Market) repriceAllPeggedOrders(ctx context.Context) {
+func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) error {
 	for _, order := range m.peggedOrders {
-		m.repricePeggedOrder(ctx, order, false)
+		switch order.PeggedOrder.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			if (changes & PriceMoveMid) > 0 {
+				return m.repricePeggedOrder(ctx, order)
+			}
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			if (changes & PriceMoveBestBid) > 0 {
+				return m.repricePeggedOrder(ctx, order)
+			}
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			if (changes & PriceMoveBestAsk) > 0 {
+				return m.repricePeggedOrder(ctx, order)
+			}
+		}
 	}
+	return nil
 }
 
-func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order, firstTime bool) {
+// Reprice a pegged order. If this is the first time we submit the resulting order into the book
+// otherwise we amend the existing order
+func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) error {
 	// Work out the new price of the order
 	switch order.PeggedOrder.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
-		order.Price = m.getMidPrice()
-	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-		order.Price = m.getBestBidPrice()
-	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-		order.Price = m.getBestAskPrice()
-	}
-
-	if !firstTime {
-		amend := &types.OrderAmendment{
-			MarketID: order.MarketID,
-			OrderID:  order.Id,
-			PartyID:  order.PartyID,
-			Price:    &types.Price{Value: order.Price},
+		mid, err := m.getMidPrice()
+		if err != nil {
+			return ErrUnableToReprice
 		}
-		m.AmendOrder(ctx, amend)
+		order.Price = uint64(int64(mid) + order.PeggedOrder.Offset)
+	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+		bestbid, err := m.getBestBidPrice()
+		if err != nil {
+			return ErrUnableToReprice
+		}
+		order.Price = uint64(int64(bestbid) + order.PeggedOrder.Offset)
+	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+		bestask, err := m.getBestAskPrice()
+		if err != nil {
+			return ErrUnableToReprice
+		}
+		order.Price = uint64(int64(bestask) + order.PeggedOrder.Offset)
 	}
+	return nil
 }
 
 // UnparkAllPeggedOrders Attempt to place all pegged orders back onto the order book
 func (m *Market) UnparkAllPeggedOrders(ctx context.Context) {
+	// Create slice to put any orders that we can't unpack
+	failedToUnpark := make([]*types.Order, 0)
 	for _, order := range m.peggedOrders {
-		// Reprice the order
-		m.repricePeggedOrder(ctx, order, true)
+		// Reprice the order and submit it
+		err := m.repricePeggedOrder(ctx, order)
+		if err != nil {
+			failedToUnpark = append(failedToUnpark, order)
+		}
 	}
+	m.parkedOrders = failedToUnpark
 }
 
 // EnterAuction : Prepare the order book to be run as an auction
@@ -577,6 +604,9 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Send an event bus update
 	m.broker.Send(endEvt)
+
+	// We are moving to continuous trading so we have to unpark any pegged orders
+	m.UnparkAllPeggedOrders(ctx)
 }
 
 func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) types.OrderError {
@@ -805,12 +835,22 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 		if m.as.InAuction() {
 			// If we are in an auction, we don't insert this order into the book
-			// Maybe should return an orderConfimration with order state PARKED
-			return nil, nil
+			// Maybe should return an orderConfirmation with order state PARKED
+			order.Status = types.Order_STATUS_PARKED
+			order.Reason = types.OrderError_ORDER_ERROR_NONE
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+			return &types.OrderConfirmation{Order: order}, nil
 
 		} else {
 			// Reprice
-			m.repricePeggedOrder(ctx, order, true)
+			err := m.repricePeggedOrder(ctx, order)
+			if err != nil {
+				m.parkedOrders = append(m.parkedOrders, order)
+				order.Status = types.Order_STATUS_PARKED
+				order.Reason = types.OrderError_ORDER_ERROR_NONE
+				m.broker.Send(events.NewOrderEvent(ctx, order))
+				return &types.OrderConfirmation{Order: order}, nil
+			}
 		}
 	}
 
@@ -922,6 +962,8 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	m.handleConfirmation(ctx, order, confirmation)
 
 	m.broker.Send(events.NewOrderEvent(ctx, order))
+
+	m.checkForReferenceMoves(ctx)
 
 	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
@@ -1578,6 +1620,8 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		}
 	}
 
+	m.checkForReferenceMoves(ctx)
+
 	return cancellations, nil
 }
 
@@ -1630,10 +1674,33 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			logging.Error(err))
 	}
 
+	// If this is a pegged order, remove from pegged and parked lists
+	if order.PeggedOrder != nil {
+		// Scan pegged orders for a match
+		for i, po := range m.peggedOrders {
+			if po.Id == order.Id {
+				copy(m.peggedOrders[i:], m.peggedOrders[i+1:])
+				m.peggedOrders[len(m.peggedOrders)-1] = nil
+				m.peggedOrders = m.peggedOrders[:len(m.peggedOrders)-1]
+			}
+		}
+
+		// Scan parked orders for a match
+		for i, po := range m.parkedOrders {
+			if po.Id == order.Id {
+				copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
+				m.parkedOrders[len(m.parkedOrders)-1] = nil
+				m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
+			}
+		}
+	}
+
+	m.checkForReferenceMoves(ctx)
+
 	return cancellation, nil
 }
 
-// CancelOrder cancels the given order
+// ParkOrder removes the given order from the orderbook and parks it
 func (m *Market) ParkOrder(ctx context.Context, order *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "ParkOrder")
 	defer timer.EngineTimeCounterAdd()
@@ -1785,6 +1852,8 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 				logging.Error(err))
 		}
 
+		m.checkForReferenceMoves(ctx)
+
 		return &types.OrderConfirmation{
 			Order: cancellation.Order,
 		}, nil
@@ -1818,6 +1887,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			m.checkForReferenceMoves(ctx)
 		}
 		return ret, err
 	}
@@ -1867,6 +1937,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		if err == nil {
 			m.handleConfirmation(ctx, amendedOrder, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			m.checkForReferenceMoves(ctx)
 		}
 		return confirmation, err
 	}
@@ -1883,6 +1954,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			m.checkForReferenceMoves(ctx)
 		}
 		return ret, err
 	}
@@ -2068,16 +2140,63 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) (orderList []types.Order, 
 	return
 }
 
-func (m *Market) getBestAskPrice() uint64 {
+func (m *Market) getBestAskPrice() (uint64, error) {
 	return m.matching.GetBestAskPrice()
 }
 
-func (m *Market) getBestBidPrice() uint64 {
+func (m *Market) getBestBidPrice() (uint64, error) {
 	return m.matching.GetBestBidPrice()
 }
 
-func (m *Market) getMidPrice() uint64 {
-	return (m.matching.GetBestBidPrice() + m.matching.GetBestAskPrice()) / 2
+func (m *Market) getMidPrice() (uint64, error) {
+	bid, err := m.matching.GetBestBidPrice()
+	if err != nil {
+		return 0, err
+	}
+	ask, err := m.matching.GetBestAskPrice()
+	if err != nil {
+		return 0, err
+	}
+	return (bid + ask) / 2, nil
+}
+
+func (m *Market) checkForReferenceMoves(ctx context.Context) {
+	// Get the current reference values and compare them to the last saved set
+	newBestBid, _ := m.getBestBidPrice()
+	newBestAsk, _ := m.getBestAskPrice()
+	newMid, _ := m.getMidPrice()
+
+	// Look for a move
+	var changes uint8
+	if newMid != m.lastMidPrice {
+		changes |= PriceMoveMid
+	}
+	if newBestBid != m.lastBestBidPrice {
+		changes |= PriceMoveBestBid
+	}
+	if newBestAsk != m.lastBestAskPrice {
+		changes |= PriceMoveBestAsk
+	}
+
+	// If we have a move update any pegged orders that reference it
+	if changes != 0 {
+		m.repriceAllPeggedOrders(ctx, changes)
+	}
+
+	// Update the last price values
+	m.lastMidPrice = newMid
+	m.lastBestBidPrice = newBestBid
+	m.lastBestAskPrice = newBestAsk
+}
+
+// GetPeggedOrderCount returns the number of pegged orders in the market
+func (m *Market) GetPeggedOrderCount() int {
+	return len(m.peggedOrders)
+}
+
+// GetParkedOrderCount returns hte number of parked orders in the market
+func (m *Market) GetParkedOrderCount() int {
+	return len(m.parkedOrders)
 }
 
 // create an actual risk model, and calculate the risk factors
