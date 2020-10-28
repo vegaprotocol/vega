@@ -356,6 +356,14 @@ func (this *LiquidityProvisionSubmission) Validate() error {
 	}
 	return nil
 }
+func (this *LiquidityOrderReference) Validate() error {
+	if this.LiquidityOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.LiquidityOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("LiquidityOrder", err)
+		}
+	}
+	return nil
+}
 func (this *LiquidityProvision) Validate() error {
 	if this.MarketID == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))

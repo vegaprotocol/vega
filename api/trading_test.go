@@ -239,7 +239,7 @@ func getTestGRPCServer(
 		return
 	}
 
-	liquidityService := liquidity.NewService(logger, conf.Liquidity)
+	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
 	// stub...

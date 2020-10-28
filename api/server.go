@@ -255,6 +255,7 @@ func (g *GRPCServer) Start() {
 		DepositService:          g.depositService,
 		MarketDepthService:      g.marketDepthService,
 		NetParamsService:        g.netParamsService,
+		LiquidityService:        g.liquidityService,
 		ctx:                     g.ctx,
 	}
 	go tradingDataSvc.updateNetInfo(g.ctx)

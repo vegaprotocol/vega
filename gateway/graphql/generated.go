@@ -42,7 +42,8 @@ type ResolverRoot interface {
 	Candle() CandleResolver
 	Deposit() DepositResolver
 	LiquidityOrder() LiquidityOrderResolver
-	LiquidityProvisionSubmission() LiquidityProvisionSubmissionResolver
+	LiquidityOrderReference() LiquidityOrderReferenceResolver
+	LiquidityProvision() LiquidityProvisionResolver
 	MarginLevels() MarginLevelsResolver
 	Market() MarketResolver
 	MarketData() MarketDataResolver
@@ -222,13 +223,23 @@ type ComplexityRoot struct {
 		Reference  func(childComplexity int) int
 	}
 
-	LiquidityProvisionSubmission struct {
+	LiquidityOrderReference struct {
+		LiquidityOrder func(childComplexity int) int
+		Order          func(childComplexity int) int
+	}
+
+	LiquidityProvision struct {
 		Buys             func(childComplexity int) int
 		CommitmentAmount func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
 		Fee              func(childComplexity int) int
-		ID               func(childComplexity int) int
-		MarketID         func(childComplexity int) int
+		Id               func(childComplexity int) int
+		Market           func(childComplexity int) int
+		Party            func(childComplexity int) int
 		Sells            func(childComplexity int) int
+		Status           func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+		Version          func(childComplexity int) int
 	}
 
 	LogNormalModelParams struct {
@@ -272,6 +283,7 @@ type ComplexityRoot struct {
 		Depth                   func(childComplexity int, maxDepth *int) int
 		Fees                    func(childComplexity int) int
 		ID                      func(childComplexity int) int
+		LiquidityProvisions     func(childComplexity int, party *string) int
 		Name                    func(childComplexity int) int
 		OpeningAuction          func(childComplexity int) int
 		Orders                  func(childComplexity int, skip *int, first *int, last *int) int
@@ -385,16 +397,17 @@ type ComplexityRoot struct {
 	}
 
 	Party struct {
-		Accounts    func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
-		Deposits    func(childComplexity int) int
-		Id          func(childComplexity int) int
-		Margins     func(childComplexity int, marketID *string) int
-		Orders      func(childComplexity int, skip *int, first *int, last *int) int
-		Positions   func(childComplexity int) int
-		Proposals   func(childComplexity int, inState *ProposalState) int
-		Trades      func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
-		Votes       func(childComplexity int) int
-		Withdrawals func(childComplexity int) int
+		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
+		Deposits            func(childComplexity int) int
+		Id                  func(childComplexity int) int
+		LiquidityProvisions func(childComplexity int, market *string) int
+		Margins             func(childComplexity int, marketID *string) int
+		Orders              func(childComplexity int, skip *int, first *int, last *int) int
+		Positions           func(childComplexity int) int
+		Proposals           func(childComplexity int, inState *ProposalState) int
+		Trades              func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
+		Votes               func(childComplexity int) int
+		Withdrawals         func(childComplexity int) int
 	}
 
 	Position struct {
@@ -708,11 +721,17 @@ type LiquidityOrderResolver interface {
 	Reference(ctx context.Context, obj *proto.LiquidityOrder) (PeggedReference, error)
 	Proportion(ctx context.Context, obj *proto.LiquidityOrder) (int, error)
 }
-type LiquidityProvisionSubmissionResolver interface {
-	ID(ctx context.Context, obj *proto.LiquidityProvisionSubmission) (*string, error)
+type LiquidityOrderReferenceResolver interface {
+	Order(ctx context.Context, obj *proto.LiquidityOrderReference) (*proto.Order, error)
+}
+type LiquidityProvisionResolver interface {
+	Party(ctx context.Context, obj *proto.LiquidityProvision) (*proto.Party, error)
+	CreatedAt(ctx context.Context, obj *proto.LiquidityProvision) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.LiquidityProvision) (string, error)
+	Market(ctx context.Context, obj *proto.LiquidityProvision) (*Market, error)
+	CommitmentAmount(ctx context.Context, obj *proto.LiquidityProvision) (int, error)
 
-	CommitmentAmount(ctx context.Context, obj *proto.LiquidityProvisionSubmission) (int, error)
-	Fee(ctx context.Context, obj *proto.LiquidityProvisionSubmission) (float64, error)
+	Status(ctx context.Context, obj *proto.LiquidityProvision) (LiquidityProvisionStatus, error)
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *proto.MarginLevels) (*Market, error)
@@ -731,6 +750,7 @@ type MarketResolver interface {
 	Depth(ctx context.Context, obj *Market, maxDepth *int) (*proto.MarketDepth, error)
 	Candles(ctx context.Context, obj *Market, since string, interval Interval) ([]*proto.Candle, error)
 	Data(ctx context.Context, obj *Market) (*proto.MarketData, error)
+	LiquidityProvisions(ctx context.Context, obj *Market, party *string) ([]*proto.LiquidityProvision, error)
 }
 type MarketDataResolver interface {
 	Market(ctx context.Context, obj *proto.MarketData) (*Market, error)
@@ -802,6 +822,7 @@ type PartyResolver interface {
 	Votes(ctx context.Context, obj *proto.Party) ([]*ProposalVote, error)
 	Withdrawals(ctx context.Context, obj *proto.Party) ([]*Withdrawal, error)
 	Deposits(ctx context.Context, obj *proto.Party) ([]*proto.Deposit, error)
+	LiquidityProvisions(ctx context.Context, obj *proto.Party, market *string) ([]*proto.LiquidityProvision, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.Position) (*Market, error)
@@ -1539,47 +1560,96 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquidityOrder.Reference(childComplexity), true
 
-	case "LiquidityProvisionSubmission.Buys":
-		if e.complexity.LiquidityProvisionSubmission.Buys == nil {
+	case "LiquidityOrderReference.liquidityOrder":
+		if e.complexity.LiquidityOrderReference.LiquidityOrder == nil {
 			break
 		}
 
-		return e.complexity.LiquidityProvisionSubmission.Buys(childComplexity), true
+		return e.complexity.LiquidityOrderReference.LiquidityOrder(childComplexity), true
 
-	case "LiquidityProvisionSubmission.commitmentAmount":
-		if e.complexity.LiquidityProvisionSubmission.CommitmentAmount == nil {
+	case "LiquidityOrderReference.order":
+		if e.complexity.LiquidityOrderReference.Order == nil {
 			break
 		}
 
-		return e.complexity.LiquidityProvisionSubmission.CommitmentAmount(childComplexity), true
+		return e.complexity.LiquidityOrderReference.Order(childComplexity), true
 
-	case "LiquidityProvisionSubmission.fee":
-		if e.complexity.LiquidityProvisionSubmission.Fee == nil {
+	case "LiquidityProvision.buys":
+		if e.complexity.LiquidityProvision.Buys == nil {
 			break
 		}
 
-		return e.complexity.LiquidityProvisionSubmission.Fee(childComplexity), true
+		return e.complexity.LiquidityProvision.Buys(childComplexity), true
 
-	case "LiquidityProvisionSubmission.id":
-		if e.complexity.LiquidityProvisionSubmission.ID == nil {
+	case "LiquidityProvision.commitmentAmount":
+		if e.complexity.LiquidityProvision.CommitmentAmount == nil {
 			break
 		}
 
-		return e.complexity.LiquidityProvisionSubmission.ID(childComplexity), true
+		return e.complexity.LiquidityProvision.CommitmentAmount(childComplexity), true
 
-	case "LiquidityProvisionSubmission.marketID":
-		if e.complexity.LiquidityProvisionSubmission.MarketID == nil {
+	case "LiquidityProvision.createdAt":
+		if e.complexity.LiquidityProvision.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.LiquidityProvisionSubmission.MarketID(childComplexity), true
+		return e.complexity.LiquidityProvision.CreatedAt(childComplexity), true
 
-	case "LiquidityProvisionSubmission.Sells":
-		if e.complexity.LiquidityProvisionSubmission.Sells == nil {
+	case "LiquidityProvision.fee":
+		if e.complexity.LiquidityProvision.Fee == nil {
 			break
 		}
 
-		return e.complexity.LiquidityProvisionSubmission.Sells(childComplexity), true
+		return e.complexity.LiquidityProvision.Fee(childComplexity), true
+
+	case "LiquidityProvision.id":
+		if e.complexity.LiquidityProvision.Id == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.Id(childComplexity), true
+
+	case "LiquidityProvision.market":
+		if e.complexity.LiquidityProvision.Market == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.Market(childComplexity), true
+
+	case "LiquidityProvision.party":
+		if e.complexity.LiquidityProvision.Party == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.Party(childComplexity), true
+
+	case "LiquidityProvision.sells":
+		if e.complexity.LiquidityProvision.Sells == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.Sells(childComplexity), true
+
+	case "LiquidityProvision.status":
+		if e.complexity.LiquidityProvision.Status == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.Status(childComplexity), true
+
+	case "LiquidityProvision.updatedAt":
+		if e.complexity.LiquidityProvision.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.UpdatedAt(childComplexity), true
+
+	case "LiquidityProvision.version":
+		if e.complexity.LiquidityProvision.Version == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.Version(childComplexity), true
 
 	case "LogNormalModelParams.mu":
 		if e.complexity.LogNormalModelParams.Mu == nil {
@@ -1770,6 +1840,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.ID(childComplexity), true
+
+	case "Market.liquidityProvisions":
+		if e.complexity.Market.LiquidityProvisions == nil {
+			break
+		}
+
+		args, err := ec.field_Market_liquidityProvisions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Market.LiquidityProvisions(childComplexity, args["party"].(*string)), true
 
 	case "Market.name":
 		if e.complexity.Market.Name == nil {
@@ -2364,6 +2446,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Id(childComplexity), true
+
+	case "Party.liquidityProvisions":
+		if e.complexity.Party.LiquidityProvisions == nil {
+			break
+		}
+
+		args, err := ec.field_Party_liquidityProvisions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Party.LiquidityProvisions(childComplexity, args["market"].(*string)), true
 
 	case "Party.margins":
 		if e.complexity.Party.Margins == nil {
@@ -4795,6 +4889,14 @@ type Market {
 
   "marketData for the given market"
   data: MarketData!
+
+  "The list of the liquidity provision commitment for this market"
+  liquidityProvisions(
+    "An optional party id"
+    party: String
+  ): [LiquidityProvision!]
+
+
 }
 
 """
@@ -4935,6 +5037,12 @@ type Party {
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!]
+
+  "The list of the liquidity provision commitment from this party"
+  liquidityProvisions(
+    "An optional market id"
+    market: String
+  ): [LiquidityProvision!]
 }
 
 """
@@ -6121,20 +6229,47 @@ input LiquidityOrderInput {
   offset: Int!
 }
 
+"Status of a liquidity provision order"
+enum LiquidityProvisionStatus {
+  "An active liquidity provision"
+  Active
+  "A liquidity provision stopped by the network"
+  Stopped
+  "A Cancelled Liquidity provision"
+  Cancelled
+}
+
+type LiquidityOrderReference {
+  "The id of the pegged order generated to fullfill this commitment"
+  order: Order!
+  "The liquidity order"
+  liquidityOrder: LiquidityOrder!
+}
+
 "The command to be sent to the chain for a liquidity provision submission"
-type LiquidityProvisionSubmission {
+type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: String
+  "The Id of the party making this commitment"
+  party: Party!
+  "When the liquidity provision was initially created (formatted RFC3339)"
+  createdAt: String!
+  "When the liquidity provision was updated (formatted RFC3339)"
+  updatedAt: String!
   "Market identifier for the order"
-  marketID: String!
+  market: Market!
   "Specified as a unitless number that represents the amount of settlement asset of the market."
   commitmentAmount: Int!
   "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
-  fee: Float!
+  fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
-  Sells: [LiquidityOrder]
+  sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
-  Buys:  [LiquidityOrder]
+  buys:  [LiquidityOrderReference!]!
+  "The version of this LiquidityProvision"
+  version: String!
+  "The current status of this liquidity provision"
+  status: LiquidityProvisionStatus!
 }
 
 "A prepared LiquidityProvision command"
@@ -6197,6 +6332,20 @@ func (ec *executionContext) field_Market_depth_args(ctx context.Context, rawArgs
 		}
 	}
 	args["maxDepth"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Market_liquidityProvisions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["party"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["party"] = arg0
 	return args, nil
 }
 
@@ -6623,6 +6772,20 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 		}
 	}
 	args["type"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Party_liquidityProvisions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["market"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["market"] = arg0
 	return args, nil
 }
 
@@ -10383,7 +10546,7 @@ func (ec *executionContext) _LiquidityOrder_offset(ctx context.Context, field gr
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LiquidityProvisionSubmission_id(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvisionSubmission) (ret graphql.Marshaler) {
+func (ec *executionContext) _LiquidityOrderReference_order(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityOrderReference) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10391,7 +10554,7 @@ func (ec *executionContext) _LiquidityProvisionSubmission_id(ctx context.Context
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "LiquidityProvisionSubmission",
+		Object:   "LiquidityOrderReference",
 		Field:    field,
 		Args:     nil,
 		IsMethod: true,
@@ -10400,21 +10563,24 @@ func (ec *executionContext) _LiquidityProvisionSubmission_id(ctx context.Context
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvisionSubmission().ID(rctx, obj)
+		return ec.resolvers.LiquidityOrderReference().Order(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*proto.Order)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LiquidityProvisionSubmission_marketID(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvisionSubmission) (ret graphql.Marshaler) {
+func (ec *executionContext) _LiquidityOrderReference_liquidityOrder(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityOrderReference) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10422,7 +10588,7 @@ func (ec *executionContext) _LiquidityProvisionSubmission_marketID(ctx context.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "LiquidityProvisionSubmission",
+		Object:   "LiquidityOrderReference",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -10431,7 +10597,106 @@ func (ec *executionContext) _LiquidityProvisionSubmission_marketID(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MarketID, nil
+		return obj.LiquidityOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.LiquidityOrder)
+	fc.Result = res
+	return ec.marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvision_id(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvision_party(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidityProvision().Party(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.Party)
+	fc.Result = res
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvision_createdAt(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidityProvision().CreatedAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10448,7 +10713,7 @@ func (ec *executionContext) _LiquidityProvisionSubmission_marketID(ctx context.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LiquidityProvisionSubmission_commitmentAmount(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvisionSubmission) (ret graphql.Marshaler) {
+func (ec *executionContext) _LiquidityProvision_updatedAt(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10456,7 +10721,7 @@ func (ec *executionContext) _LiquidityProvisionSubmission_commitmentAmount(ctx c
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "LiquidityProvisionSubmission",
+		Object:   "LiquidityProvision",
 		Field:    field,
 		Args:     nil,
 		IsMethod: true,
@@ -10465,7 +10730,75 @@ func (ec *executionContext) _LiquidityProvisionSubmission_commitmentAmount(ctx c
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvisionSubmission().CommitmentAmount(rctx, obj)
+		return ec.resolvers.LiquidityProvision().UpdatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvision_market(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidityProvision().Market(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Market)
+	fc.Result = res
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvision_commitmentAmount(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidityProvision().CommitmentAmount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10482,7 +10815,7 @@ func (ec *executionContext) _LiquidityProvisionSubmission_commitmentAmount(ctx c
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LiquidityProvisionSubmission_fee(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvisionSubmission) (ret graphql.Marshaler) {
+func (ec *executionContext) _LiquidityProvision_fee(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10490,16 +10823,16 @@ func (ec *executionContext) _LiquidityProvisionSubmission_fee(ctx context.Contex
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "LiquidityProvisionSubmission",
+		Object:   "LiquidityProvision",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.LiquidityProvisionSubmission().Fee(rctx, obj)
+		return obj.Fee, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10511,12 +10844,12 @@ func (ec *executionContext) _LiquidityProvisionSubmission_fee(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LiquidityProvisionSubmission_Sells(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvisionSubmission) (ret graphql.Marshaler) {
+func (ec *executionContext) _LiquidityProvision_sells(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10524,7 +10857,7 @@ func (ec *executionContext) _LiquidityProvisionSubmission_Sells(ctx context.Cont
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "LiquidityProvisionSubmission",
+		Object:   "LiquidityProvision",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -10540,14 +10873,17 @@ func (ec *executionContext) _LiquidityProvisionSubmission_Sells(ctx context.Cont
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*proto.LiquidityOrder)
+	res := resTmp.([]*proto.LiquidityOrderReference)
 	fc.Result = res
-	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx, field.Selections, res)
+	return ec.marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LiquidityProvisionSubmission_Buys(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvisionSubmission) (ret graphql.Marshaler) {
+func (ec *executionContext) _LiquidityProvision_buys(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10555,7 +10891,7 @@ func (ec *executionContext) _LiquidityProvisionSubmission_Buys(ctx context.Conte
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "LiquidityProvisionSubmission",
+		Object:   "LiquidityProvision",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -10571,11 +10907,82 @@ func (ec *executionContext) _LiquidityProvisionSubmission_Buys(ctx context.Conte
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*proto.LiquidityOrder)
+	res := resTmp.([]*proto.LiquidityOrderReference)
 	fc.Result = res
-	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx, field.Selections, res)
+	return ec.marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReferenceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvision_version(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityProvision_status(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidityProvision().Status(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(LiquidityProvisionStatus)
+	fc.Result = res
+	return ec.marshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityProvisionStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LogNormalModelParams_mu(ctx context.Context, field graphql.CollectedField, obj *LogNormalModelParams) (ret graphql.Marshaler) {
@@ -11687,6 +12094,44 @@ func (ec *executionContext) _Market_data(ctx context.Context, field graphql.Coll
 	res := resTmp.(*proto.MarketData)
 	fc.Result = res
 	return ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Market_liquidityProvisions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().LiquidityProvisions(rctx, obj, args["party"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
@@ -14327,6 +14772,44 @@ func (ec *executionContext) _Party_deposits(ctx context.Context, field graphql.C
 	res := resTmp.([]*proto.Deposit)
 	fc.Result = res
 	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐDepositᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Party_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Party",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Party_liquidityProvisions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Party().LiquidityProvisions(rctx, obj, args["market"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
@@ -23438,18 +23921,18 @@ func (ec *executionContext) _LiquidityOrder(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var liquidityProvisionSubmissionImplementors = []string{"LiquidityProvisionSubmission"}
+var liquidityOrderReferenceImplementors = []string{"LiquidityOrderReference"}
 
-func (ec *executionContext) _LiquidityProvisionSubmission(ctx context.Context, sel ast.SelectionSet, obj *proto.LiquidityProvisionSubmission) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProvisionSubmissionImplementors)
+func (ec *executionContext) _LiquidityOrderReference(ctx context.Context, sel ast.SelectionSet, obj *proto.LiquidityOrderReference) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityOrderReferenceImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("LiquidityProvisionSubmission")
-		case "id":
+			out.Values[i] = graphql.MarshalString("LiquidityOrderReference")
+		case "order":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -23457,14 +23940,97 @@ func (ec *executionContext) _LiquidityProvisionSubmission(ctx context.Context, s
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._LiquidityProvisionSubmission_id(ctx, field, obj)
+				res = ec._LiquidityOrderReference_order(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
-		case "marketID":
-			out.Values[i] = ec._LiquidityProvisionSubmission_marketID(ctx, field, obj)
+		case "liquidityOrder":
+			out.Values[i] = ec._LiquidityOrderReference_liquidityOrder(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var liquidityProvisionImplementors = []string{"LiquidityProvision"}
+
+func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.SelectionSet, obj *proto.LiquidityProvision) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProvisionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityProvision")
+		case "id":
+			out.Values[i] = ec._LiquidityProvision_id(ctx, field, obj)
+		case "party":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvision_party(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "createdAt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvision_createdAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "updatedAt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvision_updatedAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "market":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidityProvision_market(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "commitmentAmount":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -23473,13 +24039,33 @@ func (ec *executionContext) _LiquidityProvisionSubmission(ctx context.Context, s
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._LiquidityProvisionSubmission_commitmentAmount(ctx, field, obj)
+				res = ec._LiquidityProvision_commitmentAmount(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
 		case "fee":
+			out.Values[i] = ec._LiquidityProvision_fee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sells":
+			out.Values[i] = ec._LiquidityProvision_sells(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "buys":
+			out.Values[i] = ec._LiquidityProvision_buys(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "version":
+			out.Values[i] = ec._LiquidityProvision_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "status":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -23487,16 +24073,12 @@ func (ec *executionContext) _LiquidityProvisionSubmission(ctx context.Context, s
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._LiquidityProvisionSubmission_fee(ctx, field, obj)
+				res = ec._LiquidityProvision_status(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
-		case "Sells":
-			out.Values[i] = ec._LiquidityProvisionSubmission_Sells(ctx, field, obj)
-		case "Buys":
-			out.Values[i] = ec._LiquidityProvisionSubmission_Buys(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23901,6 +24483,17 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "liquidityProvisions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_liquidityProvisions(ctx, field, obj)
 				return res
 			})
 		default:
@@ -24921,6 +25514,17 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_deposits(ctx, field, obj)
+				return res
+			})
+		case "liquidityProvisions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Party_liquidityProvisions(ctx, field, obj)
 				return res
 			})
 		default:
@@ -27749,6 +28353,20 @@ func (ec *executionContext) marshalNLedgerEntry2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return ec._LedgerEntry(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLiquidityOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v proto.LiquidityOrder) graphql.Marshaler {
+	return ec._LiquidityOrder(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v *proto.LiquidityOrder) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LiquidityOrder(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNLiquidityOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx context.Context, v interface{}) (LiquidityOrderInput, error) {
 	return ec.unmarshalInputLiquidityOrderInput(ctx, v)
 }
@@ -27779,6 +28397,80 @@ func (ec *executionContext) unmarshalNLiquidityOrderInput2ᚖcodeᚗvegaprotocol
 	}
 	res, err := ec.unmarshalNLiquidityOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalNLiquidityOrderReference2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReference(ctx context.Context, sel ast.SelectionSet, v proto.LiquidityOrderReference) graphql.Marshaler {
+	return ec._LiquidityOrderReference(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityOrderReference) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReference(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNLiquidityOrderReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReference(ctx context.Context, sel ast.SelectionSet, v *proto.LiquidityOrderReference) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LiquidityOrderReference(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLiquidityProvision2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v proto.LiquidityProvision) graphql.Marshaler {
+	return ec._LiquidityProvision(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *proto.LiquidityProvision) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LiquidityProvision(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityProvisionStatus(ctx context.Context, v interface{}) (LiquidityProvisionStatus, error) {
+	var res LiquidityProvisionStatus
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityProvisionStatus(ctx context.Context, sel ast.SelectionSet, v LiquidityProvisionStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNLogNormalModelParams2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParams(ctx context.Context, sel ast.SelectionSet, v LogNormalModelParams) graphql.Marshaler {
@@ -29195,11 +29887,7 @@ func (ec *executionContext) marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
-func (ec *executionContext) marshalOLiquidityOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v proto.LiquidityOrder) graphql.Marshaler {
-	return ec._LiquidityOrder(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityOrder) graphql.Marshaler {
+func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvisionᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityProvision) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -29226,7 +29914,7 @@ func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx, sel, v[i])
+			ret[i] = ec.marshalNLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvision(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -29237,13 +29925,6 @@ func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗi
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) marshalOLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v *proto.LiquidityOrder) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._LiquidityOrder(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOLogNormalRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx context.Context, v interface{}) (LogNormalRiskModelInput, error) {

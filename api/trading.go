@@ -36,6 +36,7 @@ type TradeOrderService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
 type LiquidityService interface {
 	PrepareLiquidityProvisionSubmission(context.Context, *types.LiquidityProvisionSubmission) error
+	Get(market, party string) ([]types.LiquidityProvision, error)
 }
 
 // AccountService ...

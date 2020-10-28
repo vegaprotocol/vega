@@ -462,6 +462,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
 	l.netParamsService = netparams.NewService(l.ctx)
+	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
@@ -472,7 +473,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin, l.marketDepthSub, l.riskFactorSub)
+		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
+		l.liquidityService)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -560,7 +562,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
-	l.liquidityService = liquidity.NewService(l.Log, l.conf.Liquidity)
 
 	l.cfgwatchr.OnConfigUpdate(
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },

@@ -947,6 +947,14 @@ type Market {
 
   "marketData for the given market"
   data: MarketData!
+
+  "The list of the liquidity provision commitment for this market"
+  liquidityProvisions(
+    "An optional party id"
+    party: String
+  ): [LiquidityProvision!]
+
+
 }
 
 """
@@ -1087,6 +1095,12 @@ type Party {
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!]
+
+  "The list of the liquidity provision commitment from this party"
+  liquidityProvisions(
+    "An optional market id"
+    market: String
+  ): [LiquidityProvision!]
 }
 
 """
@@ -2273,20 +2287,47 @@ input LiquidityOrderInput {
   offset: Int!
 }
 
+"Status of a liquidity provision order"
+enum LiquidityProvisionStatus {
+  "An active liquidity provision"
+  Active
+  "A liquidity provision stopped by the network"
+  Stopped
+  "A Cancelled Liquidity provision"
+  Cancelled
+}
+
+type LiquidityOrderReference {
+  "The id of the pegged order generated to fullfill this commitment"
+  order: Order!
+  "The liquidity order"
+  liquidityOrder: LiquidityOrder!
+}
+
 "The command to be sent to the chain for a liquidity provision submission"
-type LiquidityProvisionSubmission {
+type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: String
+  "The Id of the party making this commitment"
+  party: Party!
+  "When the liquidity provision was initially created (formatted RFC3339)"
+  createdAt: String!
+  "When the liquidity provision was updated (formatted RFC3339)"
+  updatedAt: String!
   "Market identifier for the order"
-  marketID: String!
+  market: Market!
   "Specified as a unitless number that represents the amount of settlement asset of the market."
   commitmentAmount: Int!
   "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
-  fee: Float!
+  fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
-  Sells: [LiquidityOrder]
+  sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
-  Buys:  [LiquidityOrder]
+  buys:  [LiquidityOrderReference!]!
+  "The version of this LiquidityProvision"
+  version: String!
+  "The current status of this liquidity provision"
+  status: LiquidityProvisionStatus!
 }
 
 "A prepared LiquidityProvision command"
