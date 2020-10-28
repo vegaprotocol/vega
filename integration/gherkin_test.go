@@ -39,10 +39,15 @@ func f64val(rows *gherkin.TableRow, idx int) float64 {
 }
 
 func f64arr(rows *gherkin.TableRow, idx int, sep string) ([]float64, error) {
-	sArr := strings.Split(rows.Cells[idx].Value, sep)
+	rawString := rows.Cells[idx].Value
+	sArr := strings.Split(rawString, sep)
+	n := len(sArr)
+	if len(rawString) == 0 {
+		n = 0
+	}
 	f64arr := make([]float64, 0, len(sArr))
-	for _, s := range sArr {
-		f64, err := strconv.ParseFloat(s, 10)
+	for i := 0; i < n; i++ {
+		f64, err := strconv.ParseFloat(sArr[i], 10)
 		if err != nil {
 			return nil, err
 		}
@@ -52,10 +57,15 @@ func f64arr(rows *gherkin.TableRow, idx int, sep string) ([]float64, error) {
 }
 
 func i64arr(rows *gherkin.TableRow, idx int, sep string) ([]int64, error) {
-	sArr := strings.Split(rows.Cells[idx].Value, sep)
-	i64arr := make([]int64, 0, len(sArr))
-	for _, s := range sArr {
-		i64, err := strconv.ParseInt(s, 10, 0)
+	rawString := rows.Cells[idx].Value
+	sArr := strings.Split(rawString, sep)
+	n := len(sArr)
+	if len(rawString) == 0 {
+		n = 0
+	}
+	i64arr := make([]int64, 0, n)
+	for i := 0; i < n; i++ {
+		i64, err := strconv.ParseInt(sArr[i], 10, 0)
 		if err != nil {
 			return nil, err
 		}
