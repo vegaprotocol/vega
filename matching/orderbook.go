@@ -510,6 +510,9 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		return nil, err
 	}
 
+	// we remove the order from the expiring list as well.
+	b.removePendingGttOrder(*order)
+
 	order, err := b.DeleteOrder(order)
 	if err != nil {
 		return nil, err
