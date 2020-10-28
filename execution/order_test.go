@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOrderBufferOutputCount(t *testing.T) {
@@ -609,7 +610,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders sell side validation", testPeggedOrderSells)
 }
 
-func TestPeggedOrderAddWIthNoMarketPrice(t *testing.T) {
+func TestPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
@@ -628,6 +629,33 @@ func TestPeggedOrderAddWIthNoMarketPrice(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, tm.market.GetParkedOrderCount(), 1)
 	assert.Equal(t, tm.market.GetPeggedOrderCount(), 1)
+}
+
+func TestPeggedOrderAdd(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 102)
+
+	// Place a valid pegged order which will be parked
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, confirmation.Order.Status)
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+
+	assert.Equal(t, uint64(98), order.Price)
 }
 
 func TestPeggedOrderParkWhenInAuction(t *testing.T) {
