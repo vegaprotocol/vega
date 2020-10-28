@@ -32,7 +32,7 @@ type Svc struct {
 	ch         chan types.LiquidityProvision
 }
 
-func NewService(log *logging.Logger, config Config, ctx context.Context) *Svc {
+func NewService(ctx context.Context, log *logging.Logger, config Config) *Svc {
 	log = log.Named(namedLogger)
 	svc := &Svc{
 		Base:       subscribers.NewBase(ctx, 10, true),

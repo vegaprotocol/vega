@@ -462,7 +462,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
 	l.netParamsService = netparams.NewService(l.ctx)
-	l.liquidityService = liquidity.NewService(l.Log, l.conf.Liquidity, l.ctx)
+	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
