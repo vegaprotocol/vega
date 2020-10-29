@@ -140,7 +140,7 @@ type Market struct {
 
 	parties map[string]struct{}
 
-	pMonitor PriceMonitor // @TODO initialise and assign
+	pMonitor PriceMonitor
 
 	as *monitor.AuctionState // @TODO this should be an interface
 
