@@ -340,6 +340,8 @@ func (m *Market) GetMarketData() types.MarketData {
 	if bestBidPrice > 0 && bestOfferPrice > 0 {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
+	rf, _ := m.getRiskFactors()
+	targetStake := m.tsCalculator.GetTargetStake(m.currentTime, *rf)
 
 	var staticMidPrice uint64
 	if bestStaticBidPrice > 0 && bestStaticOfferPrice > 0 {
