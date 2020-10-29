@@ -1077,6 +1077,13 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 			// set the `updatedAt` value as these orders have changed
 			order.UpdatedAt = m.currentTime.UnixNano()
 			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			// If the order is a pegged order and it complete we must remove it from the pegged lists
+			if order.PeggedOrder != nil {
+				if order.Remaining == 0 || order.Status != types.Order_STATUS_ACTIVE {
+					m.removePeggedOrder(order)
+				}
+			}
 		}
 	}
 
@@ -2282,6 +2289,30 @@ func (m *Market) GetPeggedOrderCount() int {
 // GetParkedOrderCount returns hte number of parked orders in the market
 func (m *Market) GetParkedOrderCount() int {
 	return len(m.parkedOrders)
+}
+
+// removePeggedOrder looks through the pegged and parked list
+// and removes the matching order if found
+func (m *Market) removePeggedOrder(order *types.Order) {
+	for i, po := range m.peggedOrders {
+		if po.Id == order.Id {
+			// Remove item from slice
+			copy(m.peggedOrders[i:], m.peggedOrders[i+1:])
+			m.peggedOrders[len(m.peggedOrders)-1] = nil
+			m.peggedOrders = m.peggedOrders[:len(m.peggedOrders)-1]
+			break
+		}
+	}
+
+	for i, po := range m.parkedOrders {
+		if po.Id == order.Id {
+			// Remove item from slice
+			copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
+			m.parkedOrders[len(m.parkedOrders)-1] = nil
+			m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
+			break
+		}
+	}
 }
 
 // create an actual risk model, and calculate the risk factors

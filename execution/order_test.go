@@ -621,10 +621,38 @@ func TestPeggedOrders(t *testing.T) {
 	//	t.Run("pegged orders check that a sell order pegged to BEST MID is repriced")
 
 	// Tests for Pete to work on
-	//	t.Run("pegged order check that a filled pegged order is handled correctly")
+	t.Run("pegged order check that a filled pegged order is handled correctly", testPeggedOrderFilledOrder)
 	//	t.Run("parked orders during normal trading are unparked when possible")
 	//	t.Run("pegged orders are handled correctly when moving into auction")
 	//	t.Run("pegged orders are handled correctly when moving out of auction")
+}
+
+func testPeggedOrderFilledOrder(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "party1")
+	addAccount(tm, "party2")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Place 2 orders to create valid reference prices
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+
+	// Place a valid pegged order which will be added to the order book
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	_, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+
+	// Place a sell MARKET order to fill the buy orders
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party2", 2, 0)
+
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 }
 
 func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
