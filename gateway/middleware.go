@@ -1,12 +1,12 @@
 package gateway
 
 import (
-	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
+	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 )
@@ -15,30 +15,13 @@ import (
 // address of the caller
 func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		found := false
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		ip, err := vhttp.RemoteAddr(r)
 		if err != nil {
-			log.Warn("Remote address is not splittable in middleware",
-				logging.String("remote-addr", r.RemoteAddr))
+			log.Debug("Failed to get remote address in middleware",
+				logging.String("remote-addr", r.RemoteAddr),
+				logging.String("x-forwarded-for", r.Header.Get("X-Forwarded-For")),
+			)
 		} else {
-			userIP := net.ParseIP(ip)
-			if userIP == nil {
-				log.Warn("Remote address is not IP:port format in middleware",
-					logging.String("remote-addr", r.RemoteAddr))
-			} else {
-				found = true
-
-				// Only defined when site is accessed via non-anonymous proxy
-				// and takes precedence over RemoteAddr
-				forward := r.Header.Get("X-Forwarded-For")
-				if forward != "" {
-					ip = forward
-				}
-			}
-		}
-
-		if found {
 			r = r.WithContext(contextutil.WithRemoteIPAddr(r.Context(), ip))
 		}
 		next.ServeHTTP(w, r)
