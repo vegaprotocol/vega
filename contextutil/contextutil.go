@@ -8,9 +8,7 @@ import (
 )
 
 type remoteIPAddrKey int
-
 type traceIDT int
-
 type blockHeight int
 
 var (

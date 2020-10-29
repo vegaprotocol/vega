@@ -70,7 +70,7 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 		rawTx.From = &types.Transaction_PubKey{
 			PubKey: key,
 		}
-		tx, err := processor.NewTx(rawTx)
+		tx, err := processor.NewTx(rawTx, []byte{})
 		require.NoError(t, err)
 
 		require.NoError(t, tx.Validate())
@@ -107,7 +107,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 		rawTx.From = &types.Transaction_PubKey{
 			PubKey: key,
 		}
-		tx, err := processor.NewTx(rawTx)
+		tx, err := processor.NewTx(rawTx, []byte{})
 		require.NoError(t, err)
 
 		require.Error(t, tx.Validate())
@@ -125,7 +125,7 @@ func (s *TxTestSuite) testValidateSignedInvalidCommand(t *testing.T) {
 	}
 
 	rawTx := txEncode(t, cmd, prop)
-	tx, err := processor.NewTx(rawTx)
+	tx, err := processor.NewTx(rawTx, []byte{})
 	require.NoError(t, err)
 
 	assert.Error(t, tx.Validate())
@@ -137,6 +137,7 @@ func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
 			&types.Transaction{
 				InputData: []byte("shorter-than-37-bytes"),
 			},
+			[]byte{},
 		)
 		require.Error(t, err)
 	})
@@ -151,6 +152,7 @@ func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
 					[]byte("foobar"),
 				),
 			},
+			[]byte{},
 		)
 		require.NoError(t, err)
 		require.Error(t, tx.Validate())

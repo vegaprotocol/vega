@@ -51,8 +51,6 @@ type Service struct {
 	refs map[string]string
 
 	nw NodeWallet
-
-	idgen *IDgenerator
 }
 
 func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Service, error) {
@@ -66,7 +64,6 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 		pendingAssets: map[string]*Asset{},
 		refs:          map[string]string{},
 		nw:            nw,
-		idgen:         NewIDGen(),
 	}
 	ts.NotifyOnTick(s.onTick)
 	return s, nil
@@ -86,10 +83,7 @@ func (a *Service) ReloadConf(cfg Config) {
 	a.cfg = cfg
 }
 
-func (a *Service) onTick(_ context.Context, t time.Time) {
-	// update block time on id generator
-	a.idgen.NewBatch()
-}
+func (a *Service) onTick(_ context.Context, t time.Time) {}
 
 // Enable move the state of an from pending the list of valid and accepted assets
 func (a *Service) Enable(assetID string) error {
@@ -114,8 +108,6 @@ func (a *Service) IsEnabled(assetID string) bool {
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
 func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
-	// make a new asset id
-	// assetID := s.idgen.NewID()
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:

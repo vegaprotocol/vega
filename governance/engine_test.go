@@ -59,7 +59,7 @@ func testSubmitValidProposal(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()))
+	err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()), "proposal-id")
 	assert.NoError(t, err)
 }
 
@@ -75,37 +75,37 @@ func testProposalState(t *testing.T) {
 
 	unspecified := eng.newOpenProposal(party.Id, time.Now())
 	unspecified.State = types.Proposal_STATE_UNSPECIFIED
-	err := eng.SubmitProposal(context.Background(), unspecified)
+	err := eng.SubmitProposal(context.Background(), unspecified, "proposal-id1")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
 
 	failed := eng.newOpenProposal(party.Id, time.Now())
 	failed.State = types.Proposal_STATE_FAILED
-	err = eng.SubmitProposal(context.Background(), failed)
+	err = eng.SubmitProposal(context.Background(), failed, "proposal-id2")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
 
 	passed := eng.newOpenProposal(party.Id, time.Now())
 	passed.State = types.Proposal_STATE_PASSED
-	err = eng.SubmitProposal(context.Background(), passed)
+	err = eng.SubmitProposal(context.Background(), passed, "proposal-id3")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
 
 	rejected := eng.newOpenProposal(party.Id, time.Now())
 	rejected.State = types.Proposal_STATE_REJECTED
-	err = eng.SubmitProposal(context.Background(), rejected)
+	err = eng.SubmitProposal(context.Background(), rejected, "proposal-id4")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
 
 	declined := eng.newOpenProposal(party.Id, time.Now())
 	declined.State = types.Proposal_STATE_DECLINED
-	err = eng.SubmitProposal(context.Background(), declined)
+	err = eng.SubmitProposal(context.Background(), declined, "proposal-id5")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
 
 	enacted := eng.newOpenProposal(party.Id, time.Now())
 	enacted.State = types.Proposal_STATE_ENACTED
-	err = eng.SubmitProposal(context.Background(), enacted)
+	err = eng.SubmitProposal(context.Background(), enacted, "proposal-id6")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
 
@@ -117,7 +117,7 @@ func testProposalState(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()))
+	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()), "proposal-id7")
 	assert.NoError(t, err)
 }
 
@@ -141,18 +141,18 @@ func testProposalDuplicate(t *testing.T) {
 	})
 
 	original := eng.newOpenProposal(party.Id, time.Now())
-	err := eng.SubmitProposal(context.Background(), original)
+	err := eng.SubmitProposal(context.Background(), original, "proposal-id")
 	assert.NoError(t, err)
 
 	aCopy := original
 	aCopy.Reference = "this-is-a-copy"
-	err = eng.SubmitProposal(context.Background(), aCopy)
+	err = eng.SubmitProposal(context.Background(), aCopy, "proposal-id")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error())
 
 	aCopy = original
 	aCopy.State = types.Proposal_STATE_PASSED
-	err = eng.SubmitProposal(context.Background(), aCopy)
+	err = eng.SubmitProposal(context.Background(), aCopy, "proposal-id")
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error(), "reject atempt to change state indirectly")
 }
@@ -175,7 +175,7 @@ func testProposerStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, noAccountPartyID, p.PartyID)
 	})
-	err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(noAccountPartyID, time.Now()))
+	err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(noAccountPartyID, time.Now()), "proposal-id")
 	assert.Error(t, err)
 	assert.EqualError(t, err, notFoundError.Error())
 
@@ -188,7 +188,7 @@ func testProposerStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, emptyParty.Id, p.PartyID)
 	})
-	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(emptyParty.Id, time.Now()))
+	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(emptyParty.Id, time.Now()), "proposal-id1")
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalInsufficientTokens.Error())
 
@@ -202,7 +202,7 @@ func testProposerStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, poshParty.Id, p.PartyID)
 	})
-	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(poshParty.Id, time.Now()))
+	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(poshParty.Id, time.Now()), "proposal-id2")
 	assert.NoError(t, err)
 }
 
@@ -225,14 +225,14 @@ func testClosingTime(t *testing.T) {
 	now := time.Now()
 	tooEarly := eng.newOpenProposal(party.Id, now)
 	tooEarly.Terms.ClosingTimestamp = now.Unix()
-	err := eng.SubmitProposal(context.Background(), tooEarly)
+	err := eng.SubmitProposal(context.Background(), tooEarly, "proposal-id")
 	fmt.Printf("ERROR: %v\n", err)
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalCloseTimeTooSoon.Error())
 
 	tooLate := eng.newOpenProposal(party.Id, now)
 	tooLate.Terms.ClosingTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
-	err = eng.SubmitProposal(context.Background(), tooLate)
+	err = eng.SubmitProposal(context.Background(), tooLate, "proposal-id2")
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalCloseTimeTooLate.Error())
 
@@ -244,7 +244,7 @@ func testClosingTime(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, now))
+	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, now), "proposal-id3")
 	assert.NoError(t, err)
 }
 
@@ -268,13 +268,13 @@ func testEnactmentTime(t *testing.T) {
 	beforeClosingTime := eng.newOpenProposal(party.Id, now)
 	beforeClosingTime.Terms.EnactmentTimestamp = now.Unix()
 	assert.Less(t, beforeClosingTime.Terms.EnactmentTimestamp, beforeClosingTime.Terms.ClosingTimestamp)
-	err := eng.SubmitProposal(context.Background(), beforeClosingTime)
+	err := eng.SubmitProposal(context.Background(), beforeClosingTime, "proposal-id")
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalEnactTimeTooSoon.Error())
 
 	tooLate := eng.newOpenProposal(party.Id, now)
 	tooLate.Terms.EnactmentTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
-	err = eng.SubmitProposal(context.Background(), tooLate)
+	err = eng.SubmitProposal(context.Background(), tooLate, "proposal-id1")
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalEnactTimeTooLate.Error())
 
@@ -288,7 +288,8 @@ func testEnactmentTime(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyID)
 	})
-	err = eng.SubmitProposal(context.Background(), atClosingTime)
+	err = eng.SubmitProposal(context.Background(), atClosingTime, "proposal-id2")
+	assert.NoError(t, err)
 }
 
 func testValidateTimestamps(t *testing.T) {
@@ -306,7 +307,7 @@ func testValidateTimestamps(t *testing.T) {
 	now := time.Now()
 	prop := eng.newOpenProposal(party.Id, now)
 	prop.Terms.ValidationTimestamp = prop.Terms.ClosingTimestamp + 10
-	err := eng.SubmitProposal(context.Background(), prop)
+	err := eng.SubmitProposal(context.Background(), prop, "proposal-id")
 	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
 }
 
@@ -347,7 +348,7 @@ func testVoteProposalID(t *testing.T) {
 		assert.Equal(t, emptyProposer.Id, p.PartyID)
 	})
 	rejectedProposal := eng.newOpenProposal(emptyProposer.Id, time.Now())
-	err = eng.SubmitProposal(context.Background(), rejectedProposal)
+	err = eng.SubmitProposal(context.Background(), rejectedProposal, "proposal-id")
 	assert.Error(t, err)
 
 	err = eng.AddVote(context.Background(), types.Vote{
@@ -366,21 +367,22 @@ func testVoteProposalID(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, goodProposer.Id, p.PartyID)
 	})
+
 	openProposal := eng.newOpenProposal(goodProposer.Id, time.Now())
-	err = eng.SubmitProposal(context.Background(), openProposal)
+	err = eng.SubmitProposal(context.Background(), openProposal, "proposal-id1")
 	assert.NoError(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		ve, ok := e.(*events.Vote)
 		assert.True(t, ok)
 		vote := ve.Vote()
-		assert.Equal(t, openProposal.ID, vote.ProposalID)
+		assert.Equal(t, "proposal-id1", vote.ProposalID)
 		assert.Equal(t, voter.Id, vote.PartyID)
 	})
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter.Id,
 		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalID: openProposal.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.NoError(t, err)
 }
@@ -402,7 +404,7 @@ func testVoterStake(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, proposer.Id, p.PartyID)
 	})
-	err := eng.SubmitProposal(context.Background(), openProposal)
+	err := eng.SubmitProposal(context.Background(), openProposal, "proposal-id1")
 	assert.NoError(t, err)
 
 	voterNoAccount := "voter-no-account"
@@ -411,7 +413,7 @@ func testVoterStake(t *testing.T) {
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voterNoAccount,
 		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalID: openProposal.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.Error(t, err)
 	assert.EqualError(t, err, notFoundError.Error())
@@ -420,7 +422,7 @@ func testVoterStake(t *testing.T) {
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    emptyAccount.Id,
 		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalID: openProposal.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrVoterInsufficientTokens.Error())
@@ -430,13 +432,13 @@ func testVoterStake(t *testing.T) {
 		ve, ok := e.(*events.Vote)
 		assert.True(t, ok)
 		vote := ve.Vote()
-		assert.Equal(t, openProposal.ID, vote.ProposalID)
+		assert.Equal(t, "proposal-id1", vote.ProposalID)
 		assert.Equal(t, validAccount.Id, vote.PartyID)
 	})
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    validAccount.Id,
 		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalID: openProposal.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.NoError(t, err)
 }
@@ -457,9 +459,9 @@ func testVotingDeclinedProposal(t *testing.T) {
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, proposer.Id, p.PartyID)
-		assert.Equal(t, declined.ID, p.ID)
+		assert.Equal(t, "proposal-id1", p.ID)
 	})
-	err := eng.SubmitProposal(context.Background(), declined)
+	err := eng.SubmitProposal(context.Background(), declined, "proposal-id1")
 	assert.NoError(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -467,7 +469,7 @@ func testVotingDeclinedProposal(t *testing.T) {
 		assert.True(t, ok)
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
-		assert.Equal(t, declined.ID, p.ID)
+		assert.Equal(t, "proposal-id1", p.ID)
 	})
 	afterClose := time.Unix(declined.Terms.ClosingTimestamp, 0).Add(time.Hour)
 	accepted := eng.OnChainTimeUpdate(context.Background(), afterClose)
@@ -477,7 +479,7 @@ func testVotingDeclinedProposal(t *testing.T) {
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter.Id,
 		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalID: declined.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
@@ -499,9 +501,9 @@ func testVotingPassedProposal(t *testing.T) {
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, proposer.Id, p.PartyID)
-		assert.Equal(t, passed.ID, p.ID)
+		assert.Equal(t, "proposal-id1", p.ID)
 	})
-	err := eng.SubmitProposal(context.Background(), passed)
+	err := eng.SubmitProposal(context.Background(), passed, "proposal-id1")
 	assert.NoError(t, err)
 
 	voter1 := eng.makeValidPartyTimes("voter-1", 7, 2)
@@ -510,13 +512,13 @@ func testVotingPassedProposal(t *testing.T) {
 		ve, ok := e.(*events.Vote)
 		assert.True(t, ok)
 		vote := ve.Vote()
-		assert.Equal(t, passed.ID, vote.ProposalID)
+		assert.Equal(t, "proposal-id1", vote.ProposalID)
 		assert.Equal(t, voter1.Id, vote.PartyID)
 	})
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter1.Id,
 		Value:      types.Vote_VALUE_YES, // matters!
-		ProposalID: passed.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.NoError(t, err)
 
@@ -526,7 +528,7 @@ func testVotingPassedProposal(t *testing.T) {
 		assert.True(t, ok)
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
-		assert.Equal(t, passed.ID, p.ID)
+		assert.Equal(t, "proposal-id1", p.ID)
 	})
 	eng.OnChainTimeUpdate(context.Background(), afterClosing)
 
@@ -534,7 +536,7 @@ func testVotingPassedProposal(t *testing.T) {
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter2.Id,
 		Value:      types.Vote_VALUE_NO, // does not matter
-		ProposalID: passed.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalPassed.Error())
@@ -543,12 +545,12 @@ func testVotingPassedProposal(t *testing.T) {
 	// no calculations, no state change, simply removed from governance engine
 	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, 1)
-	assert.Equal(t, passed.ID, tobeEnacted[0].Proposal().ID)
+	assert.Equal(t, "proposal-id1", tobeEnacted[0].Proposal().ID)
 
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter2.Id,
 		Value:      types.Vote_VALUE_NO, // does not matter
-		ProposalID: passed.ID,
+		ProposalID: "proposal-id1",
 	})
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
@@ -575,7 +577,7 @@ func testProposalDeclined(t *testing.T) {
 		assert.Equal(t, proposer.Id, p.PartyID)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	err := eng.SubmitProposal(context.Background(), proposal)
+	err := eng.SubmitProposal(context.Background(), proposal, proposal.ID)
 	assert.NoError(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
@@ -634,7 +636,7 @@ func testProposalPassed(t *testing.T) {
 		assert.Equal(t, proposerVoter.Id, p.PartyID)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	err := eng.SubmitProposal(context.Background(), proposal)
+	err := eng.SubmitProposal(context.Background(), proposal, proposal.ID)
 	assert.NoError(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -663,7 +665,7 @@ func testProposalPassed(t *testing.T) {
 
 	modified := proposal
 	modified.State = types.Proposal_STATE_DECLINED
-	err = eng.SubmitProposal(context.Background(), proposal)
+	err = eng.SubmitProposal(context.Background(), proposal, proposal.ID)
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalIsDuplicate.Error())
 
@@ -716,12 +718,12 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		})
 		toBePassed := eng.newOpenProposal(partyA, now)
-		err := eng.SubmitProposal(context.Background(), toBePassed)
+		err := eng.SubmitProposal(context.Background(), toBePassed, toBePassed.ID)
 		assert.NoError(t, err)
 		passed[toBePassed.ID] = &toBePassed
 
 		toBeDeclined := eng.newOpenProposal(partyB, now)
-		err = eng.SubmitProposal(context.Background(), toBeDeclined)
+		err = eng.SubmitProposal(context.Background(), toBeDeclined, toBeDeclined.ID)
 		assert.NoError(t, err)
 		declined[toBeDeclined.ID] = &toBeDeclined
 

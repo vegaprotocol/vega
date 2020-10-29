@@ -16,7 +16,7 @@ var (
 	ErrChainEventAssetListERC20WithoutEnoughSignature = errors.New("chain event for erc20 asset list received with missing node signatures")
 )
 
-func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte) error {
+func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte, id string) error {
 	// first verify the event was emited by a validator
 	if !app.top.Exists(pubkey) {
 		return ErrChainEventFromNonValidator
@@ -33,9 +33,9 @@ func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pub
 	// figure out what to do with it.
 	switch ce.Event.(type) {
 	case *types.ChainEvent_Builtin:
-		return app.processChainEventBuiltinAsset(ctx, ce)
+		return app.processChainEventBuiltinAsset(ctx, ce, id)
 	case *types.ChainEvent_Erc20:
-		return app.processChainEventERC20(ctx, ce)
+		return app.processChainEventERC20(ctx, ce, id)
 	case *types.ChainEvent_Btc:
 		return errors.New("BTC Event not implemented")
 	case *types.ChainEvent_Validator:
@@ -45,7 +45,7 @@ func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pub
 	}
 }
 
-func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent) error {
+func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent, id string) error {
 	evt := ce.GetBuiltin()
 	if evt == nil {
 		return ErrNotABuiltinAssetEvent
@@ -56,7 +56,7 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 		if err := app.checkVegaAssetID(act.Deposit, "BuiltinAsset.Deposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositBuiltinAsset(ctx, act.Deposit, ce.Nonce)
+		return app.banking.DepositBuiltinAsset(ctx, act.Deposit, id, ce.Nonce)
 	case *types.BuiltinAssetEvent_Withdrawal:
 		if err := app.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
 			return err
@@ -67,7 +67,7 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 	}
 }
 
-func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent) error {
+func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent, id string) error {
 	evt := ce.GetErc20()
 	if evt == nil {
 		return ErrNotAnERC20Event
@@ -94,7 +94,7 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositERC20(ctx, act.Deposit, evt.Block, evt.Index)
+		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index)
 	case *types.ERC20Event_Withdrawal:
 		act.Withdrawal.VegaAssetID = strings.TrimPrefix(act.Withdrawal.VegaAssetID, "0x")
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
