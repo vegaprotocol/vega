@@ -3055,27 +3055,6 @@
       },
       "description": "Ethereum event (for oracles)."
     },
-    "vegaExternalRiskModel": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Name."
-        },
-        "socket": {
-          "type": "string",
-          "description": "Local machine socket to connect to."
-        },
-        "config": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "description": "Collection of configuration items."
-        }
-      },
-      "description": "Risk model for external modelling.\nProvided by external service via a Unix socket."
-    },
     "vegaFee": {
       "type": "object",
       "properties": {
@@ -4818,10 +4797,6 @@
         "logNormalRiskModel": {
           "$ref": "#/definitions/vegaLogNormalRiskModel",
           "description": "Log normal."
-        },
-        "externalRiskModel": {
-          "$ref": "#/definitions/vegaExternalRiskModel",
-          "description": "External socket."
         },
         "simpleRiskModel": {
           "$ref": "#/definitions/vegaSimpleRiskModel",

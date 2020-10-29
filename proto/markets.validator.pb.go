@@ -91,10 +91,6 @@ func (this *SimpleModelParams) Validate() error {
 	}
 	return nil
 }
-func (this *ExternalRiskModel) Validate() error {
-	// Validation of proto3 map<> fields is unsupported.
-	return nil
-}
 func (this *ScalingFactors) Validate() error {
 	return nil
 }
@@ -121,13 +117,6 @@ func (this *TradableInstrument) Validate() error {
 		if oneOfNester.LogNormalRiskModel != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LogNormalRiskModel); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("LogNormalRiskModel", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetRiskModel().(*TradableInstrument_ExternalRiskModel); ok {
-		if oneOfNester.ExternalRiskModel != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.ExternalRiskModel); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("ExternalRiskModel", err)
 			}
 		}
 	}
