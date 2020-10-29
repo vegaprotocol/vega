@@ -925,6 +925,6 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.Equal(t,
-		types.Order_STATUS_PARTIALLY_FILLED.String(),
+		types.Order_STATUS_PARKED.String(),
 		confirmation.Order.Status.String(), "When pegged price below zero (MIDPRICE - OFFSET) <= 0")
 }
