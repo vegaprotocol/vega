@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
+	liqTarget "code.vegaprotocol.io/vega/liquidity/target"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -259,6 +260,8 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
+	tsCalculator := liqTarget.NewEngine(time.Hour, 10)
+
 	market := &Market{
 		log:                  log,
 		idgen:                idgen,
@@ -332,8 +335,13 @@ func (m *Market) GetMarketData() types.MarketData {
 	if bestBidPrice > 0 && bestOfferPrice > 0 {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
-	rf, _ := m.getRiskFactors()
-	targetStake := m.tsCalculator.GetTargetStake(m.currentTime, *rf)
+	rf, err := m.getRiskFactors()
+	var targetStake float64
+	if err != nil {
+		m.log.Error("unable to get risk factors, can't calculate target stake")
+	} else {
+		targetStake = m.tsCalculator.GetTargetStake(m.currentTime, *rf)
+	}
 
 	return types.MarketData{
 		Market:           m.GetID(),
@@ -1152,6 +1160,8 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
+			// Record open inteterest change
+			m.tsCalculator.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
 		}
