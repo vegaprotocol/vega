@@ -24,7 +24,7 @@ const (
 
 type Config struct {
 	Level      encoding.LogLevel     `long:"level" description:"Log level"`
-	RateLimit  vhttp.RateLimitConfig `long:"rateLimit" description:" "`
+	RateLimit  vhttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
 	WalletPath string                `long:"wallet-path" description:" "`
 	Port       int                   `long:"port" description:"Listen for connections on port <port>"`
 	IP         string                `long:"ip" description:"Bind to address <ip>"`
@@ -42,7 +42,7 @@ func NewDefaultConfig(defaultDirPath string) Config {
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		RateLimit: vhttp.RateLimitConfig{
 			CoolDown:  encoding.Duration{Duration: defaultCoolDown},
-			AllowList: []string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
+			AllowList: []string{"10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
 		},
 		WalletPath: filepath.Join(defaultDirPath, defaultWallet),
 		Node: NodeConfig{

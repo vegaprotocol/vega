@@ -39,7 +39,7 @@ type Config struct {
 	IP          string                `long:"ip"`
 	Node        NodeConfig            `group:"Node" namespace:"node"`
 	RsaKey      string                `long:"rsa-key"`
-	RateLimit   vhttp.RateLimitConfig `long:"rateLimit"`
+	RateLimit   vhttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
 }
 
 type NodeConfig struct {
@@ -64,7 +64,7 @@ func NewDefaultConfig() Config {
 		RsaKey: rsaKeyPath,
 		RateLimit: vhttp.RateLimitConfig{
 			CoolDown:  encoding.Duration{Duration: defaultCoolDown},
-			AllowList: []string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
+			AllowList: []string{"10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
 		},
 	}
 }
