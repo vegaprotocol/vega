@@ -84,6 +84,12 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
 }
 
+// TargetStakeCalculator interface
+type TargetStakeCalculator interface {
+	RecordOpenInterest(oi uint64, now time.Time) error
+	GetTargetStake(now time.Time, rf types.RiskFactor) float64
+}
+
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
 // keep the interface for documentation purposes
 type AuctionState interface {
@@ -141,6 +147,8 @@ type Market struct {
 	parties map[string]struct{}
 
 	pMonitor PriceMonitor
+
+	tsCalculator TargetStakeCalculator
 
 	as *monitor.AuctionState // @TODO this should be an interface
 
@@ -324,6 +332,8 @@ func (m *Market) GetMarketData() types.MarketData {
 	if bestBidPrice > 0 && bestOfferPrice > 0 {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
+	rf, _ := m.getRiskFactors()
+	targetStake := m.tsCalculator.GetTargetStake(m.currentTime, *rf)
 
 	return types.MarketData{
 		Market:           m.GetID(),
@@ -342,6 +352,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketState:      m.as.Mode(),
 		Trigger:          m.as.Trigger(),
 		// FIXME(WITOLD): uncomment set real values here
+		TargetStake: fmt.Sprintf("%f", targetStake),
 		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
 
