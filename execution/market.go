@@ -262,6 +262,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStake)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
+	tsCalculator := liqTarget.NewEngine(time.Hour, 10)
 
 	market := &Market{
 		log:                  log,
@@ -340,8 +341,13 @@ func (m *Market) GetMarketData() types.MarketData {
 	if bestBidPrice > 0 && bestOfferPrice > 0 {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
-	rf, _ := m.getRiskFactors()
-	targetStake := m.tsCalculator.GetTargetStake(m.currentTime, *rf)
+	rf, err := m.getRiskFactors()
+	var targetStake float64
+	if err != nil {
+		m.log.Error("unable to get risk factors, can't calculate target stake")
+	} else {
+		targetStake = m.tsCalculator.GetTargetStake(m.currentTime, *rf)
+	}
 
 	var staticMidPrice uint64
 	if bestStaticBidPrice > 0 && bestStaticOfferPrice > 0 {
