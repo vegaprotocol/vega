@@ -2263,6 +2263,8 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		// If we have a move update any pegged orders that reference it
 		if changes != 0 {
 			repricedCount = m.repriceAllPeggedOrders(ctx, changes)
+		} else {
+			repricedCount = 0
 		}
 
 		// Update the last price values

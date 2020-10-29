@@ -609,9 +609,13 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders buy side validation", testPeggedOrderBuys)
 	t.Run("pegged orders sell side validation", testPeggedOrderSells)
 	t.Run("pegged orders are parked when price below 0", testPeggedOrderParkWhenPriceBelowZero)
+	t.Run("pegged order when there is no market prices", testPeggedOrderAddWithNoMarketPrice)
+	t.Run("pegged order add to order book", testPeggedOrderAdd)
+	t.Run("pegged order test when placing a pegged order forces a reprice", testPeggedOrderWithReprice)
+	t.Run("pegged order entry during an auction", testPeggedOrderParkWhenInAuction)
 }
 
-func TestPeggedOrderAddWithNoMarketPrice(t *testing.T) {
+func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
@@ -632,7 +636,7 @@ func TestPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
-func TestPeggedOrderAdd(t *testing.T) {
+func testPeggedOrderAdd(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
@@ -659,7 +663,7 @@ func TestPeggedOrderAdd(t *testing.T) {
 	assert.Equal(t, uint64(98), order.Price)
 }
 
-func TestPeggedOrderWithReprice(t *testing.T) {
+func testPeggedOrderWithReprice(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
@@ -688,7 +692,7 @@ func TestPeggedOrderWithReprice(t *testing.T) {
 	// TODO need to find a way to validate details of the amended order
 }
 
-func TestPeggedOrderParkWhenInAuction(t *testing.T) {
+func testPeggedOrderParkWhenInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	auctionClose := now.Add(101 * time.Second)
 	closeSec := int64(10000000000)
