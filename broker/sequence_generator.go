@@ -6,12 +6,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 )
 
-type SeqEvent interface {
-	events.Event
-	SetSequenceID(s uint64)
-	Sequence() uint64 // this isn't used apart from in tests
-}
-
 type gen struct {
 	mu       sync.Mutex
 	blockSeq map[string]uint64
@@ -21,7 +15,7 @@ type gen struct {
 func newGen() *gen {
 	return &gen{
 		blockSeq: map[string]uint64{},
-		blocks:   []string{},
+		blocks:   make([]string, 0, 4),
 	}
 }
 
@@ -43,17 +37,15 @@ func (g *gen) setSequence(evts ...events.Event) []events.Event {
 		// if we're adding a new hash, check if we're up to 3, and remove it if needed
 		defer g.cleanID()
 	}
-	// set sequence ID to the next sequence ID available
+	// so current == 1, sending 3 events -> map == 4
+	// sequences set are 1 + 0, 1 + 1, and 1 + 2 (so 1 through 3)
 	g.blockSeq[hash] += ln
 	g.mu.Unlock()
+	// set sequence ID to the next sequence ID available
 	ret := make([]events.Event, 0, len(evts))
 	// create slice of ids
-	for i := range evts {
-		e, ok := evts[i].(SeqEvent)
-		if !ok {
-			continue
-		}
-		e.SetSequenceID(uint64(i) + cur)
+	for i, e := range evts {
+		e.SetSequenceID(cur + uint64(i))
 		ret = append(ret, e)
 	}
 	return ret
@@ -61,7 +53,7 @@ func (g *gen) setSequence(evts ...events.Event) []events.Event {
 
 func (g *gen) cleanID() {
 	g.mu.Lock()
-	if len(g.blocks) == 3 {
+	if len(g.blocks) == 4 {
 		delete(g.blockSeq, g.blocks[0])
 		g.blocks = g.blocks[1:]
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -739,6 +740,24 @@ func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
 	return nil
 }
 
+func theMarketStateIs(market, marketStateStr string) error {
+	ms, ok := proto.MarketState_value[marketStateStr]
+	if !ok {
+		return fmt.Errorf("invalid market state: %v", marketStateStr)
+	}
+	marketState := proto.MarketState(ms)
+
+	mktdata, err := execsetup.engine.GetMarketData(market)
+	if err != nil {
+		return fmt.Errorf("unable to get marked data for market(%v), err(%v)", market, err)
+	}
+
+	if mktdata.MarketState != marketState {
+		return fmt.Errorf("market state is wrong for market(%v), expected(%v) got(%v)", market, marketState, mktdata.MarketState)
+	}
+	return nil
+}
+
 func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	var err error
 	for _, row := range trades.Rows {
@@ -906,6 +925,36 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {
+	horizons, err := i64arr(row, 21, ",")
+	if err != nil {
+		log.Fatalf("Can't parse horizons (%v) to int64 array: %v", row.Cells[21].Value, err)
+	}
+	probs, err := f64arr(row, 22, ",")
+	if err != nil {
+		log.Fatalf("Can't parse probabilities (%v) to float64 array: %v", row.Cells[22].Value, err)
+	}
+	durations, err := i64arr(row, 23, ",")
+	if err != nil {
+		log.Fatalf("Can't parse durations (%v) to int64 array: %v", row.Cells[23].Value, err)
+	}
+	n := len(horizons)
+	if n != len(probs) || n != len(durations) {
+		log.Fatalf("horizons (%v), probabilities (%v) and durations (%v) need to have the same number of elements",
+			n,
+			len(probs),
+			len(durations))
+	}
+
+	params := make([]*proto.PriceMonitoringParameters, 0, n)
+	for i := 0; i < n; i++ {
+		p := &proto.PriceMonitoringParameters{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
+		params = append(params, p)
+	}
+	pMonitorSettings := &proto.PriceMonitoringSettings{
+		PriceMonitoringParameters: params,
+		UpdateFrequency:           i64val(row, 20),
+	}
+
 	mkt := proto.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
@@ -949,6 +998,8 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 					Params: &proto.SimpleModelParams{
 						FactorLong:  f64val(row, 6),
 						FactorShort: f64val(row, 7),
+						MaxMoveUp:   f64val(row, 8),
+						MinMoveDown: f64val(row, 9),
 					},
 				},
 			},
@@ -963,6 +1014,7 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
+		PriceMonitoringSettings: pMonitorSettings,
 	}
 
 	if val(row, 5) == "forward" {

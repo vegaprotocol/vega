@@ -869,12 +869,16 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 						},
 					},
 				},
-				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces: 5,
+				Metadata:               []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces:          5,
+				OpeningAuctionDuration: 30 * 60, // 30 minutes
 				TradingMode: &types.NewMarketConfiguration_Continuous{
 					Continuous: &types.ContinuousTrading{
 						TickSize: "0.1",
 					},
+				},
+				PriceMonitoringSettings: &types.PriceMonitoringSettings{
+					UpdateFrequency: 10,
 				},
 			},
 		},

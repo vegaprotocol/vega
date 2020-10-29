@@ -57,15 +57,13 @@ func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
 }
 
 // When we leave an auction we need to remove any orders marked as GFA
-func (s *OrderBookSide) getOrdersToCancel(newState types.MarketState) ([]*types.Order, error) {
+func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) {
 	ordersToCancel := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
 			// Find orders to cancel
-			if (order.TimeInForce == types.Order_TIF_GFA &&
-				newState == types.MarketState_MARKET_STATE_CONTINUOUS) ||
-				(order.TimeInForce == types.Order_TIF_GFN &&
-					newState == types.MarketState_MARKET_STATE_AUCTION) {
+			if (order.TimeInForce == types.Order_TIF_GFA && !auction) ||
+				(order.TimeInForce == types.Order_TIF_GFN && auction) {
 				// Save order to send back to client
 				ordersToCancel = append(ordersToCancel, order)
 			}
@@ -167,6 +165,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	if s.side == types.Side_SIDE_BUY {
 		for i := len(s.levels) - 1; i >= 0; i-- {
 			pricelevel := s.levels[i]
+			var toRemove int
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price >= price && totalVolume+order.Remaining <= volume {
@@ -174,13 +173,17 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining
 					// Remove the order from the price level
-					pricelevel.removeOrder(0)
+					toRemove++
 
 				} else {
 					// We should never get to here unless the passed in price
 					// and volume are not correct
 					return nil, ErrInvalidVolume
 				}
+			}
+			for toRemove > 0 {
+				toRemove--
+				pricelevel.removeOrder(0)
 			}
 			// Erase this price level which will be at the end of the slice
 			s.levels[i] = nil
@@ -194,6 +197,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	} else {
 		for i := len(s.levels) - 1; i >= 0; i-- {
 			pricelevel := s.levels[i]
+			var toRemove int
 			for _, order := range pricelevel.orders {
 				// Check the price is good and the total volume will not be exceeded
 				if order.Price <= price && totalVolume+order.Remaining <= volume {
@@ -201,13 +205,18 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 					extractedOrders = append(extractedOrders, order)
 					totalVolume += order.Remaining
 					// Remove the order from the price level
-					pricelevel.removeOrder(0)
+					toRemove++
 				} else {
 					// We should never get to here unless the passed in price
 					// and volume are not correct
 					return nil, ErrInvalidVolume
 				}
 			}
+			if toRemove > 0 {
+				toRemove--
+				pricelevel.removeOrder(0)
+			}
+
 			// Erase this price level which will be the end of the slice
 			s.levels[i] = nil
 			s.levels = s.levels[:len(s.levels)-1]
@@ -413,32 +422,21 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 	return filled, trades, nil
 }
 
-func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Order, uint64, error) {
+func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, uint64, error) {
 	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 
 	var (
-		trades                  []*types.Trade
-		impactedOrders          []*types.Order
-		lastTradedPrice         uint64
-		totalVolumeToFill       uint64
-		totalPrice, totalVolume uint64
+		trades            []*types.Trade
+		impactedOrders    []*types.Order
+		lastTradedPrice   uint64
+		totalVolumeToFill uint64
 	)
 
 	if agg.TimeInForce == types.Order_TIF_FOK {
-		totalVolume = agg.Remaining
-
 		if agg.Side == types.Side_SIDE_SELL {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
-				if agg.Type == types.Order_TYPE_NETWORK {
-					totalVolumeToFill += level.volume
-					factor := totalVolume
-					if level.volume < totalVolume {
-						factor = level.volume
-						totalVolume -= level.volume
-					}
-					totalPrice += level.price * factor
-				} else if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
 					totalVolumeToFill += level.volume
 				}
 				// No need to keep looking once we pass the required amount
@@ -451,15 +449,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		if agg.Side == types.Side_SIDE_BUY {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
-				if agg.Type == types.Order_TYPE_NETWORK {
-					totalVolumeToFill += level.volume
-					factor := totalVolume
-					if level.volume < totalVolume {
-						factor = level.volume
-						totalVolume -= level.volume
-					}
-					totalPrice += level.price * factor
-				} else if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
+				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
 					totalVolumeToFill += level.volume
 				}
 				// No need to keep looking once we pass the required amount
@@ -493,7 +483,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
 			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
 				// break if a wash trade is detected
@@ -529,7 +519,7 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 		// also it will allow us to reduce allocations
 		for !filled && idx >= 0 {
 			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg)
+				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
 				trades = append(trades, ntrades...)
 				impactedOrders = append(impactedOrders, nimpact...)
 				if err != nil && err == ErrWashTrade {
@@ -560,6 +550,10 @@ func (s *OrderBookSide) uncross(agg *types.Order) ([]*types.Trade, []*types.Orde
 	}
 
 	if agg.Type == types.Order_TYPE_NETWORK {
+		var totalPrice uint64
+		for _, t := range trades {
+			totalPrice += t.Price * t.Size
+		}
 		// now we are done with uncrossing,
 		// we can set back the price of the netorder to the average
 		// price over the whole volume

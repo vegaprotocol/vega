@@ -48,6 +48,8 @@
     - [GetVotesByPartyResponse](#api.GetVotesByPartyResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
+    - [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest)
+    - [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
     - [MarginLevelsResponse](#api.MarginLevelsResponse)
     - [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest)
@@ -66,7 +68,6 @@
     - [MarketsResponse](#api.MarketsResponse)
     - [NetworkParametersRequest](#api.NetworkParametersRequest)
     - [NetworkParametersResponse](#api.NetworkParametersResponse)
-    - [ObserveEventBatch](#api.ObserveEventBatch)
     - [ObserveEventsRequest](#api.ObserveEventsRequest)
     - [ObserveEventsResponse](#api.ObserveEventsResponse)
     - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
@@ -97,6 +98,8 @@
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
     - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
     - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest)
+    - [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse)
     - [PrepareProposalRequest](#api.PrepareProposalRequest)
     - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
@@ -203,6 +206,8 @@
     - [LogNormalRiskModel](#vega.LogNormalRiskModel)
     - [MarginCalculator](#vega.MarginCalculator)
     - [Market](#vega.Market)
+    - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
+    - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -243,6 +248,10 @@
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
+    - [LiquidityOrder](#vega.LiquidityOrder)
+    - [LiquidityOrderReference](#vega.LiquidityOrderReference)
+    - [LiquidityProvision](#vega.LiquidityProvision)
+    - [LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
@@ -258,6 +267,7 @@
     - [OrderConfirmation](#vega.OrderConfirmation)
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
+    - [PeggedOrder](#vega.PeggedOrder)
     - [Position](#vega.Position)
     - [PositionTrade](#vega.PositionTrade)
     - [Price](#vega.Price)
@@ -282,15 +292,18 @@
     - [Withdrawal](#vega.Withdrawal)
 
     - [AccountType](#vega.AccountType)
+    - [AuctionTrigger](#vega.AuctionTrigger)
     - [ChainStatus](#vega.ChainStatus)
     - [Deposit.Status](#vega.Deposit.Status)
     - [Interval](#vega.Interval)
+    - [LiquidityProvision.Status](#vega.LiquidityProvision.Status)
     - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
     - [OrderError](#vega.OrderError)
+    - [PeggedReference](#vega.PeggedReference)
     - [Side](#vega.Side)
     - [Trade.Type](#vega.Trade.Type)
     - [TransferType](#vega.TransferType)
@@ -977,6 +990,40 @@ Response for the latest trade that occurred on Vega for a given market.
 
 
 
+<a name="api.LiquidityProvisionsRequest"></a>
+
+### LiquidityProvisionsRequest
+A message requesting for the list
+of liquidity provisions orders for markets
+one of the 2 filters is required or both
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| market | [string](#string) |  | the market we want to get liquidity provision orders from |
+| party | [string](#string) |  | the party which submitted the liquidity provision orders |
+
+
+
+
+
+
+<a name="api.LiquidityProvisionsResponse"></a>
+
+### LiquidityProvisionsResponse
+A response containing all of the
+vega liquidity provisions orders
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| liquidityProvisions | [vega.LiquidityProvision](#vega.LiquidityProvision) | repeated |  |
+
+
+
+
+
+
 <a name="api.MarginLevelsRequest"></a>
 
 ### MarginLevelsRequest
@@ -1255,22 +1302,6 @@ vega network parameters
 
 
 
-<a name="api.ObserveEventBatch"></a>
-
-### ObserveEventBatch
-Used when subscribed to observe events from the event bus
-This message is used to update the batch size (only for gRPC bi-directional streaming)
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| batchSize | [int64](#int64) |  | Batch size. Required field. Default: 0, send any and all events when they are available. |
-
-
-
-
-
-
 <a name="api.ObserveEventsRequest"></a>
 
 ### ObserveEventsRequest
@@ -1282,7 +1313,7 @@ Request to subscribe to a stream of one or more event types from the Vega event 
 | type | [vega.BusEventType](#vega.BusEventType) | repeated | One or more types of event. Required field. |
 | marketID | [string](#string) |  | Market identifier. Optional field. |
 | partyID | [string](#string) |  | Party identifier. Optional field. |
-| batchSize | [int64](#int64) |  | Batch size. Optional field. If specified, will result in the event stream API to return a specific number of events in a batch. For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream. Default: 0, send any and all events when they are available. |
+| batchSize | [int64](#int64) |  | Batch size. Optional field. If not specified, any events received will be sent immediately. If the client is not ready for the next data-set, data may be dropped a number of times, and eventually the stream is closed. if specified, the first batch will be sent when ready. To receive the next set of events, the client must write an `ObserveEventBatch` message on the stream to flush the buffer. If no message is received in 5 seconds, the stream is closed. Default: 0, send any and all events when they are available. |
 
 
 
@@ -1745,6 +1776,36 @@ Response for preparing an order cancellation.
 
 
 
+<a name="api.PrepareLiquidityProvisionRequest"></a>
+
+### PrepareLiquidityProvisionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| submission | [vega.LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareLiquidityProvisionResponse"></a>
+
+### PrepareLiquidityProvisionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="api.PrepareProposalRequest"></a>
 
 ### PrepareProposalRequest
@@ -2169,6 +2230,7 @@ The response for a list of withdrawals
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare a governance proposal |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a governance vote |
 | PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | Propagate a chain event |
+| PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse) |  |
 
 
 <a name="api.trading_data"></a>
@@ -2214,7 +2276,7 @@ The response for a list of withdrawals
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
-| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
+| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) stream | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
 | Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics |
 | GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
@@ -2238,6 +2300,7 @@ The response for a list of withdrawals
 | Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
 | Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
 | NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
+| LiquidityProvisions | [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest) | [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse) | Get the liquidity provision orders |
 
 
 
@@ -2680,6 +2743,7 @@ An auction event indicating a change in auction state, for example starting or e
 | leave | [bool](#bool) |  | True if the event indicates leaving auction mode and False otherwise |
 | start | [int64](#int64) |  | Timestamp containing the start time for an auction |
 | end | [int64](#int64) |  | Timestamp containing the end time for an auction |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | the reason this market is/was in auction |
 
 
 
@@ -2720,6 +2784,7 @@ A bus event is a container for event bus events emitted by Vega
 | auction | [AuctionEvent](#vega.AuctionEvent) |  | Auction events, see [AuctionEvent](#vega.AuctionEvent) |
 | riskFactor | [RiskFactor](#vega.RiskFactor) |  | Risk factor events |
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
+| liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
 
 
@@ -2747,7 +2812,8 @@ A loss socialization event contains details on the amount of wins unable to be d
 <a name="vega.MarketEvent"></a>
 
 ### MarketEvent
-A market event is a common structure for market updates
+MarketEvent - the common denominator for all market events
+interface has a method to return a string for logging
 
 
 | Field | Type | Label | Description |
@@ -2915,6 +2981,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_AUCTION | 22 | Event indicating a change in auction state, for example starting or ending an auction |
 | BUS_EVENT_TYPE_RISK_FACTOR | 23 | Event indicating a risk factor has been updated |
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
+| BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
 
 
@@ -3061,6 +3128,7 @@ Configuration for a new market on Vega.
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags. |
 | openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | price monitoring configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous trading. |
@@ -3211,6 +3279,8 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY | 19 | Invalid key in update network parameter proposal |
 | PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE | 20 | Invalid valid in update network parameter proposal |
 | PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL | 22 | Opening auction duration is less than the network minimum opening auction time |
+| PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE | 23 | Opening auction duration is more than the network minimum opening auction time |
 
 
 
@@ -3495,6 +3565,40 @@ Market definition.
 | openingAuction | [AuctionDuration](#vega.AuctionDuration) |  | Auction duration specifies how long the opening auction will run (minimum duration and optionally a minimum traded volume). |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
+| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | PriceMonitoringSettings for the market. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringParameters"></a>
+
+### PriceMonitoringParameters
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
+| probability | [double](#double) |  | Price monitoirng probability level p. |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringSettings"></a>
+
+### PriceMonitoringSettings
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| updateFrequency | [int64](#int64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
 
 
 
@@ -3528,6 +3632,8 @@ Risk model parameters for simple modelling.
 | ----- | ---- | ----- | ----------- |
 | factorLong | [double](#double) |  | Pre-defined risk factor value for long. |
 | factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
+| maxMoveUp | [double](#double) |  | Pre-defined maximum price move up that the model considers as valid. |
+| minMoveDown | [double](#double) |  | Pre-defined minimum price move down that the model considers as valid. |
 
 
 
@@ -4138,6 +4244,83 @@ Represents a ledger entry on Vega.
 
 
 
+<a name="vega.LiquidityOrder"></a>
+
+### LiquidityOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [PeggedReference](#vega.PeggedReference) |  |  |
+| proportion | [uint32](#uint32) |  |  |
+| offset | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LiquidityOrderReference"></a>
+
+### LiquidityOrderReference
+A pair of a liquidity order and the id of the generated order by the core
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  | The ID of the pegged order generated by the core to fullfill this liquidityOrder |
+| liquidityOrder | [LiquidityOrder](#vega.LiquidityOrder) |  | The liquidity order from the original submission |
+
+
+
+
+
+
+<a name="vega.LiquidityProvision"></a>
+
+### LiquidityProvision
+An Liquidity provider commitment
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | LiquidityProvision identifier |
+| partyID | [string](#string) |  | Party who created the provision |
+| createdAt | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| updatedAt | [int64](#int64) |  | Timestamp for when the order was updated at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| sells | [LiquidityOrderReference](#vega.LiquidityOrderReference) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| buys | [LiquidityOrderReference](#vega.LiquidityOrderReference) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
+| version | [string](#string) |  | version of this LiquidityProvision order |
+| status | [LiquidityProvision.Status](#vega.LiquidityProvision.Status) |  | the status of this liquidity provision |
+
+
+
+
+
+
+<a name="vega.LiquidityProvisionSubmission"></a>
+
+### LiquidityProvisionSubmission
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| Sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| Buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
+
+
+
+
+
+
 <a name="vega.MarginLevels"></a>
 
 ### MarginLevels
@@ -4182,6 +4365,7 @@ Represents data generated by a market when open.
 | indicativePrice | [uint64](#uint64) |  | indicative price (zero if not in auction) |
 | indicativeVolume | [uint64](#uint64) |  | indicative volume (zero if not in auction) |
 | marketState | [MarketState](#vega.MarketState) |  | the current state of the market |
+| trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | if the market is in auction state, this field indicates what triggered the auction |
 
 
 
@@ -4315,6 +4499,7 @@ An order can be submitted, amended and cancelled on Vega in an attempt to make t
 | updatedAt | [int64](#int64) |  | Timestamp for when the Order was last updated, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | version | [uint64](#uint64) |  | The version for the order, initial value is version 1 and is incremented after each successful amend |
 | batchID | [uint64](#uint64) |  | Batch identifier for the order, used internally for orders submitted during auctions to keep track of the auction batch this order falls under (required for fees calculation). |
+| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | If this order represents a pegged order, the details are supplied here |
 
 
 
@@ -4413,6 +4598,7 @@ An order submission is a request to submit or create a new order on Vega.
 | expiresAt | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`. |
 | type | [Order.Type](#vega.Order.Type) |  | Type for the order. See [`Order.Type`](#vega.Order.Type). Required field. |
 | reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus. Currently set internally by the node to return a unique reference identifier for the order submission. |
+| peggedOrder | [PeggedOrder](#vega.PeggedOrder) |  | Pegged order details. If this sub message is supplied then the fields are used to configure a pegged order |
 
 
 
@@ -4428,6 +4614,22 @@ A party represents an entity who wishes to trade on or query a Vega network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | A unique identifier for the party, typically represented by a public key. |
+
+
+
+
+
+
+<a name="vega.PeggedOrder"></a>
+
+### PeggedOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [PeggedReference](#vega.PeggedReference) |  | Which price point are we linked to |
+| offset | [int64](#int64) |  | Offset from the price reference |
 
 
 
@@ -4882,6 +5084,21 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 
 
 
+<a name="vega.AuctionTrigger"></a>
+
+### AuctionTrigger
+What triggered an auction (if any)
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| AUCTION_TRIGGER_UNSPECIFIED | 0 | No auction triggered |
+| AUCTION_TRIGGER_BATCH | 1 | Batch auction |
+| AUCTION_TRIGGER_OPENING | 2 | Opening auction |
+| AUCTION_TRIGGER_PRICE | 3 | Price monitoring trigger |
+| AUCTION_TRIGGER_LIQUIDITY | 4 | liquidity monitoring trigger |
+
+
+
 <a name="vega.ChainStatus"></a>
 
 ### ChainStatus
@@ -4927,6 +5144,20 @@ Represents a set of time intervals that are used when querying for candle-stick 
 
 
 
+<a name="vega.LiquidityProvision.Status"></a>
+
+### LiquidityProvision.Status
+the status of a liquidity provision order
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| LIQUIDITY_PROVISION_STATUS_UNSPECIFIED | 0 | The default value |
+| LIQUIDITY_PROVISION_STATUS_ACTIVE | 1 | The liquidity provision is active |
+| LIQUIDITY_PROVISION_STATUS_STOPPED | 2 | The liquidity provision was stopped by the network |
+| LIQUIDITY_PROVISION_STATUS_CANCELLED | 3 | The liquidity provision was cancelled by the MM. |
+
+
+
 <a name="vega.MarketState"></a>
 
 ### MarketState
@@ -4936,7 +5167,9 @@ What mode is the market currently running, also known as market state.
 | ---- | ------ | ----------- |
 | MARKET_STATE_UNSPECIFIED | 0 | Default value, this is invalid |
 | MARKET_STATE_CONTINUOUS | 1 | Normal trading |
-| MARKET_STATE_AUCTION | 2 | Auction trading |
+| MARKET_STATE_BATCH_AUCTION | 2 | Auction trading (FBA) |
+| MARKET_STATE_OPENING_AUCTION | 3 | Opening auction |
+| MARKET_STATE_MONITORING_AUCTION | 4 | Auction triggered by monitoring |
 
 
 
@@ -5044,6 +5277,32 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC | 29 | Amending to FOK or IOC is invalid |
 | ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN | 30 | Amending to GFA or GFN is invalid |
 | ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN | 31 | Amending from GFA or GFN is invalid |
+| ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION | 32 | IOC orders are not allowed during auction |
+| ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION | 33 | FOK orders are not allowed during auction |
+| ORDER_ERROR_MUST_BE_LIMIT_ORDER | 34 | Pegged orders must be LIMIT orders |
+| ORDER_ERROR_MUST_BE_GTT_OR_GTC | 35 | Pegged orders can only have TIF GTC or GTT |
+| ORDER_ERROR_WITHOUT_REFERENCE_PRICE | 36 | Pegged order must have a reference price |
+| ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE | 37 | Buy pegged order cannot reference best ask price |
+| ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO | 38 | Pegged order offset must be &lt;= 0 |
+| ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO | 39 | Pegged order offset must be &lt; 0 |
+| ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO | 40 | Pegged order offset must be &gt;= 0 |
+| ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE | 41 | Sell pegged order cannot reference best bid price |
+| ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO | 42 | Pegged order offset must be &gt; zero |
+| ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
+
+
+
+<a name="vega.PeggedReference"></a>
+
+### PeggedReference
+Which price point is the pegged order linked to
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PEGGED_REFERENCE_UNSPECIFIED | 0 | No reference given |
+| PEGGED_REFERENCE_MID | 1 | MID price |
+| PEGGED_REFERENCE_BEST_BID | 2 | BEST BID price |
+| PEGGED_REFERENCE_BEST_ASK | 3 | BEST BID price |
 
 
 

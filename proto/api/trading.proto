@@ -39,6 +39,8 @@ service trading {
 
   // Propagate a chain event
   rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
+
+  rpc PrepareLiquidityProvision(PrepareLiquidityProvisionRequest) returns (PrepareLiquidityProvisionResponse);
 }
 
 // Request for a new event sent by the blockchain queue to be propagated on Vega.
@@ -270,7 +272,7 @@ service trading_data {
   rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
 
   // Subscribe to a stream of events from the core
-  rpc ObserveEventBus(ObserveEventsRequest) returns (stream ObserveEventsResponse);
+  rpc ObserveEventBus(stream ObserveEventsRequest) returns (stream ObserveEventsResponse);
 
   // -- Misc --
 
@@ -343,6 +345,9 @@ service trading_data {
 
   // Get the network parameters
   rpc NetworkParameters(NetworkParametersRequest) returns (NetworkParametersResponse);
+
+  // Get the liquidity provision orders
+  rpc LiquidityProvisions(LiquidityProvisionsRequest) returns (LiquidityProvisionsResponse);
 }
 
 // Request for a list of all assets enabled on Vega.
@@ -1021,6 +1026,14 @@ message PrepareVoteResponse {
   vega.Vote vote = 2;
 }
 
+message PrepareLiquidityProvisionRequest {
+  vega.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
+}
+
+message PrepareLiquidityProvisionResponse {
+  bytes blob = 1;
+}
+
 // Request for an order with the specified order identifier.
 // Optionally, return a specific version of the order with the `version` field.
 message OrderByIDRequest {
@@ -1085,18 +1098,13 @@ message ObserveEventsRequest {
   // Party identifier. Optional field.
   string partyID = 3;
   // Batch size. Optional field.
-  // If specified, will result in the event stream API to return a specific number of events in a batch.
-  // For example, with a size of 100, the client will not see any events until Vega has sent 100 events to the stream.
+  // If not specified, any events received will be sent immediately. If the client is not ready
+  // for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
+  // if specified, the first batch will be sent when ready. To receive the next set of events, the client
+  // must write an `ObserveEventBatch` message on the stream to flush the buffer.
+  // If no message is received in 5 seconds, the stream is closed.
   // Default: 0, send any and all events when they are available.
   int64 batchSize = 4;
-}
-
-// Used when subscribed to observe events from the event bus
-// This message is used to update the batch size (only for gRPC bi-directional streaming)
-message ObserveEventBatch {
-  // Batch size. Required field.
-  // Default: 0, send any and all events when they are available.
-  int64 batchSize = 1;
 }
 
 // Response to a subscribed stream of events from the Vega event bus
@@ -1185,4 +1193,20 @@ message NetworkParametersRequest {}
 // vega network parameters
 message NetworkParametersResponse {
   repeated vega.NetworkParameter networkParameters = 1;
+}
+
+// A message requesting for the list
+// of liquidity provisions orders for markets
+// one of the 2 filters is required or both
+message LiquidityProvisionsRequest {
+  // the market we want to get liquidity provision orders from
+  string market = 1;
+  // the party which submitted the liquidity provision orders
+  string party = 2;
+}
+
+// A response containing all of the
+// vega liquidity provisions orders
+message LiquidityProvisionsResponse {
+  repeated vega.LiquidityProvision liquidityProvisions = 1;
 }

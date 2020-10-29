@@ -1,14 +1,12 @@
-package main
+package node
 
 import (
 	"context"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -23,9 +21,9 @@ import (
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/netparams"
@@ -52,17 +50,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"golang.org/x/crypto/sha3"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
-func envConfigPath() string {
-	return os.Getenv("VEGA_CONFIG")
-}
-
-func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error) {
+func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this shouldn't happen...
 	if l.cancel != nil {
 		l.cancel()
@@ -74,26 +66,8 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		}
 	}()
 	l.ctx, l.cancel = context.WithCancel(context.Background())
-	// Use configPath from args
-	configPath := l.configPath
-	if configPath == "" {
-		// Use configPath from ENV
-		configPath = envConfigPath()
-		if configPath == "" {
-			// Default directory ($HOME/.vega)
-			configPath = fsutil.DefaultVegaDir()
-		}
-	}
-	l.configPath = configPath
 
-	// VEGA config (holds all package level configs)
-	cfgwatchr, err := config.NewFromFile(l.ctx, l.Log, configPath, configPath)
-	if err != nil {
-		l.Log.Error("unable to start config watcher", logging.Error(err))
-		return
-	}
-	conf := cfgwatchr.Get()
-	l.cfgwatchr = cfgwatchr
+	conf := l.cfgwatchr.Get()
 
 	if flagProvided("--no-chain") {
 		conf.Blockchain.ChainProvider = "noop"
@@ -103,22 +77,10 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 		conf.StoresEnabled = false
 	}
 
-	// if theses is not specified, we then trigger a prompt
-	// for the user to type his password
-	var nodeWalletPassphrase string
-	if len(l.nodeWalletPassphrase) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
-	} else {
-		nodeWalletPassphrase, err = getFilePassphrase(l.nodeWalletPassphrase)
-	}
-	if err != nil {
-		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
-	}
-
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
-	if flagProvided("--with-pprof") || conf.Pprof.Enabled {
+	if conf.Pprof.Enabled {
 		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
 		l.pproffhandlr, err = pprof.New(l.Log, conf.Pprof)
 		if err != nil {
@@ -127,12 +89,9 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	l.Log.Info("Starting Vega",
-		logging.String("config-path", configPath),
-		logging.String("version", Version),
-		logging.String("version-hash", VersionHash))
-
-	// assign config vars
-	l.configPath, l.conf = configPath, conf
+		logging.String("config-path", l.configPath),
+		logging.String("version", l.Version),
+		logging.String("version-hash", l.VersionHash))
 
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
@@ -150,7 +109,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = stats.New(l.Log, l.conf.Stats, l.cli.version, l.cli.versionHash)
+	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
@@ -171,7 +130,7 @@ func (l *NodeCommand) persistentPre(_ *cobra.Command, args []string) (err error)
 	}
 
 	// nodewallet
-	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, nodeWalletPassphrase, ethclt)
+	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt)
 	if err != nil {
 		return err
 	}
@@ -300,7 +259,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 	return nil
 }
 
-// load all asset from genesis state
+// UponGenesis loads all asset from genesis state
 func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 	state, err := assets.LoadGenesisState(rawstate)
 	if err != nil {
@@ -363,12 +322,12 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	aid, err := l.assets.NewAsset(id, v)
 	if err != nil {
-		return fmt.Errorf("error instanciating asset %v\n", err)
+		return fmt.Errorf("error instanciating asset %v", err)
 	}
 
 	asset, err := l.assets.Get(aid)
 	if err != nil {
-		return fmt.Errorf("unable to get asset %v\n", err)
+		return fmt.Errorf("unable to get asset %v", err)
 	}
 
 	// just a simple backoff here
@@ -383,7 +342,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to instanciate new asset %v", err)
+		return fmt.Errorf("unable to instanciate new asset err=%v, asset-source=%s", err, v.String())
 	}
 	if err := l.assets.Enable(aid); err != nil {
 		return fmt.Errorf("unable to enable asset: %v", err)
@@ -410,10 +369,6 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 }
 
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
-	if l.record != "" && l.replay != "" {
-		return nil, errors.New("you can't specify both record and replay flags")
-	}
-
 	app, err := processor.NewApp(
 		l.Log,
 		l.conf.Processor,
@@ -438,9 +393,8 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	}
 
 	var abciApp tmtypes.Application
-	if l.record != "" {
-		path := filepath.Join(l.record, fmt.Sprintf("abci-record-%s", time.Now().Format("2006-01-02-15-04-05")))
-		l.Log.Info("Recording mode", logging.String("path", path))
+	tmCfg := l.conf.Blockchain.Tendermint
+	if path := tmCfg.ABCIRecordDir; path != "" {
 		rec, err := recorder.NewRecord(path, afero.NewOsFs())
 		if err != nil {
 			return nil, err
@@ -463,8 +417,8 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 	}
 	l.abciServer = srv
 
-	if l.replay != "" {
-		rec, err := recorder.NewReplay(l.replay, afero.NewOsFs())
+	if path := tmCfg.ABCIReplayFile; path != "" {
+		rec, err := recorder.NewReplay(path, afero.NewOsFs())
 		if err != nil {
 			return nil, err
 		}
@@ -493,7 +447,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node
-func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
+func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {
 		if err != nil {
@@ -508,6 +462,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
 	l.netParamsService = netparams.NewService(l.ctx)
+	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
@@ -518,7 +473,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService)
+		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
+		l.liquidityService)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -543,12 +499,12 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
-	commander, err := nodewallet.NewCommander(l.ctx, nil, wal)
+	commander, err := nodewallet.NewCommander(nil, wal)
 	if err != nil {
 		return err
 	}
 
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, !l.noStores)
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
 
 	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
@@ -562,8 +518,8 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 
 	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
 	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
-	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 	l.genesisHandler.OnGenesisAppStateLoaded(l.netParams.UponGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
@@ -588,6 +544,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
 		return
 	}
+
 	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin); err != nil {
 		return
 	}
@@ -622,6 +579,7 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
 		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
+		func(cfg config.Config) { l.liquidityService.ReloadConf(cfg.Liquidity) },
 		func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) },
 		func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) },
 		func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) },
@@ -634,29 +592,6 @@ func (l *NodeCommand) preRun(_ *cobra.Command, _ []string) (err error) {
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
 	)
 
-	l.genesisHandler.OnGenesisAppStateLoaded(
-		l.UponGenesis,
-	)
-
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
 	return
-}
-
-func getTerminalPassphrase(what string) (string, error) {
-	fmt.Printf("please enter %v passphrase:", what)
-	password, err := terminal.ReadPassword(0)
-	if err != nil {
-		return "", err
-	}
-
-	fmt.Println("")
-	return string(password), nil
-}
-
-func getFilePassphrase(path string) (string, error) {
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return string(buf), nil
 }

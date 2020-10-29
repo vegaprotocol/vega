@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -17,85 +18,56 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
-
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/spf13/cobra"
+	"github.com/jessevdk/go-flags"
 	"github.com/zannen/toml"
 )
 
-type initCommand struct {
-	command
+type InitCmd struct {
+	config.RootPathFlag
 
-	rootPath              string
-	force                 bool
-	nodeWalletPassphrase  string
-	genDevNodeWallet      bool
-	genBuiltinAssetFaucet bool
-	Log                   *logging.Logger
+	// We've unified the passphrase flag as config.PassphraseFlag, which uses --passphrase.
+	// As systemtests uses --nodewallet-passphrase we'll define the flag directly here
+	// TODO: uncomment this line and remove the Passphrase field.
+	// config.PassphraseFlag
+	Passphrase config.Passphrase `short:"p" long:"nodewallet-passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+
+	Force      bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
+	GenDev     bool `short:"g" long:"gen-dev-nodewallet" description:"Generate dev wallet for all vega supported chains (not for production)"`
+	GenBuiltin bool `short:"b" long:"gen-builtinasset-faucet" description:"Generate the builtin asset configuration (not for production)"`
 }
 
-func (ic *initCommand) Init(c *Cli) {
-	ic.cli = c
-	ic.cmd = &cobra.Command{
-		Use:   "init",
-		Short: "Initialize a vega node",
-		Long:  "Generate the minimal configuration required for a vega node to start",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunInit(ic.rootPath, ic.force, ic.Log, ic.nodeWalletPassphrase, ic.genDevNodeWallet, ic.genBuiltinAssetFaucet)
-		},
-	}
+var initCmd InitCmd
 
-	fs := ic.cmd.Flags()
-	fs.StringVarP(&ic.rootPath, "root-path", "r", fsutil.DefaultVegaDir(), "Path of the root directory in which the configuration will be located")
-	fs.StringVarP(&ic.nodeWalletPassphrase, "nodewallet-passphrase", "n", "", "The path to a file containing the passphrase used to encrypt the vega nodewallet")
-	fs.BoolVarP(&ic.force, "force", "f", false, "Erase exiting vega configuration at the specified path")
-	fs.BoolVarP(&ic.genDevNodeWallet, "gen-dev-nodewallet", "g", false, "Generate dev wallet for all vega supported chains (not for production)")
-	fs.BoolVarP(&ic.genBuiltinAssetFaucet, "gen-builtinasset-faucet", "b", false, "Generate the builtin asset configuration (not for production)")
-}
+func (opts *InitCmd) Execute(_ []string) error {
+	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
+	defer logger.AtExit()
 
-// RunInit initialises vega config files - config.toml and markets/*.json.
-func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPassphraseInput string, genDevNodeWallet, genBuiltinAssetFaucet bool) error {
-
-	// if theses is not specified, we then trigger a prompt
-	// for the user to type his password
-	var (
-		nodeWalletPassphrase string
-		err                  error
-	)
-	if len(nodeWalletPassphraseInput) <= 0 {
-		nodeWalletPassphrase, err = getTerminalPassphrase("nodewallet")
-	} else {
-		nodeWalletPassphrase, err = getFilePassphrase(nodeWalletPassphraseInput)
-	}
-	if err != nil {
-		return fmt.Errorf("cannot start the node, passphrase error: %v", err)
-	}
-
-	rootPathExists, err := fsutil.PathExists(rootPath)
+	rootPathExists, err := fsutil.PathExists(opts.RootPath)
 	if err != nil {
 		if _, ok := err.(*fsutil.PathNotFound); !ok {
 			return err
 		}
 	}
 
-	if rootPathExists && !force {
-		return fmt.Errorf("configuration already exists at `%v` please remove it first or re-run using -f", rootPath)
+	if rootPathExists && !opts.Force {
+		return fmt.Errorf("configuration already exists at `%v` please remove it first or re-run using -f", opts.RootPath)
 	}
 
-	if rootPathExists && force {
-		logger.Info("removing existing configuration", logging.String("path", rootPath))
-		os.RemoveAll(rootPath) // ignore any errors here to force removal
+	if rootPathExists && opts.Force {
+		logger.Info("removing existing configuration", logging.String("path", opts.RootPath))
+		os.RemoveAll(opts.RootPath) // ignore any errors here to force removal
 	}
 
 	// create the root
-	if err = fsutil.EnsureDir(rootPath); err != nil {
+	if err = fsutil.EnsureDir(opts.RootPath); err != nil {
 		return err
 	}
 
-	fullCandleStorePath := filepath.Join(rootPath, storage.CandlesDataPath)
-	fullOrderStorePath := filepath.Join(rootPath, storage.OrdersDataPath)
-	fullTradeStorePath := filepath.Join(rootPath, storage.TradesDataPath)
-	fullMarketStorePath := filepath.Join(rootPath, storage.MarketsDataPath)
+	fullCandleStorePath := filepath.Join(opts.RootPath, storage.CandlesDataPath)
+	fullOrderStorePath := filepath.Join(opts.RootPath, storage.OrdersDataPath)
+	fullTradeStorePath := filepath.Join(opts.RootPath, storage.TradesDataPath)
+	fullMarketStorePath := filepath.Join(opts.RootPath, storage.MarketsDataPath)
 
 	// create sub-folders
 	if err = fsutil.EnsureDir(fullCandleStorePath); err != nil {
@@ -113,7 +85,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 
 	// create default market folder
 	fullDefaultMarketConfigPath :=
-		filepath.Join(rootPath, execution.MarketConfigPath)
+		filepath.Join(opts.RootPath, execution.MarketConfigPath)
 
 	if err = fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
 		return err
@@ -126,11 +98,16 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 	}
 
 	// generate a default configuration
-	cfg := config.NewDefaultConfig(rootPath)
+	cfg := config.NewDefaultConfig(opts.RootPath)
+
+	pass, err := opts.Passphrase.Get("nodewallet")
+	if err != nil {
+		return err
+	}
 
 	// initialize the faucet if needed
-	if genBuiltinAssetFaucet {
-		pubkey, err := faucet.GenConfig(logger, rootPath, nodeWalletPassphrase, false)
+	if opts.GenBuiltin {
+		pubkey, err := faucet.GenConfig(logger, opts.RootPath, pass, false)
 		if err != nil {
 			return err
 		}
@@ -149,7 +126,7 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 	}
 
 	// create the configuration file
-	f, err := os.Create(filepath.Join(rootPath, "config.toml"))
+	f, err := os.Create(filepath.Join(opts.RootPath, "config.toml"))
 	if err != nil {
 		return err
 	}
@@ -159,11 +136,11 @@ func RunInit(rootPath string, force bool, logger *logging.Logger, nodeWalletPass
 	}
 
 	// init the nodewallet
-	if err := nodeWalletInit(cfg, nodeWalletPassphrase, genDevNodeWallet); err != nil {
+	if err := nodeWalletInit(cfg, pass, opts.GenDev); err != nil {
 		return err
 	}
 
-	logger.Info("configuration generated successfully", logging.String("path", rootPath))
+	logger.Info("configuration generated successfully", logging.String("path", opts.RootPath))
 
 	return nil
 }
@@ -316,6 +293,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				Duration: int64(auctionDuration.Seconds()),
 				Volume:   0,
 			},
+			PriceMonitoringSettings: &proto.PriceMonitoringSettings{
+				PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+				UpdateFrequency:           60,
+			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
 		err = createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
@@ -327,9 +308,23 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 	return filenames, nil
 }
 
+func Init(ctx context.Context, parser *flags.Parser) error {
+	initCmd = InitCmd{
+		RootPathFlag: config.NewRootPathFlag(),
+	}
+
+	var (
+		short = "Initializes a vega node"
+		long  = "Generate the minimal configuration required for a vega node to start"
+	)
+	_, err := parser.AddCommand("init", short, long, &initCmd)
+	return err
+}
+
 func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
 	m := jsonpb.Marshaler{
-		Indent: "  ",
+		Indent:       "  ",
+		EmitDefaults: true,
 	}
 	buf, err := m.MarshalToString(mkt)
 	if err != nil {

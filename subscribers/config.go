@@ -11,8 +11,8 @@ const (
 
 // Config represent the configuration of the subscribers package
 type Config struct {
-	OrderEventLogLevel  encoding.LogLevel
-	MarketEventLogLevel encoding.LogLevel
+	OrderEventLogLevel  encoding.LogLevel `long:"order-event-log-level"`
+	MarketEventLogLevel encoding.LogLevel `long:"market-even-log-level"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

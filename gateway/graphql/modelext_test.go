@@ -445,6 +445,13 @@ func TestModelConverters(t *testing.T) {
 					TickSize: "0.1",
 				},
 			},
+			OpeningAuction: &proto.AuctionDuration{
+				Duration: 10,
+				Volume:   1000,
+			},
+			PriceMonitoringSettings: &proto.PriceMonitoringSettings{
+				PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
+			},
 		}
 
 		m, err := gql.MarketFromProto(pm)

@@ -8,7 +8,8 @@ import "proto/assets.proto";
 import "proto/governance.proto";
 import "proto/vega.proto";
 
-// A market event is a common structure for market updates
+// MarketEvent - the common denominator for all market events
+// interface has a method to return a string for logging
 message MarketEvent {
   // Market identifier for the event
   string marketID = 1;
@@ -109,6 +110,8 @@ message AuctionEvent {
   int64 start = 4;
   // Timestamp containing the end time for an auction
   int64 end = 5;
+  // the reason this market is/was in auction
+  AuctionTrigger trigger = 6;
 }
 
 // An (event) bus event type is used to specify a type of event
@@ -166,6 +169,8 @@ enum BusEventType {
     BUS_EVENT_TYPE_RISK_FACTOR = 23;
     // Event indicating a network parameter has been added or updated
     BUS_EVENT_TYPE_NETWORK_PARAMETER = 24;
+    // Event indicating a liquidity provision has been created or updated
+    BUS_EVENT_TYPE_LIQUIDITY_PROVISION = 25;
     // Event indicating a market related event, for example when a market opens
     BUS_EVENT_TYPE_MARKET = 101;
 }
@@ -225,6 +230,8 @@ message BusEvent {
     RiskFactor riskFactor = 122;
     // Network parameter events
     NetworkParameter networkParameter = 123;
+    // LiquidityProvision  events
+    LiquidityProvision liquidityProvision = 124;
     // Market tick events, see [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
   }

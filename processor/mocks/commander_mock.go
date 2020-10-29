@@ -5,7 +5,8 @@
 package mocks
 
 import (
-	blockchain "code.vegaprotocol.io/vega/blockchain"
+	txn "code.vegaprotocol.io/vega/txn"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	reflect "reflect"
@@ -35,15 +36,15 @@ func (m *MockCommander) EXPECT() *MockCommanderMockRecorder {
 }
 
 // Command mocks base method
-func (m *MockCommander) Command(arg0 blockchain.Command, arg1 protoiface.MessageV1) error {
+func (m *MockCommander) Command(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Command", arg0, arg1)
+	ret := m.ctrl.Call(m, "Command", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Command indicates an expected call of Command
-func (mr *MockCommanderMockRecorder) Command(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockCommanderMockRecorder) Command(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Command", reflect.TypeOf((*MockCommander)(nil).Command), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Command", reflect.TypeOf((*MockCommander)(nil).Command), arg0, arg1, arg2)
 }

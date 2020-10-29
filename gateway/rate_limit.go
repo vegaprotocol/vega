@@ -10,7 +10,7 @@ import (
 )
 
 type RateLimitConfig struct {
-	CoolDown encoding.Duration
+	CoolDown encoding.Duration `long:"coolDown"`
 }
 
 type RateLimit struct {

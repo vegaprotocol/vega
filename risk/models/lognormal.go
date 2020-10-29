@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	pd "code.vegaprotocol.io/quant/pricedistribution"
 	"code.vegaprotocol.io/quant/riskmodelbs"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -54,4 +55,10 @@ func (f *LogNormal) CalculateRiskFactors(
 		},
 	}
 	return true, rf
+}
+
+// PriceRange returns the minimum and maximum price as implied by the model's probability distribution with horizon given by yearFraction (e.g. 0.5 for half a year) and probability level (e.g. 0.95 for 95%).
+func (f *LogNormal) PriceRange(currentPrice, yearFraction, probabilityLevel float64) (float64, float64) {
+	dist := f.params.GetProbabilityDistribution(currentPrice, yearFraction)
+	return pd.PriceRange(dist, probabilityLevel)
 }

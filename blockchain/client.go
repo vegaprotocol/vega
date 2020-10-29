@@ -7,6 +7,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 
@@ -49,7 +50,7 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	}
 
 	// first verify the transaction in the bundle is valid + signature is OK
-	_, command, err := TxDecode(tx.InputData)
+	_, command, err := txn.Decode(tx.InputData)
 	if err != nil {
 		return false, err
 	}

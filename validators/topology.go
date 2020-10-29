@@ -1,6 +1,7 @@
 package validators
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/hex"
@@ -42,7 +43,7 @@ type Topology struct {
 	mu sync.Mutex
 }
 
-func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, isValidator bool) *Topology {
+func NewTopology(log *logging.Logger, cfg Config, wallet Wallet) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -53,7 +54,6 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, isValidator boo
 		validators:        ValidatorMapping{},
 		chainValidators:   [][]byte{},
 		vegaValidatorRefs: map[string]struct{}{},
-		isValidator:       isValidator,
 	}
 
 	return t
@@ -144,6 +144,8 @@ func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) e
 		return err
 	}
 
+	pubkey := t.wallet.PubKeyOrAddress()
+
 	// vals is a map of tm pubkey -> vega pubkey
 	// tm is base64 encoded, vega is hex
 	for tm, vega := range state {
@@ -155,6 +157,10 @@ func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) e
 		vegaBytes, err := hex.DecodeString(vega)
 		if err != nil {
 			return err
+		}
+
+		if bytes.Equal(pubkey, vegaBytes) {
+			t.isValidator = true
 		}
 
 		nr := &proto.NodeRegistration{

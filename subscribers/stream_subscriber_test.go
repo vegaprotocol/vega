@@ -93,15 +93,31 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 			Id: "acc-2",
 		}),
 	}
+
+	data := []*types.BusEvent{}
+	done := make(chan struct{})
+	getData := func() {
+		done <- struct{}{}
+		data = sub.GetData(context.Background())
+		done <- struct{}{}
+	}
+
+	go getData()
+
+	<-done
 	sub.Push(set...)
-	data := sub.GetData(context.Background())
+	<-done
 	// we expect to see no events
 	assert.Equal(t, len(set), len(data))
 	last := events.NewAccountEvent(sub.ctx, types.Account{
 		Id: "acc-3",
 	})
+
+	go getData()
+
+	<-done
 	sub.Push(last)
-	data = sub.GetData(context.Background())
+	<-done
 	assert.Equal(t, 1, len(data))
 	rt, err := events.ProtoToInternal(data[0].Type)
 	assert.NoError(t, err)
@@ -151,8 +167,19 @@ func testFilteredSomeValidEvents(t *testing.T) {
 			MarketID: "valid",
 		}),
 	}
+
+	data := []*types.BusEvent{}
+	done := make(chan struct{})
+	getData := func() {
+		done <- struct{}{}
+		data = sub.GetData(context.Background())
+		done <- struct{}{}
+	}
+	go getData()
+
+	<-done
 	sub.Push(set...)
-	data := sub.GetData(context.Background())
+	<-done
 	// we expect to see no events
 	assert.Equal(t, 1, len(data))
 }
@@ -185,15 +212,19 @@ func testBatchedStreamSubscriber(t *testing.T) {
 		sub.C() <- set
 		close(ch)
 	}
+
+	var data []*types.BusEvent
+	go func() {
+		rec <- struct{}{}
+		data = sub.GetData(context.Background())
+		close(rec)
+	}()
+	<-rec
+
 	go sendRoutine(sent, sub, set1)
 	// ensure all events were sent
 	<-sent
 	// now start receiving, this should not receive any events:
-	var data []*types.BusEvent
-	go func() {
-		data = sub.GetData(context.Background())
-		close(rec)
-	}()
 	// let's send a new batch, this ought to fill the buffer
 	sent = make(chan struct{})
 	go sendRoutine(sent, sub, set1)
@@ -202,8 +233,8 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	assert.Equal(t, 5, len(data))
 	// a total of 6 events were now sent to the subscriber, changing the buffer size ought to return 1 event
 	<-sent
-	data = sub.UpdateBatchSize(len(set1)) // set batch size to match test-data set
-	assert.Equal(t, 1, len(data))         // we should have drained the buffer
+	data = sub.UpdateBatchSize(sub.ctx, len(set1)) // set batch size to match test-data set
+	assert.Equal(t, 1, len(data))                  // we should have drained the buffer
 	sent = make(chan struct{})
 	go sendRoutine(sent, sub, set1)
 	<-sent

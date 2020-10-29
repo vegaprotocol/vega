@@ -18,6 +18,8 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/monitor"
+	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
@@ -63,6 +65,36 @@ var (
 	networkPartyID = "network"
 )
 
+// PriceMonitor interface to handle price monitoring/auction triggers
+// @TODO the interface shouldn't be imported here
+type PriceMonitor interface {
+	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
+}
+
+// We can't use the interface yet. AuctionState is passed to the engines, which access different methods
+// keep the interface for documentation purposes
+type AuctionState interface {
+	// are we in auction, and what auction are we in?
+	InAuction() bool
+	IsOpeningAuction() bool
+	IsPriceAuction() bool
+	IsLiquidityAuction() bool
+	IsFBA() bool
+	IsMonitorAuction() bool
+	// is it the start/end of an auction
+	AuctionStart() bool
+	AuctionEnd() bool
+	// when does the auction start/end
+	ExpiresAt() *time.Time
+	Start() time.Time
+	// signal we've started/ended the auction
+	AuctionStarted(ctx context.Context) *events.Auction
+	AuctionEnded(ctx context.Context, now time.Time) *events.Auction
+	// get some data
+	Mode() types.MarketState
+	Trigger() types.AuctionTrigger
+}
+
 // Market represents an instance of a market in vega and is in charge of calling
 // the engines in order to process all transctiona
 type Market struct {
@@ -75,13 +107,9 @@ type Market struct {
 	closingAt   time.Time
 	currentTime time.Time
 
-	// If we are in a time based auction, set the start and finish time here
-	auctionStart time.Time
-	auctionEnd   time.Time
-	mu           sync.Mutex
+	mu sync.Mutex
 
 	markPrice uint64
-	tradeMode types.MarketState
 
 	// own engines
 	matching           *matching.OrderBook
@@ -94,13 +122,14 @@ type Market struct {
 	// deps engines
 	collateral *collateral.Engine
 
-	// auction triggers
-	auctionTriggers []AuctionTrigger
-
 	broker Broker
 	closed bool
 
 	parties map[string]struct{}
+
+	pMonitor PriceMonitor // @TODO initialise and assign
+
+	as *monitor.AuctionState // @TODO this should be an interface
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -141,7 +170,7 @@ func NewMarket(
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
-	auctionTriggers []AuctionTrigger,
+	as *monitor.AuctionState,
 ) (*Market, error) {
 
 	if len(mkt.Id) == 0 {
@@ -162,13 +191,10 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to get market closing time")
 	}
 
-	marketState := types.MarketState_MARKET_STATE_CONTINUOUS
-	if mkt.OpeningAuction != nil {
-		marketState = types.MarketState_MARKET_STATE_AUCTION
-	}
-
+	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
+	// as far as matching goes: it's either an auction or not
 	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice, marketState)
+		tradableInstrument.Instrument.InitialMarkPrice, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,
@@ -192,20 +218,12 @@ func NewMarket(
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instanciate fee engine")
-	}
-	mode := types.MarketState_MARKET_STATE_CONTINUOUS
-	if fba := mkt.GetDiscrete(); fba != nil {
-		mode = types.MarketState_MARKET_STATE_AUCTION
+		return nil, errors.Wrap(err, "unable to instantiate fee engine")
 	}
 
-	var auctionClose time.Time
-	if mkt.OpeningAuction != nil && mkt.OpeningAuction.Duration > 0 {
-		auctionClose = now.Add(time.Second * (time.Duration)(mkt.OpeningAuction.Duration))
-	}
-
-	if auctionTriggers == nil {
-		auctionTriggers = make([]AuctionTrigger, 0)
+	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
 	market := &Market{
@@ -224,13 +242,11 @@ func NewMarket(
 		broker:             broker,
 		fee:                feeEngine,
 		parties:            map[string]struct{}{},
-		auctionStart:       now,
-		auctionEnd:         auctionClose,
-		tradeMode:          mode,
-		auctionTriggers:    auctionTriggers,
+		as:                 as,
+		pMonitor:           pMonitor,
 	}
 
-	if mkt.OpeningAuction != nil {
+	if market.as.AuctionStart() {
 		market.EnterAuction(ctx)
 	}
 	return market, nil
@@ -267,14 +283,13 @@ func (m *Market) GetMarketData() types.MarketData {
 	// Auction related values
 	var indicativePrice, indicativeVolume uint64
 	var auctionStart, auctionEnd int64
-	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
+	if m.as.InAuction() {
 		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
-		// Zero time does not equal 0 in UnixNanos, we need to check here before converting
-		if !m.auctionStart.IsZero() {
-			auctionStart = m.auctionStart.UnixNano()
+		if t := m.as.Start(); !t.IsZero() {
+			auctionStart = t.UnixNano()
 		}
-		if !m.auctionEnd.IsZero() {
-			auctionEnd = m.auctionEnd.UnixNano()
+		if t := m.as.ExpiresAt(); t != nil {
+			auctionEnd = t.UnixNano()
 		}
 	}
 
@@ -292,7 +307,8 @@ func (m *Market) GetMarketData() types.MarketData {
 		IndicativeVolume: indicativeVolume,
 		AuctionStart:     auctionStart,
 		AuctionEnd:       auctionEnd,
-		MarketState:      m.matching.GetMarketState(),
+		MarketState:      m.as.Mode(),
+		Trigger:          m.as.Trigger(),
 	}
 }
 
@@ -333,32 +349,35 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	m.closed = closed
 	m.currentTime = t
 
-	// Look to see if we are in an auction that needs to finish
-	if m.matching.GetMarketState() == types.MarketState_MARKET_STATE_AUCTION {
-		// Have we completed the auction time
-		if !m.auctionEnd.IsZero() && m.auctionEnd.Before(t) {
-			m.LeaveAuction(ctx)
-			m.auctionEnd = time.Time{}
+	// check price auction end
+	if m.as.InAuction() {
+		if m.as.IsOpeningAuction() {
+			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
+				// mark opening auction as ending
+				m.as.EndAuction()
+				m.LeaveAuction(ctx, t)
+			}
+		} else if m.as.IsPriceAuction() {
+			p := m.matching.GetIndicativePrice()
+			// ending auction now would result in no trades so feed the last mark price into pMonitor
+			if p == 0 {
+				p = m.markPrice
+			}
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
+				m.log.Error("Price monitoring error", logging.Error(err))
+				// @TODO handle or panic? (panic is last resort)
+			}
+			// price monitoring engine indicated auction can end
+			if m.as.AuctionEnd() {
+				m.LeaveAuction(ctx, t)
+			}
 		}
+		// This is where ending liquidity auctions and FBA's will be handled
 	}
 
 	// TODO(): handle market start time
 
-	if !m.isOpeningAuction() {
-		m.auctionModeTimeBasedSemaphore(ctx, t)
-	}
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Calculating risk factors (if required)",
-			logging.String("market-id", m.mkt.Id))
-	}
-
 	m.risk.CalculateFactors(ctx, t)
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Calculated risk factors and updated positions (maybe)",
-			logging.String("market-id", m.mkt.Id))
-	}
 
 	timer.EngineTimeCounterAdd()
 
@@ -387,21 +406,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			// this will be next block
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
-			if m.log.GetLevel() == logging.DebugLevel {
-				// use transfers, unused var thingy
-				for _, v := range transfers {
-					if m.log.GetLevel() == logging.DebugLevel {
-						m.log.Debug(
-							"Got transfers on market close",
-							logging.String("transfer", fmt.Sprintf("%v", *v)),
-							logging.String("market-id", m.GetID()))
-					}
-				}
-			}
 
 			asset, _ := m.mkt.GetAsset()
 			parties := make([]string, 0, len(m.parties))
-			for k, _ := range m.parties {
+			for k := range m.parties {
 				parties = append(parties, k)
 			}
 
@@ -413,17 +421,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			} else {
 				evt := events.NewTransferResponse(ctx, clearMarketTransfers)
 				m.broker.Send(evt)
-				if m.log.GetLevel() == logging.DebugLevel {
-					// use transfers, unused var thingy
-					for _, v := range clearMarketTransfers {
-						if m.log.GetLevel() == logging.DebugLevel {
-							m.log.Debug(
-								"Market cleared with success",
-								logging.String("transfer", fmt.Sprintf("%v", *v)),
-								logging.String("market-id", m.GetID()))
-						}
-					}
-				}
 			}
 		}
 	}
@@ -437,6 +434,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
 	}
+	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.Order_STATUS_REJECTED
 	if oerr, ok := types.IsOrderError(err); ok {
 		order.Reason = oerr
@@ -453,66 +451,8 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
-func (m *Market) isOpeningAuction() bool {
-	if m.mkt.OpeningAuction != nil {
-		return true
-	}
-	return false
-}
-
-func (m *Market) auctionModeTimeBasedSemaphore(ctx context.Context, t time.Time) {
-	isMarketCurrentlyInAuction := m.GetTradingMode() == types.MarketState_MARKET_STATE_AUCTION
-
-	if isMarketCurrentlyInAuction {
-		if m.shouldLeaveAuctionPerTime(t) && !m.shouldEnterAuctionPerTime(t) {
-			indicativeUncrossingPrice, indicativeVolume, _ := m.matching.GetIndicativePriceAndVolume()
-			if indicativeVolume == 0 || !m.shouldEnterAuctionPerPrice(indicativeUncrossingPrice) {
-				m.LeaveAuction(ctx)
-			}
-
-		}
-	} else {
-		if m.shouldEnterAuctionPerTime(t) {
-			m.EnterAuction(ctx)
-		}
-	}
-}
-
-func (m *Market) shouldEnterAuctionPerTime(t time.Time) bool {
-	b := false
-	for _, trigger := range m.auctionTriggers {
-		if trigger.EnterPerTime(t) {
-			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
-		}
-	}
-	return b
-}
-
-func (m *Market) shouldLeaveAuctionPerTime(t time.Time) bool {
-	b := true
-	for _, trigger := range m.auctionTriggers {
-		if !trigger.LeavePerTime(t) {
-			b = false // Don't exit early in case multiple triggers hit and internal stage changes relevant
-		}
-	}
-	return b
-}
-
-func (m *Market) shouldEnterAuctionPerPrice(price uint64) bool {
-	b := false
-	for _, trigger := range m.auctionTriggers {
-		if trigger.EnterPerPrice(price) {
-			b = true // Don't exit early in case multiple triggers hit and internal stage changes relevant
-		}
-	}
-	return b
-}
-
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
-	m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
-
-	m.matching.EnterAuction() // TODO (WG 03/09/20): Cancel orders, calling this only to be able the test the triggers for now.
 	// Change market type to auction
 	ordersToCancel, err := m.matching.EnterAuction()
 	if err != nil {
@@ -525,43 +465,34 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	}
 
 	// Send an event bus update
-	m.broker.Send(events.NewAuctionEvent(ctx,
-		m.mkt.Id,
-		false,
-		m.auctionStart.UnixNano(),
-		m.auctionEnd.UnixNano(),
-		m.isOpeningAuction()))
+	m.broker.Send(m.as.AuctionStarted(ctx))
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading
-func (m *Market) LeaveAuction(ctx context.Context) {
+func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// If we were an opening auction, clear it
-	if m.isOpeningAuction() {
+	if m.as.IsOpeningAuction() {
 		m.mkt.OpeningAuction = nil
 	}
 
-	// @TODO this ought to come from m.mkt
-	m.tradeMode = types.MarketState_MARKET_STATE_CONTINUOUS
-	if fba := m.mkt.GetDiscrete(); fba != nil {
-
-		m.tradeMode = types.MarketState_MARKET_STATE_AUCTION
-	}
-
 	// Change market type to continuous trading
-	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction()
+	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.currentTime)
 	if err != nil {
 		m.log.Error("Error leaving auction", logging.Error(err))
 	}
 
 	// Process each confirmation
+	evts := make([]events.Event, 0, len(uncrossedOrders))
 	for _, uncrossedOrder := range uncrossedOrders {
 		m.handleConfirmation(ctx, uncrossedOrder.Order, uncrossedOrder)
 
 		if uncrossedOrder.Order.Remaining == 0 {
 			uncrossedOrder.Order.Status = types.Order_STATUS_FILLED
 		}
-		m.broker.Send(events.NewOrderEvent(ctx, uncrossedOrder.Order))
+		evts = append(evts, events.NewOrderEvent(ctx, uncrossedOrder.Order))
 	}
+	// send order events in a single batch, it's more efficient
+	m.broker.SendBatch(evts)
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
@@ -575,33 +506,89 @@ func (m *Market) LeaveAuction(ctx context.Context) {
 	for _, uo := range uncrossedOrders {
 		err := m.applyFees(ctx, uo.Order, uo.Trades)
 		if err != nil {
+			// @TODO this ought to be an event
 			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uo.Order.Id))
 		}
 	}
+
+	// update auction state, so we know what the new tradeMode ought to be
+	endEvt := m.as.AuctionEnded(ctx, now)
+
 	// Send an event bus update
-	m.broker.Send(events.NewAuctionEvent(ctx,
-		m.mkt.Id,
-		true,
-		m.auctionStart.UnixNano(),
-		m.auctionEnd.UnixNano(),
-		m.isOpeningAuction()))
+	m.broker.Send(endEvt)
 }
 
-// GetTradingMode : Return trading mode that the market is currently in
-func (m *Market) GetTradingMode() types.MarketState {
-	return m.tradeMode // TODO (WG 03/09/20): Adding this only to be able the test the triggers for now. Needs to be reconciled with orderbook's marketState - don't need both.
+func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) types.OrderError {
+	if order.Type != types.Order_TYPE_LIMIT {
+		// All pegged orders must be LIMIT orders
+		return types.ErrPeggedOrderMustBeLimitOrder
+	}
+
+	if order.TimeInForce != types.Order_TIF_GTT && order.TimeInForce != types.Order_TIF_GTC {
+		// Pegged orders can only be GTC or GTT
+		return types.ErrPeggedOrderMustBeGTTOrGTC
+	}
+
+	if order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+		// We must specify a valid reference
+		return types.ErrPeggedOrderWithoutReferencePrice
+	}
+
+	if order.Side == types.Side_SIDE_BUY {
+		switch order.PeggedOrder.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			return types.ErrPeggedOrderBuyCannotReferenceBestAskPrice
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			if order.PeggedOrder.Offset > 0 {
+				return types.ErrPeggedOrderOffsetMustBeLessOrEqualToZero
+			}
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			if order.PeggedOrder.Offset >= 0 {
+				return types.ErrPeggedOrderOffsetMustBeLessThanZero
+			}
+		}
+	} else {
+		switch order.PeggedOrder.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			if order.PeggedOrder.Offset < 0 {
+				return types.ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
+			}
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			return types.ErrPeggedOrderSellCannotReferenceBestBidPrice
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			if order.PeggedOrder.Offset <= 0 {
+				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
+			}
+		}
+	}
+	return types.OrderError_ORDER_ERROR_NONE
 }
 
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
-	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION && order.TimeInForce == types.Order_TIF_GFN {
+	isAuction := m.as.InAuction()
+	if isAuction && order.TimeInForce == types.Order_TIF_GFN {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return ErrGFAOrderReceivedDuringContinuousTrading
 	}
 
-	if m.tradeMode == types.MarketState_MARKET_STATE_CONTINUOUS && order.TimeInForce == types.Order_TIF_GFA {
+	if isAuction && order.TimeInForce == types.Order_TIF_IOC {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return ErrGFAOrderReceivedDuringContinuousTrading
+	}
+
+	if isAuction && order.TimeInForce == types.Order_TIF_FOK {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+		return ErrGFAOrderReceivedDuringContinuousTrading
+	}
+
+	if !isAuction && order.TimeInForce == types.Order_TIF_GFA {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -646,6 +633,24 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 		}
 		return types.ErrInvalidMarketID
 	}
+
+	// Validate pegged orders
+	if order.PeggedOrder != nil {
+		reason := m.validatePeggedOrder(ctx, order)
+		if reason != types.OrderError_ORDER_ERROR_NONE {
+			order.Status = types.Order_STATUS_REJECTED
+			order.Reason = reason
+
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failed to validate pegged order details",
+					logging.Order(*order),
+					logging.String("market", m.mkt.Id))
+			}
+			return reason
+		}
+	}
 	return nil
 }
 
@@ -654,7 +659,7 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 	if !m.collateral.HasGeneralAccount(order.PartyID, asset) {
 		// adding order to the buffer first
 		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_INVALID_PARTY_ID
+		order.Reason = types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		// trader should be created before even trying to post order
@@ -776,11 +781,11 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// If we are not in an opening auction, apply fees
 	var trades []*types.Trade
-	if m.mkt.OpeningAuction == nil &&
-		m.matching.GetMarketState() != types.MarketState_MARKET_STATE_AUCTION {
+	// we're not in auction (not opening, not any other auction
+	if !m.as.InAuction() {
 
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err = m.evaluateAuctionTriggersAndGetTrades(ctx, order)
+		trades, err = m.checkPriceAndGetTrades(ctx, order)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, order, err)
 		}
@@ -846,11 +851,14 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return confirmation, nil
 }
 
-func (m *Market) evaluateAuctionTriggersAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
+func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil && len(trades) > 0 && m.shouldEnterAuctionPerPrice(trades[len(trades)-1].Price) {
-		m.EnterAuction(ctx)
-		trades = make([]*types.Trade, 0)
+	if err == nil && len(trades) > 0 {
+		err = m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime)
+		if m.as.AuctionStart() {
+			m.EnterAuction(ctx)
+			return nil, err
+		}
 	}
 	return trades, err
 }
@@ -864,7 +872,7 @@ func (m *Market) addParty(party string) {
 func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
 	// if we have some trades, let's try to get the fees
 
-	if len(trades) <= 0 || m.isOpeningAuction() {
+	if len(trades) <= 0 || m.as.IsOpeningAuction() {
 		return nil
 	}
 
@@ -874,24 +882,13 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		err  error
 	)
 
-	switch m.mkt.TradingMode.(type) {
-	case *types.Market_Continuous:
-		// change this by the following check:
-		// if m.NotInMonitoringAuctionMode {
-		if true {
-			fees, err = m.fee.CalculateForContinuousMode(trades)
-		}
-		// FIXME(): uncomment this once we have implemented
-		// monitoring auction mode
-		//  Use this once we implemented Opening auction
-		// } else {
-		// 	fees, err = m.fee.CalculateForAuctionMode(trades)
-		// }
-
-		// FIXME(): uncomment this once we have implemented
-		// FrequentBatchesAuctions
-		// case *types.Market_FrequentBatchesAuctions:
-		// 	fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
+	if !m.as.InAuction() {
+		fees, err = m.fee.CalculateForContinuousMode(trades)
+	} else if m.as.IsMonitorAuction() {
+		// we are in auction mode
+		fees, err = m.fee.CalculateForAuctionMode(trades)
+	} else if m.as.IsFBA() {
+		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
 	}
 
 	if err != nil {
@@ -903,26 +900,15 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		transfers []*types.TransferResponse
 		asset, _  = m.mkt.GetAsset()
 	)
-	switch m.mkt.TradingMode.(type) {
-	case *types.Market_Continuous:
-		// change this by the following check:
-		// if m.NotInMonitoringAuctionMode {
-		if true {
-			transfers, err = m.collateral.TransferFeesContinuousTrading(
-				ctx, m.GetID(), asset, fees)
-		}
-		// FIXME():
-		//  Use this once we implemented Opening auction
-		// } else {
-		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
-		// 		ctx, m.GetID(), asset, fees)
-		// }
 
-		// FIXME(): uncomment once Frequent batches auctions is implemented
-		// case *types.Market_FrequentBatchesAuctions:
-		// 	transfers, err = m.collateral.TransferFeesAuctionModes(
-		// 		ctx, m.GetID(), asset, fees)
-		// }
+	if !m.as.InAuction() {
+		transfers, err = m.collateral.TransferFeesContinuousTrading(ctx, m.GetID(), asset, fees)
+	} else if m.as.IsMonitorAuction() {
+		// @TODO handle this properly
+		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+	} else if m.as.IsFBA() {
+		// @TODO implement transfer for auction types
+		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
 	}
 
 	if err != nil {
@@ -988,24 +974,6 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 		if len(margins) > 0 {
 
 			transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug(
-					"Updated margin balances",
-					logging.Int("transfer-count", len(transfers)),
-					logging.Int("closed-count", len(closed)),
-					logging.Error(err),
-				)
-				for _, tr := range transfers {
-					for _, v := range tr.GetTransfers() {
-						if m.log.GetLevel() == logging.DebugLevel {
-							m.log.Debug(
-								"Ensured margin on order with success",
-								logging.String("transfer", fmt.Sprintf("%v", *v)),
-								logging.String("market-id", m.GetID()))
-						}
-					}
-				}
-			}
 			if err == nil && len(transfers) > 0 {
 				evt := events.NewTransferResponse(ctx, transfers)
 				m.broker.Send(evt)
@@ -1403,8 +1371,8 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 	// @TODO replace markPrice with intidicative uncross price in auction mode if available
 	price := m.markPrice
-	if m.tradeMode == types.MarketState_MARKET_STATE_AUCTION {
-		if ip, _, _ := m.matching.GetIndicativePriceAndVolume(); ip != 0 {
+	if m.as.InAuction() {
+		if ip := m.matching.GetIndicativePrice(); ip != 0 {
 			price = ip
 		}
 	}
@@ -1418,12 +1386,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 			)
 		}
 		return nil, ErrMarginCheckInsufficient
-	} else if riskUpdate == nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("No risk updates",
-				logging.String("market-id", m.GetID()))
-		}
-	} else {
+	} else if riskUpdate != nil {
 		// this should always be a increase to the InitialMargin
 		// if it does fail, we need to return an error straight away
 		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
@@ -1444,17 +1407,6 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 			}
 
 			return nil, ErrMarginCheckInsufficient
-		}
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Transfers applied for ")
-			for _, v := range transfer.GetTransfers() {
-				m.log.Debug(
-					"Ensured margin on order with success",
-					logging.String("transfer", fmt.Sprintf("%v", *v)),
-					logging.String("market-id", m.GetID()),
-				)
-			}
 		}
 
 		if len(transfer.Transfers) > 0 {
@@ -1486,18 +1438,7 @@ func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin,
 		return nil, err
 	}
 	if riskUpdate == nil {
-		m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
 		return nil, nil
-	}
-
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Got margins transfer on new order")
-		transfer := riskUpdate.Transfer()
-		m.log.Debug(
-			"New margin transfer on order submit",
-			logging.String("transfer", fmt.Sprintf("%v", *transfer)),
-			logging.String("market-id", m.GetID()),
-		)
 	}
 
 	return riskUpdate, nil
@@ -1514,6 +1455,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 // but does not move the money between trader accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
+	defer timer.EngineTimeCounterAdd()
 	asset, _ := m.mkt.GetAsset()
 	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if err != nil {
@@ -1523,29 +1465,16 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		)
 		return nil
 	}
-	if m.log.GetLevel() == logging.DebugLevel {
-		// @TODO stream the ledger movements here
-		m.log.Debug(
-			"transfer responses after MTM settlement",
-			logging.Int("transfer-count", len(response)),
-			logging.String("raw-dump", fmt.Sprintf("%#v", response)),
-		)
-	}
 	// sending response to buffer
-	evt := events.NewTransferResponse(ctx, response)
-	m.broker.Send(evt)
+	m.broker.Send(events.NewTransferResponse(ctx, response))
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
 	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice)
 	if len(riskUpdates) == 0 {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("No risk updates after call to Update Margins in collateralAndRisk()")
-		}
 		return nil
 	}
 
-	timer.EngineTimeCounterAdd()
 	return riskUpdates
 }
 
@@ -1949,10 +1878,6 @@ func (m *Market) applyOrderAmendment(
 func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderCancelReplace")
 
-	if m.log.GetLevel() == logging.DebugLevel {
-		m.log.Debug("Cancel/replace order")
-	}
-
 	cancellation, err := m.matching.CancelOrder(existingOrder)
 	if cancellation == nil {
 		if err != nil {
@@ -1967,7 +1892,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		}
 	} else {
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err := m.evaluateAuctionTriggersAndGetTrades(ctx, newOrder)
+		trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, newOrder, err)
 		}
@@ -2052,4 +1977,8 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 			asset: {Long: 0.15, Short: 0.25},
 		},
 	}
+}
+
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, partyId string, sub *types.LiquidityProvisionSubmission) error {
+	return nil
 }

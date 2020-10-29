@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -18,13 +19,12 @@ type Chain interface {
 }
 
 type Commander struct {
-	ctx context.Context
 	bc  Chain
 	wal Wallet
 }
 
 var (
-	unsigned = map[blockchain.Command]struct{}{}
+	unsigned = map[txn.Command]struct{}{}
 
 	ErrCommandMustBeSigned        = errors.New("command requires a signature")
 	ErrPayloadNotNodeRegistration = errors.New("expected node registration payload")
@@ -34,12 +34,11 @@ var (
 // NewCommander - used to sign and send transaction from core
 // e.g. NodeRegistration, NodeVote
 // chain argument can't be passed in in cmd package, but is used for tests
-func NewCommander(ctx context.Context, bc Chain, wal Wallet) (*Commander, error) {
+func NewCommander(bc Chain, wal Wallet) (*Commander, error) {
 	if Blockchain(wal.Chain()) != Vega {
 		return nil, ErrVegaWalletRequired
 	}
 	return &Commander{
-		ctx: ctx,
 		bc:  bc,
 		wal: wal,
 	}, nil
@@ -51,12 +50,12 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(cmd blockchain.Command, payload proto.Message) error {
+func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message) error {
 	raw, err := proto.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	encodedCmd, err := blockchain.TxEncode(raw, cmd)
+	encodedCmd, err := txn.Encode(raw, cmd)
 	if err != nil {
 		return err
 	}
@@ -87,7 +86,7 @@ func (c *Commander) Command(cmd blockchain.Command, payload proto.Message) error
 			Version: c.wal.Version(),
 		},
 	}
-	_, err = c.bc.SubmitTransaction(c.ctx, wrapped)
+	_, err = c.bc.SubmitTransaction(ctx, wrapped)
 	return err
 }
 

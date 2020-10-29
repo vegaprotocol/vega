@@ -1,6 +1,8 @@
 package encoding
 
 import (
+	"encoding/base64"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -24,9 +26,18 @@ func (d *Duration) UnmarshalText(text []byte) error {
 	return err
 }
 
+func (d *Duration) UnmarshalFlag(s string) error {
+	return d.UnmarshalText([]byte(s))
+}
+
 // MarshalText marshal a duraton into bytes
 func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.String()), nil
+}
+
+func (d Duration) MarshalFlag() (string, error) {
+	bz, err := d.MarshalText()
+	return string(bz), err
 }
 
 // LogLevel is wrapper over the actual log level
@@ -47,7 +58,39 @@ func (l *LogLevel) UnmarshalText(text []byte) error {
 	return err
 }
 
+func (l *LogLevel) UnmarshalFlag(s string) error {
+	return l.UnmarshalText([]byte(s))
+}
+
 // MarshalText marshal a loglevel into bytes
 func (l LogLevel) MarshalText() ([]byte, error) {
 	return []byte(l.String()), nil
+}
+
+type Bool bool
+
+func (b *Bool) UnmarshalFlag(s string) error {
+	if s == "true" {
+		*b = true
+	} else if s == "false" {
+		*b = false
+	} else {
+		return fmt.Errorf("only `true' and `false' are valid values, not `%s'", s)
+	}
+	return nil
+}
+
+type Base64 []byte
+
+func (b *Base64) UnmarshalFlag(s string) error {
+	dec, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return err
+	}
+	*b = dec
+	return nil
+}
+
+func (b Base64) MarshalFlag() (string, error) {
+	return base64.StdEncoding.EncodeToString(b), nil
 }

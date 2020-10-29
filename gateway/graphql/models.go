@@ -64,6 +64,20 @@ type Asset struct {
 
 func (Asset) IsEvent() {}
 
+// An auction duration is used to configure 3 auction periods:
+// 1. `duration > 0`, `volume == 0`:
+//   The auction will last for at least N seconds.
+// 2. `duration == 0`, `volume > 0`:
+//   The auction will end once we can close with given traded volume.
+// 3. `duration > 0`, `volume > 0`:
+//   The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+type AuctionDuration struct {
+	// Duration of the auction in seconds
+	DurationSecs int `json:"durationSecs"`
+	// Target uncrossing trading volume
+	Volume int `json:"volume"`
+}
+
 type AuctionEvent struct {
 	// the market ID
 	MarketID string `json:"marketID"`
@@ -75,6 +89,8 @@ type AuctionEvent struct {
 	AuctionStart string `json:"auctionStart"`
 	// optional end time of auction
 	AuctionEnd string `json:"auctionEnd"`
+	// What triggered the auction
+	Trigger AuctionTrigger `json:"trigger"`
 }
 
 func (AuctionEvent) IsEvent() {}
@@ -315,6 +331,16 @@ type LedgerEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// A special order type for liquidity providers
+type LiquidityOrderInput struct {
+	// The value to which this order is tied
+	Reference PeggedReference `json:"reference"`
+	// The proportion of the commitment allocted to this order
+	Proportion int `json:"proportion"`
+	// Offset from the pegged reference
+	Offset int `json:"offset"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
@@ -398,6 +424,11 @@ type Market struct {
 	//   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
 	//   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
 	DecimalPlaces int `json:"decimalPlaces"`
+	// Auction duration specifies how long the opening auction will run (minimum
+	// duration and optionally a minimum traded volume).
+	OpeningAuction *AuctionDuration `json:"openingAuction"`
+	// Price monitoring settings for the market
+	PriceMonitoringSettings *PriceMonitoringSettings `json:"priceMonitoringSettings"`
 	// Orders on a market
 	Orders []*proto.Order `json:"orders"`
 	// Get account for a party or market
@@ -410,6 +441,8 @@ type Market struct {
 	Candles []*proto.Candle `json:"candles"`
 	// marketData for the given market
 	Data *proto.MarketData `json:"data"`
+	// The list of the liquidity provision commitment for this market
+	LiquidityProvisions []*proto.LiquidityProvision `json:"liquidityProvisions"`
 }
 
 func (Market) IsEvent() {}
@@ -483,6 +516,8 @@ type NewMarketInput struct {
 	Metadata []string `json:"metadata"`
 	// The proposed duration for the opening auction for this market in seconds
 	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
+	// Price monitoring configuration
+	PriceMonitoringSettings *PriceMonitoringSettingsInput `json:"priceMonitoringSettings"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -497,6 +532,14 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *proto.MarginLevels `json:"marginLevels"`
+}
+
+// Create an order linked to an index rather than a price
+type PeggedOrder struct {
+	// Index to link this order to
+	Reference PeggedReference `json:"reference"`
+	// Price offset from the peg
+	Offset string `json:"offset"`
 }
 
 type PositionResolution struct {
@@ -522,6 +565,12 @@ type PreparedCancelOrder struct {
 	Blob string `json:"blob"`
 }
 
+// A prepared LiquidityProvision command
+type PreparedLiquidityProvision struct {
+	// The blob to be send to the wallet and to be signed
+	Blob string `json:"blob"`
+}
+
 type PreparedProposal struct {
 	// Raw transaction data to sign & submit
 	Blob string `json:"blob"`
@@ -544,6 +593,46 @@ type PreparedVote struct {
 type PreparedWithdrawal struct {
 	// the raw transaction to sign & submit
 	Blob string `json:"blob"`
+}
+
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringParameters struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringParametersInput struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// Configuration of a market price monitorings auctions triggers
+type PriceMonitoringSettings struct {
+	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
+	Parameters []*PriceMonitoringParameters `json:"parameters"`
+	// How often (in seconds) the price monitoring bounds should be updated
+	UpdateFrequencySecs int `json:"updateFrequencySecs"`
+}
+
+// Configuration of a market price monitorings auctions triggers
+type PriceMonitoringSettingsInput struct {
+	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
+	Parameters []*PriceMonitoringParametersInput `json:"parameters"`
+	// How often (in seconds) the price monitoring bounds should be updated
+	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
 }
 
 type ProposalTerms struct {
@@ -783,6 +872,8 @@ type Withdrawal struct {
 	Details WithdrawalDetails `json:"details"`
 }
 
+func (Withdrawal) IsEvent() {}
+
 // The various account types we have (used by collateral)
 type AccountType string
 
@@ -842,49 +933,107 @@ func (e AccountType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type AuctionTrigger string
+
+const (
+	// Invalid trigger (or no auction)
+	AuctionTriggerUnspecified AuctionTrigger = "Unspecified"
+	// Auction because market is trading FBA
+	AuctionTriggerBatch AuctionTrigger = "Batch"
+	// Opening auction
+	AuctionTriggerOpening AuctionTrigger = "Opening"
+	// Price monitoring
+	AuctionTriggerPrice AuctionTrigger = "Price"
+	// Liquidity monitoring
+	AuctionTriggerLiquidity AuctionTrigger = "Liquidity"
+)
+
+var AllAuctionTrigger = []AuctionTrigger{
+	AuctionTriggerUnspecified,
+	AuctionTriggerBatch,
+	AuctionTriggerOpening,
+	AuctionTriggerPrice,
+	AuctionTriggerLiquidity,
+}
+
+func (e AuctionTrigger) IsValid() bool {
+	switch e {
+	case AuctionTriggerUnspecified, AuctionTriggerBatch, AuctionTriggerOpening, AuctionTriggerPrice, AuctionTriggerLiquidity:
+		return true
+	}
+	return false
+}
+
+func (e AuctionTrigger) String() string {
+	return string(e)
+}
+
+func (e *AuctionTrigger) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AuctionTrigger(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AuctionTrigger", str)
+	}
+	return nil
+}
+
+func (e AuctionTrigger) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type BusEventType string
 
 const (
-	// event type indicating TimeUpdate
+	// Vega Time has changed
 	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
-	// transfer response event
+	// A balance has been transferred between accounts
 	BusEventTypeTransferResponses BusEventType = "TransferResponses"
-	// position resolution event
+	// A position resolution event has occurred
 	BusEventTypePositionResolution BusEventType = "PositionResolution"
-	// order event
+	// An order has been created or updated
 	BusEventTypeOrder BusEventType = "Order"
-	// account event
+	// An account has been updated
 	BusEventTypeAccount BusEventType = "Account"
-	// party event
+	// A party has been updated
 	BusEventTypeParty BusEventType = "Party"
-	// trade event
+	// A trade has been created
 	BusEventTypeTrade BusEventType = "Trade"
-	// margin levels event
+	// Margin levels have changed for a position
 	BusEventTypeMarginLevels BusEventType = "MarginLevels"
-	// proposal event
+	// A governance proposal has been created or updated
 	BusEventTypeProposal BusEventType = "Proposal"
-	// vote event
+	// A vote has been placed on a governance proposal
 	BusEventTypeVote BusEventType = "Vote"
-	// market data event
+	// Market data has been updated
 	BusEventTypeMarketData BusEventType = "MarketData"
-	// node signature event
+	// Validator nodes signatures for an event
 	BusEventTypeNodeSignature BusEventType = "NodeSignature"
-	// loss socialization event
+	// A position has been closed without sufficient insurance pool balance to cover it
 	BusEventTypeLossSocialization BusEventType = "LossSocialization"
-	// settle position event
+	// A position has been settled
 	BusEventTypeSettlePosition BusEventType = "SettlePosition"
-	// settle distressed event
+	// A distressed position has been settled
 	BusEventTypeSettleDistressed BusEventType = "SettleDistressed"
-	// market created event
+	// A new market has been created
 	BusEventTypeMarketCreated BusEventType = "MarketCreated"
-	// asset event
+	// An asset has been created or update
 	BusEventTypeAsset BusEventType = "Asset"
-	// market tick event
+	// A market has progressed by one tick
 	BusEventTypeMarketTick BusEventType = "MarketTick"
-	// auction event
+	// A market has either entered or exited auction
 	BusEventTypeAuction BusEventType = "Auction"
-	// risk factor event
+	// A risk factor adjustment was made
 	BusEventTypeRiskFactor BusEventType = "RiskFactor"
+	// A liquidity commitment change occurred
+	BusEventTypeLiquidityProvision BusEventType = "LiquidityProvision"
+	// Collateral has deposited in to this Vega network via the bridge
+	BusEventTypeDeposit BusEventType = "Deposit"
+	// Collateral has been withdrawn from this Vega network via the bridge
+	BusEventTypeWithdrawal BusEventType = "Withdrawal"
 	// constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
@@ -910,12 +1059,15 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeMarketTick,
 	BusEventTypeAuction,
 	BusEventTypeRiskFactor,
+	BusEventTypeLiquidityProvision,
+	BusEventTypeDeposit,
+	BusEventTypeWithdrawal,
 	BusEventTypeMarket,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeMarket:
 		return true
 	}
 	return false
@@ -1045,24 +1197,77 @@ func (e Interval) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Status of a liquidity provision order
+type LiquidityProvisionStatus string
+
+const (
+	// An active liquidity provision
+	LiquidityProvisionStatusActive LiquidityProvisionStatus = "Active"
+	// A liquidity provision stopped by the network
+	LiquidityProvisionStatusStopped LiquidityProvisionStatus = "Stopped"
+	// A Cancelled Liquidity provision
+	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
+)
+
+var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
+	LiquidityProvisionStatusActive,
+	LiquidityProvisionStatusStopped,
+	LiquidityProvisionStatusCancelled,
+}
+
+func (e LiquidityProvisionStatus) IsValid() bool {
+	switch e {
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled:
+		return true
+	}
+	return false
+}
+
+func (e LiquidityProvisionStatus) String() string {
+	return string(e)
+}
+
+func (e *LiquidityProvisionStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = LiquidityProvisionStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid LiquidityProvisionStatus", str)
+	}
+	return nil
+}
+
+func (e LiquidityProvisionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // What market state are we in
 type MarketState string
 
 const (
 	// Continuous trading where orders are processed and potentially matched on arrival
 	MarketStateContinuous MarketState = "CONTINUOUS"
-	// Auction trading where orders are uncrossed at the end of the auction period
-	MarketStateAuction MarketState = "AUCTION"
+	// Auction trading where orders are uncrossed at the end of the opening auction period
+	MarketStateOpeningAuction MarketState = "OPENING_AUCTION"
+	// Auction as normal trading mode for the market, where orders are uncrossed periodically
+	MarketStateBatchAuction MarketState = "BATCH_AUCTION"
+	// Auction triggered by price/liquidity monitoring
+	MarketStateMonitoringAuction MarketState = "MONITORING_AUCTION"
 )
 
 var AllMarketState = []MarketState{
 	MarketStateContinuous,
-	MarketStateAuction,
+	MarketStateOpeningAuction,
+	MarketStateBatchAuction,
+	MarketStateMonitoringAuction,
 }
 
 func (e MarketState) IsValid() bool {
 	switch e {
-	case MarketStateContinuous, MarketStateAuction:
+	case MarketStateContinuous, MarketStateOpeningAuction, MarketStateBatchAuction, MarketStateMonitoringAuction:
 		return true
 	}
 	return false
@@ -1199,6 +1404,30 @@ const (
 	OrderRejectionReasonGFAOrderDuringAuction OrderRejectionReason = "GFAOrderDuringAuction"
 	// Good for auction order received during continuous trading
 	OrderRejectionReasonGFNOrderDuringContinuousTrading OrderRejectionReason = "GFNOrderDuringContinuousTrading"
+	// IOC orders are not allowed during auction
+	OrderRejectionReasonIOCOrderDuringAuction OrderRejectionReason = "IOCOrderDuringAuction"
+	// FOK orders are not allowed during auction
+	OrderRejectionReasonFOKOrderDuringAuction OrderRejectionReason = "FOKOrderDuringAuction"
+	// Pegged orders must be LIMIT orders
+	OrderRejectionReasonPeggedOrderMustBeLimitOrder OrderRejectionReason = "PeggedOrderMustBeLimitOrder"
+	// Pegged orders can only have TIF GTC or GTT
+	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc OrderRejectionReason = "PeggedOrderMustBeGTTOrGTC"
+	// Pegged order must have a reference price
+	OrderRejectionReasonPeggedOrderWithoutReferencePrice OrderRejectionReason = "PeggedOrderWithoutReferencePrice"
+	// Buy pegged order cannot reference best ask price
+	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice OrderRejectionReason = "PeggedOrderBuyCannotReferenceBestAskPrice"
+	// Pegged order offset must be <= 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessOrEqualToZero"
+	// Pegged order offset must be < 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeLessThanZero"
+	// Pegged order offset must be >= 0
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterOrEqualToZero"
+	// Sell pegged order cannot reference best bid price
+	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice OrderRejectionReason = "PeggedOrderSellCannotReferenceBestBidPrice"
+	// Pegged order offset must be > zero
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterThanZero"
+	// Insufficient balance to submit the order (no deposit made)
+	OrderRejectionReasonInsufficientAssetBalance OrderRejectionReason = "InsufficientAssetBalance"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1233,11 +1462,23 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonInvalidMarketType,
 	OrderRejectionReasonGFAOrderDuringAuction,
 	OrderRejectionReasonGFNOrderDuringContinuousTrading,
+	OrderRejectionReasonIOCOrderDuringAuction,
+	OrderRejectionReasonFOKOrderDuringAuction,
+	OrderRejectionReasonPeggedOrderMustBeLimitOrder,
+	OrderRejectionReasonPeggedOrderMustBeGTTOrGtc,
+	OrderRejectionReasonPeggedOrderWithoutReferencePrice,
+	OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice,
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero,
+	OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero,
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero,
+	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice,
+	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero,
+	OrderRejectionReasonInsufficientAssetBalance,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance:
 		return true
 	}
 	return false
@@ -1425,6 +1666,53 @@ func (e *OrderType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OrderType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Valid references used for pegged orders.
+type PeggedReference string
+
+const (
+	// Peg the order against the mid price of the order book
+	PeggedReferenceMid PeggedReference = "Mid"
+	// Peg the order against the best bid price of the order book
+	PeggedReferenceBestBid PeggedReference = "BestBid"
+	// Peg the order against the best ask price of the order book
+	PeggedReferenceBestAsk PeggedReference = "BestAsk"
+)
+
+var AllPeggedReference = []PeggedReference{
+	PeggedReferenceMid,
+	PeggedReferenceBestBid,
+	PeggedReferenceBestAsk,
+}
+
+func (e PeggedReference) IsValid() bool {
+	switch e {
+	case PeggedReferenceMid, PeggedReferenceBestBid, PeggedReferenceBestAsk:
+		return true
+	}
+	return false
+}
+
+func (e PeggedReference) String() string {
+	return string(e)
+}
+
+func (e *PeggedReference) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PeggedReference(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PeggedReference", str)
+	}
+	return nil
+}
+
+func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

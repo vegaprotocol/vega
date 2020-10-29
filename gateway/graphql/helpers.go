@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"google.golang.org/grpc/status"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -12,11 +12,21 @@ import (
 )
 
 func safeStringUint64(input string) (uint64, error) {
-	if i, err := strconv.ParseUint(input, 10, 64); err == nil {
-		return i, nil
+	i, err := strconv.ParseUint(input, 10, 64)
+	if err != nil {
+		// A conversion error occurred, return the error
+		return 0, fmt.Errorf("invalid input string for uint64 conversion %s", input)
 	}
-	// A conversion error occurred, return the error
-	return 0, fmt.Errorf("invalid input string for uint64 conversion %s", input)
+	return i, nil
+}
+
+func safeStringInt64(input string) (int64, error) {
+	i, err := strconv.ParseInt(input, 10, 64)
+	if err != nil {
+		// A conversion error occurred, return the error
+		return 0, fmt.Errorf("invalid input string for int64 conversion %s", input)
+	}
+	return i, nil
 }
 
 // customErrorFromStatus provides a richer error experience from grpc ErrorDetails
@@ -30,14 +40,12 @@ func customErrorFromStatus(err error) error {
 		customInner := ""
 		customMessage := st.Message()
 		errorDetails := st.Details()
-		if errorDetails != nil {
-			for _, s := range errorDetails {
-				det := s.(*types.ErrorDetail)
-				customDetail = det.Message
-				customCode = fmt.Sprintf("%d", det.Code)
-				customInner = det.Inner
-				break
-			}
+		for _, s := range errorDetails {
+			det := s.(*types.ErrorDetail)
+			customDetail = det.Message
+			customCode = fmt.Sprintf("%d", det.Code)
+			customInner = det.Inner
+			break
 		}
 		return &gqlerror.Error{
 			Message: customMessage,

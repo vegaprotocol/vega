@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/nodewallet/mocks"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +35,7 @@ func getTestCommander(t *testing.T) *testCommander {
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
 	wal := &stubWallet{chain: string(nodewallet.Vega)}
-	cmd, err := nodewallet.NewCommander(ctx, chain, wal)
+	cmd, err := nodewallet.NewCommander(chain, wal)
 	assert.NoError(t, err)
 	return &testCommander{
 		Commander: cmd,
@@ -61,10 +62,12 @@ func testSignedCommandSuccess(t *testing.T) {
 	commander := getTestCommander(t)
 	defer commander.Finish()
 
-	cmd := blockchain.NodeVoteCommand
+	cmd := txn.NodeVoteCommand
 	payload := &types.NodeVote{}
-	commander.chain.EXPECT().SubmitTransaction(commander.ctx, gomock.Any()).Times(1)
-	assert.NoError(t, commander.Command(cmd, payload))
+	ctx := context.Background()
+
+	commander.chain.EXPECT().SubmitTransaction(ctx, gomock.Any()).Times(1)
+	assert.NoError(t, commander.Command(ctx, cmd, payload))
 }
 
 func (t *testCommander) Finish() {

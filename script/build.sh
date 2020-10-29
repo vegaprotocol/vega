@@ -76,7 +76,7 @@ set_version() {
 }
 
 set_ldflags() {
-    ldflags="-X main.Version=$version -X main.VersionHash=$version_hash"
+    ldflags="-X main.CLIVersion=$version -X main.CLIVersionHash=$version_hash"
 }
 
 parse_args() {
@@ -358,6 +358,11 @@ run() {
 		fi
 
 		for app in "${apps[@]}" ; do
+			if test "$app" = "v2" ; then
+				app=vega
+			fi
+
+			echo "Building $app"
 			case "$action" in
 			build)
 				o="cmd/$app/$app$osarchsuffix$dbgsuffix$suffix$typesuffix"
