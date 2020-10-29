@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/gateway"
+	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
@@ -39,7 +39,7 @@ func getTestService(t *testing.T) *testService {
 	handler := mocks.NewMockWalletHandler(ctrl)
 	nodeForward := mocks.NewMockNodeForward(ctrl)
 	cfg := &wallet.Config{
-		RateLimit: gateway.RateLimitConfig{
+		RateLimit: vhttp.RateLimitConfig{
 			CoolDown: encoding.Duration{Duration: 1 * time.Minute},
 		},
 	}

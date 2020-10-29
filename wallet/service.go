@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"code.vegaprotocol.io/vega/gateway"
+	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/protobuf/proto"
@@ -25,7 +26,7 @@ type Service struct {
 	s           *http.Server
 	handler     WalletHandler
 	nodeForward NodeForward
-	rl          *gateway.RateLimit
+	rl          *vhttp.RateLimit
 	cfunc       context.CancelFunc
 }
 
@@ -111,7 +112,7 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 		handler:     h,
 		nodeForward: n,
 		cfunc:       cfunc,
-		rl:          gateway.NewRateLimit(ctx, cfg.RateLimit),
+		rl:          vhttp.NewRateLimit(ctx, cfg.RateLimit),
 	}
 
 	// all the endpoints are public for testing purpose

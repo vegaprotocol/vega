@@ -12,7 +12,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/gateway"
+	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
@@ -45,7 +45,7 @@ type Faucet struct {
 	cfg    Config
 	wal    *wallet.Wallet
 	s      *http.Server
-	rl     *gateway.RateLimit
+	rl     *vhttp.RateLimit
 	cfunc  context.CancelFunc
 	stopCh chan struct{}
 
@@ -92,7 +92,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		cltdata: clientData,
 		conn:    conn,
 		cfunc:   cfunc,
-		rl:      gateway.NewRateLimit(ctx, cfg.RateLimit),
+		rl:      vhttp.NewRateLimit(ctx, cfg.RateLimit),
 		stopCh:  make(chan struct{}),
 	}
 

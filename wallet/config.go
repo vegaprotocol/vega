@@ -14,7 +14,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/gateway"
+	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/zannen/toml"
@@ -33,13 +33,13 @@ const (
 )
 
 type Config struct {
-	Level       encoding.LogLevel       `long:"level"`
-	TokenExpiry encoding.Duration       `long:"token-expiry"`
-	Port        int                     `long:"port"`
-	IP          string                  `long:"ip"`
-	Node        NodeConfig              `group:"Node" namespace:"node"`
-	RsaKey      string                  `long:"rsa-key"`
-	RateLimit   gateway.RateLimitConfig `long:"rateLimit"`
+	Level       encoding.LogLevel     `long:"level"`
+	TokenExpiry encoding.Duration     `long:"token-expiry"`
+	Port        int                   `long:"port"`
+	IP          string                `long:"ip"`
+	Node        NodeConfig            `group:"Node" namespace:"node"`
+	RsaKey      string                `long:"rsa-key"`
+	RateLimit   vhttp.RateLimitConfig `long:"rateLimit"`
 }
 
 type NodeConfig struct {
@@ -62,7 +62,7 @@ func NewDefaultConfig() Config {
 		IP:     "0.0.0.0",
 		Port:   1789,
 		RsaKey: rsaKeyPath,
-		RateLimit: gateway.RateLimitConfig{
+		RateLimit: vhttp.RateLimitConfig{
 			CoolDown: encoding.Duration{Duration: defaultCoolDown},
 		},
 	}
