@@ -613,12 +613,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged order add to order book", testPeggedOrderAdd)
 	t.Run("pegged order test when placing a pegged order forces a reprice", testPeggedOrderWithReprice)
 	t.Run("pegged order entry during an auction", testPeggedOrderParkWhenInAuction)
-
-	// Tests for Gus to work on
-	//	t.Run("pegged orders check that a buy order pegged to BEST BID is repriced")
-	//	t.Run("pegged orders check that a buy order pegged to MID is repriced")
-	//	t.Run("pegged orders check that a sell order pegged to BEST ASK is repriced")
-	//	t.Run("pegged orders check that a sell order pegged to BEST MID is repriced")
+	t.Run("pegged order repricing", testPeggedOrderRepricing)
 
 	// Tests for Pete to work on
 	t.Run("pegged order check that a filled pegged order is handled correctly", testPeggedOrderFilledOrder)
@@ -971,4 +966,88 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 	assert.Equal(t,
 		types.Order_STATUS_PARKED.String(),
 		confirmation.Order.Status.String(), "When pegged price below zero (MIDPRICE - OFFSET) <= 0")
+}
+
+func testPeggedOrderRepricing(t *testing.T) {
+	// Create the market
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+
+	var (
+		buyPrice  uint64 = 90
+		sellPrice uint64 = 110
+		midPrice         = (sellPrice + buyPrice) / 2
+	)
+
+	tests := []struct {
+		reference      types.PeggedReference
+		side           types.Side
+		offset         int64
+		expectedPrice  uint64
+		expectingError string
+	}{
+		{
+			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+			side:          types.Side_SIDE_BUY,
+			offset:        -3,
+			expectedPrice: buyPrice - 3,
+		},
+		{
+			reference:      types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+			side:           types.Side_SIDE_BUY,
+			offset:         3,
+			expectingError: "can't have a positive offset on Buy orders",
+		},
+		{
+			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
+			side:          types.Side_SIDE_BUY,
+			offset:        -5,
+			expectedPrice: midPrice - 5,
+		},
+		{
+			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
+			side:          types.Side_SIDE_SELL,
+			offset:        5,
+			expectedPrice: midPrice + 5,
+		},
+		{
+			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+			side:          types.Side_SIDE_SELL,
+			offset:        5,
+			expectedPrice: sellPrice + 5,
+		},
+		{
+			reference:      types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+			side:           types.Side_SIDE_SELL,
+			offset:         -5,
+			expectingError: "can't have a negative offset on Sell orders",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			// Create market
+			tm := getTestMarket(t, now, closingAt, nil)
+
+			// Create the party
+			addAccount(tm, "party")
+			tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+			// Create buy and sell orders
+			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party", 1, buyPrice)
+			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party", 1, sellPrice)
+
+			// Create pegged order
+			order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, test.side, "party", 10, 0)
+			order.PeggedOrder = &types.PeggedOrder{Reference: test.reference, Offset: test.offset}
+			conf, err := tm.market.SubmitOrder(context.Background(), &order)
+			if msg := test.expectingError; msg != "" {
+				require.Error(t, err, msg)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expectedPrice, conf.Order.Price)
+			}
+		})
+	}
 }
