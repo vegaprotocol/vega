@@ -354,7 +354,8 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	}
 
 	l.Log.Info("new asset added successfully",
-		logging.String("asset", asset.String()))
+		logging.String("asset", asset.String()),
+		logging.String("source", v.String()))
 
 	// FIXME: this will be remove once we stop loading market from config
 	// here we replace the mkts assets symbols with ids
