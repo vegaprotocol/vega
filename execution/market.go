@@ -537,7 +537,7 @@ func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) err
 		return err
 	}
 	order.Price = price
-	return proto.ErrNil
+	return nil
 }
 
 // UnparkAllPeggedOrders Attempt to place all pegged orders back onto the order book
@@ -2260,6 +2260,8 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		// If we have a move update any pegged orders that reference it
 		if changes != 0 {
 			repricedCount = m.repriceAllPeggedOrders(ctx, changes)
+		} else {
+			repricedCount = 0
 		}
 
 		// Update the last price values
