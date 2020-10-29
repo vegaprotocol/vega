@@ -627,8 +627,8 @@ func TestPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARKED)
 	assert.NoError(t, err)
-	assert.Equal(t, tm.market.GetParkedOrderCount(), 1)
-	assert.Equal(t, tm.market.GetPeggedOrderCount(), 1)
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
 func TestPeggedOrderAdd(t *testing.T) {
@@ -644,7 +644,7 @@ func TestPeggedOrderAdd(t *testing.T) {
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 102)
 
-	// Place a valid pegged order which will be parked
+	// Place a valid pegged order which will be added to the order book
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
@@ -656,6 +656,35 @@ func TestPeggedOrderAdd(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 
 	assert.Equal(t, uint64(98), order.Price)
+}
+
+func TestPeggedOrderWithReprice(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+
+	md := tm.market.GetMarketData()
+	assert.Equal(t, uint64(100), md.MidPrice)
+	// Place a valid pegged order which will be added to the order book
+	// This order will cause the MID price to move and thus a reprice multiple times until it settles
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	_, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+
+	// Check to make sure the existing pegged order is repriced correctly
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+
+	// TODO need to find a way to validate details of the amended order
 }
 
 func TestPeggedOrderParkWhenInAuction(t *testing.T) {

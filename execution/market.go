@@ -477,50 +477,64 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
-func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) error {
+// repriceAllPeggedOrders runs through the slicve of pegged orders and reprices all those
+// which are using a reference that has moved. Returns the number of orders that were repriced.
+func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint64 {
+	var repriceCount uint64
 	for _, order := range m.peggedOrders {
-		switch order.PeggedOrder.Reference {
-		case types.PeggedReference_PEGGED_REFERENCE_MID:
-			if (changes & PriceMoveMid) > 0 {
-				return m.repricePeggedOrder(ctx, order)
-			}
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-			if (changes & PriceMoveBestBid) > 0 {
-				return m.repricePeggedOrder(ctx, order)
-			}
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-			if (changes & PriceMoveBestAsk) > 0 {
-				return m.repricePeggedOrder(ctx, order)
+		if (order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
+			changes&PriceMoveMid > 0) ||
+			(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_BID &&
+				changes&PriceMoveBestBid > 0) ||
+			(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_ASK &&
+				changes&PriceMoveBestAsk > 0) {
+			price, err := m.getNewPeggedPrice(ctx, order)
+			if err != nil {
+				// We can't reprice so we should remove the order and park it
+			} else {
+				// Force an amend but don't trigger a reprice to happen
+				m.AmendPeggedOrder(ctx, order, price)
+				repriceCount++
 			}
 		}
 	}
-	return nil
+	return repriceCount
 }
 
-// Reprice a pegged order. If this is the first time we submit the resulting order into the book
-// otherwise we amend the existing order
-func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) error {
+func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uint64, error) {
 	// Work out the new price of the order
+	var price uint64
 	switch order.PeggedOrder.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
 		mid, err := m.getMidPrice()
 		if err != nil {
-			return ErrUnableToReprice
+			return 0, ErrUnableToReprice
 		}
-		order.Price = uint64(int64(mid) + order.PeggedOrder.Offset)
+		price = uint64(int64(mid) + order.PeggedOrder.Offset)
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
 		bestbid, err := m.getBestBidPrice()
 		if err != nil {
-			return ErrUnableToReprice
+			return 0, ErrUnableToReprice
 		}
-		order.Price = uint64(int64(bestbid) + order.PeggedOrder.Offset)
+		price = uint64(int64(bestbid) + order.PeggedOrder.Offset)
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
 		bestask, err := m.getBestAskPrice()
 		if err != nil {
-			return ErrUnableToReprice
+			return 0, ErrUnableToReprice
 		}
-		order.Price = uint64(int64(bestask) + order.PeggedOrder.Offset)
+		price = uint64(int64(bestask) + order.PeggedOrder.Offset)
 	}
+	return price, nil
+}
+
+// Reprice a pegged order. This only updates the price on the order
+func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) error {
+	// Work out the new price of the order
+	price, err := m.getNewPeggedPrice(ctx, order)
+	if err != nil {
+		return err
+	}
+	order.Price = price
 	return nil
 }
 
@@ -1833,7 +1847,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
-		// Update the exiting message in place before we cancel it
+		// Update the existing message in place before we cancel it
 		m.orderAmendInPlace(existingOrder, amendedOrder)
 		cancellation, err := m.matching.CancelOrder(amendedOrder)
 		if cancellation == nil || err != nil {
@@ -1969,6 +1983,61 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		m.log.Debug("Order amendment not allowed", logging.Order(*existingOrder))
 	}
 	return nil, types.ErrEditNotAllowed
+}
+
+// AmendPeggedOrder amend an existing pegged order from the order book
+// This does not need to perform all the checks of the full AmendOrder call
+// as we know the order is valid already
+func (m *Market) AmendPeggedOrder(ctx context.Context, existingOrder *types.Order, price uint64) (*types.OrderConfirmation, error) {
+	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendPeggedOrder")
+	defer timer.EngineTimeCounterAdd()
+
+	amendedOrder := *existingOrder
+	amendedOrder.Price = price
+
+	// Update potential new position after the amend
+	pos, err := m.position.AmendOrder(existingOrder, &amendedOrder)
+	if err != nil {
+		// adding order to the buffer first
+		amendedOrder.Status = types.Order_STATUS_REJECTED
+		amendedOrder.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
+		m.broker.Send(events.NewOrderEvent(ctx, &amendedOrder))
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to amend potential trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		return nil, ErrMarginCheckFailed
+	}
+
+	// Perform check and allocate margin
+	// ignore rollback return here, as if we amend it means the order
+	// is already on the book, not rollback will be needed, the margin
+	// will be updated later on for sure.
+	if _, err = m.checkMarginForOrder(ctx, pos, &amendedOrder); err != nil {
+		// Undo the position registering
+		_, err1 := m.position.AmendOrder(&amendedOrder, existingOrder)
+		if err1 != nil {
+			m.log.Error("Unable to unregister potential amended trader position",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err1))
+		}
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Unable to check/add margin for trader",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		return nil, ErrMarginCheckFailed
+	}
+
+	confirmation, err := m.orderCancelReplace(ctx, existingOrder, &amendedOrder)
+	if err == nil {
+		m.handleConfirmation(ctx, &amendedOrder, confirmation)
+		m.broker.Send(events.NewOrderEvent(ctx, &amendedOrder))
+	}
+	return confirmation, err
 }
 
 func (m *Market) validateOrderAmendment(
@@ -2166,33 +2235,38 @@ func (m *Market) getMidPrice() (uint64, error) {
 	return (bid + ask) / 2, nil
 }
 
+// checkForReferenceMoves looks to see if the reference prices have moved since the
+// last transaction was processed.
 func (m *Market) checkForReferenceMoves(ctx context.Context) {
-	// Get the current reference values and compare them to the last saved set
-	newBestBid, _ := m.getBestBidPrice()
-	newBestAsk, _ := m.getBestAskPrice()
-	newMid, _ := m.getMidPrice()
+	var repricedCount uint64
+	for repricedCount = 1; repricedCount > 0; {
+		// Get the current reference values and compare them to the last saved set
+		newBestBid, _ := m.getBestBidPrice()
+		newBestAsk, _ := m.getBestAskPrice()
+		newMid, _ := m.getMidPrice()
 
-	// Look for a move
-	var changes uint8
-	if newMid != m.lastMidPrice {
-		changes |= PriceMoveMid
-	}
-	if newBestBid != m.lastBestBidPrice {
-		changes |= PriceMoveBestBid
-	}
-	if newBestAsk != m.lastBestAskPrice {
-		changes |= PriceMoveBestAsk
-	}
+		// Look for a move
+		var changes uint8
+		if newMid != m.lastMidPrice {
+			changes |= PriceMoveMid
+		}
+		if newBestBid != m.lastBestBidPrice {
+			changes |= PriceMoveBestBid
+		}
+		if newBestAsk != m.lastBestAskPrice {
+			changes |= PriceMoveBestAsk
+		}
 
-	// If we have a move update any pegged orders that reference it
-	if changes != 0 {
-		m.repriceAllPeggedOrders(ctx, changes)
-	}
+		// If we have a move update any pegged orders that reference it
+		if changes != 0 {
+			repricedCount = m.repriceAllPeggedOrders(ctx, changes)
+		}
 
-	// Update the last price values
-	m.lastMidPrice = newMid
-	m.lastBestBidPrice = newBestBid
-	m.lastBestAskPrice = newBestAsk
+		// Update the last price values
+		m.lastMidPrice = newMid
+		m.lastBestBidPrice = newBestBid
+		m.lastBestAskPrice = newBestAsk
+	}
 }
 
 // GetPeggedOrderCount returns the number of pegged orders in the market
