@@ -613,6 +613,18 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged order add to order book", testPeggedOrderAdd)
 	t.Run("pegged order test when placing a pegged order forces a reprice", testPeggedOrderWithReprice)
 	t.Run("pegged order entry during an auction", testPeggedOrderParkWhenInAuction)
+
+	// Tests for Gus to work on
+	//	t.Run("pegged orders check that a buy order pegged to BEST BID is repriced")
+	//	t.Run("pegged orders check that a buy order pegged to MID is repriced")
+	//	t.Run("pegged orders check that a sell order pegged to BEST ASK is repriced")
+	//	t.Run("pegged orders check that a sell order pegged to BEST MID is repriced")
+
+	// Tests for Pete to work on
+	//	t.Run("pegged order check that a filled pegged order is handled correctly")
+	//	t.Run("parked orders during normal trading are unparked when possible")
+	//	t.Run("pegged orders are handled correctly when moving into auction")
+	//	t.Run("pegged orders are handled correctly when moving out of auction")
 }
 
 func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
