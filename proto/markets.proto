@@ -134,18 +134,6 @@ message SimpleModelParams {
   double minMoveDown = 4 [(validator.field) = {float_lte: 0}];
 }
 
-// Risk model for external modelling.
-// Provided by external service via a Unix socket.
-message ExternalRiskModel {
-
-  // Name.
-  string name = 1;
-  // Local machine socket to connect to.
-  string socket = 2;
-  // Collection of configuration items.
-  map<string, string> config = 3;
-}
-
 // Scaling Factors (for use in margin calculation).
 message ScalingFactors {
 
@@ -174,10 +162,8 @@ message TradableInstrument {
   oneof riskModel {
     // Log normal.
     LogNormalRiskModel logNormalRiskModel = 100;
-    // External socket.
-    ExternalRiskModel externalRiskModel = 101;
     // Simple.
-    SimpleRiskModel simpleRiskModel = 102;
+    SimpleRiskModel simpleRiskModel = 101;
   }
 }
 
