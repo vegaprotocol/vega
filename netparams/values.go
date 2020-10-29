@@ -36,7 +36,7 @@ func (b *baseValue) ToString() (string, error) {
 	return "", errors.New("not a string value")
 }
 
-func (b *baseValue) ToJSONStruct(v interface{}) error {
+func (b *baseValue) ToJSONStruct(v interface{ Reset() }) error {
 	return errors.New("not a JSON value")
 }
 
