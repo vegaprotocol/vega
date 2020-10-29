@@ -852,7 +852,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	if order.PeggedOrder != nil {
 		// Add pegged order to time sorted list
-		m.peggedOrders = append(m.peggedOrders, order)
+		m.addPeggedOrder(order)
 
 		if m.as.InAuction() {
 			// If we are in an auction, we don't insert this order into the book
@@ -2267,7 +2267,7 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 			changes |= PriceMoveBestAsk
 		}
 
-		// If we have a move update any pegged orders that reference it
+		// If we have a reference price move, update any pegged orders that reference it
 		if changes != 0 {
 			repricedCount = m.repriceAllPeggedOrders(ctx, changes)
 		} else {
@@ -2278,6 +2278,28 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		m.lastMidPrice = newMid
 		m.lastBestBidPrice = newBestBid
 		m.lastBestAskPrice = newBestAsk
+
+		// If we have any parked orders, see if we can get a
+		// valid price for them and try to submit them
+		if len(m.parkedOrders) > 0 {
+			ordersToUnpark := m.parkedOrders
+			m.parkedOrders = []*types.Order{}
+			failedOrders := []*types.Order{}
+			for _, order := range ordersToUnpark {
+				price, err := m.getNewPeggedPrice(ctx, order)
+				if err == nil {
+					// Submit the order to the market
+					order.Price = price
+					_, err := m.SubmitOrder(ctx, order)
+					if err != nil {
+						failedOrders = append(failedOrders, order)
+					}
+				} else {
+					failedOrders = append(failedOrders, order)
+				}
+			}
+			m.parkedOrders = failedOrders
+		}
 	}
 }
 
@@ -2289,6 +2311,16 @@ func (m *Market) GetPeggedOrderCount() int {
 // GetParkedOrderCount returns hte number of parked orders in the market
 func (m *Market) GetParkedOrderCount() int {
 	return len(m.parkedOrders)
+}
+
+func (m *Market) addPeggedOrder(order *types.Order) {
+	// Check this order is unique
+	for _, po := range m.peggedOrders {
+		if po.Id == order.Id {
+			return
+		}
+	}
+	m.peggedOrders = append(m.peggedOrders, order)
 }
 
 // removePeggedOrder looks through the pegged and parked list
