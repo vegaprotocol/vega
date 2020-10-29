@@ -9,13 +9,14 @@ import (
 )
 
 var (
+	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
 )
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
-	tWindow       time.Duration
-	scalingFactor float64
+	tWindow time.Duration
+	sFactor float64
 
 	now               time.Time
 	scheduledTruncate time.Time
@@ -29,6 +30,15 @@ type timestampedOI struct {
 	OI   uint64
 }
 
+// NewEngine returns a new instance of target stake calculation Engine
+func NewEngine(timeWindow time.Duration, scalingFactor float64) *Engine {
+	return &Engine{
+		tWindow: timeWindow,
+		sFactor: scalingFactor,
+	}
+}
+
+// RecordOpenInterest records open interset history so that target stake can be calculated
 func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if now.Before(e.now) {
 		return ErrTimeSequence // This shouldn't happen, but if it does there's something fishy going on
@@ -64,13 +74,15 @@ func (e *Engine) getMaxFromCurrent() uint64 {
 	return m
 }
 
+// GetTargetStake returns target stake based current time, risk factors
+// and the open interest time series constructed by calls to RecordOpenInterest
 func (e *Engine) GetTargetStake(now time.Time, rf types.RiskFactor) float64 {
 	minTime := now.Add(-e.tWindow)
 	if minTime.After(e.max.Time) {
 		e.computeMaxOI(now)
 	}
 
-	return float64(e.max.OI) * e.scalingFactor * math.Max(rf.Short, rf.Long)
+	return float64(e.max.OI) * e.sFactor * math.Max(rf.Short, rf.Long)
 }
 
 func (e *Engine) computeMaxOI(now time.Time) {
