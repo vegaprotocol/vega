@@ -41,7 +41,8 @@ func NewDefaultConfig(defaultDirPath string) Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		RateLimit: vhttp.RateLimitConfig{
-			CoolDown: encoding.Duration{Duration: defaultCoolDown},
+			CoolDown:  encoding.Duration{Duration: defaultCoolDown},
+			AllowList: []string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
 		},
 		WalletPath: filepath.Join(defaultDirPath, defaultWallet),
 		Node: NodeConfig{

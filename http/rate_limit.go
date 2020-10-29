@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"fmt"
+	"net"
 	"sync"
 	"time"
 
@@ -11,6 +12,11 @@ import (
 
 type RateLimitConfig struct {
 	CoolDown encoding.Duration `long:"coolDown"`
+
+	// AllowList is a list of ip/subnets, e.g. "10.0.0.0/8", "192.168.0.0/16"
+	AllowList []string `long:"allowList"`
+
+	allowList []net.IPNet
 }
 
 type RateLimit struct {
@@ -21,20 +27,33 @@ type RateLimit struct {
 	mu sync.Mutex
 }
 
-func NewRateLimit(ctx context.Context, cfg RateLimitConfig) *RateLimit {
+func NewRateLimit(ctx context.Context, cfg RateLimitConfig) (*RateLimit, error) {
+	cfg.allowList = make([]net.IPNet, len(cfg.AllowList))
+	for i, allowItem := range cfg.AllowList {
+		_, ipnet, err := net.ParseCIDR(allowItem)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse AllowList entry: %s", allowItem)
+		}
+		cfg.allowList[i] = *ipnet
+	}
 	r := &RateLimit{
 		cfg:      cfg,
 		requests: map[string]time.Time{},
 	}
 	go r.startCleanup(ctx)
-	return r
+	return r, nil
 }
 
 // NewRequest returns nil if the rate has not been exceeded
-func (r *RateLimit) NewRequest(identifier string) error {
+func (r *RateLimit) NewRequest(prefix, ip string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if r.isAllowListed(ip) {
+		return nil
+	}
+
+	identifier := fmt.Sprintf("%s %s", prefix, ip)
 	until, found := r.requests[identifier]
 	if !found {
 		until = time.Time{}
@@ -47,13 +66,23 @@ func (r *RateLimit) NewRequest(identifier string) error {
 		// another request came in while still greylisted
 		// add a penalty time
 		r.requests[identifier] = until.Add(r.cfg.CoolDown.Duration)
-		return fmt.Errorf("rate-limited until until %v", r.requests[identifier])
+		return fmt.Errorf("rate-limited (%s for %s) until %v", prefix, ip, r.requests[identifier])
 	}
 
 	// greylist for the minimal duration
 	r.requests[identifier] = time.Now().Add(r.cfg.CoolDown.Duration)
 
 	return nil
+}
+
+func (r *RateLimit) isAllowListed(ip string) bool {
+	netIP := net.ParseIP(ip)
+	for _, allowItem := range r.cfg.allowList {
+		if allowItem.Contains(netIP) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *RateLimit) startCleanup(ctx context.Context) {

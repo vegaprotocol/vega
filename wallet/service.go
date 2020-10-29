@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/gateway"
 	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -105,6 +104,11 @@ type NodeForward interface {
 
 func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletHandler, n NodeForward) (*Service, error) {
 	ctx, cfunc := context.WithCancel(context.Background())
+	rl, err := vhttp.NewRateLimit(ctx, cfg.RateLimit)
+	if err != nil {
+		cfunc()
+		return nil, fmt.Errorf("failed to create RateLimit: %v", err)
+	}
 	s := &Service{
 		Router:      httprouter.New(),
 		log:         log,
@@ -112,7 +116,7 @@ func NewServiceWith(log *logging.Logger, cfg *Config, rootPath string, h WalletH
 		handler:     h,
 		nodeForward: n,
 		cfunc:       cfunc,
-		rl:          vhttp.NewRateLimit(ctx, cfg.RateLimit),
+		rl:          rl,
 	}
 
 	// all the endpoints are public for testing purpose
@@ -186,16 +190,15 @@ func (s *Service) CreateWallet(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 
 	// rate limit wallet creation by source IP address
-	ip, err := gateway.RemoteAddr(r)
+	ip, err := vhttp.RemoteAddr(r)
 	if err != nil {
 		writeError(w, newError(fmt.Sprintf("failed to get request remote address: %v", err)), http.StatusBadRequest)
 		return
 	}
-	rlkey := fmt.Sprintf("createwallet-%s", ip)
-	if err := s.rl.NewRequest(rlkey); err != nil {
+	if err := s.rl.NewRequest("wallet creation", ip); err != nil {
 		s.log.Debug("Wallet creation denied - rate limit",
 			logging.String("name", req.Wallet),
-			logging.String("rlkey", rlkey),
+			logging.String("ip", ip),
 		)
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
@@ -271,16 +274,22 @@ func (s *Service) GenerateKeypair(t string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// rate limit keypair creation by source IP address and wallet name
+	ip, err := vhttp.RemoteAddr(r)
+	if err != nil {
+		writeError(w, newError(fmt.Sprintf("failed to get request remote address: %v", err)), http.StatusBadRequest)
+		return
+	}
 	// rate limit keypair creation by wallet name
 	wname, err := s.handler.GetWalletName(t)
 	if err != nil {
 		writeError(w, newError("failed to get wallet name from token"), http.StatusBadRequest)
 		return
 	}
-	rlkey := fmt.Sprintf("wallet-%s", wname)
-	if err := s.rl.NewRequest(rlkey); err != nil {
+	if err := s.rl.NewRequest(fmt.Sprintf("keypair generation for wallet %s", wname), ip); err != nil {
 		s.log.Debug("Keypair generation denied - rate limit",
-			logging.String("rlkey", rlkey),
+			logging.String("ip", ip),
+			logging.String("wallet", wname),
 		)
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return

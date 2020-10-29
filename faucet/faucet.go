@@ -83,6 +83,11 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
+	rl, err := vhttp.NewRateLimit(ctx, cfg.RateLimit)
+	if err != nil {
+		cfunc()
+		return nil, fmt.Errorf("failed to create RateLimit: %v", err)
+	}
 	f := &Faucet{
 		Router:  httprouter.New(),
 		log:     log,
@@ -92,7 +97,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		cltdata: clientData,
 		conn:    conn,
 		cfunc:   cfunc,
-		rl:      vhttp.NewRateLimit(ctx, cfg.RateLimit),
+		rl:      rl,
 		stopCh:  make(chan struct{}),
 	}
 
@@ -130,9 +135,19 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		writeError(w, newError(err.Error()), http.StatusInternalServerError)
 		return
 	}
-	rlkey := fmt.Sprintf("party-%s-asset-%s", req.Party, req.Asset)
-	if err := f.rl.NewRequest(rlkey); err != nil {
-		f.log.Debug("Mint denied - rate limit", logging.String("rlkey", rlkey))
+
+	// rate limit minting by source IP address, party, asset
+	ip, err := vhttp.RemoteAddr(r)
+	if err != nil {
+		writeError(w, newError(fmt.Sprintf("failed to get request remote address: %v", err)), http.StatusBadRequest)
+		return
+	}
+	rlkey := fmt.Sprintf("minting for party %s and asset %s", req.Party, req.Asset)
+	if err := f.rl.NewRequest(rlkey, ip); err != nil {
+		f.log.Debug("Mint denied - rate limit",
+			logging.String("ip", ip),
+			logging.String("rlkey", rlkey),
+		)
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}
