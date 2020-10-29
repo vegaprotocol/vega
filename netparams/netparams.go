@@ -31,6 +31,7 @@ type value interface {
 	ToBool() (bool, error)
 	ToString() (string, error)
 	ToDuration() (time.Duration, error)
+	ToJSONStruct(interface{ Reset() }) error
 }
 
 type NetParamWatcher func(string, string)
@@ -233,4 +234,15 @@ func (s *Store) GetString(key string) (string, error) {
 		return "", ErrUnknownKey
 	}
 	return svalue.ToString()
+}
+
+// GetJSONStruct a value associated to the given key
+func (s *Store) GetJSONStruct(key string, v interface{ Reset() }) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svalue, ok := s.store[key]
+	if !ok {
+		return ErrUnknownKey
+	}
+	return svalue.ToJSONStruct(v)
 }

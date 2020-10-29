@@ -44,6 +44,7 @@ type TradingClient interface {
 	PrepareProposal(ctx context.Context, in *protoapi.PrepareProposalRequest, opts ...grpc.CallOption) (*protoapi.PrepareProposalResponse, error)
 
 	PrepareVote(ctx context.Context, in *protoapi.PrepareVoteRequest, opts ...grpc.CallOption) (*protoapi.PrepareVoteResponse, error)
+	PrepareLiquidityProvision(ctx context.Context, in *protoapi.PrepareLiquidityProvisionRequest, opts ...grpc.CallOption) (*protoapi.PrepareLiquidityProvisionResponse, error)
 	PrepareWithdraw(ctx context.Context, in *protoapi.PrepareWithdrawRequest, opts ...grpc.CallOption) (*protoapi.PrepareWithdrawResponse, error)
 	// unary calls - writes
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
@@ -121,6 +122,7 @@ type TradingDataClient interface {
 	Deposit(ctx context.Context, in *protoapi.DepositRequest, opts ...grpc.CallOption) (*protoapi.DepositResponse, error)
 	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
 	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
+	LiquidityProvisions(ctx context.Context, in *protoapi.LiquidityProvisionsRequest, opts ...grpc.CallOption) (*protoapi.LiquidityProvisionsResponse, error)
 
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
 }
@@ -248,6 +250,65 @@ func (r *VegaResolverRoot) Asset() AssetResolver {
 // Deposit ...
 func (r *VegaResolverRoot) Deposit() DepositResolver {
 	return (*myDepositResolver)(r)
+}
+
+func (r *VegaResolverRoot) LiquidityOrder() LiquidityOrderResolver {
+	return (*myLiquidityOrderResolver)(r)
+}
+
+func (r *VegaResolverRoot) LiquidityOrderReference() LiquidityOrderReferenceResolver {
+	return (*myLiquidityOrderReferenceResolver)(r)
+}
+
+func (r *VegaResolverRoot) LiquidityProvision() LiquidityProvisionResolver {
+	return (*myLiquidityProvisionResolver)(r)
+}
+
+// LiquidityOrder resolver
+
+type myLiquidityOrderResolver VegaResolverRoot
+
+func (r *myLiquidityOrderResolver) Proportion(ctx context.Context, obj *types.LiquidityOrder) (int, error) {
+	return int(obj.Proportion), nil
+}
+
+func (r *myLiquidityOrderResolver) Reference(ctx context.Context, obj *types.LiquidityOrder) (PeggedReference, error) {
+	return convertPeggedReferenceFromProto(obj.Reference)
+}
+
+// LiquidityOrderRefernce resolver
+
+type myLiquidityOrderReferenceResolver VegaResolverRoot
+
+func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *types.LiquidityOrderReference) (*types.Order, error) {
+	var lor LiquidityOrderReferenceResolver = r
+	return lor.(QueryResolver).OrderByID(ctx, obj.OrderID, nil)
+}
+
+// LiquidityProvision resolver
+
+type myLiquidityProvisionResolver VegaResolverRoot
+
+func (r *myLiquidityProvisionResolver) Party(ctx context.Context, obj *types.LiquidityProvision) (*types.Party, error) {
+	return &types.Party{Id: obj.PartyID}, nil
+}
+
+func (r *myLiquidityProvisionResolver) CreatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
+}
+func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+}
+func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*Market, error) {
+	var lp interface{} = r
+	return lp.(QueryResolver).Market(ctx, obj.MarketID)
+}
+func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (int, error) {
+	return int(obj.CommitmentAmount), nil
+}
+
+func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.LiquidityProvision) (LiquidityProvisionStatus, error) {
+	return convertLiquidityProvisionStatusFromProto(obj.Status)
 }
 
 // deposit resolver
@@ -787,6 +848,29 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 
 type myMarketResolver VegaResolverRoot
 
+func (r *myMarketResolver) LiquidityProvisions(
+	ctx context.Context,
+	market *Market,
+	party *string,
+) ([]*types.LiquidityProvision, error) {
+	var pid string
+	if party != nil {
+		pid = *party
+	}
+
+	req := protoapi.LiquidityProvisionsRequest{
+		Party:  pid,
+		Market: market.ID,
+	}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
 func (r *myMarketResolver) Data(ctx context.Context, market *Market) (*types.MarketData, error) {
 	req := protoapi.MarketDataByIDRequest{
 		MarketID: market.ID,
@@ -967,6 +1051,29 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 		Limit:      limit,
 		Descending: descending,
 	}
+}
+
+func (r *myPartyResolver) LiquidityProvisions(
+	ctx context.Context,
+	party *types.Party,
+	market *string,
+) ([]*types.LiquidityProvision, error) {
+	var mid string
+	if market != nil {
+		mid = *market
+	}
+
+	req := protoapi.LiquidityProvisionsRequest{
+		Party:  party.Id,
+		Market: mid,
+	}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	return res.LiquidityProvisions, nil
 }
 
 func (r *myPartyResolver) Margins(ctx context.Context,
@@ -1374,6 +1481,22 @@ func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLev
 // BEGIN: MarketData resolver
 
 type myMarketDataResolver VegaResolverRoot
+
+func (r *myMarketDataResolver) AuctionStart(_ context.Context, m *types.MarketData) (*string, error) {
+	if m.AuctionStart <= 0 {
+		return nil, nil
+	}
+	s := vegatime.Format(vegatime.UnixNano(m.AuctionStart))
+	return &s, nil
+}
+
+func (r *myMarketDataResolver) AuctionEnd(_ context.Context, m *types.MarketData) (*string, error) {
+	if m.AuctionEnd <= 0 {
+		return nil, nil
+	}
+	s := vegatime.Format(vegatime.UnixNano(m.AuctionEnd))
+	return &s, nil
+}
 
 func (r *myMarketDataResolver) MarketState(_ context.Context, m *types.MarketData) (MarketState, error) {
 	return convertMarketStateFromProto(m.MarketState)
@@ -2232,6 +2355,40 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	}
 	return &PreparedAmendOrder{
 		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
+	}, nil
+}
+
+func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketId string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error) {
+	if commitmentAmount < 0 {
+		return nil, errors.New("commitmentAmount can't be negative")
+	}
+
+	pBuys, err := LiquidityOrderInputs(buys).IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
+	pSells, err := LiquidityOrderInputs(sells).IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
+	req := &protoapi.PrepareLiquidityProvisionRequest{
+		Submission: &types.LiquidityProvisionSubmission{
+			MarketID:         marketId,
+			CommitmentAmount: uint64(commitmentAmount),
+			Fee:              fee,
+			Buys:             pBuys,
+			Sells:            pSells,
+		},
+	}
+	resp, err := r.tradingClient.PrepareLiquidityProvision(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	return &PreparedLiquidityProvision{
+		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 	}, nil
 }
 

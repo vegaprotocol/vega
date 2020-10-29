@@ -68,6 +68,25 @@ func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
 	}
 }
 
+func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
+	select {
+	case <-b.ctx.Done():
+		return false
+	case <-sub.Skip():
+		return false
+	case <-sub.Closed():
+		return true
+	case sub.C() <- evts:
+		return false
+	default:
+		// @TODO perhaps log that we've encountered the channel buffer of a subscriber
+		// this could help us find out what combination of event types + batch sizes are
+		// problematic
+		go b.sendChannel(sub, evts)
+		return false
+	}
+}
+
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
 	b.mu.Lock()
 	ch, ok := b.eChans[t]
@@ -110,8 +129,8 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 					default:
 						if sub.required {
 							sub.Push(events...)
-						} else {
-							go b.sendChannel(sub, events)
+						} else if rm := b.sendChannelSync(sub, events); rm {
+							unsub = append(unsub, k)
 						}
 					}
 				}

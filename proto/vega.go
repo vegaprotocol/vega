@@ -29,3 +29,4 @@ func (_ MarketData) IsEvent()     {}
 func (_ NodeSignature) IsEvent()  {}
 func (_ GovernanceData) IsEvent() {}
 func (_ RiskFactor) IsEvent()     {}
+func (_ Deposit) IsEvent()        {}

@@ -4,8 +4,8 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | tau/short | lamd/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee |
-      | ETH/DEC19 | BTC      | ETH       | ETH   |   9400000 | simple     |       0.1 |       0.2 |  0 | 0 |     0 |              5 |              4 |           3.2 |          940000 |           0 | continous    |        0 |                 0 |            0 |
+      | name      | baseName | quoteName | asset | markprice | risk model | tau/short | lamd/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations |
+      | ETH/DEC19 | BTC      | ETH       | ETH   |   9400000 | simple     |       0.1 |       0.2 |  0 | 0 |     0 |              5 |              4 |           3.2 |          940000 |           0 | continous    |        0 |                 0 |            0 |                 0  |                |             |                 |
     And the following traders:
       | name       | amount       |
       | trader1    | 1000000000   |

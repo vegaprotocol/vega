@@ -129,6 +129,7 @@ func NewApp(
 		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
 		HandleDeliverTx(txn.NodeSignatureCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
+		HandleDeliverTx(txn.LiquidityProvisionCommand, app.DeliverLiquidityProvision).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -196,7 +197,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 
 	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes, vators); err != nil {
-		app.log.Error("something happened when initializing vega with the genesis block", logging.Error(err))
+		app.log.Fatal("something happened when initializing vega with the genesis block", logging.Error(err))
 	}
 
 	return tmtypes.ResponseInitChain{}
@@ -441,6 +442,16 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return err
 }
 
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	sub := &types.LiquidityProvisionSubmission{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+
+	partyId := hex.EncodeToString(tx.PubKey())
+	return app.exec.SubmitLiquidityProvision(ctx, partyId, sub)
+}
+
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 	vote := &types.NodeVote{}
 	if err := tx.Unmarshal(vote); err != nil {
@@ -541,7 +552,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		Sig:  sig,
 		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
-	if err := app.cmd.Command(txn.NodeSignatureCommand, payload); err != nil {
+	if err := app.cmd.Command(ctx, txn.NodeSignatureCommand, payload); err != nil {
 		// do nothing for now, we'll need a retry mechanism for this and all command soon
 		app.log.Error("unable to send command for notary",
 			logging.Error(err))

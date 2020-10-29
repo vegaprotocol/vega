@@ -83,7 +83,7 @@ func testEventEmitterNotWhitelisted(t *testing.T) {
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(11, 0))
-	err := evtfwd.Forward(evt, "not whitelisted")
+	err := evtfwd.Forward(context.Background(), evt, "not whitelisted")
 	assert.EqualError(t, err, evtforward.ErrPubKeyNotWhitelisted.Error())
 }
 
@@ -91,11 +91,11 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Return(nil)
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(11, 0))
-	err := evtfwd.Forward(evt, okEventEmitter)
+	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
 	assert.NoError(t, err)
 }
 
@@ -103,14 +103,14 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any()).Return(nil)
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(11, 0))
-	err := evtfwd.Forward(evt, okEventEmitter)
+	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
 	assert.NoError(t, err)
 	// now the event should exist, let's try toforward againt
-	err = evtfwd.Forward(evt, okEventEmitter)
+	err = evtfwd.Forward(context.Background(), evt, okEventEmitter)
 	assert.EqualError(t, err, evtforward.ErrEvtAlreadyExist.Error())
 }
 
