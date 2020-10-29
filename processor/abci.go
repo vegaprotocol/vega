@@ -455,7 +455,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 	}
 
 	partyID := hex.EncodeToString(tx.PubKey())
-	return app.exec.SubmitLiquidityProvision(ctx, partyID, sub, id)
+	return app.exec.SubmitLiquidityProvision(ctx, sub, partyID, id)
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {

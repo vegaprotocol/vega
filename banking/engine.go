@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -160,7 +159,7 @@ func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
 	return e.finalizeAssetList(ctx, assetID)
 }
 
-func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID string, amount uint64) error {
+func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID string, amount uint64) error {
 	asset, err := e.assets.Get(assetID)
 	if err != nil {
 		e.log.Error("unable to get asset by id",
@@ -172,7 +171,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
 
-	w, ref, err := e.newWithdrawal(ctx, party, assetID, amount, time.Time{}, nil)
+	w, ref, err := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
 	if err != nil {
 		return err
 	}
@@ -197,9 +196,9 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, party, assetID stri
 }
 
 func (e *Engine) DepositBuiltinAsset(
-	ctx context.Context, d *types.BuiltinAssetDeposit, nonce uint64) error {
+	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(ctx, d.PartyID, d.VegaAssetID, d.Amount)
+	dep, err := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount)
 	if err != nil {
 		return err
 	}
@@ -245,9 +244,9 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
+func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id string, blockNumber, txIndex uint64) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(ctx, d.TargetPartyID, d.VegaAssetID, 0)
+	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, 0)
 	if err != nil {
 		return err
 	}
@@ -315,7 +314,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string, amount uint64, ext *types.Erc20WithdrawExt) error {
+func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID string, amount uint64, ext *types.Erc20WithdrawExt) error {
 	asset, err := e.assets.Get(assetID)
 	if err != nil {
 		e.log.Debug("unable to get asset by id",
@@ -334,7 +333,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, party, assetID string,
 			Erc20: ext,
 		},
 	}
-	w, ref, err := e.newWithdrawal(ctx, party, assetID, amount, expiry, wext)
+	w, ref, err := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
 	if err != nil {
 		return err
 	}
@@ -522,22 +521,16 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 }
 
 func (e *Engine) newWithdrawal(
-	ctx context.Context,
-	partyID, asset string,
+	id, partyID, asset string,
 	amount uint64,
 	expiry time.Time,
 	wext *types.WithdrawExt,
 ) (w *types.Withdrawal, ref *big.Int, err error) {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
-	wid, ok := contextutil.CommandIDFromContext(ctx)
-	if !ok {
-		err = ErrMissingWithdrawIDFromContext
-		return
-	}
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
 	w = &types.Withdrawal{
-		Id:               wid,
+		Id:               id,
 		Status:           types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
 		PartyID:          partyID,
 		Asset:            asset,
@@ -551,16 +544,12 @@ func (e *Engine) newWithdrawal(
 }
 
 func (e *Engine) newDeposit(
-	ctx context.Context, partyID, asset string, amount uint64,
+	id, partyID, asset string, amount uint64,
 ) (*types.Deposit, error) {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
-	did, ok := contextutil.CommandIDFromContext(ctx)
-	if !ok {
-		return nil, ErrMissingDepositIDFromContext
-	}
 	return &types.Deposit{
-		Id:               did,
+		Id:               id,
 		Status:           types.Deposit_DEPOSIT_STATUS_OPEN,
 		PartyID:          partyID,
 		Asset:            asset,
