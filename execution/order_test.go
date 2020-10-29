@@ -608,6 +608,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders must be either GTT or GTC ", testPeggedOrderTIFs)
 	t.Run("pegged orders buy side validation", testPeggedOrderBuys)
 	t.Run("pegged orders sell side validation", testPeggedOrderSells)
+	t.Run("pegged orders are parked when price below 0", testPeggedOrderParkWhenPriceBelowZero)
 }
 
 func TestPeggedOrderAddWithNoMarketPrice(t *testing.T) {
@@ -897,4 +898,33 @@ func testPeggedOrderSells(t *testing.T) {
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
+}
+
+func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	for _, acc := range []string{"buyer", "seller", "pegged"} {
+		addAccount(tm, acc)
+		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	}
+
+	buy := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "buyer", 10, 4)
+	_, err := tm.market.SubmitOrder(ctx, &buy)
+	require.NoError(t, err)
+
+	sell := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "seller", 10, 8)
+	_, err = tm.market.SubmitOrder(ctx, &sell)
+	require.NoError(t, err)
+
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "pegged", 10, 4)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+	assert.Equal(t,
+		types.Order_STATUS_PARTIALLY_FILLED.String(),
+		confirmation.Order.Status.String(), "When pegged price below zero (MIDPRICE - OFFSET) <= 0")
 }
