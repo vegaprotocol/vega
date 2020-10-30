@@ -147,6 +147,7 @@ func createMarket(
 	searchLevel, _ := netp.GetFloat(netparams.MarketMarginScalingFactorSearchLevel)
 	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
 	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
+
 	// get price monitoring parameters
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.PriceMonitoringParameters == nil {
@@ -154,6 +155,10 @@ func createMarket(
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
 		definition.PriceMonitoringParameters = pmParams
 	}
+
+	// get target stake parameters
+	tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
+	tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
 
 	// if the openingAuctionDuration == 0 we need to default
 	// to the network parameter
@@ -188,6 +193,10 @@ func createMarket(
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
 			Parameters:      definition.PriceMonitoringParameters,
 			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
+		},
+		TargetStake: &types.TargetStakeParameters{
+			TimeWindow:    int64(tsTimeWindow.Seconds()),
+			ScalingFactor: tsScalingFactor,
 		},
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
