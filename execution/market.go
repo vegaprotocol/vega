@@ -853,7 +853,18 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if order.PeggedOrder != nil {
 		// Add pegged order to time sorted list
 		m.addPeggedOrder(order)
+	}
 
+	// Now that validation is handled, call the code to place the order
+	orderConf, err := m.submitValidatedOrder(ctx, order)
+	if err == nil {
+		orderValidity = "valid"
+	}
+	return orderConf, err
+}
+
+func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+	if order.PeggedOrder != nil {
 		if m.as.InAuction() {
 			// If we are in an auction, we don't insert this order into the book
 			// Maybe should return an orderConfirmation with order state PARKED
@@ -872,6 +883,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 				m.broker.Send(events.NewOrderEvent(ctx, order))
 				return &types.OrderConfirmation{Order: order}, nil
 			}
+			order.Status = types.Order_STATUS_ACTIVE
 		}
 	}
 
@@ -988,7 +1000,6 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	m.checkForReferenceMoves(ctx)
 
-	orderValidity = "valid" // used in deferred func.
 	return confirmation, nil
 }
 
@@ -2290,7 +2301,7 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 				if err == nil {
 					// Submit the order to the market
 					order.Price = price
-					_, err := m.SubmitOrder(ctx, order)
+					_, err := m.submitValidatedOrder(ctx, order)
 					if err != nil {
 						failedOrders = append(failedOrders, order)
 					}
@@ -2314,12 +2325,6 @@ func (m *Market) GetParkedOrderCount() int {
 }
 
 func (m *Market) addPeggedOrder(order *types.Order) {
-	// Check this order is unique
-	for _, po := range m.peggedOrders {
-		if po.Id == order.Id {
-			return
-		}
-	}
 	m.peggedOrders = append(m.peggedOrders, order)
 }
 
