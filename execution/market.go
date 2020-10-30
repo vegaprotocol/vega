@@ -88,7 +88,7 @@ type PriceMonitor interface {
 // TargetStakeCalculator interface
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
-	GetTargetStake(now time.Time, rf types.RiskFactor) float64
+	GetTargetStake(rf types.RiskFactor, now time.Time) float64
 }
 
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
@@ -260,7 +260,7 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
-	tsCalculator := liqTarget.NewEngine(time.Hour, 10)
+	tsCalculator := liqTarget.NewEngine(*mkt.TargetStake)
 
 	market := &Market{
 		log:                  log,
@@ -280,6 +280,7 @@ func NewMarket(
 		parties:              map[string]struct{}{},
 		as:                   as,
 		pMonitor:             pMonitor,
+		tsCalculator:         tsCalculator,
 		expiringPeggedOrders: matching.NewExpiringOrders(),
 	}
 

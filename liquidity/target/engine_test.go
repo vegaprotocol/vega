@@ -14,13 +14,15 @@ import (
 var now time.Time = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
 
 func TestConstructor(t *testing.T) {
-	engine := target.NewEngine(time.Hour, 10)
+	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
+	engine := target.NewEngine(params)
 
 	require.NotNil(t, engine)
 }
 
 func TestRecordOpenInterest(t *testing.T) {
-	engine := target.NewEngine(time.Hour, 10)
+	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
+	engine := target.NewEngine(params)
 	err := engine.RecordOpenInterest(9, now)
 	require.NoError(t, err)
 	err = engine.RecordOpenInterest(0, now)
@@ -34,7 +36,8 @@ func TestRecordOpenInterest(t *testing.T) {
 }
 
 func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
-	engine := target.NewEngine(time.Hour, 10)
+	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
+	engine := target.NewEngine(params)
 	rf := types.RiskFactor{
 		Long:  0.3,
 		Short: 0.1,
@@ -48,12 +51,13 @@ func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	tWindow := time.Hour
 	scalingFactor := 11.3
+	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := 0.3
 	rfShort := 0.1
 	var oi uint64 = 23
 	expectedTargetStake := float64(oi) * math.Max(rfLong, rfShort) * scalingFactor
 
-	engine := target.NewEngine(tWindow, scalingFactor)
+	engine := target.NewEngine(params)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -75,13 +79,14 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	tWindow := time.Hour
 	scalingFactor := 11.3
+	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := 0.3
 	rfShort := 0.1
 	expectedTargetStake := func(oi uint64) float64 {
 		return float64(oi) * math.Max(rfLong, rfShort) * scalingFactor
 	}
 
-	engine := target.NewEngine(tWindow, scalingFactor)
+	engine := target.NewEngine(params)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,

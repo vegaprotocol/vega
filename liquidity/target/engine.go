@@ -31,10 +31,10 @@ type timestampedOI struct {
 }
 
 // NewEngine returns a new instance of target stake calculation Engine
-func NewEngine(timeWindow time.Duration, scalingFactor float64) *Engine {
+func NewEngine(parameters types.TargetStakeParameters) *Engine {
 	return &Engine{
-		tWindow: timeWindow,
-		sFactor: scalingFactor,
+		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
+		sFactor: parameters.ScalingFactor,
 	}
 }
 
