@@ -1177,3 +1177,65 @@ func TestTriggerByMarketOrder(t *testing.T) {
 
 	require.Equal(t, initialPrice, md.MarkPrice)
 }
+
+func TestTargetStakeReturnedAndCorrect(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	var oi uint64 = 123
+	var matchingPrice uint64 = 111
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
+	expectedTargetStake := float64(oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.TargetStake.ScalingFactor
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        oi,
+		Price:       matchingPrice,
+		Remaining:   oi,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_FOK,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        oi,
+		Price:       matchingPrice,
+		Remaining:   oi,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	require.Equal(t, 1, len(confirmationBuy.Trades))
+
+	mktData := tm.market.GetMarketData()
+	require.NotNil(t, mktData)
+
+	require.Equal(t, fmt.Sprintf("%.f", expectedTargetStake), mktData.TargetStake)
+
+}
