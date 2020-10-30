@@ -360,11 +360,9 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:       auctionEnd,
 		MarketState:      m.as.Mode(),
 		Trigger:          m.as.Trigger(),
-		// FIXME(WITOLD): uncomment set real values here
-		TargetStake: fmt.Sprintf("%f", targetStake),
-		// TargetStake: getTargetStake(),
+		TargetStake:      fmt.Sprintf("%.f", m.getTargetStake()),
+		// FIXME(WITOLD): uncomment set real value here
 		// SuppliedStake: getSuppliedStake(),
-
 	}
 }
 
@@ -2457,4 +2455,15 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
 	return nil
+}
+
+func (m *Market) getTargetStake() float64 {
+	rf, err := m.getRiskFactors()
+	var targetStake float64
+	if err != nil {
+		m.log.Error("unable to get risk factors, can't calculate target stake")
+	} else {
+		targetStake = m.tsCalculator.GetTargetStake(*rf, m.currentTime)
+	}
+	return targetStake
 }
