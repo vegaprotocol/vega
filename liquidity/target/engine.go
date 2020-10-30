@@ -41,30 +41,32 @@ func NewEngine(timeWindow time.Duration, scalingFactor float64) *Engine {
 // RecordOpenInterest records open interset history so that target stake can be calculated
 func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if now.Before(e.now) {
-		return ErrTimeSequence // This shouldn't happen, but if it does there's something fishy going on
+		return ErrTimeSequence
 	}
 
 	if oi >= e.max.OI {
 		e.max = timestampedOI{Time: now, OI: oi}
 	}
 
-	if now.Equal(e.now) {
-		e.current = append(e.current, oi)
-	} else {
+	if now.After(e.now) {
 		toi := timestampedOI{Time: e.now, OI: e.getMaxFromCurrent()}
 		e.previous = append(e.previous, toi)
 		e.current = make([]uint64, 0, len(e.current))
 		e.now = now
 	}
+	e.current = append(e.current, oi)
 
 	if e.now.After(e.scheduledTruncate) {
-		e.truncateHistory()
+		e.truncateHistory(e.minTime(now))
 	}
 
 	return nil
 }
 
 func (e *Engine) getMaxFromCurrent() uint64 {
+	if len(e.current) == 0 {
+		return 0
+	}
 	m := e.current[0]
 	for i := 1; i < len(e.current); i++ {
 		if e.current[i] > m {
@@ -76,18 +78,18 @@ func (e *Engine) getMaxFromCurrent() uint64 {
 
 // GetTargetStake returns target stake based current time, risk factors
 // and the open interest time series constructed by calls to RecordOpenInterest
-func (e *Engine) GetTargetStake(now time.Time, rf types.RiskFactor) float64 {
-	minTime := now.Add(-e.tWindow)
+func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time) float64 {
+	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
-		e.computeMaxOI(now)
+		e.computeMaxOI(now, minTime)
 	}
 
-	return float64(e.max.OI) * e.sFactor * math.Max(rf.Short, rf.Long)
+	return float64(e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
 }
 
-func (e *Engine) computeMaxOI(now time.Time) {
+func (e *Engine) computeMaxOI(now, minTime time.Time) {
 	m := timestampedOI{Time: e.now, OI: e.getMaxFromCurrent()}
-	e.truncateHistory()
+	e.truncateHistory(minTime)
 	var j int
 	for i := 0; i < len(e.previous); i++ {
 		if e.previous[i].OI > m.OI {
@@ -102,8 +104,12 @@ func (e *Engine) computeMaxOI(now time.Time) {
 
 }
 
-func (e *Engine) truncateHistory() {
-	minTime := e.now.Add(-e.tWindow)
+//minTime returns the lower bound of the sliding time window
+func (e *Engine) minTime(now time.Time) time.Time {
+	return now.Add(-e.tWindow)
+}
+
+func (e *Engine) truncateHistory(minTime time.Time) {
 	var i int
 	for i = 0; i < len(e.previous); i++ {
 		if !e.previous[i].Time.Before(minTime) {
