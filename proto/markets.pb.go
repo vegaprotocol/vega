@@ -1156,7 +1156,7 @@ func (m *PriceMonitoringSettings) GetUpdateFrequency() int64 {
 
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {
-	// Specifies length of time window for target stake calculation
+	// Specifies length of time window expressed in seconds for target stake calculation
 	TimeWindow int64 `protobuf:"varint,1,opt,name=timeWindow,proto3" json:"timeWindow,omitempty"`
 	// Specifies scaling factors used in target stake calculation
 	ScalingFactor        float64  `protobuf:"fixed64,2,opt,name=scalingFactor,proto3" json:"scalingFactor,omitempty"`
