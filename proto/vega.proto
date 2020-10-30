@@ -1017,6 +1017,11 @@ message MarketData {
   MarketState marketState = 14;
   // if the market is in auction state, this field indicates what triggered the auction
   AuctionTrigger trigger = 15;
+  // the targeted stake for the given market
+  string targetStake = 16;
+  // the available stake fo the given market
+  string suppliedStake = 17;
+
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.

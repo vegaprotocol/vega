@@ -309,6 +309,10 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:       auctionEnd,
 		MarketState:      m.as.Mode(),
 		Trigger:          m.as.Trigger(),
+		// FIXME(WITOLD): uncomment set real values here
+		// TargetStake: getTargetStake(),
+		// SuppliedStake: getSuppliedStake(),
+
 	}
 }
 
