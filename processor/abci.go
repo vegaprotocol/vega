@@ -19,7 +19,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/proto/crypto/keys"
 )
 
 type App struct {
@@ -193,14 +192,8 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	vators := make([][]byte, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
-		var data []byte
-		switch t := v.PubKey.Sum.(type) {
-		case *keys.PublicKey_Ed25519:
-			data = t.Ed25519
-		}
-
-		if len(data) > 0 {
-			vators = append(vators, data)
+		if len(v.PubKey.Data) > 0 {
+			vators = append(vators, v.PubKey.Data)
 		}
 	}
 
