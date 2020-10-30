@@ -321,6 +321,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 		Status:      types.Order_STATUS_ACTIVE,
 		CreatedAt:   app.currentTimestamp.UnixNano(),
 		Remaining:   s.Size,
+		PeggedOrder: s.PeggedOrder,
 	}
 
 	app.stats.IncTotalCreateOrder()
