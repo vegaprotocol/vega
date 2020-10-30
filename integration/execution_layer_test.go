@@ -970,7 +970,6 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 				Id:        fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
 				Code:      fmt.Sprintf("CRYPTO/%v", val(row, 0)),
 				Name:      fmt.Sprintf("%s future", val(row, 0)),
-				BaseName:  val(row, 1),
 				QuoteName: val(row, 2),
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{

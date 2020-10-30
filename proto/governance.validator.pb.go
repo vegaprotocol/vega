@@ -33,9 +33,6 @@ func (this *InstrumentConfiguration) Validate() error {
 	if this.Code == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Code", fmt.Errorf(`value '%v' must not be an empty string`, this.Code))
 	}
-	if this.BaseName == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("BaseName", fmt.Errorf(`value '%v' must not be an empty string`, this.BaseName))
-	}
 	if this.QuoteName == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("QuoteName", fmt.Errorf(`value '%v' must not be an empty string`, this.QuoteName))
 	}

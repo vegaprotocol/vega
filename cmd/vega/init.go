@@ -244,7 +244,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 					Id:        fmt.Sprintf("Crypto/%s%s/Futures/%s", skel.baseName, skel.quoteName, monYear),
 					Code:      fmt.Sprintf("CRYPTO:%s%s/%s", skel.baseName, skel.quoteName, monYearUpper),
 					Name:      fmt.Sprintf("%s %s vs %s future", skel.maturity.Format("January 2006"), skel.baseName, skel.quoteName),
-					BaseName:  skel.baseName,
 					QuoteName: skel.quoteName,
 					Metadata: &proto.InstrumentMetadata{
 						Tags: []string{

@@ -465,7 +465,6 @@ func TestModelConverters(t *testing.T) {
 			Instrument: &gql.InstrumentConfigurationInput{
 				Name:      "abcXyz",
 				Code:      "abccode",
-				BaseName:  "abc",
 				QuoteName: "Xyz",
 				FutureProduct: &gql.FutureProductInput{
 					Maturity: "asdasdas",
@@ -507,7 +506,6 @@ func TestModelConverters(t *testing.T) {
 			Instrument: &gql.InstrumentConfigurationInput{
 				Code:      "abccode",
 				Name:      "abcXyz",
-				BaseName:  "abc",
 				QuoteName: "Xyz",
 				FutureProduct: &gql.FutureProductInput{
 					Maturity: "asdasdas",
@@ -546,7 +544,6 @@ func TestModelConverters(t *testing.T) {
 			Instrument: &proto.InstrumentConfiguration{
 				Name:      "December 2020 ETH vs VUSD future",
 				Code:      "CRYPTO:ETHVUSD/DEC20",
-				BaseName:  "ETH",
 				QuoteName: "VUSD",
 				Product: &proto.InstrumentConfiguration_Future{
 					Future: &proto.FutureProduct{
@@ -596,7 +593,6 @@ func TestModelConverters(t *testing.T) {
 			Instrument: &proto.InstrumentConfiguration{
 				Name:      "December 2020 ETH vs VUSD future",
 				Code:      "CRYPTO:ETHVUSD/DEC20",
-				BaseName:  "ETH",
 				QuoteName: "VUSD",
 				Product: &proto.InstrumentConfiguration_Future{
 					Future: &proto.FutureProduct{

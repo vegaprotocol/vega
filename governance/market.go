@@ -93,7 +93,6 @@ func createInstrument(
 	result := &types.Instrument{
 		Name:      input.Name,
 		Code:      input.Code,
-		BaseName:  input.BaseName,
 		QuoteName: input.QuoteName,
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
@@ -231,10 +230,6 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 }
 
 func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {
-	if instrument.BaseName == instrument.QuoteName {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, ErrInvalidSecurity
-	}
-
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
