@@ -346,7 +346,7 @@ func (m *Market) GetMarketData() types.MarketData {
 	if err != nil {
 		m.log.Error("unable to get risk factors, can't calculate target stake")
 	} else {
-		targetStake = m.tsCalculator.GetTargetStake(m.currentTime, *rf)
+		targetStake = m.tsCalculator.GetTargetStake(*rf, m.currentTime)
 	}
 
 	var staticMidPrice uint64
