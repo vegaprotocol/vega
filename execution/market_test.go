@@ -3,6 +3,7 @@ package execution_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -35,6 +36,7 @@ type testMarket struct {
 	now             time.Time
 	asset           string
 	mas             *monitor.AuctionState
+	mktCfg          *types.Market
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings) *testMarket {
@@ -81,10 +83,12 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 
 	mkts := getMarkets(closingAt, pMonitorSettings)
 
-	mas := monitor.NewAuctionState(&mkts[0], now)
+	mktCfg := &mkts[0]
+
+	mas := monitor.NewAuctionState(mktCfg, now)
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, &mkts[0], now, broker, execution.NewIDGen(), mas)
+		feeConfig, collateralEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
 	assert.NoError(t, err)
 
 	asset, err := mkts[0].GetAsset()
@@ -103,6 +107,7 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 		now:             now,
 		asset:           asset,
 		mas:             mas,
+		mktCfg:          mktCfg,
 	}
 }
 
@@ -949,4 +954,66 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction (trigger can only start auction, but can't stop it from concluding at a higher price)
+}
+
+func TestTargetStakeReturnedAndCorrect(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	var oi uint64 = 123
+	var matchingPrice uint64 = 111
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
+	expectedTargetStake := float64(oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.TargetStake.ScalingFactor
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        oi,
+		Price:       matchingPrice,
+		Remaining:   oi,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_FOK,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        oi,
+		Price:       matchingPrice,
+		Remaining:   oi,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	require.Equal(t, 1, len(confirmationBuy.Trades))
+
+	mktData := tm.market.GetMarketData()
+	require.NotNil(t, mktData)
+
+	require.Equal(t, fmt.Sprintf("%.f", expectedTargetStake), mktData.TargetStake)
+
 }
