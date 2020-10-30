@@ -5044,6 +5044,7 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 | ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | Liquidity accounts contain fees earned by providing liquidity on Vega markets. |
 | ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned by placing orders that sit on the book and are then matched with an incoming order to create a trade. These fees reward traders who provide the best priced liquidity that actually allows trading to take place. |
 | ACCOUNT_TYPE_LOCK_WITHDRAW | 8 | This account is created to lock funds to be withdrawn by parties |
+| ACCOUNT_TYPE_BOND | 9 | This account is created to maintain liquidity providers funds commitments |
 
 
 
