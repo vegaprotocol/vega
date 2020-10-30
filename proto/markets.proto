@@ -206,6 +206,15 @@ message PriceMonitoringSettings {
   int64 updateFrequency = 2;
 }
 
+// TargetStakeParameters contains parameters used in target stake calculation
+message TargetStakeParameters {
+  // Specifies length of time window for target stake calculation
+  int64 timeWindow = 1 [(validator.field) = {int_gt: 0}];
+
+  // Specifies scaling factors used in target stake calculation
+  double scalingFactor = 2 [(validator.field) = {float_gt: 0}];
+}
+
 // Market definition.
 message Market {
 
@@ -231,4 +240,7 @@ message Market {
   }
   // PriceMonitoringSettings for the market.
   PriceMonitoringSettings priceMonitoringSettings = 6;
+
+  // TargetStakeParameters for the market
+  TargetStakeParameters targetStake = 7;
 }

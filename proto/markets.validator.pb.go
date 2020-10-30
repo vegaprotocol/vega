@@ -173,6 +173,15 @@ func (this *PriceMonitoringSettings) Validate() error {
 	}
 	return nil
 }
+func (this *TargetStakeParameters) Validate() error {
+	if !(this.TimeWindow > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("TimeWindow", fmt.Errorf(`value '%v' must be greater than '0'`, this.TimeWindow))
+	}
+	if !(this.ScalingFactor > 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("ScalingFactor", fmt.Errorf(`value '%v' must be strictly greater than '0'`, this.ScalingFactor))
+	}
+	return nil
+}
 func (this *Market) Validate() error {
 	if this.TradableInstrument != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TradableInstrument); err != nil {
@@ -206,6 +215,11 @@ func (this *Market) Validate() error {
 	if this.PriceMonitoringSettings != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PriceMonitoringSettings); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
+		}
+	}
+	if this.TargetStake != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TargetStake); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("TargetStake", err)
 		}
 	}
 	return nil
