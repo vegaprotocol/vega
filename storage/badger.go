@@ -361,6 +361,12 @@ func (bs *badgerStore) accountMarginIDKey(partyID string, marketID string, asset
 		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_MARGIN), partyID, marketID, assetID))
 }
 
+// accountBondKey is composed from a party market and asset, has a market index (future work could add an asset index)
+func (bs *badgerStore) accountBondIDKey(partyID string, marketID string, assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_M:%s_A:%s",
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_BOND), partyID, marketID, assetID))
+}
+
 // accountMarketKey is used to provide an index of all accounts for a particular market (no party scope).
 // Id should be a reference to the accountMarginIdKey generated above, general accounts span
 // all of VEGA without having market scope. Currently used for MARGIN type only.
@@ -390,6 +396,10 @@ func (bs *badgerStore) getAccountTypePrefix(accType types.AccountType) string {
 		return "FI"
 	case types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY:
 		return "FL"
+	case types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW:
+		return "LW"
+	case types.AccountType_ACCOUNT_TYPE_BOND:
+		return "BD"
 	default:
 		return "ERR"
 	}

@@ -33,7 +33,6 @@ type App struct {
 	cfg      Config
 	log      *logging.Logger
 	cancelFn func()
-	idGen    *IDgenerator
 	rates    *ratelimit.Rates
 
 	// service injection
@@ -86,12 +85,10 @@ func NewApp(
 		log:      log,
 		cfg:      config,
 		cancelFn: cancelFn,
-		idGen:    NewIDGen(),
 		rates: ratelimit.New(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-
 		assets:     assets,
 		banking:    banking,
 		broker:     broker,
@@ -124,20 +121,32 @@ func NewApp(
 		HandleDeliverTx(txn.SubmitOrderCommand, app.DeliverSubmitOrder).
 		HandleDeliverTx(txn.CancelOrderCommand, app.DeliverCancelOrder).
 		HandleDeliverTx(txn.AmendOrderCommand, app.DeliverAmendOrder).
-		HandleDeliverTx(txn.WithdrawCommand, app.DeliverWithdraw).
-		HandleDeliverTx(txn.ProposeCommand, app.DeliverPropose).
+		HandleDeliverTx(txn.WithdrawCommand, addDeterministicID(app.DeliverWithdraw)).
+		HandleDeliverTx(txn.ProposeCommand, addDeterministicID(app.DeliverPropose)).
 		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
 		HandleDeliverTx(txn.NodeSignatureCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
-		HandleDeliverTx(txn.LiquidityProvisionCommand, app.DeliverLiquidityProvision).
+		HandleDeliverTx(txn.LiquidityProvisionCommand, addDeterministicID(app.DeliverLiquidityProvision)).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
-			app.RequireValidatorPubKeyW(app.DeliverChainEvent))
+			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent)))
 
 	app.time.NotifyOnTick(app.onTick)
 
 	return app, nil
+}
+
+// addDeteremisticID will build the command id and .
+// the command id is built using the signature of the proposer of the command
+// the signature is then hashed with sha3_256
+// the hash is the hex string encoded
+func addDeterministicID(
+	f func(context.Context, abci.Tx, string) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		return f(ctx, tx, hex.EncodeToString(crypto.Hash(tx.Signature())))
+	}
 }
 
 func (app *App) RequireValidatorPubKeyW(
@@ -390,16 +399,17 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverWithdraw(
+	ctx context.Context, tx abci.Tx, id string) error {
 	w := &types.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
 	}
 
-	return app.processWithdraw(ctx, w)
+	return app.processWithdraw(ctx, w, id)
 }
 
-func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
 	prop := &types.Proposal{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -411,11 +421,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx) error {
 		logging.String("proposal-party", prop.PartyID),
 		logging.String("proposal-terms", prop.Terms.String()))
 
-	// TODO(JEREMY): use hash of the signature here.
-	app.idGen.SetProposalID(prop)
-	prop.Timestamp = app.currentTimestamp.UnixNano()
-
-	return app.gov.SubmitProposal(ctx, *prop)
+	return app.gov.SubmitProposal(ctx, *prop, id)
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
@@ -442,14 +448,14 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return err
 }
 
-func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
 	sub := &types.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
 
-	partyId := hex.EncodeToString(tx.PubKey())
-	return app.exec.SubmitLiquidityProvision(ctx, partyId, sub)
+	partyID := hex.EncodeToString(tx.PubKey())
+	return app.exec.SubmitLiquidityProvision(ctx, sub, partyID, id)
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
@@ -461,17 +467,16 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 	return app.erc.AddNodeCheck(ctx, vote)
 }
 
-func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {
 	ce := &types.ChainEvent{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
 
-	return app.processChainEvent(ctx, ce, tx.PubKey())
+	return app.processChainEvent(ctx, ce, tx.PubKey(), id)
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {
-	app.idGen.NewBatch()
 	acceptedProposals := app.gov.OnChainTimeUpdate(ctx, t)
 	for _, toEnact := range acceptedProposals {
 		prop := toEnact.Proposal()

@@ -91,6 +91,42 @@ func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
 	t.Run("fees transfer check account events", testFeeTransferContinuousOKCheckAccountEvents)
 }
 
+func TestCreateBondAccount(t *testing.T) {
+	t.Run("create a bond account with success", testCreateBondAccountSuccess)
+	t.Run("create a bond account with - failure no general account", testCreateBondAccountFailureNoGeneral)
+}
+
+func testCreateBondAccountFailureNoGeneral(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	trader := "mytrader"
+	// create trader
+	_, err := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.EqualError(t, err, "party general account missing when trying to create a bond account")
+}
+
+func testCreateBondAccountSuccess(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	trader := "mytrader"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	_, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	assert.NoError(t, err)
+	bnd, err := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.Engine.UpdateBalance(context.Background(), bnd, 500)
+	assert.Nil(t, err)
+
+	bndacc, _ := eng.GetAccountByID(bnd)
+	assert.Equal(t, 500, int(bndacc.Balance))
+}
+
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	defer eng.Finish()

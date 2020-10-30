@@ -5643,6 +5643,8 @@ enum AccountType {
   FeeLiquidity
   "LockWithdraw - and account use for party in the process of withdrawing funds"
   LockWithdraw
+  "Bond - an account use to maintain MM commitments"
+  Bond
 }
 
 input SimpleRiskModelParamsInput {

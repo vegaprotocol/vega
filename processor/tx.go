@@ -22,15 +22,16 @@ var (
 )
 
 type Tx struct {
-	tx *types.Transaction
+	tx        *types.Transaction
+	signature []byte
 }
 
-func NewTx(tx *types.Transaction) (*Tx, error) {
+func NewTx(tx *types.Transaction, signature []byte) (*Tx, error) {
 	if len(tx.InputData) < TxHeaderLen {
 		return nil, ErrInvalidTxPayloadLen
 	}
 
-	return &Tx{tx}, nil
+	return &Tx{tx, signature}, nil
 }
 
 // Hash returns hash of the given Tx. Hashes are unique to every vega tx.
@@ -44,6 +45,8 @@ func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
 // The Tx might be included on a higher block height.
 // Depending on the tolerance of the chain the Tx might be included or rejected.
 func (tx *Tx) BlockHeight() uint64 { return tx.tx.BlockHeight }
+
+func (tx *Tx) Signature() []byte { return tx.signature }
 
 // Command returns the Command of the Tx
 func (t *Tx) Command() txn.Command {

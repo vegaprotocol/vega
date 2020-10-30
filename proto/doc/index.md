@@ -195,8 +195,6 @@
     - [ContinuousTrading](#vega.ContinuousTrading)
     - [DiscreteTrading](#vega.DiscreteTrading)
     - [EthereumEvent](#vega.EthereumEvent)
-    - [ExternalRiskModel](#vega.ExternalRiskModel)
-    - [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry)
     - [FeeFactors](#vega.FeeFactors)
     - [Fees](#vega.Fees)
     - [Future](#vega.Future)
@@ -3381,40 +3379,6 @@ Ethereum event (for oracles).
 
 
 
-<a name="vega.ExternalRiskModel"></a>
-
-### ExternalRiskModel
-Risk model for external modelling.
-Provided by external service via a Unix socket.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | Name. |
-| socket | [string](#string) |  | Local machine socket to connect to. |
-| config | [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry) | repeated | Collection of configuration items. |
-
-
-
-
-
-
-<a name="vega.ExternalRiskModel.ConfigEntry"></a>
-
-### ExternalRiskModel.ConfigEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="vega.FeeFactors"></a>
 
 ### FeeFactors
@@ -3666,7 +3630,6 @@ Tradable Instrument definition.
 | instrument | [Instrument](#vega.Instrument) |  | Instrument details. |
 | marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  | Margin calculator for the instrument. |
 | logNormalRiskModel | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal. |
-| externalRiskModel | [ExternalRiskModel](#vega.ExternalRiskModel) |  | External socket. |
 | simpleRiskModel | [SimpleRiskModel](#vega.SimpleRiskModel) |  | Simple. |
 
 
@@ -5081,6 +5044,7 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 | ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | Liquidity accounts contain fees earned by providing liquidity on Vega markets. |
 | ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned by placing orders that sit on the book and are then matched with an incoming order to create a trade. These fees reward traders who provide the best priced liquidity that actually allows trading to take place. |
 | ACCOUNT_TYPE_LOCK_WITHDRAW | 8 | This account is created to lock funds to be withdrawn by parties |
+| ACCOUNT_TYPE_BOND | 9 | This account is created to maintain liquidity providers funds commitments |
 
 
 

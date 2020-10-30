@@ -2366,6 +2366,6 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 	}
 }
 
-func (m *Market) SubmitLiquidityProvision(ctx context.Context, partyId string, sub *types.LiquidityProvisionSubmission) error {
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
 	return nil
 }
