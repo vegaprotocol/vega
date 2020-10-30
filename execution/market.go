@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"math/big"
 	"sync"
 	"time"
 
@@ -520,14 +519,18 @@ func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uin
 		return 0, ErrUnableToReprice
 	}
 
-	bn := big.NewInt(0).SetUint64(price)
-	bn.Add(bn, big.NewInt(order.PeggedOrder.Offset))
+	if order.PeggedOrder.Offset >= 0 {
+		return price + uint64(order.PeggedOrder.Offset), nil
+	}
 
-	// If the number is negative
-	if bn.Sign() <= 0 {
+	// At this stage offset is negative so we change it's sign to cast it to an
+	// unsigned type
+	offset := uint64(-order.PeggedOrder.Offset)
+	if price < offset {
 		return 0, ErrUnableToReprice
 	}
-	return bn.Uint64(), nil
+
+	return price - offset, nil
 }
 
 // Reprice a pegged order. This only updates the price on the order
