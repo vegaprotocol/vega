@@ -149,10 +149,8 @@ message Order {
     TIF_IOC = 3;
     // Fill or kill.
     TIF_FOK = 4;
-
     // good for auction
     TIF_GFA = 5;
-
     // good for normal
     TIF_GFN = 6;
 
