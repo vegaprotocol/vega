@@ -37,6 +37,7 @@ var (
 	ErrUnsupportedProposalType                 = errors.New("unsupported proposal type")
 	ErrProposalOpeningAuctionDurationTooShort  = errors.New("proposal opening auction duration is too short")
 	ErrProposalOpeningAuctionDurationTooLong   = errors.New("proposal opening auction duration is too long")
+	ErrMissingCommandIDFromContext             = errors.New("could not find command id from the context")
 )
 
 // Broker - event bus
@@ -227,7 +228,10 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
 // Only open can be submitted and validated at this point. No further validation happens.
-func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal) error {
+func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string) error {
+	p.ID = id
+	p.Timestamp = e.currentTime.UnixNano()
+
 	if _, exists := e.activeProposals[p.ID]; exists {
 		return ErrProposalIsDuplicate // state is not allowed to change externally
 	}

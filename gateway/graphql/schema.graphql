@@ -118,6 +118,7 @@ type Mutation {
   """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
+
   """
   submitTransaction(
     "The signed transaction"
@@ -126,6 +127,19 @@ type Mutation {
     sig: SignatureInput!
   ): TransactionSubmitted!
 
+  "Prepare a Liquidity provision order so it can be signed and submitted"
+  prepareLiquidityProvision(
+    "Market identifier for the order"
+    marketID: String!
+    "Specified as a unitless number that represents the amount of settlement asset of the market."
+    commitmentAmount: Int!
+    "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
+    fee: String!
+    "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+    sells: [LiquidityOrderInput!]!
+    "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+    buys:  [LiquidityOrderInput!]!
+  ): PreparedLiquidityProvision!
 }
 
 "Create an order linked to an index rather than a price"
@@ -296,10 +310,10 @@ type MarketData {
   timestamp: String!
   "the sum of the size of all positions greater than 0."
   openInterest: String!
-  "time in seconds until the end of the current auction, 0 if not in auction mode"
-  auctionEnd: Int
-  "time in seconds until the start of the next auction (0 if no new auction scheduled)"
-  auctionStart: Int
+  "time at which the auction will stop (null if not in auction mode"
+  auctionEnd: String
+  "time at which the next auction will start (null if none is scheduled)"
+  auctionStart: String
   "indicative price if the auction ended now, 0 if not in auction mode"
   indicativePrice: String!
   "indicative volume if the auction ended now, 0 if not in auction mode"
@@ -308,6 +322,20 @@ type MarketData {
   marketState: MarketState!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
+  "the amount of stake targeted for this market"
+  targetStake: String
+  "the supplied stake for the market"
+  suppliedStake: String
+  "The liquidity commitments for a given market"
+  commitments: MarketDataCommitments!
+}
+
+"The MM commitments for this market"
+type MarketDataCommitments {
+  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  sells: [LiquidityOrderReference!]
+  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  buys:  [LiquidityOrderReference!]
 }
 
 type PreparedWithdrawal {
@@ -933,6 +961,14 @@ type Market {
 
   "marketData for the given market"
   data: MarketData!
+
+  "The list of the liquidity provision commitment for this market"
+  liquidityProvisions(
+    "An optional party id"
+    party: String
+  ): [LiquidityProvision!]
+
+
 }
 
 """
@@ -1073,6 +1109,12 @@ type Party {
 
   "The list of all deposits for a party by the party"
   deposits: [Deposit!]
+
+  "The list of the liquidity provision commitment from this party"
+  liquidityProvisions(
+    "An optional market id"
+    market: String
+  ): [LiquidityProvision!]
 }
 
 """
@@ -1666,6 +1708,8 @@ enum AccountType {
   FeeLiquidity
   "LockWithdraw - and account use for party in the process of withdrawing funds"
   LockWithdraw
+  "Bond - an account use to maintain MM commitments"
+  Bond
 }
 
 input SimpleRiskModelParamsInput {
@@ -2168,53 +2212,58 @@ enum AuctionTrigger {
 }
 
 enum BusEventType {
-  "event type indicating TimeUpdate"
+  "Vega Time has changed"
   TimeUpdate
-  "transfer response event"
+  "A balance has been transferred between accounts"
   TransferResponses
-  "position resolution event"
+  "A position resolution event has occurred"
   PositionResolution
-  "order event"
+  "An order has been created or updated"
   Order
-  "account event"
+  "An account has been updated"
   Account
-  "party event"
+  "A party has been updated"
   Party
-  "trade event"
+  "A trade has been created"
   Trade
-  "margin levels event"
+  "Margin levels have changed for a position"
   MarginLevels
-  "proposal event"
+  "A governance proposal has been created or updated"
   Proposal
-  "vote event"
+  "A vote has been placed on a governance proposal"
   Vote
-  "market data event"
+  "Market data has been updated"
   MarketData
-  "node signature event"
+  "Validator nodes signatures for an event"
   NodeSignature
-  "loss socialization event"
+  "A position has been closed without sufficient insurance pool balance to cover it"
   LossSocialization
-  "settle position event"
+  "A position has been settled"
   SettlePosition
-  "settle distressed event"
+  "A distressed position has been settled"
   SettleDistressed
-  "market created event"
+  "A new market has been created"
   MarketCreated
-  "asset event"
+  "An asset has been created or update"
   Asset
-  "market tick event"
+  "A market has progressed by one tick"
   MarketTick
-  "auction event"
+  "A market has either entered or exited auction"
   Auction
-  "risk factor event"
+  "A risk factor adjustment was made"
   RiskFactor
-
+  "A liquidity commitment change occurred"
+  LiquidityProvision
+  "Collateral has deposited in to this Vega network via the bridge"
+  Deposit
+  "Collateral has been withdrawn from this Vega network via the bridge"
+  Withdrawal
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor
+union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor | Deposit | Withdrawal
 
 type BusEvent {
   "the id for this event"
@@ -2235,4 +2284,73 @@ type RiskFactor {
   short: Float!
   "long factor"
   long: Float!
+}
+
+"A special order type for liquidity providers"
+type LiquidityOrder {
+  "The value to which this order is tied"
+  reference: PeggedReference!
+  "The proportion of the commitment allocted to this order"
+  proportion: Int!
+  "Offset from the pegged reference"
+  offset: Int!
+}
+
+"A special order type for liquidity providers"
+input LiquidityOrderInput {
+  "The value to which this order is tied"
+  reference: PeggedReference!
+  "The proportion of the commitment allocted to this order"
+  proportion: Int!
+  "Offset from the pegged reference"
+  offset: Int!
+}
+
+"Status of a liquidity provision order"
+enum LiquidityProvisionStatus {
+  "An active liquidity provision"
+  Active
+  "A liquidity provision stopped by the network"
+  Stopped
+  "A Cancelled Liquidity provision"
+  Cancelled
+}
+
+type LiquidityOrderReference {
+  "The id of the pegged order generated to fullfill this commitment"
+  order: Order!
+  "The liquidity order"
+  liquidityOrder: LiquidityOrder!
+}
+
+"The command to be sent to the chain for a liquidity provision submission"
+type LiquidityProvision {
+  "Unique identifier for the order (set by the system after consensus)"
+  id: String
+  "The Id of the party making this commitment"
+  party: Party!
+  "When the liquidity provision was initially created (formatted RFC3339)"
+  createdAt: String!
+  "When the liquidity provision was updated (formatted RFC3339)"
+  updatedAt: String!
+  "Market identifier for the order"
+  market: Market!
+  "Specified as a unitless number that represents the amount of settlement asset of the market."
+  commitmentAmount: Int!
+  "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
+  fee: String!
+  "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+  sells: [LiquidityOrderReference!]!
+  "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+  buys:  [LiquidityOrderReference!]!
+  "The version of this LiquidityProvision"
+  version: String!
+  "The current status of this liquidity provision"
+  status: LiquidityProvisionStatus!
+}
+
+"A prepared LiquidityProvision command"
+type PreparedLiquidityProvision {
+  "The blob to be send to the wallet and to be signed"
+  blob: String!
 }

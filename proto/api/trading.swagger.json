@@ -190,6 +190,72 @@
         ]
       }
     },
+    "/liquidity-provisions": {
+      "get": {
+        "operationId": "PrepareLiquidityProvision2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareLiquidityProvisionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "submission.marketID",
+            "description": "Market identifier for the order. Required field.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "submission.commitmentAmount",
+            "description": "Specified as a unitless number that represents the amount of settlement asset of the market.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "submission.fee",
+            "description": "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
+    "/liquidity-provisions/prepare/submit": {
+      "post": {
+        "operationId": "PrepareLiquidityProvision",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiPrepareLiquidityProvisionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiPrepareLiquidityProvisionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "trading"
+        ]
+      }
+    },
     "/markets": {
       "get": {
         "summary": "Get a list of Markets",
@@ -906,7 +972,7 @@
           },
           {
             "name": "type",
-            "description": "Account type. Required field.\n\n - ACCOUNT_TYPE_UNSPECIFIED: Default value.\n - ACCOUNT_TYPE_INSURANCE: Insurance pool accounts contain insurance pool funds for a market.\n - ACCOUNT_TYPE_SETTLEMENT: Settlement accounts exist only during settlement or mark-to-market.\n - ACCOUNT_TYPE_MARGIN: Margin accounts contain margin funds for a party and each party will\nhave multiple margin accounts, one for each market they have traded in.\n\nMargin account funds will alter as margin requirements on positions change.\n - ACCOUNT_TYPE_GENERAL: General accounts contains general funds for a party. A party will\nhave multiple general accounts, one for each asset they want\nto trade with.\n\nGeneral accounts are where funds are initially deposited or withdrawn from.\nIt is also the account where funds are taken to fulfil fees and initial margin requirements.\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: Infrastructure accounts contain fees earned by providing infrastructure on Vega.\n - ACCOUNT_TYPE_FEES_LIQUIDITY: Liquidity accounts contain fees earned by providing liquidity on Vega markets.\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned by placing orders that sit on the book\nand are then matched with an incoming order to create a trade.\nThese fees reward traders who provide the best priced liquidity that actually allows trading to take place.\n - ACCOUNT_TYPE_LOCK_WITHDRAW: This account is created to lock funds to be withdrawn by parties",
+            "description": "Account type. Required field.\n\n - ACCOUNT_TYPE_UNSPECIFIED: Default value.\n - ACCOUNT_TYPE_INSURANCE: Insurance pool accounts contain insurance pool funds for a market.\n - ACCOUNT_TYPE_SETTLEMENT: Settlement accounts exist only during settlement or mark-to-market.\n - ACCOUNT_TYPE_MARGIN: Margin accounts contain margin funds for a party and each party will\nhave multiple margin accounts, one for each market they have traded in.\n\nMargin account funds will alter as margin requirements on positions change.\n - ACCOUNT_TYPE_GENERAL: General accounts contains general funds for a party. A party will\nhave multiple general accounts, one for each asset they want\nto trade with.\n\nGeneral accounts are where funds are initially deposited or withdrawn from.\nIt is also the account where funds are taken to fulfil fees and initial margin requirements.\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: Infrastructure accounts contain fees earned by providing infrastructure on Vega.\n - ACCOUNT_TYPE_FEES_LIQUIDITY: Liquidity accounts contain fees earned by providing liquidity on Vega markets.\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned by placing orders that sit on the book\nand are then matched with an incoming order to create a trade.\nThese fees reward traders who provide the best priced liquidity that actually allows trading to take place.\n - ACCOUNT_TYPE_LOCK_WITHDRAW: This account is created to lock funds to be withdrawn by parties\n - ACCOUNT_TYPE_BOND: This account is created to maintain liquidity providers funds commitments",
             "in": "query",
             "required": false,
             "type": "string",
@@ -919,7 +985,8 @@
               "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
               "ACCOUNT_TYPE_FEES_LIQUIDITY",
               "ACCOUNT_TYPE_FEES_MAKER",
-              "ACCOUNT_TYPE_LOCK_WITHDRAW"
+              "ACCOUNT_TYPE_LOCK_WITHDRAW",
+              "ACCOUNT_TYPE_BOND"
             ],
             "default": "ACCOUNT_TYPE_UNSPECIFIED"
           },
@@ -1626,6 +1693,18 @@
       },
       "description": "Response for the latest trade that occurred on Vega for a given market."
     },
+    "apiLiquidityProvisionsResponse": {
+      "type": "object",
+      "properties": {
+        "liquidityProvisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityProvision"
+          }
+        }
+      },
+      "title": "A response containing all of the\nvega liquidity provisions orders"
+    },
     "apiMarginLevelsResponse": {
       "type": "object",
       "properties": {
@@ -1930,6 +2009,23 @@
       },
       "description": "Response for preparing an order cancellation."
     },
+    "apiPrepareLiquidityProvisionRequest": {
+      "type": "object",
+      "properties": {
+        "submission": {
+          "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
+        }
+      }
+    },
+    "apiPrepareLiquidityProvisionResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "apiPrepareProposalRequest": {
       "type": "object",
       "properties": {
@@ -2231,10 +2327,11 @@
         "ACCOUNT_TYPE_FEES_INFRASTRUCTURE",
         "ACCOUNT_TYPE_FEES_LIQUIDITY",
         "ACCOUNT_TYPE_FEES_MAKER",
-        "ACCOUNT_TYPE_LOCK_WITHDRAW"
+        "ACCOUNT_TYPE_LOCK_WITHDRAW",
+        "ACCOUNT_TYPE_BOND"
       ],
       "default": "ACCOUNT_TYPE_UNSPECIFIED",
-      "description": "Various collateral/account types as used by Vega.\n\n - ACCOUNT_TYPE_UNSPECIFIED: Default value.\n - ACCOUNT_TYPE_INSURANCE: Insurance pool accounts contain insurance pool funds for a market.\n - ACCOUNT_TYPE_SETTLEMENT: Settlement accounts exist only during settlement or mark-to-market.\n - ACCOUNT_TYPE_MARGIN: Margin accounts contain margin funds for a party and each party will\nhave multiple margin accounts, one for each market they have traded in.\n\nMargin account funds will alter as margin requirements on positions change.\n - ACCOUNT_TYPE_GENERAL: General accounts contains general funds for a party. A party will\nhave multiple general accounts, one for each asset they want\nto trade with.\n\nGeneral accounts are where funds are initially deposited or withdrawn from.\nIt is also the account where funds are taken to fulfil fees and initial margin requirements.\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: Infrastructure accounts contain fees earned by providing infrastructure on Vega.\n - ACCOUNT_TYPE_FEES_LIQUIDITY: Liquidity accounts contain fees earned by providing liquidity on Vega markets.\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned by placing orders that sit on the book\nand are then matched with an incoming order to create a trade.\nThese fees reward traders who provide the best priced liquidity that actually allows trading to take place.\n - ACCOUNT_TYPE_LOCK_WITHDRAW: This account is created to lock funds to be withdrawn by parties"
+      "description": "Various collateral/account types as used by Vega.\n\n - ACCOUNT_TYPE_UNSPECIFIED: Default value.\n - ACCOUNT_TYPE_INSURANCE: Insurance pool accounts contain insurance pool funds for a market.\n - ACCOUNT_TYPE_SETTLEMENT: Settlement accounts exist only during settlement or mark-to-market.\n - ACCOUNT_TYPE_MARGIN: Margin accounts contain margin funds for a party and each party will\nhave multiple margin accounts, one for each market they have traded in.\n\nMargin account funds will alter as margin requirements on positions change.\n - ACCOUNT_TYPE_GENERAL: General accounts contains general funds for a party. A party will\nhave multiple general accounts, one for each asset they want\nto trade with.\n\nGeneral accounts are where funds are initially deposited or withdrawn from.\nIt is also the account where funds are taken to fulfil fees and initial margin requirements.\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: Infrastructure accounts contain fees earned by providing infrastructure on Vega.\n - ACCOUNT_TYPE_FEES_LIQUIDITY: Liquidity accounts contain fees earned by providing liquidity on Vega markets.\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned by placing orders that sit on the book\nand are then matched with an incoming order to create a trade.\nThese fees reward traders who provide the best priced liquidity that actually allows trading to take place.\n - ACCOUNT_TYPE_LOCK_WITHDRAW: This account is created to lock funds to be withdrawn by parties\n - ACCOUNT_TYPE_BOND: This account is created to maintain liquidity providers funds commitments"
     },
     "vegaAddValidator": {
       "type": "object",
@@ -2614,6 +2711,10 @@
           "$ref": "#/definitions/vegaNetworkParameter",
           "title": "Network parameter events"
         },
+        "liquidityProvision": {
+          "$ref": "#/definitions/vegaLiquidityProvision",
+          "title": "LiquidityProvision  events"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent",
           "title": "Market tick events, see [MarketEvent](#vega.MarketEvent)"
@@ -2649,10 +2750,11 @@
         "BUS_EVENT_TYPE_AUCTION",
         "BUS_EVENT_TYPE_RISK_FACTOR",
         "BUS_EVENT_TYPE_NETWORK_PARAMETER",
+        "BUS_EVENT_TYPE_LIQUIDITY_PROVISION",
         "BUS_EVENT_TYPE_MARKET"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
-      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens",
+      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens",
       "title": "An (event) bus event type is used to specify a type of event\nIt has 2 styles of event:\nSingle values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item\nGroup values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items"
     },
     "vegaCandle": {
@@ -2955,27 +3057,6 @@
       },
       "description": "Ethereum event (for oracles)."
     },
-    "vegaExternalRiskModel": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Name."
-        },
-        "socket": {
-          "type": "string",
-          "description": "Local machine socket to connect to."
-        },
-        "config": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "description": "Collection of configuration items."
-        }
-      },
-      "description": "Risk model for external modelling.\nProvided by external service via a Unix socket."
-    },
     "vegaFee": {
       "type": "object",
       "properties": {
@@ -3233,6 +3314,139 @@
       },
       "description": "Represents a ledger entry on Vega."
     },
+    "vegaLiquidityOrder": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "$ref": "#/definitions/vegaPeggedReference"
+        },
+        "proportion": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "offset": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "vegaLiquidityOrderReference": {
+      "type": "object",
+      "properties": {
+        "orderID": {
+          "type": "string",
+          "title": "The ID of the pegged order generated by the core to fullfill this liquidityOrder"
+        },
+        "liquidityOrder": {
+          "$ref": "#/definitions/vegaLiquidityOrder",
+          "title": "The liquidity order from the original submission"
+        }
+      },
+      "title": "A pair of a liquidity order and the id of the generated order by the core"
+    },
+    "vegaLiquidityProvision": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "LiquidityProvision identifier"
+        },
+        "partyID": {
+          "type": "string",
+          "title": "Party who created the provision"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "int64",
+          "description": "Timestamp for when the order was created at, in nanoseconds since the epoch.\nSee [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "int64",
+          "description": "Timestamp for when the order was updated at, in nanoseconds since the epoch.\nSee [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`."
+        },
+        "marketID": {
+          "type": "string",
+          "description": "Market identifier for the order. Required field."
+        },
+        "commitmentAmount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Specified as a unitless number that represents the amount of settlement asset of the market."
+        },
+        "fee": {
+          "type": "string",
+          "description": "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers."
+        },
+        "sells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrderReference"
+          },
+          "description": "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+        },
+        "buys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrderReference"
+          },
+          "description": "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+        },
+        "version": {
+          "type": "string",
+          "title": "version of this LiquidityProvision order"
+        },
+        "status": {
+          "$ref": "#/definitions/vegaLiquidityProvisionStatus",
+          "title": "the status of this liquidity provision"
+        }
+      },
+      "title": "An Liquidity provider commitment"
+    },
+    "vegaLiquidityProvisionStatus": {
+      "type": "string",
+      "enum": [
+        "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
+        "LIQUIDITY_PROVISION_STATUS_ACTIVE",
+        "LIQUIDITY_PROVISION_STATUS_STOPPED",
+        "LIQUIDITY_PROVISION_STATUS_CANCELLED"
+      ],
+      "default": "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
+      "description": "- LIQUIDITY_PROVISION_STATUS_UNSPECIFIED: The default value\n - LIQUIDITY_PROVISION_STATUS_ACTIVE: The liquidity provision is active\n - LIQUIDITY_PROVISION_STATUS_STOPPED: The liquidity provision was stopped by the network\n - LIQUIDITY_PROVISION_STATUS_CANCELLED: The liquidity provision was cancelled by the MM.",
+      "title": "the status of a liquidity provision order"
+    },
+    "vegaLiquidityProvisionSubmission": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string",
+          "description": "Market identifier for the order. Required field."
+        },
+        "commitmentAmount": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Specified as a unitless number that represents the amount of settlement asset of the market."
+        },
+        "fee": {
+          "type": "string",
+          "description": "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers."
+        },
+        "Sells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
+        },
+        "Buys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "description": "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
+        }
+      }
+    },
     "vegaLogNormalModelParams": {
       "type": "object",
       "properties": {
@@ -3459,6 +3673,14 @@
         "trigger": {
           "$ref": "#/definitions/vegaAuctionTrigger",
           "title": "if the market is in auction state, this field indicates what triggered the auction"
+        },
+        "targetStake": {
+          "type": "string",
+          "title": "the targeted stake for the given market"
+        },
+        "suppliedStake": {
+          "type": "string",
+          "title": "the available stake fo the given market"
         }
       },
       "description": "Represents data generated by a market when open."
@@ -4585,10 +4807,6 @@
         "logNormalRiskModel": {
           "$ref": "#/definitions/vegaLogNormalRiskModel",
           "description": "Log normal."
-        },
-        "externalRiskModel": {
-          "$ref": "#/definitions/vegaExternalRiskModel",
-          "description": "External socket."
         },
         "simpleRiskModel": {
           "$ref": "#/definitions/vegaSimpleRiskModel",

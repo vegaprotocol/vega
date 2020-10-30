@@ -222,6 +222,7 @@ type tradingDataService struct {
 	DepositService          DepositService
 	MarketDepthService      *subscribers.MarketDepthBuilder
 	NetParamsService        NetParamsService
+	LiquidityService        LiquidityService
 	ctx                     context.Context
 
 	chainID                  string
@@ -232,6 +233,22 @@ type tradingDataService struct {
 	netInfo           *tmctypes.ResultNetInfo
 	netInfoMu         sync.RWMutex
 	netInfoLastUpdate time.Time
+}
+
+func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
+	lps, err := t.LiquidityService.Get(req.Market, req.Party)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*types.LiquidityProvision, 0, len(lps))
+	for _, v := range lps {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.LiquidityProvisionsResponse{
+		LiquidityProvisions: out,
+	}, nil
 }
 
 func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {

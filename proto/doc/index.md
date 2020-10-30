@@ -48,6 +48,8 @@
     - [GetVotesByPartyResponse](#api.GetVotesByPartyResponse)
     - [LastTradeRequest](#api.LastTradeRequest)
     - [LastTradeResponse](#api.LastTradeResponse)
+    - [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest)
+    - [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse)
     - [MarginLevelsRequest](#api.MarginLevelsRequest)
     - [MarginLevelsResponse](#api.MarginLevelsResponse)
     - [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest)
@@ -96,6 +98,8 @@
     - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
     - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
     - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
+    - [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest)
+    - [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse)
     - [PrepareProposalRequest](#api.PrepareProposalRequest)
     - [PrepareProposalResponse](#api.PrepareProposalResponse)
     - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
@@ -191,8 +195,6 @@
     - [ContinuousTrading](#vega.ContinuousTrading)
     - [DiscreteTrading](#vega.DiscreteTrading)
     - [EthereumEvent](#vega.EthereumEvent)
-    - [ExternalRiskModel](#vega.ExternalRiskModel)
-    - [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry)
     - [FeeFactors](#vega.FeeFactors)
     - [Fees](#vega.Fees)
     - [Future](#vega.Future)
@@ -244,6 +246,10 @@
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
+    - [LiquidityOrder](#vega.LiquidityOrder)
+    - [LiquidityOrderReference](#vega.LiquidityOrderReference)
+    - [LiquidityProvision](#vega.LiquidityProvision)
+    - [LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission)
     - [MarginLevels](#vega.MarginLevels)
     - [MarketData](#vega.MarketData)
     - [MarketDepth](#vega.MarketDepth)
@@ -288,6 +294,7 @@
     - [ChainStatus](#vega.ChainStatus)
     - [Deposit.Status](#vega.Deposit.Status)
     - [Interval](#vega.Interval)
+    - [LiquidityProvision.Status](#vega.LiquidityProvision.Status)
     - [MarketState](#vega.MarketState)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
     - [Order.Status](#vega.Order.Status)
@@ -975,6 +982,40 @@ Response for the latest trade that occurred on Vega for a given market.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | trade | [vega.Trade](#vega.Trade) |  | A trade, if found. |
+
+
+
+
+
+
+<a name="api.LiquidityProvisionsRequest"></a>
+
+### LiquidityProvisionsRequest
+A message requesting for the list
+of liquidity provisions orders for markets
+one of the 2 filters is required or both
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| market | [string](#string) |  | the market we want to get liquidity provision orders from |
+| party | [string](#string) |  | the party which submitted the liquidity provision orders |
+
+
+
+
+
+
+<a name="api.LiquidityProvisionsResponse"></a>
+
+### LiquidityProvisionsResponse
+A response containing all of the
+vega liquidity provisions orders
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| liquidityProvisions | [vega.LiquidityProvision](#vega.LiquidityProvision) | repeated |  |
 
 
 
@@ -1733,6 +1774,36 @@ Response for preparing an order cancellation.
 
 
 
+<a name="api.PrepareLiquidityProvisionRequest"></a>
+
+### PrepareLiquidityProvisionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| submission | [vega.LiquidityProvisionSubmission](#vega.LiquidityProvisionSubmission) |  |  |
+
+
+
+
+
+
+<a name="api.PrepareLiquidityProvisionResponse"></a>
+
+### PrepareLiquidityProvisionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blob | [bytes](#bytes) |  |  |
+
+
+
+
+
+
 <a name="api.PrepareProposalRequest"></a>
 
 ### PrepareProposalRequest
@@ -2157,6 +2228,7 @@ The response for a list of withdrawals
 | PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare a governance proposal |
 | PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a governance vote |
 | PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | Propagate a chain event |
+| PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse) |  |
 
 
 <a name="api.trading_data"></a>
@@ -2226,6 +2298,7 @@ The response for a list of withdrawals
 | Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its ID |
 | Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get withdrawals for a party |
 | NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
+| LiquidityProvisions | [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest) | [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse) | Get the liquidity provision orders |
 
 
 
@@ -2709,6 +2782,7 @@ A bus event is a container for event bus events emitted by Vega
 | auction | [AuctionEvent](#vega.AuctionEvent) |  | Auction events, see [AuctionEvent](#vega.AuctionEvent) |
 | riskFactor | [RiskFactor](#vega.RiskFactor) |  | Risk factor events |
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
+| liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
 
 
@@ -2905,6 +2979,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_AUCTION | 22 | Event indicating a change in auction state, for example starting or ending an auction |
 | BUS_EVENT_TYPE_RISK_FACTOR | 23 | Event indicating a risk factor has been updated |
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
+| BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
 
 
@@ -3304,40 +3379,6 @@ Ethereum event (for oracles).
 
 
 
-<a name="vega.ExternalRiskModel"></a>
-
-### ExternalRiskModel
-Risk model for external modelling.
-Provided by external service via a Unix socket.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | Name. |
-| socket | [string](#string) |  | Local machine socket to connect to. |
-| config | [ExternalRiskModel.ConfigEntry](#vega.ExternalRiskModel.ConfigEntry) | repeated | Collection of configuration items. |
-
-
-
-
-
-
-<a name="vega.ExternalRiskModel.ConfigEntry"></a>
-
-### ExternalRiskModel.ConfigEntry
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="vega.FeeFactors"></a>
 
 ### FeeFactors
@@ -3589,7 +3630,6 @@ Tradable Instrument definition.
 | instrument | [Instrument](#vega.Instrument) |  | Instrument details. |
 | marginCalculator | [MarginCalculator](#vega.MarginCalculator) |  | Margin calculator for the instrument. |
 | logNormalRiskModel | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal. |
-| externalRiskModel | [ExternalRiskModel](#vega.ExternalRiskModel) |  | External socket. |
 | simpleRiskModel | [SimpleRiskModel](#vega.SimpleRiskModel) |  | Simple. |
 
 
@@ -4167,6 +4207,83 @@ Represents a ledger entry on Vega.
 
 
 
+<a name="vega.LiquidityOrder"></a>
+
+### LiquidityOrder
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| reference | [PeggedReference](#vega.PeggedReference) |  |  |
+| proportion | [uint32](#uint32) |  |  |
+| offset | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="vega.LiquidityOrderReference"></a>
+
+### LiquidityOrderReference
+A pair of a liquidity order and the id of the generated order by the core
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orderID | [string](#string) |  | The ID of the pegged order generated by the core to fullfill this liquidityOrder |
+| liquidityOrder | [LiquidityOrder](#vega.LiquidityOrder) |  | The liquidity order from the original submission |
+
+
+
+
+
+
+<a name="vega.LiquidityProvision"></a>
+
+### LiquidityProvision
+An Liquidity provider commitment
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | LiquidityProvision identifier |
+| partyID | [string](#string) |  | Party who created the provision |
+| createdAt | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| updatedAt | [int64](#int64) |  | Timestamp for when the order was updated at, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| sells | [LiquidityOrderReference](#vega.LiquidityOrderReference) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| buys | [LiquidityOrderReference](#vega.LiquidityOrderReference) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
+| version | [string](#string) |  | version of this LiquidityProvision order |
+| status | [LiquidityProvision.Status](#vega.LiquidityProvision.Status) |  | the status of this liquidity provision |
+
+
+
+
+
+
+<a name="vega.LiquidityProvisionSubmission"></a>
+
+### LiquidityProvisionSubmission
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketID | [string](#string) |  | Market identifier for the order. Required field. |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| Sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| Buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
+
+
+
+
+
+
 <a name="vega.MarginLevels"></a>
 
 ### MarginLevels
@@ -4212,6 +4329,8 @@ Represents data generated by a market when open.
 | indicativeVolume | [uint64](#uint64) |  | indicative volume (zero if not in auction) |
 | marketState | [MarketState](#vega.MarketState) |  | the current state of the market |
 | trigger | [AuctionTrigger](#vega.AuctionTrigger) |  | if the market is in auction state, this field indicates what triggered the auction |
+| targetStake | [string](#string) |  | the targeted stake for the given market |
+| suppliedStake | [string](#string) |  | the available stake fo the given market |
 
 
 
@@ -4927,6 +5046,7 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 | ACCOUNT_TYPE_FEES_LIQUIDITY | 6 | Liquidity accounts contain fees earned by providing liquidity on Vega markets. |
 | ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned by placing orders that sit on the book and are then matched with an incoming order to create a trade. These fees reward traders who provide the best priced liquidity that actually allows trading to take place. |
 | ACCOUNT_TYPE_LOCK_WITHDRAW | 8 | This account is created to lock funds to be withdrawn by parties |
+| ACCOUNT_TYPE_BOND | 9 | This account is created to maintain liquidity providers funds commitments |
 
 
 
@@ -4987,6 +5107,20 @@ Represents a set of time intervals that are used when querying for candle-stick 
 | INTERVAL_I1H | 3600 | 1 hour. |
 | INTERVAL_I6H | 21600 | 6 hours. |
 | INTERVAL_I1D | 86400 | 1 day. |
+
+
+
+<a name="vega.LiquidityProvision.Status"></a>
+
+### LiquidityProvision.Status
+the status of a liquidity provision order
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| LIQUIDITY_PROVISION_STATUS_UNSPECIFIED | 0 | The default value |
+| LIQUIDITY_PROVISION_STATUS_ACTIVE | 1 | The liquidity provision is active |
+| LIQUIDITY_PROVISION_STATUS_STOPPED | 2 | The liquidity provision was stopped by the network |
+| LIQUIDITY_PROVISION_STATUS_CANCELLED | 3 | The liquidity provision was cancelled by the MM. |
 
 
 

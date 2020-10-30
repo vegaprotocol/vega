@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -49,17 +50,17 @@ func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1 interface{}) *gomock.Call 
 }
 
 // SendSignature mocks base method
-func (m *MockNotary) SendSignature(arg0 string, arg1 []byte, arg2 proto.NodeSignatureKind) error {
+func (m *MockNotary) SendSignature(arg0 context.Context, arg1 string, arg2 []byte, arg3 proto.NodeSignatureKind) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendSignature", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SendSignature", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SendSignature indicates an expected call of SendSignature
-func (mr *MockNotaryMockRecorder) SendSignature(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockNotaryMockRecorder) SendSignature(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSignature", reflect.TypeOf((*MockNotary)(nil).SendSignature), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSignature", reflect.TypeOf((*MockNotary)(nil).SendSignature), arg0, arg1, arg2, arg3)
 }
 
 // StartAggregate mocks base method

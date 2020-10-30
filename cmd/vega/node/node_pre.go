@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -24,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/netparams"
@@ -52,12 +52,7 @@ import (
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"golang.org/x/crypto/sha3"
-	"golang.org/x/crypto/ssh/terminal"
 )
-
-func envConfigPath() string {
-	return os.Getenv("VEGA_CONFIG")
-}
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this shouldn't happen...
@@ -85,7 +80,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
-	if flagProvided("--with-pprof") || conf.Pprof.Enabled {
+	if conf.Pprof.Enabled {
 		l.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
 		l.pproffhandlr, err = pprof.New(l.Log, conf.Pprof)
 		if err != nil {
@@ -264,7 +259,7 @@ func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
 	return nil
 }
 
-// load all asset from genesis state
+// UponGenesis loads all asset from genesis state
 func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 	state, err := assets.LoadGenesisState(rawstate)
 	if err != nil {
@@ -327,12 +322,12 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	aid, err := l.assets.NewAsset(id, v)
 	if err != nil {
-		return fmt.Errorf("error instanciating asset %v\n", err)
+		return fmt.Errorf("error instanciating asset %v", err)
 	}
 
 	asset, err := l.assets.Get(aid)
 	if err != nil {
-		return fmt.Errorf("unable to get asset %v\n", err)
+		return fmt.Errorf("unable to get asset %v", err)
 	}
 
 	// just a simple backoff here
@@ -347,7 +342,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to instanciate new asset %v", err)
+		return fmt.Errorf("unable to instanciate new asset err=%v, asset-source=%s", err, v.String())
 	}
 	if err := l.assets.Enable(aid); err != nil {
 		return fmt.Errorf("unable to enable asset: %v", err)
@@ -467,6 +462,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
 	l.netParamsService = netparams.NewService(l.ctx)
+	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
@@ -477,7 +473,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin, l.marketDepthSub, l.riskFactorSub)
+		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
+		l.liquidityService)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -502,7 +499,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
-	commander, err := nodewallet.NewCommander(l.ctx, nil, wal)
+	commander, err := nodewallet.NewCommander(nil, wal)
 	if err != nil {
 		return err
 	}
@@ -547,6 +544,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
 		return
 	}
+
 	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin); err != nil {
 		return
 	}
@@ -581,6 +579,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
 		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
+		func(cfg config.Config) { l.liquidityService.ReloadConf(cfg.Liquidity) },
 		func(cfg config.Config) { l.tradeService.ReloadConf(cfg.Trades) },
 		func(cfg config.Config) { l.marketService.ReloadConf(cfg.Markets) },
 		func(cfg config.Config) { l.riskService.ReloadConf(cfg.Risk) },
@@ -595,23 +594,4 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
 	return
-}
-
-func getTerminalPassphrase(what string) (string, error) {
-	fmt.Printf("please enter %v passphrase:", what)
-	password, err := terminal.ReadPassword(0)
-	if err != nil {
-		return "", err
-	}
-
-	fmt.Println("")
-	return string(password), nil
-}
-
-func getFilePassphrase(path string) (string, error) {
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return string(buf), nil
 }

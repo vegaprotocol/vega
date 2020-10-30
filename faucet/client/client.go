@@ -61,6 +61,9 @@ func (c *Client) Mint(party, asset string, amount uint64) error {
 	}
 	defer res.Body.Close()
 	resbody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
 	faucetRes := &faucet.MintResponse{}
 	err = json.Unmarshal(resbody, faucetRes)
 	if err != nil {

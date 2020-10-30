@@ -309,6 +309,10 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:       auctionEnd,
 		MarketState:      m.as.Mode(),
 		Trigger:          m.as.Trigger(),
+		// FIXME(WITOLD): uncomment set real values here
+		// TargetStake: getTargetStake(),
+		// SuppliedStake: getSuppliedStake(),
+
 	}
 }
 
@@ -1977,4 +1981,8 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 			asset: {Long: 0.15, Short: 0.25},
 		},
 	}
+}
+
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
+	return nil
 }

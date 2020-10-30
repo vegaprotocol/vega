@@ -14,18 +14,23 @@ import (
 )
 
 type testTx struct {
+	payload     []byte
 	pubkey      []byte
 	hash        []byte
+	signature   []byte
 	command     txn.Command
-	blockHeight uint64
 	validateFn  func() error
+	blockHeight uint64
 }
 
 func (tx *testTx) Unmarshal(interface{}) error { return nil }
-func (tx *testTx) PubKey() []byte              { return tx.pubkey }
-func (tx *testTx) Hash() []byte                { return tx.hash }
-func (tx *testTx) Command() txn.Command        { return tx.command }
-func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
+
+func (tx *testTx) Signature() []byte    { return tx.signature }
+func (tx *testTx) Payload() []byte      { return tx.payload }
+func (tx *testTx) PubKey() []byte       { return tx.pubkey }
+func (tx *testTx) Hash() []byte         { return tx.hash }
+func (tx *testTx) Command() txn.Command { return tx.command }
+func (tx *testTx) BlockHeight() uint64  { return tx.blockHeight }
 func (tx *testTx) Validate() error {
 	if fn := tx.validateFn; fn != nil {
 		return fn()

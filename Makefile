@@ -29,7 +29,9 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
+	@[ -d vendor ] && mv vendor vendor.tmp
 	@go generate ./...
+	@[ -d vendor.tmp ] && mv vendor.tmp vendor
 
 .PHONY: msan
 msan: ## Run memory sanitizer

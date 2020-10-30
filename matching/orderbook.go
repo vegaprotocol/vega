@@ -333,19 +333,14 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 	for price := maxPrice; price >= minPrice; price-- {
 		volume, err := b.buy.GetVolume(price)
 
-		if err == nil {
-			cumulativeVolume += volume
-			cumulativeVolumes[price] = CumulativeVolumeLevel{
-				price:               price,
-				bidVolume:           volume,
-				cumulativeBidVolume: cumulativeVolume,
-			}
-		} else {
-			cumulativeVolumes[price] = CumulativeVolumeLevel{
-				price:               price,
-				bidVolume:           0,
-				cumulativeBidVolume: cumulativeVolume,
-			}
+		if err != nil {
+			continue
+		}
+		cumulativeVolume += volume
+		cumulativeVolumes[price] = CumulativeVolumeLevel{
+			price:               price,
+			bidVolume:           volume,
+			cumulativeBidVolume: cumulativeVolume,
 		}
 	}
 
@@ -355,16 +350,19 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[ui
 		volume, err := b.sell.GetVolume(price)
 
 		// Lookup the existing structure from the map
-		cvl := cumulativeVolumes[price]
+		cvl, ok := cumulativeVolumes[price]
+
+		if !ok && err != nil {
+			// nothing to do
+			continue
+		}
 
 		if err == nil {
 			cumulativeVolume += volume
 			cvl.askVolume = volume
-			cvl.cumulativeAskVolume = cumulativeVolume
-		} else {
-			cvl.askVolume = 0
-			cvl.cumulativeAskVolume = cumulativeVolume
 		}
+
+		cvl.cumulativeAskVolume = cumulativeVolume
 		cvl.maxTradableAmount = min(cvl.cumulativeAskVolume, cvl.cumulativeBidVolume)
 		cumulativeVolumes[price] = cvl
 	}
@@ -510,6 +508,9 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		return nil, err
 	}
 
+	// we remove the order from the expiring list as well.
+	b.removePendingGttOrder(*order)
+
 	order, err := b.DeleteOrder(order)
 	if err != nil {
 		return nil, err
@@ -533,6 +534,15 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	// If the creation date for the 2 orders is different, something went wrong
 	if originalOrder.CreatedAt != amendedOrder.CreatedAt {
 		return types.ErrOrderOutOfSequence
+	}
+
+	var (
+		expiryChanged = originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
+			originalOrder.TimeInForce != amendedOrder.TimeInForce
+		ordcpy types.Order
+	)
+	if expiryChanged {
+		ordcpy = *originalOrder
 	}
 
 	if err := b.validateOrder(amendedOrder); err != nil {
@@ -568,9 +578,8 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	// If we have changed the ExpiresAt or TIF then update Expiry table
-	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
-		originalOrder.TimeInForce != amendedOrder.TimeInForce {
-		b.removePendingGttOrder(*originalOrder)
+	if expiryChanged {
+		b.removePendingGttOrder(ordcpy)
 		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*amendedOrder)
 		}

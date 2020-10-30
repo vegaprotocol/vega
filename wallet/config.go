@@ -14,29 +14,32 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fsutil"
+	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/zannen/toml"
 )
 
 const (
-	namedLogger    = "wallet"
-	configFile     = "wallet-service-config.toml"
-	rsaKeyPath     = "wallet_rsa"
-	pubRsaKeyName  = "public.pem"
-	privRsaKeyName = "private.pem"
+	namedLogger     = "wallet"
+	configFile      = "wallet-service-config.toml"
+	rsaKeyPath      = "wallet_rsa"
+	pubRsaKeyName   = "public.pem"
+	privRsaKeyName  = "private.pem"
+	defaultCoolDown = 1 * time.Minute
 
 	//  7 days, needs to be in seconds for the token
 	tokenExpiry = time.Hour * 24 * 7
 )
 
 type Config struct {
-	Level       encoding.LogLevel `long:"level"`
-	TokenExpiry encoding.Duration `long:"token-expiry"`
-	Port        int               `long:"port"`
-	IP          string            `long:"ip"`
-	Node        NodeConfig        `group:"Node" namespace:"node"`
-	RsaKey      string            `long:"rsa-key"`
+	Level       encoding.LogLevel     `long:"level"`
+	TokenExpiry encoding.Duration     `long:"token-expiry"`
+	Port        int                   `long:"port"`
+	IP          string                `long:"ip"`
+	Node        NodeConfig            `group:"Node" namespace:"node"`
+	RsaKey      string                `long:"rsa-key"`
+	RateLimit   vhttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
 }
 
 type NodeConfig struct {
@@ -59,6 +62,10 @@ func NewDefaultConfig() Config {
 		IP:     "0.0.0.0",
 		Port:   1789,
 		RsaKey: rsaKeyPath,
+		RateLimit: vhttp.RateLimitConfig{
+			CoolDown:  encoding.Duration{Duration: defaultCoolDown},
+			AllowList: []string{"10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
+		},
 	}
 }
 

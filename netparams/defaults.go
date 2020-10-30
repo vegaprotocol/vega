@@ -5,15 +5,20 @@ import "time"
 func defaultNetParams() map[string]value {
 	return map[string]value{
 		// markets
-		MarketMarginScalingFactorSearchLevel:       NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.1"),
-		MarketMarginScalingFactorInitialMargin:     NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.2"),
-		MarketMarginScalingFactorCollateralRelease: NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.4"),
-		MarketFeeFactorsMakerFee:                   NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00025"),
-		MarketFeeFactorsInfrastructureFee:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.0005"),
-		MarketFeeFactorsLiquidityFee:               NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.001"),
-		MarketAuctionMinimumDuration:               NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
-		MarketAuctionMaximumDuration:               NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("168h0m0s"),
-		MarketInitialMarkPrice:                     NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
+		MarketMarginScalingFactorSearchLevel:          NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.1"),
+		MarketMarginScalingFactorInitialMargin:        NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.2"),
+		MarketMarginScalingFactorCollateralRelease:    NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1.4"),
+		MarketFeeFactorsMakerFee:                      NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00025"),
+		MarketFeeFactorsInfrastructureFee:             NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.0005"),
+		MarketFeeFactorsLiquidityFee:                  NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.001"),
+		MarketAuctionMinimumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
+		MarketAuctionMaximumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("168h0m0s"),
+		MarketInitialMarkPrice:                        NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityBondPenaltyParameter:           NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityMaximumLiquidityFeeFactorLevel: NewFloat(FloatGT(0), FloatLTE(1)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityStakeToCCYSiskas:               NewFloat(FloatGT(0)).Mutable(true).MustUpdate("1"),
+		MarketTargetStakeTimeWindow:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
+		MarketTargetStakeScalingFactor:                NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("10"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
