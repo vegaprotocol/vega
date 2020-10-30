@@ -340,7 +340,7 @@ func (m *Market) GetMarketData() types.MarketData {
 	if err != nil {
 		m.log.Error("unable to get risk factors, can't calculate target stake")
 	} else {
-		targetStake = m.tsCalculator.GetTargetStake(m.currentTime, *rf)
+		targetStake = m.tsCalculator.GetTargetStake(*rf, m.currentTime)
 	}
 
 	return types.MarketData{
@@ -1161,7 +1161,12 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
 			// Record open inteterest change
-			m.tsCalculator.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
+			err := m.tsCalculator.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
+			if err != nil {
+				m.log.Error("unable record open interest",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
 		}
