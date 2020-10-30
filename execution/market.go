@@ -573,7 +573,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Send out events for all orders we park
 	for _, order := range ordersToPark {
-		m.ParkOrder(ctx, order)
+		m.parkOrder(ctx, order)
 	}
 
 	// Send an event bus update
@@ -1738,17 +1738,12 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			}
 		}
 	}
-
 	m.checkForReferenceMoves(ctx)
-
 	return cancellation, nil
 }
 
-// ParkOrder removes the given order from the orderbook and parks it
-func (m *Market) ParkOrder(ctx context.Context, order *types.Order) error {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "ParkOrder")
-	defer timer.EngineTimeCounterAdd()
-
+// parkOrder removes the given order from the orderbook and parks it
+func (m *Market) parkOrder(ctx context.Context, order *types.Order) error {
 	if m.closed {
 		return ErrMarketClosed
 	}
