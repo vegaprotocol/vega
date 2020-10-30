@@ -143,10 +143,12 @@ type Market struct {
 	as *monitor.AuctionState // @TODO this should be an interface
 
 	// A collection of time sorted pegged orders
-	peggedOrders []*types.Order
+	peggedOrders         []*types.Order
+	expiringPeggedOrders *matching.ExpiringOrders
 
 	// A collection of pegged orders that have been parked
-	parkedOrders []*types.Order
+	parkedOrders         []*types.Order
+	expiringParkedOrders *matching.ExpiringOrders
 
 	// Store the previous price values so we can see what has changed
 	lastBestBidPrice uint64
@@ -249,23 +251,25 @@ func NewMarket(
 	}
 
 	market := &Market{
-		log:                log,
-		idgen:              idgen,
-		mkt:                mkt,
-		closingAt:          closingAt,
-		currentTime:        now,
-		markPrice:          tradableInstrument.Instrument.InitialMarkPrice,
-		matching:           book,
-		tradableInstrument: tradableInstrument,
-		risk:               riskEngine,
-		position:           positionEngine,
-		settlement:         settleEngine,
-		collateral:         collateralEngine,
-		broker:             broker,
-		fee:                feeEngine,
-		parties:            map[string]struct{}{},
-		as:                 as,
-		pMonitor:           pMonitor,
+		log:                  log,
+		idgen:                idgen,
+		mkt:                  mkt,
+		closingAt:            closingAt,
+		currentTime:          now,
+		markPrice:            tradableInstrument.Instrument.InitialMarkPrice,
+		matching:             book,
+		tradableInstrument:   tradableInstrument,
+		risk:                 riskEngine,
+		position:             positionEngine,
+		settlement:           settleEngine,
+		collateral:           collateralEngine,
+		broker:               broker,
+		fee:                  feeEngine,
+		parties:              map[string]struct{}{},
+		as:                   as,
+		pMonitor:             pMonitor,
+		expiringPeggedOrders: matching.NewExpiringOrders(),
+		expiringParkedOrders: matching.NewExpiringOrders(),
 	}
 
 	if market.as.AuctionStart() {
@@ -2210,28 +2214,33 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
-func (m *Market) RemoveExpiredOrders(timestamp int64) (orderList []types.Order, err error) {
+func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "RemoveExpiredOrders")
+	defer timer.EngineTimeCounterAdd()
 
 	if m.closed {
-		err = ErrMarketClosed
-	} else {
-		orderList = m.matching.RemoveExpiredOrders(timestamp)
-		// need to remove the expired orders from the potentials positions
-		for _, order := range orderList {
-			order := order
-			_, err = m.position.UnregisterOrder(&order)
-			if err != nil {
-				if m.log.GetLevel() == logging.DebugLevel {
-					m.log.Debug("Failure unregistering order in positions engine (cancel)",
-						logging.Order(order),
-						logging.Error(err))
-				}
+		return nil, ErrMarketClosed
+	}
+
+	for _, order := range m.expiringPeggedOrders.Expire(timestamp) {
+		order := order
+		m.removePeggedOrder(&order)
+	}
+
+	orderList := m.matching.RemoveExpiredOrders(timestamp)
+	// need to remove the expired orders from the potentials positions
+	for _, order := range orderList {
+		order := order
+		if _, err := m.position.UnregisterOrder(&order); err != nil {
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failure unregistering order in positions engine (cancel)",
+					logging.Order(order),
+					logging.Error(err))
 			}
 		}
 	}
-	timer.EngineTimeCounterAdd()
-	return
+
+	return orderList, nil
 }
 
 func (m *Market) getBestAskPrice() (uint64, error) {
@@ -2324,6 +2333,11 @@ func (m *Market) GetParkedOrderCount() int {
 
 func (m *Market) addPeggedOrder(order *types.Order) {
 	m.peggedOrders = append(m.peggedOrders, order)
+
+	// expiring orders will be removed by RemoveExpiredOrders
+	if order.IsPersistent() && order.ExpiresAt > 0 {
+		m.expiringPeggedOrders.Insert(*order)
+	}
 }
 
 // removePeggedOrder looks through the pegged and parked list
