@@ -481,18 +481,17 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 	if len(i.Code) <= 0 {
 		return nil, errors.New("Instrument.Code: string cannot be empty")
 	}
-	if len(i.QuoteName) <= 0 {
-		return nil, errors.New("Instrument.QuoteName: string cannot be empty")
-	}
 
 	result := &types.InstrumentConfiguration{
-		Name:      i.Name,
-		Code:      i.Code,
-		QuoteName: i.QuoteName,
+		Name: i.Name,
+		Code: i.Code,
 	}
 
 	if i.FutureProduct != nil {
-		if len(i.FutureProduct.Asset) <= 0 {
+		if len(i.FutureProduct.QuoteName) <= 0 {
+			return nil, errors.New("FutureProduct.QuoteName: string cannot be empty")
+		}
+		if len(i.FutureProduct.SettlementAsset) <= 0 {
 			return nil, errors.New("FutureProduct.Asset: string cannot be empty")
 		}
 		if len(i.FutureProduct.Maturity) <= 0 {
@@ -501,8 +500,9 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 
 		result.Product = &types.InstrumentConfiguration_Future{
 			Future: &types.FutureProduct{
-				Asset:    i.FutureProduct.Asset,
-				Maturity: i.FutureProduct.Maturity,
+				SettlementAsset: i.FutureProduct.SettlementAsset,
+				Maturity:        i.FutureProduct.Maturity,
+				QuoteName:       i.FutureProduct.QuoteName,
 			},
 		}
 	} else {

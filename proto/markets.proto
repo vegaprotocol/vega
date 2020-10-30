@@ -42,7 +42,10 @@ message Future {
   // The maturity for the future.
   string maturity = 1;
   // The asset for the future.
-  string asset = 2;
+  string settlementAsset = 2;
+  // Quote name of the instrument.
+  string quoteName = 4;
+
   // Oracle configuration.
   oneof oracle {
     // Ethereum events.
@@ -77,12 +80,10 @@ message Instrument {
   string code = 2;
   // Name of the instrument.
   string name = 3;
-  // Quote name of the instrument.
-  string quoteName = 4;
   // A collection of instrument meta-data.
-  InstrumentMetadata metadata = 5;
+  InstrumentMetadata metadata = 4;
   // An initial mark price for the instrument.
-  uint64 initialMarkPrice = 6;
+  uint64 initialMarkPrice = 5;
   // The product the instrument is composed of.
   oneof product {
     // Future.

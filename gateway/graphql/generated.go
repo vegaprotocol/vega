@@ -187,30 +187,30 @@ type ComplexityRoot struct {
 	}
 
 	Future struct {
-		Asset    func(childComplexity int) int
-		Maturity func(childComplexity int) int
-		Oracle   func(childComplexity int) int
+		Maturity        func(childComplexity int) int
+		Oracle          func(childComplexity int) int
+		QuoteName       func(childComplexity int) int
+		SettlementAsset func(childComplexity int) int
 	}
 
 	FutureProduct struct {
-		Asset    func(childComplexity int) int
-		Maturity func(childComplexity int) int
+		Maturity        func(childComplexity int) int
+		QuoteName       func(childComplexity int) int
+		SettlementAsset func(childComplexity int) int
 	}
 
 	Instrument struct {
-		Code      func(childComplexity int) int
-		Id        func(childComplexity int) int
-		Metadata  func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Product   func(childComplexity int) int
-		QuoteName func(childComplexity int) int
+		Code     func(childComplexity int) int
+		Id       func(childComplexity int) int
+		Metadata func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Product  func(childComplexity int) int
 	}
 
 	InstrumentConfiguration struct {
 		Code          func(childComplexity int) int
 		FutureProduct func(childComplexity int) int
 		Name          func(childComplexity int) int
-		QuoteName     func(childComplexity int) int
 	}
 
 	InstrumentMetadata struct {
@@ -766,11 +766,12 @@ type DepositResolver interface {
 	CreditedTimestamp(ctx context.Context, obj *proto.Deposit) (*string, error)
 }
 type FutureResolver interface {
-	Asset(ctx context.Context, obj *proto.Future) (*Asset, error)
+	SettlementAsset(ctx context.Context, obj *proto.Future) (*Asset, error)
+
 	Oracle(ctx context.Context, obj *proto.Future) (Oracle, error)
 }
 type FutureProductResolver interface {
-	Asset(ctx context.Context, obj *proto.FutureProduct) (*Asset, error)
+	SettlementAsset(ctx context.Context, obj *proto.FutureProduct) (*Asset, error)
 }
 type InstrumentResolver interface {
 	Metadata(ctx context.Context, obj *proto.Instrument) (*InstrumentMetadata, error)
@@ -1479,13 +1480,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Fees.Factors(childComplexity), true
 
-	case "Future.asset":
-		if e.complexity.Future.Asset == nil {
-			break
-		}
-
-		return e.complexity.Future.Asset(childComplexity), true
-
 	case "Future.maturity":
 		if e.complexity.Future.Maturity == nil {
 			break
@@ -1500,12 +1494,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Future.Oracle(childComplexity), true
 
-	case "FutureProduct.asset":
-		if e.complexity.FutureProduct.Asset == nil {
+	case "Future.quoteName":
+		if e.complexity.Future.QuoteName == nil {
 			break
 		}
 
-		return e.complexity.FutureProduct.Asset(childComplexity), true
+		return e.complexity.Future.QuoteName(childComplexity), true
+
+	case "Future.settlementAsset":
+		if e.complexity.Future.SettlementAsset == nil {
+			break
+		}
+
+		return e.complexity.Future.SettlementAsset(childComplexity), true
 
 	case "FutureProduct.maturity":
 		if e.complexity.FutureProduct.Maturity == nil {
@@ -1513,6 +1514,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FutureProduct.Maturity(childComplexity), true
+
+	case "FutureProduct.quoteName":
+		if e.complexity.FutureProduct.QuoteName == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.QuoteName(childComplexity), true
+
+	case "FutureProduct.settlementAsset":
+		if e.complexity.FutureProduct.SettlementAsset == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.SettlementAsset(childComplexity), true
 
 	case "Instrument.code":
 		if e.complexity.Instrument.Code == nil {
@@ -1549,13 +1564,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Instrument.Product(childComplexity), true
 
-	case "Instrument.quoteName":
-		if e.complexity.Instrument.QuoteName == nil {
-			break
-		}
-
-		return e.complexity.Instrument.QuoteName(childComplexity), true
-
 	case "InstrumentConfiguration.code":
 		if e.complexity.InstrumentConfiguration.Code == nil {
 			break
@@ -1576,13 +1584,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentConfiguration.Name(childComplexity), true
-
-	case "InstrumentConfiguration.quoteName":
-		if e.complexity.InstrumentConfiguration.QuoteName == nil {
-			break
-		}
-
-		return e.complexity.InstrumentConfiguration.QuoteName(childComplexity), true
 
 	case "InstrumentMetadata.tags":
 		if e.complexity.InstrumentMetadata.Tags == nil {
@@ -4999,7 +5000,10 @@ type Future {
   maturity: String!
 
   "The name of the asset (string)"
-  asset: Asset!
+  settlementAsset: Asset!
+
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
 
   "The oracle used for this product (Oracle union)"
   oracle: Oracle!
@@ -5018,9 +5022,6 @@ type Instrument {
 
   "Full and fairly descriptive name for the instrument"
   name: String!
-
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
 
   "Metadata for this instrument"
   metadata: InstrumentMetadata!
@@ -6039,14 +6040,19 @@ input FutureProductInput {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
-  asset: String!
+  settlementAsset: String!
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
 }
 
 type FutureProduct {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
-  "Product asset name"
-  asset: Asset!
+  "Product asset ID"
+  settlementAsset: Asset!
+ "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+
 }
 
 input InstrumentConfigurationInput {
@@ -6054,8 +6060,6 @@ input InstrumentConfigurationInput {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
   "Future product specification"
   futureProduct: FutureProductInput
 }
@@ -6065,8 +6069,6 @@ type InstrumentConfiguration {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
   "Future product specification"
   futureProduct: FutureProduct
 }
@@ -10070,7 +10072,7 @@ func (ec *executionContext) _Future_maturity(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Future_asset(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
+func (ec *executionContext) _Future_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10087,7 +10089,7 @@ func (ec *executionContext) _Future_asset(ctx context.Context, field graphql.Col
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Future().Asset(rctx, obj)
+		return ec.resolvers.Future().SettlementAsset(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10102,6 +10104,40 @@ func (ec *executionContext) _Future_asset(ctx context.Context, field graphql.Col
 	res := resTmp.(*Asset)
 	fc.Result = res
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Future_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Future",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuoteName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_oracle(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
@@ -10172,7 +10208,7 @@ func (ec *executionContext) _FutureProduct_maturity(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FutureProduct_asset(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _FutureProduct_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10189,7 +10225,7 @@ func (ec *executionContext) _FutureProduct_asset(ctx context.Context, field grap
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.FutureProduct().Asset(rctx, obj)
+		return ec.resolvers.FutureProduct().SettlementAsset(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10204,6 +10240,40 @@ func (ec *executionContext) _FutureProduct_asset(ctx context.Context, field grap
 	res := resTmp.(*Asset)
 	fc.Result = res
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FutureProduct",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuoteName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *proto.Instrument) (ret graphql.Marshaler) {
@@ -10292,40 +10362,6 @@ func (ec *executionContext) _Instrument_name(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Instrument_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.Instrument) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Instrument",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.QuoteName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10462,40 +10498,6 @@ func (ec *executionContext) _InstrumentConfiguration_code(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Code, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _InstrumentConfiguration_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.InstrumentConfiguration) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "InstrumentConfiguration",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.QuoteName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23135,9 +23137,15 @@ func (ec *executionContext) unmarshalInputFutureProductInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "asset":
+		case "settlementAsset":
 			var err error
-			it.Asset, err = ec.unmarshalNString2string(ctx, v)
+			it.SettlementAsset, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "quoteName":
+			var err error
+			it.QuoteName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -23162,12 +23170,6 @@ func (ec *executionContext) unmarshalInputInstrumentConfigurationInput(ctx conte
 		case "code":
 			var err error
 			it.Code, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "quoteName":
-			var err error
-			it.QuoteName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -24788,7 +24790,7 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "asset":
+		case "settlementAsset":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -24796,12 +24798,17 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Future_asset(ctx, field, obj)
+				res = ec._Future_settlementAsset(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
+		case "quoteName":
+			out.Values[i] = ec._Future_quoteName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "oracle":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -24843,7 +24850,7 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "asset":
+		case "settlementAsset":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -24851,12 +24858,17 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._FutureProduct_asset(ctx, field, obj)
+				res = ec._FutureProduct_settlementAsset(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
+		case "quoteName":
+			out.Values[i] = ec._FutureProduct_quoteName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24891,11 +24903,6 @@ func (ec *executionContext) _Instrument(ctx context.Context, sel ast.SelectionSe
 			}
 		case "name":
 			out.Values[i] = ec._Instrument_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "quoteName":
-			out.Values[i] = ec._Instrument_quoteName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -24956,11 +24963,6 @@ func (ec *executionContext) _InstrumentConfiguration(ctx context.Context, sel as
 			}
 		case "code":
 			out.Values[i] = ec._InstrumentConfiguration_code(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "quoteName":
-			out.Values[i] = ec._InstrumentConfiguration_quoteName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

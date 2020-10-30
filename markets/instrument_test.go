@@ -11,10 +11,9 @@ import (
 
 func getValidInstrumentProto() *types.Instrument {
 	return &types.Instrument{
-		Id:        "Crypto/BTCUSD/Futures/Dec19",
-		Code:      "FX:BTCUSD/DEC19",
-		Name:      "December 2019 BTC vs USD future",
-		QuoteName: "USD",
+		Id:   "Crypto/BTCUSD/Futures/Dec19",
+		Code: "FX:BTCUSD/DEC19",
+		Name: "December 2019 BTC vs USD future",
 		Metadata: &types.InstrumentMetadata{
 			Tags: []string{
 				"asset_class:fx/crypto",
@@ -23,8 +22,9 @@ func getValidInstrumentProto() *types.Instrument {
 		},
 		Product: &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity: "2019-12-31T00:00:00Z",
-				Asset:    "Ethereum/Ether",
+				QuoteName:       "USD",
+				Maturity:        "2019-12-31T00:00:00Z",
+				SettlementAsset: "Ethereum/Ether",
 				Oracle: &types.Future_EthereumEvent{
 					EthereumEvent: &types.EthereumEvent{
 						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
@@ -48,8 +48,8 @@ func TestInstrument(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity: "notavaliddate",
-				Asset:    "Ethereum/Ether",
+				Maturity:        "notavaliddate",
+				SettlementAsset: "Ethereum/Ether",
 				Oracle: &types.Future_EthereumEvent{
 					EthereumEvent: &types.EthereumEvent{
 						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
@@ -76,9 +76,9 @@ func TestInstrument(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity: "2019-12-31T00:00:00Z",
-				Asset:    "Ethereum/Ether",
-				Oracle:   nil,
+				Maturity:        "2019-12-31T00:00:00Z",
+				SettlementAsset: "Ethereum/Ether",
+				Oracle:          nil,
 			},
 		}
 		inst, err := markets.NewInstrument(pinst)

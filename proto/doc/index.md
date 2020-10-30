@@ -3044,7 +3044,8 @@ Future product configuration.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | maturity | [string](#string) |  | Future product maturity (ISO8601/RFC3339 timestamp). |
-| asset | [string](#string) |  | Product asset name. |
+| settlementAsset | [string](#string) |  | Product settlementAsset ID. |
+| quoteName | [string](#string) |  | Product quoteName |
 
 
 
@@ -3112,7 +3113,6 @@ Instrument configuration.
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | Instrument name. |
 | code | [string](#string) |  | Instrument code. |
-| quoteName | [string](#string) |  | Quote (secondary) security. |
 | future | [FutureProduct](#vega.FutureProduct) |  | Futures. |
 
 
@@ -3456,7 +3456,8 @@ Future product definition.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | maturity | [string](#string) |  | The maturity for the future. |
-| asset | [string](#string) |  | The asset for the future. |
+| settlementAsset | [string](#string) |  | The asset for the future. |
+| quoteName | [string](#string) |  | Quote name of the instrument. |
 | ethereumEvent | [EthereumEvent](#vega.EthereumEvent) |  | Ethereum events. |
 
 
@@ -3475,7 +3476,6 @@ Instrument definition.
 | id | [string](#string) |  | Instrument identifier. |
 | code | [string](#string) |  | Code for the instrument. |
 | name | [string](#string) |  | Name of the instrument. |
-| quoteName | [string](#string) |  | Quote name of the instrument. |
 | metadata | [InstrumentMetadata](#vega.InstrumentMetadata) |  | A collection of instrument meta-data. |
 | initialMarkPrice | [uint64](#uint64) |  | An initial mark price for the instrument. |
 | future | [Future](#vega.Future) |  | Future. |

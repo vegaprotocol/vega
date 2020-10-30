@@ -167,12 +167,12 @@ func TestModelConverters(t *testing.T) {
 
 		mkt := gql.NewMarketInput{
 			Instrument: &gql.InstrumentConfigurationInput{
-				Name:      "abcXyz",
-				Code:      "abccode",
-				QuoteName: "Xyz",
+				Name: "abcXyz",
+				Code: "abccode",
 				FutureProduct: &gql.FutureProductInput{
-					Maturity: "asdasdas",
-					Asset:    "Ethereum/Ether",
+					Maturity:        "asdasdas",
+					SettlementAsset: "Ethereum/Ether",
+					QuoteName:       "Xyz",
 				},
 			},
 			RiskParameters: &gql.RiskParametersInput{
@@ -208,12 +208,12 @@ func TestModelConverters(t *testing.T) {
 
 		mkt := gql.NewMarketInput{
 			Instrument: &gql.InstrumentConfigurationInput{
-				Code:      "abccode",
-				Name:      "abcXyz",
-				QuoteName: "Xyz",
+				Code: "abccode",
+				Name: "abcXyz",
 				FutureProduct: &gql.FutureProductInput{
-					Maturity: "asdasdas",
-					Asset:    "Ethereum/Ether",
+					Maturity:        "asdasdas",
+					SettlementAsset: "Ethereum/Ether",
+					QuoteName:       "Xyz",
 				},
 			},
 			RiskParameters: &gql.RiskParametersInput{

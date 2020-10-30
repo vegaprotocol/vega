@@ -8012,10 +8012,17 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 </tr>
 
                 <tr>
-                  <td>asset</td>
+                  <td>settlementAsset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Product asset name. </p></td>
+                  <td><p>Product settlementAsset ID. </p></td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Product quoteName </p></td>
                 </tr>
 
             </tbody>
@@ -8046,7 +8053,18 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 </tr>
 
                 <tr>
-                  <td>asset</td>
+                  <td>settlementAsset</td>
+                  <td>
+                    <ul>
+
+                      <li>string_not_empty: true</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
                   <td>
                     <ul>
 
@@ -8206,13 +8224,6 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
 
                 <tr>
-                  <td>quoteName</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Quote (secondary) security. </p></td>
-                </tr>
-
-                <tr>
                   <td>future</td>
                   <td><a href="#vega.FutureProduct">FutureProduct</a></td>
                   <td></td>
@@ -8248,17 +8259,6 @@ value (Vote) is the vote cast by the given party </p></td>
 
                 <tr>
                   <td>code</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>quoteName</td>
                   <td>
                     <ul>
 
@@ -9358,10 +9358,17 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 </tr>
 
                 <tr>
-                  <td>asset</td>
+                  <td>settlementAsset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The asset for the future. </p></td>
+                </tr>
+
+                <tr>
+                  <td>quoteName</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Quote name of the instrument. </p></td>
                 </tr>
 
                 <tr>
@@ -9407,13 +9414,6 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Name of the instrument. </p></td>
-                </tr>
-
-                <tr>
-                  <td>quoteName</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Quote name of the instrument. </p></td>
                 </tr>
 
                 <tr>

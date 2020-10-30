@@ -150,10 +150,9 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
-				Id:        "Crypto/ETHUSD/Futures/Dec19",
-				Code:      "CRYPTO:ETHUSD/DEC19",
-				Name:      "December 2019 ETH vs USD future",
-				QuoteName: "USD",
+				Id:   "Crypto/ETHUSD/Futures/Dec19",
+				Code: "CRYPTO:ETHUSD/DEC19",
+				Name: "December 2019 ETH vs USD future",
 				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
@@ -170,7 +169,8 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 								Event:      "price_changed",
 							},
 						},
-						Asset: "ETH",
+						SettlementAsset: "ETH",
+						QuoteName:       "USD",
 					},
 				},
 			},
@@ -468,7 +468,7 @@ func TestSetMarketID(t *testing.T) {
 									Event:      "price_changed",
 								},
 							},
-							Asset: "Ethereum/Ether",
+							SettlementAsset: "Ethereum/Ether",
 						},
 					},
 				},
