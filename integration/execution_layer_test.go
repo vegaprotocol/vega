@@ -1016,6 +1016,10 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 			Continuous: &proto.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
+		TargetStake: &proto.TargetStakeParameters{
+			TimeWindow:    3600,
+			ScalingFactor: 10,
+		},
 	}
 
 	if val(row, 5) == "forward" {

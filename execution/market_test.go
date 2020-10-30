@@ -165,6 +165,10 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
+		TargetStake: &types.TargetStakeParameters{
+			TimeWindow:    3600,
+			ScalingFactor: 10,
+		},
 	}
 
 	execution.SetMarketID(&mkt, 0)
