@@ -147,8 +147,7 @@ type Market struct {
 	expiringPeggedOrders *matching.ExpiringOrders
 
 	// A collection of pegged orders that have been parked
-	parkedOrders         []*types.Order
-	expiringParkedOrders *matching.ExpiringOrders
+	parkedOrders []*types.Order
 
 	// Store the previous price values so we can see what has changed
 	lastBestBidPrice uint64
@@ -269,7 +268,6 @@ func NewMarket(
 		as:                   as,
 		pMonitor:             pMonitor,
 		expiringPeggedOrders: matching.NewExpiringOrders(),
-		expiringParkedOrders: matching.NewExpiringOrders(),
 	}
 
 	if market.as.AuctionStart() {
@@ -2226,22 +2224,27 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 	for _, order := range m.expiringPeggedOrders.Expire(timestamp) {
 		order := order
 		m.removePeggedOrder(&order)
+		m.unregisterOrder(&order)
 	}
 
 	orderList := m.matching.RemoveExpiredOrders(timestamp)
 	// need to remove the expired orders from the potentials positions
 	for _, order := range orderList {
 		order := order
-		if _, err := m.position.UnregisterOrder(&order); err != nil {
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("Failure unregistering order in positions engine (cancel)",
-					logging.Order(order),
-					logging.Error(err))
-			}
-		}
+		m.unregisterOrder(&order)
 	}
 
 	return orderList, nil
+}
+
+func (m *Market) unregisterOrder(order *types.Order) {
+	if _, err := m.position.UnregisterOrder(order); err != nil {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Failure unregistering order in positions engine (cancel)",
+				logging.Order(*order),
+				logging.Error(err))
+		}
+	}
 }
 
 func (m *Market) getBestAskPrice() (uint64, error) {
