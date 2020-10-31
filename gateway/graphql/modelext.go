@@ -314,20 +314,6 @@ func OracleFromProto(o interface{}) (Oracle, error) {
 	}
 }
 
-// ProductFromProto ...
-func ProductFromProto(pp interface{}) (Product, error) {
-	if pp == nil {
-		return nil, ErrNilProduct
-	}
-
-	switch /*pimpl :=*/ pp.(type) {
-	// case *types.Instrument_Future:
-	// 	return FutureFromProto(pimpl.Future)
-	default:
-		return nil, ErrUnimplementedProduct
-	}
-}
-
 // ForwardFromProto ...
 func ForwardFromProto(f *types.LogNormalRiskModel) (*LogNormalRiskModel, error) {
 	return &LogNormalRiskModel{
