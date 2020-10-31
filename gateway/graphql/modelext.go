@@ -124,21 +124,6 @@ func (d *DiscreteTrading) IntoProto() (*types.Market_Discrete, error) {
 	}, nil
 }
 
-func (m *Market) tradingModeIntoProto(mkt *types.Market) (err error) {
-	if m.TradingMode == nil {
-		return ErrNilTradingMode
-	}
-	switch tm := m.TradingMode.(type) {
-	case *ContinuousTrading:
-		mkt.TradingMode, err = tm.IntoProto()
-	case *DiscreteTrading:
-		mkt.TradingMode, err = tm.IntoProto()
-	default:
-		err = ErrUnimplementedTradingMode
-	}
-	return err
-}
-
 // IntoProto ...
 func (ee *EthereumEvent) IntoProto() (*types.Future_EthereumEvent, error) {
 	return &types.Future_EthereumEvent{
@@ -147,35 +132,6 @@ func (ee *EthereumEvent) IntoProto() (*types.Future_EthereumEvent, error) {
 			Event:      ee.Event,
 		},
 	}, nil
-}
-
-func (f *Future) oracleIntoProto(pf *types.Future) (err error) {
-	if f.Oracle == nil {
-		return ErrNilOracle
-	}
-	switch o := f.Oracle.(type) {
-	case *EthereumEvent:
-		pf.Oracle, err = o.IntoProto()
-	default:
-		err = ErrUnimplementedOracle
-	}
-	return err
-
-}
-
-// IntoProto ...
-func (f *Future) IntoProto() (*types.Instrument_Future, error) {
-	var err error
-	pf := &types.Future{
-		Maturity: f.Maturity,
-		Asset:    f.Asset.ID,
-	}
-	err = f.oracleIntoProto(pf)
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.Instrument_Future{Future: pf}, err
 }
 
 // IntoProto ...
@@ -187,43 +143,6 @@ func (im *InstrumentMetadata) IntoProto() (*types.InstrumentMetadata, error) {
 		pim.Tags = append(pim.Tags, v)
 	}
 	return pim, nil
-}
-
-func (i *Instrument) productIntoProto(pinst *types.Instrument) (err error) {
-	if i.Product == nil {
-		return ErrNilProduct
-	}
-	switch p := i.Product.(type) {
-	case *Future:
-		pinst.Product, err = p.IntoProto()
-	default:
-		err = ErrUnimplementedProduct
-	}
-	return err
-}
-
-// IntoProto ...
-func (i *Instrument) IntoProto() (*types.Instrument, error) {
-	var err error
-	pinst := &types.Instrument{
-		Id:        i.ID,
-		Code:      i.Code,
-		Name:      i.Name,
-		QuoteName: i.QuoteName,
-	}
-
-	if i.Metadata != nil {
-		pinst.Metadata, err = i.Metadata.IntoProto()
-		if err != nil {
-			return nil, err
-		}
-	}
-	err = i.productIntoProto(pinst)
-	if err != nil {
-		return nil, err
-	}
-
-	return pinst, err
 }
 
 // IntoProto ...
@@ -239,41 +158,6 @@ func (f *LogNormalRiskModel) IntoProto() (*types.TradableInstrument_LogNormalRis
 			},
 		},
 	}, nil
-}
-
-func (ti *TradableInstrument) riskModelIntoProto(
-	pti *types.TradableInstrument) (err error) {
-	if ti.RiskModel == nil {
-		return ErrNilRiskModel
-	}
-	switch rm := ti.RiskModel.(type) {
-	case *LogNormalRiskModel:
-		pti.RiskModel, err = rm.IntoProto()
-	default:
-		err = ErrUnimplementedRiskModel
-	}
-	return err
-}
-
-// IntoProto ...
-func (ti *TradableInstrument) IntoProto() (*types.TradableInstrument, error) {
-	var err error
-	pti := &types.TradableInstrument{}
-	if ti.Instrument != nil {
-		pti.Instrument, err = ti.Instrument.IntoProto()
-		if err != nil {
-			return nil, err
-		}
-	}
-	if ti.MarginCalculator != nil {
-		pti.MarginCalculator, _ = ti.MarginCalculator.IntoProto()
-	}
-	err = ti.riskModelIntoProto(pti)
-	if err != nil {
-		return nil, err
-	}
-
-	return pti, nil
 }
 
 func (m *MarginCalculator) IntoProto() (*types.MarginCalculator, error) {
@@ -306,29 +190,6 @@ func (f *Fees) IntoProto() (*types.Fees, error) {
 		pf.Factors, _ = f.Factors.IntoProto()
 	}
 	return pf, nil
-}
-
-// IntoProto ...
-func (m *Market) IntoProto() (*types.Market, error) {
-	var err error
-	pmkt := &types.Market{}
-	pmkt.Id = m.ID
-	if m.Fees != nil {
-		pmkt.Fees, _ = m.Fees.IntoProto()
-	}
-
-	if err = m.tradingModeIntoProto(pmkt); err != nil {
-		return nil, err
-	}
-
-	if m.TradableInstrument != nil {
-		pmkt.TradableInstrument, err = m.TradableInstrument.IntoProto()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return pmkt, nil
 }
 
 func (o *LiquidityOrderInput) IntoProto() (*types.LiquidityOrder, error) {
@@ -453,61 +314,18 @@ func OracleFromProto(o interface{}) (Oracle, error) {
 	}
 }
 
-// FutureFromProto ...
-func FutureFromProto(pf *types.Future) (*Future, error) {
-	if pf == nil {
-		return nil, ErrNilFuture
-	}
-
-	var err error
-	f := &Future{}
-	f.Maturity = pf.Maturity
-	f.Asset = &Asset{ID: pf.Asset}
-	f.Oracle, err = OracleFromProto(pf.Oracle)
-	if err != nil {
-		return nil, err
-	}
-
-	return f, nil
-}
-
 // ProductFromProto ...
 func ProductFromProto(pp interface{}) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
 	}
 
-	switch pimpl := pp.(type) {
-	case *types.Instrument_Future:
-		return FutureFromProto(pimpl.Future)
+	switch /*pimpl :=*/ pp.(type) {
+	// case *types.Instrument_Future:
+	// 	return FutureFromProto(pimpl.Future)
 	default:
 		return nil, ErrUnimplementedProduct
 	}
-}
-
-// InstrumentFromProto ...
-func InstrumentFromProto(pi *types.Instrument) (*Instrument, error) {
-	if pi == nil {
-		return nil, ErrNilInstrument
-	}
-	var err error
-	i := &Instrument{
-		ID:        pi.Id,
-		Code:      pi.Code,
-		Name:      pi.Name,
-		QuoteName: pi.QuoteName,
-	}
-	meta, err := InstrumentMetadataFromProto(pi.Metadata)
-	if err != nil {
-		return nil, err
-	}
-	i.Metadata = meta
-	i.Product, err = ProductFromProto(pi.Product)
-	if err != nil {
-		return nil, err
-	}
-
-	return i, nil
 }
 
 // ForwardFromProto ...
@@ -546,30 +364,6 @@ func RiskModelFromProto(rm interface{}) (RiskModel, error) {
 	default:
 		return nil, ErrUnimplementedRiskModel
 	}
-}
-
-// TradableInstrumentFromProto ...
-func TradableInstrumentFromProto(pti *types.TradableInstrument) (*TradableInstrument, error) {
-	if pti == nil {
-		return nil, ErrNilTradableInstrument
-	}
-	var err error
-	ti := &TradableInstrument{}
-	instrument, err := InstrumentFromProto(pti.Instrument)
-	if err != nil {
-		return nil, err
-	}
-	ti.Instrument = instrument
-	ti.RiskModel, err = RiskModelFromProto(pti.RiskModel)
-	if err != nil {
-		return nil, err
-	}
-	mc, err := MarginCalculatorFromProto(pti.MarginCalculator)
-	if err != nil {
-		return nil, err
-	}
-	ti.MarginCalculator = mc
-	return ti, nil
 }
 
 func MarginCalculatorFromProto(mc *types.MarginCalculator) (*MarginCalculator, error) {
@@ -659,42 +453,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 		Parameters:          params,
 		UpdateFrequencySecs: int(ppmst.UpdateFrequency),
 	}, nil
-}
-
-// MarketFromProto ...
-func MarketFromProto(pmkt *types.Market) (*Market, error) {
-	if pmkt == nil {
-		return nil, ErrNilMarket
-	}
-	var err error
-	mkt := &Market{}
-	mkt.ID = pmkt.Id
-	mkt.DecimalPlaces = int(pmkt.DecimalPlaces)
-
-	mkt.Fees, err = FeesFromProto(pmkt.Fees)
-
-	mkt.TradingMode, err = TradingModeFromProto(pmkt.TradingMode)
-	if err != nil {
-		return nil, err
-	}
-	tradableInstrument, err :=
-		TradableInstrumentFromProto(pmkt.TradableInstrument)
-	if err != nil {
-		return nil, err
-	}
-	mkt.TradableInstrument = tradableInstrument
-
-	mkt.OpeningAuction, err = AuctionDurationFromProto(pmkt.OpeningAuction)
-	if err != nil {
-		return nil, err
-	}
-
-	mkt.PriceMonitoringSettings, err = PriceMonitoringSettingsFromProto(pmkt.PriceMonitoringSettings)
-	if err != nil {
-		return nil, err
-	}
-
-	return mkt, nil
 }
 
 func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
@@ -1496,8 +1254,7 @@ func eventFromProto(e *types.BusEvent) Event {
 			Price:    int(de.Price),
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
-		m, _ := MarketFromProto(e.GetMarketCreated())
-		return m
+		return e.GetMarketCreated()
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
 		a, _ := AssetFromProto(e.GetAsset())
 		return a
