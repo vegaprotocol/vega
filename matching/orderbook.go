@@ -480,7 +480,7 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 	}
 
 	orders := make([]*types.Order, 0, len(orderIDs))
-	for oid, _ := range orderIDs {
+	for oid := range orderIDs {
 		orders = append(orders, b.ordersByID[oid])
 	}
 	return orders

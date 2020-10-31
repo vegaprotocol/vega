@@ -228,26 +228,6 @@ func (b *Broker) subscribe(s Subscriber) int {
 	return k
 }
 
-func (b *Broker) sub(s Subscriber, req bool) int {
-	k := b.getKey()
-	sub := subscription{
-		Subscriber: s,
-		required:   req,
-	}
-	b.subs[k] = sub
-	types := s.Types()
-	if len(types) == 0 {
-		types = []events.Type{events.All}
-	}
-	for _, t := range types {
-		if _, ok := b.tSubs[t]; !ok {
-			b.tSubs[t] = map[int]*subscription{}
-		}
-		b.tSubs[t][k] = &sub
-	}
-	return k
-}
-
 // Unsubscribe removes subscriber from broker
 // this does not change the state of the subscriber
 func (b *Broker) Unsubscribe(k int) {

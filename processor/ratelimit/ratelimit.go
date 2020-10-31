@@ -70,9 +70,5 @@ func (r *Rates) Allow(key string) bool {
 	}
 	entry[r.block]++
 
-	if r.Count(key) >= r.requests {
-		return false
-	}
-
-	return true
+	return r.Count(key) < r.requests
 }

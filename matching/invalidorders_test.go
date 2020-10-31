@@ -3,7 +3,6 @@ package matching
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +24,7 @@ func TestOrderBookInvalid_emptyMarketID(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidMarketID, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
@@ -44,7 +43,7 @@ func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPartyID, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_ZeroSize(t *testing.T) {
@@ -63,7 +62,7 @@ func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidRemainingSize, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
@@ -101,7 +100,7 @@ func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidRemainingSize, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_GTCMarket(t *testing.T) {
@@ -120,7 +119,7 @@ func TestOrderBookInvalid_GTCMarket(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_GTCNetwork(t *testing.T) {
@@ -139,7 +138,7 @@ func TestOrderBookInvalid_GTCNetwork(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_GTTMarket(t *testing.T) {
@@ -159,7 +158,7 @@ func TestOrderBookInvalid_GTTMarket(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_GTTNetwork(t *testing.T) {
@@ -179,7 +178,7 @@ func TestOrderBookInvalid_GTTNetwork(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }
 
 func TestOrderBookInvalid_IOCNetwork(t *testing.T) {
@@ -198,5 +197,5 @@ func TestOrderBookInvalid_IOCNetwork(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.Equal(t, types.ErrInvalidPersistence, err)
-	assert.Equal(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.Equal(t, (*types.OrderConfirmation)(nil), confirm)
 }

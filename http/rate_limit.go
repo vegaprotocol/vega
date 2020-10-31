@@ -92,7 +92,7 @@ func (r *RateLimit) startCleanup(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case _ = <-ticker.C:
+		case <-ticker.C:
 			now := time.Now()
 			r.mu.Lock()
 			for identifier, until := range r.requests {

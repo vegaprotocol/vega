@@ -86,7 +86,8 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 
 	parameters := make([]*types.PriceMonitoringParameters, 0, len(settings.PriceMonitoringParameters))
 	for _, p := range settings.PriceMonitoringParameters {
-		parameters = append(parameters, &(*p))
+		p := *p
+		parameters = append(parameters, &p)
 	}
 
 	// Other functions depend on this sorting
@@ -195,13 +196,6 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 	return nil
 }
 
-func (e *Engine) initialise(price uint64, now time.Time) {
-	if !e.initialised {
-		e.reset(price, now)
-		e.initialised = true
-	}
-}
-
 // reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
 func (e *Engine) reset(price uint64, now time.Time) {
 	e.now = now
@@ -274,27 +268,6 @@ func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonito
 		}
 	}
 	return ret
-}
-
-// checkBoundViolations returns a map of horizon and probability level pair to boolean.
-// A true value indicates that a bound corresponding to a given horizon and probability level pair has been violated.
-func (e *Engine) checkBoundViolations(price uint64) map[*types.PriceMonitoringParameters]bool {
-	fpPrice := float64(price)
-	checks := make(map[*types.PriceMonitoringParameters]bool, len(e.parameters))
-	var prevHorizon int64
-	var ref float64
-	for _, p := range e.parameters {
-		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
-		if p.Horizon != prevHorizon {
-			ref = e.getReferencePrice(e.now.Add(time.Duration(-p.Horizon) * time.Second))
-			prevHorizon = p.Horizon
-		}
-
-		priceDiff := fpPrice - ref
-		bounds := e.bounds[p]
-		checks[p] = priceDiff < bounds.MinMoveDown || priceDiff > bounds.MaxMoveUp
-	}
-	return checks
 }
 
 func (e *Engine) updateBounds() {

@@ -750,7 +750,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
-		if m.log.GetLevel() == logging.DebugLevel {
+		if m.log.GetLevel() <= logging.DebugLevel {
 			m.log.Debug("Unable to register potential trader position",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
@@ -773,9 +773,11 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
-		m.log.Error("Unable to check/add margin for trader",
-			logging.String("market-id", m.GetID()),
-			logging.Error(err))
+		if m.log.GetLevel() <= logging.DebugLevel {
+			m.log.Debug("Unable to check/add margin for trader",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
 		return nil, ErrMarginCheckFailed
 	}
 
@@ -817,7 +819,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		if m.log.GetLevel() == logging.DebugLevel {
+		if m.log.GetLevel() <= logging.DebugLevel {
 			m.log.Debug("Failure after submitting order to matching engine",
 				logging.Order(*order),
 				logging.Error(err))
