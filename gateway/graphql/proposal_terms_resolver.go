@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 var (
@@ -15,11 +14,11 @@ var (
 type proposalTermsResolver VegaResolverRoot
 
 func (r *proposalTermsResolver) ClosingDatetime(ctx context.Context, obj *types.ProposalTerms) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.ClosingTimestamp)), nil
+	return secondsTSToDatetime(obj.ClosingTimestamp), nil
 }
 
 func (r *proposalTermsResolver) EnactmentDatetime(ctx context.Context, obj *types.ProposalTerms) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.EnactmentTimestamp)), nil
+	return secondsTSToDatetime(obj.EnactmentTimestamp), nil
 }
 
 func (r *proposalTermsResolver) Change(ctx context.Context, obj *types.ProposalTerms) (ProposalChange, error) {

@@ -236,7 +236,7 @@ func (r *VegaResolverRoot) Statistics() StatisticsResolver {
 
 // Proposal returns the proposal resolver
 func (r *VegaResolverRoot) Proposal() ProposalResolver {
-	return (*myProposalResolver)(r)
+	return (*proposalResolver)(r)
 }
 
 // NodeSignature ...
@@ -287,7 +287,7 @@ func (r *VegaResolverRoot) TradableInstrument() TradableInstrumentResolver {
 }
 
 func (r *VegaResolverRoot) NewAsset() NewAssetResolver {
-	return (*myNewAssetResolver)(r)
+	return (*newAssetResolver)(r)
 }
 
 func (r *VegaResolverRoot) NewMarket() NewMarketResolver {

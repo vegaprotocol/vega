@@ -6,8 +6,8 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-type myNewAssetResolver VegaResolverRoot
+type newAssetResolver VegaResolverRoot
 
-func (r *myNewAssetResolver) Source(ctx context.Context, obj *types.NewAsset) (AssetSource, error) {
+func (r *newAssetResolver) Source(ctx context.Context, obj *types.NewAsset) (AssetSource, error) {
 	return AssetSourceFromProto(obj.Changes)
 }

@@ -6,9 +6,9 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-type myProposalResolver VegaResolverRoot
+type proposalResolver VegaResolverRoot
 
-func (r *myProposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*ProposalRejectionReason, error) {
+func (r *proposalResolver) RejectionReason(_ context.Context, data *types.GovernanceData) (*ProposalRejectionReason, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
@@ -24,21 +24,21 @@ func (r *myProposalResolver) RejectionReason(_ context.Context, data *types.Gove
 	return &reason, nil
 }
 
-func (r *myProposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
+func (r *proposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return &data.Proposal.ID, nil
 }
 
-func (r *myProposalResolver) Reference(ctx context.Context, data *types.GovernanceData) (string, error) {
+func (r *proposalResolver) Reference(ctx context.Context, data *types.GovernanceData) (string, error) {
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
 	return data.Proposal.Reference, nil
 }
 
-func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceData) (*types.Party, error) {
+func (r *proposalResolver) Party(ctx context.Context, data *types.GovernanceData) (*types.Party, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
@@ -53,14 +53,14 @@ func (r *myProposalResolver) Party(ctx context.Context, data *types.GovernanceDa
 	return p, err
 }
 
-func (r *myProposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
+func (r *proposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
 	return convertProposalStateFromProto(data.Proposal.State)
 }
 
-func (r *myProposalResolver) Datetime(ctx context.Context, data *types.GovernanceData) (string, error) {
+func (r *proposalResolver) Datetime(ctx context.Context, data *types.GovernanceData) (string, error) {
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
@@ -71,14 +71,14 @@ func (r *myProposalResolver) Datetime(ctx context.Context, data *types.Governanc
 	return nanoTSToDatetime(data.Proposal.Timestamp), nil
 }
 
-func (r *myProposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*types.ProposalTerms, error) {
+func (r *proposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*types.ProposalTerms, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return data.Proposal.Terms, nil
 }
 
-func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vote) ([]*Vote, error) {
+func (r *proposalResolver) convertVotes(ctx context.Context, data []*types.Vote) ([]*Vote, error) {
 	result := make([]*Vote, len(data))
 	for i, v := range data {
 		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyID)
@@ -98,14 +98,14 @@ func (r *myProposalResolver) convertVotes(ctx context.Context, data []*types.Vot
 	return result, nil
 }
 
-func (r *myProposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
+func (r *proposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return r.convertVotes(ctx, data.Yes)
 }
 
-func (r *myProposalResolver) NoVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
+func (r *proposalResolver) NoVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
