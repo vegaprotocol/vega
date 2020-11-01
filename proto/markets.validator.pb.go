@@ -154,20 +154,12 @@ func (this *PriceMonitoringParameter) Validate() error {
 	}
 	return nil
 }
-func (this *PriceMonitoringParameters) Validate() error {
-	for _, item := range this.Parameters {
+func (this *PriceMonitoringSettings) Validate() error {
+	for _, item := range this.PriceMonitoringParameters {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Parameters", err)
+				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringParameters", err)
 			}
-		}
-	}
-	return nil
-}
-func (this *PriceMonitoringSettings) Validate() error {
-	if this.PriceMonitoringParameters != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PriceMonitoringParameters); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringParameters", err)
 		}
 	}
 	return nil
