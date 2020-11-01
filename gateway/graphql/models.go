@@ -239,30 +239,12 @@ type Fees struct {
 	Factors *FeeFactors `json:"factors"`
 }
 
-type FutureProduct struct {
-	// Future product maturity (ISO8601/RFC3339 timestamp)
-	Maturity string `json:"maturity"`
-	// Product asset name
-	Asset *Asset `json:"asset"`
-}
-
 // Future product configuration
 type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
 	Asset string `json:"asset"`
-}
-
-type InstrumentConfiguration struct {
-	// Full and fairly descriptive name for the instrument
-	Name string `json:"name"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
-	Code string `json:"code"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
-	// Future product specification
-	FutureProduct *FutureProduct `json:"futureProduct"`
 }
 
 type InstrumentConfigurationInput struct {
@@ -397,14 +379,6 @@ type NetworkParameterInput struct {
 	Value string `json:"value"`
 }
 
-// A new asset proposal change
-type NewAsset struct {
-	// the source of the new Asset
-	Source AssetSource `json:"source"`
-}
-
-func (NewAsset) IsProposalChange() {}
-
 // A new asset to be added into vega
 type NewAssetInput struct {
 	// A new builtin assed to be created
@@ -412,21 +386,6 @@ type NewAssetInput struct {
 	// A new ERC20 asset to be created
 	Erc20 *ERC20Input `json:"erc20"`
 }
-
-type NewMarket struct {
-	// New market instrument configuration
-	Instrument *InstrumentConfiguration `json:"instrument"`
-	// Decimal places used for the new market
-	DecimalPlaces int `json:"decimalPlaces"`
-	// New market risk configuration
-	RiskParameters RiskModel `json:"riskParameters"`
-	// Metadata for this instrument, tags
-	Metadata []string `json:"metadata"`
-	// Trading mode
-	TradingMode TradingMode `json:"tradingMode"`
-}
-
-func (NewMarket) IsProposalChange() {}
 
 // Allows creating new markets on the network
 type NewMarketInput struct {
@@ -557,17 +516,6 @@ type PriceMonitoringSettingsInput struct {
 	Parameters []*PriceMonitoringParametersInput `json:"parameters"`
 	// How often (in seconds) the price monitoring bounds should be updated
 	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
-}
-
-type ProposalTerms struct {
-	// ISO-8601 time and date when voting closes for this proposal.
-	// Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
-	ClosingDatetime string `json:"closingDatetime"`
-	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
-	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
-	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Actual change being introduced by the proposal - action the proposal triggers if passed and enacted.
-	Change ProposalChange `json:"change"`
 }
 
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
@@ -725,24 +673,9 @@ type TransferResponses struct {
 
 func (TransferResponses) IsEvent() {}
 
-// Incomplete change definition for governance proposal terms
-// TODO: complete the type
-type UpdateMarket struct {
-	MarketID string `json:"marketId"`
-}
-
-func (UpdateMarket) IsProposalChange() {}
-
 type UpdateMarketInput struct {
 	MarketID string `json:"marketId"`
 }
-
-// Allows submitting a proposal for changing network parameters
-type UpdateNetworkParameter struct {
-	NetworkParameter *proto.NetworkParameter `json:"networkParameter"`
-}
-
-func (UpdateNetworkParameter) IsProposalChange() {}
 
 // Allows submitting a proposal for changing network parameters
 type UpdateNetworkParameterInput struct {
