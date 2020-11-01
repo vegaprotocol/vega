@@ -190,7 +190,7 @@ func testProposerStake(t *testing.T) {
 	})
 	err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(emptyParty.Id, time.Now()), "proposal-id1")
 	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalInsufficientTokens.Error())
+	assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
 
 	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(123456))
 	poshParty := eng.makeValidParty("party-with-tokens", 123456-100)
@@ -228,13 +228,13 @@ func testClosingTime(t *testing.T) {
 	err := eng.SubmitProposal(context.Background(), tooEarly, "proposal-id")
 	fmt.Printf("ERROR: %v\n", err)
 	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalCloseTimeTooSoon.Error())
+	assert.Contains(t, err.Error(), "proposal closing time too soon, expected >")
 
 	tooLate := eng.newOpenProposal(party.Id, now)
 	tooLate.Terms.ClosingTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
 	err = eng.SubmitProposal(context.Background(), tooLate, "proposal-id2")
 	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalCloseTimeTooLate.Error())
+	assert.Contains(t, err.Error(), "proposal closing time too late, expected <")
 
 	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(1))
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
@@ -270,13 +270,13 @@ func testEnactmentTime(t *testing.T) {
 	assert.Less(t, beforeClosingTime.Terms.EnactmentTimestamp, beforeClosingTime.Terms.ClosingTimestamp)
 	err := eng.SubmitProposal(context.Background(), beforeClosingTime, "proposal-id")
 	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalEnactTimeTooSoon.Error())
+	assert.Contains(t, err.Error(), "proposal enactment time too soon, expected >")
 
 	tooLate := eng.newOpenProposal(party.Id, now)
 	tooLate.Terms.EnactmentTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
 	err = eng.SubmitProposal(context.Background(), tooLate, "proposal-id1")
 	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalEnactTimeTooLate.Error())
+	assert.Contains(t, err.Error(), "proposal enactment time too lat, expected <")
 
 	atClosingTime := eng.newOpenProposal(party.Id, now)
 	atClosingTime.Terms.EnactmentTimestamp = atClosingTime.Terms.ClosingTimestamp
@@ -816,7 +816,9 @@ func getTestEngine(t *testing.T) *tstEngine {
 
 	log := logging.NewTestLogger()
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
-	eng, err := governance.NewEngine(log, cfg, accs, broker, assets, erc, netp, time.Now()) // started as a validator
+	now := time.Now()
+	now = now.Truncate(time.Second)
+	eng, err := governance.NewEngine(log, cfg, accs, broker, assets, erc, netp, now) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
