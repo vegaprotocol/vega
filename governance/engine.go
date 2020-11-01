@@ -80,6 +80,7 @@ type NetParams interface {
 	GetFloat(string) (float64, error)
 	GetInt(string) (int64, error)
 	GetDuration(string) (time.Duration, error)
+	GetJSONStruct(string, interface{ Reset() }) error
 	Get(string) (string, error)
 }
 
