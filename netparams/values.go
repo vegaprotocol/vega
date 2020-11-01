@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+
+	validators "github.com/mwitkow/go-proto-validators"
 )
 
 type baseValue struct{}
@@ -502,4 +504,10 @@ func (j *JSON) MustUpdate(value string) *JSON {
 
 func (j *JSON) String() string {
 	return j.rawval
+}
+
+func JSONProtoValidator() func(interface{}) error {
+	return func(t interface{}) error {
+		return validators.CallValidatorIfExists(t)
+	}
 }
