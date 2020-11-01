@@ -181,8 +181,8 @@ message Fees {
   FeeFactors factors = 1;
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
-message PriceMonitoringParameters {
+// PriceMonitoringParameter holds together price projection horizon τ, probability level p, and auction extension duration
+message PriceMonitoringParameter {
   // Price monitoring projection horizon τ in seconds.
   int64 horizon = 1 [(validator.field) = {int_gt: 0}];
   // Price monitoirng probability level p.
@@ -193,10 +193,15 @@ message PriceMonitoringParameters {
   int64 auctionExtension = 3 [(validator.field) = {int_gt: 0}];
 }
 
+// PriceMonitoringParameters represents a collection of type PriceMonitoringParameter
+message PriceMonitoringParameters {
+  repeated PriceMonitoringParameter parameters = 1;
+}
+
 message PriceMonitoringSettings {
   // Specifies a set of PriceMonitoringParameters to be used for price
   // monitoring purposes
-  repeated PriceMonitoringParameters priceMonitoringParameters = 1;
+  PriceMonitoringParameters priceMonitoringParameters = 1;
 
   // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
   int64 updateFrequency = 2;
