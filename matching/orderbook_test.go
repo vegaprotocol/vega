@@ -413,7 +413,8 @@ func testBestBidPriceAndVolume(t *testing.T) {
 		assert.Equal(t, len(confirm.Trades), len(trades))
 	}
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(300), price)
 	assert.Equal(t, uint64(15), volume)
 }
@@ -478,7 +479,8 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 		assert.Equal(t, len(trades), len(confirm.Trades))
 	}
 
-	price, volume := book.BestOfferPriceAndVolume()
+	price, volume, err := book.BestOfferPriceAndVolume()
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(10), price)
 	assert.Equal(t, uint64(15), volume)
 }
@@ -2963,8 +2965,12 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	makeOrder(t, book, market, "PriceSetterBuy", types.Side_SIDE_BUY, 100, "party01", 1)
 	makeOrder(t, book, market, "PriceSetterSell", types.Side_SIDE_SELL, 101, "party01", 1)
 
-	assert.Equal(t, book.GetBestAskPrice(), uint64(101))
-	assert.Equal(t, book.GetBestBidPrice(), uint64(100))
+	bestask, err := book.GetBestAskPrice()
+	assert.NoError(t, err)
+	bestbid, err := book.GetBestBidPrice()
+	assert.NoError(t, err)
+	assert.Equal(t, bestask, uint64(101))
+	assert.Equal(t, bestbid, uint64(100))
 
 	bp1 := getOrder(t, book, market, "BuyPeg1", types.Side_SIDE_BUY, 100, "party01", 5)
 	bp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,

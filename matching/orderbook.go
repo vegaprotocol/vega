@@ -246,8 +246,8 @@ func (b OrderBook) InAuction() bool {
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
-	bestBid := b.GetBestBidPrice()
-	bestAsk := b.GetBestAskPrice()
+	bestBid, _ := b.GetBestBidPrice()
+	bestAsk, _ := b.GetBestAskPrice()
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -297,8 +297,8 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePrice() uint64 {
-	bestBid := b.GetBestBidPrice()
-	bestAsk := b.GetBestAskPrice()
+	bestBid, _ := b.GetBestBidPrice()
+	bestAsk, _ := b.GetBestAskPrice()
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -489,12 +489,12 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 }
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
-func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
+func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64, error) {
 	return b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
 }
 
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
-func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
+func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64, error) {
 	return b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
 }
 
@@ -843,11 +843,16 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 		}
 		return nil, err
 	}
+	// First look for the order in the order book
 	order, exists := b.ordersByID[orderID]
 	if !exists {
 		return nil, ErrOrderDoesNotExist
 	}
 	return order, nil
+
+	// Look for the order in the parked order list
+	// TODO
+
 }
 
 // RemoveDistressedOrders remove from the book all order holding distressed positions
@@ -919,14 +924,14 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 	}
 }
 
-func (b *OrderBook) GetBestBidPrice() uint64 {
-	price, _ := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
-	return price
+func (b *OrderBook) GetBestBidPrice() (uint64, error) {
+	price, _, err := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
+	return price, err
 }
 
-func (b *OrderBook) GetBestAskPrice() uint64 {
-	price, _ := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
-	return price
+func (b *OrderBook) GetBestAskPrice() (uint64, error) {
+	price, _, err := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+	return price, err
 }
 
 // PrintState prints the actual state of the book.

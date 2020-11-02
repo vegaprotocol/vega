@@ -375,6 +375,8 @@ enum OrderError {
   // a general account to submit the order (no deposits made
   // for the required asset).
   ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE = 43;
+  // We are unable to reprice a pegged order because a market price is unavailable
+  ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 44;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
