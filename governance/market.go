@@ -148,7 +148,6 @@ func createMarket(
 	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
 	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
 	// get price monitoring parameters
-
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.PriceMonitoringParameters == nil {
 		pmParams := &types.PriceMonitoringParameters{}
@@ -187,8 +186,8 @@ func createMarket(
 			},
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
-			PriceMonitoringParameters: definition.PriceMonitoringParameters,
-			UpdateFrequency:           int64(pmUpdateFreq.Seconds()),
+			Parameters:      definition.PriceMonitoringParameters,
+			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
 		},
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
