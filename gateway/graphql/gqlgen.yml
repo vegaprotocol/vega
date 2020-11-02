@@ -42,7 +42,14 @@ models:
     model: code.vegaprotocol.io/vega/proto.LiquidityProvision
   LiquidityOrderReference:
     model: code.vegaprotocol.io/vega/proto.LiquidityOrderReference
+  Future:
+    model: code.vegaprotocol.io/vega/proto.Future
+  TradableInstrument:
+    model: code.vegaprotocol.io/vega/proto.TradableInstrument
+  Instrument:
+    model: code.vegaprotocol.io/vega/proto.Instrument
   Market:
+    model: code.vegaprotocol.io/vega/proto.Market
     fields:
       orders:
         resolver: true

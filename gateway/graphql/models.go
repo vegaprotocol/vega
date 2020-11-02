@@ -239,18 +239,6 @@ type Fees struct {
 	Factors *FeeFactors `json:"factors"`
 }
 
-// A Future product
-type Future struct {
-	// The maturity date of the product (ISO8601/RFC3339 timestamp)
-	Maturity string `json:"maturity"`
-	// The name of the asset (string)
-	Asset *Asset `json:"asset"`
-	// The oracle used for this product (Oracle union)
-	Oracle Oracle `json:"oracle"`
-}
-
-func (Future) IsProduct() {}
-
 type FutureProduct struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
@@ -264,22 +252,6 @@ type FutureProductInput struct {
 	Maturity string `json:"maturity"`
 	// Product asset name
 	Asset string `json:"asset"`
-}
-
-// Describe something that can be traded on Vega
-type Instrument struct {
-	// Uniquely identify an instrument accrods all instruments available on Vega (string)
-	ID string `json:"id"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
-	Code string `json:"code"`
-	// Full and fairly descriptive name for the instrument
-	Name string `json:"name"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
-	// Metadata for this instrument
-	Metadata *InstrumentMetadata `json:"metadata"`
-	// A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
-	Product Product `json:"product"`
 }
 
 type InstrumentConfiguration struct {
@@ -390,56 +362,6 @@ type MarginCalculator struct {
 	// The scaling factors that will be used for margin calculation
 	ScalingFactors *ScalingFactors `json:"scalingFactors"`
 }
-
-// Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
-type Market struct {
-	// Market ID
-	ID string `json:"id"`
-	// Market full name
-	Name string `json:"name"`
-	// Fees related data
-	Fees *Fees `json:"fees"`
-	// An instance of or reference to a tradable instrument.
-	TradableInstrument *TradableInstrument `json:"tradableInstrument"`
-	// Definitions and required configuration for the trading mode
-	TradingMode TradingMode `json:"tradingMode"`
-	// decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
-	// number denominated in the currency of the Market. (uint64)
-	//
-	// Examples:
-	//   Currency     Balance  decimalPlaces  Real Balance
-	//   GBP              100              0       GBP 100
-	//   GBP              100              2       GBP   1.00
-	//   GBP              100              4       GBP   0.01
-	//   GBP                1              4       GBP   0.0001   (  0.01p  )
-	//
-	//   GBX (pence)      100              0       GBP   1.00     (100p     )
-	//   GBX (pence)      100              2       GBP   0.01     (  1p     )
-	//   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-	//   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
-	DecimalPlaces int `json:"decimalPlaces"`
-	// Auction duration specifies how long the opening auction will run (minimum
-	// duration and optionally a minimum traded volume).
-	OpeningAuction *AuctionDuration `json:"openingAuction"`
-	// Price monitoring settings for the market
-	PriceMonitoringSettings *PriceMonitoringSettings `json:"priceMonitoringSettings"`
-	// Orders on a market
-	Orders []*proto.Order `json:"orders"`
-	// Get account for a party or market
-	Accounts []*proto.Account `json:"accounts"`
-	// Trades on a market
-	Trades []*proto.Trade `json:"trades"`
-	// Current depth on the orderbook for this market
-	Depth *proto.MarketDepth `json:"depth"`
-	// Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-	Candles []*proto.Candle `json:"candles"`
-	// marketData for the given market
-	Data *proto.MarketData `json:"data"`
-	// The list of the liquidity provision commitment for this market
-	LiquidityProvisions []*proto.LiquidityProvision `json:"liquidityProvisions"`
-}
-
-func (Market) IsEvent() {}
 
 // The MM commitments for this market
 type MarketDataCommitments struct {
@@ -760,16 +682,6 @@ type TimeUpdate struct {
 }
 
 func (TimeUpdate) IsEvent() {}
-
-// A tradable instrument is a combination of an instrument and a risk model
-type TradableInstrument struct {
-	// An instance of or reference to a fully specified instrument.
-	Instrument *Instrument `json:"instrument"`
-	// A reference to a risk model that is valid for the instrument
-	RiskModel RiskModel `json:"riskModel"`
-	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
-	MarginCalculator *MarginCalculator `json:"marginCalculator"`
-}
 
 // The fee paid by the party when a trade occurs
 type TradeFee struct {
