@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -410,8 +411,16 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	}
 
 	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
-	if terms.EnactmentTimestamp < terms.ClosingTimestamp || (terms.ValidationTimestamp > 0 && terms.ValidationTimestamp >= terms.ClosingTimestamp) {
-		return ErrIncompatibleTimestamps
+	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
+		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
+		closeTime := time.Unix(terms.ClosingTimestamp, 0)
+		return fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
+	}
+
+	if terms.ValidationTimestamp > 0 && terms.ValidationTimestamp >= terms.ClosingTimestamp {
+		validationTime := time.Unix(terms.ValidationTimestamp, 0)
+		closeTime := time.Unix(terms.ClosingTimestamp, 0)
+		return fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
 	}
 
 	return s.validateProposalChanges(terms.Change)

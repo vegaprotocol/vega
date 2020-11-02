@@ -307,8 +307,10 @@ func testValidateTimestamps(t *testing.T) {
 	now := time.Now()
 	prop := eng.newOpenProposal(party.Id, now)
 	prop.Terms.ValidationTimestamp = prop.Terms.ClosingTimestamp + 10
+	prop.Terms.Change = &types.ProposalTerms_NewAsset{}
 	err := eng.SubmitProposal(context.Background(), prop, "proposal-id")
-	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "proposal closing time cannot be before validation time, expected >")
 }
 
 func TestVoteValidation(t *testing.T) {

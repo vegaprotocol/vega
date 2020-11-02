@@ -323,5 +323,6 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 	testAuthor := "test-author"
 	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
-	assert.EqualError(t, err, governance.ErrIncompatibleTimestamps.Error())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "proposal closing time cannot be before validation time, expected >")
 }
