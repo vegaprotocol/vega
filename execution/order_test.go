@@ -618,6 +618,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("parked orders during normal trading are unparked when possible", testParkedOrdersAreUnparkedWhenPossible)
 	t.Run("pegged orders are handled correctly when moving into auction", testPeggedOrdersEnteringAuction)
 	t.Run("pegged orders are handled correctly when moving out of auction", testPeggedOrdersLeavingAuction)
+	t.Run("pegged orders are removed when expired", testPeggedOrderExpiring)
 }
 
 func testPeggedOrderFilledOrder(t *testing.T) {
@@ -1141,4 +1142,49 @@ func testPeggedOrderRepricing(t *testing.T) {
 			}
 		})
 	}
+}
+
+func testPeggedOrderExpiring(t *testing.T) {
+	// Create the market
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+
+	tm := getTestMarket(t, now, closingAt, nil)
+	addAccount(tm, "party")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Create buy and sell orders
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party", 1, 100)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party", 1, 200)
+
+	// let's create N orders with different expiration time
+	expirations := []struct {
+		party      string
+		expiration time.Time
+	}{
+		{"party-10", now.Add(10 * time.Minute)},
+		{"party-20", now.Add(20 * time.Minute)},
+		{"party-30", now.Add(30 * time.Minute)},
+	}
+	for _, test := range expirations {
+		addAccount(tm, test.party)
+
+		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, test.party, 10, 150)
+		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+		order.ExpiresAt = test.expiration.UnixNano()
+		_, err := tm.market.SubmitOrder(context.Background(), &order)
+		require.NoError(t, err)
+	}
+
+	t.Run("Lower expire time", func(t *testing.T) {
+		orders, err := tm.market.RemoveExpiredOrders(now.Add(5 * time.Minute).UnixNano())
+		require.NoError(t, err)
+		require.Len(t, orders, 0)
+	})
+
+	orders, err := tm.market.RemoveExpiredOrders(now.Add(25 * time.Minute).UnixNano())
+	require.NoError(t, err)
+	assert.Len(t, orders, 2, "2 orders should have been removed")
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
 }
