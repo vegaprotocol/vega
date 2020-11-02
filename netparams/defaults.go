@@ -23,7 +23,7 @@ func defaultNetParams() map[string]value {
 		MarketLiquidityStakeToCCYSiskas:               NewFloat(FloatGT(0)).Mutable(true).MustUpdate("1"),
 		MarketTargetStakeTimeWindow:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
 		MarketTargetStakeScalingFactor:                NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("10"),
-		MarketPriceMonitoringDefaultParameters:        NewJSON(&proto.PriceMonitoringParameters{}, JSONProtoValidator()).Mutable(true).MustUpdate(`{"parameters": []}`),
+		MarketPriceMonitoringDefaultParameters:        NewJSON(&proto.PriceMonitoringParameters{}, JSONProtoValidator()).Mutable(true).MustUpdate(`{"triggers": []}`),
 		MarketPriceMonitoringUpdateFrequency:          NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m0s"),
 
 		// governance market proposal

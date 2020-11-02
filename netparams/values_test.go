@@ -78,7 +78,7 @@ func TestJSONValues(t *testing.T) {
 func TestJSONVPriceMonitoringParameters(t *testing.T) {
 
 	// happy case, pouplated parameters array
-	validPmJsonString := `{"parameters": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
+	validPmJsonString := `{"triggers": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
 	j := netparams.NewJSON(&types.PriceMonitoringParameters{}, netparams.JSONProtoValidator()).Mutable(true).MustUpdate(validPmJsonString)
 	assert.NotNil(t, j)
 	err := j.Validate(validPmJsonString)
@@ -91,16 +91,16 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	err = j.ToJSONStruct(pm)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, len(pm.Parameters))
-	assert.Equal(t, int64(60), pm.Parameters[0].Horizon)
-	assert.Equal(t, 0.95, pm.Parameters[0].Probability)
-	assert.Equal(t, int64(90), pm.Parameters[0].AuctionExtension)
-	assert.Equal(t, int64(120), pm.Parameters[1].Horizon)
-	assert.Equal(t, 0.99, pm.Parameters[1].Probability)
-	assert.Equal(t, int64(180), pm.Parameters[1].AuctionExtension)
+	assert.Equal(t, 2, len(pm.Triggers))
+	assert.Equal(t, int64(60), pm.Triggers[0].Horizon)
+	assert.Equal(t, 0.95, pm.Triggers[0].Probability)
+	assert.Equal(t, int64(90), pm.Triggers[0].AuctionExtension)
+	assert.Equal(t, int64(120), pm.Triggers[1].Horizon)
+	assert.Equal(t, 0.99, pm.Triggers[1].Probability)
+	assert.Equal(t, int64(180), pm.Triggers[1].AuctionExtension)
 
 	// happy case, empty parameters array
-	validPmJsonString = `{"parameters": []}`
+	validPmJsonString = `{"triggers": []}`
 	j = netparams.NewJSON(&types.PriceMonitoringParameters{}, netparams.JSONProtoValidator()).Mutable(true).MustUpdate(validPmJsonString)
 	assert.NotNil(t, j)
 	err = j.Validate(validPmJsonString)
@@ -113,12 +113,12 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	err = j.ToJSONStruct(pm)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 0, len(pm.Parameters))
+	assert.Equal(t, 0, len(pm.Triggers))
 
 	// errors cases now
 
 	// invalid field
-	invalidPmJsonString := `{"parameters": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180, "nope": "abc"}]}`
+	invalidPmJsonString := `{"triggers": [{"horizon": 60, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180, "nope": "abc"}]}`
 	expectedErrorMsg := "unable to unmarshal value, json: unknown field \"nope\""
 	err = j.Validate(invalidPmJsonString)
 	assert.EqualError(t, err, expectedErrorMsg)
@@ -129,8 +129,8 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	// invalid value
 
 	// horizon
-	invalidPmJsonString = `{"parameters": [{"horizon": 0, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
-	expectedErrorMsg = "invalid field Parameters.Horizon: value '0' must be greater than '0'"
+	invalidPmJsonString = `{"triggers": [{"horizon": 0, "probability": 0.95, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
+	expectedErrorMsg = "invalid field Triggers.Horizon: value '0' must be greater than '0'"
 	err = j.Validate(invalidPmJsonString)
 	assert.EqualError(t, err, expectedErrorMsg)
 
@@ -138,16 +138,16 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	assert.EqualError(t, err, expectedErrorMsg)
 
 	// probability
-	invalidPmJsonString = `{"parameters": [{"horizon": 60, "probability": 0, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
-	expectedErrorMsg = "invalid field Parameters.Probability: value '0' must be strictly greater than '0'"
+	invalidPmJsonString = `{"triggers": [{"horizon": 60, "probability": 0, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
+	expectedErrorMsg = "invalid field Triggers.Probability: value '0' must be strictly greater than '0'"
 	err = j.Validate(invalidPmJsonString)
 	assert.EqualError(t, err, expectedErrorMsg)
 
 	err = j.Update(invalidPmJsonString)
 	assert.EqualError(t, err, expectedErrorMsg)
 
-	invalidPmJsonString = `{"parameters": [{"horizon": 60, "probability": 1, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
-	expectedErrorMsg = "invalid field Parameters.Probability: value '1' must be strictly lower than '1'"
+	invalidPmJsonString = `{"triggers": [{"horizon": 60, "probability": 1, "auctionExtension": 90},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
+	expectedErrorMsg = "invalid field Triggers.Probability: value '1' must be strictly lower than '1'"
 	err = j.Validate(invalidPmJsonString)
 	assert.EqualError(t, err, expectedErrorMsg)
 
@@ -155,8 +155,8 @@ func TestJSONVPriceMonitoringParameters(t *testing.T) {
 	assert.EqualError(t, err, expectedErrorMsg)
 
 	// auctionExtension
-	invalidPmJsonString = `{"parameters": [{"horizon": 60, "probability": 0.95, "auctionExtension": 0},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
-	expectedErrorMsg = "invalid field Parameters.AuctionExtension: value '0' must be greater than '0'"
+	invalidPmJsonString = `{"triggers": [{"horizon": 60, "probability": 0.95, "auctionExtension": 0},{"horizon": 120, "probability": 0.99, "auctionExtension": 180}]}`
+	expectedErrorMsg = "invalid field Triggers.AuctionExtension: value '0' must be greater than '0'"
 	err = j.Validate(invalidPmJsonString)
 	assert.EqualError(t, err, expectedErrorMsg)
 }
