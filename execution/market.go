@@ -2058,6 +2058,7 @@ func (m *Market) AmendPeggedOrder(ctx context.Context, existingOrder *types.Orde
 	if err == nil {
 		m.handleConfirmation(ctx, &amendedOrder, confirmation)
 		m.broker.Send(events.NewOrderEvent(ctx, &amendedOrder))
+		*existingOrder = amendedOrder
 	}
 	return confirmation, err
 }

@@ -481,7 +481,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 }
 
 func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
-	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
+	tif types.Order_TimeInForce, expiresAt int64, pass bool) *types.OrderConfirmation {
 	amend := &types.OrderAmendment{
 		OrderID:     orderID,
 		PartyID:     party,
@@ -503,6 +503,7 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 		assert.NotNil(t, amended)
 		assert.NoError(t, err)
 	}
+	return amended
 }
 
 func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce,
@@ -618,6 +619,34 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("parked orders during normal trading are unparked when possible", testParkedOrdersAreUnparkedWhenPossible)
 	t.Run("pegged orders are handled correctly when moving into auction", testPeggedOrdersEnteringAuction)
 	t.Run("pegged orders are handled correctly when moving out of auction", testPeggedOrdersLeavingAuction)
+	t.Run("pegged orders amend reference", testPeggedOrderAmendToMoveReference)
+}
+
+func testPeggedOrderAmendToMoveReference(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Place 2 orders to create valid reference prices
+	bestBidOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+
+	// Place a valid pegged order which will be added to the order book
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	_, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+
+	// Amend best bid price
+	amendConf1 := amendOrder(t, tm, "party1", bestBidOrder, 0, 88, types.Order_TIF_UNSPECIFIED, 0, true)
+	assert.NotNil(t, amendConf1)
+	amendConf2 := amendOrder(t, tm, "party1", bestBidOrder, 0, 86, types.Order_TIF_UNSPECIFIED, 0, true)
+	assert.NotNil(t, amendConf2)
 }
 
 func testPeggedOrderFilledOrder(t *testing.T) {
@@ -1059,6 +1088,10 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 		confirmation.Order.Status.String(), "When pegged price below zero (MIDPRICE - OFFSET) <= 0")
 }
 
+func TestTT(t *testing.T) {
+	testPeggedOrderRepricing(t)
+}
+
 func testPeggedOrderRepricing(t *testing.T) {
 	// Create the market
 	now := time.Unix(10, 0)
@@ -1094,13 +1127,13 @@ func testPeggedOrderRepricing(t *testing.T) {
 			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
 			side:          types.Side_SIDE_BUY,
 			offset:        -5,
-			expectedPrice: midPrice - 5,
+			expectedPrice: midPrice - 1,
 		},
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
 			side:          types.Side_SIDE_SELL,
 			offset:        5,
-			expectedPrice: midPrice + 5,
+			expectedPrice: midPrice,
 		},
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
@@ -1137,7 +1170,7 @@ func testPeggedOrderRepricing(t *testing.T) {
 				require.Error(t, err, msg)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expectedPrice, conf.Order.Price)
+				require.Equal(t, test.expectedPrice, conf.Order.Price)
 			}
 		})
 	}
