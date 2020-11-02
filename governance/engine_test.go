@@ -851,7 +851,6 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 				Instrument: &types.InstrumentConfiguration{
 					Name:      "June 2020 GBP vs VUSD future",
 					Code:      "CRYPTO:GBPVUSD/JUN20",
-					BaseName:  "GBP",
 					QuoteName: "VUSD",
 					Product: &types.InstrumentConfiguration_Future{
 						Future: &types.FutureProduct{

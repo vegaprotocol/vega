@@ -94,5 +94,5 @@ func (rp *ReplayProtector) DeliverTx(tx Tx) error {
 
 type replayProtectorNoop struct{}
 
-func (_ *replayProtectorNoop) SetHeight(uint64)   {}
-func (_ *replayProtectorNoop) DeliverTx(Tx) error { return nil }
+func (*replayProtectorNoop) SetHeight(uint64)   {}
+func (*replayProtectorNoop) DeliverTx(Tx) error { return nil }

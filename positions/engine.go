@@ -336,7 +336,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 		// remove from the map
 		delete(e.positions, party)
 		// remove from the slice
-		for i, _ := range e.positionsCpy {
+		for i := range e.positionsCpy {
 			if e.positionsCpy[i].Party() == trader.Party() {
 				e.log.Warn("removing trader from positions engine (cpy slice)",
 					logging.String("party-id", trader.Party()))

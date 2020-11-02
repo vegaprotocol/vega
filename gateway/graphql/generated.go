@@ -187,7 +187,6 @@ type ComplexityRoot struct {
 	}
 
 	Instrument struct {
-		BaseName  func(childComplexity int) int
 		Code      func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Metadata  func(childComplexity int) int
@@ -197,7 +196,6 @@ type ComplexityRoot struct {
 	}
 
 	InstrumentConfiguration struct {
-		BaseName      func(childComplexity int) int
 		Code          func(childComplexity int) int
 		FutureProduct func(childComplexity int) int
 		Name          func(childComplexity int) int
@@ -1416,13 +1414,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FutureProduct.Maturity(childComplexity), true
 
-	case "Instrument.baseName":
-		if e.complexity.Instrument.BaseName == nil {
-			break
-		}
-
-		return e.complexity.Instrument.BaseName(childComplexity), true
-
 	case "Instrument.code":
 		if e.complexity.Instrument.Code == nil {
 			break
@@ -1464,13 +1455,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Instrument.QuoteName(childComplexity), true
-
-	case "InstrumentConfiguration.baseName":
-		if e.complexity.InstrumentConfiguration.BaseName == nil {
-			break
-		}
-
-		return e.complexity.InstrumentConfiguration.BaseName(childComplexity), true
 
 	case "InstrumentConfiguration.code":
 		if e.complexity.InstrumentConfiguration.Code == nil {
@@ -4766,9 +4750,6 @@ type Instrument {
   "Full and fairly descriptive name for the instrument"
   name: String!
 
-  "String representing the base (e.g. BTCUSD -> BTC is base)"
-  baseName: String!
-
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
@@ -5758,8 +5739,6 @@ input InstrumentConfigurationInput {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the base (e.g. BTCUSD -> BTC is base)"
-  baseName: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   "Future product specification"
@@ -5771,8 +5750,6 @@ type InstrumentConfiguration {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the base (e.g. BTCUSD -> BTC is base)"
-  baseName: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   "Future product specification"
@@ -9977,40 +9954,6 @@ func (ec *executionContext) _Instrument_name(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Instrument_baseName(ctx context.Context, field graphql.CollectedField, obj *Instrument) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Instrument",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BaseName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Instrument_quoteName(ctx context.Context, field graphql.CollectedField, obj *Instrument) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -10165,40 +10108,6 @@ func (ec *executionContext) _InstrumentConfiguration_code(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Code, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _InstrumentConfiguration_baseName(ctx context.Context, field graphql.CollectedField, obj *InstrumentConfiguration) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "InstrumentConfiguration",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BaseName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22268,12 +22177,6 @@ func (ec *executionContext) unmarshalInputInstrumentConfigurationInput(ctx conte
 			if err != nil {
 				return it, err
 			}
-		case "baseName":
-			var err error
-			it.BaseName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "quoteName":
 			var err error
 			it.QuoteName, err = ec.unmarshalNString2string(ctx, v)
@@ -23958,11 +23861,6 @@ func (ec *executionContext) _Instrument(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "baseName":
-			out.Values[i] = ec._Instrument_baseName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "quoteName":
 			out.Values[i] = ec._Instrument_quoteName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -24007,11 +23905,6 @@ func (ec *executionContext) _InstrumentConfiguration(ctx context.Context, sel as
 			}
 		case "code":
 			out.Values[i] = ec._InstrumentConfiguration_code(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "baseName":
-			out.Values[i] = ec._InstrumentConfiguration_baseName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

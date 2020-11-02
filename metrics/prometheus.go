@@ -465,7 +465,7 @@ func APIRequestAndTimeGRPC(request string, startTime time.Time) {
 		return
 	}
 	apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
-	duration := time.Now().Sub(startTime).Seconds()
+	duration := time.Since(startTime).Seconds()
 	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 }
 
@@ -478,7 +478,7 @@ func APIRequestAndTimeGraphQL(request string, time float64) {
 	apiRequestTimeCounter.WithLabelValues("GraphQL", request).Add(time)
 }
 
-// APIRequestAndTimeGRPC updates the metrics for GRPC API calls
+// StartAPIRequestAndTimeGRPC updates the metrics for GRPC API calls
 func StartAPIRequestAndTimeGRPC(request string) func() {
 	startTime := time.Now()
 	return func() {
@@ -486,7 +486,7 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 			return
 		}
 		apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
-		duration := time.Now().Sub(startTime).Seconds()
+		duration := time.Since(startTime).Seconds()
 		apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 	}
 }

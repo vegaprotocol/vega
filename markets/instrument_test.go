@@ -14,7 +14,6 @@ func getValidInstrumentProto() *types.Instrument {
 		Id:        "Crypto/BTCUSD/Futures/Dec19",
 		Code:      "FX:BTCUSD/DEC19",
 		Name:      "December 2019 BTC vs USD future",
-		BaseName:  "BTC",
 		QuoteName: "USD",
 		Metadata: &types.InstrumentMetadata{
 			Tags: []string{

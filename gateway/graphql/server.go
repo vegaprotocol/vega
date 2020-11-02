@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
@@ -122,7 +123,7 @@ func (g *GraphServer) Start() {
 
 	if g.GraphQLPlaygroundEnabled {
 		g.log.Warn("graphql playground enabled, this is not a recommended setting for production")
-		handlr.Handle("/", corz.Handler(handler.Playground("VEGA", "/query")))
+		handlr.Handle("/", corz.Handler(playground.Handler("VEGA", "/query")))
 	}
 	options := []handler.Option{
 		handler.WebsocketKeepAliveDuration(10 * time.Second),

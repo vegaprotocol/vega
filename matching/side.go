@@ -90,30 +90,6 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 	s.getPriceLevel(o.Price).addOrder(o)
 }
 
-func (s *OrderBookSide) getHighestOrderPrice() (uint64, error) {
-	if len(s.levels) <= 0 {
-		return 0, ErrNoOrder
-	}
-	// sell order descending
-	if s.side == types.Side_SIDE_SELL {
-		return s.levels[0].price, nil
-	}
-	// buy order ascending
-	return s.levels[len(s.levels)-1].price, nil
-}
-
-func (s *OrderBookSide) getLowestOrderPrice() (uint64, error) {
-	if len(s.levels) <= 0 {
-		return 0, ErrNoOrder
-	}
-	// sell order descending
-	if s.side == types.Side_SIDE_SELL {
-		return s.levels[len(s.levels)-1].price, nil
-	}
-	// buy order ascending
-	return s.levels[0].price, nil
-}
-
 // BestPriceAndVolume returns the top of book price and volume
 // returns an error if the book is empty
 func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64, error) {

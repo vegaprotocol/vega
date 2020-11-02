@@ -20,7 +20,7 @@ type FinalSettlement string
 
 const (
 	FinalSettlementOracle    FinalSettlement = "Oracle"
-	FinalSettlementMarkPrice                 = "LastMarkPrice"
+	FinalSettlementMarkPrice FinalSettlement = "LastMarkPrice"
 )
 
 type FinalSettlementW struct {

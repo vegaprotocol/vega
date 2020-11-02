@@ -503,10 +503,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	return repriceCount
 }
 
-// getNewPeggedPrice calculates the new limit price for this pegged order
-// If the resulting price is <= 0, the price will be set to zero and the order status will be parked.
 func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uint64, error) {
-	// Work out the new price of the order
 	var (
 		err   error
 		price uint64
@@ -903,7 +900,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
-		if m.log.GetLevel() == logging.DebugLevel {
+		if m.log.GetLevel() <= logging.DebugLevel {
 			m.log.Debug("Unable to register potential trader position",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
@@ -926,9 +923,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
-		m.log.Error("Unable to check/add margin for trader",
-			logging.String("market-id", m.GetID()),
-			logging.Error(err))
+		if m.log.GetLevel() <= logging.DebugLevel {
+			m.log.Debug("Unable to check/add margin for trader",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
 		return nil, ErrMarginCheckFailed
 	}
 
@@ -970,7 +969,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		if m.log.GetLevel() == logging.DebugLevel {
+		if m.log.GetLevel() <= logging.DebugLevel {
 			m.log.Debug("Failure after submitting order to matching engine",
 				logging.Order(*order),
 				logging.Error(err))

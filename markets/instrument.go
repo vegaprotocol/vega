@@ -26,8 +26,6 @@ type Instrument struct {
 	InitialMarkPrice uint64
 	Product          products.Product
 
-	// Base and Quote aren't used internally, but might be used later on, so add them here just in case
-	Base  string
 	Quote string
 }
 
@@ -73,7 +71,6 @@ func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 		Name:             pi.Name,
 		Metadata:         pi.Metadata,
 		Product:          product,
-		Base:             pi.BaseName,
 		Quote:            pi.QuoteName,
 		InitialMarkPrice: pi.InitialMarkPrice,
 	}, err

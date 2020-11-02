@@ -3,7 +3,6 @@ package matching
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -26,7 +25,7 @@ func TestOrderBook_MarketOrderFOKNotFilledResponsePrice(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify that the response price for the unfilled order is zero
-	assert.NotEqual(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
 	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
 }
 
@@ -47,7 +46,7 @@ func TestOrderBook_MarketOrderIOCNotFilledResponsePrice(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify that the response price for the unfilled order is zero
-	assert.NotEqual(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
 	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
 }
 
@@ -81,7 +80,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify that the response price for the unfilled order is zero
-	assert.NotEqual(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
 	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
 
 	// Nothing was filled
@@ -122,7 +121,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify that the response price for the unfilled order is zero
-	assert.NotEqual(t, (*proto.OrderConfirmation)(nil), confirm)
+	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
 	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
 
 	// Something was filled

@@ -209,7 +209,6 @@ func (i *Instrument) IntoProto() (*types.Instrument, error) {
 		Id:        i.ID,
 		Code:      i.Code,
 		Name:      i.Name,
-		BaseName:  i.BaseName,
 		QuoteName: i.QuoteName,
 	}
 
@@ -496,7 +495,6 @@ func InstrumentFromProto(pi *types.Instrument) (*Instrument, error) {
 		ID:        pi.Id,
 		Code:      pi.Code,
 		Name:      pi.Name,
-		BaseName:  pi.BaseName,
 		QuoteName: pi.QuoteName,
 	}
 	meta, err := InstrumentMetadataFromProto(pi.Metadata)
@@ -760,7 +758,6 @@ func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, er
 		Instrument: &InstrumentConfiguration{
 			Name:      newMarket.Instrument.Name,
 			Code:      newMarket.Instrument.Code,
-			BaseName:  newMarket.Instrument.BaseName,
 			QuoteName: newMarket.Instrument.QuoteName,
 		},
 		DecimalPlaces:  int(newMarket.DecimalPlaces),
@@ -810,9 +807,6 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 	if len(i.Code) <= 0 {
 		return nil, errors.New("Instrument.Code: string cannot be empty")
 	}
-	if len(i.BaseName) <= 0 {
-		return nil, errors.New("Instrument.BaseName: string cannot be empty")
-	}
 	if len(i.QuoteName) <= 0 {
 		return nil, errors.New("Instrument.QuoteName: string cannot be empty")
 	}
@@ -820,7 +814,6 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 	result := &types.InstrumentConfiguration{
 		Name:      i.Name,
 		Code:      i.Code,
-		BaseName:  i.BaseName,
 		QuoteName: i.QuoteName,
 	}
 
@@ -1264,7 +1257,6 @@ func defaultInstrumentConfiguration() *types.InstrumentConfiguration {
 	return &types.InstrumentConfiguration{
 		Name:      "",
 		Code:      "",
-		BaseName:  "",
 		QuoteName: "",
 		Product:   defaultFutureProductConfiguration(),
 	}

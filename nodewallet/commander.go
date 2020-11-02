@@ -24,8 +24,6 @@ type Commander struct {
 }
 
 var (
-	unsigned = map[txn.Command]struct{}{}
-
 	ErrCommandMustBeSigned        = errors.New("command requires a signature")
 	ErrPayloadNotNodeRegistration = errors.New("expected node registration payload")
 	ErrVegaWalletRequired         = errors.New("vega wallet required to start commander")

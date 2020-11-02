@@ -5,7 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 type tstOB struct {
@@ -15,10 +14,6 @@ type tstOB struct {
 
 func (t *tstOB) Finish() {
 	t.log.Sync()
-}
-
-func getCurrentUtcTimestampNano() int64 {
-	return vegatime.Now().UnixNano()
 }
 
 func getTestOrderBook(t *testing.T, market string) *tstOB {

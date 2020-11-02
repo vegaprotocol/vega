@@ -108,7 +108,7 @@ func (s *Store) OnChainTimeUpdate(_ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
-	for k, _ := range s.paramUpdates {
+	for k := range s.paramUpdates {
 		val, _ := s.Get(k)
 		for _, w := range s.watchers[k] {
 			w(k, val)

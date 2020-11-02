@@ -274,8 +274,6 @@ type Instrument struct {
 	Code string `json:"code"`
 	// Full and fairly descriptive name for the instrument
 	Name string `json:"name"`
-	// String representing the base (e.g. BTCUSD -> BTC is base)
-	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
 	// Metadata for this instrument
@@ -289,8 +287,6 @@ type InstrumentConfiguration struct {
 	Name string `json:"name"`
 	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
 	Code string `json:"code"`
-	// String representing the base (e.g. BTCUSD -> BTC is base)
-	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
 	// Future product specification
@@ -302,8 +298,6 @@ type InstrumentConfigurationInput struct {
 	Name string `json:"name"`
 	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
 	Code string `json:"code"`
-	// String representing the base (e.g. BTCUSD -> BTC is base)
-	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
 	// Future product specification

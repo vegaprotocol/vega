@@ -77,14 +77,12 @@ message Instrument {
   string code = 2;
   // Name of the instrument.
   string name = 3;
-  // Base name of the instrument.
-  string baseName = 4;
   // Quote name of the instrument.
-  string quoteName = 5;
+  string quoteName = 4;
   // A collection of instrument meta-data.
-  InstrumentMetadata metadata = 6;
+  InstrumentMetadata metadata = 5;
   // An initial mark price for the instrument.
-  uint64 initialMarkPrice = 7;
+  uint64 initialMarkPrice = 6;
   // The product the instrument is composed of.
   oneof product {
     // Future.
