@@ -293,8 +293,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				Volume:   0,
 			},
 			PriceMonitoringSettings: &proto.PriceMonitoringSettings{
-				PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
-				UpdateFrequency:           60,
+				Parameters: &proto.PriceMonitoringParameters{
+					Triggers: []*proto.PriceMonitoringTrigger{},
+				},
+				UpdateFrequency: 60,
 			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)

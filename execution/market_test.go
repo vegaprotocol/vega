@@ -72,8 +72,10 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 
 	if pMonitorSettings == nil {
 		pMonitorSettings = &types.PriceMonitoringSettings{
-			PriceMonitoringParameters: []*types.PriceMonitoringParameters{},
-			UpdateFrequency:           0,
+			Parameters: &types.PriceMonitoringParameters{
+				Triggers: []*types.PriceMonitoringTrigger{},
+			},
+			UpdateFrequency: 0,
 		}
 	}
 
@@ -518,8 +520,10 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	afterAuciton := auctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{
-			{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{
+				{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+			},
 		},
 		UpdateFrequency: 600,
 	}
@@ -631,8 +635,10 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	afterAuciton := auctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{
-			{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{
+				{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+			},
 		},
 		UpdateFrequency: 600,
 	}
@@ -789,8 +795,10 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	initialAuctionEnd := auctionEndTime.Add(time.Second)
 	pMonitorSettings := &types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{
-			{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{
+				{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+			},
 		},
 		UpdateFrequency: 600,
 	}

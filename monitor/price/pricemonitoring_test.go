@@ -22,8 +22,10 @@ func TestEmptyParametersList(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{},
-		UpdateFrequency:           1}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 1}
 
 	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-10), float64(currentPrice+10)).Times(2)
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
@@ -47,11 +49,15 @@ func TestEmptyParametersList(t *testing.T) {
 }
 
 func TestErrorWithNilRiskModel(t *testing.T) {
-	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	p2 := types.PriceMonitoringParameters{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	p1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	p2 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
-		UpdateFrequency:           600}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: 600,
+	}
 
 	pm, err := price.NewMonitor(nil, settings)
 	require.Error(t, err)
@@ -64,11 +70,14 @@ func TestRecordPriceChange(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	p2 := types.PriceMonitoringParameters{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	p1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	p2 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
-		UpdateFrequency:           600}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: 600,
+	}
 
 	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-10), float64(currentPrice+10)).Times(2)
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
@@ -96,11 +105,14 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	var p1Time int64 = 60
 	var p2Time int64 = 300
-	p1 := types.PriceMonitoringParameters{Horizon: 3600, Probability: 0.99, AuctionExtension: p1Time}
-	p2 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: p2Time}
+	p1 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: p1Time}
+	p2 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: p2Time}
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
-		UpdateFrequency:           600}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: 600,
+	}
 
 	var maxMoveDownHorizon1 uint64 = 1
 	var maxMoveUpHorizon1 uint64 = 2
@@ -202,11 +214,14 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	initialTime := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	now := initialTime
 	var p1Time int64 = 60
-	p1 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.99, AuctionExtension: p1Time}
+	p1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: p1Time}
 	var boundUpdateFrequency int64 = 120
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1},
-		UpdateFrequency:           boundUpdateFrequency}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1},
+		},
+		UpdateFrequency: boundUpdateFrequency,
+	}
 	var maxMoveDown1 uint64 = 1
 	var maxMoveUp1 uint64 = 2
 
@@ -409,12 +424,15 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var price1 uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	p1 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	p2 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	p1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
+	p2 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
-		UpdateFrequency:           boundUpdateFrequency}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: boundUpdateFrequency,
+	}
 	var maxMoveDownP1 uint64 = 1
 	var maxMoveUpP1 uint64 = 2
 	var p2Multiplier uint64 = 4
@@ -465,12 +483,15 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var price1 uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	p1 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	p2 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	p1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
+	p2 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
-		UpdateFrequency:           boundUpdateFrequency}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: boundUpdateFrequency,
+	}
 	var maxMoveDownP1 uint64 = 1
 	var maxMoveUpP1 uint64 = 2
 	var p2Multiplier uint64 = 4
@@ -521,12 +542,15 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var price1 uint64 = 123
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	p1 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	p2 := types.PriceMonitoringParameters{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	p1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
+	p2 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1, &p2},
-		UpdateFrequency:           boundUpdateFrequency}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: boundUpdateFrequency,
+	}
 	var maxMoveDownP1 uint64 = 1
 	var maxMoveUpP1 uint64 = 2
 	var p2Multiplier uint64 = 4
@@ -592,12 +616,14 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
-	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	p1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1},
-		UpdateFrequency:           1}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1},
+		},
+		UpdateFrequency: 1,
+	}
 
 	riskModelMock.EXPECT().PriceRange(float64(currentPrice), gomock.Any(), gomock.Any()).Return(float64(currentPrice-10), float64(currentPrice+10)).Times(2)
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
@@ -617,12 +643,15 @@ func TestMarketInGenericAuction(t *testing.T) {
 	riskModelMock := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	var currentPrice uint64 = 123
-	p1 := types.PriceMonitoringParameters{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	p1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
 	settings := types.PriceMonitoringSettings{
-		PriceMonitoringParameters: []*types.PriceMonitoringParameters{&p1},
-		UpdateFrequency:           1}
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1},
+		},
+		UpdateFrequency: 1,
+	}
 
 	var maxMoveUp uint64 = 10
 	var maxMoveDown uint64 = 5

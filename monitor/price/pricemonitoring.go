@@ -66,7 +66,7 @@ type RangeProvider interface {
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
 	riskModel       RangeProvider
-	parameters      []*types.PriceMonitoringParameters
+	parameters      []*types.PriceMonitoringTrigger
 	updateFrequency time.Duration
 
 	initialised bool
@@ -75,7 +75,7 @@ type Engine struct {
 	update      time.Time
 	pricesNow   []uint64
 	pricesPast  []pastPrice
-	bounds      map[*types.PriceMonitoringParameters]bound
+	bounds      map[*types.PriceMonitoringTrigger]bound
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
@@ -84,8 +84,8 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		return nil, ErrNilRangeProvider
 	}
 
-	parameters := make([]*types.PriceMonitoringParameters, 0, len(settings.PriceMonitoringParameters))
-	for _, p := range settings.PriceMonitoringParameters {
+	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
+	for _, p := range settings.Parameters.Triggers {
 		p := *p
 		parameters = append(parameters, &p)
 	}
@@ -207,7 +207,7 @@ func (e *Engine) reset(price uint64, now time.Time) {
 }
 
 func (e *Engine) initilizeBounds() {
-	e.bounds = make(map[*types.PriceMonitoringParameters]bound, len(e.parameters))
+	e.bounds = make(map[*types.PriceMonitoringTrigger]bound, len(e.parameters))
 	for _, p := range e.parameters {
 		e.bounds[p] = bound{}
 	}
@@ -242,12 +242,12 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 	return nil
 }
 
-func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonitoringParameters {
+func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonitoringTrigger {
 	var (
-		fp  float64                            = float64(p)                           // price as float
-		ph  int64                                                                     // previous horizon
-		ref float64                                                                   // reference price
-		ret []*types.PriceMonitoringParameters = []*types.PriceMonitoringParameters{} // returned price projections, empty if all good
+		fp  float64                         = float64(p)                        // price as float
+		ph  int64                                                               // previous horizon
+		ref float64                                                             // reference price
+		ret []*types.PriceMonitoringTrigger = []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
 	)
 	for _, p := range e.parameters {
 		b, ok := e.bounds[p]

@@ -945,14 +945,16 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 			len(durations))
 	}
 
-	params := make([]*proto.PriceMonitoringParameters, 0, n)
+	triggs := make([]*proto.PriceMonitoringTrigger, 0, n)
 	for i := 0; i < n; i++ {
-		p := &proto.PriceMonitoringParameters{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
-		params = append(params, p)
+		p := &proto.PriceMonitoringTrigger{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
+		triggs = append(triggs, p)
 	}
 	pMonitorSettings := &proto.PriceMonitoringSettings{
-		PriceMonitoringParameters: params,
-		UpdateFrequency:           i64val(row, 20),
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: triggs,
+		},
+		UpdateFrequency: i64val(row, 20),
 	}
 
 	mkt := proto.Market{
