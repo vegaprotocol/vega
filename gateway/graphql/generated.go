@@ -5421,6 +5421,9 @@ enum OrderStatus {
 
   "This order was partially filled."
   PartiallyFilled
+
+  "This order has been removed from the order book and applies to pegged orders only"
+  Parked
 }
 
 "Reason for the proposal beeing rejected by the core node"

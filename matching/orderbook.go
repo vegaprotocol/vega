@@ -171,16 +171,16 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 }
 
 // EnterAuction Moves the order book into an auction state
-func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
+func (b *OrderBook) EnterAuction() ([]*types.Order, []*types.Order, error) {
 	// Scan existing orders to see which ones can be kept, cancelled and parked
-	buyCancelledOrders, err := b.buy.getOrdersToCancel(true)
+	buyCancelledOrders, buyParkOrders, err := b.buy.getOrdersToCancelOrPark(true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	sellCancelledOrders, err := b.sell.getOrdersToCancel(true)
+	sellCancelledOrders, sellParkOrder, err := b.sell.getOrdersToCancelOrPark(true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Set the market state
@@ -189,7 +189,9 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Return all the orders that have been removed from the book and need to be cancelled
 	ordersToCancel := buyCancelledOrders
 	ordersToCancel = append(ordersToCancel, sellCancelledOrders...)
-	return ordersToCancel, nil
+	ordersToPark := buyParkOrders
+	ordersToPark = append(ordersToPark, sellParkOrder...)
+	return ordersToCancel, ordersToPark, nil
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
@@ -216,12 +218,12 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	// Remove any orders that will not be valid in continuous trading
-	buyOrdersToCancel, err := b.buy.getOrdersToCancel(false)
+	buyOrdersToCancel, _, err := b.buy.getOrdersToCancelOrPark(false)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	sellOrdersToCancel, err := b.sell.getOrdersToCancel(false)
+	sellOrdersToCancel, _, err := b.sell.getOrdersToCancelOrPark(false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -244,8 +246,8 @@ func (b OrderBook) InAuction() bool {
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
-	bestBid := b.getBestBidPrice()
-	bestAsk := b.getBestAskPrice()
+	bestBid := b.GetBestBidPrice()
+	bestAsk := b.GetBestAskPrice()
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -295,8 +297,8 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePrice() uint64 {
-	bestBid := b.getBestBidPrice()
-	bestAsk := b.getBestAskPrice()
+	bestBid := b.GetBestBidPrice()
+	bestAsk := b.GetBestAskPrice()
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -554,6 +556,19 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		Order: order,
 	}
 	return result, nil
+}
+
+// RemoveOrder takes the order off the order book
+func (b *OrderBook) RemoveOrder(order *types.Order) error {
+	order, err := b.DeleteOrder(order)
+	if err != nil {
+		return err
+	}
+
+	// Important to mark the order as parked (and no longer active)
+	order.Status = types.Order_STATUS_PARKED
+
+	return nil
 }
 
 // AmendOrder amend an order which is an active order on the book
@@ -904,12 +919,12 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 	}
 }
 
-func (b *OrderBook) getBestBidPrice() uint64 {
+func (b *OrderBook) GetBestBidPrice() uint64 {
 	price, _ := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
 	return price
 }
 
-func (b *OrderBook) getBestAskPrice() uint64 {
+func (b *OrderBook) GetBestAskPrice() uint64 {
 	price, _ := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
 	return price
 }
