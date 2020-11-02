@@ -106,18 +106,14 @@ func (w *Watcher) Get() Config {
 // OnConfigUpdate register a function to be called when the configuration is getting updated
 func (w *Watcher) OnConfigUpdate(fns ...func(Config)) {
 	w.mu.Lock()
-	for _, f := range fns {
-		w.cfgUpdateListeners = append(w.cfgUpdateListeners, f)
-	}
+	w.cfgUpdateListeners = append(w.cfgUpdateListeners, fns...)
 	w.mu.Unlock()
 }
 
 // Use registers a function that modify the config when the configuration is updated.
 func (w *Watcher) Use(fns ...func(*Config) error) {
 	w.mu.Lock()
-	for _, f := range fns {
-		w.cfgHandlers = append(w.cfgHandlers, f)
-	}
+	w.cfgHandlers = append(w.cfgHandlers, fns...)
 	w.mu.Unlock()
 }
 

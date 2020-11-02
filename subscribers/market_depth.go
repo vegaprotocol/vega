@@ -48,8 +48,6 @@ type MarketDepthBuilder struct {
 	mu sync.RWMutex
 	// Map of all the markets to their market depth
 	marketDepths map[string]*MarketDepth
-	// Keep count of the number of clients requesting updates
-	subscribersCount int32
 	// Incrementing counter for subscriberID
 	subscriberID uint64
 	// Map of subscriberIds to their channels
@@ -113,7 +111,7 @@ func (md *MarketDepth) removeOrder(order *types.Order, reduceAmount uint64) erro
 	pl := md.getPriceLevel(order.Side, order.Price)
 
 	if pl == nil {
-		return errors.New("Unknown pricelevel")
+		return errors.New("unknown pricelevel")
 	}
 	// Update the values
 	pl.totalOrders--

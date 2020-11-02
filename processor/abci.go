@@ -321,7 +321,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, order)
 	if conf != nil {
-		if app.log.GetLevel() == logging.DebugLevel {
+		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
 				logging.Order(*order),
 				logging.OrderWithTag(*conf.Order, "aggressive-order"),
@@ -337,8 +337,8 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	// increment total orders, even for failures so current ID strategy is valid.
 	app.stats.IncTotalOrders()
 
-	if err != nil {
-		app.log.Error("error message on creating order",
+	if err != nil && app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("error message on creating order",
 			logging.Order(*order),
 			logging.Error(err))
 	}

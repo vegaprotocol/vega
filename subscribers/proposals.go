@@ -1,8 +1,6 @@
 package subscribers
 
 import (
-	"sync"
-
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -22,48 +20,33 @@ const (
 
 type ProposalFilteredSub struct {
 	*Base
-	mu      sync.Mutex
-	filters []ProposalFilter
-	matched []types.Proposal
 }
 
-// ByProposalID - filter proposal events by proposal ID
+// ProposalByID - filter proposal events by proposal ID
 func ProposalByID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
-		if p.ID == id {
-			return true
-		}
-		return false
+		return p.ID == id
 	}
 }
 
 // ProposalByPartyID - filter proposals submitted by given party
 func ProposalByPartyID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
-		if p.PartyID == id {
-			return true
-		}
-		return false
+		return p.PartyID == id
 	}
 }
 
 // ProposalByState - filter proposals by state
 func ProposalByState(s types.Proposal_State) ProposalFilter {
 	return func(p types.Proposal) bool {
-		if p.State == s {
-			return true
-		}
-		return false
+		return p.State == s
 	}
 }
 
 // ProposalByReference - filter out proposals by reference
 func ProposalByReference(ref string) ProposalFilter {
 	return func(p types.Proposal) bool {
-		if p.Reference == ref {
-			return true
-		}
-		return false
+		return p.Reference == ref
 	}
 }
 

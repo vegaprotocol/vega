@@ -85,8 +85,7 @@ func (app *App) cacheTx(in []byte, tx Tx) {
 // txFromCache retrieves (and remove if found) a Tx from the cache,
 // it returns the Tx or nil if not found.
 func (app *App) txFromCache(in []byte) Tx {
-	key := string(in)
-	tx, ok := app.checkedTxs[key]
+	tx, ok := app.checkedTxs[string(in)]
 	if !ok {
 		return nil
 	}
@@ -95,8 +94,7 @@ func (app *App) txFromCache(in []byte) Tx {
 }
 
 func (app *App) removeTxFromCache(in []byte) {
-	key := string(in)
-	delete(app.checkedTxs, key)
+	delete(app.checkedTxs, string(in))
 }
 
 // getTx returns an internal Tx given a []byte.
