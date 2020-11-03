@@ -139,9 +139,7 @@ func (im *InstrumentMetadata) IntoProto() (*types.InstrumentMetadata, error) {
 	pim := &types.InstrumentMetadata{
 		Tags: []string{},
 	}
-	for _, v := range im.Tags {
-		pim.Tags = append(pim.Tags, v)
-	}
+	pim.Tags = append(pim.Tags, im.Tags...)
 	return pim, nil
 }
 
@@ -441,21 +439,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 	}, nil
 }
 
-func (i *InstrumentConfiguration) assignProductFromProto(instrument *types.InstrumentConfiguration) error {
-	if instrument == nil {
-		instrument = defaultInstrumentConfiguration()
-	}
-	if future := instrument.GetFuture(); future != nil {
-		i.FutureProduct = &FutureProduct{
-			Asset:    &Asset{ID: future.Asset},
-			Maturity: future.Maturity,
-		}
-	} else {
-		return ErrNilProduct
-	}
-	return nil
-}
-
 // RiskConfigurationFromProto ...
 func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskModel, error) {
 	if newMarket.RiskParameters == nil {
@@ -482,65 +465,6 @@ func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskMo
 	default:
 		return nil, ErrInvalidRiskConfiguration
 	}
-}
-
-// NewMarketFromProto ...
-func NewMarketFromProto(newMarket *types.NewMarketConfiguration) (*NewMarket, error) {
-	if newMarket == nil {
-		newMarket = defaultNewMarket()
-	}
-	risk, err := RiskConfigurationFromProto(newMarket)
-	if err != nil {
-		return nil, err
-	}
-	mode, err := NewMarketTradingModeFromProto(newMarket.TradingMode)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &NewMarket{
-		Instrument: &InstrumentConfiguration{
-			Name:      newMarket.Instrument.Name,
-			Code:      newMarket.Instrument.Code,
-			QuoteName: newMarket.Instrument.QuoteName,
-		},
-		DecimalPlaces:  int(newMarket.DecimalPlaces),
-		RiskParameters: risk,
-		TradingMode:    mode,
-		Metadata:       newMarket.Metadata,
-	}
-
-	result.Instrument.assignProductFromProto(newMarket.Instrument)
-	return result, nil
-}
-
-// ProposalTermsFromProto ...
-func ProposalTermsFromProto(terms *types.ProposalTerms) (*ProposalTerms, error) {
-	result := &ProposalTerms{
-		ClosingDatetime:   secondsTSToDatetime(terms.ClosingTimestamp),
-		EnactmentDatetime: secondsTSToDatetime(terms.EnactmentTimestamp),
-	}
-	if terms.GetUpdateMarket() != nil {
-		result.Change = nil
-	} else if newMarket := terms.GetNewMarket(); newMarket != nil {
-		marketConfig, err := NewMarketFromProto(newMarket.Changes)
-		if err != nil {
-			return nil, err
-		}
-		result.Change = marketConfig
-	} else if netParam := terms.GetUpdateNetworkParameter(); netParam != nil {
-		result.Change = UpdateNetworkParameter{
-			NetworkParameter: netParam.Changes,
-		}
-	} else if newAsset := terms.GetNewAsset(); newAsset != nil {
-		newAsset, err := NewAssetFromProto(newAsset)
-		if err != nil {
-			return nil, err
-		}
-		result.Change = newAsset
-
-	}
-	return result, nil
 }
 
 // IntoProto ...
@@ -723,7 +647,7 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 	}
 
 	if n.Erc20 != nil {
-		if isSet == true {
+		if isSet {
 			return nil, ErrMultipleAssetSourcesSpecified
 		}
 		isSet = true
@@ -975,16 +899,6 @@ func AssetFromProto(passet *types.Asset) (*Asset, error) {
 		Decimals:    int(passet.Decimals),
 		TotalSupply: passet.TotalSupply,
 		Source:      source,
-	}, nil
-}
-
-func NewAssetFromProto(newAsset *types.NewAsset) (*NewAsset, error) {
-	source, err := AssetSourceFromProto(newAsset.Changes)
-	if err != nil {
-		return nil, err
-	}
-	return &NewAsset{
-		Source: source,
 	}, nil
 }
 
