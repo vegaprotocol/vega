@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -51,7 +50,6 @@ import (
 	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-	"golang.org/x/crypto/sha3"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -269,36 +267,28 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 		return nil
 	}
 
-	h := func(key []byte) []byte {
-		hasher := sha3.New256()
-		hasher.Write([]byte(key))
-		return hasher.Sum(nil)
-	}
-
-	assetSrcs := []proto.AssetSource{}
-	for _, v := range state.Builtins {
+	assetSrcs := map[string]proto.AssetSource{}
+	for k, v := range state.Builtins {
 		v := v
 		assetSrc := proto.AssetSource{
 			Source: &proto.AssetSource_BuiltinAsset{
 				BuiltinAsset: &v,
 			},
 		}
-		assetSrcs = append(assetSrcs, assetSrc)
+		assetSrcs[k] = assetSrc
 	}
-	for _, v := range state.ERC20 {
+	for k, v := range state.ERC20 {
 		v := v
 		assetSrc := proto.AssetSource{
 			Source: &proto.AssetSource_Erc20{
 				Erc20: &v,
 			},
 		}
-		assetSrcs = append(assetSrcs, assetSrc)
+		assetSrcs[k] = assetSrc
 	}
 
-	for _, v := range assetSrcs {
-		v := v
-		id := hex.EncodeToString(h([]byte(v.String())))
-		err := l.loadAsset(id, &v)
+	for k, v := range assetSrcs {
+		err := l.loadAsset(k, &v)
 		if err != nil {
 			return err
 		}
