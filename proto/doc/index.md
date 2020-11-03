@@ -206,6 +206,7 @@
     - [Market](#vega.Market)
     - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
     - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
+    - [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -3125,7 +3126,7 @@ Configuration for a new market on Vega.
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags. |
 | openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
-| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | price monitoring configuration |
+| PriceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) |  | price monitoring configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous trading. |
@@ -3537,14 +3538,12 @@ Market definition.
 <a name="vega.PriceMonitoringParameters"></a>
 
 ### PriceMonitoringParameters
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringParameters contain a collection of triggers to be used for a given market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
-| probability | [double](#double) |  | Price monitoirng probability level p. |
-| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
+| triggers | [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger) | repeated |  |
 
 
 
@@ -3559,8 +3558,25 @@ PriceMonitoringParameters holds together price projection horizon τ, probabilit
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| parameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) |  | Specifies PriceMonitoringParameters to be used for price monitoring purposes |
 | updateFrequency | [int64](#int64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringTrigger"></a>
+
+### PriceMonitoringTrigger
+PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
+| probability | [double](#double) |  | Price monitoirng probability level p. |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
 
 
 
