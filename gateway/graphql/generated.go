@@ -480,14 +480,18 @@ type ComplexityRoot struct {
 	}
 
 	PriceMonitoringParameters struct {
-		AuctionExtensionSecs func(childComplexity int) int
-		HorizonSecs          func(childComplexity int) int
-		Probability          func(childComplexity int) int
+		Triggers func(childComplexity int) int
 	}
 
 	PriceMonitoringSettings struct {
 		Parameters          func(childComplexity int) int
 		UpdateFrequencySecs func(childComplexity int) int
+	}
+
+	PriceMonitoringTrigger struct {
+		AuctionExtensionSecs func(childComplexity int) int
+		HorizonSecs          func(childComplexity int) int
+		Probability          func(childComplexity int) int
 	}
 
 	Proposal struct {
@@ -2774,26 +2778,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PriceLevel.Volume(childComplexity), true
 
-	case "PriceMonitoringParameters.auctionExtensionSecs":
-		if e.complexity.PriceMonitoringParameters.AuctionExtensionSecs == nil {
+	case "PriceMonitoringParameters.triggers":
+		if e.complexity.PriceMonitoringParameters.Triggers == nil {
 			break
 		}
 
-		return e.complexity.PriceMonitoringParameters.AuctionExtensionSecs(childComplexity), true
-
-	case "PriceMonitoringParameters.horizonSecs":
-		if e.complexity.PriceMonitoringParameters.HorizonSecs == nil {
-			break
-		}
-
-		return e.complexity.PriceMonitoringParameters.HorizonSecs(childComplexity), true
-
-	case "PriceMonitoringParameters.probability":
-		if e.complexity.PriceMonitoringParameters.Probability == nil {
-			break
-		}
-
-		return e.complexity.PriceMonitoringParameters.Probability(childComplexity), true
+		return e.complexity.PriceMonitoringParameters.Triggers(childComplexity), true
 
 	case "PriceMonitoringSettings.parameters":
 		if e.complexity.PriceMonitoringSettings.Parameters == nil {
@@ -2808,6 +2798,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PriceMonitoringSettings.UpdateFrequencySecs(childComplexity), true
+
+	case "PriceMonitoringTrigger.auctionExtensionSecs":
+		if e.complexity.PriceMonitoringTrigger.AuctionExtensionSecs == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringTrigger.AuctionExtensionSecs(childComplexity), true
+
+	case "PriceMonitoringTrigger.horizonSecs":
+		if e.complexity.PriceMonitoringTrigger.HorizonSecs == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringTrigger.HorizonSecs(childComplexity), true
+
+	case "PriceMonitoringTrigger.probability":
+		if e.complexity.PriceMonitoringTrigger.Probability == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringTrigger.Probability(childComplexity), true
 
 	case "Proposal.datetime":
 		if e.complexity.Proposal.Datetime == nil {
@@ -4876,10 +4887,19 @@ type AuctionDuration {
   volume: Int!
 }
 
+
+"""
+PriceMonitoringParameters holds a list of triggers
+"""
+type PriceMonitoringParameters {
+  "The list of triggers for this price monitoring"
+  triggers: [PriceMonitoringTrigger!]
+}
+
 """
 PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
 """
-type PriceMonitoringParameters {
+type PriceMonitoringTrigger {
   "Price monitoring projection horizon τ in seconds (> 0)."
   horizonSecs: Int!
   "Price monitoring probability level p. (>0 and < 1)"
@@ -4892,10 +4912,11 @@ type PriceMonitoringParameters {
   auctionExtensionSecs: Int!
 }
 
+
 "Configuration of a market price monitorings auctions triggers"
 type PriceMonitoringSettings {
   "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
-  parameters: [PriceMonitoringParameters!]
+  parameters: PriceMonitoringParameters
   "How often (in seconds) the price monitoring bounds should be updated"
   updateFrequencySecs: Int!
 }
@@ -5820,9 +5841,17 @@ input DiscreteTradingInput {
 }
 
 """
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringParameters holds a list of triggers
 """
 input PriceMonitoringParametersInput {
+  "The list of triggers for this price monitoring"
+  triggers: [PriceMonitoringTriggerInput!]
+}
+
+"""
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+"""
+input PriceMonitoringTriggerInput {
   "Price monitoring projection horizon τ in seconds (> 0)."
   horizonSecs: Int!
   "Price monitoring probability level p. (>0 and < 1)"
@@ -5838,7 +5867,7 @@ input PriceMonitoringParametersInput {
 "Configuration of a market price monitorings auctions triggers"
 input PriceMonitoringSettingsInput {
   "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
-  parameters: [PriceMonitoringParametersInput!]
+  parameters: PriceMonitoringParametersInput
   "How often (in seconds) the price monitoring bounds should be updated"
   updateFrequencySecs: Int
 }
@@ -5858,7 +5887,7 @@ input NewMarketInput {
   "The proposed duration for the opening auction for this market in seconds"
   openingAuctionDurationSecs: Int
   "Price monitoring configuration"
-  priceMonitoringSettings: PriceMonitoringSettingsInput
+  priceMonitoringParameters: PriceMonitoringParametersInput
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput
@@ -15778,7 +15807,7 @@ func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PriceMonitoringParameters_horizonSecs(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
+func (ec *executionContext) _PriceMonitoringParameters_triggers(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -15795,89 +15824,18 @@ func (ec *executionContext) _PriceMonitoringParameters_horizonSecs(ctx context.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.HorizonSecs, nil
+		return obj.Triggers, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.([]*PriceMonitoringTrigger)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PriceMonitoringParameters_probability(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PriceMonitoringParameters",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Probability, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PriceMonitoringParameters_auctionExtensionSecs(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PriceMonitoringParameters",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AuctionExtensionSecs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceMonitoringSettings_parameters(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringSettings) (ret graphql.Marshaler) {
@@ -15906,9 +15864,9 @@ func (ec *executionContext) _PriceMonitoringSettings_parameters(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*PriceMonitoringParameters)
+	res := resTmp.(*PriceMonitoringParameters)
 	fc.Result = res
-	return ec.marshalOPriceMonitoringParameters2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceMonitoringSettings_updateFrequencySecs(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringSettings) (ret graphql.Marshaler) {
@@ -15929,6 +15887,108 @@ func (ec *executionContext) _PriceMonitoringSettings_updateFrequencySecs(ctx con
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.UpdateFrequencySecs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringTrigger_horizonSecs(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringTrigger) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringTrigger",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HorizonSecs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringTrigger_probability(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringTrigger) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringTrigger",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Probability, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringTrigger_auctionExtensionSecs(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringTrigger) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringTrigger",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuctionExtensionSecs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22418,9 +22478,9 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "priceMonitoringSettings":
+		case "priceMonitoringParameters":
 			var err error
-			it.PriceMonitoringSettings, err = ec.unmarshalOPriceMonitoringSettingsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx, v)
+			it.PriceMonitoringParameters, err = ec.unmarshalOPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -22472,21 +22532,9 @@ func (ec *executionContext) unmarshalInputPriceMonitoringParametersInput(ctx con
 
 	for k, v := range asMap {
 		switch k {
-		case "horizonSecs":
+		case "triggers":
 			var err error
-			it.HorizonSecs, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "probability":
-			var err error
-			it.Probability, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "auctionExtensionSecs":
-			var err error
-			it.AuctionExtensionSecs, err = ec.unmarshalNInt2int(ctx, v)
+			it.Triggers, err = ec.unmarshalOPriceMonitoringTriggerInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -22504,13 +22552,43 @@ func (ec *executionContext) unmarshalInputPriceMonitoringSettingsInput(ctx conte
 		switch k {
 		case "parameters":
 			var err error
-			it.Parameters, err = ec.unmarshalOPriceMonitoringParametersInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInputᚄ(ctx, v)
+			it.Parameters, err = ec.unmarshalOPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "updateFrequencySecs":
 			var err error
 			it.UpdateFrequencySecs, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPriceMonitoringTriggerInput(ctx context.Context, obj interface{}) (PriceMonitoringTriggerInput, error) {
+	var it PriceMonitoringTriggerInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "horizonSecs":
+			var err error
+			it.HorizonSecs, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "probability":
+			var err error
+			it.Probability, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "auctionExtensionSecs":
+			var err error
+			it.AuctionExtensionSecs, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -26362,21 +26440,8 @@ func (ec *executionContext) _PriceMonitoringParameters(ctx context.Context, sel 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PriceMonitoringParameters")
-		case "horizonSecs":
-			out.Values[i] = ec._PriceMonitoringParameters_horizonSecs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "probability":
-			out.Values[i] = ec._PriceMonitoringParameters_probability(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "auctionExtensionSecs":
-			out.Values[i] = ec._PriceMonitoringParameters_auctionExtensionSecs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "triggers":
+			out.Values[i] = ec._PriceMonitoringParameters_triggers(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26403,6 +26468,43 @@ func (ec *executionContext) _PriceMonitoringSettings(ctx context.Context, sel as
 			out.Values[i] = ec._PriceMonitoringSettings_parameters(ctx, field, obj)
 		case "updateFrequencySecs":
 			out.Values[i] = ec._PriceMonitoringSettings_updateFrequencySecs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var priceMonitoringTriggerImplementors = []string{"PriceMonitoringTrigger"}
+
+func (ec *executionContext) _PriceMonitoringTrigger(ctx context.Context, sel ast.SelectionSet, obj *PriceMonitoringTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, priceMonitoringTriggerImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PriceMonitoringTrigger")
+		case "horizonSecs":
+			out.Values[i] = ec._PriceMonitoringTrigger_horizonSecs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "probability":
+			out.Values[i] = ec._PriceMonitoringTrigger_probability(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "auctionExtensionSecs":
+			out.Values[i] = ec._PriceMonitoringTrigger_auctionExtensionSecs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -29300,32 +29402,6 @@ func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._PriceLevel(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPriceMonitoringParameters2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringParameters) graphql.Marshaler {
-	return ec._PriceMonitoringParameters(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx context.Context, sel ast.SelectionSet, v *PriceMonitoringParameters) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PriceMonitoringParameters(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (PriceMonitoringParametersInput, error) {
-	return ec.unmarshalInputPriceMonitoringParametersInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (*PriceMonitoringParametersInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalNPriceMonitoringSettings2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringSettings) graphql.Marshaler {
 	return ec._PriceMonitoringSettings(ctx, sel, &v)
 }
@@ -29338,6 +29414,32 @@ func (ec *executionContext) marshalNPriceMonitoringSettings2ᚖcodeᚗvegaprotoc
 		return graphql.Null
 	}
 	return ec._PriceMonitoringSettings(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPriceMonitoringTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTrigger(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringTrigger) graphql.Marshaler {
+	return ec._PriceMonitoringTrigger(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTrigger(ctx context.Context, sel ast.SelectionSet, v *PriceMonitoringTrigger) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PriceMonitoringTrigger(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPriceMonitoringTriggerInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx context.Context, v interface{}) (PriceMonitoringTriggerInput, error) {
+	return ec.unmarshalInputPriceMonitoringTriggerInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNPriceMonitoringTriggerInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx context.Context, v interface{}) (*PriceMonitoringTriggerInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNPriceMonitoringTriggerInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
@@ -30908,7 +31010,30 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOPriceMonitoringParameters2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceMonitoringParameters) graphql.Marshaler {
+func (ec *executionContext) marshalOPriceMonitoringParameters2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringParameters) graphql.Marshaler {
+	return ec._PriceMonitoringParameters(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx context.Context, sel ast.SelectionSet, v *PriceMonitoringParameters) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PriceMonitoringParameters(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (PriceMonitoringParametersInput, error) {
+	return ec.unmarshalInputPriceMonitoringParametersInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (*PriceMonitoringParametersInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceMonitoringTrigger) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -30935,7 +31060,7 @@ func (ec *executionContext) marshalOPriceMonitoringParameters2ᚕᚖcodeᚗvegap
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPriceMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParameters(ctx, sel, v[i])
+			ret[i] = ec.marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTrigger(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -30948,7 +31073,7 @@ func (ec *executionContext) marshalOPriceMonitoringParameters2ᚕᚖcodeᚗvegap
 	return ret
 }
 
-func (ec *executionContext) unmarshalOPriceMonitoringParametersInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInputᚄ(ctx context.Context, v interface{}) ([]*PriceMonitoringParametersInput, error) {
+func (ec *executionContext) unmarshalOPriceMonitoringTriggerInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInputᚄ(ctx context.Context, v interface{}) ([]*PriceMonitoringTriggerInput, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -30958,26 +31083,14 @@ func (ec *executionContext) unmarshalOPriceMonitoringParametersInput2ᚕᚖcode�
 		}
 	}
 	var err error
-	res := make([]*PriceMonitoringParametersInput, len(vSlice))
+	res := make([]*PriceMonitoringTriggerInput, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNPriceMonitoringTriggerInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) unmarshalOPriceMonitoringSettingsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx context.Context, v interface{}) (PriceMonitoringSettingsInput, error) {
-	return ec.unmarshalInputPriceMonitoringSettingsInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOPriceMonitoringSettingsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx context.Context, v interface{}) (*PriceMonitoringSettingsInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOPriceMonitoringSettingsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettingsInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalOProposal2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v proto.GovernanceData) graphql.Marshaler {
