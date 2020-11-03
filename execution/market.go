@@ -309,6 +309,10 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:       auctionEnd,
 		MarketState:      m.as.Mode(),
 		Trigger:          m.as.Trigger(),
+		// FIXME(WITOLD): uncomment set real values here
+		// TargetStake: getTargetStake(),
+		// SuppliedStake: getSuppliedStake(),
+
 	}
 }
 
@@ -518,6 +522,52 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	m.broker.Send(endEvt)
 }
 
+func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) types.OrderError {
+	if order.Type != types.Order_TYPE_LIMIT {
+		// All pegged orders must be LIMIT orders
+		return types.ErrPeggedOrderMustBeLimitOrder
+	}
+
+	if order.TimeInForce != types.Order_TIF_GTT && order.TimeInForce != types.Order_TIF_GTC {
+		// Pegged orders can only be GTC or GTT
+		return types.ErrPeggedOrderMustBeGTTOrGTC
+	}
+
+	if order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+		// We must specify a valid reference
+		return types.ErrPeggedOrderWithoutReferencePrice
+	}
+
+	if order.Side == types.Side_SIDE_BUY {
+		switch order.PeggedOrder.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			return types.ErrPeggedOrderBuyCannotReferenceBestAskPrice
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			if order.PeggedOrder.Offset > 0 {
+				return types.ErrPeggedOrderOffsetMustBeLessOrEqualToZero
+			}
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			if order.PeggedOrder.Offset >= 0 {
+				return types.ErrPeggedOrderOffsetMustBeLessThanZero
+			}
+		}
+	} else {
+		switch order.PeggedOrder.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			if order.PeggedOrder.Offset < 0 {
+				return types.ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
+			}
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			return types.ErrPeggedOrderSellCannotReferenceBestBidPrice
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			if order.PeggedOrder.Offset <= 0 {
+				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
+			}
+		}
+	}
+	return types.OrderError_ORDER_ERROR_NONE
+}
+
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
 	isAuction := m.as.InAuction()
@@ -586,6 +636,24 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 				logging.String("market", m.mkt.Id))
 		}
 		return types.ErrInvalidMarketID
+	}
+
+	// Validate pegged orders
+	if order.PeggedOrder != nil {
+		reason := m.validatePeggedOrder(ctx, order)
+		if reason != types.OrderError_ORDER_ERROR_NONE {
+			order.Status = types.Order_STATUS_REJECTED
+			order.Reason = reason
+
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failed to validate pegged order details",
+					logging.Order(*order),
+					logging.String("market", m.mkt.Id))
+			}
+			return reason
+		}
 	}
 	return nil
 }
@@ -1913,4 +1981,8 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 			asset: {Long: 0.15, Short: 0.25},
 		},
 	}
+}
+
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
+	return nil
 }

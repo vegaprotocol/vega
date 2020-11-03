@@ -257,7 +257,9 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 
 	// Find the maximum tradable amount
 	var maxTradableAmount uint64
-	for _, value := range cumulativeVolumes {
+	for k, value := range cumulativeVolumes {
+		value.maxTradableAmount = min(value.cumulativeAskVolume, value.cumulativeBidVolume)
+		cumulativeVolumes[k] = value
 		maxTradableAmount = max(maxTradableAmount, value.maxTradableAmount)
 	}
 
@@ -328,45 +330,72 @@ func (b *OrderBook) GetIndicativePrice() uint64 {
 func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[uint64]CumulativeVolumeLevel {
 	cumulativeVolumes := map[uint64]CumulativeVolumeLevel{}
 
+	type maybePriceLevel struct {
+		price uint64
+		pl    *PriceLevel
+	}
+
 	// Run through the bid prices and build cumulative volume
 	var cumulativeVolume uint64
-	for price := maxPrice; price >= minPrice; price-- {
-		volume, err := b.buy.GetVolume(price)
 
-		if err == nil {
-			cumulativeVolume += volume
-			cumulativeVolumes[price] = CumulativeVolumeLevel{
-				price:               price,
-				bidVolume:           volume,
-				cumulativeBidVolume: cumulativeVolume,
-			}
+	// we'll keep track of all the pl we encounter
+	mplm := map[uint64]maybePriceLevel{}
+
+	for i := len(b.buy.levels) - 1; i >= 0; i-- {
+		if b.buy.levels[i].price < minPrice {
+			break
+		}
+		cumulativeVolume += b.buy.levels[i].volume
+		cumulativeVolumes[b.buy.levels[i].price] = CumulativeVolumeLevel{
+			price:               b.buy.levels[i].price,
+			bidVolume:           b.buy.levels[i].volume,
+			cumulativeBidVolume: cumulativeVolume,
+		}
+
+		mplm[b.buy.levels[i].price] = maybePriceLevel{price: b.buy.levels[i].price}
+	}
+
+	// now we add all the sells
+	// to our list of pricelevel
+	// making sure we have no duplicates
+	for i := len(b.sell.levels) - 1; i >= 0; i-- {
+		var price = b.sell.levels[i].price
+		if price > maxPrice {
+			break
+		}
+
+		if mpl, ok := mplm[price]; ok {
+			mpl.pl = b.sell.levels[i]
+			mplm[price] = mpl
 		} else {
-			cumulativeVolumes[price] = CumulativeVolumeLevel{
-				price:               price,
-				bidVolume:           0,
-				cumulativeBidVolume: cumulativeVolume,
-			}
+			mplm[price] = maybePriceLevel{price: price, pl: b.sell.levels[i]}
 		}
 	}
 
-	// Now do the same for the ask prices but reuse the price levels already made
+	// now we insert them all in the slice.
+	// so we can sort them
+	mpls := make([]maybePriceLevel, 0, len(mplm))
+	for _, v := range mplm {
+		mpls = append(mpls, v)
+	}
+
+	// sort the slice so we can go through each levels nicely
+	sort.Slice(mpls, func(i, j int) bool { return mpls[i].price > mpls[j].price })
+
+	// now we iterate other all the OK price levels
 	cumulativeVolume = 0
-	for price := minPrice; price <= maxPrice; price++ {
-		volume, err := b.sell.GetVolume(price)
-
+	for i := len(mpls) - 1; i >= 0; i-- {
 		// Lookup the existing structure from the map
-		cvl := cumulativeVolumes[price]
+		cvl := cumulativeVolumes[mpls[i].price]
 
-		if err == nil {
-			cumulativeVolume += volume
-			cvl.askVolume = volume
-			cvl.cumulativeAskVolume = cumulativeVolume
-		} else {
-			cvl.askVolume = 0
-			cvl.cumulativeAskVolume = cumulativeVolume
+		if mpls[i].pl != nil {
+			cumulativeVolume += mpls[i].pl.volume
+			cvl.askVolume = mpls[i].pl.volume
 		}
+
+		cvl.cumulativeAskVolume = cumulativeVolume
 		cvl.maxTradableAmount = min(cvl.cumulativeAskVolume, cvl.cumulativeBidVolume)
-		cumulativeVolumes[price] = cvl
+		cumulativeVolumes[mpls[i].price] = cvl
 	}
 
 	return cumulativeVolumes
@@ -510,6 +539,9 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		return nil, err
 	}
 
+	// we remove the order from the expiring list as well.
+	b.removePendingGttOrder(*order)
+
 	order, err := b.DeleteOrder(order)
 	if err != nil {
 		return nil, err
@@ -533,6 +565,15 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	// If the creation date for the 2 orders is different, something went wrong
 	if originalOrder.CreatedAt != amendedOrder.CreatedAt {
 		return types.ErrOrderOutOfSequence
+	}
+
+	var (
+		expiryChanged = originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
+			originalOrder.TimeInForce != amendedOrder.TimeInForce
+		ordcpy types.Order
+	)
+	if expiryChanged {
+		ordcpy = *originalOrder
 	}
 
 	if err := b.validateOrder(amendedOrder); err != nil {
@@ -568,9 +609,8 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	// If we have changed the ExpiresAt or TIF then update Expiry table
-	if originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
-		originalOrder.TimeInForce != amendedOrder.TimeInForce {
-		b.removePendingGttOrder(*originalOrder)
+	if expiryChanged {
+		b.removePendingGttOrder(ordcpy)
 		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*amendedOrder)
 		}

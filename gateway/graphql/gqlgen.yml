@@ -36,6 +36,12 @@ models:
     model: code.vegaprotocol.io/vega/proto.RiskFactor
   NetworkParameter:
     model: code.vegaprotocol.io/vega/proto.NetworkParameter
+  LiquidityOrder:
+    model: code.vegaprotocol.io/vega/proto.LiquidityOrder
+  LiquidityProvision:
+    model: code.vegaprotocol.io/vega/proto.LiquidityProvision
+  LiquidityOrderReference:
+    model: code.vegaprotocol.io/vega/proto.LiquidityOrderReference
   Market:
     fields:
       orders:
@@ -51,6 +57,8 @@ models:
       accounts:
         resolver: true
       orderByReference:
+        resolver: true
+      liquidityProvisions:
         resolver: true
   Party:
     model: code.vegaprotocol.io/vega/proto.Party

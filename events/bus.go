@@ -65,6 +65,7 @@ const (
 	PositionResolution
 	MarketEvent // this event is not used for any specific event, but by subscribers that aggregate all market events (e.g. for logging)
 	OrderEvent
+	LiquidityProvisionEvent
 	AccountEvent
 	PartyEvent
 	TradeEvent
@@ -120,61 +121,64 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_AUCTION:             AuctionEvent,
 		types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:         RiskFactorEvent,
 		types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:   NetworkParameterEvent,
+		types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION: LiquidityProvisionEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
-		TimeUpdate:             types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-		TransferResponses:      types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
-		PositionResolution:     types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
-		MarketEvent:            types.BusEventType_BUS_EVENT_TYPE_MARKET,
-		OrderEvent:             types.BusEventType_BUS_EVENT_TYPE_ORDER,
-		AccountEvent:           types.BusEventType_BUS_EVENT_TYPE_ACCOUNT,
-		PartyEvent:             types.BusEventType_BUS_EVENT_TYPE_PARTY,
-		TradeEvent:             types.BusEventType_BUS_EVENT_TYPE_TRADE,
-		MarginLevelsEvent:      types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS,
-		ProposalEvent:          types.BusEventType_BUS_EVENT_TYPE_PROPOSAL,
-		VoteEvent:              types.BusEventType_BUS_EVENT_TYPE_VOTE,
-		MarketDataEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA,
-		NodeSignatureEvent:     types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE,
-		LossSocializationEvent: types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION,
-		SettlePositionEvent:    types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION,
-		SettleDistressedEvent:  types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED,
-		MarketCreatedEvent:     types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED,
-		AssetEvent:             types.BusEventType_BUS_EVENT_TYPE_ASSET,
-		MarketTickEvent:        types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
-		WithdrawalEvent:        types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL,
-		DepositEvent:           types.BusEventType_BUS_EVENT_TYPE_DEPOSIT,
-		AuctionEvent:           types.BusEventType_BUS_EVENT_TYPE_AUCTION,
-		RiskFactorEvent:        types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR,
-		NetworkParameterEvent:  types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER,
+		TimeUpdate:              types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+		TransferResponses:       types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
+		PositionResolution:      types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
+		MarketEvent:             types.BusEventType_BUS_EVENT_TYPE_MARKET,
+		OrderEvent:              types.BusEventType_BUS_EVENT_TYPE_ORDER,
+		AccountEvent:            types.BusEventType_BUS_EVENT_TYPE_ACCOUNT,
+		PartyEvent:              types.BusEventType_BUS_EVENT_TYPE_PARTY,
+		TradeEvent:              types.BusEventType_BUS_EVENT_TYPE_TRADE,
+		MarginLevelsEvent:       types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS,
+		ProposalEvent:           types.BusEventType_BUS_EVENT_TYPE_PROPOSAL,
+		VoteEvent:               types.BusEventType_BUS_EVENT_TYPE_VOTE,
+		MarketDataEvent:         types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA,
+		NodeSignatureEvent:      types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE,
+		LossSocializationEvent:  types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION,
+		SettlePositionEvent:     types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION,
+		SettleDistressedEvent:   types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED,
+		MarketCreatedEvent:      types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED,
+		AssetEvent:              types.BusEventType_BUS_EVENT_TYPE_ASSET,
+		MarketTickEvent:         types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
+		WithdrawalEvent:         types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL,
+		DepositEvent:            types.BusEventType_BUS_EVENT_TYPE_DEPOSIT,
+		AuctionEvent:            types.BusEventType_BUS_EVENT_TYPE_AUCTION,
+		RiskFactorEvent:         types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR,
+		NetworkParameterEvent:   types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER,
+		LiquidityProvisionEvent: types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
 	}
 
 	eventStrings = map[Type]string{
-		All:                    "ALL",
-		TimeUpdate:             "TimeUpdate",
-		TransferResponses:      "TransferResponses",
-		PositionResolution:     "PositionResolution",
-		MarketEvent:            "MarketEvent",
-		OrderEvent:             "OrderEvent",
-		AccountEvent:           "AccountEvent",
-		PartyEvent:             "PartyEvent",
-		TradeEvent:             "TradeEvent",
-		MarginLevelsEvent:      "MarginLevelsEvent",
-		ProposalEvent:          "ProposalEvent",
-		VoteEvent:              "VoteEvent",
-		MarketDataEvent:        "MarketDataEvent",
-		NodeSignatureEvent:     "NodeSignatureEvent",
-		LossSocializationEvent: "LossSocializationEvent",
-		SettlePositionEvent:    "SettlePositionEvent",
-		SettleDistressedEvent:  "SettleDistressedEvent",
-		MarketCreatedEvent:     "MarketCreatedEvent",
-		AssetEvent:             "AssetEvent",
-		MarketTickEvent:        "MarketTickEvent",
-		AuctionEvent:           "AuctionEvent",
-		WithdrawalEvent:        "WithdrawalEvent",
-		DepositEvent:           "DepositEvent",
-		RiskFactorEvent:        "RiskFactorEvent",
-		NetworkParameterEvent:  "NetworkParameterEvent",
+		All:                     "ALL",
+		TimeUpdate:              "TimeUpdate",
+		TransferResponses:       "TransferResponses",
+		PositionResolution:      "PositionResolution",
+		MarketEvent:             "MarketEvent",
+		OrderEvent:              "OrderEvent",
+		AccountEvent:            "AccountEvent",
+		PartyEvent:              "PartyEvent",
+		TradeEvent:              "TradeEvent",
+		MarginLevelsEvent:       "MarginLevelsEvent",
+		ProposalEvent:           "ProposalEvent",
+		VoteEvent:               "VoteEvent",
+		MarketDataEvent:         "MarketDataEvent",
+		NodeSignatureEvent:      "NodeSignatureEvent",
+		LossSocializationEvent:  "LossSocializationEvent",
+		SettlePositionEvent:     "SettlePositionEvent",
+		SettleDistressedEvent:   "SettleDistressedEvent",
+		MarketCreatedEvent:      "MarketCreatedEvent",
+		AssetEvent:              "AssetEvent",
+		MarketTickEvent:         "MarketTickEvent",
+		AuctionEvent:            "AuctionEvent",
+		WithdrawalEvent:         "WithdrawalEvent",
+		DepositEvent:            "DepositEvent",
+		RiskFactorEvent:         "RiskFactorEvent",
+		NetworkParameterEvent:   "NetworkParameterEvent",
+		LiquidityProvisionEvent: "LiquidityProvisionEvent",
 	}
 )
 
@@ -228,6 +232,9 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		return e, nil
 	case types.RiskFactor:
 		e := NewRiskFactorEvent(ctx, tv)
+		return e, nil
+	case types.LiquidityProvision:
+		e := NewLiquidityProvisionEvent(ctx, &tv)
 		return e, nil
 	}
 	return nil, ErrUnsuportedEvent

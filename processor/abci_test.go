@@ -6,17 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-	tmprototypes "github.com/tendermint/tendermint/proto/types"
 )
 
 type AbciTestSuite struct {
@@ -68,24 +67,24 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	require.NoError(t, err)
 
 	party := hex.EncodeToString(pub.([]byte))
-	data := map[blockchain.Command]proto.Message{
-		blockchain.SubmitOrderCommand: &types.OrderSubmission{
+	data := map[txn.Command]proto.Message{
+		txn.SubmitOrderCommand: &types.OrderSubmission{
 			PartyID: party,
 		},
-		blockchain.CancelOrderCommand: &types.OrderCancellation{
+		txn.CancelOrderCommand: &types.OrderCancellation{
 			PartyID: party,
 		},
-		// blockchain.AmendOrderCommand: &types.OrderAmendment{
+		// txn.AmendOrderCommand: &types.OrderAmendment{
 		// 	PartyID: party,
 		// },
-		blockchain.ProposeCommand: &types.Proposal{
+		txn.ProposeCommand: &types.Proposal{
 			PartyID: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
 		},
-		blockchain.VoteCommand: &types.Vote{
+		txn.VoteCommand: &types.Vote{
 			PartyID: party,
 		},
-		// blockchain.WithdrawCommand: &types.Withdraw{
+		// txn.WithdrawCommand: &types.Withdraw{
 		// 	PartyID: party,
 		// },
 	}
@@ -111,7 +110,7 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
 	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 	for cmd, msg := range data {
 		tx := txEncode(t, cmd, msg)
@@ -149,7 +148,7 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmprototypes.Header{
+		Header: tmtypes.Header{
 			Time: now,
 		},
 	})
@@ -186,7 +185,7 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmprototypes.Header{
+		Header: tmtypes.Header{
 			Time: now,
 		},
 	})
@@ -196,7 +195,7 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmprototypes.Header{
+		Header: tmtypes.Header{
 			Time: now,
 		},
 	})

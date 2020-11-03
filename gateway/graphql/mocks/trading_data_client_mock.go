@@ -497,6 +497,26 @@ func (mr *MockTradingDataClientMockRecorder) LastTrade(arg0, arg1 interface{}, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastTrade", reflect.TypeOf((*MockTradingDataClient)(nil).LastTrade), varargs...)
 }
 
+// LiquidityProvisions mocks base method
+func (m *MockTradingDataClient) LiquidityProvisions(arg0 context.Context, arg1 *api.LiquidityProvisionsRequest, arg2 ...grpc.CallOption) (*api.LiquidityProvisionsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "LiquidityProvisions", varargs...)
+	ret0, _ := ret[0].(*api.LiquidityProvisionsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LiquidityProvisions indicates an expected call of LiquidityProvisions
+func (mr *MockTradingDataClientMockRecorder) LiquidityProvisions(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityProvisions", reflect.TypeOf((*MockTradingDataClient)(nil).LiquidityProvisions), varargs...)
+}
+
 // MarginLevels mocks base method
 func (m *MockTradingDataClient) MarginLevels(arg0 context.Context, arg1 *api.MarginLevelsRequest, arg2 ...grpc.CallOption) (*api.MarginLevelsResponse, error) {
 	m.ctrl.T.Helper()

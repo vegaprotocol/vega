@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/governance"
 	mockgov "code.vegaprotocol.io/vega/governance/mocks"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -121,7 +122,7 @@ func getTestGRPCServer(
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
 	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
 	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
-		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.5"},
+		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.8"},
 		SyncInfo:      tmctypes.SyncInfo{},
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)
@@ -238,6 +239,8 @@ func getTestGRPCServer(
 		return
 	}
 
+	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
+
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
 	// stub...
 	gov, vote := govStub{}, voteStub{}
@@ -267,6 +270,7 @@ func getTestGRPCServer(
 		marketService,
 		partyService,
 		orderService,
+		liquidityService,
 		tradeService,
 		candleService,
 		accountService,

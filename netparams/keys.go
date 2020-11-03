@@ -2,15 +2,20 @@ package netparams
 
 const (
 	// market related parameters
-	MarketMarginScalingFactorSearchLevel       = "market.margin.scalingFactor.searchLevel"
-	MarketMarginScalingFactorInitialMargin     = "market.margin.scalingFactor.initialMargin"
-	MarketMarginScalingFactorCollateralRelease = "market.margin.scalingFactor.collateralRelease"
-	MarketFeeFactorsMakerFee                   = "market.fee.factors.makerFee"
-	MarketFeeFactorsInfrastructureFee          = "market.fee.factors.infrastructureFee"
-	MarketFeeFactorsLiquidityFee               = "market.fee.factors.liquidityFee"
-	MarketAuctionMinimumDuration               = "market.auction.minimumDuration"
-	MarketAuctionMaximumDuration               = "market.auction.maximumDuration"
-	MarketInitialMarkPrice                     = "market.initialMarkPrice"
+	MarketMarginScalingFactorSearchLevel          = "market.margin.scalingFactor.searchLevel"
+	MarketMarginScalingFactorInitialMargin        = "market.margin.scalingFactor.initialMargin"
+	MarketMarginScalingFactorCollateralRelease    = "market.margin.scalingFactor.collateralRelease"
+	MarketFeeFactorsMakerFee                      = "market.fee.factors.makerFee"
+	MarketFeeFactorsInfrastructureFee             = "market.fee.factors.infrastructureFee"
+	MarketFeeFactorsLiquidityFee                  = "market.fee.factors.liquidityFee"
+	MarketAuctionMinimumDuration                  = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration                  = "market.auction.maximumDuration"
+	MarketInitialMarkPrice                        = "market.initialMarkPrice"
+	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
+	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
+	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stateToCcySiskas"
+	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
+	MarketTargetStakeScalingFactor                = "market.stake.target.scalingFactor"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"

@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
@@ -32,6 +32,13 @@ type TradeOrderService interface {
 	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error
 }
 
+// LiquidityService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
+type LiquidityService interface {
+	PrepareLiquidityProvisionSubmission(context.Context, *types.LiquidityProvisionSubmission) error
+	Get(market, party string) ([]types.LiquidityProvision, error)
+}
+
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
@@ -48,7 +55,7 @@ type GovernanceService interface {
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
 type EvtForwarder interface {
-	Forward(e *types.ChainEvent, pk string) error
+	Forward(ctx context.Context, e *types.ChainEvent, pk string) error
 }
 
 // Blockchain ...
@@ -62,6 +69,7 @@ type tradingService struct {
 
 	blockchain        Blockchain
 	tradeOrderService TradeOrderService
+	liquidityService  LiquidityService
 	accountService    AccountService
 	marketService     MarketService
 	governanceService GovernanceService
@@ -82,7 +90,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, blockchain.SubmitOrderCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.SubmitOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
@@ -102,7 +110,7 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, blockchain.CancelOrderCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.CancelOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrCancelOrder, err)
 	}
 	return &protoapi.PrepareCancelOrderResponse{
@@ -121,7 +129,7 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Am
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, blockchain.AmendOrderCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.AmendOrderCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrAmendOrder, err)
 	}
 	return &protoapi.PrepareAmendOrderResponse{
@@ -159,7 +167,7 @@ func (s *tradingService) PrepareWithdraw(
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, blockchain.WithdrawCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.WithdrawCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
 	}
 	return &protoapi.PrepareWithdrawResponse{
@@ -185,7 +193,7 @@ func (s *tradingService) PrepareProposal(
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 
-	if raw, err = blockchain.TxEncode(raw, blockchain.ProposeCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.ProposeCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
 	return &protoapi.PrepareProposalResponse{
@@ -214,12 +222,38 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
-	if raw, err = blockchain.TxEncode(raw, blockchain.VoteCommand); err != nil {
+	if raw, err = txn.Encode(raw, txn.VoteCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
 	return &protoapi.PrepareVoteResponse{
 		Blob: raw,
 		Vote: vote,
+	}, nil
+}
+
+func (s *tradingService) PrepareLiquidityProvision(ctx context.Context, req *protoapi.PrepareLiquidityProvisionRequest) (*protoapi.PrepareLiquidityProvisionResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("PrepareLiquidity", startTime)
+
+	if err := req.Validate(); err != nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
+	if err := s.liquidityService.PrepareLiquidityProvisionSubmission(ctx, req.Submission); err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
+	}
+
+	raw, err := proto.Marshal(req.Submission)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
+	}
+
+	if raw, err = txn.Encode(raw, txn.LiquidityProvisionCommand); err != nil {
+		return nil, apiError(codes.Internal, ErrPrepareVote, err)
+	}
+
+	return &protoapi.PrepareLiquidityProvisionResponse{
+		Blob: raw,
 	}, nil
 }
 
@@ -248,7 +282,7 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	}
 
 	var ok = true
-	err = s.evtForwarder.Forward(req.Evt, req.PubKey)
+	err = s.evtForwarder.Forward(ctx, req.Evt, req.PubKey)
 	if err != nil {
 		s.log.Error("unable to forward chain event",
 			logging.String("pubkey", req.PubKey),

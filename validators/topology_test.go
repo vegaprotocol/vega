@@ -1,6 +1,9 @@
 package validators_test
 
 import (
+	"context"
+	"encoding/hex"
+	"encoding/json"
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -11,6 +14,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/crypto"
+)
+
+const (
+	pubkey = "0f9041e6d5b83d3577d02de3e92c39a2ce1e5aeeee2c40cfbd28a339a3e2e265"
 )
 
 func tmTestPubKey() testPubKey {
@@ -27,7 +34,25 @@ func getTestTop(t *testing.T) *testTop {
 	ctrl := gomock.NewController(t)
 	wallet := mocks.NewMockWallet(ctrl)
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, true)
+	hexkey, _ := hex.DecodeString(pubkey)
+	wallet.EXPECT().PubKeyOrAddress().Times(1).Return(hexkey)
+
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet)
+
+	state := struct {
+		Validators map[string]string
+	}{
+		Validators: map[string]string{
+			"tm-key": pubkey,
+		},
+	}
+
+	buf, err := json.Marshal(state)
+	if err != nil {
+		t.Fatalf("error marshalling state %v", err)
+	}
+
+	top.LoadValidatorsOnGenesis(context.Background(), buf)
 
 	return &testTop{
 		Topology: top,

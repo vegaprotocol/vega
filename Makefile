@@ -29,7 +29,9 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
+	@[ -d vendor ] && mv vendor vendor.tmp
 	@go generate ./...
+	@[ -d vendor.tmp ] && mv vendor.tmp vendor
 
 .PHONY: msan
 msan: ## Run memory sanitizer
@@ -117,6 +119,7 @@ print_check: ## Check for fmt.Print functions in Go code
 	find -name vendor -prune -o \
 		-name cmd -prune -o \
 		-name '*_test.go' -prune -o \
+		-name 'flags.go' -prune -o \
 		-name '*.go' -print0 | \
 		xargs -0 grep -E '^([^/]|/[^/])*fmt.Print' | \
 		tee "$$f" && \

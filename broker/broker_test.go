@@ -306,12 +306,13 @@ func testSendBatchChannel(t *testing.T) {
 	}
 	// ensure both batches are sent
 	wg := sync.WaitGroup{}
-	// 2 calls, only the first batch will be sent
-	wg.Add(2)
+	// 3 calls, only the first batch will be sent
+	// third call is routine that tries to send the second batch. This will of course fail
+	wg.Add(3)
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	// we try to get the channel 2 times, only 1 of the attempts will actually publish the events
-	sub.EXPECT().C().Times(2).Return(cCh).Do(func() {
+	// we try to get the channel 3 times, only 1 of the attempts will actually publish the events
+	sub.EXPECT().C().Times(3).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})
@@ -382,11 +383,12 @@ func testSkipOptional(t *testing.T) {
 	}
 	// ensure all 3 events are being sent (wait for routine to spawn)
 	wg := sync.WaitGroup{}
-	wg.Add(len(evts))
+	wg.Add(len(evts)*2 - 1)
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
 	// we try to get the channel 3 times, only 1 of the attempts will actually publish the event
-	sub.EXPECT().C().Times(len(evts)).Return(cCh).Do(func() {
+	// the other 2 attempts will run in a routine
+	sub.EXPECT().C().Times(len(evts)*2 - 1).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})

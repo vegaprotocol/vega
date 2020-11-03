@@ -10,6 +10,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fsutil"
+	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/zannen/toml"
 )
@@ -22,24 +23,27 @@ const (
 )
 
 type Config struct {
-	Level      encoding.LogLevel
-	CoolDown   encoding.Duration
-	WalletPath string
-	Port       int
-	IP         string
-	Node       NodeConfig
+	Level      encoding.LogLevel     `long:"level" description:"Log level"`
+	RateLimit  vhttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
+	WalletPath string                `long:"wallet-path" description:" "`
+	Port       int                   `long:"port" description:"Listen for connections on port <port>"`
+	IP         string                `long:"ip" description:"Bind to address <ip>"`
+	Node       NodeConfig            `group:"Node" namespace:"node"`
 }
 
 type NodeConfig struct {
-	Port    int
-	IP      string
-	Retries uint64
+	Port    int    `long:"port" description:"Connect to Node on port <port>"`
+	IP      string `long:"ip" description:"Connect to Node on address <ip>"`
+	Retries uint64 `long:"retries" description:"Connection retries before fail"`
 }
 
 func NewDefaultConfig(defaultDirPath string) Config {
 	return Config{
-		Level:      encoding.LogLevel{Level: logging.InfoLevel},
-		CoolDown:   encoding.Duration{Duration: defaultCoolDown},
+		Level: encoding.LogLevel{Level: logging.InfoLevel},
+		RateLimit: vhttp.RateLimitConfig{
+			CoolDown:  encoding.Duration{Duration: defaultCoolDown},
+			AllowList: []string{"10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
+		},
 		WalletPath: filepath.Join(defaultDirPath, defaultWallet),
 		Node: NodeConfig{
 			IP:      "127.0.0.1",

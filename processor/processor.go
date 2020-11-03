@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -55,12 +55,13 @@ type ExecutionEngine interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
 	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
-	SubmitProposal(context.Context, types.Proposal) error
+	SubmitProposal(context.Context, types.Proposal, string) error
 	AddVote(context.Context, types.Vote) error
 	OnChainTimeUpdate(context.Context, time.Time) []*governance.ToEnact
 }
@@ -111,7 +112,7 @@ type Assets interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(cmd blockchain.Command, payload proto.Message) error
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
@@ -154,10 +155,10 @@ type EvtForwarder interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
-	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, uint64) error
-	WithdrawalBuiltinAsset(context.Context, string, string, uint64) error
+	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
+	WithdrawalBuiltinAsset(context.Context, string, string, string, uint64) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64) error
-	DepositERC20(context.Context, *types.ERC20Deposit, uint64, uint64) error
-	LockWithdrawalERC20(context.Context, string, string, uint64, *types.Erc20WithdrawExt) error
+	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64) error
+	LockWithdrawalERC20(context.Context, string, string, string, uint64, *types.Erc20WithdrawExt) error
 	WithdrawalERC20(*types.ERC20Withdrawal, uint64, uint64) error
 }

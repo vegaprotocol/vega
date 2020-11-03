@@ -98,7 +98,7 @@ http:
     - selector: api.trading_data.MarginLevels
       get: '/parties/{partyID}/markets/{marketID}/margin'
 
-    - selector: api.trading.Withdraw
+    - selector: api.trading.PrepareWithdraw
       post: '/parties/prepare/withdraw'
       body: '*'
     - selector: api.trading_data.GetProposalsByParty
@@ -126,6 +126,12 @@ http:
       post: '/governance/prepare/vote'
       body: "*"
 
+    # LiquidityProvision
+    - selector: api.trading.PrepareLiquidityProvision
+      post: '/liquidity-provisions/prepare/submit'
+      body: "*"
+    - selector: api.trading.PrepareLiquidityProvision
+      get: '/liquidity-provisions'
 
     # Miscellaneous
     - selector: api.trading_data.Statistics
