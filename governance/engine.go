@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
 
@@ -80,7 +81,7 @@ type NetParams interface {
 	GetFloat(string) (float64, error)
 	GetInt(string) (int64, error)
 	GetDuration(string) (time.Duration, error)
-	GetJSONStruct(string, interface{ Reset() }) error
+	GetJSONStruct(string, netparams.Reset) error
 	Get(string) (string, error)
 }
 
