@@ -844,10 +844,6 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 		return nil, ErrOrderDoesNotExist
 	}
 	return order, nil
-
-	// Look for the order in the parked order list
-	// TODO
-
 }
 
 // RemoveDistressedOrders remove from the book all order holding distressed positions
