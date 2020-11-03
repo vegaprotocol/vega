@@ -65,5 +65,11 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
 		GovernanceProposalUpdateNetParamMinProposerBalance:    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateNetParamMinVoterBalance:       NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
+
+		// no validation for this initially as we configure the
+		// the bootstrapping asset.
+		// validation will be added at node startup, so we can use dynamic stuff
+		// e.g: assets and collateral when setting up a new ID.
+		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 	}
 }

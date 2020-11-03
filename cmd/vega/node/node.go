@@ -36,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
@@ -159,6 +160,8 @@ type NodeCommand struct {
 	assetPlugin      *plugins.Asset
 	withdrawalPlugin *plugins.Withdrawal
 	depositPlugin    *plugins.Deposit
+
+	app *processor.App
 
 	Version     string
 	VersionHash string
