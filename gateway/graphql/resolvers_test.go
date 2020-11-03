@@ -140,11 +140,6 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		return &protoapi.MarketByIDResponse{Market: m}, nil
 	})
 
-	incompleteMarket := &types.Market{
-		Id: "foobar",
-	}
-	root.tradingDataClient.EXPECT().Markets(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.MarketsResponse{Markets: []*types.Market{incompleteMarket}}, nil)
-
 	name := "BTC/DEC19"
 	vMarkets, err := root.Query().Markets(ctx, &name)
 	assert.Nil(t, err)
@@ -153,10 +148,6 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	name = "ETH/USD18"
 	vMarkets, err = root.Query().Markets(ctx, &name)
-	assert.Error(t, err)
-	assert.Nil(t, vMarkets)
-
-	vMarkets, err = root.Query().Markets(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, vMarkets)
 
@@ -180,8 +171,8 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	ctx := context.Background()
 
 	marketID := "BTC/DEC19"
-	market := &gql.Market{
-		ID: marketID,
+	market := &types.Market{
+		Id: marketID,
 	}
 
 	root.tradingDataClient.EXPECT().OrdersByMarket(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.OrdersByMarketResponse{Orders: []*types.Order{
