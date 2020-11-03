@@ -506,10 +506,19 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
-	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
-	l.genesisHandler.OnGenesisAppStateLoaded(l.netParams.UponGenesis)
-	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(
+		// be sure to keep this in order.
+		// the node upon genesis will load all asset first in the node
+		// state. This is important to happend first as we will load the
+		// asset which will be considered as the governance token.
+		l.UponGenesis,
+		// This needs to happen always after, as it defined the network
+		// parameters, one of them is  the Governance Token asset ID.
+		// which if not loaded in the previous state, then will make the node
+		// panic at startup.
+		l.netParams.UponGenesis,
+		l.topology.LoadValidatorsOnGenesis,
+	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
