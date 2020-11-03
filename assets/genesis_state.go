@@ -14,6 +14,14 @@ type GenesisState struct {
 }
 
 var (
+	governanceAsset = types.BuiltinAsset{
+		Name:                "VOTE",
+		Symbol:              "VOTE",
+		TotalSupply:         "0",
+		Decimals:            5,
+		MaxFaucetAmountMint: "1000",
+	}
+
 	defaultBuiltins = []types.BuiltinAsset{
 		{
 			Name:                "Ether",
@@ -29,7 +37,7 @@ var (
 			Decimals:            5,
 			MaxFaucetAmountMint: "1000000", // 10BTC
 		},
-		types.BuiltinAsset{
+		{
 			Name:                "VUSD",
 			Symbol:              "VUSD",
 			TotalSupply:         "21000000",
@@ -54,6 +62,8 @@ func DefaultGenesisState() GenesisState {
 		hasher.Write([]byte(key))
 		return hasher.Sum(nil)
 	}
+
+	builtins["VOTE"] = governanceAsset
 
 	for _, v := range defaultBuiltins {
 		assetSrc := types.AssetSource{
