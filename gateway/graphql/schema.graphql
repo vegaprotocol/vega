@@ -883,6 +883,15 @@ type PriceMonitoringSettings {
   updateFrequencySecs: Int!
 }
 
+"TargetStakeParameters contains parameters used in target stake calculation"
+type TargetStakeParameters {
+  "Specifies length of time window expressed in seconds for target stake calculation"
+  timeWindow: Int!
+
+  "Specifies scaling factors used in target stake calculation"
+  scalingFactor: Float!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
@@ -927,6 +936,9 @@ type Market {
 
   "Price monitoring settings for the market"
   priceMonitoringSettings: PriceMonitoringSettings!
+
+  "Taget stake parameter"
+  targetStake: TargetStakeParameters!
 
   "Orders on a market"
   orders (

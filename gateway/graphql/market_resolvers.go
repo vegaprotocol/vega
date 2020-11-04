@@ -208,3 +208,10 @@ func (r *myMarketResolver) PriceMonitoringSettings(ctx context.Context, obj *pro
 func (r *myMarketResolver) TradingMode(ctx context.Context, obj *proto.Market) (TradingMode, error) {
 	return TradingModeFromProto(obj.TradingMode)
 }
+
+func (r *myMarketResolver) TargetStake(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error) {
+	return &TargetStakeParameters{
+		TimeWindow:    int(obj.TargetStake.TimeWindow),
+		ScalingFactor: obj.TargetStake.ScalingFactor,
+	}, nil
+}

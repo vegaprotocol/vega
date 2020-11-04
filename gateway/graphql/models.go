@@ -636,6 +636,14 @@ type SimpleRiskModelParamsInput struct {
 	FactorShort float64 `json:"factorShort"`
 }
 
+// TargetStakeParameters contains parameters used in target stake calculation
+type TargetStakeParameters struct {
+	// Specifies length of time window expressed in seconds for target stake calculation
+	TimeWindow int `json:"timeWindow"`
+	// Specifies scaling factors used in target stake calculation
+	ScalingFactor float64 `json:"scalingFactor"`
+}
+
 type TimeUpdate struct {
 	// timestamp - new block time
 	Timestamp string `json:"timestamp"`
