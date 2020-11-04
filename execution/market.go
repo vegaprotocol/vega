@@ -1740,46 +1740,34 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 }
 
 // parkOrderAndAdd removes the order from the orderbook and adds it to the parked list
-func (m *Market) parkOrderAndAdd(ctx context.Context, order *types.Order) error {
-	err := m.parkOrder(ctx, order)
-	if err != nil {
-		return err
-	}
+func (m *Market) parkOrderAndAdd(ctx context.Context, order *types.Order) {
+	m.parkOrder(ctx, order)
 	m.parkedOrders = append(m.parkedOrders, order)
-	return nil
 }
 
 // parkOrder removes the given order from the orderbook
-func (m *Market) parkOrder(ctx context.Context, order *types.Order) error {
-	if m.closed {
-		return ErrMarketClosed
-	}
-
+// parkOrder will panic if it encounters errors, which means that it reached an
+// invalid state.
+func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	defer m.releaseMarginExcess(ctx, order.PartyID)
 
-	err := m.matching.RemoveOrder(order)
-	if err != nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Failure to remove order from matching engine",
-				logging.String("party-id", order.PartyID),
-				logging.String("order-id", order.Id),
-				logging.String("market", m.mkt.Id),
-				logging.Error(err))
-		}
-		return err
+	if err := m.matching.RemoveOrder(order); err != nil {
+		m.log.Fatal("Failure to remove order from matching enginei",
+			logging.String("party-id", order.PartyID),
+			logging.String("order-id", order.Id),
+			logging.String("market", m.mkt.Id),
+			logging.Error(err))
 	}
 
 	// Update the order in our stores (will be marked as parked)
 	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.Order_STATUS_PARKED
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-	_, err = m.position.UnregisterOrder(order)
-	if err != nil {
-		m.log.Error("Failure unregistering order in positions engine (parking)",
+	if _, err := m.position.UnregisterOrder(order); err != nil {
+		m.log.Fatal("Failure unregistering order in positions engine (parking)",
 			logging.Order(*order),
 			logging.Error(err))
 	}
-	return nil
 }
 
 // CancelOrderByID locates order by its Id and cancels it
