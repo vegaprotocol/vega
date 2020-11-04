@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"math/big"
 	"sort"
 	"sync"
 	"time"
@@ -80,7 +79,7 @@ type Engine struct {
 	enabledAssets map[string]types.Asset
 
 	// assetid -> total amount for the asset
-	totalAmounts map[string]*big.Int
+	totalAmounts map[string]uint64
 	// keep track of what's the current governanceAsset
 	governanceAsset string
 }
@@ -99,6 +98,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
+		totalAmounts:  map[string]uint64{},
 	}, nil
 }
 
@@ -1559,7 +1559,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 
 	// reduce the total amount for this asset
 	bal := e.totalAmounts[asset]
-	e.totalAmounts[asset] = bal.Sub(bal, big.NewInt(int64(amount)))
+	e.totalAmounts[asset] = bal - amount
 
 	return nil
 }
@@ -1577,7 +1577,7 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint
 
 	// increment balance of the given asset
 	bal := e.totalAmounts[asset]
-	e.totalAmounts[asset] = bal.Add(bal, big.NewInt(int64(amount)))
+	e.totalAmounts[asset] = bal + amount
 
 	return e.IncrementBalance(ctx, accID, amount)
 }
@@ -1640,7 +1640,7 @@ func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
 
 // GetTotalTokens - returns total amount of tokens in the network
 func (e *Engine) GetTotalTokens() uint64 {
-	return e.totalAmounts[e.governanceAsset].Uint64()
+	return e.totalAmounts[e.governanceAsset]
 }
 
 func (e *Engine) removeAccount(id string) error {
