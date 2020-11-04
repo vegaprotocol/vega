@@ -82,12 +82,21 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 	)
 
 	tokAsset := types.Asset{
-		ID:          collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
-		Name:        collateral.TokenAssetSource.GetBuiltinAsset().Name,
-		Symbol:      collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
-		Decimals:    collateral.TokenAssetSource.GetBuiltinAsset().Decimals,
-		TotalSupply: collateral.TokenAssetSource.GetBuiltinAsset().TotalSupply,
-		Source:      collateral.TokenAssetSource,
+		ID:          "VOTE",
+		Name:        "VOTE",
+		Symbol:      "VOTE",
+		Decimals:    5,
+		TotalSupply: "1000",
+		Source: &types.AssetSource{
+			Source: &types.AssetSource_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					Name:        "VOTE",
+					Symbol:      "VOTE",
+					Decimals:    5,
+					TotalSupply: "1000",
+				},
+			},
+		},
 	}
 	colE.EnableAsset(context.Background(), tokAsset)
 
@@ -165,12 +174,21 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 	}
 
 	tokAsset := types.Asset{
-		ID:          collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
-		Name:        collateral.TokenAssetSource.GetBuiltinAsset().Name,
-		Symbol:      collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
-		Decimals:    collateral.TokenAssetSource.GetBuiltinAsset().Decimals,
-		TotalSupply: collateral.TokenAssetSource.GetBuiltinAsset().TotalSupply,
-		Source:      collateral.TokenAssetSource,
+		ID:          "VOTE",
+		Name:        "VOTE",
+		Symbol:      "VOTE",
+		Decimals:    5,
+		TotalSupply: "1000",
+		Source: &types.AssetSource{
+			Source: &types.AssetSource_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					Name:        "VOTE",
+					Symbol:      "VOTE",
+					Decimals:    5,
+					TotalSupply: "1000",
+				},
+			},
+		},
 	}
 	execsetup.collateral.EnableAsset(context.Background(), tokAsset)
 
