@@ -2,6 +2,7 @@ package logging
 
 import (
 	"encoding/hex"
+	"time"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
@@ -141,6 +142,11 @@ func CandleWithTag(c types.Candle, tag string) zap.Field {
 // Order constructs a field with the given VEGA order proto value.
 func Order(o types.Order) zap.Field {
 	return zap.String("order", o.String())
+}
+
+// Time display a time
+func Time(key string, t time.Time) zap.Field {
+	return zap.Time(key, t)
 }
 
 // OrderWithTag constructs a field with the given VEGA order proto value and key equal to the tag string.

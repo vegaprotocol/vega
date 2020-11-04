@@ -239,58 +239,12 @@ type Fees struct {
 	Factors *FeeFactors `json:"factors"`
 }
 
-// A Future product
-type Future struct {
-	// The maturity date of the product (ISO8601/RFC3339 timestamp)
-	Maturity string `json:"maturity"`
-	// The name of the asset (string)
-	Asset *Asset `json:"asset"`
-	// The oracle used for this product (Oracle union)
-	Oracle Oracle `json:"oracle"`
-}
-
-func (Future) IsProduct() {}
-
-type FutureProduct struct {
-	// Future product maturity (ISO8601/RFC3339 timestamp)
-	Maturity string `json:"maturity"`
-	// Product asset name
-	Asset *Asset `json:"asset"`
-}
-
 // Future product configuration
 type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
 	Asset string `json:"asset"`
-}
-
-// Describe something that can be traded on Vega
-type Instrument struct {
-	// Uniquely identify an instrument accrods all instruments available on Vega (string)
-	ID string `json:"id"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
-	Code string `json:"code"`
-	// Full and fairly descriptive name for the instrument
-	Name string `json:"name"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
-	// Metadata for this instrument
-	Metadata *InstrumentMetadata `json:"metadata"`
-	// A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
-	Product Product `json:"product"`
-}
-
-type InstrumentConfiguration struct {
-	// Full and fairly descriptive name for the instrument
-	Name string `json:"name"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
-	Code string `json:"code"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
-	// Future product specification
-	FutureProduct *FutureProduct `json:"futureProduct"`
 }
 
 type InstrumentConfigurationInput struct {
@@ -391,56 +345,6 @@ type MarginCalculator struct {
 	ScalingFactors *ScalingFactors `json:"scalingFactors"`
 }
 
-// Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
-type Market struct {
-	// Market ID
-	ID string `json:"id"`
-	// Market full name
-	Name string `json:"name"`
-	// Fees related data
-	Fees *Fees `json:"fees"`
-	// An instance of or reference to a tradable instrument.
-	TradableInstrument *TradableInstrument `json:"tradableInstrument"`
-	// Definitions and required configuration for the trading mode
-	TradingMode TradingMode `json:"tradingMode"`
-	// decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
-	// number denominated in the currency of the Market. (uint64)
-	//
-	// Examples:
-	//   Currency     Balance  decimalPlaces  Real Balance
-	//   GBP              100              0       GBP 100
-	//   GBP              100              2       GBP   1.00
-	//   GBP              100              4       GBP   0.01
-	//   GBP                1              4       GBP   0.0001   (  0.01p  )
-	//
-	//   GBX (pence)      100              0       GBP   1.00     (100p     )
-	//   GBX (pence)      100              2       GBP   0.01     (  1p     )
-	//   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-	//   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
-	DecimalPlaces int `json:"decimalPlaces"`
-	// Auction duration specifies how long the opening auction will run (minimum
-	// duration and optionally a minimum traded volume).
-	OpeningAuction *AuctionDuration `json:"openingAuction"`
-	// Price monitoring settings for the market
-	PriceMonitoringSettings *PriceMonitoringSettings `json:"priceMonitoringSettings"`
-	// Orders on a market
-	Orders []*proto.Order `json:"orders"`
-	// Get account for a party or market
-	Accounts []*proto.Account `json:"accounts"`
-	// Trades on a market
-	Trades []*proto.Trade `json:"trades"`
-	// Current depth on the orderbook for this market
-	Depth *proto.MarketDepth `json:"depth"`
-	// Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-	Candles []*proto.Candle `json:"candles"`
-	// marketData for the given market
-	Data *proto.MarketData `json:"data"`
-	// The list of the liquidity provision commitment for this market
-	LiquidityProvisions []*proto.LiquidityProvision `json:"liquidityProvisions"`
-}
-
-func (Market) IsEvent() {}
-
 // The MM commitments for this market
 type MarketDataCommitments struct {
 	// a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
@@ -475,14 +379,6 @@ type NetworkParameterInput struct {
 	Value string `json:"value"`
 }
 
-// A new asset proposal change
-type NewAsset struct {
-	// the source of the new Asset
-	Source AssetSource `json:"source"`
-}
-
-func (NewAsset) IsProposalChange() {}
-
 // A new asset to be added into vega
 type NewAssetInput struct {
 	// A new builtin assed to be created
@@ -490,21 +386,6 @@ type NewAssetInput struct {
 	// A new ERC20 asset to be created
 	Erc20 *ERC20Input `json:"erc20"`
 }
-
-type NewMarket struct {
-	// New market instrument configuration
-	Instrument *InstrumentConfiguration `json:"instrument"`
-	// Decimal places used for the new market
-	DecimalPlaces int `json:"decimalPlaces"`
-	// New market risk configuration
-	RiskParameters RiskModel `json:"riskParameters"`
-	// Metadata for this instrument, tags
-	Metadata []string `json:"metadata"`
-	// Trading mode
-	TradingMode TradingMode `json:"tradingMode"`
-}
-
-func (NewMarket) IsProposalChange() {}
 
 // Allows creating new markets on the network
 type NewMarketInput struct {
@@ -637,17 +518,6 @@ type PriceMonitoringSettingsInput struct {
 	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
 }
 
-type ProposalTerms struct {
-	// ISO-8601 time and date when voting closes for this proposal.
-	// Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
-	ClosingDatetime string `json:"closingDatetime"`
-	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
-	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
-	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Actual change being introduced by the proposal - action the proposal triggers if passed and enacted.
-	Change ProposalChange `json:"change"`
-}
-
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
 type ProposalTermsInput struct {
 	// ISO-8601 time and date when voting closes for this proposal.
@@ -761,16 +631,6 @@ type TimeUpdate struct {
 
 func (TimeUpdate) IsEvent() {}
 
-// A tradable instrument is a combination of an instrument and a risk model
-type TradableInstrument struct {
-	// An instance of or reference to a fully specified instrument.
-	Instrument *Instrument `json:"instrument"`
-	// A reference to a risk model that is valid for the instrument
-	RiskModel RiskModel `json:"riskModel"`
-	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
-	MarginCalculator *MarginCalculator `json:"marginCalculator"`
-}
-
 // The fee paid by the party when a trade occurs
 type TradeFee struct {
 	// The maker fee, aggressive party to the other party (the one who had an order in the book)
@@ -813,24 +673,9 @@ type TransferResponses struct {
 
 func (TransferResponses) IsEvent() {}
 
-// Incomplete change definition for governance proposal terms
-// TODO: complete the type
-type UpdateMarket struct {
-	MarketID string `json:"marketId"`
-}
-
-func (UpdateMarket) IsProposalChange() {}
-
 type UpdateMarketInput struct {
 	MarketID string `json:"marketId"`
 }
-
-// Allows submitting a proposal for changing network parameters
-type UpdateNetworkParameter struct {
-	NetworkParameter *proto.NetworkParameter `json:"networkParameter"`
-}
-
-func (UpdateNetworkParameter) IsProposalChange() {}
 
 // Allows submitting a proposal for changing network parameters
 type UpdateNetworkParameterInput struct {

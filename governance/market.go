@@ -267,12 +267,14 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
 	if proposedDuration != 0 && proposedDuration < minAuctionDuration {
 		// Auction duration is too small
-		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL, ErrProposalOpeningAuctionDurationTooShort
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL,
+			fmt.Errorf("proposal opening auction duration is too short, expected > %v, got %v", minAuctionDuration, proposedDuration)
 	}
 	maxAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMaximumDuration)
 	if proposedDuration > maxAuctionDuration {
 		// Auction duration is too large
-		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE, ErrProposalOpeningAuctionDurationTooLong
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE,
+			fmt.Errorf("proposal opening auction duration is too long, expected < %v, got %v", maxAuctionDuration, proposedDuration)
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

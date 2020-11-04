@@ -880,11 +880,12 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	if order.PeggedOrder != nil {
+		order.Status = types.Order_STATUS_PARKED
+		order.Reason = types.OrderError_ORDER_ERROR_NONE
+
 		if m.as.InAuction() {
 			// If we are in an auction, we don't insert this order into the book
 			// Maybe should return an orderConfirmation with order state PARKED
-			order.Status = types.Order_STATUS_PARKED
-			order.Reason = types.OrderError_ORDER_ERROR_NONE
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 			return &types.OrderConfirmation{Order: order}, nil
 
@@ -893,8 +894,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			err := m.repricePeggedOrder(ctx, order)
 			if err != nil {
 				m.parkedOrders = append(m.parkedOrders, order)
-				order.Status = types.Order_STATUS_PARKED
-				order.Reason = types.OrderError_ORDER_ERROR_NONE
 				m.broker.Send(events.NewOrderEvent(ctx, order))
 				return &types.OrderConfirmation{Order: order}, nil
 			}
@@ -1734,23 +1733,7 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	// If this is a pegged order, remove from pegged and parked lists
 	if order.PeggedOrder != nil {
-		// Scan pegged orders for a match
-		for i, po := range m.peggedOrders {
-			if po.Id == order.Id {
-				copy(m.peggedOrders[i:], m.peggedOrders[i+1:])
-				m.peggedOrders[len(m.peggedOrders)-1] = nil
-				m.peggedOrders = m.peggedOrders[:len(m.peggedOrders)-1]
-			}
-		}
-
-		// Scan parked orders for a match
-		for i, po := range m.parkedOrders {
-			if po.Id == order.Id {
-				copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
-				m.parkedOrders[len(m.parkedOrders)-1] = nil
-				m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
-			}
-		}
+		m.removePeggedOrder(order)
 	}
 	m.checkForReferenceMoves(ctx)
 	return &types.OrderCancellationConfirmation{Order: order}, nil
