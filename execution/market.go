@@ -495,7 +495,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 			price, err := m.getNewPeggedPrice(ctx, order)
 			if err != nil {
 				// We can't reprice so we should remove the order and park it
-				m.parkOrder(ctx, order)
+				m.parkOrderAndAdd(ctx, order)
 			} else {
 				// Force an amend but don't trigger a reprice to happen
 				m.amendPeggedOrder(ctx, order, price)
@@ -1756,7 +1756,17 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
 
-// parkOrder removes the given order from the orderbook and parks it
+// parkOrderAndAdd removes the order from the orderbook and adds it to the parked list
+func (m *Market) parkOrderAndAdd(ctx context.Context, order *types.Order) error {
+	err := m.parkOrder(ctx, order)
+	if err != nil {
+		return err
+	}
+	m.parkedOrders = append(m.parkedOrders, order)
+	return nil
+}
+
+// parkOrder removes the given order from the orderbook
 func (m *Market) parkOrder(ctx context.Context, order *types.Order) error {
 	if m.closed {
 		return ErrMarketClosed
