@@ -1733,23 +1733,7 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	// If this is a pegged order, remove from pegged and parked lists
 	if order.PeggedOrder != nil {
-		// Scan pegged orders for a match
-		for i, po := range m.peggedOrders {
-			if po.Id == order.Id {
-				copy(m.peggedOrders[i:], m.peggedOrders[i+1:])
-				m.peggedOrders[len(m.peggedOrders)-1] = nil
-				m.peggedOrders = m.peggedOrders[:len(m.peggedOrders)-1]
-			}
-		}
-
-		// Scan parked orders for a match
-		for i, po := range m.parkedOrders {
-			if po.Id == order.Id {
-				copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
-				m.parkedOrders[len(m.parkedOrders)-1] = nil
-				m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
-			}
-		}
+		m.removePeggedOrder(order)
 	}
 	m.checkForReferenceMoves(ctx)
 	return &types.OrderCancellationConfirmation{Order: order}, nil
