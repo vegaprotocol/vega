@@ -855,13 +855,11 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	order.Version = InitialOrderVersion
 	order.Status = types.Order_STATUS_ACTIVE
 
-	err := m.validateOrder(ctx, order)
-	if err != nil {
+	if err := m.validateOrder(ctx, order); err != nil {
 		return nil, err
 	}
 
-	err = m.validateAccounts(ctx, order)
-	if err != nil {
+	if err := m.validateAccounts(ctx, order); err != nil {
 		return nil, err
 	}
 

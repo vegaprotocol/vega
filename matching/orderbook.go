@@ -701,7 +701,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// if order is persistent type add to order book to the correct side
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
-		if order.ExpiresAt > 0 {
+		if order.ExpiresAt > 0 && order.PeggedOrder == nil {
 			b.insertExpiringOrder(*order)
 		}
 
