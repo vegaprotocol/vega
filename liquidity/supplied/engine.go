@@ -35,13 +35,15 @@ type RiskModel interface {
 	ProbabilityOfTrading(price float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
 }
 
+// Engine provides the supplied liquidity calculation function
 type Engine struct {
 	mID string
 	lpp LiquidityProvisionProvider
 	op  OrderProvider
 	rm  RiskModel
 
-	//TODO: Move buys, sells here to aid memory usage
+	buys  map[uint64]uint64
+	sells map[uint64]uint64
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine if all arguments get supplied (with non-nil values) and an error otherwise
@@ -65,19 +67,18 @@ func NewEngine(marketID string, lpProvider LiquidityProvisionProvider, orderProv
 }
 
 // GetSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e Engine) GetSuppliedLiquidity() (float64, error) {
-	buys, sells, err := e.getLiquidityProvisionOrders()
-	if err != nil {
+func (e *Engine) GetSuppliedLiquidity() (float64, error) {
+	if err := e.getLiquidityProvisionOrders(); err != nil {
 		return 0, err
 	}
 	min, max := e.rm.PriceRange()
-	bLiq := e.calculateInstantaneousLiquidity(buys, true, min, max)
-	sLiq := e.calculateInstantaneousLiquidity(sells, false, min, max)
+	bLiq := e.calculateInstantaneousLiquidity(e.buys, true, min, max)
+	sLiq := e.calculateInstantaneousLiquidity(e.sells, false, min, max)
 
 	return math.Min(bLiq, sLiq), nil
 }
 
-func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide bool, minPrice, maxPrice float64) float64 {
+func (e *Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide bool, minPrice, maxPrice float64) float64 {
 	liquidity := 0.0
 	for price, volume := range mp {
 		fpPrice := float64(price)
@@ -88,26 +89,26 @@ func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide 
 	return liquidity
 }
 
-func (e Engine) getLiquidityProvisionOrders() (map[uint64]uint64, map[uint64]uint64, error) {
+func (e *Engine) getLiquidityProvisionOrders() error {
 	lps, err := e.lpp.GetLiquidityProvisions(e.mID)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	buys := make(map[uint64]uint64, len(lps))
-	sells := make(map[uint64]uint64, len(lps))
+	e.buys = make(map[uint64]uint64, maxInt(len(lps), len(e.buys)))
+	e.sells = make(map[uint64]uint64, maxInt(len(lps), len(e.sells)))
 	for _, lp := range lps {
-		if err := e.sumVolumePerPrice(buys, lp.Buys); err != nil {
-			return nil, nil, err
+		if err := e.sumVolumePerPrice(e.buys, lp.Buys); err != nil {
+			return err
 		}
-		if err := e.sumVolumePerPrice(sells, lp.Sells); err != nil {
-			return nil, nil, err
+		if err := e.sumVolumePerPrice(e.sells, lp.Sells); err != nil {
+			return err
 		}
 	}
-	return buys, sells, nil
+	return nil
 }
 
-func (e Engine) sumVolumePerPrice(mp map[uint64]uint64, lors []*types.LiquidityOrderReference) error {
+func (e *Engine) sumVolumePerPrice(mp map[uint64]uint64, lors []*types.LiquidityOrderReference) error {
 	for _, lor := range lors {
 		order, err := e.op.GetOrderByID(lor.OrderID)
 		if err != nil {
@@ -118,4 +119,9 @@ func (e Engine) sumVolumePerPrice(mp map[uint64]uint64, lors []*types.LiquidityO
 	return nil
 }
 
-// TODO: Do we need a liquidity engine that liqudity service will reference? Then we could pass reference to that engine to market and use it here.
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
