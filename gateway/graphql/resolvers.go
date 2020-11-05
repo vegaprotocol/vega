@@ -1811,7 +1811,8 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
+	expiration *string, tif OrderTimeInForce, peggedReference PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
 	order := &types.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
@@ -1854,6 +1855,23 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		}
 		// move to pure timestamps or convert an RFC format shortly
 		order.ExpiresAt = &proto.Timestamp{Value: expiresAt.UnixNano()}
+	}
+
+	if peggedOffset != nil {
+		po, err := strconv.ParseInt(*peggedOffset, 10, 64)
+		if err != nil {
+			r.log.Error("unable to parse pegged offset in order amend",
+				logging.Error(err))
+			return nil, errors.New("invalid pegged offset, could not convert to proto pegged offset")
+		}
+		order.PeggedOffset = &types.PeggedOffset{Value: po}
+	}
+
+	order.PeggedReference, err = convertPeggedReferenceToProto(peggedReference)
+	if err != nil {
+		r.log.Error("unable to parse pegged reference in order amend",
+			logging.Error(err))
+		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
 	}
 
 	req := protoapi.AmendOrderRequest{

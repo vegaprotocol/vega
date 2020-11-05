@@ -544,6 +544,8 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO, nil
 	case OrderRejectionReasonInsufficientAssetBalance:
 		return types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE, nil
+	case OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder:
+		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
@@ -629,6 +631,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, nil
 	case types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
 		return OrderRejectionReasonInsufficientAssetBalance, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER:
+		return OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err

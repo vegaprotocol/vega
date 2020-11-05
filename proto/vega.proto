@@ -41,6 +41,11 @@ enum Interval {
   //       - gateway/graphql/schema.graphql (enum Interval)
 }
 
+message PeggedOffset {
+  // PeggedOffset value used in pegged orders to represent the offset against the reference price
+  int64 value = 1;
+}
+
 message Price {
   // Price value, given as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
@@ -373,6 +378,8 @@ enum OrderError {
   // a general account to submit the order (no deposits made
   // for the required asset).
   ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE = 43;
+  // Cannot amend a non pegged orders details
+  ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER = 44;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -741,6 +748,12 @@ message OrderAmendment {
   // Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
   // See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`.
   Order.TimeInForce timeInForce = 7;
+  // Amend the pegged order offset for the order
+  // See [`PeggedOffset`](#api.PeggedOffset).
+  PeggedOffset peggedOffset = 8;
+  // Amend the pegged order reference for the order
+  // See [`PeggedReference`](#api.PeggedReference).
+  PeggedReference peggedReference = 9;
 }
 
 // An order submission is a request to submit or create a new order on Vega.
