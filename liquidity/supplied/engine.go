@@ -70,18 +70,18 @@ func (e Engine) GetSuppliedLiquidity() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	bLiq := e.calculateInstantaneousLiquidity(buys, true)
-	sLiq := e.calculateInstantaneousLiquidity(sells, false)
+	min, max := e.rm.PriceRange()
+	bLiq := e.calculateInstantaneousLiquidity(buys, true, min, max)
+	sLiq := e.calculateInstantaneousLiquidity(sells, false, min, max)
 
 	return math.Min(bLiq, sLiq), nil
 }
 
-func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide bool) float64 {
-	min, max := e.rm.PriceRange()
+func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide bool, minPrice, maxPrice float64) float64 {
 	liquidity := 0.0
 	for price, volume := range mp {
 		fpPrice := float64(price)
-		prob := e.rm.ProbabilityOfTrading(fpPrice, isBuySide, true, min, max)
+		prob := e.rm.ProbabilityOfTrading(fpPrice, isBuySide, true, minPrice, maxPrice)
 
 		liquidity += fpPrice * float64(volume) * prob
 	}
