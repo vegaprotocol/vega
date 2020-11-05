@@ -1842,7 +1842,6 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 				logging.String("market", orderAmendment.GetMarketID()),
 				logging.Error(err))
 		}
-
 		return nil, types.ErrInvalidOrderID
 	}
 
@@ -2129,6 +2128,12 @@ func (m *Market) validateOrderAmendment(
 			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED) {
 		// We cannot amend from a GFA/GFN orders
 		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
+	} else if order.PeggedOrder == nil {
+		// We cannot change a pegged orders details on a non pegged order
+		if amendment.PeggedOffset != nil ||
+			amendment.PeggedReference != types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+			return types.OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
+		}
 	}
 	return nil
 }

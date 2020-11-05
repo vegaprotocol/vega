@@ -66,6 +66,10 @@ type Mutation {
     expiration: String
     "Time in force"
     timeInForce: OrderTimeInForce!
+    "The reference point for pegged orders"
+    peggedReference: PeggedReference!
+    "The offset from the reference price for pegged orders"
+    peggedOffset: String
   ): PreparedAmendOrder!
 
   """

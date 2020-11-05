@@ -4034,6 +4034,14 @@
         "timeInForce": {
           "$ref": "#/definitions/OrderTimeInForce",
           "description": "Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.\nSee [`TimeInForce`](#api.VegaTimeResponse).`timestamp`."
+        },
+        "peggedOffset": {
+          "$ref": "#/definitions/vegaPeggedOffset",
+          "description": "Amend the pegged order offset for the order\nSee [`PeggedOffset`](#api.PeggedOffset)."
+        },
+        "peggedReference": {
+          "$ref": "#/definitions/vegaPeggedReference",
+          "description": "Amend the pegged order reference for the order\nSee [`PeggedReference`](#api.PeggedReference)."
         }
       },
       "description": "An order amendment is a request to amend or update an existing order on Vega."
@@ -4197,6 +4205,16 @@
         }
       },
       "description": "A party represents an entity who wishes to trade on or query a Vega network."
+    },
+    "vegaPeggedOffset": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "format": "int64",
+          "title": "PeggedOffset value used in pegged orders to represent the offset against the reference price"
+        }
+      }
     },
     "vegaPeggedOrder": {
       "type": "object",

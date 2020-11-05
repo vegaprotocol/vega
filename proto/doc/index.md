@@ -268,6 +268,7 @@
     - [OrderConfirmation](#vega.OrderConfirmation)
     - [OrderSubmission](#vega.OrderSubmission)
     - [Party](#vega.Party)
+    - [PeggedOffset](#vega.PeggedOffset)
     - [PeggedOrder](#vega.PeggedOrder)
     - [Position](#vega.Position)
     - [PositionTrade](#vega.PositionTrade)
@@ -4550,6 +4551,8 @@ The `orderID`, `partyID` and `marketID` fields are used for lookup of the order 
 | sizeDelta | [int64](#int64) |  | Amend the size for the order by the delta specified. To reduce the size from the current value set a negative integer value. To increase the size from the current value, set a positive integer value. To leave the size unchanged set a value of zero. |
 | expiresAt | [Timestamp](#vega.Timestamp) |  | Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged. See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`. |
+| peggedOffset | [PeggedOffset](#vega.PeggedOffset) |  | Amend the pegged order offset for the order See [`PeggedOffset`](#api.PeggedOffset). |
+| peggedReference | [PeggedReference](#vega.PeggedReference) |  | Amend the pegged order reference for the order See [`PeggedReference`](#api.PeggedReference). |
 
 
 
@@ -4641,6 +4644,21 @@ A party represents an entity who wishes to trade on or query a Vega network.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | A unique identifier for the party, typically represented by a public key. |
+
+
+
+
+
+
+<a name="vega.PeggedOffset"></a>
+
+### PeggedOffset
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [int64](#int64) |  | PeggedOffset value used in pegged orders to represent the offset against the reference price |
 
 
 

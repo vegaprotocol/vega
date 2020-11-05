@@ -1857,7 +1857,8 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
+	expiration *string, tif OrderTimeInForce, peggedReference PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
 	order := &types.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
