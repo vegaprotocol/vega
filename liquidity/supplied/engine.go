@@ -1,38 +1,70 @@
 package supplied
 
 import (
+	"errors"
 	"math"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+var (
+	// ErrNilLiquidityProvisionProvider signals that nil was supplied in place of LiquidityProvisionProvider
+	ErrNilLiquidityProvisionProvider = errors.New("nil LiquidityProvisionProvider")
+	// ErrNilOrderProvider signals that nil was supplied in place of OrderProvider
+	ErrNilOrderProvider = errors.New("nil OrderProvider")
+	// ErrNilRiskModel signals that nil was supplied in place of RiskModel
+	ErrNilRiskModel = errors.New("nil RiskModel")
+)
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_provision_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied LiquidityProvisionProvider
+// LiquidityProvisionProvider allows getting all the liquidity provisions per specied market ID
 type LiquidityProvisionProvider interface {
 	GetLiquidityProvisions(market string) ([]types.LiquidityProvision, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied OrderProvider
+// OrderProvider allows getting an order by its ID
 type OrderProvider interface {
 	GetOrderByID(orderID string) (*types.Order, error)
 }
 
-type ProbabilityOfTradingCalculator interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
+// RiskModel allows calculation of min/max price range and a probability of trading.
+type RiskModel interface {
+	PriceRange() (float64, float64)
 	ProbabilityOfTrading(price float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
 }
 
-type PariceRangeProvider interface {
-	PriceRange() (float64, float64)
-}
-
 type Engine struct {
-	mId string
-
+	mID string
 	lpp LiquidityProvisionProvider
 	op  OrderProvider
-	ptc ProbabilityOfTradingCalculator
-	prp PariceRangeProvider
+	rm  RiskModel
 
 	//TODO: Move buys, sells here to aid memory usage
 }
 
+// NewEngine returns a reference to a new supplied liquidity calculation engine if all arguments get supplied (with non-nil values) and an error otherwise
+func NewEngine(marketID string, lpProvider LiquidityProvisionProvider, orderProvider OrderProvider, riskModel RiskModel) (*Engine, error) {
+	if lpProvider == nil {
+		return nil, ErrNilLiquidityProvisionProvider
+	}
+	if orderProvider == nil {
+		return nil, ErrNilOrderProvider
+	}
+	if riskModel == nil {
+		return nil, ErrNilRiskModel
+	}
+
+	return &Engine{
+		mID: marketID,
+		lpp: lpProvider,
+		op:  orderProvider,
+		rm:  riskModel,
+	}, nil
+}
+
+// GetSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
 func (e Engine) GetSuppliedLiquidity() (float64, error) {
 	buys, sells, err := e.getLiquidityProvisionOrders()
 	if err != nil {
@@ -45,11 +77,11 @@ func (e Engine) GetSuppliedLiquidity() (float64, error) {
 }
 
 func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide bool) float64 {
-	min, max := e.prp.PriceRange()
+	min, max := e.rm.PriceRange()
 	liquidity := 0.0
 	for price, volume := range mp {
 		fpPrice := float64(price)
-		prob := e.ptc.ProbabilityOfTrading(fpPrice, isBuySide, true, min, max)
+		prob := e.rm.ProbabilityOfTrading(fpPrice, isBuySide, true, min, max)
 
 		liquidity += fpPrice * float64(volume) * prob
 	}
@@ -57,7 +89,7 @@ func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide 
 }
 
 func (e Engine) getLiquidityProvisionOrders() (map[uint64]uint64, map[uint64]uint64, error) {
-	lps, err := e.lpp.GetLiquidityProvisions(e.mId)
+	lps, err := e.lpp.GetLiquidityProvisions(e.mID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -86,5 +118,4 @@ func (e Engine) sumVolumePerPrice(mp map[uint64]uint64, lors []*types.LiquidityO
 	return nil
 }
 
-// TODO: Do we want to get min/max from model, or are LP orders already guaranteed to be in that range?
 // TODO: Do we need a liquidity engine that liqudity service will reference? Then we could pass reference to that engine to market and use it here.
