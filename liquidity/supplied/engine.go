@@ -68,7 +68,7 @@ func NewEngine(marketID string, lpProvider LiquidityProvisionProvider, orderProv
 
 // GetSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
 func (e *Engine) GetSuppliedLiquidity() (float64, error) {
-	if err := e.getLiquidityProvisionOrders(); err != nil {
+	if err := e.calculateOrderPricesAndVolumes(); err != nil {
 		return 0, err
 	}
 	min, max := e.rm.PriceRange()
@@ -89,7 +89,7 @@ func (e *Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide
 	return liquidity
 }
 
-func (e *Engine) getLiquidityProvisionOrders() error {
+func (e *Engine) calculateOrderPricesAndVolumes() error {
 	lps, err := e.lpp.GetLiquidityProvisions(e.mID)
 	if err != nil {
 		return err
