@@ -1277,15 +1277,10 @@ func testPeggedOrderExpiring(t *testing.T) {
 		_, err := tm.market.SubmitOrder(context.Background(), &order)
 		require.NoError(t, err)
 	}
-
-	t.Run("Lower expire time", func(t *testing.T) {
-		orders, err := tm.market.RemoveExpiredOrders(now.Add(5 * time.Minute).UnixNano())
-		require.NoError(t, err)
-		require.Len(t, orders, 0)
-	})
+	assert.Equal(t, len(expirations), tm.market.GetPeggedOrderCount())
 
 	orders, err := tm.market.RemoveExpiredOrders(now.Add(25 * time.Minute).UnixNano())
 	require.NoError(t, err)
-	assert.Len(t, orders, 2, "2 orders should have been removed")
+	assert.Empty(t, orders, "expiring pegged orders shouldn't be in the books expiring list")
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
 }
