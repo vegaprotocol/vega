@@ -171,16 +171,16 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 }
 
 // EnterAuction Moves the order book into an auction state
-func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
+func (b *OrderBook) EnterAuction() ([]*types.Order, []*types.Order, error) {
 	// Scan existing orders to see which ones can be kept, cancelled and parked
-	buyCancelledOrders, err := b.buy.getOrdersToCancel(true)
+	buyCancelledOrders, buyParkOrders, err := b.buy.getOrdersToCancelOrPark(true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	sellCancelledOrders, err := b.sell.getOrdersToCancel(true)
+	sellCancelledOrders, sellParkOrder, err := b.sell.getOrdersToCancelOrPark(true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Set the market state
@@ -189,7 +189,9 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 	// Return all the orders that have been removed from the book and need to be cancelled
 	ordersToCancel := buyCancelledOrders
 	ordersToCancel = append(ordersToCancel, sellCancelledOrders...)
-	return ordersToCancel, nil
+	ordersToPark := buyParkOrders
+	ordersToPark = append(ordersToPark, sellParkOrder...)
+	return ordersToCancel, ordersToPark, nil
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
@@ -216,12 +218,12 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	// Remove any orders that will not be valid in continuous trading
-	buyOrdersToCancel, err := b.buy.getOrdersToCancel(false)
+	buyOrdersToCancel, _, err := b.buy.getOrdersToCancelOrPark(false)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	sellOrdersToCancel, err := b.sell.getOrdersToCancel(false)
+	sellOrdersToCancel, _, err := b.sell.getOrdersToCancelOrPark(false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -244,8 +246,8 @@ func (b OrderBook) InAuction() bool {
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
-	bestBid := b.getBestBidPrice()
-	bestAsk := b.getBestAskPrice()
+	bestBid, _ := b.GetBestBidPrice()
+	bestAsk, _ := b.GetBestAskPrice()
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -295,8 +297,8 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifing the order book state
 func (b *OrderBook) GetIndicativePrice() uint64 {
-	bestBid := b.getBestBidPrice()
-	bestAsk := b.getBestAskPrice()
+	bestBid, _ := b.GetBestBidPrice()
+	bestAsk, _ := b.GetBestAskPrice()
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -487,12 +489,12 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 }
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
-func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64) {
+func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64, error) {
 	return b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
 }
 
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
-func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64) {
+func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64, error) {
 	return b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
 }
 
@@ -554,6 +556,19 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		Order: order,
 	}
 	return result, nil
+}
+
+// RemoveOrder takes the order off the order book
+func (b *OrderBook) RemoveOrder(order *types.Order) error {
+	order, err := b.DeleteOrder(order)
+	if err != nil {
+		return err
+	}
+
+	// Important to mark the order as parked (and no longer active)
+	order.Status = types.Order_STATUS_PARKED
+
+	return nil
 }
 
 // AmendOrder amend an order which is an active order on the book
@@ -685,13 +700,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// if order is persistent type add to order book to the correct side
 	// and we did not hit a error / wash trade error
-	if isPersistent(order) && order.Remaining > 0 && err == nil {
-
-		// GTT orders need to be added to the expiring orders table, these orders will be removed when expired.
-		if (order.TimeInForce == types.Order_TIF_GTT ||
-			order.TimeInForce == types.Order_TIF_GFN ||
-			order.TimeInForce == types.Order_TIF_GFA) &&
-			order.ExpiresAt > 0 {
+	if order.IsPersistent() && err == nil {
+		if order.ExpiresAt > 0 && order.PeggedOrder == nil {
 			b.insertExpiringOrder(*order)
 		}
 
@@ -828,6 +838,7 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 		}
 		return nil, err
 	}
+	// First look for the order in the order book
 	order, exists := b.ordersByID[orderID]
 	if !exists {
 		return nil, ErrOrderDoesNotExist
@@ -904,14 +915,14 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 	}
 }
 
-func (b *OrderBook) getBestBidPrice() uint64 {
-	price, _ := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
-	return price
+func (b *OrderBook) GetBestBidPrice() (uint64, error) {
+	price, _, err := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
+	return price, err
 }
 
-func (b *OrderBook) getBestAskPrice() uint64 {
-	price, _ := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
-	return price
+func (b *OrderBook) GetBestAskPrice() (uint64, error) {
+	price, _, err := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+	return price, err
 }
 
 // PrintState prints the actual state of the book.

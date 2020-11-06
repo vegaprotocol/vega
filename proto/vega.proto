@@ -127,7 +127,7 @@ enum PeggedReference {
   PEGGED_REFERENCE_MID = 1;
   // BEST BID price
   PEGGED_REFERENCE_BEST_BID = 2;
-  // BEST BID price
+  // BEST ASK price
   PEGGED_REFERENCE_BEST_ASK = 3;
 }
 
@@ -154,10 +154,8 @@ message Order {
     TIF_IOC = 3;
     // Fill or kill.
     TIF_FOK = 4;
-
     // good for auction
     TIF_GFA = 5;
-
     // good for normal
     TIF_GFN = 6;
 
@@ -201,6 +199,8 @@ message Order {
     STATUS_REJECTED = 6;
     // Used for closed partially filled IOC orders.
     STATUS_PARTIALLY_FILLED = 7;
+    // The order ha been removed from the book and has been parked, applies to pegged order only
+    STATUS_PARKED = 8;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -380,6 +380,8 @@ enum OrderError {
   ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE = 43;
   // Cannot amend a non pegged orders details
   ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER = 44;
+  // We are unable to reprice a pegged order because a market price is unavailable
+  ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 45;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

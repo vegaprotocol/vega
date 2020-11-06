@@ -2087,6 +2087,7 @@ func (t *tradingDataService) ObserveEventBus(
 
 	// number of retries to -1 to have pretty much unlimited retries
 	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(req.BatchSize), filters...)
+	defer close(bCh)
 
 	if req.BatchSize > 0 {
 		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
@@ -2128,9 +2129,9 @@ func (t *tradingDataService) recvEventRequest(
 ) (*protoapi.ObserveEventsRequest, error) {
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
 	oebCh := make(chan protoapi.ObserveEventsRequest)
-	defer close(oebCh)
 	var err error
 	go func() {
+		defer close(oebCh)
 		nb := protoapi.ObserveEventsRequest{}
 		if err = stream.RecvMsg(&nb); err != nil {
 			cfunc()
