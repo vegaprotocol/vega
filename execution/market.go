@@ -590,6 +590,10 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Send an event bus update
 	m.broker.Send(m.as.AuctionStarted(ctx))
+
+	// At this point all pegged orders are parked but the pegged order list would be
+	// identical to the parked order list so we save time by not updating the parked list
+	m.parkedOrders = []*types.Order{}
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading
