@@ -1894,9 +1894,25 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		}, nil
 	}
 
-	// If this was a pegged order, reprice before we check if the values have changed
+	// If this is a pegged order, reprice before we check if the values have changed
 	if existingOrder.PeggedOrder != nil {
-		// TODO after pegged order merge:		m.getPeggedOrderPrice(amendedOrder)
+		newPrice, err := m.getNewPeggedPrice(ctx, amendedOrder)
+		if err != nil {
+			if amendedOrder.Status != types.Order_STATUS_PARKED {
+				// If we are live then park
+				m.parkOrder(ctx, existingOrder)
+			}
+		}
+
+		// If we are parked then we can amend in place
+		if existingOrder.Status == types.Order_STATUS_PARKED {
+			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
+			if err == nil {
+				m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			}
+			return ret, err
+		}
+		amendedOrder.Price = newPrice
 	}
 
 	// from here these are the normal amendment
@@ -2132,6 +2148,10 @@ func (m *Market) applyOrderAmendment(
 		Version:     existingOrder.Version + 1,
 		UpdatedAt:   currentTime.UnixNano(),
 	}
+	if existingOrder.PeggedOrder != nil {
+		order.PeggedOrder = &types.PeggedOrder{Reference: existingOrder.PeggedOrder.Reference,
+			Offset: existingOrder.PeggedOrder.Offset}
+	}
 
 	// apply price changes
 	if amendment.Price != nil && existingOrder.Price != amendment.Price.Value {
@@ -2168,7 +2188,9 @@ func (m *Market) applyOrderAmendment(
 		if amendment.PeggedReference != types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			order.PeggedOrder.Reference = amendment.PeggedReference
 		}
-		err = m.validatePeggedOrder(ctx, order)
+		if verr := m.validatePeggedOrder(ctx, order); verr != types.OrderError_ORDER_ERROR_NONE {
+			err = verr
+		}
 	}
 	return
 }
@@ -2224,6 +2246,17 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 		}
 		return nil, err
 	}
+	return &types.OrderConfirmation{
+		Order: amendOrder,
+	}, nil
+}
+
+func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
+	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendWhenParked")
+	defer timer.EngineTimeCounterAdd()
+
+	*originalOrder = *amendOrder
+
 	return &types.OrderConfirmation{
 		Order: amendOrder,
 	}, nil
