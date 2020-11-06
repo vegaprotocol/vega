@@ -1109,9 +1109,6 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil)
-
-	addAccount(tm, "party1")
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx := context.Background()
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
@@ -1141,9 +1138,6 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil)
-
-	addAccount(tm, "party1")
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	ctx := context.Background()
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
