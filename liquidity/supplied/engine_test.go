@@ -205,19 +205,3 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedLiquidity, liquidity)
 }
-
-func Test_XXX(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	orderProvider := mocks.NewMockOrderProvider(ctrl)
-	riskModel := mocks.NewMockRiskModel(ctrl)
-
-	minPrice := 89.2
-	maxPrice := 111.1
-
-
-
-	engine, err := supplied.NewEngine(orderProvider, riskModel)
-	require.NotNil(t, engine)
-	require.NoError(t, err)
-
-	engine.UpdateOrderSizes(types.LiquidityProvision)
