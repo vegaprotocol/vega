@@ -485,7 +485,7 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	amend := &types.OrderAmendment{
 		OrderID:     orderID,
 		PartyID:     party,
-		MarketID:    tm.market.GetID(),
+		MarketID:    market,
 		SizeDelta:   sizeDelta,
 		TimeInForce: tif,
 	}
@@ -497,6 +497,13 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	if expiresAt > 0 {
 		amend.ExpiresAt = &types.Timestamp{Value: expiresAt}
 	}
+
+	return amend
+}
+
+func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
+	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
+	amend := getAmend(tm.market.GetID(), party, orderID, sizeDelta, price, tif, expiresAt)
 
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	if pass {
