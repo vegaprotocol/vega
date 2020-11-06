@@ -1104,6 +1104,10 @@ message LiquidityOrder {
   PeggedReference reference = 1;
   uint32 proportion = 2;
   int64 offset = 3;
+  // holds the fraction of total liquidity obligation that should be commited to that order given proportions of all orders forming the Buys or Sells
+  double normalisedFraction = 4;
+  // holds the calculated size of the order based on the probability of trading for it's latest price and the normalisedFraction
+  double liquidityImpliedSize = 5; 
 }
 
 message LiquidityProvisionSubmission {
