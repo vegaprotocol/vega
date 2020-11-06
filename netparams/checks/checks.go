@@ -22,13 +22,13 @@ func GovernanceAssetUpdate(
 ) netparams.StringRule {
 	return func(value string) error {
 		if !assets.IsEnabled(value) {
-			log.Error("tried to push a governance update with an non-enabled asset",
+			log.Debug("tried to push a governance update with an non-enabled asset",
 				logging.String("asset-id", value))
 			return fmt.Errorf("invalid asset %v", value)
 		}
 
 		if !collateral.AssetExists(value) {
-			log.Error("unable to update governance asset in collateral",
+			log.Debug("unable to update governance asset in collateral",
 				logging.String("asset-id", value))
 			return fmt.Errorf("asset does not exists in collateral %v", value)
 		}
