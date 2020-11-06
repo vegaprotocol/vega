@@ -171,33 +171,33 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order) (pos *MarketPosition, err error) {
-	timer := metrics.NewTimeCounter("-", "positions", "UnregisterOrder")
+func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
+	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
+
 	pos, found := e.positions[order.PartyID]
 	if !found {
-		err = ErrPositionNotFound
-	} else {
-		if order.Side == types.Side_SIDE_BUY {
-			// recalculate vwap
-			vwap := pos.vwBuyPrice*uint64(pos.buy) - order.Price*order.Remaining
-			pos.buy -= int64(order.Remaining)
-			if pos.buy != 0 {
-				pos.vwBuyPrice = vwap / uint64(pos.buy)
-			} else {
-				pos.vwBuyPrice = 0
-			}
+		return nil, ErrPositionNotFound
+	}
+
+	if order.Side == types.Side_SIDE_BUY {
+		// recalculate vwap
+		vwap := pos.vwBuyPrice*uint64(pos.buy) - order.Price*order.Remaining
+		pos.buy -= int64(order.Remaining)
+		if pos.buy != 0 {
+			pos.vwBuyPrice = vwap / uint64(pos.buy)
 		} else {
-			vwap := pos.vwSellPrice*uint64(pos.sell) - order.Price*order.Remaining
-			pos.sell -= int64(order.Remaining)
-			if pos.sell != 0 {
-				pos.vwSellPrice = vwap / uint64(pos.sell)
-			} else {
-				pos.vwSellPrice = 0
-			}
+			pos.vwBuyPrice = 0
+		}
+	} else {
+		vwap := pos.vwSellPrice*uint64(pos.sell) - order.Price*order.Remaining
+		pos.sell -= int64(order.Remaining)
+		if pos.sell != 0 {
+			pos.vwSellPrice = vwap / uint64(pos.sell)
+		} else {
+			pos.vwSellPrice = 0
 		}
 	}
-	timer.EngineTimeCounterAdd()
-	return
+	return pos, nil
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order

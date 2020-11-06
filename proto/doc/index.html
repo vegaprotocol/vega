@@ -14123,6 +14123,12 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td><p>Used for closed partially filled IOC orders.</p></td>
               </tr>
 
+              <tr>
+                <td>STATUS_PARKED</td>
+                <td>8</td>
+                <td><p>The order ha been removed from the book and has been parked, applies to pegged order only</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -14489,6 +14495,12 @@ a general account to submit the order (no deposits made
 for the required asset).</p></td>
               </tr>
 
+              <tr>
+                <td>ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER</td>
+                <td>44</td>
+                <td><p>We are unable to reprice a pegged order because a market price is unavailable</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -14521,7 +14533,7 @@ for the required asset).</p></td>
               <tr>
                 <td>PEGGED_REFERENCE_BEST_ASK</td>
                 <td>3</td>
-                <td><p>BEST BID price</p></td>
+                <td><p>BEST ASK price</p></td>
               </tr>
 
           </tbody>

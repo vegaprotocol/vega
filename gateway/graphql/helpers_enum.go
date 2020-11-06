@@ -223,6 +223,8 @@ func convertOrderStatusToProto(x OrderStatus) (types.Order_Status, error) {
 		return types.Order_STATUS_REJECTED, nil
 	case OrderStatusPartiallyFilled:
 		return types.Order_STATUS_PARTIALLY_FILLED, nil
+	case OrderStatusParked:
+		return types.Order_STATUS_PARKED, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderStatus from GraphQL to Proto: %v", x)
 		return types.Order_STATUS_INVALID, err
@@ -246,6 +248,8 @@ func convertOrderStatusFromProto(x types.Order_Status) (OrderStatus, error) {
 		return OrderStatusRejected, nil
 	case types.Order_STATUS_PARTIALLY_FILLED:
 		return OrderStatusPartiallyFilled, nil
+	case types.Order_STATUS_PARKED:
+		return OrderStatusParked, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderStatus from Proto to GraphQL: %v", x)
 		return OrderStatusActive, err
@@ -544,6 +548,8 @@ func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderErro
 		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO, nil
 	case OrderRejectionReasonInsufficientAssetBalance:
 		return types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE, nil
+	case OrderRejectionReasonUnableToRepricePeggedOrder:
+		return types.OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER, nil
 	default:
 		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
 		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
@@ -629,6 +635,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, nil
 	case types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
 		return OrderRejectionReasonInsufficientAssetBalance, nil
+	case types.OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER:
+		return OrderRejectionReasonUnableToRepricePeggedOrder, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err
