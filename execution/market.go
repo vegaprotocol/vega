@@ -1622,7 +1622,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, err
 	}
 
-	amendedOrder, err := m.applyOrderAmendment(existingOrder, orderAmendment)
+	amendedOrder, err := m.applyOrderAmendment(ctx, existingOrder, orderAmendment)
 	if err != nil {
 		return nil, err
 	}
@@ -1683,8 +1683,12 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		}, nil
 	}
 
-	// from here these are the normal amendment
+	// If this was a pegged order, reprice before we check if the values have changed
+	if existingOrder.PeggedOrder != nil {
+		// TODO after pegged order merge:		m.getPeggedOrderPrice(amendedOrder)
+	}
 
+	// from here these are the normal amendment
 	var priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
 
 	if amendedOrder.Price != existingOrder.Price {
@@ -1832,6 +1836,7 @@ func (m *Market) validateOrderAmendment(
 
 // this function assume the amendment have been validated before
 func (m *Market) applyOrderAmendment(
+	ctx context.Context,
 	existingOrder *types.Order,
 	amendment *types.OrderAmendment,
 ) (order *types.Order, err error) {
@@ -1882,6 +1887,18 @@ func (m *Market) applyOrderAmendment(
 	}
 	if amendment.ExpiresAt != nil {
 		order.ExpiresAt = amendment.ExpiresAt.Value
+	}
+
+	// apply pegged order values
+	if order.PeggedOrder != nil {
+		if amendment.PeggedOffset != nil {
+			order.PeggedOrder.Offset = amendment.PeggedOffset.Value
+		}
+
+		if amendment.PeggedReference != types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+			order.PeggedOrder.Reference = amendment.PeggedReference
+		}
+		err = m.validatePeggedOrder(ctx, order)
 	}
 	return
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOrderBufferOutputCount(t *testing.T) {
@@ -479,12 +480,13 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
 }
 
-func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
-	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
+func getAmend(market string, party string, orderID string, sizeDelta int64, price uint64,
+	tif types.Order_TimeInForce, expiresAt int64) *types.OrderAmendment {
+
 	amend := &types.OrderAmendment{
 		OrderID:     orderID,
 		PartyID:     party,
-		MarketID:    tm.market.GetID(),
+		MarketID:    market,
 		SizeDelta:   sizeDelta,
 		TimeInForce: tif,
 	}
@@ -496,6 +498,13 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	if expiresAt > 0 {
 		amend.ExpiresAt = &types.Timestamp{Value: expiresAt}
 	}
+
+	return amend
+}
+
+func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
+	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
+	amend := getAmend(tm.market.GetID(), party, orderID, sizeDelta, price, tif, expiresAt)
 
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	if pass {
@@ -790,5 +799,109 @@ func testPeggedOrderSells(t *testing.T) {
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 0}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+}
+
+func TestPeggedOrderAmendWhileParked(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Place a pegged order when there is no reference price so it will be parked
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	// Try to amend the offset value
+	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedOffset = &types.PeggedOffset{Value: -5}
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Try to amend the reference price
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Try to amend the size of the order
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 1, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Try to amend the price of the order
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 101, types.Order_TIF_UNSPECIFIED, 0)
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.Nil(t, amended)
+	assert.Error(t, err)
+
+	// Try to amend the time in force of the order
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 101, types.Order_TIF_GTT, 10000000000)
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+}
+
+func TestPeggedOrderAmendOffsetWhileLive(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Place 2 trades o we have a valid BEST_BID+MID+BEST_ASK price
+	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 99)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 101)
+	require.NotNil(t, sellOrder)
+
+	// Place the pegged order
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.Nil(t, confirmation)
+	assert.Error(t, err)
+
+	// Try to amend the offset value
+	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedOffset = &types.PeggedOffset{Value: -5}
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Try to amend the reference price
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Try to amend the size of the order
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 1, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Try to amend the price of the order
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 101, types.Order_TIF_UNSPECIFIED, 0)
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.Nil(t, amended)
+	assert.Error(t, err)
+
+	// Try to amend the time in force of the order
+	amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 101, types.Order_TIF_GTT, 10000000000)
+	amended, err = tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
 	assert.NoError(t, err)
 }
