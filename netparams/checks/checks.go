@@ -21,7 +21,6 @@ func GovernanceAssetUpdate(
 	collateral Collateral,
 ) netparams.StringRule {
 	return func(value string) error {
-		fmt.Printf("CHECK ASSET EXISTS YOOOO\n\n\n")
 		if !assets.IsEnabled(value) {
 			log.Error("tried to push a governance update with an non-enabled asset",
 				logging.String("asset-id", value))
