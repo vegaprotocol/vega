@@ -151,7 +151,7 @@ func (s *Store) OnChainTimeUpdate(_ time.Time) {
 	}
 	for k := range s.paramUpdates {
 		if err := s.dispatchUpdate(k); err != nil {
-			s.log.Error("unable to dispatch netparams update", logging.Error(err))
+			s.log.Debug("unable to dispatch netparams update", logging.Error(err))
 		}
 	}
 	s.paramUpdates = map[string]struct{}{}

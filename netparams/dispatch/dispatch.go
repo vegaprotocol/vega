@@ -21,13 +21,13 @@ func GovernanceAssetUpdate(
 ) func(value string) error {
 	return func(value string) error {
 		if !assets.IsEnabled(value) {
-			log.Error("tried to push a governance update with an non-enabled asset",
+			log.Debug("tried to push a governance update with an non-enabled asset",
 				logging.String("asset-id", value))
 			return fmt.Errorf("invalid asset %v", value)
 		}
 
 		if err := collateral.UpdateGovernanceAsset(value); err != nil {
-			log.Error("unable to update governance asset in collateral",
+			log.Debug("unable to update governance asset in collateral",
 				logging.String("asset-id", value),
 				logging.Error(err))
 			return fmt.Errorf("unable to update governance asset in collateral %w", err)
