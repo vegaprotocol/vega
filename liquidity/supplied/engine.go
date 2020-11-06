@@ -8,19 +8,11 @@ import (
 )
 
 var (
-	// ErrNilLiquidityProvisionProvider signals that nil was supplied in place of LiquidityProvisionProvider
-	ErrNilLiquidityProvisionProvider = errors.New("nil LiquidityProvisionProvider")
 	// ErrNilOrderProvider signals that nil was supplied in place of OrderProvider
 	ErrNilOrderProvider = errors.New("nil OrderProvider")
 	// ErrNilRiskModel signals that nil was supplied in place of RiskModel
 	ErrNilRiskModel = errors.New("nil RiskModel")
 )
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_provision_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied LiquidityProvisionProvider
-// LiquidityProvisionProvider allows getting all the liquidity provisions per specied market ID
-type LiquidityProvisionProvider interface {
-	GetLiquidityProvisions(market string) ([]types.LiquidityProvision, error)
-}
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied OrderProvider
 // OrderProvider allows getting an order by its ID
@@ -36,19 +28,12 @@ type RiskModel interface {
 }
 
 type Engine struct {
-	mID string
-	lpp LiquidityProvisionProvider
-	op  OrderProvider
-	rm  RiskModel
-
-	//TODO: Move buys, sells here to aid memory usage
+	op OrderProvider
+	rm RiskModel
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine if all arguments get supplied (with non-nil values) and an error otherwise
-func NewEngine(marketID string, lpProvider LiquidityProvisionProvider, orderProvider OrderProvider, riskModel RiskModel) (*Engine, error) {
-	if lpProvider == nil {
-		return nil, ErrNilLiquidityProvisionProvider
-	}
+func NewEngine(orderProvider OrderProvider, riskModel RiskModel) (*Engine, error) {
 	if orderProvider == nil {
 		return nil, ErrNilOrderProvider
 	}
@@ -57,16 +42,14 @@ func NewEngine(marketID string, lpProvider LiquidityProvisionProvider, orderProv
 	}
 
 	return &Engine{
-		mID: marketID,
-		lpp: lpProvider,
-		op:  orderProvider,
-		rm:  riskModel,
+		op: orderProvider,
+		rm: riskModel,
 	}, nil
 }
 
-// GetSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e Engine) GetSuppliedLiquidity() (float64, error) {
-	buys, sells, err := e.getLiquidityProvisionOrders()
+// CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
+func (e Engine) CalculateSuppliedLiquidity(liquidityProvisions ...types.LiquidityProvision) (float64, error) {
+	buys, sells, err := e.getLiquidityProvisionOrders(liquidityProvisions...)
 	if err != nil {
 		return 0, err
 	}
@@ -88,15 +71,11 @@ func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide 
 	return liquidity
 }
 
-func (e Engine) getLiquidityProvisionOrders() (map[uint64]uint64, map[uint64]uint64, error) {
-	lps, err := e.lpp.GetLiquidityProvisions(e.mID)
-	if err != nil {
-		return nil, nil, err
-	}
+func (e Engine) getLiquidityProvisionOrders(liquidityProvisions ...types.LiquidityProvision) (map[uint64]uint64, map[uint64]uint64, error) {
 
-	buys := make(map[uint64]uint64, len(lps))
-	sells := make(map[uint64]uint64, len(lps))
-	for _, lp := range lps {
+	buys := make(map[uint64]uint64, len(liquidityProvisions))
+	sells := make(map[uint64]uint64, len(liquidityProvisions))
+	for _, lp := range liquidityProvisions {
 		if err := e.sumVolumePerPrice(buys, lp.Buys); err != nil {
 			return nil, nil, err
 		}
@@ -117,5 +96,3 @@ func (e Engine) sumVolumePerPrice(mp map[uint64]uint64, lors []*types.LiquidityO
 	}
 	return nil
 }
-
-// TODO: Do we need a liquidity engine that liqudity service will reference? Then we could pass reference to that engine to market and use it here.

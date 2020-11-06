@@ -13,65 +13,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const MarketID string = "TestMarket"
-
 func TestConstructor(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	lpProvider := mocks.NewMockLiquidityProvisionProvider(ctrl)
 	orderProvider := mocks.NewMockOrderProvider(ctrl)
 	riskModel := mocks.NewMockRiskModel(ctrl)
 
-	engine, err := supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
+	engine, err := supplied.NewEngine(orderProvider, riskModel)
 	require.NotNil(t, engine)
 	require.NoError(t, err)
 
-	engine, err = supplied.NewEngine(MarketID, nil, orderProvider, riskModel)
+	engine, err = supplied.NewEngine(nil, riskModel)
 	require.Nil(t, engine)
 	require.Error(t, err)
 
-	engine, err = supplied.NewEngine(MarketID, lpProvider, nil, riskModel)
-	require.Nil(t, engine)
-	require.Error(t, err)
-
-	engine, err = supplied.NewEngine(MarketID, lpProvider, orderProvider, nil)
+	engine, err = supplied.NewEngine(orderProvider, nil)
 	require.Nil(t, engine)
 	require.Error(t, err)
 }
 
-func TestGetSuppliedLiquidity(t *testing.T) {
+func TestCalculateSuppliedLiquidity(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	lpProvider := mocks.NewMockLiquidityProvisionProvider(ctrl)
 	orderProvider := mocks.NewMockOrderProvider(ctrl)
 	riskModel := mocks.NewMockRiskModel(ctrl)
 
 	minPrice := 89.2
 	maxPrice := 111.1
 
-	// LP provider error
-	errString := "liquidity provider error"
-
-	lps := []types.LiquidityProvision{}
-	lpProvider.EXPECT().GetLiquidityProvisions(MarketID).Return(nil, errors.New(errString)).Times(1)
-
-	engine, err := supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
-	require.NotNil(t, engine)
-	require.NoError(t, err)
-
-	liquidity, err := engine.GetSuppliedLiquidity()
-	require.Error(t, err)
-	require.EqualError(t, err, errString)
-	require.Equal(t, 0.0, liquidity)
-
 	// No LP orders
-	lps = []types.LiquidityProvision{}
+	lps := []types.LiquidityProvision{}
 	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice).Times(1)
-	lpProvider.EXPECT().GetLiquidityProvisions(MarketID).Return(lps, nil).Times(1)
 
-	engine, err = supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
+	engine, err := supplied.NewEngine(orderProvider, riskModel)
 	require.NotNil(t, engine)
 	require.NoError(t, err)
 
-	liquidity, err = engine.GetSuppliedLiquidity()
+	liquidity, err := engine.CalculateSuppliedLiquidity(lps...)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, liquidity)
 
@@ -82,18 +58,17 @@ func TestGetSuppliedLiquidity(t *testing.T) {
 	}
 	lps = []types.LiquidityProvision{lp1}
 	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice).Times(1)
-	lpProvider.EXPECT().GetLiquidityProvisions(MarketID).Return(lps, nil).Times(1)
 
-	engine, err = supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
+	engine, err = supplied.NewEngine(orderProvider, riskModel)
 	require.NotNil(t, engine)
 	require.NoError(t, err)
 
-	liquidity, err = engine.GetSuppliedLiquidity()
+	liquidity, err = engine.CalculateSuppliedLiquidity(lps...)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, liquidity)
 
 	// 1 LP order, order provider error
-	errString = "order provider error"
+	errString := "order provider error"
 	lp1buyOrder1Ref := "lp1buyOrder1"
 	lp1buyOrder1 := &types.Order{
 		Id:        lp1buyOrder1Ref,
@@ -114,14 +89,13 @@ func TestGetSuppliedLiquidity(t *testing.T) {
 
 	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1buyOrder1.Price), true, true, minPrice, maxPrice).Return(lp1buyOrder1Prob).Times(1)
-	lpProvider.EXPECT().GetLiquidityProvisions(MarketID).Return(lps, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1buyOrder1Ref).Return(nil, errors.New(errString)).Times(1)
 
-	engine, err = supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
+	engine, err = supplied.NewEngine(orderProvider, riskModel)
 	require.NotNil(t, engine)
 	require.NoError(t, err)
 
-	liquidity, err = engine.GetSuppliedLiquidity()
+	liquidity, err = engine.CalculateSuppliedLiquidity(lps...)
 	require.Error(t, err)
 	require.EqualError(t, err, errString)
 	require.Equal(t, 0.0, liquidity)
@@ -129,14 +103,13 @@ func TestGetSuppliedLiquidity(t *testing.T) {
 	// 1 LP order, 1 buy, no sells
 	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1buyOrder1.Price), true, true, minPrice, maxPrice).Return(lp1buyOrder1Prob).Times(1)
-	lpProvider.EXPECT().GetLiquidityProvisions(MarketID).Return(lps, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1buyOrder1Ref).Return(lp1buyOrder1, nil).Times(1)
 
-	engine, err = supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
+	engine, err = supplied.NewEngine(orderProvider, riskModel)
 	require.NotNil(t, engine)
 	require.NoError(t, err)
 
-	liquidity, err = engine.GetSuppliedLiquidity()
+	liquidity, err = engine.CalculateSuppliedLiquidity(lps...)
 	require.NoError(t, err)
 	require.Equal(t, 0.0, liquidity)
 
@@ -182,16 +155,15 @@ func TestGetSuppliedLiquidity(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1buyOrder1.Price), true, true, minPrice, maxPrice).Return(lp1buyOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1sellOrder1.Price), false, true, minPrice, maxPrice).Return(lp1sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1sellOrder2.Price), false, true, minPrice, maxPrice).Return(lp1sellOrder2Prob).Times(1)
-	lpProvider.EXPECT().GetLiquidityProvisions(MarketID).Return(lps, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1buyOrder1Ref).Return(lp1buyOrder1, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1sellOrder1Ref).Return(lp1sellOrder1, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1sellOrder2Ref).Return(lp1sellOrder2, nil).Times(1)
 
-	engine, err = supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
+	engine, err = supplied.NewEngine(orderProvider, riskModel)
 	require.NotNil(t, engine)
 	require.NoError(t, err)
 
-	liquidity, err = engine.GetSuppliedLiquidity()
+	liquidity, err = engine.CalculateSuppliedLiquidity(lps...)
 	require.NoError(t, err)
 	require.Equal(t, expectedLiquidity, liquidity)
 
@@ -220,17 +192,16 @@ func TestGetSuppliedLiquidity(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1buyOrder1.Price), true, true, minPrice, maxPrice).Return(lp1buyOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1sellOrder1.Price), false, true, minPrice, maxPrice).Return(lp1sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(lp1sellOrder2.Price), false, true, minPrice, maxPrice).Return(lp1sellOrder2Prob).Times(1)
-	lpProvider.EXPECT().GetLiquidityProvisions(MarketID).Return(lps, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1buyOrder1Ref).Return(lp1buyOrder1, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp2buyOrder1Ref).Return(lp2buyOrder1, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1sellOrder1Ref).Return(lp1sellOrder1, nil).Times(1)
 	orderProvider.EXPECT().GetOrderByID(lp1sellOrder2Ref).Return(lp1sellOrder2, nil).Times(1)
 
-	engine, err = supplied.NewEngine(MarketID, lpProvider, orderProvider, riskModel)
+	engine, err = supplied.NewEngine(orderProvider, riskModel)
 	require.NotNil(t, engine)
 	require.NoError(t, err)
 
-	liquidity, err = engine.GetSuppliedLiquidity()
+	liquidity, err = engine.CalculateSuppliedLiquidity(lps...)
 	require.NoError(t, err)
 	require.Equal(t, expectedLiquidity, liquidity)
 }
