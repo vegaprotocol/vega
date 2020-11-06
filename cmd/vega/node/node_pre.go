@@ -577,8 +577,8 @@ func (l *NodeCommand) setupNetParameters() error {
 	// now add some watcher for our netparams
 	err = l.netParams.Watch(
 		netparams.WatchParam{
-			netparams.GovernanceVoteAsset,
-			dispatch.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+			Param:   netparams.GovernanceVoteAsset,
+			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
 		},
 	)
 	if err != nil {
