@@ -161,6 +161,10 @@ func (b *Broker) Send(event events.Event) {
 }
 
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
+	// TxErrEvent events are special cases, they don't get sent to an "ALL" subscription
+	if t == events.TxErrEvent {
+		return b.tSubs[t]
+	}
 	ret := map[int]*subscription{}
 	keys := []events.Type{
 		t,
@@ -258,7 +262,7 @@ func (b *Broker) rmSubs(keys ...int) {
 		if len(types) == 0 {
 			types = []events.Type{events.All}
 		}
-		if len(types) == 0 || len(types) == 1 && types[0] == events.All {
+		if len(types) == 1 && types[0] == events.All {
 			// remove in all subscribers then
 			for _, v := range b.tSubs {
 				delete(v, k)
