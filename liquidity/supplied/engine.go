@@ -1,17 +1,9 @@
 package supplied
 
 import (
-	"errors"
 	"math"
 
 	types "code.vegaprotocol.io/vega/proto"
-)
-
-var (
-	// ErrNilOrderProvider signals that nil was supplied in place of OrderProvider
-	ErrNilOrderProvider = errors.New("nil OrderProvider")
-	// ErrNilRiskModel signals that nil was supplied in place of RiskModel
-	ErrNilRiskModel = errors.New("nil RiskModel")
 )
 
 type LiquidityOrder struct {
@@ -41,18 +33,11 @@ type Engine struct {
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine if all arguments get supplied (with non-nil values) and an error otherwise
-func NewEngine(orderProvider OrderProvider, riskModel RiskModel) (*Engine, error) {
-	if orderProvider == nil {
-		return nil, ErrNilOrderProvider
-	}
-	if riskModel == nil {
-		return nil, ErrNilRiskModel
-	}
-
+func NewEngine(orderProvider OrderProvider, riskModel RiskModel) *Engine {
 	return &Engine{
 		op: orderProvider,
 		rm: riskModel,
-	}, nil
+	}
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
