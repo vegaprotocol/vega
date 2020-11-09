@@ -700,7 +700,7 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 5)
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
 
-	// Place a valid pegged order which will be added to the order book
+	// Place a valid pegged order which will be parked because it cannot be repriced
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 1)
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
 	_, err := tm.market.SubmitOrder(ctx, &order)
@@ -1290,7 +1290,14 @@ func testPeggedOrderExpiring(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
 }
 
-func TestPeggedOrderAmendForcesUnPark(t *testing.T) {
+func TestPeggedOrdersAmends(t *testing.T) {
+	t.Run("pegged orders amend an order that is parked but becomes live ", testPeggedOrderAmendParkedToLive)
+	t.Run("pegged orders amend an order that is parked and remains parked", testPeggedOrderAmendParkedStayParked)
+}
+
+// If we amend an order that is parked and not in auction we need to see if the amendment has caused the
+// order to be unparkable. If so we will have to put it back on the live book.
+func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
@@ -1319,6 +1326,46 @@ func TestPeggedOrderAmendForcesUnPark(t *testing.T) {
 	require.NotNil(t, amended)
 	assert.Equal(t, int64(-5), amended.Order.PeggedOrder.Offset)
 	assert.NoError(t, err)
+
+	// Check we should have no parked orders
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+}
+
+// Amend a parked order but the order remains parked
+func testPeggedOrderAmendParkedStayParked(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
+	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	require.NotNil(t, sellOrder)
+
+	// Place the pegged order which will be parked
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Amend offset so we can reprice
+	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedOffset = &types.PeggedOffset{Value: -15}
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.Equal(t, int64(-15), amended.Order.PeggedOrder.Offset)
+	assert.NoError(t, err)
+
+	// Check we should have no parked orders
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
 func TestPeggedOrderAmendForcesPark(t *testing.T) {
