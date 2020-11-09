@@ -57,8 +57,9 @@ func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
 }
 
 // When we leave an auction we need to remove any orders marked as GFA
-func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) {
+func (s *OrderBookSide) getOrdersToCancelOrPark(auction bool) ([]*types.Order, []*types.Order, error) {
 	ordersToCancel := make([]*types.Order, 0)
+	ordersToPark := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
 			// Find orders to cancel
@@ -67,9 +68,13 @@ func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) 
 				// Save order to send back to client
 				ordersToCancel = append(ordersToCancel, order)
 			}
+
+			if auction && order.PeggedOrder != nil {
+				ordersToPark = append(ordersToPark, order)
+			}
 		}
 	}
-	return ordersToCancel, nil
+	return ordersToCancel, ordersToPark, nil
 }
 
 // When we leave an auction period we need to put back all the orders
@@ -85,11 +90,13 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 	s.getPriceLevel(o.Price).addOrder(o)
 }
 
-func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64) {
+// BestPriceAndVolume returns the top of book price and volume
+// returns an error if the book is empty
+func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
-		return 0, 0
+		return 0, 0, errors.New("no orders on the book")
 	}
-	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume
+	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume, nil
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {

@@ -5166,6 +5166,7 @@ See resulting status in [What order types are available to trade on Vega?](https
 | STATUS_FILLED | 5 | Used for closed fully filled orders. |
 | STATUS_REJECTED | 6 | Used for orders when not enough collateral was available to fill the margin requirements. |
 | STATUS_PARTIALLY_FILLED | 7 | Used for closed partially filled IOC orders. |
+| STATUS_PARKED | 8 | The order ha been removed from the book and has been parked, applies to pegged order only |
 
 
 
@@ -5253,6 +5254,7 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE | 41 | Sell pegged order cannot reference best bid price |
 | ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO | 42 | Pegged order offset must be &gt; zero |
 | ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
+| ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 44 | We are unable to reprice a pegged order because a market price is unavailable |
 
 
 
@@ -5266,7 +5268,7 @@ Which price point is the pegged order linked to
 | PEGGED_REFERENCE_UNSPECIFIED | 0 | No reference given |
 | PEGGED_REFERENCE_MID | 1 | MID price |
 | PEGGED_REFERENCE_BEST_BID | 2 | BEST BID price |
-| PEGGED_REFERENCE_BEST_ASK | 3 | BEST BID price |
+| PEGGED_REFERENCE_BEST_ASK | 3 | BEST ASK price |
 
 
 
