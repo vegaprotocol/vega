@@ -319,13 +319,19 @@ func (m *Market) GetMarketData() types.MarketData {
 		}
 	}
 
+	// If we do not have one of the best_* prices, leave the mid price as zero
+	var midPrice uint64
+	if bestBidPrice > 0 && bestOfferPrice > 0 {
+		midPrice = (bestBidPrice + bestOfferPrice) / 2
+	}
+
 	return types.MarketData{
 		Market:           m.GetID(),
 		BestBidPrice:     bestBidPrice,
 		BestBidVolume:    bestBidVolume,
 		BestOfferPrice:   bestOfferPrice,
 		BestOfferVolume:  bestOfferVolume,
-		MidPrice:         (bestBidPrice + bestOfferPrice) / 2,
+		MidPrice:         midPrice,
 		MarkPrice:        m.markPrice,
 		Timestamp:        m.currentTime.UnixNano(),
 		OpenInterest:     m.position.GetOpenInterest(),
@@ -1764,6 +1770,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	// Update the order in our stores (will be marked as parked)
 	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.Order_STATUS_PARKED
+	order.Price = 0
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	if _, err := m.position.UnregisterOrder(order); err != nil {
 		m.log.Fatal("Failure unregistering order in positions engine (parking)",
