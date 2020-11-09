@@ -4617,7 +4617,7 @@ type LiquidityOrder struct {
 	// holds the fraction of total liquidity obligation that should be commited to that order given proportions of all orders forming the Buys or Sells
 	NormalisedFraction float64 `protobuf:"fixed64,4,opt,name=normalisedFraction,proto3" json:"normalisedFraction,omitempty"`
 	// holds the calculated size of the order based on the probability of trading for it's latest price and the normalisedFraction
-	LiquidityImpliedSize uint64   `protobuf:"varint,5,opt,name=liquidityImpliedSize,proto3" json:"liquidityImpliedSize,omitempty"`
+	LiquidityImpliedSize float64  `protobuf:"fixed64,5,opt,name=liquidityImpliedSize,proto3" json:"liquidityImpliedSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4676,7 +4676,7 @@ func (m *LiquidityOrder) GetNormalisedFraction() float64 {
 	return 0
 }
 
-func (m *LiquidityOrder) GetLiquidityImpliedSize() uint64 {
+func (m *LiquidityOrder) GetLiquidityImpliedSize() float64 {
 	if m != nil {
 		return m.LiquidityImpliedSize
 	}
