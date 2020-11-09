@@ -4611,16 +4611,12 @@ func (m *NetworkParameter) GetValue() string {
 }
 
 type LiquidityOrder struct {
-	Reference  PeggedReference `protobuf:"varint,1,opt,name=reference,proto3,enum=vega.PeggedReference" json:"reference,omitempty"`
-	Proportion uint32          `protobuf:"varint,2,opt,name=proportion,proto3" json:"proportion,omitempty"`
-	Offset     int64           `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
-	// holds the fraction of total liquidity obligation that should be commited to that order given proportions of all orders forming the Buys or Sells
-	NormalisedFraction float64 `protobuf:"fixed64,4,opt,name=normalisedFraction,proto3" json:"normalisedFraction,omitempty"`
-	// holds the calculated size of the order based on the probability of trading for it's latest price and the normalisedFraction
-	LiquidityImpliedSize float64  `protobuf:"fixed64,5,opt,name=liquidityImpliedSize,proto3" json:"liquidityImpliedSize,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Reference            PeggedReference `protobuf:"varint,1,opt,name=reference,proto3,enum=vega.PeggedReference" json:"reference,omitempty"`
+	Proportion           uint32          `protobuf:"varint,2,opt,name=proportion,proto3" json:"proportion,omitempty"`
+	Offset               int64           `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *LiquidityOrder) Reset()         { *m = LiquidityOrder{} }
@@ -4665,20 +4661,6 @@ func (m *LiquidityOrder) GetProportion() uint32 {
 func (m *LiquidityOrder) GetOffset() int64 {
 	if m != nil {
 		return m.Offset
-	}
-	return 0
-}
-
-func (m *LiquidityOrder) GetNormalisedFraction() float64 {
-	if m != nil {
-		return m.NormalisedFraction
-	}
-	return 0
-}
-
-func (m *LiquidityOrder) GetLiquidityImpliedSize() float64 {
-	if m != nil {
-		return m.LiquidityImpliedSize
 	}
 	return 0
 }
