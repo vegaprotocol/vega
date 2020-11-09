@@ -28,28 +28,45 @@ type RiskModel interface {
 }
 
 type Engine struct {
-	op OrderProvider
 	rm RiskModel
 }
 
-// NewEngine returns a reference to a new supplied liquidity calculation engine if all arguments get supplied (with non-nil values) and an error otherwise
-func NewEngine(orderProvider OrderProvider, riskModel RiskModel) *Engine {
+// NewEngine returns a reference to a new supplied liquidity calculation engine
+func NewEngine(riskModel RiskModel) *Engine {
 	return &Engine{
-		op: orderProvider,
 		rm: riskModel,
 	}
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e Engine) CalculateSuppliedLiquidity(liquidityProvisions ...types.LiquidityProvision) (float64, error) {
-	buys, sells, err := e.getLiquidityProvisionOrders(liquidityProvisions...)
-	if err != nil {
-		return 0, err
-	}
+func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error) {
+	bLiq := 0.0
+	sLiq := 0.0
 	min, max := e.rm.PriceRange()
-	bLiq := e.calculateInstantaneousLiquidity(buys, true, min, max)
-	sLiq := e.calculateInstantaneousLiquidity(sells, false, min, max)
+	var bProbs map[uint64]float64 = make(map[uint64]float64)
+	var sProbs map[uint64]float64 = make(map[uint64]float64)
+	var prob float64
+	var ok bool
+	for _, o := range orders {
+		price := o.Price
+		fpPrice := float64(price)
+		volume := o.Remaining
 
+		if o.Side == types.Side_SIDE_BUY {
+			if prob, ok = bProbs[price]; !ok {
+				prob = e.rm.ProbabilityOfTrading(fpPrice, true, true, min, max)
+				bProbs[price] = prob
+			}
+			bLiq += fpPrice * float64(volume) * prob
+		}
+		if o.Side == types.Side_SIDE_SELL {
+			if prob, ok = sProbs[price]; !ok {
+				prob = e.rm.ProbabilityOfTrading(fpPrice, false, true, min, max)
+				sProbs[price] = prob
+			}
+			sLiq += fpPrice * float64(volume) * prob
+		}
+	}
 	return math.Min(bLiq, sLiq), nil
 }
 
@@ -86,41 +103,4 @@ func updateNormalisedFractions(orders []*LiquidityOrder) {
 	for _, o := range orders {
 		o.NormalisedFraction = float64(o.Proportion) / fpSum
 	}
-}
-
-func (e Engine) calculateInstantaneousLiquidity(mp map[uint64]uint64, isBuySide bool, minPrice, maxPrice float64) float64 {
-	liquidity := 0.0
-	for price, volume := range mp {
-		fpPrice := float64(price)
-		prob := e.rm.ProbabilityOfTrading(fpPrice, isBuySide, true, minPrice, maxPrice)
-
-		liquidity += fpPrice * float64(volume) * prob
-	}
-	return liquidity
-}
-
-func (e Engine) getLiquidityProvisionOrders(liquidityProvisions ...types.LiquidityProvision) (map[uint64]uint64, map[uint64]uint64, error) {
-
-	buys := make(map[uint64]uint64, len(liquidityProvisions))
-	sells := make(map[uint64]uint64, len(liquidityProvisions))
-	for _, lp := range liquidityProvisions {
-		if err := e.sumVolumePerPrice(buys, lp.Buys); err != nil {
-			return nil, nil, err
-		}
-		if err := e.sumVolumePerPrice(sells, lp.Sells); err != nil {
-			return nil, nil, err
-		}
-	}
-	return buys, sells, nil
-}
-
-func (e Engine) sumVolumePerPrice(mp map[uint64]uint64, lors []*types.LiquidityOrderReference) error {
-	for _, lor := range lors {
-		order, err := e.op.GetOrderByID(lor.OrderID)
-		if err != nil {
-			return err
-		}
-		mp[order.Price] += order.Remaining
-	}
-	return nil
 }
