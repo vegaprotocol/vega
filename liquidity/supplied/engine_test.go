@@ -15,14 +15,15 @@ import (
 func TestCalculateSuppliedLiquidity(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	riskModel := mocks.NewMockRiskModel(ctrl)
+	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
 
 	minPrice := 89.2
 	maxPrice := 111.1
 
 	// No orders
-	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice).Times(1)
+	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(1)
 
-	engine := supplied.NewEngine(riskModel)
+	engine := supplied.NewEngine(riskModel, rangeProvider)
 	require.NotNil(t, engine)
 
 	liquidity, err := engine.CalculateSuppliedLiquidity([]types.Order{})
@@ -38,10 +39,10 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	}
 
 	buyOrder1Prob := 0.256
-	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice).Times(1)
+	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 
-	engine = supplied.NewEngine(riskModel)
+	engine = supplied.NewEngine(riskModel, rangeProvider)
 	require.NotNil(t, engine)
 
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1})
@@ -68,12 +69,12 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	sellLiquidity := float64(sellOrder1.Price)*float64(sellOrder1.Remaining)*sellOrder1Prob + float64(sellOrder2.Price)*float64(sellOrder2.Remaining)*sellOrder2Prob
 	expectedLiquidity := math.Min(buyLiquidity, sellLiquidity)
 
-	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice)
+	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder1.Price), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder2.Price), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
 
-	engine = supplied.NewEngine(riskModel)
+	engine = supplied.NewEngine(riskModel, rangeProvider)
 	require.NotNil(t, engine)
 
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1, sellOrder1, sellOrder2})
@@ -91,12 +92,12 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	buyLiquidity += float64(buyOrder2.Price) * float64(buyOrder2.Remaining) * buyOrder1Prob
 	expectedLiquidity = math.Min(buyLiquidity, sellLiquidity)
 
-	riskModel.EXPECT().PriceRange().Return(minPrice, maxPrice)
+	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder1.Price), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder2.Price), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
 
-	engine = supplied.NewEngine(riskModel)
+	engine = supplied.NewEngine(riskModel, rangeProvider)
 	require.NotNil(t, engine)
 
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2})

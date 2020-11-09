@@ -14,27 +14,28 @@ type LiquidityOrder struct {
 	LiquidityImpliedSize uint64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied OrderProvider
-// OrderProvider allows getting an order by its ID
-type OrderProvider interface {
-	GetOrderByID(orderID string) (*types.Order, error)
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
-	PriceRange() (float64, float64)
 	ProbabilityOfTrading(price float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/valid_price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied ValidPriceRangeProvider
+// ValidPriceRangeProvider provides the range of valid prices, that is prices that wouldn't trade the current trading mode
+type ValidPriceRangeProvider interface {
+	ValidPriceRange() (float64, float64)
 }
 
 type Engine struct {
 	rm RiskModel
+	rp ValidPriceRangeProvider
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
-func NewEngine(riskModel RiskModel) *Engine {
+func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvider) *Engine {
 	return &Engine{
 		rm: riskModel,
+		rp: validPriceRangeProvider,
 	}
 }
 
@@ -42,7 +43,7 @@ func NewEngine(riskModel RiskModel) *Engine {
 func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error) {
 	bLiq := 0.0
 	sLiq := 0.0
-	min, max := e.rm.PriceRange()
+	min, max := e.rp.ValidPriceRange()
 	var bProbs map[uint64]float64 = make(map[uint64]float64)
 	var sProbs map[uint64]float64 = make(map[uint64]float64)
 	var prob float64
@@ -77,7 +78,7 @@ func (e Engine) CalculateLiquidityImpliedSizes(liquidityObligation float64, buyO
 	//get probability of trading
 	updateNormalisedFractions(buyOrders)
 	updateNormalisedFractions(sellOrders)
-	min, max := e.rm.PriceRange()
+	min, max := e.rp.ValidPriceRange()
 	e.updateSizes(liquidityObligation, buyOrders, true, min, max)
 	e.updateSizes(liquidityObligation, sellOrders, false, min, max)
 

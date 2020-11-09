@@ -32,21 +32,6 @@ func (m *MockRiskModel) EXPECT() *MockRiskModelMockRecorder {
 	return m.recorder
 }
 
-// PriceRange mocks base method
-func (m *MockRiskModel) PriceRange() (float64, float64) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PriceRange")
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(float64)
-	return ret0, ret1
-}
-
-// PriceRange indicates an expected call of PriceRange
-func (mr *MockRiskModelMockRecorder) PriceRange() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PriceRange", reflect.TypeOf((*MockRiskModel)(nil).PriceRange))
-}
-
 // ProbabilityOfTrading mocks base method
 func (m *MockRiskModel) ProbabilityOfTrading(arg0 float64, arg1, arg2 bool, arg3, arg4 float64) float64 {
 	m.ctrl.T.Helper()
