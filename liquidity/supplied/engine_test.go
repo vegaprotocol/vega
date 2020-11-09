@@ -42,9 +42,6 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 
-	engine = supplied.NewEngine(riskModel, rangeProvider)
-	require.NotNil(t, engine)
-
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1})
 	require.NoError(t, err)
 	require.Equal(t, 0.0, liquidity)
@@ -74,9 +71,6 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder1.Price), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder2.Price), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
 
-	engine = supplied.NewEngine(riskModel, rangeProvider)
-	require.NotNil(t, engine)
-
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1, sellOrder1, sellOrder2})
 	require.NoError(t, err)
 	require.Equal(t, expectedLiquidity, liquidity)
@@ -96,9 +90,6 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder1.Price), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder2.Price), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
-
-	engine = supplied.NewEngine(riskModel, rangeProvider)
-	require.NotNil(t, engine)
 
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2})
 	require.NoError(t, err)
