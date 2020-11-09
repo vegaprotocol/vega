@@ -753,7 +753,7 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 5)
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
 
-	// Place a valid pegged order which will be added to the order book
+	// Place a valid pegged order which will be parked because it cannot be repriced
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 1)
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
 	_, err := tm.market.SubmitOrder(ctx, &order)

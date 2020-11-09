@@ -905,6 +905,9 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if err == nil {
 		orderValidity = "valid"
 	}
+
+	m.checkForReferenceMoves(ctx)
+
 	return orderConf, err
 }
 
@@ -1041,8 +1044,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	m.handleConfirmation(ctx, order, confirmation)
 
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-
-	m.checkForReferenceMoves(ctx)
 
 	return confirmation, nil
 }
@@ -1934,23 +1935,35 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// If this is a pegged order, reprice before we check if the values have changed
 	if existingOrder.PeggedOrder != nil {
-		newPrice, err := m.getNewPeggedPrice(ctx, amendedOrder)
+		err := m.repricePeggedOrder(ctx, amendedOrder)
 		if err != nil {
+			// Failed to reprice so we have to park the order
 			if amendedOrder.Status != types.Order_STATUS_PARKED {
 				// If we are live then park
 				m.parkOrder(ctx, existingOrder)
 			}
-		}
-
-		// If we are parked then we can amend in place
-		if existingOrder.Status == types.Order_STATUS_PARKED {
 			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
 			if err == nil {
 				m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 			}
 			return ret, err
+		} else {
+			// We got a new valid price, if we are parked we need to unpark
+			if amendedOrder.Status == types.Order_STATUS_PARKED {
+				orderConf, err := m.submitValidatedOrder(ctx, amendedOrder)
+				if err == nil {
+					// Remove from unparked list
+					for i, order := range m.parkedOrders {
+						if order.Id == amendedOrder.Id {
+							copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
+							m.parkedOrders[len(m.parkedOrders)-1] = nil
+							m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
+							return orderConf, err
+						}
+					}
+				}
+			}
 		}
-		amendedOrder.Price = newPrice
 	}
 
 	// from here these are the normal amendment
@@ -2105,12 +2118,18 @@ func (m *Market) amendPeggedOrder(ctx context.Context, existingOrder *types.Orde
 		return nil, ErrMarginCheckFailed
 	}
 
-	confirmation, err := m.orderCancelReplace(ctx, existingOrder, &amendedOrder)
-	if err == nil {
-		m.handleConfirmation(ctx, &amendedOrder, confirmation)
-		m.broker.Send(events.NewOrderEvent(ctx, &amendedOrder))
-		*existingOrder = amendedOrder
+	var confirmation *types.OrderConfirmation
+	if existingOrder.Status != types.Order_STATUS_PARKED {
+		confirmation, err = m.orderCancelReplace(ctx, existingOrder, &amendedOrder)
+		if err == nil {
+			m.handleConfirmation(ctx, &amendedOrder, confirmation)
+		}
+	} else {
+		confirmation = &types.OrderConfirmation{Order: existingOrder}
+
 	}
+	m.broker.Send(events.NewOrderEvent(ctx, &amendedOrder))
+	*existingOrder = amendedOrder
 	return confirmation, err
 }
 
@@ -2403,23 +2422,7 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		// If we have any parked orders, see if we can get a
 		// valid price for them and try to submit them
 		if len(m.parkedOrders) > 0 {
-			ordersToUnpark := m.parkedOrders
-			m.parkedOrders = []*types.Order{}
-			failedOrders := []*types.Order{}
-			for _, order := range ordersToUnpark {
-				price, err := m.getNewPeggedPrice(ctx, order)
-				if err == nil {
-					// Submit the order to the market
-					order.Price = price
-					_, err := m.submitValidatedOrder(ctx, order)
-					if err != nil {
-						failedOrders = append(failedOrders, order)
-					}
-				} else {
-					failedOrders = append(failedOrders, order)
-				}
-			}
-			m.parkedOrders = failedOrders
+			m.unparkAllPeggedOrders(ctx)
 		}
 	}
 }
