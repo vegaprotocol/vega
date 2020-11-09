@@ -19,6 +19,44 @@ var _ = math.Inf
 func (this *MarketEvent) Validate() error {
 	return nil
 }
+func (this *TxErrorEvent) Validate() error {
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_Order); ok {
+		if oneOfNester.Order != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Order); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_OrderAmendment); ok {
+		if oneOfNester.OrderAmendment != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.OrderAmendment); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("OrderAmendment", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_OrderCancellation); ok {
+		if oneOfNester.OrderCancellation != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.OrderCancellation); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("OrderCancellation", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_Proposal); ok {
+		if oneOfNester.Proposal != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Proposal); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_Vote); ok {
+		if oneOfNester.Vote != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Vote); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *TimeUpdate) Validate() error {
 	return nil
 }
@@ -233,6 +271,13 @@ func (this *BusEvent) Validate() error {
 		if oneOfNester.Market != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Market); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Market", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_TxErrEvent); ok {
+		if oneOfNester.TxErrEvent != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.TxErrEvent); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("TxErrEvent", err)
 			}
 		}
 	}
