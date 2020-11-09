@@ -2,7 +2,6 @@ package orders
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -253,7 +252,6 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 }
 
 func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error {
-	fmt.Println("AMEND", amendment)
 	if amendment == nil {
 		return ErrEmptyPrepareRequest
 	}
