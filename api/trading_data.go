@@ -2073,6 +2073,15 @@ func (t *tradingDataService) ObserveEventBus(
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
+	if len(req.PartyID) == 0 {
+		// no PartyID filter
+		for _, t := range types {
+			// subscription to TxErr events
+			if t == events.TxErrEvent {
+				return apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing party filter for TxError stream"))
+			}
+		}
+	}
 	filters := []subscribers.EventFilter{}
 	if len(req.MarketID) > 0 && len(req.PartyID) > 0 {
 		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketID, req.PartyID))
