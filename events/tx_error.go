@@ -78,11 +78,10 @@ func (t TxErr) Proto() types.TxErrorEvent {
 }
 
 func (t TxErr) StreamMessage() *types.BusEvent {
-	cpy := o.o
 	return &types.BusEvent{
-		ID:    o.eventID(),
-		Block: o.TraceID(),
-		Type:  o.et.ToProto(),
+		ID:    t.eventID(),
+		Block: t.TraceID(),
+		Type:  t.et.ToProto(),
 		Event: &types.BusEvent_TxErrEvent{
 			TxErrEvent: t.evt,
 		},
