@@ -1760,7 +1760,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	defer m.releaseMarginExcess(ctx, order.PartyID)
 
 	if err := m.matching.RemoveOrder(order); err != nil {
-		m.log.Fatal("Failure to remove order from matching enginei",
+		m.log.Fatal("Failure to remove order from matching engine",
 			logging.String("party-id", order.PartyID),
 			logging.String("order-id", order.Id),
 			logging.String("market", m.mkt.Id),
@@ -1902,12 +1902,20 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// If this is a pegged order, reprice before we check if the values have changed
 	if existingOrder.PeggedOrder != nil {
+		// Amend in place during an auction
+		if m.as.InAuction() {
+			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
+			if err == nil {
+				m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			}
+			return ret, err
+		}
 		err := m.repricePeggedOrder(ctx, amendedOrder)
 		if err != nil {
 			// Failed to reprice so we have to park the order
 			if amendedOrder.Status != types.Order_STATUS_PARKED {
 				// If we are live then park
-				m.parkOrder(ctx, existingOrder)
+				m.parkOrderAndAdd(ctx, existingOrder)
 			}
 			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
 			if err == nil {
@@ -2278,6 +2286,8 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendWhenParked")
 	defer timer.EngineTimeCounterAdd()
+
+	amendOrder.Status = types.Order_STATUS_PARKED
 
 	*originalOrder = *amendOrder
 

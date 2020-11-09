@@ -1293,6 +1293,10 @@ func testPeggedOrderExpiring(t *testing.T) {
 func TestPeggedOrdersAmends(t *testing.T) {
 	t.Run("pegged orders amend an order that is parked but becomes live ", testPeggedOrderAmendParkedToLive)
 	t.Run("pegged orders amend an order that is parked and remains parked", testPeggedOrderAmendParkedStayParked)
+	t.Run("pegged orders amend an order that is live but becomes parked", testPeggedOrderAmendForcesPark)
+	t.Run("pegged orders amend an order while in auction", testPeggedOrderAmendDuringAuction)
+	t.Run("pegged orders amend an orders pegged reference", testPeggedOrderAmendReference)
+	t.Run("pegged orders amend an orders pegged reference during an auction", testPeggedOrderAmendReferenceInAuction)
 }
 
 // If we amend an order that is parked and not in auction we need to see if the amendment has caused the
@@ -1368,111 +1372,154 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
-func TestPeggedOrderAmendForcesPark(t *testing.T) {
-	/*	now := time.Unix(10, 0)
-		closeSec := int64(10000000000)
-		closingAt := time.Unix(closeSec, 0)
-		tm := getTestMarket(t, now, closingAt, nil)
+// Take a valid live order and force it to be parked by amending it
+func testPeggedOrderAmendForcesPark(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
-		addAccount(tm, "party1")
-		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-		// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-		buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
-		require.NotNil(t, buyOrder)
-		sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
-		require.NotNil(t, sellOrder)
+	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
+	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	require.NotNil(t, sellOrder)
 
-		// Place the pegged order
-		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 10)
-		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
-		confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
-		require.Nil(t, confirmation)
-		assert.Error(t, err)
+	// Place the pegged order
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.NotNil(t, confirmation)
+	assert.NoError(t, err)
 
-		// Amend offset so we cannot reprice
-		amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-		amend.PeggedOffset = &types.PeggedOffset{Value: -15}
-		amended, err := tm.market.AmendOrder(context.Background(), amend)
-		require.Nil(t, amended)
-		assert.Error(t, err)*/
+	// Amend offset so we cannot reprice
+	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedOffset = &types.PeggedOffset{Value: -15}
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	// Order should be parked
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
 }
 
-func TestPeggedOrderAmendAlreadyParked(t *testing.T) {
-	/*	now := time.Unix(10, 0)
-		closeSec := int64(10000000000)
-		closingAt := time.Unix(closeSec, 0)
-		tm := getTestMarket(t, now, closingAt, nil)
+func testPeggedOrderAmendDuringAuction(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
 
-		addAccount(tm, "party1")
-		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-		// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-		buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
-		require.NotNil(t, buyOrder)
-		sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
-		require.NotNil(t, sellOrder)
+	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
+		Duration: closeSec / 10, // some time in the future, before closing
+	})
+	tm.market.EnterAuction(ctx)
 
-		// Place the pegged order which will park it
-		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 10)
-		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
-		confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
-		require.Nil(t, confirmation)
-		assert.Error(t, err)
+	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
+	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	require.NotNil(t, sellOrder)
 
-		// Amend offset so we cannot reprice
-		amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-		amend.PeggedOffset = &types.PeggedOffset{Value: -15}
-		amended, err := tm.market.AmendOrder(context.Background(), amend)
-		require.Nil(t, amended)
-		assert.Error(t, err)*/
+	// Place the pegged order which will park it
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Amend offset so we cannot reprice
+	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedOffset = &types.PeggedOffset{Value: -5}
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
-func TestPeggedOrderAmendWhileParked(t *testing.T) {
-	/*	now := time.Unix(10, 0)
-		closeSec := int64(10000000000)
-		closingAt := time.Unix(closeSec, 0)
-		tm := getTestMarket(t, now, closingAt, nil)
+func testPeggedOrderAmendReference(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
 
-		addAccount(tm, "party1")
-		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-		// Place a pegged order when there is no reference price so it will be parked
-		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
-		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
-		confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
-		require.Nil(t, confirmation)
-		assert.Error(t, err)
+	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
+	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	require.NotNil(t, sellOrder)
 
-		// Try to amend the offset value
-		amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-		amend.PeggedOffset = &types.PeggedOffset{Value: -5}
-		amended, err := tm.market.AmendOrder(context.Background(), amend)
-		require.NotNil(t, amended)
-		assert.NoError(t, err)
+	// Place the pegged order which will park it
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.NotNil(t, confirmation)
+	assert.NoError(t, err)
 
-		// Try to amend the reference price
-		amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-		amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
-		amended, err = tm.market.AmendOrder(context.Background(), amend)
-		require.NotNil(t, amended)
-		assert.NoError(t, err)
+	// Amend offset so we cannot reprice
+	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
 
-		// Try to amend the size of the order
-		amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 1, 0, types.Order_TIF_UNSPECIFIED, 0)
-		amended, err = tm.market.AmendOrder(context.Background(), amend)
-		require.NotNil(t, amended)
-		assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, amended.Order.Status)
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
+}
 
-		// Try to amend the price of the order
-		amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 101, types.Order_TIF_UNSPECIFIED, 0)
-		amended, err = tm.market.AmendOrder(context.Background(), amend)
-		require.Nil(t, amended)
-		assert.Error(t, err)
+func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
 
-		// Try to amend the time in force of the order
-		amend = getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 101, types.Order_TIF_GTT, 10000000000)
-		amended, err = tm.market.AmendOrder(context.Background(), amend)
-		require.NotNil(t, amended)
-		assert.NoError(t, err)*/
+	addAccount(tm, "party1")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
+		Duration: closeSec / 10, // some time in the future, before closing
+	})
+	tm.market.EnterAuction(ctx)
+
+	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
+	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	require.NotNil(t, sellOrder)
+
+	// Place the pegged order which will park it
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Amend offset so we cannot reprice
+	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
+	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
+	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	require.NotNil(t, amended)
+	assert.NoError(t, err)
+
+	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
 }
