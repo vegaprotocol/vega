@@ -1107,7 +1107,7 @@ message LiquidityOrder {
   // holds the fraction of total liquidity obligation that should be commited to that order given proportions of all orders forming the Buys or Sells
   double normalisedFraction = 4;
   // holds the calculated size of the order based on the probability of trading for it's latest price and the normalisedFraction
-  uint64 liquidityImpliedSize = 5; 
+  double liquidityImpliedSize = 5; 
 }
 
 message LiquidityProvisionSubmission {
