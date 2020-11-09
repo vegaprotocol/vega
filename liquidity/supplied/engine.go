@@ -53,7 +53,7 @@ func (e Engine) CalculateSuppliedLiquidity(liquidityProvisions ...types.Liquidit
 	return math.Min(bLiq, sLiq), nil
 }
 
-// UpdateLiquidityImpliedSizes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
+// CalculateLiquidityImpliedSizes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
 func (e Engine) CalculateLiquidityImpliedSizes(liquidityObligation float64, buyOrders []*LiquidityOrder, sellOrders []*LiquidityOrder) error {
 	//get normalised fractions
