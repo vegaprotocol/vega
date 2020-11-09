@@ -686,9 +686,10 @@ type ComplexityRoot struct {
 	}
 
 	Vote struct {
-		Datetime func(childComplexity int) int
-		Party    func(childComplexity int) int
-		Value    func(childComplexity int) int
+		Datetime   func(childComplexity int) int
+		Party      func(childComplexity int) int
+		ProposalID func(childComplexity int) int
+		Value      func(childComplexity int) int
 	}
 
 	Withdrawal struct {
@@ -3860,6 +3861,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Vote.Party(childComplexity), true
 
+	case "Vote.proposalId":
+		if e.complexity.Vote.ProposalID == nil {
+			break
+		}
+
+		return e.complexity.Vote.ProposalID(childComplexity), true
+
 	case "Vote.value":
 		if e.complexity.Vote.Value == nil {
 			break
@@ -6091,6 +6099,9 @@ type Vote {
 
   "ISO-8601 time and date when the vote reached Vega network"
   datetime: String!
+
+  "The ID of the proposal this vote applies to"
+  proposalId: ID!
 }
 
 type ProposalVote {
@@ -20651,6 +20662,40 @@ func (ec *executionContext) _Vote_datetime(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Vote_proposalId(ctx context.Context, field graphql.CollectedField, obj *Vote) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Vote",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProposalID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Withdrawal_id(ctx context.Context, field graphql.CollectedField, obj *Withdrawal) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -28115,6 +28160,11 @@ func (ec *executionContext) _Vote(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "datetime":
 			out.Values[i] = ec._Vote_datetime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "proposalId":
+			out.Values[i] = ec._Vote_proposalId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
