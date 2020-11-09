@@ -83,7 +83,7 @@ func (t TxErr) StreamMessage() *types.BusEvent {
 		ID:    o.eventID(),
 		Block: o.TraceID(),
 		Type:  o.et.ToProto(),
-		Event: &types.BusEvent_Order{
+		Event: &types.BusEvent_TxErrEvent{
 			TxErrEvent: t.evt,
 		},
 	}
