@@ -336,13 +336,6 @@ func (m *Market) GetMarketData() types.MarketData {
 	if bestBidPrice > 0 && bestOfferPrice > 0 {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
-	rf, err := m.getRiskFactors()
-	var targetStake float64
-	if err != nil {
-		m.log.Error("unable to get risk factors, can't calculate target stake")
-	} else {
-		targetStake = m.tsCalculator.GetTargetStake(*rf, m.currentTime)
-	}
 
 	return types.MarketData{
 		Market:           m.GetID(),
