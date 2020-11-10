@@ -59,8 +59,8 @@ var (
 	ErrPeggedOrderMustBeGTTOrGTC = errors.New("pegged orders must be GTT or GTC orders")
 	// ErrPeggedOrderWithoutReferencePrice pegged order message with no reference price
 	ErrPeggedOrderWithoutReferencePrice = errors.New("pegged order missing a reference price")
-	// ErrPeggedOrderBuyCannotReferenceBestAskPrice pegged buy order cannot refernce best ask
-	ErrPeggedOrderBuyCannotReferenceBestAskPrice = errors.New("pegged buy order cannot refernce best ask")
+	// ErrPeggedOrderBuyCannotReferenceBestAskPrice pegged buy order cannot reference best ask
+	ErrPeggedOrderBuyCannotReferenceBestAskPrice = errors.New("pegged buy order cannot reference best ask")
 	// ErrPeggedOrderOffsetMustBeLessOrEqualToZero pegged order offset must be <= 0
 	ErrPeggedOrderOffsetMustBeLessOrEqualToZero = errors.New("pegged order offset must be <= 0")
 	// ErrPeggedOrderOffsetMustBeLessThanZero pegged order offset must be < 0
