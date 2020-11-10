@@ -400,7 +400,7 @@ type NewMarketInput struct {
 	// The proposed duration for the opening auction for this market in seconds
 	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
 	// Price monitoring configuration
-	PriceMonitoringSettings *PriceMonitoringSettingsInput `json:"priceMonitoringSettings"`
+	PriceMonitoringParameters *PriceMonitoringParametersInput `json:"priceMonitoringParameters"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -478,34 +478,22 @@ type PreparedWithdrawal struct {
 	Blob string `json:"blob"`
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+// PriceMonitoringParameters holds a list of triggers
 type PriceMonitoringParameters struct {
-	// Price monitoring projection horizon τ in seconds (> 0).
-	HorizonSecs int `json:"horizonSecs"`
-	// Price monitoring probability level p. (>0 and < 1)
-	Probability float64 `json:"probability"`
-	// Price monitoring auction extension duration in seconds should the price
-	// breach it's theoretical level over the specified horizon at the specified
-	// probability level (> 0)
-	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+	// The list of triggers for this price monitoring
+	Triggers []*PriceMonitoringTrigger `json:"triggers"`
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+// PriceMonitoringParameters holds a list of triggers
 type PriceMonitoringParametersInput struct {
-	// Price monitoring projection horizon τ in seconds (> 0).
-	HorizonSecs int `json:"horizonSecs"`
-	// Price monitoring probability level p. (>0 and < 1)
-	Probability float64 `json:"probability"`
-	// Price monitoring auction extension duration in seconds should the price
-	// breach it's theoretical level over the specified horizon at the specified
-	// probability level (> 0)
-	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+	// The list of triggers for this price monitoring
+	Triggers []*PriceMonitoringTriggerInput `json:"triggers"`
 }
 
 // Configuration of a market price monitorings auctions triggers
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
-	Parameters []*PriceMonitoringParameters `json:"parameters"`
+	Parameters *PriceMonitoringParameters `json:"parameters"`
 	// How often (in seconds) the price monitoring bounds should be updated
 	UpdateFrequencySecs int `json:"updateFrequencySecs"`
 }
@@ -513,9 +501,33 @@ type PriceMonitoringSettings struct {
 // Configuration of a market price monitorings auctions triggers
 type PriceMonitoringSettingsInput struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
-	Parameters []*PriceMonitoringParametersInput `json:"parameters"`
+	Parameters *PriceMonitoringParametersInput `json:"parameters"`
 	// How often (in seconds) the price monitoring bounds should be updated
 	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
+}
+
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringTrigger struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringTriggerInput struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.

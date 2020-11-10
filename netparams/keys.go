@@ -16,6 +16,8 @@ const (
 	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stateToCcySiskas"
 	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                = "market.stake.target.scalingFactor"
+	MarketPriceMonitoringDefaultParameters        = "market.monitor.price.defaultParameters"
+	MarketPriceMonitoringUpdateFrequency          = "market.monitor.price.updateFrequency"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"

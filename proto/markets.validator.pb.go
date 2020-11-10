@@ -140,7 +140,7 @@ func (this *Fees) Validate() error {
 	}
 	return nil
 }
-func (this *PriceMonitoringParameters) Validate() error {
+func (this *PriceMonitoringTrigger) Validate() error {
 	if !(this.Horizon > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Horizon", fmt.Errorf(`value '%v' must be greater than '0'`, this.Horizon))
 	}
@@ -155,12 +155,20 @@ func (this *PriceMonitoringParameters) Validate() error {
 	}
 	return nil
 }
-func (this *PriceMonitoringSettings) Validate() error {
-	for _, item := range this.PriceMonitoringParameters {
+func (this *PriceMonitoringParameters) Validate() error {
+	for _, item := range this.Triggers {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringParameters", err)
+				return github_com_mwitkow_go_proto_validators.FieldError("Triggers", err)
 			}
+		}
+	}
+	return nil
+}
+func (this *PriceMonitoringSettings) Validate() error {
+	if this.Parameters != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Parameters); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Parameters", err)
 		}
 	}
 	return nil

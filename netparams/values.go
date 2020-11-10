@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+
+	validators "github.com/mwitkow/go-proto-validators"
 )
 
 type baseValue struct{}
@@ -36,7 +38,7 @@ func (b *baseValue) ToString() (string, error) {
 	return "", errors.New("not a string value")
 }
 
-func (b *baseValue) ToJSONStruct(v interface{ Reset() }) error {
+func (b *baseValue) ToJSONStruct(v Reset) error {
 	return errors.New("not a JSON value")
 }
 
@@ -414,14 +416,14 @@ type JSONValidate func(interface{}) error
 
 type JSON struct {
 	*baseValue
-	value   interface{ Reset() }
+	value   Reset
 	ty      reflect.Type
 	rawval  string
 	v       JSONValidate
 	mutable bool
 }
 
-func NewJSON(val interface{ Reset() }, validate JSONValidate) *JSON {
+func NewJSON(val Reset, validate JSONValidate) *JSON {
 	if val == nil {
 		panic("JSON values requires non nil pointers")
 	}
@@ -438,7 +440,7 @@ func NewJSON(val interface{ Reset() }, validate JSONValidate) *JSON {
 
 }
 
-func (j *JSON) ToJSONStruct(v interface{ Reset() }) error {
+func (j *JSON) ToJSONStruct(v Reset) error {
 	if v == nil {
 		return errors.New("nil interface{}")
 	}
@@ -502,4 +504,10 @@ func (j *JSON) MustUpdate(value string) *JSON {
 
 func (j *JSON) String() string {
 	return j.rawval
+}
+
+func JSONProtoValidator() func(interface{}) error {
+	return func(t interface{}) error {
+		return validators.CallValidatorIfExists(t)
+	}
 }

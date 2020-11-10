@@ -990,6 +990,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.PriceMonitoringTrigger"><span class="badge">M</span>PriceMonitoringTrigger</a>
+                </li>
+
+                <li>
                   <a href="#vega.ScalingFactors"><span class="badge">M</span>ScalingFactors</a>
                 </li>
 
@@ -8253,8 +8257,8 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
 
                 <tr>
-                  <td>priceMonitoringSettings</td>
-                  <td><a href="#vega.PriceMonitoringSettings">PriceMonitoringSettings</a></td>
+                  <td>PriceMonitoringParameters</td>
+                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
                   <td></td>
                   <td><p>price monitoring configuration </p></td>
                 </tr>
@@ -9482,7 +9486,62 @@ duration and optionally a minimum traded volume). </p></td>
 
 
         <h3 id="vega.PriceMonitoringParameters">PriceMonitoringParameters</h3>
-        <p>PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration</p>
+        <p>PriceMonitoringParameters contain a collection of triggers to be used for a given market.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>triggers</td>
+                  <td><a href="#vega.PriceMonitoringTrigger">PriceMonitoringTrigger</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringSettings">PriceMonitoringSettings</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>parameters</td>
+                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
+                  <td></td>
+                  <td><p>Specifies PriceMonitoringParameters to be used for price monitoring purposes </p></td>
+                </tr>
+
+                <tr>
+                  <td>updateFrequency</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Specifies how often (expressed in seconds) the price monitoring bounds should be updated. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringTrigger">PriceMonitoringTrigger</h3>
+        <p>PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration</p>
 
 
           <table class="field-table">
@@ -9567,38 +9626,6 @@ probability level. </p></td>
 
               </tbody>
             </table>
-
-
-
-
-
-        <h3 id="vega.PriceMonitoringSettings">PriceMonitoringSettings</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>priceMonitoringParameters</td>
-                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
-                  <td>repeated</td>
-                  <td><p>Specifies a set of PriceMonitoringParameters to be used for price
-monitoring purposes </p></td>
-                </tr>
-
-                <tr>
-                  <td>updateFrequency</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Specifies how often (expressed in seconds) the price monitoring bounds should be updated. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
 
 
 

@@ -3831,8 +3831,8 @@
           "format": "int64",
           "description": "Time duration for the opening auction to last."
         },
-        "priceMonitoringSettings": {
-          "$ref": "#/definitions/vegaPriceMonitoringSettings",
+        "PriceMonitoringParameters": {
+          "$ref": "#/definitions/vegaPriceMonitoringParameters",
           "title": "price monitoring configuration"
         },
         "simple": {
@@ -4288,6 +4288,32 @@
     "vegaPriceMonitoringParameters": {
       "type": "object",
       "properties": {
+        "triggers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceMonitoringTrigger"
+          }
+        }
+      },
+      "description": "PriceMonitoringParameters contain a collection of triggers to be used for a given market."
+    },
+    "vegaPriceMonitoringSettings": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "$ref": "#/definitions/vegaPriceMonitoringParameters",
+          "title": "Specifies PriceMonitoringParameters to be used for price monitoring purposes"
+        },
+        "updateFrequency": {
+          "type": "string",
+          "format": "int64",
+          "description": "Specifies how often (expressed in seconds) the price monitoring bounds should be updated."
+        }
+      }
+    },
+    "vegaPriceMonitoringTrigger": {
+      "type": "object",
+      "properties": {
         "horizon": {
           "type": "string",
           "format": "int64",
@@ -4304,24 +4330,7 @@
           "description": "Price monitoring auction extension duration in seconds should the price\nbreach it's theoretical level over the specified horizon at the specified\nprobability level."
         }
       },
-      "title": "PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration"
-    },
-    "vegaPriceMonitoringSettings": {
-      "type": "object",
-      "properties": {
-        "priceMonitoringParameters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceMonitoringParameters"
-          },
-          "title": "Specifies a set of PriceMonitoringParameters to be used for price\nmonitoring purposes"
-        },
-        "updateFrequency": {
-          "type": "string",
-          "format": "int64",
-          "description": "Specifies how often (expressed in seconds) the price monitoring bounds should be updated."
-        }
-      }
+      "title": "PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration"
     },
     "vegaProposal": {
       "type": "object",

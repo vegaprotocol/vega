@@ -21,6 +21,10 @@ type Broker interface {
 	Send(e events.Event)
 }
 
+type Reset interface {
+	Reset()
+}
+
 type value interface {
 	Validate(value string) error
 	Update(value string) error
@@ -31,7 +35,7 @@ type value interface {
 	ToBool() (bool, error)
 	ToString() (string, error)
 	ToDuration() (time.Duration, error)
-	ToJSONStruct(interface{ Reset() }) error
+	ToJSONStruct(Reset) error
 }
 
 type NetParamWatcher func(string, string)
@@ -237,7 +241,7 @@ func (s *Store) GetString(key string) (string, error) {
 }
 
 // GetJSONStruct a value associated to the given key
-func (s *Store) GetJSONStruct(key string, v interface{ Reset() }) error {
+func (s *Store) GetJSONStruct(key string, v Reset) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	svalue, ok := s.store[key]
