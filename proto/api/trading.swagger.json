@@ -4784,7 +4784,7 @@
         "timeWindow": {
           "type": "string",
           "format": "int64",
-          "title": "Specifies length of time window for target stake calculation"
+          "title": "Specifies length of time window expressed in seconds for target stake calculation"
         },
         "scalingFactor": {
           "type": "number",

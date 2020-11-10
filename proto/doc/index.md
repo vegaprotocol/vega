@@ -3643,7 +3643,7 @@ TargetStakeParameters contains parameters used in target stake calculation
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timeWindow | [int64](#int64) |  | Specifies length of time window for target stake calculation |
+| timeWindow | [int64](#int64) |  | Specifies length of time window expressed in seconds for target stake calculation |
 | scalingFactor | [double](#double) |  | Specifies scaling factors used in target stake calculation |
 
 
