@@ -399,6 +399,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
 	proposal, err := e.validateVote(vote)
 	if err != nil {
+		// vote was not created/accepted, send TxErrEvent
+		e.broker.Send(events.NewTxErrEvent(ctx, err, vote.PartyID, vote))
 		return err
 	}
 	// we only want to count the last vote, so add to yes/no map, delete from the other
