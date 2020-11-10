@@ -24,7 +24,7 @@ message TxErrorEvent {
   string errMsg = 2;
   // the transaction that failed
   oneof transaction {
-    Order order = 101;
+    OrderSubmission orderSubmission = 101;
     OrderAmendment orderAmendment = 102;
     OrderCancellation orderCancellation = 103;
     Proposal proposal = 104;

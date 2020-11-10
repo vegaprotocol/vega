@@ -20,10 +20,10 @@ func (this *MarketEvent) Validate() error {
 	return nil
 }
 func (this *TxErrorEvent) Validate() error {
-	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_Order); ok {
-		if oneOfNester.Order != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Order); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Order", err)
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_OrderSubmission); ok {
+		if oneOfNester.OrderSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.OrderSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("OrderSubmission", err)
 			}
 		}
 	}

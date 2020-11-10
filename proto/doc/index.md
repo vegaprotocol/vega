@@ -2956,7 +2956,7 @@ A transfer responses event contains a collection of transfer information
 | ----- | ---- | ----- | ----------- |
 | PartyID | [string](#string) |  | the party who had a tx fail |
 | errMsg | [string](#string) |  | error message describing what went wrong |
-| order | [Order](#vega.Order) |  |  |
+| orderSubmission | [OrderSubmission](#vega.OrderSubmission) |  |  |
 | orderAmendment | [OrderAmendment](#vega.OrderAmendment) |  |  |
 | orderCancellation | [OrderCancellation](#vega.OrderCancellation) |  |  |
 | proposal | [Proposal](#vega.Proposal) |  |  |
