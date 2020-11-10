@@ -38,14 +38,14 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &types.TxErrorEvent_Vote{
 			Vote: &tv,
 		}
-	case *types.Order:
+	case *types.OrderSubmission:
 		cpy := *tv
-		evt.evt.Transaction = &types.TxErrorEvent_Order{
-			Order: &cpy,
+		evt.evt.Transaction = &types.TxErrorEvent_OrderSubmission{
+			OrderSubmission: &cpy,
 		}
-	case types.Order:
-		evt.evt.Transaction = &types.TxErrorEvent_Order{
-			Order: &tv,
+	case types.OrderSubmission:
+		evt.evt.Transaction = &types.TxErrorEvent_OrderSubmission{
+			OrderSubmission: &tv,
 		}
 	case *types.OrderCancellation:
 		cpy := *tv

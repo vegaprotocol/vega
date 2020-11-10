@@ -4971,8 +4971,8 @@
           "type": "string",
           "title": "error message describing what went wrong"
         },
-        "order": {
-          "$ref": "#/definitions/vegaOrder"
+        "orderSubmission": {
+          "$ref": "#/definitions/vegaOrderSubmission"
         },
         "orderAmendment": {
           "$ref": "#/definitions/vegaOrderAmendment"
