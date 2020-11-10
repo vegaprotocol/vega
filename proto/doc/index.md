@@ -168,6 +168,7 @@
     - [TimeUpdate](#vega.TimeUpdate)
     - [TradeSettlement](#vega.TradeSettlement)
     - [TransferResponses](#vega.TransferResponses)
+    - [TxErrorEvent](#vega.TxErrorEvent)
 
     - [BusEventType](#vega.BusEventType)
 
@@ -2785,6 +2786,7 @@ A bus event is a container for event bus events emitted by Vega
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
 | liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
+| txErrEvent | [TxErrorEvent](#vega.TxErrorEvent) |  | Transaction error events - separate category, not included in ALL events |
 
 
 
@@ -2943,6 +2945,27 @@ A transfer responses event contains a collection of transfer information
 
 
 
+<a name="vega.TxErrorEvent"></a>
+
+### TxErrorEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| PartyID | [string](#string) |  | the party who had a tx fail |
+| errMsg | [string](#string) |  | error message describing what went wrong |
+| orderSubmission | [OrderSubmission](#vega.OrderSubmission) |  |  |
+| orderAmendment | [OrderAmendment](#vega.OrderAmendment) |  |  |
+| orderCancellation | [OrderCancellation](#vega.OrderCancellation) |  |  |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| vote | [Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
 
 
 <a name="vega.BusEventType"></a>
@@ -2982,6 +3005,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
 | BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
+| BUS_EVENT_TYPE_TX_ERROR | 201 | Event used to report failed transactions back to a user - excluded from the ALL type |
 
 
 
