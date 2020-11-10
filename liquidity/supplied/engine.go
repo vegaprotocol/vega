@@ -41,32 +41,37 @@ func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvi
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
 func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error) {
 	minPrice, maxPrice := e.rp.ValidPriceRange()
-	return e.calculateSuppliedLiquidityWithMinMax(orders, minPrice, maxPrice)
+	bLiq, sLiq, err := e.calculateBuySellLiquidityWithMinMax(orders, minPrice, maxPrice)
+	if err != nil {
+		return 0, err
+	}
+	return math.Min(bLiq, sLiq), nil
 }
 
 // CalculateLiquidityImpliedSizes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
 func (e Engine) CalculateLiquidityImpliedSizes(liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
 	minPrice, maxPrice := e.rp.ValidPriceRange()
-	buySupplied, err := e.calculateSuppliedLiquidityWithMinMax(buyLimitOrders, minPrice, maxPrice)
-	if err != nil {
-		return err
-	}
-	sellSupplied, err := e.calculateSuppliedLiquidityWithMinMax(sellLimitOrders, minPrice, maxPrice)
+
+	limitOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders))
+	limitOrders = append(limitOrders, buyLimitOrders...)
+	limitOrders = append(limitOrders, sellLimitOrders...)
+
+	buySupplied, sellSupplied, err := e.calculateBuySellLiquidityWithMinMax(limitOrders, minPrice, maxPrice)
 	if err != nil {
 		return err
 	}
 
-	buyObligation := liquidityObligation - buySupplied
-	e.updateSizes(buyObligation, buyShapes, true, minPrice, maxPrice)
+	buyRemaining := liquidityObligation - buySupplied
+	e.updateSizes(buyRemaining, buyShapes, true, minPrice, maxPrice)
 
-	sellObligation := liquidityObligation - sellSupplied
-	e.updateSizes(sellObligation, sellShapes, false, minPrice, maxPrice)
+	sellRemaining := liquidityObligation - sellSupplied
+	e.updateSizes(sellRemaining, sellShapes, false, minPrice, maxPrice)
 	return nil
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e Engine) calculateSuppliedLiquidityWithMinMax(orders []types.Order, minPrice, maxPrice float64) (float64, error) {
+func (e Engine) calculateBuySellLiquidityWithMinMax(orders []types.Order, minPrice, maxPrice float64) (float64, float64, error) {
 	bLiq := 0.0
 	sLiq := 0.0
 	var bProbs map[uint64]float64 = make(map[uint64]float64)
@@ -93,7 +98,7 @@ func (e Engine) calculateSuppliedLiquidityWithMinMax(orders []types.Order, minPr
 			sLiq += fpPrice * float64(volume) * prob
 		}
 	}
-	return math.Min(bLiq, sLiq), nil
+	return bLiq, sLiq, nil
 }
 
 func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrder, buys bool, minPrice, maxPrice float64) {
@@ -122,7 +127,8 @@ func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrde
 		scaling := 0.0
 		prob := probs[i]
 		if prob > 0 {
-			scaling = float64(validatedProportions[i]) / fpSum / prob
+			fraction := float64(validatedProportions[i]) / fpSum
+			scaling = fraction / prob
 		}
 		o.LiquidityImpliedSize = uint64(math.Ceil(liquidityObligation * scaling))
 	}
