@@ -517,8 +517,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instanciate the blockchain layer
-	l.app, err = l.startABCI(l.ctx, commander)
-	if err != nil {
+	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
 		return err
 	}
 
