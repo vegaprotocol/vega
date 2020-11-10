@@ -306,6 +306,10 @@ func (r *VegaResolverRoot) UpdateNetworkParameter() UpdateNetworkParameterResolv
 	return (*updateNetworkParameterResolver)(r)
 }
 
+func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
+	return (*myPeggedOrderResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
@@ -1363,6 +1367,10 @@ func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types
 	return &types.Party{Id: order.PartyID}, nil
 }
 
+func (r *myOrderResolver) PeggedOrder(ctx context.Context, order *types.Order) (*types.PeggedOrder, error) {
+	return order.PeggedOrder, nil
+}
+
 // END: Order Resolver
 
 // BEGIN: Trade Resolver
@@ -1514,6 +1522,24 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 
 // END: Price Level Resolver
 
+// BEGIN: PeggedOrder Resolver
+
+type myPeggedOrderResolver VegaResolverRoot
+
+func (r *myPeggedOrderResolver) Reference(ctx context.Context, obj *types.PeggedOrder) (PeggedReference, error) {
+	ref, err := convertPeggedReferenceFromProto(obj.Reference)
+	if err != nil {
+		return PeggedReferenceMid, err
+	}
+	return ref, nil
+}
+
+func (r *myPeggedOrderResolver) Offset(ctx context.Context, obj *types.PeggedOrder) (string, error) {
+	return strconv.FormatInt(obj.Offset, 10), nil
+}
+
+// END: PeggedOrder Resolver
+
 // BEGIN: Position Resolver
 
 type myPositionResolver VegaResolverRoot
@@ -1634,7 +1660,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 }
 
 func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrder) (*PreparedSubmitOrder, error) {
+	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrderInput) (*PreparedSubmitOrder, error) {
 
 	order := &types.OrderSubmission{}
 
@@ -1855,6 +1881,13 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		// move to pure timestamps or convert an RFC format shortly
 		order.ExpiresAt = &proto.Timestamp{Value: expiresAt.UnixNano()}
 	}
+
+	/*	if po != nil {
+		reference := convertPeggedReferenceToProto(po.Reference)
+		offset := strconv.ParseInt(po.Offset, 10, 64)
+		order.PeggedOrder = &types.PeggedOrder{Reference: reference,
+			Offset: offset}
+	}*/
 
 	req := protoapi.AmendOrderRequest{
 		Amendment: order,
