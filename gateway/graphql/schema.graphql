@@ -2064,6 +2064,9 @@ type Vote {
 
   "ISO-8601 time and date when the vote reached Vega network"
   datetime: String!
+
+  "The ID of the proposal this vote applies to"
+  proposalId: ID!
 }
 
 type ProposalVote {

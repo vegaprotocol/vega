@@ -842,9 +842,10 @@ func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 	value, _ := convertVoteValueFromProto(v.Value)
 	return &ProposalVote{
 		Vote: &Vote{
-			Party:    caster,
-			Value:    value,
-			Datetime: nanoTSToDatetime(v.Timestamp),
+			Party:      caster,
+			Value:      value,
+			Datetime:   nanoTSToDatetime(v.Timestamp),
+			ProposalID: v.ProposalID,
 		},
 		ProposalID: v.ProposalID,
 	}
@@ -1117,7 +1118,8 @@ func eventFromProto(e *types.BusEvent) Event {
 			Party: &types.Party{
 				Id: v.PartyID,
 			},
-			Datetime: nanoTSToDatetime(v.Timestamp),
+			Datetime:   nanoTSToDatetime(v.Timestamp),
+			ProposalID: v.ProposalID,
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 		return e.GetMarketData()

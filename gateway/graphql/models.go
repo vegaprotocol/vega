@@ -689,6 +689,8 @@ type Vote struct {
 	Party *proto.Party `json:"party"`
 	// ISO-8601 time and date when the vote reached Vega network
 	Datetime string `json:"datetime"`
+	// The ID of the proposal this vote applies to
+	ProposalID string `json:"proposalId"`
 }
 
 func (Vote) IsEvent() {}
