@@ -431,6 +431,7 @@ type ComplexityRoot struct {
 		Margins           func(childComplexity int) int
 		Market            func(childComplexity int) int
 		OpenVolume        func(childComplexity int) int
+		Party             func(childComplexity int) int
 		RealisedPnl       func(childComplexity int) int
 		UnrealisedPnl     func(childComplexity int) int
 		UpdatedAt         func(childComplexity int) int
@@ -880,6 +881,7 @@ type PartyResolver interface {
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.Position) (*proto.Market, error)
+	Party(ctx context.Context, obj *proto.Position) (*proto.Party, error)
 	OpenVolume(ctx context.Context, obj *proto.Position) (string, error)
 	RealisedPnl(ctx context.Context, obj *proto.Position) (string, error)
 	UnrealisedPnl(ctx context.Context, obj *proto.Position) (string, error)
@@ -2645,6 +2647,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Position.OpenVolume(childComplexity), true
+
+	case "Position.party":
+		if e.complexity.Position.Party == nil {
+			break
+		}
+
+		return e.complexity.Position.Party(childComplexity), true
 
 	case "Position.realisedPNL":
 		if e.complexity.Position.RealisedPnl == nil {
@@ -5180,6 +5189,9 @@ type Position {
 
   "Market relating to this position"
   market: Market!
+
+  "The party holding this position"
+  party: Party!
 
   "Open volume (uint64)"
   openVolume: String!
@@ -15078,6 +15090,40 @@ func (ec *executionContext) _Position_market(ctx context.Context, field graphql.
 	res := resTmp.(*proto.Market)
 	fc.Result = res
 	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Position_party(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Position().Party(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.Party)
+	fc.Result = res
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_openVolume(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
@@ -26079,6 +26125,20 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Position_market(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "party":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Position_party(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
