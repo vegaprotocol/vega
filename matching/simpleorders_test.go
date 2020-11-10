@@ -28,7 +28,8 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(100), price)
 	assert.Equal(t, uint64(1), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
@@ -57,7 +58,8 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	price, volume := book.BestOfferPriceAndVolume()
+	price, volume, err := book.BestOfferPriceAndVolume()
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(100), price)
 	assert.Equal(t, uint64(1), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -86,7 +88,8 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -115,7 +118,8 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -148,7 +152,8 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -177,7 +182,8 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -224,7 +230,8 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -268,7 +275,8 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -312,7 +320,8 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -356,7 +365,8 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -400,7 +410,8 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -444,7 +455,8 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
@@ -489,7 +501,8 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.Error(t, err)
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)

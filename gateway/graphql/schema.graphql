@@ -1460,6 +1460,9 @@ enum OrderStatus {
 
   "This order was partially filled."
   PartiallyFilled
+
+  "This order has been removed from the order book and applies to pegged orders only"
+  Parked
 }
 
 "Reason for the proposal beeing rejected by the core node"
@@ -1636,8 +1639,12 @@ enum OrderRejectionReason {
 
   "Pegged order offset must be > zero"
 	PeggedOrderOffsetMustBeGreaterThanZero
+  
   "Insufficient balance to submit the order (no deposit made)"
   InsufficientAssetBalance
+
+  "Unable to reprice a pegged order"
+  UnableToRepricePeggedOrder
 }
 
 enum OrderType {
@@ -2075,6 +2082,9 @@ type Vote {
 
   "ISO-8601 time and date when the vote reached Vega network"
   datetime: String!
+
+  "The ID of the proposal this vote applies to"
+  proposalId: ID!
 }
 
 type ProposalVote {

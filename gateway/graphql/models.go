@@ -701,6 +701,8 @@ type Vote struct {
 	Party *proto.Party `json:"party"`
 	// ISO-8601 time and date when the vote reached Vega network
 	Datetime string `json:"datetime"`
+	// The ID of the proposal this vote applies to
+	ProposalID string `json:"proposalId"`
 }
 
 func (Vote) IsEvent() {}
@@ -1290,6 +1292,8 @@ const (
 	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterThanZero"
 	// Insufficient balance to submit the order (no deposit made)
 	OrderRejectionReasonInsufficientAssetBalance OrderRejectionReason = "InsufficientAssetBalance"
+	// Unable to reprice a pegged order
+	OrderRejectionReasonUnableToRepricePeggedOrder OrderRejectionReason = "UnableToRepricePeggedOrder"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1336,11 +1340,12 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice,
 	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero,
 	OrderRejectionReasonInsufficientAssetBalance,
+	OrderRejectionReasonUnableToRepricePeggedOrder,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonUnableToRepricePeggedOrder:
 		return true
 	}
 	return false
@@ -1386,6 +1391,8 @@ const (
 	OrderStatusRejected OrderStatus = "Rejected"
 	// This order was partially filled.
 	OrderStatusPartiallyFilled OrderStatus = "PartiallyFilled"
+	// This order has been removed from the order book and applies to pegged orders only
+	OrderStatusParked OrderStatus = "Parked"
 )
 
 var AllOrderStatus = []OrderStatus{
@@ -1396,11 +1403,12 @@ var AllOrderStatus = []OrderStatus{
 	OrderStatusFilled,
 	OrderStatusRejected,
 	OrderStatusPartiallyFilled,
+	OrderStatusParked,
 }
 
 func (e OrderStatus) IsValid() bool {
 	switch e {
-	case OrderStatusActive, OrderStatusExpired, OrderStatusCancelled, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected, OrderStatusPartiallyFilled:
+	case OrderStatusActive, OrderStatusExpired, OrderStatusCancelled, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected, OrderStatusPartiallyFilled, OrderStatusParked:
 		return true
 	}
 	return false

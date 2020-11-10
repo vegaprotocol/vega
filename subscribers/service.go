@@ -43,7 +43,6 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 		defer func() {
 			s.broker.Unsubscribe(id)
 			close(out)
-			close(in)
 			cfunc()
 		}()
 		ret := retries

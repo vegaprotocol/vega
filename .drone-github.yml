@@ -116,7 +116,7 @@ steps:
         - pull_request
 
   - name: systemtests-PR
-    image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:latest
+    image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:develop
     pull: always
     environment:
       GITHUB_API_TOKEN:
