@@ -1542,6 +1542,10 @@ func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.P
 	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
 }
 
+func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
+	return getParty(ctx, r.log, r.tradingDataClient, obj.PartyID)
+}
+
 func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) ([]*types.MarginLevels, error) {
 	if obj == nil {
 		return nil, errors.New("invalid position")

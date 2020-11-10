@@ -1135,6 +1135,9 @@ type Position {
   "Market relating to this position"
   market: Market!
 
+  "The party holding this position"
+  party: Party!
+
   "Open volume (uint64)"
   openVolume: String!
 
