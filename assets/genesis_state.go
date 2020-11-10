@@ -19,7 +19,7 @@ var (
 		Symbol:              "VOTE",
 		TotalSupply:         "0",
 		Decimals:            5,
-		MaxFaucetAmountMint: "1000",
+		MaxFaucetAmountMint: "100000",
 	}
 
 	defaultBuiltins = []types.BuiltinAsset{
