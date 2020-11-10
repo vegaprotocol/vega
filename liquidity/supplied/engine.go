@@ -10,7 +10,6 @@ type LiquidityOrder struct {
 	Price      uint64
 	Proportion uint64
 
-	NormalisedFraction   float64
 	LiquidityImpliedSize uint64
 }
 
@@ -41,9 +40,35 @@ func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvi
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
 func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error) {
+	minPrice, maxPrice := e.rp.ValidPriceRange()
+	return e.calculateSuppliedLiquidityWithMinMax(orders, minPrice, maxPrice)
+}
+
+// CalculateLiquidityImpliedSizes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
+// Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
+func (e Engine) CalculateLiquidityImpliedSizes(liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
+	minPrice, maxPrice := e.rp.ValidPriceRange()
+	buySupplied, err := e.calculateSuppliedLiquidityWithMinMax(buyLimitOrders, minPrice, maxPrice)
+	if err != nil {
+		return err
+	}
+	sellSupplied, err := e.calculateSuppliedLiquidityWithMinMax(sellLimitOrders, minPrice, maxPrice)
+	if err != nil {
+		return err
+	}
+
+	buyObligation := liquidityObligation - buySupplied
+	e.updateSizes(buyObligation, buyShapes, true, minPrice, maxPrice)
+
+	sellObligation := liquidityObligation - sellSupplied
+	e.updateSizes(sellObligation, sellShapes, false, minPrice, maxPrice)
+	return nil
+}
+
+// CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
+func (e Engine) calculateSuppliedLiquidityWithMinMax(orders []types.Order, minPrice, maxPrice float64) (float64, error) {
 	bLiq := 0.0
 	sLiq := 0.0
-	min, max := e.rp.ValidPriceRange()
 	var bProbs map[uint64]float64 = make(map[uint64]float64)
 	var sProbs map[uint64]float64 = make(map[uint64]float64)
 	var prob float64
@@ -55,14 +80,14 @@ func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error
 
 		if o.Side == types.Side_SIDE_BUY {
 			if prob, ok = bProbs[price]; !ok {
-				prob = e.rm.ProbabilityOfTrading(fpPrice, true, true, min, max)
+				prob = e.rm.ProbabilityOfTrading(fpPrice, true, true, minPrice, maxPrice)
 				bProbs[price] = prob
 			}
 			bLiq += fpPrice * float64(volume) * prob
 		}
 		if o.Side == types.Side_SIDE_SELL {
 			if prob, ok = sProbs[price]; !ok {
-				prob = e.rm.ProbabilityOfTrading(fpPrice, false, true, min, max)
+				prob = e.rm.ProbabilityOfTrading(fpPrice, false, true, minPrice, maxPrice)
 				sProbs[price] = prob
 			}
 			sLiq += fpPrice * float64(volume) * prob
@@ -71,37 +96,40 @@ func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error
 	return math.Min(bLiq, sLiq), nil
 }
 
-// CalculateLiquidityImpliedSizes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
-// Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
-func (e Engine) CalculateLiquidityImpliedSizes(liquidityObligation float64, buyOrders []*LiquidityOrder, sellOrders []*LiquidityOrder) error {
-	//get normalised fractions
-	//get probability of trading
-	updateNormalisedFractions(buyOrders)
-	updateNormalisedFractions(sellOrders)
-	min, max := e.rp.ValidPriceRange()
-	e.updateSizes(liquidityObligation, buyOrders, true, min, max)
-	e.updateSizes(liquidityObligation, sellOrders, false, min, max)
-
-	return nil
-}
-
 func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrder, buys bool, minPrice, maxPrice float64) {
-	for _, o := range orders {
-		prob := e.rm.ProbabilityOfTrading(float64(o.Price), buys, true, minPrice, maxPrice)
-		o.LiquidityImpliedSize = uint64(math.Ceil(liquidityObligation * o.NormalisedFraction / prob))
+	if liquidityObligation <= 0 {
+		setSizesTo0(orders)
+		return
 	}
-}
-
-// TODO: This should be moved elsewhere an only called when Proportion in any of the LiquidityOrders changes
-func updateNormalisedFractions(orders []*LiquidityOrder) {
 
 	var sum uint64 = 0
+	probs := make([]float64, 0, len(orders))
+	validatedProportions := make([]uint64, 0, len(orders))
 	for _, o := range orders {
-		sum += o.Proportion
+		proportion := o.Proportion
+		prob := e.rm.ProbabilityOfTrading(float64(o.Price), buys, true, minPrice, maxPrice)
+		if prob <= 0 {
+			proportion = 0
+		}
+		sum += proportion
+		validatedProportions = append(validatedProportions, proportion)
+		probs = append(probs, prob)
+
 	}
 	fpSum := float64(sum)
 
+	for i, o := range orders {
+		scaling := 0.0
+		prob := probs[i]
+		if prob > 0 {
+			scaling = float64(validatedProportions[i]) / fpSum / prob
+		}
+		o.LiquidityImpliedSize = uint64(math.Ceil(liquidityObligation * scaling))
+	}
+}
+
+func setSizesTo0(orders []*LiquidityOrder) {
 	for _, o := range orders {
-		o.NormalisedFraction = float64(o.Proportion) / fpSum
+		o.LiquidityImpliedSize = 0
 	}
 }
