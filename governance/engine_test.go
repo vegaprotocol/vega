@@ -19,6 +19,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type streamEvt interface {
+	events.Event
+	StreamMessage() *types.BusEvent
+}
+
+type voteMatcher struct{}
+
 type tstEngine struct {
 	*governance.Engine
 	ctrl   *gomock.Controller
@@ -327,15 +334,30 @@ func testVoteProposalID(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	voter := eng.makeValidParty("voter", 1)
+	vote := types.Vote{
+		PartyID:    voter.Id,
+		Value:      types.Vote_VALUE_YES,
+		ProposalID: "id-of-non-existent-porposal",
+	}
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	voter := eng.makeValidParty("voter", 1)
-
-	err := eng.AddVote(context.Background(), types.Vote{
-		PartyID:    voter.Id,
-		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalID: "id-of-non-existent-proposal",
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
+		// check we're getting the corret event
+		assert.Equal(t, events.TxErrEvent, evt.Type())
+		se, ok := evt.(streamEvt)
+		assert.True(t, ok)
+		be := se.StreamMessage()
+		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		txErr := be.GetTxErrEvent()
+		assert.NotNil(t, txErr)
+		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
+		v := txErr.GetVote()
+		assert.NotNil(t, v)
+		assert.Equal(t, vote, *v)
 	})
+
+	err := eng.AddVote(context.Background(), vote)
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
 
@@ -352,12 +374,27 @@ func testVoteProposalID(t *testing.T) {
 	rejectedProposal := eng.newOpenProposal(emptyProposer.Id, time.Now())
 	err = eng.SubmitProposal(context.Background(), rejectedProposal, "proposal-id")
 	assert.Error(t, err)
-
-	err = eng.AddVote(context.Background(), types.Vote{
+	vote = types.Vote{
 		PartyID:    voter.Id,
-		Value:      types.Vote_VALUE_NO, // does not matter
+		Value:      types.Vote_VALUE_NO,
 		ProposalID: rejectedProposal.ID,
+	}
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
+		// check we're getting the corret event
+		assert.Equal(t, events.TxErrEvent, evt.Type())
+		se, ok := evt.(streamEvt)
+		assert.True(t, ok)
+		be := se.StreamMessage()
+		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		txErr := be.GetTxErrEvent()
+		assert.NotNil(t, txErr)
+		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
+		v := txErr.GetVote()
+		assert.NotNil(t, v)
+		assert.Equal(t, vote, *v)
 	})
+
+	err = eng.AddVote(context.Background(), vote)
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
 
@@ -412,6 +449,7 @@ func testVoterStake(t *testing.T) {
 	voterNoAccount := "voter-no-account"
 	notFoundError := errors.New("account not found")
 	eng.accs.EXPECT().GetPartyTokenAccount(voterNoAccount).Times(1).Return(nil, notFoundError)
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voterNoAccount,
 		Value:      types.Vote_VALUE_YES, // does not matter
@@ -420,6 +458,14 @@ func testVoterStake(t *testing.T) {
 	assert.Error(t, err)
 	assert.EqualError(t, err, notFoundError.Error())
 
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
+		ve, ok := evt.(streamEvt)
+		assert.True(t, ok)
+		be := ve.StreamMessage()
+		txErr := be.GetTxErrEvent()
+		assert.NotNil(t, txErr)
+		assert.Equal(t, governance.ErrVoterInsufficientTokens.Error(), txErr.ErrMsg)
+	})
 	emptyAccount := eng.makeValidParty("empty-account", 0)
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    emptyAccount.Id,
@@ -478,6 +524,7 @@ func testVotingDeclinedProposal(t *testing.T) {
 	assert.Empty(t, accepted) // nothing was accepted
 
 	voter := eng.makeValidPartyTimes("voter", 1, 0)
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter.Id,
 		Value:      types.Vote_VALUE_YES, // does not matter
@@ -535,6 +582,7 @@ func testVotingPassedProposal(t *testing.T) {
 	eng.OnChainTimeUpdate(context.Background(), afterClosing)
 
 	voter2 := eng.makeValidPartyTimes("voter2", 1, 0)
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter2.Id,
 		Value:      types.Vote_VALUE_NO, // does not matter
@@ -549,6 +597,7 @@ func testVotingPassedProposal(t *testing.T) {
 	assert.Len(t, tobeEnacted, 1)
 	assert.Equal(t, "proposal-id1", tobeEnacted[0].Proposal().ID)
 
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyID:    voter2.Id,
 		Value:      types.Vote_VALUE_NO, // does not matter
@@ -921,4 +970,27 @@ func (e *tstEngine) newOpenProposal(partyID string, now time.Time) types.Proposa
 			Change:              newValidMarketTerms(), //TODO: add more variaty here (when available)
 		},
 	}
+}
+
+func (v voteMatcher) String() string {
+	return "Vote TX error event"
+}
+
+func (v voteMatcher) Matches(x interface{}) bool {
+	evt, ok := x.(streamEvt)
+	if !ok {
+		return false
+	}
+	if evt.Type() != events.TxErrEvent {
+		return false
+	}
+	be := evt.StreamMessage()
+	txErr := be.GetTxErrEvent()
+	if txErr == nil {
+		return false
+	}
+	if vote := txErr.GetVote(); vote == nil {
+		return false
+	}
+	return true
 }
