@@ -102,3 +102,5 @@ models:
         resolver: true
   Deposit:
     model: code.vegaprotocol.io/vega/proto.Deposit
+  PeggedOrder:
+    model: code.vegaprotocol.io/vega/proto.PeggedOrder
