@@ -33,15 +33,15 @@ func (m *MockRiskModel) EXPECT() *MockRiskModelMockRecorder {
 }
 
 // ProbabilityOfTrading mocks base method
-func (m *MockRiskModel) ProbabilityOfTrading(arg0 float64, arg1, arg2 bool, arg3, arg4 float64) float64 {
+func (m *MockRiskModel) ProbabilityOfTrading(arg0, arg1, arg2 float64, arg3, arg4 bool, arg5, arg6 float64) float64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(float64)
 	return ret0
 }
 
 // ProbabilityOfTrading indicates an expected call of ProbabilityOfTrading
-func (mr *MockRiskModelMockRecorder) ProbabilityOfTrading(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockRiskModelMockRecorder) ProbabilityOfTrading(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProbabilityOfTrading", reflect.TypeOf((*MockRiskModel)(nil).ProbabilityOfTrading), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProbabilityOfTrading", reflect.TypeOf((*MockRiskModel)(nil).ProbabilityOfTrading), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
