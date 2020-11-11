@@ -1828,23 +1828,26 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	var err error
 	pricevalue, err := strconv.ParseUint(price, 10, 64)
 	if err != nil {
-		r.log.Error("unable to convert price from string in order amend",
-			logging.Error(err))
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to convert price from string in order amend", logging.Error(err))
+		}
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
 	order.Price = &proto.Price{Value: pricevalue}
 
 	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
-		r.log.Error("unable to convert size from string in order amend",
-			logging.Error(err))
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to convert size from string in order amend", logging.Error(err))
+		}
 		return nil, errors.New("invalid size, could not convert to unsigned int")
 	}
 
 	order.TimeInForce, err = convertOrderTimeInForceToProto(tif)
 	if err != nil {
-		r.log.Error("unable to parse time in force in order amend",
-			logging.Error(err))
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to parse time in force in order amend", logging.Error(err))
+		}
 		return nil, errors.New("invalid time in force, could not convert to vega time in force")
 	}
 
@@ -1860,8 +1863,9 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	if peggedOffset != nil {
 		po, err := strconv.ParseInt(*peggedOffset, 10, 64)
 		if err != nil {
-			r.log.Error("unable to parse pegged offset in order amend",
-				logging.Error(err))
+			if r.log.GetLevel() == logging.DebugLevel {
+				r.log.Debug("unable to parse pegged offset in order amend", logging.Error(err))
+			}
 			return nil, errors.New("invalid pegged offset, could not convert to proto pegged offset")
 		}
 		order.PeggedOffset = &types.PeggedOffset{Value: po}
@@ -1869,8 +1873,9 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 
 	order.PeggedReference, err = convertPeggedReferenceToProto(peggedReference)
 	if err != nil {
-		r.log.Error("unable to parse pegged reference in order amend",
-			logging.Error(err))
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to parse pegged reference in order amend", logging.Error(err))
+		}
 		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
 	}
 

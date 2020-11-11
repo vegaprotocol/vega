@@ -501,7 +501,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 					// If we are parked then try to add back to the book
 					m.submitValidatedOrder(ctx, order)
 				} else {
-					// Force an amend but don't trigger a reprice to happen
+					// Amend the order on the orderbook
 					m.amendPeggedOrder(ctx, order, price)
 				}
 				repriceCount++
@@ -1900,7 +1900,6 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		}, nil
 	}
 
-	// If this is a pegged order, reprice before we check if the values have changed
 	if existingOrder.PeggedOrder != nil {
 		// Amend in place during an auction
 		if m.as.InAuction() {
@@ -1927,7 +1926,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 			if amendedOrder.Status == types.Order_STATUS_PARKED {
 				orderConf, err := m.submitValidatedOrder(ctx, amendedOrder)
 				if err == nil {
-					// Remove from unparked list
+					// Remove from parked list
 					for i, order := range m.parkedOrders {
 						if order.Id == amendedOrder.Id {
 							copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
@@ -1936,6 +1935,9 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 							return orderConf, err
 						}
 					}
+				} else {
+					// If we cannot submit a new order then the amend has failed, return the error
+					return nil, err
 				}
 			}
 		}
