@@ -166,6 +166,8 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 			return nil, perr, err
 		}
 		te.m = mkt
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		te.n = change.UpdateNetworkParameter.Changes
 	case *types.ProposalTerms_NewAsset:
 		asset, err := e.assets.Get(p.GetID())
 		if err != nil {
