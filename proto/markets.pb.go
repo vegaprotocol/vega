@@ -644,7 +644,9 @@ type SimpleModelParams struct {
 	// Pre-defined maximum price move up that the model considers as valid.
 	MaxMoveUp float64 `protobuf:"fixed64,3,opt,name=maxMoveUp,proto3" json:"maxMoveUp,omitempty"`
 	// Pre-defined minimum price move down that the model considers as valid.
-	MinMoveDown          float64  `protobuf:"fixed64,4,opt,name=minMoveDown,proto3" json:"minMoveDown,omitempty"`
+	MinMoveDown float64 `protobuf:"fixed64,4,opt,name=minMoveDown,proto3" json:"minMoveDown,omitempty"`
+	// Pre-defined constant probability of trading
+	ProbabilityOfTrading float64  `protobuf:"fixed64,5,opt,name=probabilityOfTrading,proto3" json:"probabilityOfTrading,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -699,6 +701,13 @@ func (m *SimpleModelParams) GetMaxMoveUp() float64 {
 func (m *SimpleModelParams) GetMinMoveDown() float64 {
 	if m != nil {
 		return m.MinMoveDown
+	}
+	return 0
+}
+
+func (m *SimpleModelParams) GetProbabilityOfTrading() float64 {
+	if m != nil {
+		return m.ProbabilityOfTrading
 	}
 	return 0
 }

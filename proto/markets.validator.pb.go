@@ -88,6 +88,12 @@ func (this *SimpleModelParams) Validate() error {
 	if !(this.MinMoveDown <= 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinMoveDown", fmt.Errorf(`value '%v' must be lower than or equal to '0'`, this.MinMoveDown))
 	}
+	if !(this.ProbabilityOfTrading >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProbabilityOfTrading", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.ProbabilityOfTrading))
+	}
+	if !(this.ProbabilityOfTrading <= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProbabilityOfTrading", fmt.Errorf(`value '%v' must be lower than or equal to '0'`, this.ProbabilityOfTrading))
+	}
 	return nil
 }
 func (this *ScalingFactors) Validate() error {
