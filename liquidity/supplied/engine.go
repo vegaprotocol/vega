@@ -26,16 +26,17 @@ type RiskModel interface {
 	ProbabilityOfTrading(price float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/valid_price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied ValidPriceRangeProvider
-// ValidPriceRangeProvider provides the range of valid prices, that is prices that wouldn't trade the current trading mode
-type ValidPriceRangeProvider interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
+// PriceMonitor provides the range of valid prices, that is prices that wouldn't trade the current trading mode
+type PriceMonitor interface {
+	GetHorizonYearFractions() []float64
 	GetValidPriceRange() (float64, float64)
 }
 
 // Engine provides functionality related to supplied liquidity
 type Engine struct {
 	rm RiskModel
-	rp ValidPriceRangeProvider
+	rp PriceMonitor
 
 	cachedMin float64
 	cachedMax float64
@@ -44,7 +45,7 @@ type Engine struct {
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
-func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvider) *Engine {
+func NewEngine(riskModel RiskModel, validPriceRangeProvider PriceMonitor) *Engine {
 	return &Engine{
 		rm: riskModel,
 		rp: validPriceRangeProvider,
