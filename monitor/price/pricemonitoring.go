@@ -128,6 +128,15 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 	return e, nil
 }
 
+// GetHorizonYearFractions returns horizons of all the triggers specifed, expressed as year fraction, sorted in ascending order.
+func (e *Engine) GetHorizonYearFractions() []float64 {
+	h := make([]float64, 0, len(e.bounds))
+	for _, v := range e.fpHorizons {
+		h = append(h, v)
+	}
+	return h
+}
+
 // GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction
 func (e *Engine) GetValidPriceRange() (float64, float64) {
 	min := -math.MaxFloat64

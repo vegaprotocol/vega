@@ -64,6 +64,29 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 	require.Nil(t, pm)
 }
 
+func TestGetHorizonYearFractions(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
+	p1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	p2 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+
+	settings := types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: 600,
+	}
+
+	pm, err := price.NewMonitor(riskModelMock, settings)
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+
+	yearFractions := pm.GetHorizonYearFractions()
+	require.Equal(t, 2, len(yearFractions))
+	require.Equal(t, horizonToYearFraction(p2.Horizon), yearFractions[0])
+	require.Equal(t, horizonToYearFraction(p1.Horizon), yearFractions[1])
+}
+
 func TestRecordPriceChange(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
