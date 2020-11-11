@@ -10,7 +10,7 @@ type LiquidityOrder struct {
 	Price      uint64
 	Proportion uint64
 
-	LiquidityImpliedSize uint64
+	LiquidityImpliedVolume uint64
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
@@ -48,9 +48,9 @@ func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error
 	return math.Min(bLiq, sLiq), nil
 }
 
-// CalculateLiquidityImpliedSizes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
+// CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
-func (e Engine) CalculateLiquidityImpliedSizes(liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
+func (e Engine) CalculateLiquidityImpliedVolumes(liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
 	minPrice, maxPrice := e.rp.ValidPriceRange()
 
 	limitOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders))
@@ -130,12 +130,12 @@ func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrde
 			fraction := float64(validatedProportions[i]) / fpSum
 			scaling = fraction / prob
 		}
-		o.LiquidityImpliedSize = uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price)))
+		o.LiquidityImpliedVolume = uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price)))
 	}
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {
 	for _, o := range orders {
-		o.LiquidityImpliedSize = 0
+		o.LiquidityImpliedVolume = 0
 	}
 }
