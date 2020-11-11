@@ -102,7 +102,7 @@ func Test_InteralConsistency(t *testing.T) {
 	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
 	minPrice := 89.2
 	maxPrice := 111.1
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(6)
+	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(2)
 
 	buyLimitOrders := []types.Order{}
 	sellLimitOrders := []types.Order{}
@@ -128,8 +128,8 @@ func Test_InteralConsistency(t *testing.T) {
 	}
 	validBuy1Prob := 0.1
 	validSell1Prob := 0.22
-	riskModel.EXPECT().ProbabilityOfTrading(float64(buy.Price), true, true, minPrice, maxPrice).Return(validBuy1Prob).Times(4)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(sell.Price), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(4)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(buy.Price), true, true, minPrice, maxPrice).Return(validBuy1Prob).Times(2)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(sell.Price), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(2)
 
 	engine := supplied.NewEngine(riskModel, rangeProvider)
 	require.NotNil(t, engine)
@@ -277,43 +277,13 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 }
 
-func collateOrders(buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*supplied.LiquidityOrder, sellShapes []*supplied.LiquidityOrder) []types.Order {
-	allOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders)+len(buyShapes)+len(sellShapes))
-
-	allOrders = append(allOrders, buyLimitOrders...)
-	allOrders = append(allOrders, sellLimitOrders...)
-
-	for _, s := range buyShapes {
-		lo := types.Order{
-			Price:     s.Price,
-			Size:      s.LiquidityImpliedVolume,
-			Remaining: s.LiquidityImpliedVolume,
-			Side:      types.Side_SIDE_BUY,
-		}
-		allOrders = append(allOrders, lo)
-	}
-
-	for _, s := range sellShapes {
-		lo := types.Order{
-			Price:     s.Price,
-			Size:      s.LiquidityImpliedVolume,
-			Remaining: s.LiquidityImpliedVolume,
-			Side:      types.Side_SIDE_SELL,
-		}
-		allOrders = append(allOrders, lo)
-	}
-
-	return allOrders
-
-}
-
 func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
 	minPrice := 89.2
 	maxPrice := 111.1
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(6)
+	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(12)
 
 	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
 	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
@@ -353,12 +323,12 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		invalidSell,
 	}
 
-	riskModel.EXPECT().ProbabilityOfTrading(float64(invalidBuy.Price), true, true, minPrice, maxPrice).Return(0.0).Times(4)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(validBuy1.Price), true, true, minPrice, maxPrice).Return(0.1).Times(4)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(validBuy2.Price), true, true, minPrice, maxPrice).Return(0.2).Times(4)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(invalidSell.Price), false, true, minPrice, maxPrice).Return(0.0).Times(4)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(validSell1.Price), false, true, minPrice, maxPrice).Return(0.22).Times(4)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(validSell2.Price), false, true, minPrice, maxPrice).Return(0.11).Times(4)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(invalidBuy.Price), true, true, minPrice, maxPrice).Return(0.0).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(validBuy1.Price), true, true, minPrice, maxPrice).Return(0.1).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(validBuy2.Price), true, true, minPrice, maxPrice).Return(0.2).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(invalidSell.Price), false, true, minPrice, maxPrice).Return(0.0).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(validSell1.Price), false, true, minPrice, maxPrice).Return(0.22).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(validSell2.Price), false, true, minPrice, maxPrice).Return(0.11).Times(6)
 
 	engine := supplied.NewEngine(riskModel, rangeProvider)
 	require.NotNil(t, engine)
@@ -388,9 +358,9 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		},
 	}
 
-	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[0].Price), true, true, minPrice, maxPrice).Return(0.175).Times(3)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[1].Price), true, true, minPrice, maxPrice).Return(0.312).Times(3)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(sellLimitOrders[0].Price), false, true, minPrice, maxPrice).Return(0.5).Times(3)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[0].Price), true, true, minPrice, maxPrice).Return(0.175).Times(12)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[1].Price), true, true, minPrice, maxPrice).Return(0.312).Times(12)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(sellLimitOrders[0].Price), false, true, minPrice, maxPrice).Return(0.5).Times(12)
 
 	limitOrdersSuppliedLiquidity, err := engine.CalculateSuppliedLiquidity(collateOrders(buyLimitOrders, sellLimitOrders, nil, nil))
 	require.NoError(t, err)
@@ -412,10 +382,219 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	totalSuppliedLiquidity, err := engine.CalculateSuppliedLiquidity(allOrders)
 	require.NoError(t, err)
 	require.True(t, totalSuppliedLiquidity >= liquidityObligation)
+	require.True(t, totalSuppliedLiquidity < 2*liquidityObligation)
 
 	// Limit buy orders provide enoguh liquidity
-	// Limit sell orders provide enoguh liquidity
+	buyLimitOrders = []types.Order{
+		{
+			Price:     95,
+			Size:      500,
+			Remaining: 100,
+			Side:      types.Side_SIDE_BUY,
+		},
+		{
+			Price:     97,
+			Size:      1000,
+			Remaining: 100,
+			Side:      types.Side_SIDE_BUY,
+		},
+	}
+	sellLimitOrders = []types.Order{
+		{
+			Price:     104,
+			Size:      500,
+			Remaining: 1,
+			Side:      types.Side_SIDE_SELL,
+		},
+	}
+
+	limitOrdersSuppliedLiquidity, err = engine.CalculateSuppliedLiquidity(collateOrders(buyLimitOrders, sellLimitOrders, nil, nil))
+	require.NoError(t, err)
+	require.True(t, limitOrdersSuppliedLiquidity < liquidityObligation)
+
+	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	require.NoError(t, err)
+
+	require.Equal(t, zero, invalidBuy.LiquidityImpliedVolume)
+	require.Equal(t, zero, invalidSell.LiquidityImpliedVolume)
+	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
+	require.Equal(t, zero, validBuy2.LiquidityImpliedVolume)
+	require.Less(t, zero, validSell1.LiquidityImpliedVolume)
+	require.Less(t, zero, validSell2.LiquidityImpliedVolume)
+
+	// 	Verify engine is internally consistent
+	allOrders = collateOrders(buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	totalSuppliedLiquidity, err = engine.CalculateSuppliedLiquidity(allOrders)
+	require.NoError(t, err)
+	require.True(t, totalSuppliedLiquidity >= liquidityObligation)
+	require.True(t, totalSuppliedLiquidity < 2*liquidityObligation)
+
+	//Limit sell orders provide enoguh liquidity
+	buyLimitOrders = []types.Order{
+		{
+			Price:     95,
+			Size:      500,
+			Remaining: 1,
+			Side:      types.Side_SIDE_BUY,
+		},
+		{
+			Price:     97,
+			Size:      1000,
+			Remaining: 1,
+			Side:      types.Side_SIDE_BUY,
+		},
+	}
+	sellLimitOrders = []types.Order{
+		{
+			Price:     104,
+			Size:      500,
+			Remaining: 100,
+			Side:      types.Side_SIDE_SELL,
+		},
+	}
+
+	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[0].Price), true, true, minPrice, maxPrice).Return(0.175).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[1].Price), true, true, minPrice, maxPrice).Return(0.312).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(sellLimitOrders[0].Price), false, true, minPrice, maxPrice).Return(0.5).Times(1)
+
+	limitOrdersSuppliedLiquidity, err = engine.CalculateSuppliedLiquidity(collateOrders(buyLimitOrders, sellLimitOrders, nil, nil))
+	require.NoError(t, err)
+	require.True(t, limitOrdersSuppliedLiquidity < liquidityObligation)
+
+	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	require.NoError(t, err)
+
+	require.Equal(t, zero, invalidBuy.LiquidityImpliedVolume)
+	require.Equal(t, zero, invalidSell.LiquidityImpliedVolume)
+	require.Less(t, zero, validBuy1.LiquidityImpliedVolume)
+	require.Less(t, zero, validBuy2.LiquidityImpliedVolume)
+	require.Equal(t, zero, validSell1.LiquidityImpliedVolume)
+	require.Equal(t, zero, validSell2.LiquidityImpliedVolume)
+
+	// 	Verify engine is internally consistent
+	allOrders = collateOrders(buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	totalSuppliedLiquidity, err = engine.CalculateSuppliedLiquidity(allOrders)
+	require.NoError(t, err)
+	require.True(t, totalSuppliedLiquidity >= liquidityObligation)
+	require.True(t, totalSuppliedLiquidity < 2*liquidityObligation)
+
 	// Limit buy & sell orders provide enoguh liquidity
+	buyLimitOrders = []types.Order{
+		{
+			Price:     95,
+			Size:      500,
+			Remaining: 100,
+			Side:      types.Side_SIDE_BUY,
+		},
+		{
+			Price:     97,
+			Size:      1000,
+			Remaining: 100,
+			Side:      types.Side_SIDE_BUY,
+		},
+	}
+	sellLimitOrders = []types.Order{
+		{
+			Price:     104,
+			Size:      500,
+			Remaining: 100,
+			Side:      types.Side_SIDE_SELL,
+		},
+	}
+
+	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[0].Price), true, true, minPrice, maxPrice).Return(0.175).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(buyLimitOrders[1].Price), true, true, minPrice, maxPrice).Return(0.312).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(sellLimitOrders[0].Price), false, true, minPrice, maxPrice).Return(0.5).Times(1)
+
+	limitOrdersSuppliedLiquidity, err = engine.CalculateSuppliedLiquidity(collateOrders(buyLimitOrders, sellLimitOrders, nil, nil))
+	require.NoError(t, err)
+	require.True(t, limitOrdersSuppliedLiquidity > liquidityObligation)
+
+	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	require.NoError(t, err)
+
+	require.Equal(t, zero, invalidBuy.LiquidityImpliedVolume)
+	require.Equal(t, zero, invalidSell.LiquidityImpliedVolume)
+	require.Equal(t, zero, validBuy1.LiquidityImpliedVolume)
+	require.Equal(t, zero, validBuy2.LiquidityImpliedVolume)
+	require.Equal(t, zero, validSell1.LiquidityImpliedVolume)
+	require.Equal(t, zero, validSell2.LiquidityImpliedVolume)
+
+	// 	Verify engine is internally consistent
+	allOrders = collateOrders(buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	totalSuppliedLiquidity, err = engine.CalculateSuppliedLiquidity(allOrders)
+	require.NoError(t, err)
+	require.True(t, totalSuppliedLiquidity >= liquidityObligation)
 }
 
-//TODO: Add test case where there isn't a valid peg (all outside valid price range) -> return error in that case.
+func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	riskModel := mocks.NewMockRiskModel(ctrl)
+	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
+	minPrice := 89.2
+	maxPrice := 111.1
+	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(2)
+
+	buyLimitOrders := []types.Order{}
+	sellLimitOrders := []types.Order{}
+
+	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
+	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+
+	invalidBuy := &supplied.LiquidityOrder{
+		Price:      minPriceInt - 1,
+		Proportion: 10,
+	}
+	buyShapes := []*supplied.LiquidityOrder{
+		invalidBuy,
+	}
+	invalidSell := &supplied.LiquidityOrder{
+		Price:      maxPriceInt + 1,
+		Proportion: 33,
+	}
+	sellShapes := []*supplied.LiquidityOrder{
+		invalidSell,
+	}
+	riskModel.EXPECT().ProbabilityOfTrading(float64(invalidBuy.Price), true, true, minPrice, maxPrice).Return(0.0).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(float64(invalidSell.Price), false, true, minPrice, maxPrice).Return(0.0).Times(1)
+
+	engine := supplied.NewEngine(riskModel, rangeProvider)
+	require.NotNil(t, engine)
+
+	liquidityObligation := 20.0
+	// Expecting an error as limit orders don't cover the obligation there are no valid orders to calculate size for
+	err := engine.CalculateLiquidityImpliedVolumes(liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	require.Error(t, err)
+
+	// Same when there just aren't any buy/sell shapes
+	err = engine.CalculateLiquidityImpliedVolumes(liquidityObligation, buyLimitOrders, sellLimitOrders, []*supplied.LiquidityOrder{}, []*supplied.LiquidityOrder{})
+	require.Error(t, err)
+}
+
+func collateOrders(buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*supplied.LiquidityOrder, sellShapes []*supplied.LiquidityOrder) []types.Order {
+	allOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders)+len(buyShapes)+len(sellShapes))
+
+	allOrders = append(allOrders, buyLimitOrders...)
+	allOrders = append(allOrders, sellLimitOrders...)
+
+	for _, s := range buyShapes {
+		lo := types.Order{
+			Price:     s.Price,
+			Size:      s.LiquidityImpliedVolume,
+			Remaining: s.LiquidityImpliedVolume,
+			Side:      types.Side_SIDE_BUY,
+		}
+		allOrders = append(allOrders, lo)
+	}
+
+	for _, s := range sellShapes {
+		lo := types.Order{
+			Price:     s.Price,
+			Size:      s.LiquidityImpliedVolume,
+			Remaining: s.LiquidityImpliedVolume,
+			Side:      types.Side_SIDE_SELL,
+		}
+		allOrders = append(allOrders, lo)
+	}
+	return allOrders
+}
