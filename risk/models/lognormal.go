@@ -62,3 +62,10 @@ func (f *LogNormal) PriceRange(currentPrice, yearFraction, probabilityLevel floa
 	dist := f.params.GetProbabilityDistribution(currentPrice, yearFraction)
 	return pd.PriceRange(dist, probabilityLevel)
 }
+
+// ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
+// Additional arguments control optional truncation of probability density outside the [minPrice,maxPrice] range.
+func (f *LogNormal) ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64 {
+	dist := f.params.GetProbabilityDistribution(currentPrice, yearFraction)
+	return pd.ProbabilityOfTrading(dist, orderPrice, isBid, applyMinMax, minPrice, maxPrice)
+}
