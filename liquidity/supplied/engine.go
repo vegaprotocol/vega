@@ -1,10 +1,16 @@
 package supplied
 
 import (
+	"errors"
 	"math"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
+
+// ErrNoValidOrders informs that there weren't any valid orders to cover the liquidity obligation with.
+// This could happen when for a given side (buy or sell) limit orders don't supply enough liquidity and there aren't any
+// valid pegged orders (all the prives are invalid) to cover it with.
+var ErrNoValidOrders = errors.New("no valid orders to cover the liquidity obligation with")
 
 type LiquidityOrder struct {
 	Price      uint64
@@ -28,7 +34,14 @@ type ValidPriceRangeProvider interface {
 type Engine struct {
 	rm RiskModel
 	rp ValidPriceRangeProvider
+
+	cachedMin float64
+	cachedMax float64
+	bCache    map[uint64]float64
+	sCache    map[uint64]float64
 }
+
+//TODO: refactor engine so that probabilities are cached
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
 func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvider) *Engine {
@@ -39,7 +52,7 @@ func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvi
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error) {
+func (e *Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error) {
 	minPrice, maxPrice := e.rp.ValidPriceRange()
 	bLiq, sLiq, err := e.calculateBuySellLiquidityWithMinMax(orders, minPrice, maxPrice)
 	if err != nil {
@@ -50,7 +63,7 @@ func (e Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error
 
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
-func (e Engine) CalculateLiquidityImpliedVolumes(liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
+func (e *Engine) CalculateLiquidityImpliedVolumes(liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
 	minPrice, maxPrice := e.rp.ValidPriceRange()
 
 	limitOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders))
@@ -63,48 +76,37 @@ func (e Engine) CalculateLiquidityImpliedVolumes(liquidityObligation float64, bu
 	}
 
 	buyRemaining := liquidityObligation - buySupplied
-	e.updateSizes(buyRemaining, buyShapes, true, minPrice, maxPrice)
+	if err := e.updateSizes(buyRemaining, buyShapes, true, minPrice, maxPrice); err != nil {
+		return err
+	}
 
 	sellRemaining := liquidityObligation - sellSupplied
-	e.updateSizes(sellRemaining, sellShapes, false, minPrice, maxPrice)
+	if err := e.updateSizes(sellRemaining, sellShapes, false, minPrice, maxPrice); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e Engine) calculateBuySellLiquidityWithMinMax(orders []types.Order, minPrice, maxPrice float64) (float64, float64, error) {
+func (e *Engine) calculateBuySellLiquidityWithMinMax(orders []types.Order, minPrice, maxPrice float64) (float64, float64, error) {
 	bLiq := 0.0
 	sLiq := 0.0
-	var bProbs map[uint64]float64 = make(map[uint64]float64)
-	var sProbs map[uint64]float64 = make(map[uint64]float64)
-	var prob float64
-	var ok bool
 	for _, o := range orders {
-		price := o.Price
-		fpPrice := float64(price)
-		volume := o.Remaining
-
 		if o.Side == types.Side_SIDE_BUY {
-			if prob, ok = bProbs[price]; !ok {
-				prob = e.rm.ProbabilityOfTrading(fpPrice, true, true, minPrice, maxPrice)
-				bProbs[price] = prob
-			}
-			bLiq += fpPrice * float64(volume) * prob
+			bLiq += float64(o.Price) * float64(o.Remaining) * e.getProbabilityOfTrading(o.Price, true, minPrice, maxPrice)
 		}
 		if o.Side == types.Side_SIDE_SELL {
-			if prob, ok = sProbs[price]; !ok {
-				prob = e.rm.ProbabilityOfTrading(fpPrice, false, true, minPrice, maxPrice)
-				sProbs[price] = prob
-			}
-			sLiq += fpPrice * float64(volume) * prob
+			sLiq += float64(o.Price) * float64(o.Remaining) * e.getProbabilityOfTrading(o.Price, false, minPrice, maxPrice)
 		}
 	}
 	return bLiq, sLiq, nil
 }
 
-func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrder, buys bool, minPrice, maxPrice float64) {
+func (e *Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrder, isBid bool, minPrice, maxPrice float64) error {
 	if liquidityObligation <= 0 {
 		setSizesTo0(orders)
-		return
+		return nil
 	}
 
 	var sum uint64 = 0
@@ -112,7 +114,8 @@ func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrde
 	validatedProportions := make([]uint64, 0, len(orders))
 	for _, o := range orders {
 		proportion := o.Proportion
-		prob := e.rm.ProbabilityOfTrading(float64(o.Price), buys, true, minPrice, maxPrice)
+
+		prob := e.getProbabilityOfTrading(o.Price, isBid, minPrice, maxPrice)
 		if prob <= 0 {
 			proportion = 0
 		}
@@ -120,6 +123,9 @@ func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrde
 		validatedProportions = append(validatedProportions, proportion)
 		probs = append(probs, prob)
 
+	}
+	if sum == 0 {
+		return ErrNoValidOrders
 	}
 	fpSum := float64(sum)
 
@@ -132,6 +138,28 @@ func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrde
 		}
 		o.LiquidityImpliedVolume = uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price)))
 	}
+	return nil
+}
+
+func (e *Engine) getProbabilityOfTrading(price uint64, isBid bool, minPrice float64, maxPrice float64) float64 {
+	// if min, max changed since caches were created then reset
+	if e.cachedMin != minPrice || e.cachedMax != maxPrice {
+		e.bCache = make(map[uint64]float64, len(e.bCache))
+		e.sCache = make(map[uint64]float64, len(e.sCache))
+		e.cachedMin, e.cachedMax = minPrice, maxPrice
+	}
+
+	cache := e.sCache
+	if isBid {
+		cache = e.bCache
+	}
+
+	fpPrice := float64(price)
+	if prob, ok := cache[price]; !ok {
+		prob = e.rm.ProbabilityOfTrading(fpPrice, isBid, true, minPrice, maxPrice)
+		cache[price] = prob
+	}
+	return cache[price]
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {
