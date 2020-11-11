@@ -1547,11 +1547,7 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 type myPeggedOrderResolver VegaResolverRoot
 
 func (r *myPeggedOrderResolver) Reference(ctx context.Context, obj *types.PeggedOrder) (PeggedReference, error) {
-	ref, err := convertPeggedReferenceFromProto(obj.Reference)
-	if err != nil {
-		return PeggedReferenceMid, err
-	}
-	return ref, nil
+	return convertPeggedReferenceFromProto(obj.Reference)
 }
 
 func (r *myPeggedOrderResolver) Offset(ctx context.Context, obj *types.PeggedOrder) (string, error) {
