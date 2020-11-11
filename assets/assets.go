@@ -8,10 +8,10 @@ import (
 
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/erc20"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -149,7 +149,7 @@ func (s *Service) assetHash(asset *Asset) []byte {
 		data.Symbol,
 		data.TotalSupply,
 		data.Decimals)
-	return hash([]byte(buf))
+	return crypto.Hash([]byte(buf))
 }
 
 func (s *Service) Get(assetID string) (*Asset, error) {
@@ -173,7 +173,7 @@ func (s *Service) GetByRef(ref string) (*Asset, error) {
 	return s.Get(id)
 }
 
-// GetAssetHash return an hash of the given asset to be used
+// AssetHash return an hash of the given asset to be used
 // signed to validate the asset on the vega chain
 func (s *Service) AssetHash(assetID string) ([]byte, error) {
 	asset, ok := s.assets[assetID]
@@ -185,10 +185,4 @@ func (s *Service) AssetHash(assetID string) ([]byte, error) {
 		return s.assetHash(asset), nil
 	}
 	return nil, ErrAssetDoesNotExist
-}
-
-func hash(key []byte) []byte {
-	hasher := sha3.New256()
-	hasher.Write([]byte(key))
-	return hasher.Sum(nil)
 }

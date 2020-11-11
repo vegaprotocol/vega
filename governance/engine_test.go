@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/governance/mocks"
@@ -740,7 +739,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		Id:      partyA + "-account",
 		Owner:   partyA,
 		Balance: 200,
-		Asset:   collateral.TokenAsset,
+		Asset:   "VOTE",
 	}
 	eng.accs.EXPECT().GetPartyTokenAccount(accountA.Owner).AnyTimes().Return(&accountA, nil)
 	partyB := "party-B"
@@ -748,7 +747,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		Id:      partyB + "-account",
 		Owner:   partyB,
 		Balance: 100,
-		Asset:   collateral.TokenAsset,
+		Asset:   "VOTE",
 	}
 	eng.accs.EXPECT().GetPartyTokenAccount(accountB.Owner).AnyTimes().Return(&accountB, nil)
 
@@ -941,7 +940,7 @@ func (e *tstEngine) makeValidPartyTimes(partyID string, balance uint64, times in
 		Id:      partyID + "-account",
 		Owner:   partyID,
 		Balance: balance,
-		Asset:   collateral.TokenAsset,
+		Asset:   "VOTE",
 	}
 	e.accs.EXPECT().GetPartyTokenAccount(partyID).Times(times).Return(&account, nil)
 	return &types.Party{Id: partyID}

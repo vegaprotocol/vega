@@ -61,13 +61,23 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 
 	// add the token asset
 	tokAsset := types.Asset{
-		ID:          collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
-		Name:        collateral.TokenAssetSource.GetBuiltinAsset().Name,
-		Symbol:      collateral.TokenAssetSource.GetBuiltinAsset().Symbol,
-		Decimals:    collateral.TokenAssetSource.GetBuiltinAsset().Decimals,
-		TotalSupply: collateral.TokenAssetSource.GetBuiltinAsset().TotalSupply,
-		Source:      collateral.TokenAssetSource,
+		ID:          "VOTE",
+		Name:        "VOTE",
+		Symbol:      "VOTE",
+		Decimals:    5,
+		TotalSupply: "1000",
+		Source: &types.AssetSource{
+			Source: &types.AssetSource_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					Name:        "VOTE",
+					Symbol:      "VOTE",
+					Decimals:    5,
+					TotalSupply: "1000",
+				},
+			},
+		},
 	}
+
 	collateralEngine.EnableAsset(context.Background(), tokAsset)
 
 	if pMonitorSettings == nil {
