@@ -130,7 +130,7 @@ func (e Engine) updateSizes(liquidityObligation float64, orders []*LiquidityOrde
 			fraction := float64(validatedProportions[i]) / fpSum
 			scaling = fraction / prob
 		}
-		o.LiquidityImpliedSize = uint64(math.Ceil(liquidityObligation * scaling))
+		o.LiquidityImpliedSize = uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price)))
 	}
 }
 
