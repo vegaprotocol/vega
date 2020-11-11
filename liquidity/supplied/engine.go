@@ -12,6 +12,7 @@ import (
 // valid pegged orders (all the prives are invalid) to cover it with.
 var ErrNoValidOrders = errors.New("no valid orders to cover the liquidity obligation with")
 
+// LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book
 type LiquidityOrder struct {
 	Price      uint64
 	Proportion uint64
@@ -31,6 +32,7 @@ type ValidPriceRangeProvider interface {
 	ValidPriceRange() (float64, float64)
 }
 
+// Engine provides functionality related to supplied liquidity
 type Engine struct {
 	rm RiskModel
 	rp ValidPriceRangeProvider
@@ -40,8 +42,6 @@ type Engine struct {
 	bCache    map[uint64]float64
 	sCache    map[uint64]float64
 }
-
-//TODO: refactor engine so that probabilities are cached
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
 func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvider) *Engine {
