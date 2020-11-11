@@ -22,7 +22,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	maxPrice := 111.1
 
 	// No orders
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(1)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
 
 	engine := supplied.NewEngine(riskModel, rangeProvider)
 	require.NotNil(t, engine)
@@ -40,7 +40,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	}
 
 	buyOrder1Prob := 0.256
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(1)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1})
@@ -67,7 +67,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	sellLiquidity := float64(sellOrder1.Price)*float64(sellOrder1.Remaining)*sellOrder1Prob + float64(sellOrder2.Price)*float64(sellOrder2.Remaining)*sellOrder2Prob
 	expectedLiquidity := math.Min(buyLiquidity, sellLiquidity)
 
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder1.Price), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(sellOrder2.Price), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
 
@@ -86,7 +86,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	buyLiquidity += float64(buyOrder2.Price) * float64(buyOrder2.Remaining) * buyOrder1Prob
 	expectedLiquidity = math.Min(buyLiquidity, sellLiquidity)
 
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice)
 
 	liquidity, err = engine.CalculateSuppliedLiquidity([]types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2})
 	require.NoError(t, err)
@@ -100,7 +100,7 @@ func Test_InteralConsistency(t *testing.T) {
 	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
 	minPrice := 89.2
 	maxPrice := 111.1
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(2)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
 
 	buyLimitOrders := []types.Order{}
 	sellLimitOrders := []types.Order{}
@@ -155,7 +155,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
 	minPrice := 89.2
 	maxPrice := 111.1
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(6)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(6)
 
 	buyLimitOrders := []types.Order{}
 	sellLimitOrders := []types.Order{}
@@ -283,7 +283,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
 	minPrice := 89.2
 	maxPrice := 111.1
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(12)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(12)
 
 	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
 	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
@@ -526,7 +526,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	rangeProvider := mocks.NewMockValidPriceRangeProvider(ctrl)
 	minPrice := 89.2
 	maxPrice := 111.1
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(2)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
 
 	buyLimitOrders := []types.Order{}
 	sellLimitOrders := []types.Order{}
@@ -592,7 +592,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 		order2,
 	}
 
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(1)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(order1.Price), true, true, minPrice, maxPrice).Return(0.123).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(order2.Price), false, true, minPrice, maxPrice).Return(0.234).Times(1)
 
@@ -606,7 +606,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	// Change minPrice, maxPrice and verify that probability of trading is called with new values
 	minPrice -= 10
 	maxPrice += 10
-	rangeProvider.EXPECT().ValidPriceRange().Return(minPrice, maxPrice).Times(1)
+	rangeProvider.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(order1.Price), true, true, minPrice, maxPrice).Return(0.123).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(float64(order2.Price), false, true, minPrice, maxPrice).Return(0.234).Times(1)
 

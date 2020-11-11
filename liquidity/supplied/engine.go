@@ -29,7 +29,7 @@ type RiskModel interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/valid_price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied ValidPriceRangeProvider
 // ValidPriceRangeProvider provides the range of valid prices, that is prices that wouldn't trade the current trading mode
 type ValidPriceRangeProvider interface {
-	ValidPriceRange() (float64, float64)
+	GetValidPriceRange() (float64, float64)
 }
 
 // Engine provides functionality related to supplied liquidity
@@ -53,7 +53,7 @@ func NewEngine(riskModel RiskModel, validPriceRangeProvider ValidPriceRangeProvi
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
 func (e *Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, error) {
-	minPrice, maxPrice := e.rp.ValidPriceRange()
+	minPrice, maxPrice := e.rp.GetValidPriceRange()
 	bLiq, sLiq, err := e.calculateBuySellLiquidityWithMinMax(orders, minPrice, maxPrice)
 	if err != nil {
 		return 0, err
@@ -64,7 +64,7 @@ func (e *Engine) CalculateSuppliedLiquidity(orders []types.Order) (float64, erro
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
 func (e *Engine) CalculateLiquidityImpliedVolumes(liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
-	minPrice, maxPrice := e.rp.ValidPriceRange()
+	minPrice, maxPrice := e.rp.GetValidPriceRange()
 
 	limitOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders))
 	limitOrders = append(limitOrders, buyLimitOrders...)
