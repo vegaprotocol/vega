@@ -55,6 +55,7 @@ type App struct {
 	time       TimeService
 	top        ValidatorTopology
 	vegaWallet nodewallet.Wallet
+	netp       NetworkParameters
 }
 
 func NewApp(
@@ -75,6 +76,7 @@ func NewApp(
 	time TimeService,
 	top ValidatorTopology,
 	wallet Wallet,
+	netp NetworkParameters,
 ) (*App, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -500,8 +502,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateMarket():
 			app.log.Error("update market enactment is not implemented")
-		case toEnact.IsUpdateNetwork():
-			app.log.Error("update network enactment is not implemented")
+		case toEnact.IsUpdateNetworkParameter():
+			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		default:
 			prop.State = types.Proposal_STATE_FAILED
 			app.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", prop.ID))
@@ -585,4 +587,8 @@ func (app *App) enactMarket(ctx context.Context, prop *types.Proposal, mkt *type
 			logging.String("market-id", mkt.Id),
 			logging.Error(err))
 	}
+}
+
+func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, mkt *types.NetworkParameter) {
+	prop.State = types.Proposal_STATE_ENACTED
 }

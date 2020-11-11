@@ -1,10 +1,11 @@
 package checks
 
 import (
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type Collateral interface {
@@ -15,11 +16,24 @@ type Assets interface {
 	IsEnabled(asset string) bool
 }
 
+func MarginScalingFactor() func(interface{}) error {
+	return func(v interface{}) error {
+		sf := v.(*types.ScalingFactors)
+		if err := sf.Validate(); err != nil {
+			return err
+		}
+		if sf.SearchLevel >= sf.InitialMargin || sf.InitialMargin >= sf.CollateralRelease {
+			return errors.New("invalid scaling factors (searchLeve < initialMargin < collateralRelease)")
+		}
+		return nil
+	}
+}
+
 func GovernanceAssetUpdate(
 	log *logging.Logger,
 	assets Assets,
 	collateral Collateral,
-) netparams.StringRule {
+) func(value string) error {
 	return func(value string) error {
 		if !assets.IsEnabled(value) {
 			log.Debug("tried to push a governance update with an non-enabled asset",
