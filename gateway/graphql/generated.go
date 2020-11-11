@@ -354,7 +354,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) int
-		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference PeggedReference, peggedOffset *string) int
+		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
 		PrepareOrderCancel        func(childComplexity int, id *string, partyID string, marketID *string) int
 		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
@@ -822,7 +822,7 @@ type MarketDepthUpdateResolver interface {
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id *string, partyID string, marketID *string) (*PreparedCancelOrder, error)
-	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
+	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
 	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
@@ -2215,7 +2215,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(PeggedReference), args["peggedOffset"].(*string)), true
+		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string)), true
 
 	case "Mutation.prepareOrderCancel":
 		if e.complexity.Mutation.PrepareOrderCancel == nil {
@@ -4094,7 +4094,7 @@ type Mutation {
     "Time in force"
     timeInForce: OrderTimeInForce!
     "The reference point for pegged orders"
-    peggedReference: PeggedReference!
+    peggedReference: PeggedReference
     "The offset from the reference price for pegged orders"
     peggedOffset: String
   ): PreparedAmendOrder!
@@ -6617,9 +6617,9 @@ func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Co
 		}
 	}
 	args["timeInForce"] = arg5
-	var arg6 PeggedReference
+	var arg6 *PeggedReference
 	if tmp, ok := rawArgs["peggedReference"]; ok {
-		arg6, err = ec.unmarshalNPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, tmp)
+		arg6, err = ec.unmarshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13388,7 +13388,7 @@ func (ec *executionContext) _Mutation_prepareOrderAmend(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(PeggedReference), args["peggedOffset"].(*string))
+		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30856,6 +30856,30 @@ func (ec *executionContext) unmarshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋ
 	}
 	res, err := ec.unmarshalOPeggedOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrder(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) unmarshalOPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, v interface{}) (PeggedReference, error) {
+	var res PeggedReference
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, sel ast.SelectionSet, v PeggedReference) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, v interface{}) (*PeggedReference, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, sel ast.SelectionSet, v *PeggedReference) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.Position) graphql.Marshaler {

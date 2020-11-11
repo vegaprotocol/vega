@@ -1812,7 +1812,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 }
 
 func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
-	expiration *string, tif OrderTimeInForce, peggedReference PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
+	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
 	order := &types.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
@@ -1871,7 +1871,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		order.PeggedOffset = &types.PeggedOffset{Value: po}
 	}
 
-	order.PeggedReference, err = convertPeggedReferenceToProto(peggedReference)
+	order.PeggedReference, err = convertPeggedReferenceToProto(*peggedReference)
 	if err != nil {
 		if r.log.GetLevel() == logging.DebugLevel {
 			r.log.Debug("unable to parse pegged reference in order amend", logging.Error(err))
