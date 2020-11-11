@@ -91,8 +91,8 @@ func (this *SimpleModelParams) Validate() error {
 	if !(this.ProbabilityOfTrading >= 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("ProbabilityOfTrading", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.ProbabilityOfTrading))
 	}
-	if !(this.ProbabilityOfTrading <= 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("ProbabilityOfTrading", fmt.Errorf(`value '%v' must be lower than or equal to '0'`, this.ProbabilityOfTrading))
+	if !(this.ProbabilityOfTrading <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProbabilityOfTrading", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.ProbabilityOfTrading))
 	}
 	return nil
 }
