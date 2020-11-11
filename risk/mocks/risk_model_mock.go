@@ -77,3 +77,17 @@ func (mr *MockModelMockRecorder) PriceRange(arg0, arg1, arg2 interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PriceRange", reflect.TypeOf((*MockModel)(nil).PriceRange), arg0, arg1, arg2)
 }
+
+// ProbabilityOfTrading mocks base method
+func (m *MockModel) ProbabilityOfTrading(arg0, arg1, arg2 float64, arg3, arg4 bool, arg5, arg6 float64) float64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret0, _ := ret[0].(float64)
+	return ret0
+}
+
+// ProbabilityOfTrading indicates an expected call of ProbabilityOfTrading
+func (mr *MockModelMockRecorder) ProbabilityOfTrading(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProbabilityOfTrading", reflect.TypeOf((*MockModel)(nil).ProbabilityOfTrading), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+}
