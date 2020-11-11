@@ -672,3 +672,123 @@ func TestMarketInGenericAuction(t *testing.T) {
 func horizonToYearFraction(horizon int64) float64 {
 	return float64(horizon) / float64(365.25*24*60*60)
 }
+
+func TestGetValidPriceRange_NoTriggers(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
+	var currentPrice uint64 = 123
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+
+	settings := types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 1}
+
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
+	auctionStateMock.EXPECT().InAuction().Return(false).Times(1)
+
+	pm, err := price.NewMonitor(riskModelMock, settings)
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+
+	min, max := pm.GetValidPriceRange()
+	require.Equal(t, -math.MaxFloat64, min)
+	require.Equal(t, math.MaxFloat64, max)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+
+	min, max = pm.GetValidPriceRange()
+	require.Equal(t, -math.MaxFloat64, min)
+	require.Equal(t, math.MaxFloat64, max)
+}
+
+func TestGetValidPriceRange_2triggers(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	riskModelMock := mocks.NewMockRangeProvider(ctrl)
+	auctionStateMock := mocks.NewMockAuctionState(ctrl)
+	var currentPrice uint64 = 123
+	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
+	var p1Time int64 = 60
+	var p2Time int64 = 300
+	p1 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: p1Time}
+	p2 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: p2Time}
+	settings := types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{&p1, &p2},
+		},
+		UpdateFrequency: 600,
+	}
+
+	var maxMoveDownHorizon1 uint64 = 1
+	var maxMoveUpHorizon1 uint64 = 2
+	var maxMoveDownHorizon2 uint64 = 3
+	var maxMoveUpHorizon2 uint64 = 4
+	require.True(t, maxMoveDownHorizon2 > maxMoveDownHorizon1)
+	require.True(t, maxMoveUpHorizon2 > maxMoveUpHorizon1)
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(p1.Horizon), p1.Probability).Return(float64(currentPrice-maxMoveDownHorizon1), float64(currentPrice+maxMoveUpHorizon1)).Times(2)
+	riskModelMock.EXPECT().PriceRange(float64(currentPrice), horizonToYearFraction(p2.Horizon), p2.Probability).Return(float64(currentPrice-maxMoveDownHorizon2), float64(currentPrice+maxMoveUpHorizon2)).Times(2)
+	auctionStateMock.EXPECT().IsFBA().Return(false).Times(12)
+	auctionStateMock.EXPECT().InAuction().Return(false).Times(12)
+
+	pm, err := price.NewMonitor(riskModelMock, settings)
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+
+	now = now.Add(time.Second)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+maxMoveUpHorizon1-1, now)
+	require.NoError(t, err)
+
+	now = now.Add(time.Minute)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDownHorizon1+1, now)
+	require.NoError(t, err)
+
+	now = now.Add(time.Hour)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+maxMoveUpHorizon1, now)
+	require.NoError(t, err)
+
+	now = now.Add(time.Minute)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDownHorizon1, now)
+	require.NoError(t, err)
+
+	min, max := pm.GetValidPriceRange()
+	minInt := uint64(math.Ceil(min))
+	maxInt := uint64(math.Floor(max))
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, minInt, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, maxInt, now)
+	require.NoError(t, err)
+
+	// Should trigger an auction
+	auctionStateMock.EXPECT().StartPriceAuction(now, gomock.Any()).Times(1)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, minInt-1, now)
+	require.NoError(t, err)
+
+	now = now.Add(time.Second)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, now)
+	require.NoError(t, err)
+
+	min, max = pm.GetValidPriceRange()
+	minInt = uint64(math.Ceil(min))
+	maxInt = uint64(math.Floor(max))
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, minInt, now)
+	require.NoError(t, err)
+
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, maxInt, now)
+	require.NoError(t, err)
+
+	// Should trigger an auction
+	auctionStateMock.EXPECT().StartPriceAuction(now, gomock.Any()).Times(1)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, maxInt+1, now)
+	require.NoError(t, err)
+}

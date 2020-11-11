@@ -3,6 +3,7 @@ package price
 import (
 	"context"
 	"errors"
+	"math"
 	"sort"
 	"time"
 
@@ -125,6 +126,21 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		bounds:          bounds,
 	}
 	return e, nil
+}
+
+// GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction
+func (e *Engine) GetValidPriceRange() (float64, float64) {
+	min := -math.MaxFloat64
+	max := math.MaxFloat64
+	for _, pr := range e.getCurrentPriceRanges() {
+		if pr.MinPrice > min {
+			min = pr.MinPrice
+		}
+		if pr.MaxPrice < max {
+			max = pr.MaxPrice
+		}
+	}
+	return min, max
 }
 
 // CheckPrice checks how current price and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
@@ -277,28 +293,6 @@ func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonito
 	}
 	return ret
 }
-
-// func (e *Engine) GetValidPriceRange() (float64, float64) {
-// 	var (
-// 		fp  float64                         = float64(p)                        // price as float
-// 		ph  int64                                                               // previous horizon
-// 		ref float64                                                             // reference price
-// 		ret []*types.PriceMonitoringTrigger = []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
-// 	)
-
-// 	for _, p := range e.parameters {
-// 		b, ok := e.bounds[p]
-// 		if !ok {
-// 			continue
-// 		}
-
-// 		if p.Horizon != ph {
-// 			ph = p.Horizon
-// 			ref = e.getReferencePrice(e.now.Add(time.Duration(-ph) * time.Second))
-// 		}
-
-// 	}
-// }
 
 func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 	if e.priceRangeCacheTime != e.now {
