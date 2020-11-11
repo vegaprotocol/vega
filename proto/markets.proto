@@ -131,7 +131,7 @@ message SimpleModelParams {
   // Pre-defined minimum price move down that the model considers as valid.
   double minMoveDown = 4 [(validator.field) = {float_lte: 0}];
   // Pre-defined constant probability of trading
-  double probabilityOfTrading = 5 [(validator.field) = {float_gte: 0, float_lte: 0}];
+  double probabilityOfTrading = 5 [(validator.field) = {float_gte: 0, float_lte: 1}];
 }
 
 // Scaling Factors (for use in margin calculation).
