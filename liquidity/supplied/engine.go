@@ -154,9 +154,8 @@ func (e *Engine) getProbabilityOfTrading(price uint64, isBid bool, minPrice floa
 		cache = e.bCache
 	}
 
-	fpPrice := float64(price)
 	if prob, ok := cache[price]; !ok {
-		prob = e.rm.ProbabilityOfTrading(fpPrice, isBid, true, minPrice, maxPrice)
+		prob = e.rm.ProbabilityOfTrading(float64(price), isBid, true, minPrice, maxPrice)
 		cache[price] = prob
 	}
 	return cache[price]
