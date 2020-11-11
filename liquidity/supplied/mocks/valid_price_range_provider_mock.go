@@ -32,17 +32,17 @@ func (m *MockValidPriceRangeProvider) EXPECT() *MockValidPriceRangeProviderMockR
 	return m.recorder
 }
 
-// ValidPriceRange mocks base method
-func (m *MockValidPriceRangeProvider) ValidPriceRange() (float64, float64) {
+// GetValidPriceRange mocks base method
+func (m *MockValidPriceRangeProvider) GetValidPriceRange() (float64, float64) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidPriceRange")
+	ret := m.ctrl.Call(m, "GetValidPriceRange")
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(float64)
 	return ret0, ret1
 }
 
-// ValidPriceRange indicates an expected call of ValidPriceRange
-func (mr *MockValidPriceRangeProviderMockRecorder) ValidPriceRange() *gomock.Call {
+// GetValidPriceRange indicates an expected call of GetValidPriceRange
+func (mr *MockValidPriceRangeProviderMockRecorder) GetValidPriceRange() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidPriceRange", reflect.TypeOf((*MockValidPriceRangeProvider)(nil).ValidPriceRange))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidPriceRange", reflect.TypeOf((*MockValidPriceRangeProvider)(nil).GetValidPriceRange))
 }
