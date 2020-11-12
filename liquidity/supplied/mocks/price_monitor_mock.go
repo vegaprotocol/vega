@@ -32,20 +32,6 @@ func (m *MockPriceMonitor) EXPECT() *MockPriceMonitorMockRecorder {
 	return m.recorder
 }
 
-// GetHorizonYearFractions mocks base method
-func (m *MockPriceMonitor) GetHorizonYearFractions() []float64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHorizonYearFractions")
-	ret0, _ := ret[0].([]float64)
-	return ret0
-}
-
-// GetHorizonYearFractions indicates an expected call of GetHorizonYearFractions
-func (mr *MockPriceMonitorMockRecorder) GetHorizonYearFractions() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHorizonYearFractions", reflect.TypeOf((*MockPriceMonitor)(nil).GetHorizonYearFractions))
-}
-
 // GetValidPriceRange mocks base method
 func (m *MockPriceMonitor) GetValidPriceRange() (float64, float64) {
 	m.ctrl.T.Helper()

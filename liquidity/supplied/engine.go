@@ -11,8 +11,7 @@ import (
 // This could happen when for a given side (buy or sell) limit orders don't supply enough liquidity and there aren't any
 // valid pegged orders (all the prives are invalid) to cover it with.
 var (
-	ErrNoValidOrders   = errors.New("no valid orders to cover the liquidity obligation with")
-	ErrNoYearFractions = errors.New("price monitor returned no trigger horizon year fractions")
+	ErrNoValidOrders = errors.New("no valid orders to cover the liquidity obligation with")
 )
 
 // LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book
@@ -27,12 +26,12 @@ type LiquidityOrder struct {
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
+	GetProjectionHorizon() float64
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
 // PriceMonitor provides the range of valid prices, that is prices that wouldn't trade the current trading mode
 type PriceMonitor interface {
-	GetHorizonYearFractions() []float64
 	GetValidPriceRange() (float64, float64)
 }
 
@@ -41,7 +40,7 @@ type Engine struct {
 	rm RiskModel
 	pm PriceMonitor
 
-	horizon   float64 // price projection horizon expressed as year fraction
+	horizon   float64 // projection horizon used in probability calculations
 	cachedMin float64
 	cachedMax float64
 	bCache    map[uint64]float64
@@ -49,17 +48,13 @@ type Engine struct {
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) (*Engine, error) {
-	yfs := priceMonitor.GetHorizonYearFractions()
-	if len(yfs) == 0 {
-		return nil, ErrNoYearFractions
-	}
-
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 	return &Engine{
-		rm:      riskModel,
-		pm:      priceMonitor,
-		horizon: yfs[0],
-	}, nil
+		rm: riskModel,
+		pm: priceMonitor,
+
+		horizon: riskModel.GetProjectionHorizon(),
+	}
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set

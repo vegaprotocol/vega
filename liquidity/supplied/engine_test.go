@@ -22,7 +22,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 
 	minPrice := 89.2
 	maxPrice := 111.1
@@ -30,8 +30,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	// No orders
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
 
-	engine, err := supplied.NewEngine(riskModel, priceMonitor)
-	require.NoError(t, err)
+	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
 	liquidity, err := engine.CalculateSuppliedLiquidity(MarkPrice, []types.Order{})
@@ -105,7 +104,7 @@ func Test_InteralConsistency(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
@@ -137,13 +136,12 @@ func Test_InteralConsistency(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(buy.Price), true, true, minPrice, maxPrice).Return(validBuy1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(sell.Price), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(1)
 
-	engine, err := supplied.NewEngine(riskModel, priceMonitor)
-	require.NoError(t, err)
+	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
 	// Negative liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := 100.0
-	err = engine.CalculateLiquidityImpliedVolumes(MarkPrice, liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	err := engine.CalculateLiquidityImpliedVolumes(MarkPrice, liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
 	var zero uint64 = 0
@@ -162,7 +160,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(6)
@@ -218,13 +216,12 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(validSell1.Price), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(validSell2.Price), false, true, minPrice, maxPrice).Return(validSell2Prob).Times(1)
 
-	engine, err := supplied.NewEngine(riskModel, priceMonitor)
-	require.NoError(t, err)
+	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
 	// Negative liquidity obligation -> 0 sizes on all orders
 	liquidityObligation := -2.5
-	err = engine.CalculateLiquidityImpliedVolumes(MarkPrice, liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	err := engine.CalculateLiquidityImpliedVolumes(MarkPrice, liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
 	var zero uint64 = 0
@@ -292,7 +289,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(12)
@@ -342,8 +339,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(validSell1.Price), false, true, minPrice, maxPrice).Return(0.22).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(validSell2.Price), false, true, minPrice, maxPrice).Return(0.11).Times(1)
 
-	engine, err := supplied.NewEngine(riskModel, priceMonitor)
-	require.NoError(t, err)
+	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
 	liquidityObligation := 123.45
@@ -537,7 +533,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
@@ -564,13 +560,12 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	}
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(invalidBuy.Price), true, true, minPrice, maxPrice).Return(0.0).Times(1)
 
-	engine, err := supplied.NewEngine(riskModel, priceMonitor)
-	require.NoError(t, err)
+	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
 	liquidityObligation := 20.0
 	// Expecting an error as limit orders don't cover the obligation there are no valid orders to calculate size for
-	err = engine.CalculateLiquidityImpliedVolumes(MarkPrice, liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
+	err := engine.CalculateLiquidityImpliedVolumes(MarkPrice, liquidityObligation, buyLimitOrders, sellLimitOrders, buyShapes, sellShapes)
 	require.Error(t, err)
 
 	// Same when there just aren't any buy/sell shapes
@@ -583,7 +578,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 
@@ -612,8 +607,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(order1.Price), true, true, minPrice, maxPrice).Return(0.123).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(order2.Price), false, true, minPrice, maxPrice).Return(0.234).Times(1)
 
-	engine, err := supplied.NewEngine(riskModel, priceMonitor)
-	require.NoError(t, err)
+	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
 	liquidity1, err := engine.CalculateSuppliedLiquidity(MarkPrice, orders)
