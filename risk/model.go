@@ -24,6 +24,7 @@ type Model interface {
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
 	PriceRange(price float64, yearFraction float64, probability float64) (minPrice float64, maxPrice float64)
 	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
+	GetProjectionHorizon() float64
 }
 
 // NewModel instantiate a new risk model from a market framework configuration

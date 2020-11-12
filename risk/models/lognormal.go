@@ -81,3 +81,8 @@ func (f *LogNormal) getDistribution(currentPrice, yearFraction float64) interfac
 	}
 	return f.distCache
 }
+
+// GetProjectionHorizon returns the projection horizon used by the model for margin calculation pruposes
+func (f *LogNormal) GetProjectionHorizon() float64 {
+	return f.tau
+}
