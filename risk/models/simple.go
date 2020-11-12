@@ -63,3 +63,8 @@ func (f *Simple) ProbabilityOfTrading(currentPrice, yearFraction, orderPrice flo
 	}
 	return f.prob
 }
+
+// GetProjectionHorizon returns 0 and the simple model doesn't rely on any proabilistic calculations
+func (f *Simple) GetProjectionHorizon() float64 {
+	return 0
+}
