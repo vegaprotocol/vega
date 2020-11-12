@@ -48,13 +48,13 @@ type Engine struct {
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) (*Engine, error) {
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 	return &Engine{
 		rm: riskModel,
 		pm: priceMonitor,
 
 		horizon: riskModel.GetProjectionHorizon(),
-	}, nil
+	}
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set
