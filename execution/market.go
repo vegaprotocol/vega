@@ -509,14 +509,16 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 				changes&PriceMoveBestBid > 0) ||
 			(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_ASK &&
 				changes&PriceMoveBestAsk > 0) {
-			price, err := m.getNewPeggedPrice(ctx, order)
-			if err != nil {
-				// We can't reprice so we should remove the order and park it
-				m.parkOrderAndAdd(ctx, order)
-			} else {
-				// Force an amend but don't trigger a reprice to happen
-				m.amendPeggedOrder(ctx, order, price)
-				repriceCount++
+			if order.Status != types.Order_STATUS_PARKED {
+				price, err := m.getNewPeggedPrice(ctx, order)
+				if err != nil {
+					// We can't reprice so we should remove the order and park it
+					m.parkOrderAndAdd(ctx, order)
+				} else {
+					// Force an amend but don't trigger a reprice to happen
+					m.amendPeggedOrder(ctx, order, price)
+					repriceCount++
+				}
 			}
 		}
 	}
@@ -531,11 +533,11 @@ func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uin
 
 	switch order.PeggedOrder.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
-		price, err = m.getMidPrice()
+		price, err = m.getStaticMidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-		price, err = m.getBestBidPrice()
+		price, err = m.getBestStaticBidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-		price, err = m.getBestAskPrice()
+		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
 		return 0, ErrUnableToReprice
@@ -2267,20 +2269,20 @@ func (m *Market) unregisterOrder(order *types.Order) {
 	}
 }
 
-func (m *Market) getBestAskPrice() (uint64, error) {
-	return m.matching.GetBestAskPrice()
+func (m *Market) getBestStaticAskPrice() (uint64, error) {
+	return m.matching.GetBestStaticAskPrice()
 }
 
-func (m *Market) getBestBidPrice() (uint64, error) {
-	return m.matching.GetBestBidPrice()
+func (m *Market) getBestStaticBidPrice() (uint64, error) {
+	return m.matching.GetBestStaticBidPrice()
 }
 
-func (m *Market) getMidPrice() (uint64, error) {
-	bid, err := m.matching.GetBestBidPrice()
+func (m *Market) getStaticMidPrice() (uint64, error) {
+	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
 		return 0, err
 	}
-	ask, err := m.matching.GetBestAskPrice()
+	ask, err := m.matching.GetBestStaticAskPrice()
 	if err != nil {
 		return 0, err
 	}
@@ -2296,9 +2298,9 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 	var repricedCount uint64
 	for repricedCount = 1; repricedCount > 0; {
 		// Get the current reference values and compare them to the last saved set
-		newBestBid, _ := m.getBestBidPrice()
-		newBestAsk, _ := m.getBestAskPrice()
-		newMid, _ := m.getMidPrice()
+		newBestBid, _ := m.getBestStaticBidPrice()
+		newBestAsk, _ := m.getBestStaticAskPrice()
+		newMid, _ := m.getStaticMidPrice()
 
 		// Look for a move
 		var changes uint8
