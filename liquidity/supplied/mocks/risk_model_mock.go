@@ -32,6 +32,20 @@ func (m *MockRiskModel) EXPECT() *MockRiskModelMockRecorder {
 	return m.recorder
 }
 
+// GetProjectionHorizon mocks base method
+func (m *MockRiskModel) GetProjectionHorizon() float64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProjectionHorizon")
+	ret0, _ := ret[0].(float64)
+	return ret0
+}
+
+// GetProjectionHorizon indicates an expected call of GetProjectionHorizon
+func (mr *MockRiskModelMockRecorder) GetProjectionHorizon() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectionHorizon", reflect.TypeOf((*MockRiskModel)(nil).GetProjectionHorizon))
+}
+
 // ProbabilityOfTrading mocks base method
 func (m *MockRiskModel) ProbabilityOfTrading(arg0, arg1, arg2 float64, arg3, arg4 bool, arg5, arg6 float64) float64 {
 	m.ctrl.T.Helper()
