@@ -19,6 +19,8 @@ const (
 	MarketPriceMonitoringDefaultParameters        = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency          = "market.monitor.price.updateFrequency"
 
+	GovernanceVoteAsset = "governance.vote.asset"
+
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
 	GovernanceProposalMarketMaxClose              = "governance.proposal.market.maxClose"

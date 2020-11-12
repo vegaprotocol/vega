@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
@@ -466,7 +465,8 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 		data = append(data, e.Account())
 	}
 	for _, v := range data {
-		if v.Asset != collateral.TokenAsset {
+		// remove vote token
+		if v.Asset != "VOTE" {
 			cumul += uint64(v.Balance)
 		}
 	}

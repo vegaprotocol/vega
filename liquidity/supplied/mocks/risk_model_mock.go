@@ -32,31 +32,30 @@ func (m *MockRiskModel) EXPECT() *MockRiskModelMockRecorder {
 	return m.recorder
 }
 
-// PriceRange mocks base method
-func (m *MockRiskModel) PriceRange() (float64, float64) {
+// GetProjectionHorizon mocks base method
+func (m *MockRiskModel) GetProjectionHorizon() float64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PriceRange")
+	ret := m.ctrl.Call(m, "GetProjectionHorizon")
 	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(float64)
-	return ret0, ret1
+	return ret0
 }
 
-// PriceRange indicates an expected call of PriceRange
-func (mr *MockRiskModelMockRecorder) PriceRange() *gomock.Call {
+// GetProjectionHorizon indicates an expected call of GetProjectionHorizon
+func (mr *MockRiskModelMockRecorder) GetProjectionHorizon() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PriceRange", reflect.TypeOf((*MockRiskModel)(nil).PriceRange))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectionHorizon", reflect.TypeOf((*MockRiskModel)(nil).GetProjectionHorizon))
 }
 
 // ProbabilityOfTrading mocks base method
-func (m *MockRiskModel) ProbabilityOfTrading(arg0 float64, arg1, arg2 bool, arg3, arg4 float64) float64 {
+func (m *MockRiskModel) ProbabilityOfTrading(arg0, arg1, arg2 float64, arg3, arg4 bool, arg5, arg6 float64) float64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(float64)
 	return ret0
 }
 
 // ProbabilityOfTrading indicates an expected call of ProbabilityOfTrading
-func (mr *MockRiskModelMockRecorder) ProbabilityOfTrading(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockRiskModelMockRecorder) ProbabilityOfTrading(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProbabilityOfTrading", reflect.TypeOf((*MockRiskModel)(nil).ProbabilityOfTrading), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProbabilityOfTrading", reflect.TypeOf((*MockRiskModel)(nil).ProbabilityOfTrading), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }

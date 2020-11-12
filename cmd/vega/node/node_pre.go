@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -27,6 +26,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/netparams/checks"
+	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/orders"
@@ -51,7 +52,6 @@ import (
 	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-	"golang.org/x/crypto/sha3"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -243,22 +243,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 	return
 }
 
-func (l *NodeCommand) loadAssets(col *collateral.Engine) error {
-	var err error
-	// initialize the assets service now
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
-	if err != nil {
-		return err
-	}
-
-	err = l.loadAsset(collateral.TokenAsset, collateral.TokenAssetSource)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // UponGenesis loads all asset from genesis state
 func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 	state, err := assets.LoadGenesisState(rawstate)
@@ -269,36 +253,28 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 		return nil
 	}
 
-	h := func(key []byte) []byte {
-		hasher := sha3.New256()
-		hasher.Write([]byte(key))
-		return hasher.Sum(nil)
-	}
-
-	assetSrcs := []proto.AssetSource{}
-	for _, v := range state.Builtins {
+	assetSrcs := map[string]proto.AssetSource{}
+	for k, v := range state.Builtins {
 		v := v
 		assetSrc := proto.AssetSource{
 			Source: &proto.AssetSource_BuiltinAsset{
 				BuiltinAsset: &v,
 			},
 		}
-		assetSrcs = append(assetSrcs, assetSrc)
+		assetSrcs[k] = assetSrc
 	}
-	for _, v := range state.ERC20 {
+	for k, v := range state.ERC20 {
 		v := v
 		assetSrc := proto.AssetSource{
 			Source: &proto.AssetSource_Erc20{
 				Erc20: &v,
 			},
 		}
-		assetSrcs = append(assetSrcs, assetSrc)
+		assetSrcs[k] = assetSrc
 	}
 
-	for _, v := range assetSrcs {
-		v := v
-		id := hex.EncodeToString(h([]byte(v.String())))
-		err := l.loadAsset(id, &v)
+	for k, v := range assetSrcs {
+		err := l.loadAsset(k, &v)
 		if err != nil {
 			return err
 		}
@@ -478,16 +454,17 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	now, _ := l.timeService.GetTimeNow()
 
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
+	if err != nil {
+		return err
+	}
+
 	//  create collateral
 	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	if err != nil {
 		log.Error("unable to initialise collateral", logging.Error(err))
 		return err
 	}
-
-	// TODO(): remove wheen asset are fully loaded through governance
-	// after the collateral is loaded, we want to load all the assets
-	l.loadAssets(l.collateral)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
@@ -516,10 +493,19 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	// TODO: Make OnGenesisAppStateLoaded accepts variadic args
-	l.genesisHandler.OnGenesisAppStateLoaded(l.UponGenesis)
-	l.genesisHandler.OnGenesisAppStateLoaded(l.netParams.UponGenesis)
-	l.genesisHandler.OnGenesisAppStateLoaded(l.topology.LoadValidatorsOnGenesis)
+	l.genesisHandler.OnGenesisAppStateLoaded(
+		// be sure to keep this in order.
+		// the node upon genesis will load all asset first in the node
+		// state. This is important to happend first as we will load the
+		// asset which will be considered as the governance token.
+		l.UponGenesis,
+		// This needs to happen always after, as it defined the network
+		// parameters, one of them is  the Governance Token asset ID.
+		// which if not loaded in the previous state, then will make the node
+		// panic at startup.
+		l.netParams.UponGenesis,
+		l.topology.LoadValidatorsOnGenesis,
+	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 
@@ -531,8 +517,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instanciate the blockchain layer
-	app, err := l.startABCI(l.ctx, commander)
-	if err != nil {
+	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
 		return err
 	}
 
@@ -563,6 +548,46 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
 
+	// setup config reloads for all engines / services /etc
+	l.setupConfigWatchers()
+	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
+
+	// setup some network parameters runtime validations
+	// and network parameters updates dispatches
+	if err = l.setupNetParameters(); err != nil {
+		return err
+	}
+
+	return
+}
+
+func (l *NodeCommand) setupNetParameters() error {
+	// now we are going to setup some network parameters which can be done
+	// through runtime checks
+	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
+	err := l.netParams.AddRules(
+		netparams.GovernanceVoteAsset,
+		checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+	)
+	if err != nil {
+		return err
+	}
+
+	// now add some watcher for our netparams
+	err = l.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.GovernanceVoteAsset,
+			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *NodeCommand) setupConfigWatchers() {
 	l.cfgwatchr.OnConfigUpdate(
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
@@ -574,7 +599,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
-		func(cfg config.Config) { app.ReloadConf(cfg.Processor) },
+		func(cfg config.Config) { l.app.ReloadConf(cfg.Processor) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
@@ -591,7 +616,4 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
 	)
-
-	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
-	return
 }

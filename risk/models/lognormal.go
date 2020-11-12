@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"code.vegaprotocol.io/quant/interfaces"
 	pd "code.vegaprotocol.io/quant/pricedistribution"
 	"code.vegaprotocol.io/quant/riskmodelbs"
 	types "code.vegaprotocol.io/vega/proto"
@@ -13,6 +14,10 @@ type LogNormal struct {
 	riskAversionParameter, tau float64
 	params                     riskmodelbs.ModelParamsBS
 	asset                      string
+
+	distCache    interfaces.AnalyticalDistribution
+	cachePrice   float64
+	cacheHorizon float64
 }
 
 // NewBuiltinFutures instantiate a new builtin future
@@ -59,6 +64,25 @@ func (f *LogNormal) CalculateRiskFactors(
 
 // PriceRange returns the minimum and maximum price as implied by the model's probability distribution with horizon given by yearFraction (e.g. 0.5 for half a year) and probability level (e.g. 0.95 for 95%).
 func (f *LogNormal) PriceRange(currentPrice, yearFraction, probabilityLevel float64) (float64, float64) {
-	dist := f.params.GetProbabilityDistribution(currentPrice, yearFraction)
+	dist := f.getDistribution(currentPrice, yearFraction)
 	return pd.PriceRange(dist, probabilityLevel)
+}
+
+// ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
+// Additional arguments control optional truncation of probability density outside the [minPrice,maxPrice] range.
+func (f *LogNormal) ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64 {
+	dist := f.getDistribution(currentPrice, yearFraction)
+	return pd.ProbabilityOfTrading(dist, orderPrice, isBid, applyMinMax, minPrice, maxPrice)
+}
+
+func (f *LogNormal) getDistribution(currentPrice, yearFraction float64) interfaces.AnalyticalDistribution {
+	if f.cachePrice != currentPrice || f.cacheHorizon != yearFraction || f.distCache == nil {
+		f.distCache = f.params.GetProbabilityDistribution(currentPrice, yearFraction)
+	}
+	return f.distCache
+}
+
+// GetProjectionHorizon returns the projection horizon used by the model for margin calculation pruposes
+func (f *LogNormal) GetProjectionHorizon() float64 {
+	return f.tau
 }
