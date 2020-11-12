@@ -16,10 +16,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100100  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100100  |                1 | TYPE_LIMIT | TIF_FOK |
+      | trader1 | ETH/DEC20 | sell |      1 |   100000  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100000  |                1 | TYPE_LIMIT | TIF_FOK |
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
@@ -30,7 +30,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
     #T0 + 10min
     Then the time is updated to "2020-10-16T00:10:00Z"
@@ -53,10 +53,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     Then traders place following orders:
       | trader  | id        | type | volume |    price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100100 |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100100 |                1 | TYPE_LIMIT | TIF_FOK |
+      | trader1 | ETH/DEC20 | sell |      1 |   100000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100000 |                1 | TYPE_LIMIT | TIF_FOK |
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
         Then traders place following orders:
       | trader  | id        | type | volume |    price | resulting trades | type       | tif     |
@@ -65,7 +65,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
     #T0 + 10min
     Then the time is updated to "2020-10-16T00:10:00Z"
@@ -77,7 +77,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
 
@@ -88,10 +88,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     Then traders place following orders:
       | trader  | id        | type | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100100 |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100100 |                1 | TYPE_LIMIT | TIF_FOK |
+      | trader1 | ETH/DEC20 | sell |      1 |   100000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100000 |                1 | TYPE_LIMIT | TIF_FOK |
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
     Then traders place following orders:
     | trader  | id        | type | volume |    price | resulting trades | type       | tif     |
@@ -100,7 +100,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
     Then traders place following orders:
     | trader  | id        | type | volume  |    price | resulting trades | type       | tif     |
@@ -111,7 +111,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
 
-    And the mark price for the market "ETH/DEC20" is "100100"
+    And the mark price for the market "ETH/DEC20" is "100000"
 
     #T0 + 10min01s
     Then the time is updated to "2020-10-16T00:10:01Z"
