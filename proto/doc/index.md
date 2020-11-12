@@ -3638,6 +3638,7 @@ Risk model parameters for simple modelling.
 | factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
 | maxMoveUp | [double](#double) |  | Pre-defined maximum price move up that the model considers as valid. |
 | minMoveDown | [double](#double) |  | Pre-defined minimum price move down that the model considers as valid. |
+| probabilityOfTrading | [double](#double) |  | Pre-defined constant probability of trading |
 
 
 

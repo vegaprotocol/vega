@@ -4612,6 +4612,11 @@
           "type": "number",
           "format": "double",
           "description": "Pre-defined minimum price move down that the model considers as valid."
+        },
+        "probabilityOfTrading": {
+          "type": "number",
+          "format": "double",
+          "title": "Pre-defined constant probability of trading"
         }
       },
       "description": "Risk model parameters for simple modelling."
