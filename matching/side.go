@@ -92,11 +92,29 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 
 // BestPriceAndVolume returns the top of book price and volume
 // returns an error if the book is empty
-func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64, error) {
+func (s OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, 0, errors.New("no orders on the book")
 	}
 	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume, nil
+}
+
+// BestStaticPrice returns the top of book price for non pegged orders
+// returns an error if the book is empty
+func (s OrderBookSide) BestStaticPrice() (uint64, error) {
+	if len(s.levels) <= 0 {
+		return 0, errors.New("no orders on the book")
+	}
+
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		pricelevel := s.levels[i]
+		for _, order := range pricelevel.orders {
+			if order.PeggedOrder == nil {
+				return pricelevel.price, nil
+			}
+		}
+	}
+	return 0, errors.New("no non pegged orders found on the book")
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {

@@ -623,9 +623,10 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders are handled correctly when moving out of auction", testPeggedOrdersLeavingAuction)
 	t.Run("pegged orders amend to move reference", testPeggedOrderAmendToMoveReference)
 	t.Run("pegged orders are removed when expired", testPeggedOrderExpiring)
+	t.Run("pegged order reprice when no limit orders", testPeggedOrderRepriceCrashWhenNoLimitOrders)
 }
 
-func TestPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
+func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
@@ -1217,13 +1218,13 @@ func testPeggedOrderRepricing(t *testing.T) {
 			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
 			side:          types.Side_SIDE_BUY,
 			offset:        -5,
-			expectedPrice: midPrice - 1,
+			expectedPrice: midPrice - 5,
 		},
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
 			side:          types.Side_SIDE_SELL,
 			offset:        5,
-			expectedPrice: midPrice,
+			expectedPrice: midPrice + 5,
 		},
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
