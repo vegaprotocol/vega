@@ -3624,6 +3624,16 @@
           "format": "uint64",
           "description": "Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly\n // formatted price of `1.23456` assuming market configured to 5 decimal places."
         },
+        "bestStaticBidPrice": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Highest price on the order book for buy orders not including pegged orders"
+        },
+        "bestStaticOfferPrice": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Lowest price on the order book for sell orders not including pegged orders"
+        },
         "midPrice": {
           "type": "string",
           "format": "uint64",
