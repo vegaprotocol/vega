@@ -2418,7 +2418,7 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 	order, err := m.matching.GetOrderByID(orderID)
 	if err == nil {
-		return order, true, err
+		return order, true, nil
 	}
 
 	// The pegged order list contains all the pegged orders in the system

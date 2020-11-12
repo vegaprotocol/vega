@@ -172,13 +172,9 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
 
-	err := execsetup.collateral.Deposit(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return execsetup.collateral.Deposit(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
@@ -196,22 +192,21 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 }
 
 func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
+	amount, err := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
-
-	err := execsetup.collateral.LockFundsForWithdraw(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-	err = execsetup.collateral.Withdraw(
-		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if err := execsetup.collateral.LockFundsForWithdraw(
+		context.Background(), trader, asset, amount,
+	); err != nil {
+		return err
+	}
 
+	return execsetup.collateral.Withdraw(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
