@@ -40,6 +40,7 @@ type Engine struct {
 	rm RiskModel
 	pm PriceMonitor
 
+	horizon   float64 // projection horizon used in probability calculations
 	cachedMin float64
 	cachedMax float64
 	bCache    map[uint64]float64
@@ -51,6 +52,8 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) (*Engine, error) 
 	return &Engine{
 		rm: riskModel,
 		pm: priceMonitor,
+
+		horizon: riskModel.GetProjectionHorizon(),
 	}, nil
 }
 
@@ -159,7 +162,7 @@ func (e *Engine) getProbabilityOfTrading(currentPrice float64, orderPrice uint64
 	}
 
 	if prob, ok := cache[orderPrice]; !ok {
-		prob = e.rm.ProbabilityOfTrading(currentPrice, e.rm.GetProjectionHorizon(), float64(orderPrice), isBid, true, minPrice, maxPrice)
+		prob = e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
 		cache[orderPrice] = prob
 	}
 	return cache[orderPrice]
