@@ -63,6 +63,20 @@ func (mr *MockModelMockRecorder) CalculationInterval() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculationInterval", reflect.TypeOf((*MockModel)(nil).CalculationInterval))
 }
 
+// GetProjectionHorizon mocks base method
+func (m *MockModel) GetProjectionHorizon() float64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProjectionHorizon")
+	ret0, _ := ret[0].(float64)
+	return ret0
+}
+
+// GetProjectionHorizon indicates an expected call of GetProjectionHorizon
+func (mr *MockModelMockRecorder) GetProjectionHorizon() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectionHorizon", reflect.TypeOf((*MockModel)(nil).GetProjectionHorizon))
+}
+
 // PriceRange mocks base method
 func (m *MockModel) PriceRange(arg0, arg1, arg2 float64) (float64, float64) {
 	m.ctrl.T.Helper()
