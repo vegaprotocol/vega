@@ -304,6 +304,10 @@ type MarketData {
   bestOfferPrice: String!
   "the aggregated volume being offered at the best offer price."
   bestOfferVolume: String!
+  "the highest price level on an order book for buy orders not including pegged orders."
+  bestStaticBidPrice: String!
+  "the lowest price level on an order book for offer orders not including pegged orders."
+  bestStaticOfferPrice: String!
   "the arithmetic average of the best bid price and best offer price."
   midPrice: String!
   "time at which this mark price was relevant"

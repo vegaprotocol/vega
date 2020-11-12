@@ -303,24 +303,26 @@ type ComplexityRoot struct {
 	}
 
 	MarketData struct {
-		AuctionEnd       func(childComplexity int) int
-		AuctionStart     func(childComplexity int) int
-		BestBidPrice     func(childComplexity int) int
-		BestBidVolume    func(childComplexity int) int
-		BestOfferPrice   func(childComplexity int) int
-		BestOfferVolume  func(childComplexity int) int
-		Commitments      func(childComplexity int) int
-		IndicativePrice  func(childComplexity int) int
-		IndicativeVolume func(childComplexity int) int
-		MarkPrice        func(childComplexity int) int
-		Market           func(childComplexity int) int
-		MarketState      func(childComplexity int) int
-		MidPrice         func(childComplexity int) int
-		OpenInterest     func(childComplexity int) int
-		SuppliedStake    func(childComplexity int) int
-		TargetStake      func(childComplexity int) int
-		Timestamp        func(childComplexity int) int
-		Trigger          func(childComplexity int) int
+		AuctionEnd           func(childComplexity int) int
+		AuctionStart         func(childComplexity int) int
+		BestBidPrice         func(childComplexity int) int
+		BestBidVolume        func(childComplexity int) int
+		BestOfferPrice       func(childComplexity int) int
+		BestOfferVolume      func(childComplexity int) int
+		BestStaticBidPrice   func(childComplexity int) int
+		BestStaticOfferPrice func(childComplexity int) int
+		Commitments          func(childComplexity int) int
+		IndicativePrice      func(childComplexity int) int
+		IndicativeVolume     func(childComplexity int) int
+		MarkPrice            func(childComplexity int) int
+		Market               func(childComplexity int) int
+		MarketState          func(childComplexity int) int
+		MidPrice             func(childComplexity int) int
+		OpenInterest         func(childComplexity int) int
+		SuppliedStake        func(childComplexity int) int
+		TargetStake          func(childComplexity int) int
+		Timestamp            func(childComplexity int) int
+		Trigger              func(childComplexity int) int
 	}
 
 	MarketDataCommitments struct {
@@ -809,6 +811,8 @@ type MarketDataResolver interface {
 	BestBidVolume(ctx context.Context, obj *proto.MarketData) (string, error)
 	BestOfferPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	BestOfferVolume(ctx context.Context, obj *proto.MarketData) (string, error)
+	BestStaticBidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
+	BestStaticOfferPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	MidPrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	Timestamp(ctx context.Context, obj *proto.MarketData) (string, error)
 	OpenInterest(ctx context.Context, obj *proto.MarketData) (string, error)
@@ -2024,6 +2028,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.BestOfferVolume(childComplexity), true
+
+	case "MarketData.bestStaticBidPrice":
+		if e.complexity.MarketData.BestStaticBidPrice == nil {
+			break
+		}
+
+		return e.complexity.MarketData.BestStaticBidPrice(childComplexity), true
+
+	case "MarketData.bestStaticOfferPrice":
+		if e.complexity.MarketData.BestStaticOfferPrice == nil {
+			break
+		}
+
+		return e.complexity.MarketData.BestStaticOfferPrice(childComplexity), true
 
 	case "MarketData.commitments":
 		if e.complexity.MarketData.Commitments == nil {
@@ -4387,6 +4405,10 @@ type MarketData {
   bestOfferPrice: String!
   "the aggregated volume being offered at the best offer price."
   bestOfferVolume: String!
+  "the highest price level on an order book for buy orders not including pegged orders."
+  bestStaticBidPrice: String!
+  "the lowest price level on an order book for offer orders not including pegged orders."
+  bestStaticOfferPrice: String!
   "the arithmetic average of the best bid price and best offer price."
   midPrice: String!
   "time at which this mark price was relevant"
@@ -12484,6 +12506,74 @@ func (ec *executionContext) _MarketData_bestOfferVolume(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.MarketData().BestOfferVolume(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_bestStaticBidPrice(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().BestStaticBidPrice(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_bestStaticOfferPrice(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().BestStaticOfferPrice(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25222,6 +25312,34 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._MarketData_bestOfferVolume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "bestStaticBidPrice":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_bestStaticBidPrice(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "bestStaticOfferPrice":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_bestStaticOfferPrice(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
