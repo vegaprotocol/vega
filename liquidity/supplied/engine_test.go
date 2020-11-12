@@ -22,7 +22,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 
 	minPrice := 89.2
 	maxPrice := 111.1
@@ -105,7 +105,7 @@ func Test_InteralConsistency(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
@@ -162,7 +162,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(6)
@@ -292,7 +292,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(12)
@@ -537,7 +537,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
@@ -583,7 +583,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
-	priceMonitor.EXPECT().GetHorizonYearFractions().Return([]float64{Horizon}).Times(1)
+	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
 
