@@ -625,6 +625,27 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders are removed when expired", testPeggedOrderExpiring)
 }
 
+func TestPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "party1")
+	addAccount(tm, "party2")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party2", 5, 9000)
+
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party2", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +10}
+	_, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 5, 9000)
+}
+
 func testPeggedOrderAmendToMoveReference(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
