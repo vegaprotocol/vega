@@ -106,12 +106,19 @@ func (s OrderBookSide) BestStaticPrice() (uint64, error) {
 		return 0, errors.New("no orders on the book")
 	}
 
+	var bestPrice uint64
+	var bestVolume uint64
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		pricelevel := s.levels[i]
 		for _, order := range pricelevel.orders {
 			if order.PeggedOrder == nil {
-				return pricelevel.price, nil
+				bestPrice = pricelevel.price
+				bestVolume += order.Remaining
 			}
+		}
+		// If we found a price, return it
+		if bestPrice > 0 {
+			return bestPrice, nil
 		}
 	}
 	return 0, errors.New("no non pegged orders found on the book")
