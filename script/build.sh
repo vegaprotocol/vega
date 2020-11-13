@@ -296,8 +296,8 @@ run() {
 		;;
 	staticcheck) ## Run staticcheck
 		# Run semgrep only if env var is set
-		if [ ! -z ${SEMGREP_GO_PATH} ] ; then
-			semgrep -f $SEMGREP_GO_PATH
+		if [ -n "$SEMGREP_GO_PATH" ] ; then
+			semgrep -f "$SEMGREP_GO_PATH"
 		fi
 
 		f="$(mktemp)"
