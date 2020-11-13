@@ -51,7 +51,7 @@ Feature: Test market depth events for pegged orders
       | trader            | reference       |
       | sellSideProvider  | sell-provider-1 |
       | buySideProvider   | buy-provider-1  |
-#   And dump orders
+    And dump orders
 # Now check what happened to our pegged orders
     Then I see the following order events:
       | trader   | id        | side | volume | reference | offset | price | status          |
