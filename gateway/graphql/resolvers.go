@@ -1134,6 +1134,10 @@ func (r *myMarketDataResolver) BestStaticBidPrice(_ context.Context, m *types.Ma
 	return strconv.FormatUint(m.BestStaticBidPrice, 10), nil
 }
 
+func (r *myMarketDataResolver) BestStaticBidVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestStaticBidVolume, 10), nil
+}
+
 func (r *myMarketDataResolver) OpenInterest(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.OpenInterest, 10), nil
 }
@@ -1148,6 +1152,10 @@ func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.Market
 
 func (r *myMarketDataResolver) BestStaticOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestStaticOfferPrice, 10), nil
+}
+
+func (r *myMarketDataResolver) BestStaticOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestStaticOfferVolume, 10), nil
 }
 
 func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.MarketData) (string, error) {

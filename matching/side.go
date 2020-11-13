@@ -100,10 +100,29 @@ func (s OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
 }
 
 // BestStaticPrice returns the top of book price for non pegged orders
+// We do not keep count of the volume which makes this slightly quicker
 // returns an error if the book is empty
 func (s OrderBookSide) BestStaticPrice() (uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, errors.New("no orders on the book")
+	}
+
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		pricelevel := s.levels[i]
+		for _, order := range pricelevel.orders {
+			if order.PeggedOrder == nil {
+				return pricelevel.price, nil
+			}
+		}
+	}
+	return 0, errors.New("no non pegged orders found on the book")
+}
+
+// BestStaticPriceAndVolume returns the top of book price for non pegged orders
+// returns an error if the book is empty
+func (s OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
+	if len(s.levels) <= 0 {
+		return 0, 0, errors.New("no orders on the book")
 	}
 
 	var bestPrice uint64
@@ -118,10 +137,10 @@ func (s OrderBookSide) BestStaticPrice() (uint64, error) {
 		}
 		// If we found a price, return it
 		if bestPrice > 0 {
-			return bestPrice, nil
+			return bestPrice, bestVolume, nil
 		}
 	}
-	return 0, errors.New("no non pegged orders found on the book")
+	return 0, 0, errors.New("no non pegged orders found on the book")
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {

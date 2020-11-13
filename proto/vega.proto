@@ -999,34 +999,38 @@ message MarketData {
   uint64 bestOfferVolume = 5;
   // Highest price on the order book for buy orders not including pegged orders
   uint64 bestStaticBidPrice = 6;
+  // Total volume at the best static bid price excluding pegged orders
+  uint64 bestStaticBidVolume = 7;
   // Lowest price on the order book for sell orders not including pegged orders
-  uint64 bestStaticOfferPrice = 7;
+  uint64 bestStaticOfferPrice = 8;
+  // Total volume at the best static offer price excluding pegged orders
+  uint64 bestStaticOfferVolume = 9;
   // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
   //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  uint64 midPrice = 8;
+  uint64 midPrice = 10;
   // Market identifier for the data.
-  string market = 9;
+  string market = 11;
   // Timestamp at which this mark price was relevant, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-  int64 timestamp = 10;
+  int64 timestamp = 12;
   // The sum of the size of all positions greater than 0 on the market.
-  uint64 openInterest = 11;
+  uint64 openInterest = 13;
   // Time in seconds until the end of the auction (0 if currently not in auction period).
-  int64 auctionEnd = 12;
+  int64 auctionEnd = 14;
   // Time until next auction (used in FBA's) - currently always 0.
-  int64 auctionStart = 13;
+  int64 auctionStart = 15;
   // indicative price (zero if not in auction)
-  uint64 indicativePrice = 14;
+  uint64 indicativePrice = 16;
   // indicative volume (zero if not in auction)
-  uint64 indicativeVolume = 15;
+  uint64 indicativeVolume = 17;
   // the current state of the market
-  MarketState marketState = 16;
+  MarketState marketState = 18;
   // if the market is in auction state, this field indicates what triggered the auction
-  AuctionTrigger trigger = 17;
+  AuctionTrigger trigger = 19;
   // the targeted stake for the given market
-  string targetStake = 18;
+  string targetStake = 20;
   // the available stake fo the given market
-  string suppliedStake = 19;
+  string suppliedStake = 21;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
