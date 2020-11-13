@@ -7,7 +7,7 @@ Feature: Test market depth events for pegged orders
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations |
       | ETH/DEC19 | ETH      | BTC       | BTC   |       100 | simple     |          0 |        0 |  0 | 0.016 |   2.0 |            1.4 |            1.2 |           1.1 |              42 | 0           | continuous   |        0 |                 0 |            0 |                 0  |                |             |                 |
 
-  Scenario: case 1 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
+  Scenario: Check order events with larger pegged orders, and lower balance
 # setup accounts
     Given the following traders:
       | name             |    amount |
@@ -24,7 +24,7 @@ Feature: Test market depth events for pegged orders
       | sellSideProvider | BTC   |
       | buySideProvider  | BTC   |
 # setup pegged orders
-    Then trades place pegged orders:
+    Then traders place pegged orders:
       | trader   | id        | side | volume | reference | offset | price |
       | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 100   |
       | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 100   |
@@ -56,21 +56,10 @@ Feature: Test market depth events for pegged orders
 # Now check what happened to our pegged orders
     Then I see the following order events:
       | trader   | id        | side | volume | reference | offset | price | status          |
-      | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 110   | STATUS_REJECTED |
       | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 110   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 105   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 102   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 101   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 100   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 85    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 77    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 76    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 75    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 75    | STATUS_REJECTED |
       | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 75    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 90    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 82    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 81    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 80    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 80    | STATUS_REJECTED |
       | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 80    | STATUS_ACTIVE   |
