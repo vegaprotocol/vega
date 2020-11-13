@@ -2319,9 +2319,6 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 }
 
 func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendWhenParked")
-	defer timer.EngineTimeCounterAdd()
-
 	amendOrder.Status = types.Order_STATUS_PARKED
 
 	*originalOrder = *amendOrder
