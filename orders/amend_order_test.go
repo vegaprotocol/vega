@@ -165,7 +165,6 @@ func testPrepareAmendOrderPastExpiry(t *testing.T) {
 func testPrepareAmendOrderToGFN(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:     "orderid",
-		PartyID:     "partyid",
 		TimeInForce: proto.Order_TIF_GFN,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
@@ -179,7 +178,6 @@ func testPrepareAmendOrderToGFN(t *testing.T) {
 func testPrepareAmendOrderToGFA(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:     "orderid",
-		PartyID:     "partyid",
 		TimeInForce: proto.Order_TIF_GFA,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}

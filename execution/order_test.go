@@ -585,11 +585,11 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// test_AmendMarketOrderFail
-	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100, "v0000000000000-0000001")
 	amendOrder(t, tm, "party1", orderId, 0, 0, types.Order_TIF_GFA, 0, false)
 	amendOrder(t, tm, "party1", orderId, 0, 0, types.Order_TIF_GFN, 0, false)
 
-	orderId2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	orderId2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, 0, types.Side_SIDE_SELL, "party1", 10, 100, "v0000000000000-0000002")
 	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GTC, 0, false)
 	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GFA, 0, false)
 
@@ -598,7 +598,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 		Duration: closeSec / 10, // some time in the future, before closing
 	})
 	tm.market.EnterAuction(context.Background())
-	orderId3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	orderId3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100, "v0000000000000-0000003")
 	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GTC, 0, false)
 	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GFN, 0, false)
 }
@@ -638,7 +638,7 @@ func testPeggedOrderUnpark(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Create a single buy order to give this party a valid position
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 5, 11)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 5, 11, "v0000000000000-0000001")
 
 	// Add a pegged order which will park due to missing reference price
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
@@ -648,7 +648,7 @@ func testPeggedOrderUnpark(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
 	// Send a new order to set the BEST_ASK price and force the parked order to unpark
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party2", 5, 15)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party2", 5, 15, "v0000000000000-0000002")
 
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
@@ -664,8 +664,8 @@ func testPeggedOrderAmendToMoveReference(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Place 2 orders to create valid reference prices
-	bestBidOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	bestBidOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110, "v0000000000000-0000002")
 
 	// Place a valid pegged order which will be added to the order book
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
@@ -692,8 +692,8 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110, "v0000000000000-0000002")
 
 	// Place a valid pegged order which will be added to the order book
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
@@ -702,7 +702,7 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	// Place a sell MARKET order to fill the buy orders
-	sendOrder(t, tm, &now, types.Order_TYPE_MARKET, types.Order_TIF_IOC, 0, types.Side_SIDE_SELL, "party2", 2, 0)
+	sendOrder(t, tm, &now, types.Order_TYPE_MARKET, types.Order_TIF_IOC, 0, types.Side_SIDE_SELL, "party2", 2, 0, "v0000000000000-0000003")
 
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
@@ -720,8 +720,8 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 5)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 5, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100, "v0000000000000-0000002")
 
 	// Place a valid pegged order which will be added to the order book
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 1)
@@ -733,7 +733,7 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 
 	// Send a higher buy price order to move the BEST BID price up
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 50)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 50, "v0000000000000-0000003")
 
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
@@ -755,8 +755,8 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100, "v0000000000000-0000002")
 
 	// Pegged order must be a LIMIT order
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
@@ -786,8 +786,8 @@ func testPeggedOrdersEnteringAuction(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100, "v0000000000000-0000002")
 
 	// Pegged order must be a LIMIT order
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
@@ -837,8 +837,8 @@ func testPeggedOrderAdd(t *testing.T) {
 	addAccount(tm, "party1")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 102)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 102, "v0000000000000-0000002")
 
 	// Place a valid pegged order which will be added to the order book
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
@@ -864,8 +864,8 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	addAccount(tm, "party1")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110, "v0000000000000-0000002")
 
 	md := tm.market.GetMarketData()
 	assert.Equal(t, uint64(100), md.MidPrice)
@@ -1275,8 +1275,8 @@ func testPeggedOrderRepricing(t *testing.T) {
 			tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 			// Create buy and sell orders
-			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party", 1, buyPrice)
-			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party", 1, sellPrice)
+			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party", 1, buyPrice, "v0000000000000-0000001")
+			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party", 1, sellPrice, "v0000000000000-0000002")
 
 			// Create pegged order
 			order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, test.side, "party", 10, 0)
@@ -1303,8 +1303,8 @@ func testPeggedOrderExpiring(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Create buy and sell orders
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party", 1, 100)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party", 1, 200)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party", 1, 100, "v0000000000000-0000001")
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party", 1, 200, "v0000000000000-0000002")
 
 	// let's create N orders with different expiration time
 	expirations := []struct {
