@@ -149,7 +149,7 @@ type Market struct {
 
 	pMonitor PriceMonitor
 
-	tsCalculator TargetStakeCalculator
+	tsCalc TargetStakeCalculator
 
 	as *monitor.AuctionState // @TODO this should be an interface
 
@@ -260,7 +260,7 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
-	tsCalculator := liquiditytarget.NewEngine(*mkt.TargetStake)
+	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStake)
 
 	market := &Market{
 		log:                  log,
@@ -280,7 +280,7 @@ func NewMarket(
 		parties:              map[string]struct{}{},
 		as:                   as,
 		pMonitor:             pMonitor,
-		tsCalculator:         tsCalculator,
+		tsCalc:               tsCalc,
 		expiringPeggedOrders: matching.NewExpiringOrders(),
 	}
 
@@ -1153,7 +1153,7 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
 			// Record open inteterest change
-			err := m.tsCalculator.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
+			err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
 			if err != nil {
 				m.log.Error("unable record open interest",
 					logging.String("market-id", m.GetID()),
@@ -2456,5 +2456,5 @@ func (m *Market) getTargetStake() float64 {
 		m.log.Error("unable to get risk factors, can't calculate target")
 		return 0
 	}
-	return m.tsCalculator.GetTargetStake(*rf, m.currentTime)
+	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
 }
