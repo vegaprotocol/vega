@@ -357,6 +357,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.timeService,
 		l.topology,
 		l.nodeWallet,
+		l.netParams,
 	)
 	if err != nil {
 		return nil, err
