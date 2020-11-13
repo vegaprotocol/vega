@@ -25,7 +25,7 @@ type genesisCmd struct {
 	// As systemtests uses --vega-wallet-passphrase we'll define the flag directly here
 	// TODO: uncomment this line and remove the Passphrase field.
 	// config.PassphraseFlag
-	Passphrase config.Passphrase `short:"p" long:"vega-wallet-passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+	Passphrase config.Passphrase `short:"p" long:"nodewallet-passphrase" description:"A file containing the passphrase for the nodewallet, if empty will prompt for input"`
 
 	InPlace bool   `short:"i" long:"in-place" description:"Edit the genesis file in-place"`
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
