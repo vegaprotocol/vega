@@ -67,6 +67,11 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 	}, nil
 }
 
+func (s *Service) Cleanup() error {
+	wal := s.wallets[Ethereum]
+	return wal.(*eth.Wallet).Cleanup()
+}
+
 // ReloadConf is used in order to reload the internal configuration of
 // the of the fee engine
 func (s *Service) ReloadConf(cfg Config) {

@@ -11,7 +11,7 @@ require (
 	github.com/cucumber/godog v0.8.1
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
-	github.com/ethereum/go-ethereum v1.9.12
+	github.com/ethereum/go-ethereum v1.9.20
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.4.0
@@ -29,8 +29,6 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/afero v1.1.2
-	github.com/spf13/cobra v1.0.0 // indirect
-	github.com/spf13/viper v1.7.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.8
 	github.com/vegaprotocol/modvendor v0.0.2 // indirect
@@ -38,7 +36,9 @@ require (
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.uber.org/zap v1.13.0
-	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/exp v0.0.0-20191030013958-a1ab85dbe136 // indirect
+	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a // indirect
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.23.0
 )

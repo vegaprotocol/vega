@@ -1741,15 +1741,16 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		}
 	}
 
-	// Update the order in our stores (will be marked as cancelled)
-	order.UpdatedAt = m.currentTime.UnixNano()
-	m.broker.Send(events.NewOrderEvent(ctx, order))
-
 	// If this is a pegged order, remove from pegged and parked lists
 	if order.PeggedOrder != nil {
 		m.removePeggedOrder(order)
 		order.Status = types.Order_STATUS_CANCELLED
 	}
+
+	// Publish the changed order details
+	order.UpdatedAt = m.currentTime.UnixNano()
+	m.broker.Send(events.NewOrderEvent(ctx, order))
+
 	m.checkForReferenceMoves(ctx)
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
