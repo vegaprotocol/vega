@@ -36,6 +36,10 @@ func (opts *genesisCmd) Execute(_ []string) error {
 		return err
 	}
 
+	// just for a nicer output, if we do not enter a new line
+	// the genesis output is dump straight on the password field
+	fmt.Printf("\n")
+
 	// load tm pubkey
 	tmKey, err := loadTMPubkey(tmCfg)
 	if err != nil {

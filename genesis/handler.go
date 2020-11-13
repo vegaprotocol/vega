@@ -59,10 +59,10 @@ func (h *Handler) OnGenesis(
 	return nil
 }
 
-func (h *Handler) OnGenesisTimeLoaded(f func(context.Context, time.Time)) {
-	h.onGenesisTimeLoadedCB = append(h.onGenesisTimeLoadedCB, f)
+func (h *Handler) OnGenesisTimeLoaded(f ...func(context.Context, time.Time)) {
+	h.onGenesisTimeLoadedCB = append(h.onGenesisTimeLoadedCB, f...)
 }
 
-func (h *Handler) OnGenesisAppStateLoaded(f func(context.Context, []byte) error) {
-	h.onGenesisAppStateLoadedCB = append(h.onGenesisAppStateLoadedCB, f)
+func (h *Handler) OnGenesisAppStateLoaded(f ...func(context.Context, []byte) error) {
+	h.onGenesisAppStateLoadedCB = append(h.onGenesisAppStateLoadedCB, f...)
 }

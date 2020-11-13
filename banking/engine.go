@@ -12,13 +12,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/prometheus/common/log"
-
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -563,7 +562,5 @@ type HasVegaAssetID interface {
 }
 
 func id(s fmt.Stringer, nonce uint64) string {
-	hasher := sha3.New256()
-	hasher.Write([]byte(fmt.Sprintf("%v%v", s.String(), nonce)))
-	return hex.EncodeToString(hasher.Sum(nil))
+	return hex.EncodeToString(crypto.Hash([]byte(fmt.Sprintf("%v%v", s.String(), nonce))))
 }
