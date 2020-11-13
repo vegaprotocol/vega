@@ -134,6 +134,8 @@ func (e *Engine) GetHorizonYearFractions() []float64 {
 	for _, v := range e.fpHorizons {
 		h = append(h, v)
 	}
+
+	sort.Slice(h, func(i, j int) bool { return h[i] < h[j] })
 	return h
 }
 
