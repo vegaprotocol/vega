@@ -921,8 +921,11 @@ func (b *OrderBook) GetBestBidPrice() (uint64, error) {
 }
 
 func (b *OrderBook) GetBestStaticBidPrice() (uint64, error) {
-	price, err := b.buy.BestStaticPrice()
-	return price, err
+	return b.buy.BestStaticPrice()
+}
+
+func (b *OrderBook) GetBestStaticBidPriceAndVolume() (uint64, uint64, error) {
+	return b.buy.BestStaticPriceAndVolume()
 }
 
 func (b *OrderBook) GetBestAskPrice() (uint64, error) {
@@ -931,8 +934,11 @@ func (b *OrderBook) GetBestAskPrice() (uint64, error) {
 }
 
 func (b *OrderBook) GetBestStaticAskPrice() (uint64, error) {
-	price, err := b.sell.BestStaticPrice()
-	return price, err
+	return b.sell.BestStaticPrice()
+}
+
+func (b *OrderBook) GetBestStaticAskPriceAndVolume() (uint64, uint64, error) {
+	return b.sell.BestStaticPriceAndVolume()
 }
 
 // PrintState prints the actual state of the book.

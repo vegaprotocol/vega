@@ -3629,10 +3629,20 @@
           "format": "uint64",
           "title": "Highest price on the order book for buy orders not including pegged orders"
         },
+        "bestStaticBidVolume": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Total volume at the best static bid price excluding pegged orders"
+        },
         "bestStaticOfferPrice": {
           "type": "string",
           "format": "uint64",
           "title": "Lowest price on the order book for sell orders not including pegged orders"
+        },
+        "bestStaticOfferVolume": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Total volume at the best static offer price excluding pegged orders"
         },
         "midPrice": {
           "type": "string",

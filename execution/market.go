@@ -305,8 +305,8 @@ func (m *Market) Hash() []byte {
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
-	bestStaticBidPrice, _ := m.matching.GetBestStaticBidPrice()
-	bestStaticOfferPrice, _ := m.matching.GetBestStaticAskPrice()
+	bestStaticBidPrice, bestStaticBidVolume, _ := m.getBestStaticBidPriceAndVolume()
+	bestStaticOfferPrice, bestStaticOfferVolume, _ := m.getBestStaticAskPriceAndVolume()
 
 	// Auction related values
 	var indicativePrice, indicativeVolume uint64
@@ -328,23 +328,25 @@ func (m *Market) GetMarketData() types.MarketData {
 	}
 
 	return types.MarketData{
-		Market:               m.GetID(),
-		BestBidPrice:         bestBidPrice,
-		BestBidVolume:        bestBidVolume,
-		BestOfferPrice:       bestOfferPrice,
-		BestOfferVolume:      bestOfferVolume,
-		BestStaticBidPrice:   bestStaticBidPrice,
-		BestStaticOfferPrice: bestStaticOfferPrice,
-		MidPrice:             midPrice,
-		MarkPrice:            m.markPrice,
-		Timestamp:            m.currentTime.UnixNano(),
-		OpenInterest:         m.position.GetOpenInterest(),
-		IndicativePrice:      indicativePrice,
-		IndicativeVolume:     indicativeVolume,
-		AuctionStart:         auctionStart,
-		AuctionEnd:           auctionEnd,
-		MarketState:          m.as.Mode(),
-		Trigger:              m.as.Trigger(),
+		Market:                m.GetID(),
+		BestBidPrice:          bestBidPrice,
+		BestBidVolume:         bestBidVolume,
+		BestOfferPrice:        bestOfferPrice,
+		BestOfferVolume:       bestOfferVolume,
+		BestStaticBidPrice:    bestStaticBidPrice,
+		BestStaticBidVolume:   bestStaticBidVolume,
+		BestStaticOfferPrice:  bestStaticOfferPrice,
+		BestStaticOfferVolume: bestStaticOfferVolume,
+		MidPrice:              midPrice,
+		MarkPrice:             m.markPrice,
+		Timestamp:             m.currentTime.UnixNano(),
+		OpenInterest:          m.position.GetOpenInterest(),
+		IndicativePrice:       indicativePrice,
+		IndicativeVolume:      indicativeVolume,
+		AuctionStart:          auctionStart,
+		AuctionEnd:            auctionEnd,
+		MarketState:           m.as.Mode(),
+		Trigger:               m.as.Trigger(),
 		// FIXME(WITOLD): uncomment set real values here
 		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
@@ -2261,8 +2263,16 @@ func (m *Market) getBestStaticAskPrice() (uint64, error) {
 	return m.matching.GetBestStaticAskPrice()
 }
 
+func (m *Market) getBestStaticAskPriceAndVolume() (uint64, uint64, error) {
+	return m.matching.GetBestStaticAskPriceAndVolume()
+}
+
 func (m *Market) getBestStaticBidPrice() (uint64, error) {
 	return m.matching.GetBestStaticBidPrice()
+}
+
+func (m *Market) getBestStaticBidPriceAndVolume() (uint64, uint64, error) {
+	return m.matching.GetBestStaticBidPriceAndVolume()
 }
 
 func (m *Market) getStaticMidPrice() (uint64, error) {
