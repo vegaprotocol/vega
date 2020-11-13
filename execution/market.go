@@ -262,7 +262,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStake)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
-	tsCalculator := liqTarget.NewEngine(*mkt.TargetStake)
+	tsCalc := liqTarget.NewEngine(*mkt.TargetStake)
 
 	market := &Market{
 		log:                  log,
