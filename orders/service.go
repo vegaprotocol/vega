@@ -179,7 +179,8 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		(sub.TimeInForce != types.Order_TIF_FOK && sub.TimeInForce != types.Order_TIF_IOC) {
 		return ErrInvalidTimeInForceForMarketOrder
 	}
-	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 {
+	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 &&
+		sub.PeggedOrder == nil {
 		return ErrInvalidPriceForLimitOrder
 	}
 	if sub.Type == types.Order_TYPE_NETWORK {

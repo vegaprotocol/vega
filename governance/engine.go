@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
 
@@ -80,6 +81,7 @@ type NetParams interface {
 	GetFloat(string) (float64, error)
 	GetInt(string) (int64, error)
 	GetDuration(string) (time.Duration, error)
+	GetJSONStruct(string, netparams.Reset) error
 	Get(string) (string, error)
 }
 
@@ -399,6 +401,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
 	proposal, err := e.validateVote(vote)
 	if err != nil {
+		// vote was not created/accepted, send TxErrEvent
+		e.broker.Send(events.NewTxErrEvent(ctx, err, vote.PartyID, vote))
 		return err
 	}
 	// we only want to count the last vote, so add to yes/no map, delete from the other

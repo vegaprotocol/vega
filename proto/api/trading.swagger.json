@@ -2718,6 +2718,10 @@
         "market": {
           "$ref": "#/definitions/vegaMarketEvent",
           "title": "Market tick events, see [MarketEvent](#vega.MarketEvent)"
+        },
+        "txErrEvent": {
+          "$ref": "#/definitions/vegaTxErrorEvent",
+          "title": "Transaction error events - separate category, not included in ALL events"
         }
       },
       "title": "A bus event is a container for event bus events emitted by Vega"
@@ -2751,10 +2755,11 @@
         "BUS_EVENT_TYPE_RISK_FACTOR",
         "BUS_EVENT_TYPE_NETWORK_PARAMETER",
         "BUS_EVENT_TYPE_LIQUIDITY_PROVISION",
-        "BUS_EVENT_TYPE_MARKET"
+        "BUS_EVENT_TYPE_MARKET",
+        "BUS_EVENT_TYPE_TX_ERROR"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
-      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens",
+      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens\n - BUS_EVENT_TYPE_TX_ERROR: Event used to report failed transactions back to a user - excluded from the ALL type",
       "title": "An (event) bus event type is used to specify a type of event\nIt has 2 styles of event:\nSingle values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item\nGroup values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items"
     },
     "vegaCandle": {
@@ -3831,8 +3836,8 @@
           "format": "int64",
           "description": "Time duration for the opening auction to last."
         },
-        "priceMonitoringSettings": {
-          "$ref": "#/definitions/vegaPriceMonitoringSettings",
+        "PriceMonitoringParameters": {
+          "$ref": "#/definitions/vegaPriceMonitoringParameters",
           "title": "price monitoring configuration"
         },
         "simple": {
@@ -4307,6 +4312,32 @@
     "vegaPriceMonitoringParameters": {
       "type": "object",
       "properties": {
+        "triggers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceMonitoringTrigger"
+          }
+        }
+      },
+      "description": "PriceMonitoringParameters contain a collection of triggers to be used for a given market."
+    },
+    "vegaPriceMonitoringSettings": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "$ref": "#/definitions/vegaPriceMonitoringParameters",
+          "title": "Specifies PriceMonitoringParameters to be used for price monitoring purposes"
+        },
+        "updateFrequency": {
+          "type": "string",
+          "format": "int64",
+          "description": "Specifies how often (expressed in seconds) the price monitoring bounds should be updated."
+        }
+      }
+    },
+    "vegaPriceMonitoringTrigger": {
+      "type": "object",
+      "properties": {
         "horizon": {
           "type": "string",
           "format": "int64",
@@ -4323,24 +4354,7 @@
           "description": "Price monitoring auction extension duration in seconds should the price\nbreach it's theoretical level over the specified horizon at the specified\nprobability level."
         }
       },
-      "title": "PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration"
-    },
-    "vegaPriceMonitoringSettings": {
-      "type": "object",
-      "properties": {
-        "priceMonitoringParameters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceMonitoringParameters"
-          },
-          "title": "Specifies a set of PriceMonitoringParameters to be used for price\nmonitoring purposes"
-        },
-        "updateFrequency": {
-          "type": "string",
-          "format": "int64",
-          "description": "Specifies how often (expressed in seconds) the price monitoring bounds should be updated."
-        }
-      }
+      "title": "PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration"
     },
     "vegaProposal": {
       "type": "object",
@@ -4613,6 +4627,11 @@
           "type": "number",
           "format": "double",
           "description": "Pre-defined minimum price move down that the model considers as valid."
+        },
+        "probabilityOfTrading": {
+          "type": "number",
+          "format": "double",
+          "title": "Pre-defined constant probability of trading"
         }
       },
       "description": "Risk model parameters for simple modelling."
@@ -4973,6 +4992,34 @@
         }
       },
       "title": "A transfer responses event contains a collection of transfer information"
+    },
+    "vegaTxErrorEvent": {
+      "type": "object",
+      "properties": {
+        "PartyID": {
+          "type": "string",
+          "title": "the party who had a tx fail"
+        },
+        "errMsg": {
+          "type": "string",
+          "title": "error message describing what went wrong"
+        },
+        "orderSubmission": {
+          "$ref": "#/definitions/vegaOrderSubmission"
+        },
+        "orderAmendment": {
+          "$ref": "#/definitions/vegaOrderAmendment"
+        },
+        "orderCancellation": {
+          "$ref": "#/definitions/vegaOrderCancellation"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "vote": {
+          "$ref": "#/definitions/vegaVote"
+        }
+      }
     },
     "vegaUpdateMarket": {
       "type": "object",
