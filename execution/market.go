@@ -2452,11 +2452,9 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 func (m *Market) getTargetStake() float64 {
 	rf, err := m.getRiskFactors()
-	var targetStake float64
 	if err != nil {
-		m.log.Error("unable to get risk factors, can't calculate target stake")
-	} else {
-		targetStake = m.tsCalculator.GetTargetStake(*rf, m.currentTime)
+		m.log.Error("unable to get risk factors, can't calculate target")
+		return 0
 	}
-	return targetStake
+	return m.tsCalculator.GetTargetStake(*rf, m.currentTime)
 }
