@@ -7,6 +7,8 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1375,7 +1377,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 
 	// Amend offset so we can reprice
 	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-	amend.PeggedOffset = &types.PeggedOffset{Value: -5}
+	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -5}
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	require.NotNil(t, amended)
 	assert.Equal(t, int64(-5), amended.Order.PeggedOrder.Offset)
@@ -1411,7 +1413,7 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 
 	// Amend offset so we can reprice
 	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-	amend.PeggedOffset = &types.PeggedOffset{Value: -15}
+	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	require.NotNil(t, amended)
 	assert.Equal(t, int64(-15), amended.Order.PeggedOrder.Offset)
@@ -1447,7 +1449,7 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 
 	// Amend offset so we cannot reprice
 	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-	amend.PeggedOffset = &types.PeggedOffset{Value: -15}
+	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
@@ -1488,7 +1490,7 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 
 	// Amend offset so we cannot reprice
 	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
-	amend.PeggedOffset = &types.PeggedOffset{Value: -5}
+	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -5}
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
 	require.NotNil(t, amended)
 	assert.NoError(t, err)

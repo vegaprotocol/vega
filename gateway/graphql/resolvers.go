@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -29,7 +30,7 @@ var (
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
-	ErrInvalidVotesSubscription = errors.New("invlid subscription, either proposal or party ID required")
+	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
 	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
@@ -1872,7 +1873,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 			}
 			return nil, errors.New("invalid pegged offset, could not convert to proto pegged offset")
 		}
-		order.PeggedOffset = &types.PeggedOffset{Value: po}
+		order.PeggedOffset = &wrapperspb.Int64Value{Value: po}
 	}
 
 	order.PeggedReference, err = convertPeggedReferenceToProto(*peggedReference)
