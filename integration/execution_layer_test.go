@@ -1070,3 +1070,108 @@ func dumpOrders() error {
 	}
 	return nil
 }
+
+func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
+	for i, row := range orders.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		id, side, vol, ref, offset, price := val(row, 1), val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
+		o := &types.Order{
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.Order_TIF_GTC,
+			Id:          "someid",
+			Side:        types.Side_SIDE_BUY,
+			PartyID:     trader,
+			MarketID:    id,
+			Size:        vol,
+			Price:       price,
+			Remaining:   vol,
+			Reference:   fmt.Sprintf("%s-pegged-order-%d", trader, i),
+			PeggedOrder: &types.PeggedOrder{
+				Reference: ref,
+				Offset:    offset,
+			},
+		}
+		if side == "sell" {
+			o.Side = types.Side_SIDE_SELL
+		}
+		_, err := execsetup.engine.SubmitOrder(context.Background(), o)
+		if err != nil {
+			fmt.Println("DUMP ORDER ERROR")
+			fmt.Printf("Error: %v\n", err)
+			fmt.Println("DUMP ORDER")
+			fmt.Printf("%#v\n", *o)
+			return err
+		}
+	}
+	return nil
+}
+
+func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
+	data := execsetup.broker.GetOrderEvents()
+	for _, row := range evts.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		// | trader   | id        | side | volume | reference | offset |
+		id, sside, vol, ref, offset, price := val(row, 1),
+			val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
+		status, err := orderstatusval(row, 7)
+		if err != nil {
+			return err
+		}
+		side := types.Side_SIDE_BUY
+		if sside == "sell" {
+			side = types.Side_SIDE_SELL
+		}
+		match := false
+		for _, e := range data {
+			o := e.Order()
+			if o.Status != status || o.MarketID != id || o.Side != side || o.Size != vol || o.Price != price {
+				// if o.MarketID != id || o.Side != side || o.Size != vol || o.Price != price {
+				continue
+			}
+			// check if pegged:
+			if offset != 0 {
+				// nope
+				if o.PeggedOrder == nil {
+					continue
+				}
+				if o.PeggedOrder.Offset != offset || o.PeggedOrder.Reference != ref {
+					continue
+				}
+				// this matches
+			}
+			// we've checked all fields and found this order to be a match
+			match = true
+			break
+		}
+		if !match {
+			return errors.New("no matching order event found")
+		}
+	}
+	return nil
+}
+
+func clearOrderEvents() error {
+	execsetup.broker.clearOrderEvents()
+	return nil
+}
+
+func clearOrdersByRef(in *gherkin.DataTable) error {
+	for _, row := range in.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		ref := val(row, 1)
+		if err := execsetup.broker.clearOrderByReference(trader, ref); err != nil {
+			return err
+		}
+	}
+	return nil
+}
