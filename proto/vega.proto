@@ -4,6 +4,7 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "google/protobuf/wrappers.proto";
 
 // A side relates to the direction of an order, to Buy, or Sell.
 enum Side {
@@ -39,11 +40,6 @@ enum Interval {
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum Interval)
-}
-
-message PeggedOffset {
-  // PeggedOffset value used in pegged orders to represent the offset against the reference price
-  int64 value = 1;
 }
 
 message Price {
@@ -749,8 +745,7 @@ message OrderAmendment {
   // See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`.
   Order.TimeInForce timeInForce = 7;
   // Amend the pegged order offset for the order
-  // See [`PeggedOffset`](#api.PeggedOffset).
-  PeggedOffset peggedOffset = 8;
+  google.protobuf.Int64Value peggedOffset = 8;
   // Amend the pegged order reference for the order
   // See [`PeggedReference`](#api.PeggedReference).
   PeggedReference peggedReference = 9;

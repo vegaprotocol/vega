@@ -29,7 +29,7 @@ var (
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
-	ErrInvalidVotesSubscription = errors.New("invlid subscription, either proposal or party ID required")
+	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
 	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
