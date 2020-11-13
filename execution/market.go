@@ -1155,7 +1155,7 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 			// Record open inteterest change
 			err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
 			if err != nil {
-				m.log.Error("unable record open interest",
+				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
