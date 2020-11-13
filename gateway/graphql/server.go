@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/gateway"
@@ -100,7 +102,7 @@ func (g *GraphServer) Start() {
 
 	g.log.Info("Starting GraphQL based API", logging.String("addr", ip), logging.Int("port", port))
 
-	addr := fmt.Sprintf("%s:%d", ip, port)
+	addr := net.JoinHostPort(ip, strconv.Itoa(port))
 	resolverRoot := NewResolverRoot(
 		g.log,
 		g.Config,

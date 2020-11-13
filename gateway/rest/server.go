@@ -2,8 +2,9 @@ package rest
 
 import (
 	"context"
-	"fmt"
+	"net"
 	"net/http"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -67,8 +68,8 @@ func (s *ProxyServer) Start() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	restAddr := fmt.Sprintf("%s:%d", s.REST.IP, s.REST.Port)
-	grpcAddr := fmt.Sprintf("%s:%d", s.Node.IP, s.Node.Port)
+	restAddr := net.JoinHostPort(s.REST.IP, strconv.Itoa(s.REST.Port))
+	grpcAddr := net.JoinHostPort(s.Node.IP, strconv.Itoa(s.Node.Port))
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
 		Indent:       "  ", // formatted json output
