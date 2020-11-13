@@ -24,7 +24,7 @@ Feature: Test market depth events for pegged orders
       | sellSideProvider | BTC   |
       | buySideProvider  | BTC   |
 # setup pegged orders
-    Then trades place pegged orders:
+    Then traders place pegged orders:
       | trader   | id        | side | volume | reference | offset | price |
       | pegged1  | ETH/DEC19 | sell |     10 | MID       | 10     | 100   |
       | pegged2  | ETH/DEC19 | buy  |      5 | MID       | -15    | 100   |
@@ -51,25 +51,14 @@ Feature: Test market depth events for pegged orders
       | trader            | reference       |
       | sellSideProvider  | sell-provider-1 |
       | buySideProvider   | buy-provider-1  |
-#   And dump orders
+    And dump orders
 # Now check what happened to our pegged orders
     Then I see the following order events:
       | trader   | id        | side | volume | reference | offset | price | status          |
-      | pegged1  | ETH/DEC19 | sell |     10 | MID       | 10     | 110   | STATUS_REJECTED |
       | pegged1  | ETH/DEC19 | sell |     10 | MID       | 10     | 110   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |     10 | MID       | 10     | 105   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |     10 | MID       | 10     | 102   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |     10 | MID       | 10     | 101   | STATUS_ACTIVE   |
       | pegged1  | ETH/DEC19 | sell |     10 | MID       | 10     | 100   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | buy  |      5 | MID       | -15    | 85    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |      5 | MID       | -15    | 77    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |      5 | MID       | -15    | 76    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |      5 | MID       | -15    | 75    | STATUS_REJECTED |
-      | pegged2  | ETH/DEC19 | buy  |      5 | MID       | -15    | 75    | STATUS_REJECTED |
       | pegged2  | ETH/DEC19 | buy  |      5 | MID       | -15    | 75    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |      5 | MID       | -10    | 90    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |      5 | MID       | -10    | 82    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |      5 | MID       | -10    | 81    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |      5 | MID       | -10    | 80    | STATUS_REJECTED |
-      | pegged3  | ETH/DEC19 | buy  |      5 | MID       | -10    | 80    | STATUS_REJECTED |
       | pegged3  | ETH/DEC19 | buy  |      5 | MID       | -10    | 80    | STATUS_ACTIVE   |
