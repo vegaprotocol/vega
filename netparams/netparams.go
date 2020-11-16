@@ -157,6 +157,18 @@ func (s *Store) OnChainTimeUpdate(_ time.Time) {
 	s.paramUpdates = map[string]struct{}{}
 }
 
+func (s *Store) DispatchChanges() {
+	if len(s.paramUpdates) <= 0 {
+		return
+	}
+	for k := range s.paramUpdates {
+		if err := s.dispatchUpdate(k); err != nil {
+			s.log.Debug("unable to dispatch netparams update", logging.Error(err))
+		}
+	}
+	s.paramUpdates = map[string]struct{}{}
+}
+
 // Validate will call validation on the Value stored
 // for the given key.
 func (s *Store) Validate(key, value string) error {
