@@ -3,6 +3,7 @@ package netparams_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -41,6 +42,51 @@ func TestNetParams(t *testing.T) {
 	t.Run("test exists - failure", testExistsFailure)
 	t.Run("get float", testGetFloat)
 	t.Run("get duration", testGetDuration)
+	t.Run("dispatch after update", testDispatchAfterUpdate)
+	t.Run("register dispatch function - failure", testRegisterDispatchFunctionFailure)
+}
+
+func testRegisterDispatchFunctionFailure(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+
+	err := netp.Watch(
+		netparams.WatchParam{
+			Param:   netparams.GovernanceProposalAssetMaxClose,
+			Watcher: func(s string) error { return nil },
+		},
+	)
+
+	assert.EqualError(t, err, "invalid type, expected func(time.Duration) error")
+}
+
+func testDispatchAfterUpdate(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	newDuration := "10s"
+	var wasCalled bool
+	f := func(d time.Duration) error {
+		assert.Equal(t, d, 10*time.Second)
+		wasCalled = true
+		return nil
+	}
+
+	err := netp.Watch(
+		netparams.WatchParam{
+			Param:   netparams.GovernanceProposalAssetMaxClose,
+			Watcher: f,
+		},
+	)
+
+	assert.NoError(t, err)
+
+	err = netp.Update(context.Background(), netparams.GovernanceProposalAssetMaxClose, newDuration)
+	assert.NoError(t, err)
+
+	netp.DispatchChanges()
+	assert.True(t, wasCalled)
 }
 
 func testValidateSuccess(t *testing.T) {
