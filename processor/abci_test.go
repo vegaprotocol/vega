@@ -61,6 +61,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 		proc.ts,
 		proc.top,
 		proc.wallet,
+		proc.netp,
 	)
 }
 

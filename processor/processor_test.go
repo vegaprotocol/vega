@@ -26,6 +26,7 @@ type procTest struct {
 	evtfwd *mocks.MockEvtForwarder
 	erc    *mocks.MockExtResChecker
 	bank   *mocks.MockBanking
+	netp   *mocks.MockNetworkParameters
 }
 
 type stubWallet struct {
@@ -49,6 +50,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
 	erc := mocks.NewMockExtResChecker(ctrl)
 	bank := mocks.NewMockBanking(ctrl)
+	netp := mocks.NewMockNetworkParameters(ctrl)
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(context.Context, time.Time)
@@ -74,6 +76,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		evtfwd: evtfwd,
 		erc:    erc,
 		bank:   bank,
+		netp:   netp,
 	}
 }
 

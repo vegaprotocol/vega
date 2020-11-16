@@ -510,6 +510,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		}
 		app.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
+
 }
 
 func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
@@ -589,6 +590,12 @@ func (app *App) enactMarket(ctx context.Context, prop *types.Proposal, mkt *type
 	}
 }
 
-func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, mkt *types.NetworkParameter) {
+func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
 	prop.State = types.Proposal_STATE_ENACTED
+	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
+		prop.State = types.Proposal_STATE_FAILED
+		app.log.Error("failed to update network parameters",
+			logging.String("proposal-id", prop.ID),
+			logging.Error(err))
+	}
 }
