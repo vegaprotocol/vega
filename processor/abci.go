@@ -259,7 +259,12 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	resp := tmtypes.ResponseCheckTx{}
 
 	// Check ratelimits
-	if app.limitPubkey(tx.PubKey()) {
+	limit, isval := app.limitPubkey(tx.PubKey())
+	// this is a party
+	// and if we may not want to rate limit it.
+	// in which case we may want to check if it has a balance
+	party := hex.EncodeToString(tx.PubKey())
+	if !isval && limit || !app.banking.HasBalance(party) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
 	}
@@ -268,20 +273,20 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 }
 
 // limitPubkey returns whether a request should be rate limited or not
-func (app *App) limitPubkey(pk []byte) bool {
+func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
 	// Do not rate limit validators nodes.
 	if app.top.Exists(pk) {
-		return false
+		return false, true
 	}
 
 	key := ratelimit.Key(pk).String()
 	if !app.rates.Allow(key) {
 		app.log.Error("Rate limit exceeded", logging.String("key", key))
-		return true
+		return true, false
 	}
 
 	app.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", app.rates.Count(key)))
-	return false
+	return false, false
 }
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.

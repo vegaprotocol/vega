@@ -67,7 +67,11 @@ type Engine struct {
 	log   *logging.Logger
 	cfgMu sync.Mutex
 
-	accs         map[string]*types.Account
+	accs map[string]*types.Account
+	// map of partyID -> account ID -> account
+	// this is used to check if a party have any balances in
+	// any assets at all
+	partiesAccs  map[string]map[string]*types.Account
 	hashableAccs []*types.Account
 	broker       Broker
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
@@ -93,6 +97,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 		log:           log,
 		Config:        conf,
 		accs:          make(map[string]*types.Account, initialAccountSize),
+		partiesAccs:   map[string]map[string]*types.Account{},
 		hashableAccs:  []*types.Account{},
 		broker:        broker,
 		currentTime:   now.UnixNano(),
@@ -106,6 +111,44 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 // in order to be called when the chain time is updated (basically EndBlock)
 func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 	e.currentTime = t.UnixNano()
+}
+
+func (e *Engine) HasBalance(party string) bool {
+	accs, ok := e.partiesAccs[party]
+	if !ok {
+		return false
+	}
+
+	for _, acc := range accs {
+		if acc.Balance > 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {
+	accs, ok := e.partiesAccs[party]
+	if !ok {
+		accs = map[string]*types.Account{}
+		e.partiesAccs[party] = accs
+	}
+	// this is called only when an account is created first time
+	// and never twice
+	accs[accid] = acc
+}
+
+func (e *Engine) rmPartyAccount(party, accid string) {
+	// this cannot be called for a party which do not have an account already
+	// so no risk here
+	accs := e.partiesAccs[party]
+	delete(accs, accid)
+	// delete if the number of accounts for the party
+	// is down to 0
+	if len(accs) <= 0 {
+		delete(e.partiesAccs, party)
+	}
 }
 
 func (e *Engine) removeAccountFromHashableSlice(id string) {
@@ -1257,6 +1300,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 			Type:     types.AccountType_ACCOUNT_TYPE_BOND,
 		}
 		e.accs[bondID] = &acc
+		e.addPartyAccount(partyID, bondID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
@@ -1293,6 +1337,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 		}
 		e.accs[marginID] = &acc
+		e.addPartyAccount(partyID, marginID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
@@ -1316,6 +1361,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
+		e.addPartyAccount(partyID, generalID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
@@ -1345,6 +1391,7 @@ func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyI
 			Type:     types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
 		}
 		e.accs[id] = acc
+		e.addPartyAccount(partyID, id, acc)
 		e.addAccountToHashableSlice(acc)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
@@ -1394,6 +1441,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		if err := e.removeAccount(acc.Id); err != nil {
 			return nil, err
 		}
+		// remove account from balances tracking
+		e.rmPartyAccount(trader.Party(), acc.Id)
 
 	}
 	return &resp, nil
