@@ -3,6 +3,8 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -303,7 +305,8 @@ func getTestGRPCServer(
 		// Start the gRPC server, then wait for it to be ready.
 		go g.Start()
 
-		conn, err = grpc.DialContext(ctx, fmt.Sprintf("%s:%d", conf.API.IP, conf.API.Port), grpc.WithInsecure(), grpc.WithBlock())
+		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
+		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {
 			t.Fatalf("Failed to create connection to gRPC server")
 		}

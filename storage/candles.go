@@ -264,12 +264,7 @@ func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types
 	}
 
 	// now push new updates to any observers
-	err := c.notify()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.notify()
 }
 
 // GetCandles returns all candles at interval since timestamp for a market.
