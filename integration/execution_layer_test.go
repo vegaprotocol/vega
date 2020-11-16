@@ -419,6 +419,66 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 	return nil
 }
 
+func tradersCancelPeggedOrders(data *gherkin.DataTable) error {
+	for _, row := range data.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		cancel := proto.OrderCancellation{
+			PartyID:  trader,
+			MarketID: val(row, 1),
+			OrderID:  val(row, 2),
+		}
+		_, err := execsetup.engine.CancelOrder(context.Background(), &cancel)
+		if err != nil {
+			return fmt.Errorf("unable to cancel order: %+v", err)
+		}
+	}
+	return nil
+}
+
+func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
+	cancellations := make([]proto.OrderCancellation, 0, len(data.Rows))
+	for _, row := range data.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		mkt := val(row, 1)
+		orders := execsetup.broker.getOrdersByPartyAndMarket(trader, mkt)
+		if len(orders) == 0 {
+			return fmt.Errorf("no orders found for party %s on market %s", trader, mkt)
+		}
+		// orders have to be pegged:
+		found := false
+		for _, o := range orders {
+			if o.PeggedOrder != nil && o.Status != proto.Order_STATUS_CANCELLED && o.Status != proto.Order_STATUS_REJECTED {
+				cancellations = append(cancellations, proto.OrderCancellation{
+					PartyID:  trader,
+					MarketID: mkt,
+					OrderID:  o.Id,
+				})
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("no valid pegged order found for %s on market %s", trader, mkt)
+		}
+	}
+	// do the clear stuff
+	if err := clearOrderEvents(); err != nil {
+		return err
+	}
+	for _, c := range cancellations {
+		if _, err := execsetup.engine.CancelOrder(context.Background(), &c); err != nil {
+			return fmt.Errorf("failed to cancel pegged order %s for %s on market %s", c.OrderID, c.PartyID, c.MarketID)
+		}
+	}
+	return nil
+}
+
 func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "trader" {

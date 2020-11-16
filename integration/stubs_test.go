@@ -134,6 +134,17 @@ func (b *brokerStub) clearOrderEvents() {
 	b.mu.Unlock()
 }
 
+func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Order {
+	orders := b.GetOrderEvents()
+	ret := []types.Order{}
+	for _, oe := range orders {
+		if o := oe.Order(); o.MarketID == market && o.PartyID == party {
+			ret = append(ret, *o)
+		}
+	}
+	return ret
+}
+
 func (b *brokerStub) GetOrderEvents() []events.Order {
 	batch := b.GetBatch(events.OrderEvent)
 	if len(batch) == 0 {
