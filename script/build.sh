@@ -295,11 +295,6 @@ run() {
 		return "$?"
 		;;
 	staticcheck) ## Run staticcheck
-		# Run semgrep only if env var is set
-		if [ -n "$SEMGREP_GO_PATH" ] ; then
-			semgrep -f "$SEMGREP_GO_PATH"
-		fi
-
 		f="$(mktemp)"
 		(
 			go list ./... | grep -v /integration | xargs staticcheck
@@ -310,8 +305,10 @@ run() {
 		if test "$count" -gt 0 ; then
 			return 1
 		fi
-
-		return 0
+		;;
+	semgrep) ## Run semgrep
+		semgrep -f "p/dgryski.semgrep-go"
+		return "$?"
 		;;
 	vet) ## Run go vet
 		go vet ./...
