@@ -539,7 +539,7 @@ func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uin
 	// At this stage offset is negative so we change it's sign to cast it to an
 	// unsigned type
 	offset := uint64(-order.PeggedOrder.Offset)
-	if price < offset {
+	if price <= offset {
 		return 0, ErrUnableToReprice
 	}
 
