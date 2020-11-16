@@ -635,6 +635,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders unpark order due to reference becoming valid", testPeggedOrderUnpark)
 	t.Run("pegged order reprice when no limit orders", testPeggedOrderRepriceCrashWhenNoLimitOrders)
 	t.Run("pegged order cancel a parked order", testPeggedOrderCancelParked)
+	t.Run("pegged orders cancelall", testPeggedOrderParkCancelAll)
 }
 
 func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {

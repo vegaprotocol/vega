@@ -1701,7 +1701,28 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		return nil, err
 	}
 
+	// Check the parked order list of any orders from that same party
+	var parkedCancels []*types.OrderCancellationConfirmation
+	for _, order := range m.parkedOrders {
+		if order.PartyID == partyID {
+			order.Status = types.Order_STATUS_CANCELLED
+			m.removePeggedOrder(order)
+			order.UpdatedAt = m.currentTime.UnixNano()
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			parkedCancel := &types.OrderCancellationConfirmation{
+				Order: order,
+			}
+			parkedCancels = append(parkedCancels, parkedCancel)
+		}
+	}
+
 	for _, cancellation := range cancellations {
+		// if the order was a pegged order, remove from pegged list
+		if cancellation.Order.PeggedOrder != nil {
+			m.removePeggedOrder(cancellation.Order)
+		}
+
 		// Update the order in our stores (will be marked as cancelled)
 		cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
 		m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
@@ -1715,6 +1736,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 
 	m.checkForReferenceMoves(ctx)
 
+	cancellations = append(cancellations, parkedCancels...)
 	return cancellations, nil
 }
 
