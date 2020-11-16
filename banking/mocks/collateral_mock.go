@@ -62,6 +62,20 @@ func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAsset", reflect.TypeOf((*MockCollateral)(nil).EnableAsset), arg0, arg1)
 }
 
+// HasBalance mocks base method
+func (m *MockCollateral) HasBalance(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasBalance", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasBalance indicates an expected call of HasBalance
+func (mr *MockCollateralMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasBalance", reflect.TypeOf((*MockCollateral)(nil).HasBalance), arg0)
+}
+
 // LockFundsForWithdraw mocks base method
 func (m *MockCollateral) LockFundsForWithdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
 	m.ctrl.T.Helper()
