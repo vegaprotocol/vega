@@ -242,6 +242,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 func (e *Engine) reset(price uint64, now time.Time) {
 	e.now = now
 	e.update = now
+	e.priceRangeCacheTime = time.Time{}
 	e.pricesNow = []uint64{price}
 	e.pricesPast = []pastPrice{}
 	e.resetBounds()

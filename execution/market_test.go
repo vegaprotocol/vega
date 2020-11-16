@@ -803,6 +803,48 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
 	//TODO: Check that `party2-sell-order-3` & `party1-buy-order-3` get matched in auction and a trade is generated
+
+	// Test that orders get matched as expected upon returning to continous trading
+	now = afterAuciton.Add(time.Second)
+	orderSell4 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid8",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       validPrice,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-4",
+	}
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell4)
+	assert.NotNil(t, confirmationSell)
+	assert.NoError(t, err)
+
+	orderBuy4 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid7",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       validPrice,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order-4",
+	}
+	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy4)
+	require.NotNil(t, confirmationBuy)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(confirmationBuy.Trades))
+
 }
 
 func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
