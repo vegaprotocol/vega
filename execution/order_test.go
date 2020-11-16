@@ -625,6 +625,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders are removed when expired", testPeggedOrderExpiring)
 	t.Run("pegged orders unpark order due to reference becoming valid", testPeggedOrderUnpark)
 	t.Run("pegged order cancel a parked order", testPeggedOrderCancelParked)
+	t.Run("pegged orders cancelall", testPeggedOrderParkCancelAll)
 }
 
 func testPeggedOrderUnpark(t *testing.T) {
@@ -1207,6 +1208,40 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	amendOrder(t, tm, "buyer", buy.Id, 0, 1, types.Order_TIF_UNSPECIFIED, 0, true)
 
 	assert.Equal(t, types.Order_STATUS_PARKED.String(), confirmation.Order.Status.String())
+}
+
+func testPeggedOrderParkCancelAll(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "user")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Send one normal order
+	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user", 10, 100)
+	require.NotEmpty(t, limitOrder)
+
+	// Send one pegged order that is live
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -5}
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+	assert.NotNil(t, confirmation)
+
+	// Send one pegged order that is parked
+	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user", 10, 0)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -5}
+	confirmation2, err := tm.market.SubmitOrder(ctx, &order2)
+	require.NoError(t, err)
+	assert.NotNil(t, confirmation2)
+
+	cancelConf, err := tm.market.CancelAllOrders(ctx, "user")
+	require.NoError(t, err)
+	require.NotNil(t, cancelConf)
+	assert.Equal(t, 3, len(cancelConf))
 }
 
 func testPeggedOrderRepricing(t *testing.T) {
