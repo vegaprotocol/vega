@@ -134,6 +134,8 @@ func (e *Engine) GetHorizonYearFractions() []float64 {
 	for _, v := range e.fpHorizons {
 		h = append(h, v)
 	}
+
+	sort.Slice(h, func(i, j int) bool { return h[i] < h[j] })
 	return h
 }
 
@@ -240,6 +242,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 func (e *Engine) reset(price uint64, now time.Time) {
 	e.now = now
 	e.update = now
+	e.priceRangeCacheTime = time.Time{}
 	e.pricesNow = []uint64{price}
 	e.pricesPast = []pastPrice{}
 	e.resetBounds()

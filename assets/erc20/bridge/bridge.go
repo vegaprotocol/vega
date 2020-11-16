@@ -20,7 +20,6 @@ var (
 	_ = big.NewInt
 	_ = strings.NewReader
 	_ = ethereum.NotFound
-	_ = abi.U256
 	_ = bind.Bind
 	_ = common.Big1
 	_ = types.BloomLookup
@@ -174,7 +173,7 @@ func (_Bridge *BridgeTransactorRaw) Transact(opts *bind.TransactOpts, method str
 
 // GetAssetSourceAndAssetId is a free data retrieval call binding the contract method 0x5c268f93.
 //
-// Solidity: function get_asset_source_and_asset_id(uint256 vega_id) constant returns(address, uint256)
+// Solidity: function get_asset_source_and_asset_id(uint256 vega_id) view returns(address, uint256)
 func (_Bridge *BridgeCaller) GetAssetSourceAndAssetId(opts *bind.CallOpts, vega_id *big.Int) (common.Address, *big.Int, error) {
 	var (
 		ret0 = new(common.Address)
@@ -190,21 +189,21 @@ func (_Bridge *BridgeCaller) GetAssetSourceAndAssetId(opts *bind.CallOpts, vega_
 
 // GetAssetSourceAndAssetId is a free data retrieval call binding the contract method 0x5c268f93.
 //
-// Solidity: function get_asset_source_and_asset_id(uint256 vega_id) constant returns(address, uint256)
+// Solidity: function get_asset_source_and_asset_id(uint256 vega_id) view returns(address, uint256)
 func (_Bridge *BridgeSession) GetAssetSourceAndAssetId(vega_id *big.Int) (common.Address, *big.Int, error) {
 	return _Bridge.Contract.GetAssetSourceAndAssetId(&_Bridge.CallOpts, vega_id)
 }
 
 // GetAssetSourceAndAssetId is a free data retrieval call binding the contract method 0x5c268f93.
 //
-// Solidity: function get_asset_source_and_asset_id(uint256 vega_id) constant returns(address, uint256)
+// Solidity: function get_asset_source_and_asset_id(uint256 vega_id) view returns(address, uint256)
 func (_Bridge *BridgeCallerSession) GetAssetSourceAndAssetId(vega_id *big.Int) (common.Address, *big.Int, error) {
 	return _Bridge.Contract.GetAssetSourceAndAssetId(&_Bridge.CallOpts, vega_id)
 }
 
 // GetAssetSourceAndAssetId0 is a free data retrieval call binding the contract method 0xcc1e14ef.
 //
-// Solidity: function get_asset_source_and_asset_id(bytes32 vega_id) constant returns(address, uint256)
+// Solidity: function get_asset_source_and_asset_id(bytes32 vega_id) view returns(address, uint256)
 func (_Bridge *BridgeCaller) GetAssetSourceAndAssetId0(opts *bind.CallOpts, vega_id [32]byte) (common.Address, *big.Int, error) {
 	var (
 		ret0 = new(common.Address)
@@ -220,21 +219,21 @@ func (_Bridge *BridgeCaller) GetAssetSourceAndAssetId0(opts *bind.CallOpts, vega
 
 // GetAssetSourceAndAssetId0 is a free data retrieval call binding the contract method 0xcc1e14ef.
 //
-// Solidity: function get_asset_source_and_asset_id(bytes32 vega_id) constant returns(address, uint256)
+// Solidity: function get_asset_source_and_asset_id(bytes32 vega_id) view returns(address, uint256)
 func (_Bridge *BridgeSession) GetAssetSourceAndAssetId0(vega_id [32]byte) (common.Address, *big.Int, error) {
 	return _Bridge.Contract.GetAssetSourceAndAssetId0(&_Bridge.CallOpts, vega_id)
 }
 
 // GetAssetSourceAndAssetId0 is a free data retrieval call binding the contract method 0xcc1e14ef.
 //
-// Solidity: function get_asset_source_and_asset_id(bytes32 vega_id) constant returns(address, uint256)
+// Solidity: function get_asset_source_and_asset_id(bytes32 vega_id) view returns(address, uint256)
 func (_Bridge *BridgeCallerSession) GetAssetSourceAndAssetId0(vega_id [32]byte) (common.Address, *big.Int, error) {
 	return _Bridge.Contract.GetAssetSourceAndAssetId0(&_Bridge.CallOpts, vega_id)
 }
 
 // GetDepositMinimum is a free data retrieval call binding the contract method 0xa9d9e9f0.
 //
-// Solidity: function get_deposit_minimum(address asset_source, uint256 asset_id) constant returns(uint256)
+// Solidity: function get_deposit_minimum(address asset_source, uint256 asset_id) view returns(uint256)
 func (_Bridge *BridgeCaller) GetDepositMinimum(opts *bind.CallOpts, asset_source common.Address, asset_id *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -246,21 +245,21 @@ func (_Bridge *BridgeCaller) GetDepositMinimum(opts *bind.CallOpts, asset_source
 
 // GetDepositMinimum is a free data retrieval call binding the contract method 0xa9d9e9f0.
 //
-// Solidity: function get_deposit_minimum(address asset_source, uint256 asset_id) constant returns(uint256)
+// Solidity: function get_deposit_minimum(address asset_source, uint256 asset_id) view returns(uint256)
 func (_Bridge *BridgeSession) GetDepositMinimum(asset_source common.Address, asset_id *big.Int) (*big.Int, error) {
 	return _Bridge.Contract.GetDepositMinimum(&_Bridge.CallOpts, asset_source, asset_id)
 }
 
 // GetDepositMinimum is a free data retrieval call binding the contract method 0xa9d9e9f0.
 //
-// Solidity: function get_deposit_minimum(address asset_source, uint256 asset_id) constant returns(uint256)
+// Solidity: function get_deposit_minimum(address asset_source, uint256 asset_id) view returns(uint256)
 func (_Bridge *BridgeCallerSession) GetDepositMinimum(asset_source common.Address, asset_id *big.Int) (*big.Int, error) {
 	return _Bridge.Contract.GetDepositMinimum(&_Bridge.CallOpts, asset_source, asset_id)
 }
 
 // GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
 //
-// Solidity: function get_multisig_control_address() constant returns(address)
+// Solidity: function get_multisig_control_address() view returns(address)
 func (_Bridge *BridgeCaller) GetMultisigControlAddress(opts *bind.CallOpts) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -272,21 +271,21 @@ func (_Bridge *BridgeCaller) GetMultisigControlAddress(opts *bind.CallOpts) (com
 
 // GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
 //
-// Solidity: function get_multisig_control_address() constant returns(address)
+// Solidity: function get_multisig_control_address() view returns(address)
 func (_Bridge *BridgeSession) GetMultisigControlAddress() (common.Address, error) {
 	return _Bridge.Contract.GetMultisigControlAddress(&_Bridge.CallOpts)
 }
 
 // GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
 //
-// Solidity: function get_multisig_control_address() constant returns(address)
+// Solidity: function get_multisig_control_address() view returns(address)
 func (_Bridge *BridgeCallerSession) GetMultisigControlAddress() (common.Address, error) {
 	return _Bridge.Contract.GetMultisigControlAddress(&_Bridge.CallOpts)
 }
 
 // GetVegaId is a free data retrieval call binding the contract method 0xe9da406e.
 //
-// Solidity: function get_vega_id(address asset_source, uint256 asset_id) constant returns(bytes32)
+// Solidity: function get_vega_id(address asset_source, uint256 asset_id) view returns(bytes32)
 func (_Bridge *BridgeCaller) GetVegaId(opts *bind.CallOpts, asset_source common.Address, asset_id *big.Int) ([32]byte, error) {
 	var (
 		ret0 = new([32]byte)
@@ -298,21 +297,21 @@ func (_Bridge *BridgeCaller) GetVegaId(opts *bind.CallOpts, asset_source common.
 
 // GetVegaId is a free data retrieval call binding the contract method 0xe9da406e.
 //
-// Solidity: function get_vega_id(address asset_source, uint256 asset_id) constant returns(bytes32)
+// Solidity: function get_vega_id(address asset_source, uint256 asset_id) view returns(bytes32)
 func (_Bridge *BridgeSession) GetVegaId(asset_source common.Address, asset_id *big.Int) ([32]byte, error) {
 	return _Bridge.Contract.GetVegaId(&_Bridge.CallOpts, asset_source, asset_id)
 }
 
 // GetVegaId is a free data retrieval call binding the contract method 0xe9da406e.
 //
-// Solidity: function get_vega_id(address asset_source, uint256 asset_id) constant returns(bytes32)
+// Solidity: function get_vega_id(address asset_source, uint256 asset_id) view returns(bytes32)
 func (_Bridge *BridgeCallerSession) GetVegaId(asset_source common.Address, asset_id *big.Int) ([32]byte, error) {
 	return _Bridge.Contract.GetVegaId(&_Bridge.CallOpts, asset_source, asset_id)
 }
 
 // IsOwner is a free data retrieval call binding the contract method 0x8f32d59b.
 //
-// Solidity: function isOwner() constant returns(bool)
+// Solidity: function isOwner() view returns(bool)
 func (_Bridge *BridgeCaller) IsOwner(opts *bind.CallOpts) (bool, error) {
 	var (
 		ret0 = new(bool)
@@ -324,21 +323,21 @@ func (_Bridge *BridgeCaller) IsOwner(opts *bind.CallOpts) (bool, error) {
 
 // IsOwner is a free data retrieval call binding the contract method 0x8f32d59b.
 //
-// Solidity: function isOwner() constant returns(bool)
+// Solidity: function isOwner() view returns(bool)
 func (_Bridge *BridgeSession) IsOwner() (bool, error) {
 	return _Bridge.Contract.IsOwner(&_Bridge.CallOpts)
 }
 
 // IsOwner is a free data retrieval call binding the contract method 0x8f32d59b.
 //
-// Solidity: function isOwner() constant returns(bool)
+// Solidity: function isOwner() view returns(bool)
 func (_Bridge *BridgeCallerSession) IsOwner() (bool, error) {
 	return _Bridge.Contract.IsOwner(&_Bridge.CallOpts)
 }
 
 // IsAssetWhitelisted is a free data retrieval call binding the contract method 0xcafb4cc2.
 //
-// Solidity: function is_asset_whitelisted(address asset_source, uint256 asset_id) constant returns(bool)
+// Solidity: function is_asset_whitelisted(address asset_source, uint256 asset_id) view returns(bool)
 func (_Bridge *BridgeCaller) IsAssetWhitelisted(opts *bind.CallOpts, asset_source common.Address, asset_id *big.Int) (bool, error) {
 	var (
 		ret0 = new(bool)
@@ -350,21 +349,21 @@ func (_Bridge *BridgeCaller) IsAssetWhitelisted(opts *bind.CallOpts, asset_sourc
 
 // IsAssetWhitelisted is a free data retrieval call binding the contract method 0xcafb4cc2.
 //
-// Solidity: function is_asset_whitelisted(address asset_source, uint256 asset_id) constant returns(bool)
+// Solidity: function is_asset_whitelisted(address asset_source, uint256 asset_id) view returns(bool)
 func (_Bridge *BridgeSession) IsAssetWhitelisted(asset_source common.Address, asset_id *big.Int) (bool, error) {
 	return _Bridge.Contract.IsAssetWhitelisted(&_Bridge.CallOpts, asset_source, asset_id)
 }
 
 // IsAssetWhitelisted is a free data retrieval call binding the contract method 0xcafb4cc2.
 //
-// Solidity: function is_asset_whitelisted(address asset_source, uint256 asset_id) constant returns(bool)
+// Solidity: function is_asset_whitelisted(address asset_source, uint256 asset_id) view returns(bool)
 func (_Bridge *BridgeCallerSession) IsAssetWhitelisted(asset_source common.Address, asset_id *big.Int) (bool, error) {
 	return _Bridge.Contract.IsAssetWhitelisted(&_Bridge.CallOpts, asset_source, asset_id)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
 //
-// Solidity: function owner() constant returns(address)
+// Solidity: function owner() view returns(address)
 func (_Bridge *BridgeCaller) Owner(opts *bind.CallOpts) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -376,14 +375,14 @@ func (_Bridge *BridgeCaller) Owner(opts *bind.CallOpts) (common.Address, error) 
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
 //
-// Solidity: function owner() constant returns(address)
+// Solidity: function owner() view returns(address)
 func (_Bridge *BridgeSession) Owner() (common.Address, error) {
 	return _Bridge.Contract.Owner(&_Bridge.CallOpts)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
 //
-// Solidity: function owner() constant returns(address)
+// Solidity: function owner() view returns(address)
 func (_Bridge *BridgeCallerSession) Owner() (common.Address, error) {
 	return _Bridge.Contract.Owner(&_Bridge.CallOpts)
 }

@@ -498,14 +498,16 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 				changes&PriceMoveBestBid > 0) ||
 			(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_ASK &&
 				changes&PriceMoveBestAsk > 0) {
-			price, err := m.getNewPeggedPrice(ctx, order)
-			if err != nil {
-				// We can't reprice so we should remove the order and park it
-				m.parkOrderAndAdd(ctx, order)
-			} else {
-				// Force an amend but don't trigger a reprice to happen
-				m.amendPeggedOrder(ctx, order, price)
-				repriceCount++
+			if order.Status != types.Order_STATUS_PARKED {
+				price, err := m.getNewPeggedPrice(ctx, order)
+				if err != nil {
+					// We can't reprice so we should remove the order and park it
+					m.parkOrderAndAdd(ctx, order)
+				} else {
+					// Force an amend but don't trigger a reprice to happen
+					m.amendPeggedOrder(ctx, order, price)
+					repriceCount++
+				}
 			}
 		}
 	}
@@ -1735,15 +1737,16 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		}
 	}
 
-	// Update the order in our stores (will be marked as cancelled)
-	order.UpdatedAt = m.currentTime.UnixNano()
-	m.broker.Send(events.NewOrderEvent(ctx, order))
-
 	// If this is a pegged order, remove from pegged and parked lists
 	if order.PeggedOrder != nil {
 		m.removePeggedOrder(order)
 		order.Status = types.Order_STATUS_CANCELLED
 	}
+
+	// Publish the changed order details
+	order.UpdatedAt = m.currentTime.UnixNano()
+	m.broker.Send(events.NewOrderEvent(ctx, order))
+
 	m.checkForReferenceMoves(ctx)
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
