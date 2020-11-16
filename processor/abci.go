@@ -597,5 +597,11 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 		app.log.Error("failed to update network parameters",
 			logging.String("proposal-id", prop.ID),
 			logging.Error(err))
+		return
 	}
+
+	// we call the dispatch updates here then
+	// just so we are sure all netparams updates are dispatches one by one
+	// in a deterministic order
+	app.netp.DispatchChanges()
 }

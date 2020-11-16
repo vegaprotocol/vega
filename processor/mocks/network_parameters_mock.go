@@ -8,7 +8,6 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
-	time "time"
 )
 
 // MockNetworkParameters is a mock of NetworkParameters interface
@@ -34,16 +33,16 @@ func (m *MockNetworkParameters) EXPECT() *MockNetworkParametersMockRecorder {
 	return m.recorder
 }
 
-// OnChainTimeUpdate mocks base method
-func (m *MockNetworkParameters) OnChainTimeUpdate(arg0 time.Time) {
+// DispatchChanges mocks base method
+func (m *MockNetworkParameters) DispatchChanges() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnChainTimeUpdate", arg0)
+	m.ctrl.Call(m, "DispatchChanges")
 }
 
-// OnChainTimeUpdate indicates an expected call of OnChainTimeUpdate
-func (mr *MockNetworkParametersMockRecorder) OnChainTimeUpdate(arg0 interface{}) *gomock.Call {
+// DispatchChanges indicates an expected call of DispatchChanges
+func (mr *MockNetworkParametersMockRecorder) DispatchChanges() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnChainTimeUpdate", reflect.TypeOf((*MockNetworkParameters)(nil).OnChainTimeUpdate), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DispatchChanges", reflect.TypeOf((*MockNetworkParameters)(nil).DispatchChanges))
 }
 
 // Update mocks base method
