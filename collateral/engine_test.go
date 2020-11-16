@@ -133,7 +133,7 @@ func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
 
 	party := "myparty"
 	// create trader
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.NoError(t, err)
 
@@ -141,7 +141,11 @@ func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
 	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
 	assert.Nil(t, err)
 
-	assert.True(t, eng.HasBalance(party))
+	// then add some monites
+	err = eng.Engine.DecrementBalance(context.Background(), acc, 500)
+	assert.Nil(t, err)
+
+	assert.False(t, eng.HasBalance(party))
 }
 
 func testCreateBondAccountFailureNoGeneral(t *testing.T) {
