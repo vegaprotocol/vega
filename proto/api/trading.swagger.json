@@ -3649,6 +3649,11 @@
           "format": "uint64",
           "description": "Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly\n // formatted price of `1.23456` assuming market configured to 5 decimal places."
         },
+        "staticMidPrice": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Arithmetic average of the best static bid price and best static offer price"
+        },
         "market": {
           "type": "string",
           "description": "Market identifier for the data."

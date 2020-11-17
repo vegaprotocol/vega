@@ -1008,29 +1008,31 @@ message MarketData {
   // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
   //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 midPrice = 10;
+  // Arithmetic average of the best static bid price and best static offer price
+  uint64 staticMidPrice = 11;
   // Market identifier for the data.
-  string market = 11;
+  string market = 12;
   // Timestamp at which this mark price was relevant, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-  int64 timestamp = 12;
+  int64 timestamp = 13;
   // The sum of the size of all positions greater than 0 on the market.
-  uint64 openInterest = 13;
+  uint64 openInterest = 14;
   // Time in seconds until the end of the auction (0 if currently not in auction period).
-  int64 auctionEnd = 14;
+  int64 auctionEnd = 15;
   // Time until next auction (used in FBA's) - currently always 0.
-  int64 auctionStart = 15;
+  int64 auctionStart = 16;
   // indicative price (zero if not in auction)
-  uint64 indicativePrice = 16;
+  uint64 indicativePrice = 17;
   // indicative volume (zero if not in auction)
-  uint64 indicativeVolume = 17;
+  uint64 indicativeVolume = 18;
   // the current state of the market
-  MarketState marketState = 18;
+  MarketState marketState = 19;
   // if the market is in auction state, this field indicates what triggered the auction
-  AuctionTrigger trigger = 19;
+  AuctionTrigger trigger = 20;
   // the targeted stake for the given market
-  string targetStake = 20;
+  string targetStake = 21;
   // the available stake fo the given market
-  string suppliedStake = 21;
+  string suppliedStake = 22;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.

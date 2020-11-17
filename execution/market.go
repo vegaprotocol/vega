@@ -327,6 +327,11 @@ func (m *Market) GetMarketData() types.MarketData {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
 
+	var staticMidPrice uint64
+	if bestStaticBidPrice > 0 && bestStaticOfferPrice > 0 {
+		staticMidPrice = (bestStaticBidPrice + bestStaticOfferPrice) / 2
+	}
+
 	return types.MarketData{
 		Market:                m.GetID(),
 		BestBidPrice:          bestBidPrice,
@@ -338,6 +343,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		BestStaticOfferPrice:  bestStaticOfferPrice,
 		BestStaticOfferVolume: bestStaticOfferVolume,
 		MidPrice:              midPrice,
+		StaticMidPrice:		   staticMidPrice,
 		MarkPrice:             m.markPrice,
 		Timestamp:             m.currentTime.UnixNano(),
 		OpenInterest:          m.position.GetOpenInterest(),
