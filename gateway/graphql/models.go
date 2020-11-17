@@ -418,7 +418,7 @@ type OrderEstimate struct {
 }
 
 // Create an order linked to an index rather than a price
-type PeggedOrder struct {
+type PeggedOrderInput struct {
 	// Index to link this order to
 	Reference PeggedReference `json:"reference"`
 	// Price offset from the peg

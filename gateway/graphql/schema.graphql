@@ -33,7 +33,7 @@ type Mutation {
     "client reference for the order"
     reference: String
     "pegged order details"
-    peggedOrder: PeggedOrder
+    peggedOrder: PeggedOrderInput
   ): PreparedSubmitOrder!
 
   """
@@ -147,7 +147,15 @@ type Mutation {
 }
 
 "Create an order linked to an index rather than a price"
-input PeggedOrder {
+input PeggedOrderInput {
+  "Index to link this order to"
+  reference: PeggedReference!
+  "Price offset from the peg"
+  offset: String!
+}
+
+"Create an order linked to an index rather than a price"
+type PeggedOrder {
   "Index to link this order to"
   reference: PeggedReference!
   "Price offset from the peg"
@@ -1214,6 +1222,9 @@ type Order {
 
   "UpdatedAt is the last time the order was altered"
   updatedAt: String!
+
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
 }
 
 "An estimate of the fee to be paid by the order"

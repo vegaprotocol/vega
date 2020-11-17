@@ -59,6 +59,7 @@ type ResolverRoot interface {
 	NodeSignature() NodeSignatureResolver
 	Order() OrderResolver
 	Party() PartyResolver
+	PeggedOrder() PeggedOrderResolver
 	Position() PositionResolver
 	PriceLevel() PriceLevelResolver
 	Proposal() ProposalResolver
@@ -356,7 +357,7 @@ type ComplexityRoot struct {
 		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) int
 		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
 		PrepareOrderCancel        func(childComplexity int, id *string, partyID string, marketID *string) int
-		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) int
+		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote               func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
 		PrepareWithdrawal         func(childComplexity int, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
@@ -392,6 +393,7 @@ type ComplexityRoot struct {
 		Id              func(childComplexity int) int
 		Market          func(childComplexity int) int
 		Party           func(childComplexity int) int
+		PeggedOrder     func(childComplexity int) int
 		Price           func(childComplexity int) int
 		Reference       func(childComplexity int) int
 		RejectionReason func(childComplexity int) int
@@ -424,6 +426,11 @@ type ComplexityRoot struct {
 		Trades              func(childComplexity int, marketID *string, skip *int, first *int, last *int) int
 		Votes               func(childComplexity int) int
 		Withdrawals         func(childComplexity int) int
+	}
+
+	PeggedOrder struct {
+		Offset    func(childComplexity int) int
+		Reference func(childComplexity int) int
 	}
 
 	Position struct {
@@ -826,7 +833,7 @@ type MarketDepthUpdateResolver interface {
 	SequenceNumber(ctx context.Context, obj *proto.MarketDepthUpdate) (string, error)
 }
 type MutationResolver interface {
-	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrder) (*PreparedSubmitOrder, error)
+	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id *string, partyID string, marketID *string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
@@ -878,6 +885,10 @@ type PartyResolver interface {
 	Withdrawals(ctx context.Context, obj *proto.Party) ([]*Withdrawal, error)
 	Deposits(ctx context.Context, obj *proto.Party) ([]*proto.Deposit, error)
 	LiquidityProvisions(ctx context.Context, obj *proto.Party, market *string) ([]*proto.LiquidityProvision, error)
+}
+type PeggedOrderResolver interface {
+	Reference(ctx context.Context, obj *proto.PeggedOrder) (PeggedReference, error)
+	Offset(ctx context.Context, obj *proto.PeggedOrder) (string, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *proto.Position) (*proto.Market, error)
@@ -2246,7 +2257,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrder)), true
+		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput)), true
 
 	case "Mutation.prepareProposal":
 		if e.complexity.Mutation.PrepareProposal == nil {
@@ -2407,6 +2418,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Party(childComplexity), true
+
+	case "Order.peggedOrder":
+		if e.complexity.Order.PeggedOrder == nil {
+			break
+		}
+
+		return e.complexity.Order.PeggedOrder(childComplexity), true
 
 	case "Order.price":
 		if e.complexity.Order.Price == nil {
@@ -2619,6 +2637,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Party.Withdrawals(childComplexity), true
+
+	case "PeggedOrder.offset":
+		if e.complexity.PeggedOrder.Offset == nil {
+			break
+		}
+
+		return e.complexity.PeggedOrder.Offset(childComplexity), true
+
+	case "PeggedOrder.reference":
+		if e.complexity.PeggedOrder.Reference == nil {
+			break
+		}
+
+		return e.complexity.PeggedOrder.Reference(childComplexity), true
 
 	case "Position.averageEntryPrice":
 		if e.complexity.Position.AverageEntryPrice == nil {
@@ -4088,7 +4120,7 @@ type Mutation {
     "client reference for the order"
     reference: String
     "pegged order details"
-    peggedOrder: PeggedOrder
+    peggedOrder: PeggedOrderInput
   ): PreparedSubmitOrder!
 
   """
@@ -4202,7 +4234,15 @@ type Mutation {
 }
 
 "Create an order linked to an index rather than a price"
-input PeggedOrder {
+input PeggedOrderInput {
+  "Index to link this order to"
+  reference: PeggedReference!
+  "Price offset from the peg"
+  offset: String!
+}
+
+"Create an order linked to an index rather than a price"
+type PeggedOrder {
   "Index to link this order to"
   reference: PeggedReference!
   "Price offset from the peg"
@@ -5269,6 +5309,9 @@ type Order {
 
   "UpdatedAt is the last time the order was altered"
   updatedAt: String!
+
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
 }
 
 "An estimate of the fee to be paid by the order"
@@ -6793,9 +6836,9 @@ func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.C
 		}
 	}
 	args["reference"] = arg8
-	var arg9 *PeggedOrder
+	var arg9 *PeggedOrderInput
 	if tmp, ok := rawArgs["peggedOrder"]; ok {
-		arg9, err = ec.unmarshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrder(ctx, tmp)
+		arg9, err = ec.unmarshalOPeggedOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -13358,7 +13401,7 @@ func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrder))
+		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14593,6 +14636,37 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Order_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PeggedOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*proto.PeggedOrder)
+	fc.Result = res
+	return ec.marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPeggedOrder(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OrderEstimate_fee(ctx context.Context, field graphql.CollectedField, obj *OrderEstimate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -15079,6 +15153,74 @@ func (ec *executionContext) _Party_liquidityProvisions(ctx context.Context, fiel
 	res := resTmp.([]*proto.LiquidityProvision)
 	fc.Result = res
 	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvisionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PeggedOrder_reference(ctx context.Context, field graphql.CollectedField, obj *proto.PeggedOrder) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PeggedOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PeggedOrder().Reference(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(PeggedReference)
+	fc.Result = res
+	return ec.marshalNPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PeggedOrder_offset(ctx context.Context, field graphql.CollectedField, obj *proto.PeggedOrder) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PeggedOrder",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PeggedOrder().Offset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Position_market(ctx context.Context, field graphql.CollectedField, obj *proto.Position) (ret graphql.Marshaler) {
@@ -22623,8 +22765,8 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPeggedOrder(ctx context.Context, obj interface{}) (PeggedOrder, error) {
-	var it PeggedOrder
+func (ec *executionContext) unmarshalInputPeggedOrderInput(ctx context.Context, obj interface{}) (PeggedOrderInput, error) {
+	var it PeggedOrderInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -25943,6 +26085,8 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
+		case "peggedOrder":
+			out.Values[i] = ec._Order_peggedOrder(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26115,6 +26259,56 @@ func (ec *executionContext) _Party(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Party_liquidityProvisions(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var peggedOrderImplementors = []string{"PeggedOrder"}
+
+func (ec *executionContext) _PeggedOrder(ctx context.Context, sel ast.SelectionSet, obj *proto.PeggedOrder) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, peggedOrderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PeggedOrder")
+		case "reference":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PeggedOrder_reference(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "offset":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PeggedOrder_offset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		default:
@@ -31058,15 +31252,26 @@ func (ec *executionContext) marshalOParty2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 	return ec._Party(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPeggedOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrder(ctx context.Context, v interface{}) (PeggedOrder, error) {
-	return ec.unmarshalInputPeggedOrder(ctx, v)
+func (ec *executionContext) marshalOPeggedOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPeggedOrder(ctx context.Context, sel ast.SelectionSet, v proto.PeggedOrder) graphql.Marshaler {
+	return ec._PeggedOrder(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrder(ctx context.Context, v interface{}) (*PeggedOrder, error) {
+func (ec *executionContext) marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPeggedOrder(ctx context.Context, sel ast.SelectionSet, v *proto.PeggedOrder) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PeggedOrder(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPeggedOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx context.Context, v interface{}) (PeggedOrderInput, error) {
+	return ec.unmarshalInputPeggedOrderInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOPeggedOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx context.Context, v interface{}) (*PeggedOrderInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOPeggedOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrder(ctx, v)
+	res, err := ec.unmarshalOPeggedOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx, v)
 	return &res, err
 }
 
