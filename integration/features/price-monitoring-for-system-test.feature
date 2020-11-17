@@ -28,14 +28,21 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:00:01Z" 
 
     # 1st trigger breached with non-persistent order -> auction with initial duration of 6s starts
-    Then traders place following orders:
-      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   99844  |                0 | TYPE_LIMIT  | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   99844  |                0 | TYPE_LIMIT  | TIF_FOK |
+    Then traders place following orders with references:
+      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     | reference      |
+      | trader1 | ETH/DEC20 | sell |      1 |    99844  |                0 | TYPE_LIMIT  | TIF_GTC | trader1_sell_1 |
+ 
+  Then traders place following orders:
+      | trader  | id        | type | volume |    price | resulting trades | type       | tif     |
+      | trader2 | ETH/DEC20 | buy  |      1 |    99844 |                0 | TYPE_LIMIT | TIF_FOK |
 
     And the mark price for the market "ETH/DEC20" is "100000"
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    Then traders cancels the following orders reference:
+      | trader   |       reference |
+      | trader1  |  trader1_sell_1 |
 
     # T + 4s
     Then the time is updated to "2020-10-16T00:00:05Z" 
@@ -61,21 +68,51 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
     # 100291 is the new reference price, we get the following valid price ranges for the 2 triggers: [100135, 100447] & [100001, 100582]
-
-  Then dump orders
-
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100391  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100391  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC20 | sell |      1 |   100447  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100447  |                1 | TYPE_LIMIT | TIF_GTC |
 
-    Then the time is updated to "2020-10-16T00:00:20Z" 
-
-    Then dump orders
-
-    And the mark price for the market "ETH/DEC20" is "100291"
+    And the mark price for the market "ETH/DEC20" is "100447"
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
-    # T + 5s (bounds should get updated)
-    #Then the time is updated to "2020-10-16T00:00:16Z" 
+    # Now we should be after update and the bounds should change 
+    Then the time is updated to "2020-10-16T00:00:21Z" 
+
+    Then traders place following orders:
+      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      1 |   100448  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100448  |                1 | TYPE_LIMIT | TIF_GTC |
+
+    And the mark price for the market "ETH/DEC20" is "100448"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+ 
+    # Now, we get the following valid price ranges for the 2 triggers: [100213, 100525] & [100079, 100660]
+  
+    Then traders place following orders:
+      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell |      2 |   100213  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC20 | sell |      1 |   100050  |                0 | TYPE_LIMIT | TIF_GTC |
+
+    And the mark price for the market "ETH/DEC20" is "100448"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+
+
+    # T + 2s 
+    Then the time is updated to "2020-10-16T00:00:23Z" 
+
+    Then traders place following orders:
+      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
+      | trader2 | ETH/DEC20 | buy  |      3 |   100213  |                2 | TYPE_MARKET | TIF_FOK |
+
+
+
+
+  Then dump trades
+
+    And the mark price for the market "ETH/DEC20" is "100213"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
