@@ -1166,6 +1166,10 @@ func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) 
 	return strconv.FormatUint(m.MidPrice, 10), nil
 }
 
+func (r *myMarketDataResolver) StaticMidPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.StaticMidPrice, 10), nil
+}
+
 func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MarkPrice, 10), nil
 }
