@@ -83,7 +83,7 @@ func testEventEmitterNotAllowlisted(t *testing.T) {
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(11, 0))
-	err := evtfwd.Forward(context.Background, evt, "not allowlisted")
+	err := evtfwd.Forward(context.Background(), evt, "not allowlisted")
 	assert.EqualError(t, err, evtforward.ErrPubKeyNotAllowlisted.Error())
 }
 
