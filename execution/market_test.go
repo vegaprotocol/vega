@@ -998,3 +998,153 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction (trigger can only start auction, but can't stop it from concluding at a higher price)
 }
+
+func TestTriggerByMarketOrder(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	var auctionExtensionSeconds int64 = 45
+	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{
+				{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+			},
+		},
+		UpdateFrequency: 600,
+	}
+	var initialPrice uint64 = 100
+	var auctionTriggeringPriceHigh uint64 = initialPrice + MAXMOVEUP + 1
+	tm := getTestMarket(t, now, closingAt, pMonitorSettings)
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       initialPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_FOK,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       initialPrice,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	require.Equal(t, 1, len(confirmationBuy.Trades))
+
+	auctionEnd := tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
+	orderSell2 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid3",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        3,
+		Price:       auctionTriggeringPriceHigh - 1,
+		Remaining:   3,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-2",
+	}
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell2)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	require.Equal(t, 0, len(confirmationSell.Trades))
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
+	orderSell3 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid4",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       auctionTriggeringPriceHigh,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-3",
+	}
+	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell3)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	require.Equal(t, 0, len(confirmationSell.Trades))
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
+	orderBuy2 := &types.Order{
+		Type:      types.Order_TYPE_MARKET,
+		Status:    types.Order_STATUS_ACTIVE,
+		Id:        "someid5",
+		Side:      types.Side_SIDE_BUY,
+		PartyID:   party1,
+		MarketID:  tm.market.GetID(),
+		Size:      4,
+		Remaining: 4,
+		CreatedAt: now.UnixNano(),
+		Reference: "party1-buy-order-2",
+	}
+	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy2)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	require.Equal(t, 0, len(confirmationSell.Trades))
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+
+	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
+	assert.False(t, closed)
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // Still in auction
+
+	closed = tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime.Add(time.Nanosecond))
+	assert.False(t, closed)
+
+	md := tm.market.GetMarketData()
+	auctionEnd = md.AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) //Not in auction
+
+	require.Equal(t, initialPrice, md.MarkPrice)
+}
