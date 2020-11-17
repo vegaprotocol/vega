@@ -1,7 +1,8 @@
 package abci
 
 import (
-	"fmt"
+	"net"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
@@ -53,7 +54,7 @@ func (s *Server) ReloadConf(cfg blockchain.Config) {
 // Start configures and runs a new socket based ABCI tendermint blockchain
 // server for the VEGA application.
 func (s *Server) Start() error {
-	addr := fmt.Sprintf("%s:%d", s.Tendermint.ServerAddr, s.Tendermint.ServerPort)
+	addr := net.JoinHostPort(s.Tendermint.ServerAddr, strconv.Itoa(s.Tendermint.ServerPort))
 	srv, err := server.NewServer(addr, "socket", s.abci)
 	if err != nil {
 		return err

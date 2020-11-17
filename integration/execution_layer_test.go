@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
@@ -173,13 +172,9 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
 
-	err := execsetup.collateral.Deposit(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return execsetup.collateral.Deposit(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
@@ -197,22 +192,21 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 }
 
 func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
+	amount, err := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
-
-	err := execsetup.collateral.LockFundsForWithdraw(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-	err = execsetup.collateral.Withdraw(
-		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if err := execsetup.collateral.LockFundsForWithdraw(
+		context.Background(), trader, asset, amount,
+	); err != nil {
+		return err
+	}
 
+	return execsetup.collateral.Withdraw(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
@@ -466,7 +460,8 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 		data = append(data, e.Account())
 	}
 	for _, v := range data {
-		if v.Asset != collateral.TokenAsset {
+		// remove vote token
+		if v.Asset != "VOTE" {
 			cumul += uint64(v.Balance)
 		}
 	}
@@ -945,14 +940,16 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 			len(durations))
 	}
 
-	params := make([]*proto.PriceMonitoringParameters, 0, n)
+	triggs := make([]*proto.PriceMonitoringTrigger, 0, n)
 	for i := 0; i < n; i++ {
-		p := &proto.PriceMonitoringParameters{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
-		params = append(params, p)
+		p := &proto.PriceMonitoringTrigger{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
+		triggs = append(triggs, p)
 	}
 	pMonitorSettings := &proto.PriceMonitoringSettings{
-		PriceMonitoringParameters: params,
-		UpdateFrequency:           i64val(row, 20),
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: triggs,
+		},
+		UpdateFrequency: i64val(row, 20),
 	}
 
 	mkt := proto.Market{

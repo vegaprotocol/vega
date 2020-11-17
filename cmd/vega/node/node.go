@@ -36,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
+	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
@@ -160,6 +161,8 @@ type NodeCommand struct {
 	withdrawalPlugin *plugins.Withdrawal
 	depositPlugin    *plugins.Deposit
 
+	app *processor.App
+
 	Version     string
 	VersionHash string
 }
@@ -194,6 +197,11 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWallet
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
+	defer func() {
+		if err := l.nodeWallet.Cleanup(); err != nil {
+			l.Log.Error("error cleaning up nodewallet", logging.Error(err))
+		}
+	}()
 
 	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
 	statusChecker.OnChainDisconnect(l.cancel)

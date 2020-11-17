@@ -406,15 +406,26 @@ func AuctionDurationFromProto(pad *types.AuctionDuration) (*AuctionDuration, err
 	}, nil
 }
 
+func PriceMonitoringTriggerFromProto(ppmt *types.PriceMonitoringTrigger) *PriceMonitoringTrigger {
+	return &PriceMonitoringTrigger{
+		HorizonSecs:          int(ppmt.Horizon),
+		Probability:          ppmt.Probability,
+		AuctionExtensionSecs: int(ppmt.AuctionExtension),
+	}
+}
+
 func PriceMonitoringParametersFromProto(ppmp *types.PriceMonitoringParameters) (*PriceMonitoringParameters, error) {
 	if ppmp == nil {
 		return nil, ErrNilPriceMonitoringParameters
 	}
 
+	triggers := make([]*PriceMonitoringTrigger, 0, len(ppmp.Triggers))
+	for _, v := range ppmp.Triggers {
+		triggers = append(triggers, PriceMonitoringTriggerFromProto(v))
+	}
+
 	return &PriceMonitoringParameters{
-		HorizonSecs:          int(ppmp.Horizon),
-		Probability:          ppmp.Probability,
-		AuctionExtensionSecs: int(ppmp.AuctionExtension),
+		Triggers: triggers,
 	}, nil
 }
 
@@ -424,15 +435,10 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 		return &PriceMonitoringSettings{}, nil
 	}
 
-	params := []*PriceMonitoringParameters{}
-	for _, v := range ppmst.PriceMonitoringParameters {
-		p, err := PriceMonitoringParametersFromProto(v)
-		if err != nil {
-			return nil, err
-		}
-		params = append(params, p)
+	params, err := PriceMonitoringParametersFromProto(ppmst.Parameters)
+	if err != nil {
+		return nil, err
 	}
-
 	return &PriceMonitoringSettings{
 		Parameters:          params,
 		UpdateFrequencySecs: int(ppmst.UpdateFrequency),
@@ -663,37 +669,40 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 	return assetSource, nil
 }
 
-func (p *PriceMonitoringParametersInput) IntoProto() (*types.PriceMonitoringParameters, error) {
-	return &types.PriceMonitoringParameters{
+func (p *PriceMonitoringTriggerInput) IntoProto() *types.PriceMonitoringTrigger {
+	return &types.PriceMonitoringTrigger{
 		Horizon:          int64(p.HorizonSecs),
 		Probability:      p.Probability,
 		AuctionExtension: int64(p.AuctionExtensionSecs),
+	}
+}
+
+func (p *PriceMonitoringParametersInput) IntoProto() (*types.PriceMonitoringParameters, error) {
+	triggers := make([]*types.PriceMonitoringTrigger, 0, len(p.Triggers))
+
+	for _, v := range p.Triggers {
+		triggers = append(triggers, v.IntoProto())
+	}
+
+	return &types.PriceMonitoringParameters{
+		Triggers: triggers,
 	}, nil
 }
 
 func (p *PriceMonitoringSettingsInput) IntoProto() (*types.PriceMonitoringSettings, error) {
-	if len(p.Parameters) <= 0 {
-		return &types.PriceMonitoringSettings{}, nil
-	}
-
-	params := []*types.PriceMonitoringParameters{}
-	for _, v := range p.Parameters {
-		if v != nil {
-			param, err := v.IntoProto()
-			if err != nil {
-				return nil, err
-			}
-			params = append(params, param)
-		}
-	}
 	var freq int
 	if p.UpdateFrequencySecs != nil {
 		freq = *p.UpdateFrequencySecs
 	}
 
+	params, err := p.Parameters.IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
 	return &types.PriceMonitoringSettings{
-		PriceMonitoringParameters: params,
-		UpdateFrequency:           int64(freq),
+		Parameters:      params,
+		UpdateFrequency: int64(freq),
 	}, nil
 }
 
@@ -722,13 +731,15 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.OpeningAuctionDurationSecs != nil {
 		result.OpeningAuctionDuration = int64(*n.OpeningAuctionDurationSecs)
 	}
-	if n.PriceMonitoringSettings != nil {
-		result.PriceMonitoringSettings, err = n.PriceMonitoringSettings.IntoProto()
+	if n.PriceMonitoringParameters != nil {
+		params, err := n.PriceMonitoringParameters.IntoProto()
 		if err != nil {
 			return nil, err
 		}
+
+		result.PriceMonitoringParameters = params
 	} else {
-		result.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+		result.PriceMonitoringParameters = &types.PriceMonitoringParameters{}
 	}
 
 	return result, nil

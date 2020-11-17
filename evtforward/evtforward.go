@@ -10,12 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -129,7 +129,7 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
-	key := string(hashKey([]byte(evt.String())))
+	key := string(crypto.Hash([]byte(evt.String())))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
 		// this was already acknowledged, nothing to be done, return false
@@ -163,7 +163,7 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *types.ChainEvent, pubke
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	key := string(hashKey([]byte(evt.String())))
+	key := string(crypto.Hash([]byte(evt.String())))
 	_, ok, _ := e.getEvt(key)
 	if ok {
 		return ErrEvtAlreadyExist
@@ -250,12 +250,6 @@ func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 			}
 		}
 	}
-}
-
-func hashKey(key []byte) []byte {
-	hasher := sha3.New256()
-	hasher.Write([]byte(key))
-	return hasher.Sum(nil)
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {

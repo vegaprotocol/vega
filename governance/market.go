@@ -147,11 +147,12 @@ func createMarket(
 	searchLevel, _ := netp.GetFloat(netparams.MarketMarginScalingFactorSearchLevel)
 	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
 	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
-
-	// TODO(): as of now the priceMonitoringSettings can be null
-	// we protect against this in here.
-	if definition.PriceMonitoringSettings == nil {
-		definition.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+	// get price monitoring parameters
+	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
+	if definition.PriceMonitoringParameters == nil {
+		pmParams := &types.PriceMonitoringParameters{}
+		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
+		definition.PriceMonitoringParameters = pmParams
 	}
 
 	// if the openingAuctionDuration == 0 we need to default
@@ -184,7 +185,10 @@ func createMarket(
 				},
 			},
 		},
-		PriceMonitoringSettings: definition.PriceMonitoringSettings,
+		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+			Parameters:      definition.PriceMonitoringParameters,
+			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
+		},
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err

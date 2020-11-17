@@ -92,8 +92,9 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 	ch, ok := b.eChans[t]
 	if !ok {
 		subs := b.getSubsByType(t)
-		ch = make(chan []events.Event, len(subs)*10+20) // create a channel with buffer
-		b.eChans[t] = ch                                // assign the newly created channel
+		ln := len(subs) + 1                      // at least buffer 1
+		ch = make(chan []events.Event, ln*20+20) // create a channel with buffer, min 40
+		b.eChans[t] = ch                         // assign the newly created channel
 	}
 	b.mu.Unlock()
 	ch <- evts
@@ -160,20 +161,21 @@ func (b *Broker) Send(event events.Event) {
 	b.startSending(event.Type(), b.seqGen.setSequence(event))
 }
 
+// simplified version for better performance - unfortunately, we'll still need to copy the map
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
-	ret := map[int]*subscription{}
-	keys := []events.Type{
-		t,
-		events.All,
+	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
+	subs, ok := b.tSubs[t]
+	if !ok && t != events.TxErrEvent {
+		// if a typed map isn't set (yet), and it's not the error event, we can return
+		// ALL subscribers directly instead
+		subs = b.tSubs[events.All]
 	}
-	for _, key := range keys {
-		if subs, ok := b.tSubs[key]; ok {
-			for k, s := range subs {
-				ret[k] = s
-			}
-		}
+	// we still need to create a copy to keep the race detector happy
+	cpy := make(map[int]*subscription, len(subs))
+	for k, v := range subs {
+		cpy[k] = v
 	}
-	return ret
+	return cpy
 }
 
 // Subscribe registers a new subscriber, returning the key
@@ -201,10 +203,20 @@ func (b *Broker) subscribe(s Subscriber) int {
 	}
 	b.subs[k] = sub
 	types := sub.Types()
+	// filter out weird types values like []events.Type{events.PartyEvent, events.All,}
+	// those subscribers subscribe to all events no matter what, so treat them accordingly
 	isAll := false
 	if len(types) == 0 {
 		isAll = true
 		types = []events.Type{events.All}
+	} else {
+		for _, t := range types {
+			if t == events.All {
+				types = []events.Type{events.All}
+				isAll = true
+				break
+			}
+		}
 	}
 	for _, t := range types {
 		if _, ok := b.tSubs[t]; !ok {
@@ -220,7 +232,9 @@ func (b *Broker) subscribe(s Subscriber) int {
 	}
 	if isAll {
 		for t := range b.tSubs {
-			if t != events.All {
+			// Don't add ALL subs to the map they're already in, and don't add it to the
+			// special TxErrEvent map, but we should add them to all other maps
+			if t != events.All && t != events.TxErrEvent {
 				b.tSubs[t][k] = &sub
 			}
 		}
@@ -255,10 +269,13 @@ func (b *Broker) rmSubs(keys ...int) {
 			return
 		}
 		types := s.Types()
-		if len(types) == 0 {
-			types = []events.Type{events.All}
+		for _, t := range types {
+			if t == events.All {
+				types = nil
+				break
+			}
 		}
-		if len(types) == 0 || len(types) == 1 && types[0] == events.All {
+		if len(types) == 0 {
 			// remove in all subscribers then
 			for _, v := range b.tSubs {
 				delete(v, k)

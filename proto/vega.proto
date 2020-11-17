@@ -4,6 +4,7 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "google/protobuf/wrappers.proto";
 
 // A side relates to the direction of an order, to Buy, or Sell.
 enum Side {
@@ -373,8 +374,10 @@ enum OrderError {
   // a general account to submit the order (no deposits made
   // for the required asset).
   ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE = 43;
+  // Cannot amend a non pegged orders details
+  ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER = 44;
   // We are unable to reprice a pegged order because a market price is unavailable
-  ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 44;
+  ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 45;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -743,6 +746,11 @@ message OrderAmendment {
   // Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
   // See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`.
   Order.TimeInForce timeInForce = 7;
+  // Amend the pegged order offset for the order
+  google.protobuf.Int64Value peggedOffset = 8;
+  // Amend the pegged order reference for the order
+  // See [`PeggedReference`](#api.PeggedReference).
+  PeggedReference peggedReference = 9;
 }
 
 // An order submission is a request to submit or create a new order on Vega.

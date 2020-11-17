@@ -8,6 +8,7 @@ import (
 	math "math"
 
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/golang/protobuf/ptypes/wrappers"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
@@ -200,6 +201,11 @@ func (this *OrderAmendment) Validate() error {
 	if this.ExpiresAt != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.ExpiresAt); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("ExpiresAt", err)
+		}
+	}
+	if this.PeggedOffset != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PeggedOffset); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PeggedOffset", err)
 		}
 	}
 	return nil

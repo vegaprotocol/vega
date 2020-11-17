@@ -66,6 +66,10 @@ type Mutation {
     expiration: String
     "Time in force"
     timeInForce: OrderTimeInForce!
+    "The reference point for pegged orders"
+    peggedReference: PeggedReference
+    "The offset from the reference price for pegged orders"
+    peggedOffset: String
   ): PreparedAmendOrder!
 
   """
@@ -857,10 +861,19 @@ type AuctionDuration {
   volume: Int!
 }
 
+
+"""
+PriceMonitoringParameters holds a list of triggers
+"""
+type PriceMonitoringParameters {
+  "The list of triggers for this price monitoring"
+  triggers: [PriceMonitoringTrigger!]
+}
+
 """
 PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
 """
-type PriceMonitoringParameters {
+type PriceMonitoringTrigger {
   "Price monitoring projection horizon τ in seconds (> 0)."
   horizonSecs: Int!
   "Price monitoring probability level p. (>0 and < 1)"
@@ -873,10 +886,11 @@ type PriceMonitoringParameters {
   auctionExtensionSecs: Int!
 }
 
+
 "Configuration of a market price monitorings auctions triggers"
 type PriceMonitoringSettings {
   "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
-  parameters: [PriceMonitoringParameters!]
+  parameters: PriceMonitoringParameters
   "How often (in seconds) the price monitoring bounds should be updated"
   updateFrequencySecs: Int!
 }
@@ -1132,6 +1146,9 @@ type Position {
 
   "Market relating to this position"
   market: Market!
+
+  "The party holding this position"
+  party: Party!
 
   "Open volume (uint64)"
   openVolume: String!
@@ -1640,10 +1657,13 @@ enum OrderRejectionReason {
 
   "Pegged order offset must be > zero"
 	PeggedOrderOffsetMustBeGreaterThanZero
-  
+
   "Insufficient balance to submit the order (no deposit made)"
   InsufficientAssetBalance
 
+  "Cannot change pegged order fields on a non pegged order"
+  CannotAmendPeggedOrderDetailsOnNonPeggedOrder
+  
   "Unable to reprice a pegged order"
   UnableToRepricePeggedOrder
 }
@@ -1811,9 +1831,17 @@ input DiscreteTradingInput {
 }
 
 """
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringParameters holds a list of triggers
 """
 input PriceMonitoringParametersInput {
+  "The list of triggers for this price monitoring"
+  triggers: [PriceMonitoringTriggerInput!]
+}
+
+"""
+PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+"""
+input PriceMonitoringTriggerInput {
   "Price monitoring projection horizon τ in seconds (> 0)."
   horizonSecs: Int!
   "Price monitoring probability level p. (>0 and < 1)"
@@ -1829,7 +1857,7 @@ input PriceMonitoringParametersInput {
 "Configuration of a market price monitorings auctions triggers"
 input PriceMonitoringSettingsInput {
   "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
-  parameters: [PriceMonitoringParametersInput!]
+  parameters: PriceMonitoringParametersInput
   "How often (in seconds) the price monitoring bounds should be updated"
   updateFrequencySecs: Int
 }
@@ -1849,7 +1877,7 @@ input NewMarketInput {
   "The proposed duration for the opening auction for this market in seconds"
   openingAuctionDurationSecs: Int
   "Price monitoring configuration"
-  priceMonitoringSettings: PriceMonitoringSettingsInput
+  priceMonitoringParameters: PriceMonitoringParametersInput
 
   "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
   continuousTrading: ContinuousTradingInput

@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -29,7 +30,7 @@ var (
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
-	ErrInvalidVotesSubscription = errors.New("invlid subscription, either proposal or party ID required")
+	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
 	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
@@ -1564,6 +1565,10 @@ func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.P
 	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
 }
 
+func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
+	return getParty(ctx, r.log, r.tradingDataClient, obj.PartyID)
+}
+
 func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) ([]*types.MarginLevels, error) {
 	if obj == nil {
 		return nil, errors.New("invalid position")
@@ -1833,7 +1838,8 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string, expiration *string, tif OrderTimeInForce) (*PreparedAmendOrder, error) {
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
+	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
 	order := &types.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
@@ -1849,23 +1855,26 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	var err error
 	pricevalue, err := strconv.ParseUint(price, 10, 64)
 	if err != nil {
-		r.log.Error("unable to convert price from string in order amend",
-			logging.Error(err))
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to convert price from string in order amend", logging.Error(err))
+		}
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
 	order.Price = &proto.Price{Value: pricevalue}
 
 	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
-		r.log.Error("unable to convert size from string in order amend",
-			logging.Error(err))
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to convert size from string in order amend", logging.Error(err))
+		}
 		return nil, errors.New("invalid size, could not convert to unsigned int")
 	}
 
 	order.TimeInForce, err = convertOrderTimeInForceToProto(tif)
 	if err != nil {
-		r.log.Error("unable to parse time in force in order amend",
-			logging.Error(err))
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to parse time in force in order amend", logging.Error(err))
+		}
 		return nil, errors.New("invalid time in force, could not convert to vega time in force")
 	}
 
@@ -1878,12 +1887,24 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		order.ExpiresAt = &proto.Timestamp{Value: expiresAt.UnixNano()}
 	}
 
-	/*	if po != nil {
-		reference := convertPeggedReferenceToProto(po.Reference)
-		offset := strconv.ParseInt(po.Offset, 10, 64)
-		order.PeggedOrder = &types.PeggedOrder{Reference: reference,
-			Offset: offset}
-	}*/
+	if peggedOffset != nil {
+		po, err := strconv.ParseInt(*peggedOffset, 10, 64)
+		if err != nil {
+			if r.log.GetLevel() == logging.DebugLevel {
+				r.log.Debug("unable to parse pegged offset in order amend", logging.Error(err))
+			}
+			return nil, errors.New("invalid pegged offset, could not convert to proto pegged offset")
+		}
+		order.PeggedOffset = &wrapperspb.Int64Value{Value: po}
+	}
+
+	order.PeggedReference, err = convertPeggedReferenceToProto(*peggedReference)
+	if err != nil {
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to parse pegged reference in order amend", logging.Error(err))
+		}
+		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
+	}
 
 	req := protoapi.AmendOrderRequest{
 		Amendment: order,

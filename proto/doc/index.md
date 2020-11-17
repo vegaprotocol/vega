@@ -168,6 +168,7 @@
     - [TimeUpdate](#vega.TimeUpdate)
     - [TradeSettlement](#vega.TradeSettlement)
     - [TransferResponses](#vega.TransferResponses)
+    - [TxErrorEvent](#vega.TxErrorEvent)
 
     - [BusEventType](#vega.BusEventType)
 
@@ -206,6 +207,7 @@
     - [Market](#vega.Market)
     - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
     - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
+    - [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -2784,6 +2786,7 @@ A bus event is a container for event bus events emitted by Vega
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
 | liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
+| txErrEvent | [TxErrorEvent](#vega.TxErrorEvent) |  | Transaction error events - separate category, not included in ALL events |
 
 
 
@@ -2942,6 +2945,27 @@ A transfer responses event contains a collection of transfer information
 
 
 
+<a name="vega.TxErrorEvent"></a>
+
+### TxErrorEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| PartyID | [string](#string) |  | the party who had a tx fail |
+| errMsg | [string](#string) |  | error message describing what went wrong |
+| orderSubmission | [OrderSubmission](#vega.OrderSubmission) |  |  |
+| orderAmendment | [OrderAmendment](#vega.OrderAmendment) |  |  |
+| orderCancellation | [OrderCancellation](#vega.OrderCancellation) |  |  |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| vote | [Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
 
 
 <a name="vega.BusEventType"></a>
@@ -2981,6 +3005,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
 | BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
+| BUS_EVENT_TYPE_TX_ERROR | 201 | Event used to report failed transactions back to a user - excluded from the ALL type |
 
 
 
@@ -3125,7 +3150,7 @@ Configuration for a new market on Vega.
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags. |
 | openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
-| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | price monitoring configuration |
+| PriceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) |  | price monitoring configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous trading. |
@@ -3537,14 +3562,12 @@ Market definition.
 <a name="vega.PriceMonitoringParameters"></a>
 
 ### PriceMonitoringParameters
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringParameters contain a collection of triggers to be used for a given market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
-| probability | [double](#double) |  | Price monitoirng probability level p. |
-| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
+| triggers | [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger) | repeated |  |
 
 
 
@@ -3559,8 +3582,25 @@ PriceMonitoringParameters holds together price projection horizon τ, probabilit
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| parameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) |  | Specifies PriceMonitoringParameters to be used for price monitoring purposes |
 | updateFrequency | [int64](#int64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringTrigger"></a>
+
+### PriceMonitoringTrigger
+PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
+| probability | [double](#double) |  | Price monitoirng probability level p. |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
 
 
 
@@ -3596,6 +3636,7 @@ Risk model parameters for simple modelling.
 | factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
 | maxMoveUp | [double](#double) |  | Pre-defined maximum price move up that the model considers as valid. |
 | minMoveDown | [double](#double) |  | Pre-defined minimum price move down that the model considers as valid. |
+| probabilityOfTrading | [double](#double) |  | Pre-defined constant probability of trading |
 
 
 
@@ -4486,6 +4527,8 @@ The `orderID`, `partyID` and `marketID` fields are used for lookup of the order 
 | sizeDelta | [int64](#int64) |  | Amend the size for the order by the delta specified. To reduce the size from the current value set a negative integer value. To increase the size from the current value, set a positive integer value. To leave the size unchanged set a value of zero. |
 | expiresAt | [Timestamp](#vega.Timestamp) |  | Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged. See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`. |
+| peggedOffset | [google.protobuf.Int64Value](#google.protobuf.Int64Value) |  | Amend the pegged order offset for the order |
+| peggedReference | [PeggedReference](#vega.PeggedReference) |  | Amend the pegged order reference for the order See [`PeggedReference`](#api.PeggedReference). |
 
 
 
@@ -5254,7 +5297,8 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE | 41 | Sell pegged order cannot reference best bid price |
 | ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO | 42 | Pegged order offset must be &gt; zero |
 | ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
-| ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 44 | We are unable to reprice a pegged order because a market price is unavailable |
+| ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER | 44 | Cannot amend a non pegged orders details |
+| ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 45 | We are unable to reprice a pegged order because a market price is unavailable |
 
 
 
