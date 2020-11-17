@@ -51,8 +51,7 @@ func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
 	}
 
 	tmGenesis := map[string]interface{}{}
-	err = json.Unmarshal(tmCfgBytes, &tmGenesis)
-	if err != nil {
+	if err := json.Unmarshal(tmCfgBytes, &tmGenesis); err != nil {
 		return err
 	}
 
@@ -68,9 +67,5 @@ func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(tmCfgPath, tmCfgBytes, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(tmCfgPath, tmCfgBytes, 0644)
 }

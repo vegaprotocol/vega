@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -205,13 +205,13 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 func (g *GRPCServer) Start() {
 
 	ip := g.IP
-	port := g.Port
+	port := strconv.Itoa(g.Port)
 
-	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.Int("port", port))
+	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.String("port", port))
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
+	lis, err := net.Listen("tcp", net.JoinHostPort(ip, port))
 	if err != nil {
-		g.log.Panic("Failure listening on gRPC port", logging.Int("port", port), logging.Error(err))
+		g.log.Panic("Failure listening on gRPC port", logging.String("port", port), logging.Error(err))
 	}
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))

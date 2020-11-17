@@ -305,7 +305,10 @@ run() {
 		if test "$count" -gt 0 ; then
 			return 1
 		fi
-		return 0
+		;;
+	semgrep) ## Run semgrep
+		semgrep -f "p/dgryski.semgrep-go"
+		return "$?"
 		;;
 	vet) ## Run go vet
 		go vet ./...

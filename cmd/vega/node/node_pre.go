@@ -130,18 +130,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}
 
 	// nodewallet
-	l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt)
-	if err != nil {
+	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt); err != nil {
 		return err
 	}
 
 	// ensure all require wallet are available
-	err = l.nodeWallet.EnsureRequireWallets()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return l.nodeWallet.EnsureRequireWallets()
 }
 
 func (l *NodeCommand) loadMarketsConfig() error {
@@ -554,37 +548,27 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches
-	if err = l.setupNetParameters(); err != nil {
-		return err
-	}
-
-	return
+	return l.setupNetParameters()
 }
 
 func (l *NodeCommand) setupNetParameters() error {
 	// now we are going to setup some network parameters which can be done
 	// through runtime checks
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
-	err := l.netParams.AddRules(
+	if err := l.netParams.AddRules(
 		netparams.GovernanceVoteAsset,
 		checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
 	// now add some watcher for our netparams
-	err = l.netParams.Watch(
+	return l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.GovernanceVoteAsset,
 			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
 		},
 	)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
