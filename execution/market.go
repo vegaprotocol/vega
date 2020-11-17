@@ -1958,19 +1958,18 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 			// We got a new valid price, if we are parked we need to unpark
 			if amendedOrder.Status == types.Order_STATUS_PARKED {
 				orderConf, err := m.submitValidatedOrder(ctx, amendedOrder)
-				if err == nil {
-					// Remove from parked list
-					for i, order := range m.parkedOrders {
-						if order.Id == amendedOrder.Id {
-							copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
-							m.parkedOrders[len(m.parkedOrders)-1] = nil
-							m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
-							return orderConf, err
-						}
-					}
-				} else {
+				if err != nil {
 					// If we cannot submit a new order then the amend has failed, return the error
 					return nil, err
+				}
+				// Remove from parked list
+				for i, order := range m.parkedOrders {
+					if order.Id == amendedOrder.Id {
+						copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
+						m.parkedOrders[len(m.parkedOrders)-1] = nil
+						m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
+						return orderConf, err
+					}
 				}
 			}
 		}
