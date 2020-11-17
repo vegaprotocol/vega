@@ -10,12 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -35,7 +35,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
 type Commander interface {
-	Command(cmd txn.Command, payload proto.Message) error
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
@@ -132,7 +132,7 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
-	key := string(hashKey([]byte(evt.String())))
+	key := string(crypto.Hash([]byte(evt.String())))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
 		// this was already acknowledged, nothing to be done, return false
@@ -157,8 +157,8 @@ func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
 
 // Forward will forward an ChainEvent to the tendermint network
 // we expect the pubkey to be an ed25519 pubkey hex encoded
-func (e *EvtForwarder) Forward(evt *types.ChainEvent, pubkey string) error {
-	// check if the sender of the event is allowlisted
+func (e *EvtForwarder) Forward(ctx context.Context, evt *types.ChainEvent, pubkey string) error {
+	// check if the sender of the event is whitelisted
 	if !e.isAllowlisted(pubkey) {
 		return ErrPubKeyNotAllowlisted
 	}
@@ -166,7 +166,7 @@ func (e *EvtForwarder) Forward(evt *types.ChainEvent, pubkey string) error {
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	key := string(hashKey([]byte(evt.String())))
+	key := string(crypto.Hash([]byte(evt.String())))
 	_, ok, _ := e.getEvt(key)
 	if ok {
 		return ErrEvtAlreadyExist
@@ -175,7 +175,7 @@ func (e *EvtForwarder) Forward(evt *types.ChainEvent, pubkey string) error {
 	e.evts[key] = tsEvt{ts: e.currentTime, evt: evt}
 	if e.isSender(evt) {
 		// we are selected to send the event, let's do it.
-		return e.send(evt)
+		return e.send(ctx, evt)
 	}
 	return nil
 }
@@ -209,8 +209,8 @@ func (e *EvtForwarder) getEvt(key string) (evt *types.ChainEvent, ok bool, acked
 	return nil, false, false
 }
 
-func (e *EvtForwarder) send(evt *types.ChainEvent) error {
-	return e.cmd.Command(txn.ChainEventCommand, evt)
+func (e *EvtForwarder) send(ctx context.Context, evt *types.ChainEvent) error {
+	return e.cmd.Command(ctx, txn.ChainEventCommand, evt)
 }
 
 func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
@@ -226,7 +226,7 @@ func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
 	return node.node == e.self
 }
 
-func (e *EvtForwarder) onTick(_ context.Context, t time.Time) {
+func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 	e.currentTime = t
 
 	// get an updated list of validators from the topology
@@ -247,18 +247,12 @@ func (e *EvtForwarder) onTick(_ context.Context, t time.Time) {
 			e.evts[k] = tsEvt{ts: t, evt: evt.evt}
 			if e.isSender(evt.evt) {
 				// we are selected to send the event, let's do it.
-				if err := e.send(evt.evt); err != nil {
+				if err := e.send(ctx, evt.evt); err != nil {
 					e.log.Error("unable to send event", logging.Error(err))
 				}
 			}
 		}
 	}
-}
-
-func hashKey(key []byte) []byte {
-	hasher := sha3.New256()
-	hasher.Write([]byte(key))
-	return hasher.Sum(nil)
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {

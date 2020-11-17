@@ -413,7 +413,8 @@ func testBestBidPriceAndVolume(t *testing.T) {
 		assert.Equal(t, len(confirm.Trades), len(trades))
 	}
 
-	price, volume := book.BestBidPriceAndVolume()
+	price, volume, err := book.BestBidPriceAndVolume()
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(300), price)
 	assert.Equal(t, uint64(15), volume)
 }
@@ -478,7 +479,8 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 		assert.Equal(t, len(trades), len(confirm.Trades))
 	}
 
-	price, volume := book.BestOfferPriceAndVolume()
+	price, volume, err := book.BestOfferPriceAndVolume()
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(10), price)
 	assert.Equal(t, uint64(15), volume)
 }
@@ -2245,9 +2247,10 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 	assert.NotNil(t, orderConf)
 
 	// Switch to auction and makes sure the order is cancelled
-	orders, err := book.EnterAuction()
+	orders, parked, err := book.EnterAuction()
 	assert.NoError(t, err)
 	assert.Equal(t, len(orders), 1)
+	assert.Equal(t, len(parked), 0)
 	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(1))
 }
 
@@ -2260,7 +2263,7 @@ func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
 	defer logger.Sync()
 
 	// Flip straight to auction mode
-	_, err := book.EnterAuction()
+	_, _, err := book.EnterAuction()
 	assert.NoError(t, err)
 	assert.True(t, book.InAuction())
 
@@ -2519,11 +2522,11 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(100))
-	assert.Equal(t, volume, uint64(45))
+	assert.Equal(t, int(price), 102)
+	assert.Equal(t, int(volume), 45)
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 	price = book.GetIndicativePrice()
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, int(price), 102)
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
@@ -2644,11 +2647,11 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(101))
-	assert.Equal(t, volume, uint64(10))
+	assert.Equal(t, int(price), 102)
+	assert.Equal(t, int(volume), 10)
 	assert.Equal(t, side, types.Side_SIDE_SELL)
 	price = book.GetIndicativePrice()
-	assert.Equal(t, price, uint64(101))
+	assert.Equal(t, int(price), 102)
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
@@ -2729,11 +2732,11 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(100))
-	assert.Equal(t, volume, uint64(38))
+	assert.Equal(t, int(price), 100)
+	assert.Equal(t, int(volume), 38)
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 	price = book.GetIndicativePrice()
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, int(price), 100)
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
@@ -2853,9 +2856,10 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
 
-	orders, err := book.EnterAuction()
+	orders, parked, err := book.EnterAuction()
 
 	assert.Equal(t, 0, len(orders))
+	assert.Equal(t, 0, len(parked))
 	assert.Nil(t, err)
 	order1Id := "1000000000000000000000" //Must be 22 characters
 	order2Id := "1000000000000000000001" //Must be 22 characters
@@ -2946,4 +2950,41 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
+}
+
+// Add some pegged orders to the order book and check they are parked when going into auction
+func TestOrderBook_PeggedOrders(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// We need some orders on the book to get a valid bestbis/bestask/mid price
+	makeOrder(t, book, market, "PriceSetterBuy", types.Side_SIDE_BUY, 100, "party01", 1)
+	makeOrder(t, book, market, "PriceSetterSell", types.Side_SIDE_SELL, 101, "party01", 1)
+
+	bestask, err := book.GetBestAskPrice()
+	assert.NoError(t, err)
+	bestbid, err := book.GetBestBidPrice()
+	assert.NoError(t, err)
+	assert.Equal(t, bestask, uint64(101))
+	assert.Equal(t, bestbid, uint64(100))
+
+	bp1 := getOrder(t, book, market, "BuyPeg1", types.Side_SIDE_BUY, 100, "party01", 5)
+	bp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
+		Offset: -3}
+	book.SubmitOrder(bp1)
+
+	sp1 := getOrder(t, book, market, "SellPeg1", types.Side_SIDE_SELL, 100, "party01", 5)
+	sp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
+		Offset: +3}
+	book.SubmitOrder(bp1)
+
+	// Leave auction and uncross the book
+	cancels, parked, err := book.EnterAuction()
+	assert.Nil(t, err)
+	assert.Equal(t, len(cancels), 0)
+	assert.Equal(t, len(parked), 2)
 }

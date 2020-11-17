@@ -10,10 +10,11 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -163,9 +164,7 @@ func ExtractToken(f func(string, http.ResponseWriter, *http.Request, httprouter.
 }
 
 func genSession() string {
-	hasher := sha3.New256()
-	hasher.Write([]byte(randSeq(10)))
-	return hex.EncodeToString(hasher.Sum(nil))
+	return hex.EncodeToString(crypto.Hash([]byte(randSeq(10))))
 }
 
 var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

@@ -1,10 +1,15 @@
 package netparams
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
+
+	validators "github.com/mwitkow/go-proto-validators"
 )
 
 type baseValue struct{}
@@ -33,6 +38,10 @@ func (b *baseValue) ToString() (string, error) {
 	return "", errors.New("not a string value")
 }
 
+func (b *baseValue) ToJSONStruct(v Reset) error {
+	return errors.New("not a JSON value")
+}
+
 type FloatRule func(float64) error
 
 type Float struct {
@@ -48,6 +57,35 @@ func NewFloat(rules ...FloatRule) *Float {
 		baseValue: &baseValue{},
 		rules:     rules,
 	}
+}
+
+func (f *Float) GetDispatch() func(interface{}) error {
+	return func(rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(float64) error)
+		return fn(f.value)
+	}
+}
+
+func (f *Float) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(float64) error); !ok {
+		return errors.New("invalid type, expected func(float64) error")
+	}
+	return nil
+}
+
+func (f *Float) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(FloatRule)
+		if !ok {
+			return errors.New("floats require FloatRule functions")
+		}
+		f.rules = append(f.rules, v)
+	}
+
+	return nil
 }
 
 func (f *Float) ToFloat() (float64, error) {
@@ -174,6 +212,35 @@ func NewInt(rules ...IntRule) *Int {
 	}
 }
 
+func (i *Int) GetDispatch() func(interface{}) error {
+	return func(rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(int64) error)
+		return fn(i.value)
+	}
+}
+
+func (i *Int) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(int64) error); !ok {
+		return errors.New("invalid type, expected func(int64) error")
+	}
+	return nil
+}
+
+func (i *Int) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(IntRule)
+		if !ok {
+			return errors.New("ints require IntRule functions")
+		}
+		i.rules = append(i.rules, v)
+	}
+
+	return nil
+}
+
 func (i *Int) ToInt() (int64, error) {
 	return i.value, nil
 }
@@ -297,6 +364,35 @@ func NewDuration(rules ...DurationRule) *Duration {
 	}
 }
 
+func (d *Duration) GetDispatch() func(interface{}) error {
+	return func(rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(time.Duration) error)
+		return fn(d.value)
+	}
+}
+
+func (d *Duration) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(time.Duration) error); !ok {
+		return errors.New("invalid type, expected func(time.Duration) error")
+	}
+	return nil
+}
+
+func (d *Duration) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(DurationRule)
+		if !ok {
+			return errors.New("durations require DurationRule functions")
+		}
+		d.rules = append(d.rules, v)
+	}
+
+	return nil
+}
+
 func (d *Duration) ToDuration() (time.Duration, error) {
 	return d.value, nil
 }
@@ -401,4 +497,263 @@ func DurationLT(i time.Duration) func(time.Duration) error {
 		}
 		return fmt.Errorf("expect < %v got %v", i, val)
 	}
+}
+
+type JSONRule func(interface{}) error
+
+type JSON struct {
+	*baseValue
+	value   Reset
+	ty      reflect.Type
+	rawval  string
+	rules   []JSONRule
+	mutable bool
+}
+
+func NewJSON(val Reset, rules ...JSONRule) *JSON {
+	if val == nil {
+		panic("JSON values requires non nil pointers")
+	}
+	ty := reflect.TypeOf(val)
+	if ty.Kind() != reflect.Ptr {
+		panic("JSON values requires pointers")
+	}
+	return &JSON{
+		baseValue: &baseValue{},
+		rules:     rules,
+		ty:        ty,
+		value:     val,
+	}
+
+}
+
+func (j *JSON) ToJSONStruct(v Reset) error {
+	if v == nil {
+		return errors.New("nil interface{}")
+	}
+	// just make sure types are compatible
+	if !reflect.TypeOf(v).AssignableTo(j.ty) {
+		return errors.New("incompatible type")
+	}
+
+	return json.Unmarshal([]byte(j.rawval), v)
+}
+
+func (j *JSON) GetDispatch() func(interface{}) error {
+	return func(rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(interface{}) error)
+		json.Unmarshal([]byte(j.rawval), j.value)
+		return fn(j.value)
+	}
+}
+
+func (j *JSON) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(interface{}) error); !ok {
+		return errors.New("invalid type, expected func(float64) error")
+	}
+	return nil
+}
+
+func (j *JSON) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(JSONRule)
+		if !ok {
+			return errors.New("JSONs require JSONRule functions")
+		}
+		j.rules = append(j.rules, v)
+	}
+
+	return nil
+}
+
+func (j *JSON) validateValue(value []byte) error {
+	j.value.Reset()
+	d := json.NewDecoder(bytes.NewReader([]byte(value)))
+	d.DisallowUnknownFields()
+	return d.Decode(j.value)
+}
+
+func (j *JSON) Validate(value string) error {
+	err := j.validateValue([]byte(value))
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal value, %w", err)
+	}
+
+	if !j.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	for _, fn := range j.rules {
+		if newerr := fn(j.value); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	return err
+}
+
+func (j *JSON) Update(value string) error {
+	err := j.validateValue([]byte(value))
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal value, %w", err)
+	}
+
+	if !j.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	for _, fn := range j.rules {
+		if newerr := fn(j.value); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	j.rawval = value
+	return nil
+}
+
+func (j *JSON) Mutable(b bool) *JSON {
+	j.mutable = b
+	return j
+}
+
+func (j *JSON) MustUpdate(value string) *JSON {
+	err := j.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return j
+}
+
+func (j *JSON) String() string {
+	return j.rawval
+}
+
+func JSONProtoValidator() func(interface{}) error {
+	return func(t interface{}) error {
+		return validators.CallValidatorIfExists(t)
+	}
+}
+
+type StringRule func(string) error
+
+type String struct {
+	*baseValue
+	rawval  string
+	rules   []StringRule
+	mutable bool
+}
+
+func NewString(rules ...StringRule) *String {
+	return &String{
+		baseValue: &baseValue{},
+		rules:     rules,
+	}
+}
+
+func (s *String) GetDispatch() func(interface{}) error {
+	return func(rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(string) error)
+		return fn(s.rawval)
+	}
+}
+
+func (s *String) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(string) error); !ok {
+		return errors.New("invalid type, expected func(string) error")
+	}
+	return nil
+}
+
+func (s *String) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(StringRule)
+		if !ok {
+			return errors.New("strings require StringRule functions")
+		}
+		s.rules = append(s.rules, v)
+	}
+
+	return nil
+}
+
+func (s *String) ToString() (string, error) {
+	return s.rawval, nil
+}
+
+func (s *String) Validate(value string) error {
+	if !s.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	var err error
+	for _, fn := range s.rules {
+		if newerr := fn(value); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	return err
+}
+
+func (s *String) Update(value string) error {
+	if !s.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	var err error
+	for _, fn := range s.rules {
+		if newerr := fn(value); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err == nil {
+		s.rawval = value
+	}
+
+	return err
+}
+
+func (s *String) Mutable(b bool) *String {
+	s.mutable = b
+	return s
+}
+
+func (s *String) MustUpdate(value string) *String {
+	err := s.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func (s *String) String() string {
+	return s.rawval
 }

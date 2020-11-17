@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
@@ -44,6 +45,7 @@ type GRPCServer struct {
 	candleService           *candles.Svc
 	marketService           MarketService
 	orderService            *orders.Svc
+	liquidityService        *liquidity.Svc
 	partyService            *parties.Svc
 	timeService             *vegatime.Svc
 	tradeService            *trades.Svc
@@ -81,6 +83,7 @@ func NewGRPCServer(
 	marketService MarketService,
 	partyService *parties.Svc,
 	orderService *orders.Svc,
+	liquidityService *liquidity.Svc,
 	tradeService *trades.Svc,
 	candleService *candles.Svc,
 	accountsService *accounts.Svc,
@@ -109,6 +112,7 @@ func NewGRPCServer(
 		stats:                   stats,
 		client:                  client,
 		orderService:            orderService,
+		liquidityService:        liquidityService,
 		tradeService:            tradeService,
 		candleService:           candleService,
 		timeService:             timeService,
@@ -201,13 +205,13 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 func (g *GRPCServer) Start() {
 
 	ip := g.IP
-	port := g.Port
+	port := strconv.Itoa(g.Port)
 
-	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.Int("port", port))
+	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.String("port", port))
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
+	lis, err := net.Listen("tcp", net.JoinHostPort(ip, port))
 	if err != nil {
-		g.log.Panic("Failure listening on gRPC port", logging.Int("port", port), logging.Error(err))
+		g.log.Panic("Failure listening on gRPC port", logging.String("port", port), logging.Error(err))
 	}
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
@@ -217,6 +221,7 @@ func (g *GRPCServer) Start() {
 		log:               g.log,
 		blockchain:        g.client,
 		tradeOrderService: g.orderService,
+		liquidityService:  g.liquidityService,
 		accountService:    g.accountsService,
 		marketService:     g.marketService,
 		governanceService: g.governanceService,
@@ -250,6 +255,7 @@ func (g *GRPCServer) Start() {
 		DepositService:          g.depositService,
 		MarketDepthService:      g.marketDepthService,
 		NetParamsService:        g.netParamsService,
+		LiquidityService:        g.liquidityService,
 		ctx:                     g.ctx,
 	}
 	go tradingDataSvc.updateNetInfo(g.ctx)

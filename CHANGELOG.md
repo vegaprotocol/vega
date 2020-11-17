@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.27.0
+
+*2020-10-30*
+
+This release contains a fix (read: large reduction in memory use) around auction modes with particularly large order books that caused slow block times when handling orders placed during an opening auction. It also contains a lot of internal work related to the liquidity provision mechanics.
+
+### New
+- [#2498](https://github.com/vegaprotocol/vega/pull/2498) Automatically create a bond account for liquidity providers
+- [#2596](https://github.com/vegaprotocol/vega/pull/2496) Create liquidity measurement API
+- [#2490](https://github.com/vegaprotocol/vega/pull/2490) GraphQL: Add Withdrawal and Deposit events to event bus
+- [#2476](https://github.com/vegaprotocol/vega/pull/2476) 🔥`MarketData` now uses RFC339 formatted times, not seconds
+- [#2473](https://github.com/vegaprotocol/vega/pull/2473) Add network parameters related to target stake calculation
+- [#2506](https://github.com/vegaprotocol/vega/pull/2506) Network parameters can now contain JSON configuration
+
+### Improvements
+- [#2521](https://github.com/vegaprotocol/vega/pull/2521) Optimise memory usage when building cumulative price levels
+- [#2520](https://github.com/vegaprotocol/vega/pull/2520) Fix indicative price calculation
+- [#2517](https://github.com/vegaprotocol/vega/pull/2517) Improve command line for rate limiting in faucet & wallet
+- [#2510](https://github.com/vegaprotocol/vega/pull/2510) Remove reference to external risk model
+- [#2509](https://github.com/vegaprotocol/vega/pull/2509) Fix panic when loading an invalid genesis configuration
+- [#2502](https://github.com/vegaprotocol/vega/pull/2502) Fix pointer when using amend in place
+- [#2487](https://github.com/vegaprotocol/vega/pull/2487) Remove context from struct that didn't need it
+- [#2485](https://github.com/vegaprotocol/vega/pull/2485) Refactor event bus event transmission
+- [#2481](https://github.com/vegaprotocol/vega/pull/2481) Add `LiquidityProvisionSubmission` transaction
+- [#2480](https://github.com/vegaprotocol/vega/pull/2480) Remove unused code
+- [#2479](https://github.com/vegaprotocol/vega/pull/2479) Improve validation of external resources
+- [#1936](https://github.com/vegaprotocol/vega/pull/1936) Upgrade to Tendermint 0.33.8
+
 ## 0.26.1
 
 *2020-10-23*

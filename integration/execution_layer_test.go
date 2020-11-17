@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
@@ -172,13 +172,9 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
 
-	err := execsetup.collateral.Deposit(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return execsetup.collateral.Deposit(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
@@ -196,22 +192,21 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 }
 
 func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
+	amount, err := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
-
-	err := execsetup.collateral.LockFundsForWithdraw(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-	err = execsetup.collateral.Withdraw(
-		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if err := execsetup.collateral.LockFundsForWithdraw(
+		context.Background(), trader, asset, amount,
+	); err != nil {
+		return err
+	}
 
+	return execsetup.collateral.Withdraw(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
@@ -465,7 +460,8 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 		data = append(data, e.Account())
 	}
 	for _, v := range data {
-		if v.Asset != collateral.TokenAsset {
+		// remove vote token
+		if v.Asset != "VOTE" {
 			cumul += uint64(v.Balance)
 		}
 	}
@@ -739,6 +735,24 @@ func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
 	return nil
 }
 
+func theMarketStateIs(market, marketStateStr string) error {
+	ms, ok := proto.MarketState_value[marketStateStr]
+	if !ok {
+		return fmt.Errorf("invalid market state: %v", marketStateStr)
+	}
+	marketState := proto.MarketState(ms)
+
+	mktdata, err := execsetup.engine.GetMarketData(market)
+	if err != nil {
+		return fmt.Errorf("unable to get marked data for market(%v), err(%v)", market, err)
+	}
+
+	if mktdata.MarketState != marketState {
+		return fmt.Errorf("market state is wrong for market(%v), expected(%v) got(%v)", market, marketState, mktdata.MarketState)
+	}
+	return nil
+}
+
 func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	var err error
 	for _, row := range trades.Rows {
@@ -906,6 +920,38 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 }
 
 func baseMarket(row *gherkin.TableRow) proto.Market {
+	horizons, err := i64arr(row, 21, ",")
+	if err != nil {
+		log.Fatalf("Can't parse horizons (%v) to int64 array: %v", row.Cells[21].Value, err)
+	}
+	probs, err := f64arr(row, 22, ",")
+	if err != nil {
+		log.Fatalf("Can't parse probabilities (%v) to float64 array: %v", row.Cells[22].Value, err)
+	}
+	durations, err := i64arr(row, 23, ",")
+	if err != nil {
+		log.Fatalf("Can't parse durations (%v) to int64 array: %v", row.Cells[23].Value, err)
+	}
+	n := len(horizons)
+	if n != len(probs) || n != len(durations) {
+		log.Fatalf("horizons (%v), probabilities (%v) and durations (%v) need to have the same number of elements",
+			n,
+			len(probs),
+			len(durations))
+	}
+
+	triggs := make([]*proto.PriceMonitoringTrigger, 0, n)
+	for i := 0; i < n; i++ {
+		p := &proto.PriceMonitoringTrigger{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
+		triggs = append(triggs, p)
+	}
+	pMonitorSettings := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: triggs,
+		},
+		UpdateFrequency: i64val(row, 20),
+	}
+
 	mkt := proto.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
@@ -921,7 +967,6 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 				Id:        fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
 				Code:      fmt.Sprintf("CRYPTO/%v", val(row, 0)),
 				Name:      fmt.Sprintf("%s future", val(row, 0)),
-				BaseName:  val(row, 1),
 				QuoteName: val(row, 2),
 				Metadata: &proto.InstrumentMetadata{
 					Tags: []string{
@@ -949,8 +994,8 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 					Params: &proto.SimpleModelParams{
 						FactorLong:  f64val(row, 6),
 						FactorShort: f64val(row, 7),
-						MaxMoveUp:   0, //TODO (WG 02/10/2020): Inject from .feature file
-						MinMoveDown: 0, //TODO (WG 02/10/2020): Inject from .feature file
+						MaxMoveUp:   f64val(row, 8),
+						MinMoveDown: f64val(row, 9),
 					},
 				},
 			},
@@ -965,10 +1010,7 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 		TradingMode: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
-		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
-			PriceMonitoringParameters: []*proto.PriceMonitoringParameters{},
-			UpdateFrequency:           0,
-		},
+		PriceMonitoringSettings: pMonitorSettings,
 	}
 
 	if val(row, 5) == "forward" {

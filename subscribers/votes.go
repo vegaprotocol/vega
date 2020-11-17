@@ -20,19 +20,13 @@ type VoteSub struct {
 // VoteByPartyID filters votes cast by given party
 func VoteByPartyID(id string) VoteFilter {
 	return func(v types.Vote) bool {
-		if v.PartyID == id {
-			return true
-		}
-		return false
+		return v.PartyID == id
 	}
 }
 
 func VoteByProposalID(id string) VoteFilter {
 	return func(v types.Vote) bool {
-		if v.ProposalID == id {
-			return true
-		}
-		return false
+		return v.ProposalID == id
 	}
 }
 

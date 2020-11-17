@@ -12,6 +12,7 @@ type Tx interface {
 	Unmarshal(interface{}) error
 	PubKey() []byte
 	Hash() []byte
+	Signature() []byte
 	Validate() error
 	BlockHeight() uint64
 }

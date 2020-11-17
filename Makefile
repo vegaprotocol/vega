@@ -29,7 +29,9 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
+	@[ -d vendor ] && mv vendor vendor.tmp
 	@go generate ./...
+	@[ -d vendor.tmp ] && mv vendor.tmp vendor
 
 .PHONY: msan
 msan: ## Run memory sanitizer
@@ -152,6 +154,10 @@ spellcheck: ## Run markdown spellcheck container
 .PHONY: staticcheck
 staticcheck: ## Run statick analysis checks
 	@./script/build.sh -a staticcheck
+
+.PHONY: semgrep
+semgrep: ## Run semgrep static analysis checks
+	@./script/build.sh -a semgrep
 
 .PHONY: clean
 clean: SHELL:=/bin/bash

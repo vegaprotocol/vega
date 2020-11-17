@@ -93,7 +93,6 @@ func createInstrument(
 	result := &types.Instrument{
 		Name:      input.Name,
 		Code:      input.Code,
-		BaseName:  input.BaseName,
 		QuoteName: input.QuoteName,
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
@@ -148,11 +147,12 @@ func createMarket(
 	searchLevel, _ := netp.GetFloat(netparams.MarketMarginScalingFactorSearchLevel)
 	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
 	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
-
-	// TODO(): as of now the priceMonitoringSettings can be null
-	// we protect against this in here.
-	if definition.PriceMonitoringSettings == nil {
-		definition.PriceMonitoringSettings = &types.PriceMonitoringSettings{}
+	// get price monitoring parameters
+	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
+	if definition.PriceMonitoringParameters == nil {
+		pmParams := &types.PriceMonitoringParameters{}
+		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
+		definition.PriceMonitoringParameters = pmParams
 	}
 
 	// if the openingAuctionDuration == 0 we need to default
@@ -185,7 +185,10 @@ func createMarket(
 				},
 			},
 		},
-		PriceMonitoringSettings: definition.PriceMonitoringSettings,
+		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+			Parameters:      definition.PriceMonitoringParameters,
+			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
+		},
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -231,10 +234,6 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 }
 
 func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {
-	if instrument.BaseName == instrument.QuoteName {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, ErrInvalidSecurity
-	}
-
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
@@ -272,12 +271,14 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
 	if proposedDuration != 0 && proposedDuration < minAuctionDuration {
 		// Auction duration is too small
-		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL, ErrProposalOpeningAuctionDurationTooShort
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL,
+			fmt.Errorf("proposal opening auction duration is too short, expected > %v, got %v", minAuctionDuration, proposedDuration)
 	}
 	maxAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMaximumDuration)
 	if proposedDuration > maxAuctionDuration {
 		// Auction duration is too large
-		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE, ErrProposalOpeningAuctionDurationTooLong
+		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE,
+			fmt.Errorf("proposal opening auction duration is too long, expected < %v, got %v", maxAuctionDuration, proposedDuration)
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

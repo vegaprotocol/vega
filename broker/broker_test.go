@@ -2,6 +2,7 @@ package broker_test
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -76,7 +77,11 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Send batch to ack subscriber", testSendBatch)
 	t.Run("Stop sending if context is cancelled", testStopCtx)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
-	t.Run("Send only to typed subscriber", testEventTypeSubscription)
+	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
+}
+
+func TestTxErrEvents(t *testing.T) {
+	t.Run("Ensure TxErrEvents are hidden from ALL subscribers", testTxErrNotAll)
 }
 
 func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
@@ -306,12 +311,13 @@ func testSendBatchChannel(t *testing.T) {
 	}
 	// ensure both batches are sent
 	wg := sync.WaitGroup{}
-	// 2 calls, only the first batch will be sent
-	wg.Add(2)
+	// 3 calls, only the first batch will be sent
+	// third call is routine that tries to send the second batch. This will of course fail
+	wg.Add(3)
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	// we try to get the channel 2 times, only 1 of the attempts will actually publish the events
-	sub.EXPECT().C().Times(2).Return(cCh).Do(func() {
+	// we try to get the channel 3 times, only 1 of the attempts will actually publish the events
+	sub.EXPECT().C().Times(3).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})
@@ -382,11 +388,12 @@ func testSkipOptional(t *testing.T) {
 	}
 	// ensure all 3 events are being sent (wait for routine to spawn)
 	wg := sync.WaitGroup{}
-	wg.Add(len(evts))
+	wg.Add(len(evts)*2 - 1)
 	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
 	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
 	// we try to get the channel 3 times, only 1 of the attempts will actually publish the event
-	sub.EXPECT().C().Times(len(evts)).Return(cCh).Do(func() {
+	// the other 2 attempts will run in a routine
+	sub.EXPECT().C().Times(len(evts)*2 - 1).Return(cCh).Do(func() {
 		// Done call each time we tried sending an event
 		wg.Done()
 	})
@@ -517,9 +524,9 @@ func testEventTypeSubscription(t *testing.T) {
 	sub.EXPECT().Types().Times(2).Return([]events.Type{events.TimeUpdate})
 	allSub.EXPECT().Types().Times(2).Return(nil) // subscribed to ALL events
 	// fake type:
-	different := events.Type(int(events.All) + int(events.TimeUpdate) + 1) // this value cannot exist as an events.Type value
+	different := events.Type(int(events.All) + int(events.TimeUpdate) + 1 + int(events.TxErrEvent)) // this value cannot exist as an events.Type value
 	diffSub.EXPECT().Types().Times(2).Return([]events.Type{different})
-	// subscribe the subscriberjk
+	// subscribe the subscriber
 	sub.EXPECT().Ack().AnyTimes().Return(true)
 	diffSub.EXPECT().Ack().AnyTimes().Return(true)
 	allSub.EXPECT().Ack().AnyTimes().Return(true)
@@ -530,6 +537,12 @@ func testEventTypeSubscription(t *testing.T) {
 	assert.NotZero(t, k2)
 	assert.NotZero(t, k3)
 	assert.NotEqual(t, k1, k2)
+	// send the TxErrEvent, a special case none of the subscribers ought to ever receive
+	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("random err"), "party-1", types.Vote{
+		PartyID:    "party-1",
+		Value:      types.Vote_VALUE_YES,
+		ProposalID: "prop-1",
+	}))
 	// send the correct event
 	broker.Send(event)
 	// ensure the event was delivered
@@ -538,6 +551,66 @@ func testEventTypeSubscription(t *testing.T) {
 	broker.Unsubscribe(k1)
 	broker.Unsubscribe(k2)
 	broker.Unsubscribe(k3)
+	close(skipCh)
+	close(closeCh)
+}
+
+func testTxErrNotAll(t *testing.T) {
+	broker := getBroker(t)
+	defer broker.Finish()
+	sub := mocks.NewMockSubscriber(broker.ctrl)
+	allSub := mocks.NewMockSubscriber(broker.ctrl)
+	skipCh, closeCh := make(chan struct{}), make(chan struct{})
+
+	// we'll send error events. Once both have been sent to the subscriber
+	// we're certain none of them were pushed to the ALL subscriber
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	// Closed check
+	sub.EXPECT().Closed().AnyTimes().Return(closeCh)
+	allSub.EXPECT().Closed().AnyTimes().Return(closeCh)
+	// skip check
+	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	allSub.EXPECT().Skip().AnyTimes().Return(skipCh)
+
+	// all subscriber ought to never receive anything, so don't specify an EXPECT
+	// allSub.EXPECT().Push(gomock.Any()).Times(0)
+	// actually push the event - diffSub expects nothing
+	sub.EXPECT().Push(gomock.Any()).Times(2).Do(func(_ interface{}) {
+		wg.Done()
+	})
+	// the event types this subscriber is interested in
+	sub.EXPECT().Types().AnyTimes().Return([]events.Type{events.TxErrEvent})
+	allSub.EXPECT().Types().AnyTimes().Return(nil) // subscribed to ALL events
+
+	// both subscribers are ack'ing
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+	allSub.EXPECT().Ack().AnyTimes().Return(true)
+
+	// TxErrEvent
+	evt := events.NewTxErrEvent(broker.ctx, errors.New("some error"), "party-1", types.Vote{
+		PartyID:    "party-1",
+		Value:      types.Vote_VALUE_YES,
+		ProposalID: "prop-1",
+	})
+	k1 := broker.Subscribe(sub)
+	k2 := broker.Subscribe(allSub)
+	assert.NotZero(t, k1)
+	assert.NotZero(t, k2)
+	assert.NotEqual(t, k1, k2)
+	// send the correct event
+	broker.Send(evt)
+	// send a second event
+	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("some error 2"), "party-2", types.Vote{
+		PartyID:    "party-2",
+		Value:      types.Vote_VALUE_NO,
+		ProposalID: "prop-2",
+	}))
+	// ensure the event was delivered
+	wg.Wait()
+	// unsubscribe the subscriber, now we're done
+	broker.Unsubscribe(k1)
+	broker.Unsubscribe(k2)
 	close(skipCh)
 	close(closeCh)
 }

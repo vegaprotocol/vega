@@ -8,6 +8,7 @@ import (
 	math "math"
 
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/golang/protobuf/ptypes/wrappers"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
@@ -202,6 +203,11 @@ func (this *OrderAmendment) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("ExpiresAt", err)
 		}
 	}
+	if this.PeggedOffset != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PeggedOffset); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PeggedOffset", err)
+		}
+	}
 	return nil
 }
 func (this *OrderSubmission) Validate() error {
@@ -331,5 +337,56 @@ func (this *NodeSignature) Validate() error {
 	return nil
 }
 func (this *NetworkParameter) Validate() error {
+	return nil
+}
+func (this *LiquidityOrder) Validate() error {
+	return nil
+}
+func (this *LiquidityProvisionSubmission) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	for _, item := range this.Sells {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Sells", err)
+			}
+		}
+	}
+	for _, item := range this.Buys {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Buys", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *LiquidityOrderReference) Validate() error {
+	if this.LiquidityOrder != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.LiquidityOrder); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("LiquidityOrder", err)
+		}
+	}
+	return nil
+}
+func (this *LiquidityProvision) Validate() error {
+	if this.MarketID == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	}
+	for _, item := range this.Sells {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Sells", err)
+			}
+		}
+	}
+	for _, item := range this.Buys {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Buys", err)
+			}
+		}
+	}
 	return nil
 }

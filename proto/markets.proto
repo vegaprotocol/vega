@@ -77,14 +77,12 @@ message Instrument {
   string code = 2;
   // Name of the instrument.
   string name = 3;
-  // Base name of the instrument.
-  string baseName = 4;
   // Quote name of the instrument.
-  string quoteName = 5;
+  string quoteName = 4;
   // A collection of instrument meta-data.
-  InstrumentMetadata metadata = 6;
+  InstrumentMetadata metadata = 5;
   // An initial mark price for the instrument.
-  uint64 initialMarkPrice = 7;
+  uint64 initialMarkPrice = 6;
   // The product the instrument is composed of.
   oneof product {
     // Future.
@@ -132,18 +130,8 @@ message SimpleModelParams {
   double maxMoveUp = 3 [(validator.field) = {float_gte: 0}];
   // Pre-defined minimum price move down that the model considers as valid.
   double minMoveDown = 4 [(validator.field) = {float_lte: 0}];
-}
-
-// Risk model for external modelling.
-// Provided by external service via a Unix socket.
-message ExternalRiskModel {
-
-  // Name.
-  string name = 1;
-  // Local machine socket to connect to.
-  string socket = 2;
-  // Collection of configuration items.
-  map<string, string> config = 3;
+  // Pre-defined constant probability of trading
+  double probabilityOfTrading = 5 [(validator.field) = {float_gte: 0, float_lte: 1}];
 }
 
 // Scaling Factors (for use in margin calculation).
@@ -174,10 +162,8 @@ message TradableInstrument {
   oneof riskModel {
     // Log normal.
     LogNormalRiskModel logNormalRiskModel = 100;
-    // External socket.
-    ExternalRiskModel externalRiskModel = 101;
     // Simple.
-    SimpleRiskModel simpleRiskModel = 102;
+    SimpleRiskModel simpleRiskModel = 101;
   }
 }
 
@@ -197,8 +183,8 @@ message Fees {
   FeeFactors factors = 1;
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
-message PriceMonitoringParameters {
+// PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
+message PriceMonitoringTrigger {
   // Price monitoring projection horizon τ in seconds.
   int64 horizon = 1 [(validator.field) = {int_gt: 0}];
   // Price monitoirng probability level p.
@@ -209,10 +195,14 @@ message PriceMonitoringParameters {
   int64 auctionExtension = 3 [(validator.field) = {int_gt: 0}];
 }
 
+// PriceMonitoringParameters contain a collection of triggers to be used for a given market.
+message PriceMonitoringParameters {
+  repeated PriceMonitoringTrigger triggers = 1;
+}
+
 message PriceMonitoringSettings {
-  // Specifies a set of PriceMonitoringParameters to be used for price
-  // monitoring purposes
-  repeated PriceMonitoringParameters priceMonitoringParameters = 1;
+  // Specifies PriceMonitoringParameters to be used for price monitoring purposes
+  PriceMonitoringParameters parameters = 1;
 
   // Specifies how often (expressed in seconds) the price monitoring bounds should be updated.
   int64 updateFrequency = 2;

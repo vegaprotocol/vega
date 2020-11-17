@@ -12,7 +12,7 @@ var (
 	ErrMissingWithdrawERC20Ext = errors.New("missing withdraw submission erc20 ext")
 )
 
-func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission) error {
+func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission, id string) error {
 	asset, err := app.assets.Get(w.Asset)
 	if err != nil {
 		app.log.Error("invalid vega asset ID for withdrawal",
@@ -25,13 +25,13 @@ func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission
 
 	switch {
 	case asset.IsBuiltinAsset():
-		return app.banking.WithdrawalBuiltinAsset(ctx, w.PartyID, w.Asset, w.Amount)
+		return app.banking.WithdrawalBuiltinAsset(ctx, id, w.PartyID, w.Asset, w.Amount)
 	case asset.IsERC20():
 		ext := w.Ext.GetErc20()
 		if ext == nil {
 			return ErrMissingWithdrawERC20Ext
 		}
-		return app.banking.LockWithdrawalERC20(ctx, w.PartyID, w.Asset, w.Amount, ext)
+		return app.banking.LockWithdrawalERC20(ctx, id, w.PartyID, w.Asset, w.Amount, ext)
 	}
 
 	return errors.New("unimplemented withdrawal")

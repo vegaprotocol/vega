@@ -3,6 +3,8 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/governance"
 	mockgov "code.vegaprotocol.io/vega/governance/mocks"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -121,7 +124,7 @@ func getTestGRPCServer(
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
 	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
 	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
-		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.5"},
+		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.8"},
 		SyncInfo:      tmctypes.SyncInfo{},
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)
@@ -238,6 +241,8 @@ func getTestGRPCServer(
 		return
 	}
 
+	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
+
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
 	// stub...
 	gov, vote := govStub{}, voteStub{}
@@ -267,6 +272,7 @@ func getTestGRPCServer(
 		marketService,
 		partyService,
 		orderService,
+		liquidityService,
 		tradeService,
 		candleService,
 		accountService,
@@ -299,7 +305,8 @@ func getTestGRPCServer(
 		// Start the gRPC server, then wait for it to be ready.
 		go g.Start()
 
-		conn, err = grpc.DialContext(ctx, fmt.Sprintf("%s:%d", conf.API.IP, conf.API.Port), grpc.WithInsecure(), grpc.WithBlock())
+		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
+		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {
 			t.Fatalf("Failed to create connection to gRPC server")
 		}

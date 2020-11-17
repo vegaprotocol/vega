@@ -39,6 +39,8 @@ var (
 	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
 	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
 	ErrInsufficientAssetBalance                    = OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
+	ErrCannotAmendPeggedDetailsOnNonPeggedOrder    = OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
+	ErrUnableToRepricePeggedOrder                  = OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -116,6 +118,8 @@ func (err OrderError) Error() string {
 		return "orderError: FOK orders are not allowed during auction"
 	case OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
 		return "orderError: insufficient asset balance to submit order"
+	case OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER:
+		return "orderError: cannot amend pegged details on a non pegged order"
 	default:
 		return "invalid OrderError"
 	}

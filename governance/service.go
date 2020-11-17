@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -81,73 +82,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.mu.Lock()
 	s.Config = cfg
 	s.mu.Unlock()
-}
-
-func streamVotes(ctx context.Context,
-	retries int,
-	input <-chan []types.Vote,
-	output chan []types.Vote,
-	log *logging.Logger,
-) {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Debug("votes subscriber closed the connection", logging.Error(ctx.Err()))
-			return
-		case updates := <-input:
-			// received new data
-			retryCount := retries
-			success := false
-			for !success && retryCount >= 0 {
-				select {
-				case output <- updates:
-					success = true
-				default:
-					log.Debug("failed to push votes update onto subscriber channel")
-					retryCount--
-					time.Sleep(time.Millisecond * 10)
-				}
-			}
-			if !success {
-				log.Warn("Failed to push votes update to stream, reached end of retries")
-				return
-			}
-		}
-	}
-}
-
-// TODO: explore https://godoc.org/github.com/eapache/channels#Wrap to reduce copy-paste
-func streamGovernance(ctx context.Context,
-	retries int,
-	input <-chan []types.GovernanceData,
-	output chan []types.GovernanceData,
-	log *logging.Logger,
-) bool {
-
-	select {
-	case <-ctx.Done():
-		log.Debug("governance subscriber closed the connection", logging.Error(ctx.Err()))
-		return false
-	case updates := <-input:
-		// received new data
-		retryCount := retries
-		success := false
-		for !success && retryCount >= 0 {
-			select {
-			case output <- updates:
-				success = true
-			default:
-				log.Debug("failed to push governance update onto subscriber channel")
-				retryCount--
-				time.Sleep(time.Millisecond * 10)
-			}
-		}
-		if !success {
-			log.Warn("Failed to push governance update to stream, reached end of retries")
-			return false
-		}
-	}
-	return true
 }
 
 // ObserveGovernance streams all governance updates
@@ -410,8 +344,16 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 	}
 
 	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
-	if terms.EnactmentTimestamp < terms.ClosingTimestamp || (terms.ValidationTimestamp > 0 && terms.ValidationTimestamp >= terms.ClosingTimestamp) {
-		return ErrIncompatibleTimestamps
+	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
+		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
+		closeTime := time.Unix(terms.ClosingTimestamp, 0)
+		return fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
+	}
+
+	if terms.ValidationTimestamp > 0 && terms.ValidationTimestamp >= terms.ClosingTimestamp {
+		validationTime := time.Unix(terms.ValidationTimestamp, 0)
+		closeTime := time.Unix(terms.ClosingTimestamp, 0)
+		return fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
 	}
 
 	return s.validateProposalChanges(terms.Change)

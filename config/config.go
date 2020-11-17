@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -45,38 +46,39 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	API         api.Config         `group:"API" namespace:"api"`
-	Accounts    accounts.Config    `group:"Accounts" namespace:"accounts"`
-	Blockchain  blockchain.Config  `group:"Blockchain" namespace:"blockchain"`
-	Candles     candles.Config     `group:"Candles" namespace:"candles"`
-	Collateral  collateral.Config  `group:"Collateral" namespace:"collateral"`
-	Execution   execution.Config   `group:"Execution" namespace:"execution"`
-	Processor   processor.Config   `group:"Processor" namespace:"processor"`
-	Logging     logging.Config     `group:"Logging" namespace:"logging"`
-	Matching    matching.Config    `group:"Matching" namespace:"matching"`
-	Markets     markets.Config     `group:"Markets" namespace:"markets"`
-	Orders      orders.Config      `group:"Orders" namespace:"orders"`
-	Parties     parties.Config     `group:"Parties" namespace:"parties"`
-	Position    positions.Config   `group:"Position" namespace:"position"`
-	Risk        risk.Config        `group:"Risk" namespace:"risk"`
-	Settlement  settlement.Config  `group:"Settlement" namespace:"settlement"`
-	Storage     storage.Config     `group:"Storage" namespace:"storage"`
-	Trades      trades.Config      `group:"Trades" namespace:"trades"`
-	Time        vegatime.Config    `group:"Time" namespace:"time"`
-	Monitoring  monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
-	Gateway     gateway.Config     `group:"Gateway" namespace:"gateway"`
-	Metrics     metrics.Config     `group:"Metrics" namespace:"metrics"`
-	Transfers   transfers.Config   `group:"Transfers" namespace:"transfers"`
-	Governance  governance.Config  `group:"Governance" namespace:"governance"`
-	NodeWallet  nodewallet.Config  `group:"NodeWallet" namespace:"nodewallet"`
-	Assets      assets.Config      `group:"Assets" namespace:"assets"`
-	Notary      notary.Config      `group:"Notary" namespace:"notary"`
-	EvtForward  evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
-	Subscribers subscribers.Config `group:"Subscribers" namespace:"subscribers"`
-	Genesis     genesis.Config     `group:"Genesis" namespace:"genesis"`
-	Validators  validators.Config  `group:"Validators" namespace:"validators"`
-	Banking     banking.Config     `group:"Banking" namespace:"banking"`
-	Stats       stats.Config       `group:"Stats" namespace:"stats"`
+	API               api.Config         `group:"API" namespace:"api"`
+	Accounts          accounts.Config    `group:"Accounts" namespace:"accounts"`
+	Blockchain        blockchain.Config  `group:"Blockchain" namespace:"blockchain"`
+	Candles           candles.Config     `group:"Candles" namespace:"candles"`
+	Collateral        collateral.Config  `group:"Collateral" namespace:"collateral"`
+	Execution         execution.Config   `group:"Execution" namespace:"execution"`
+	Processor         processor.Config   `group:"Processor" namespace:"processor"`
+	Logging           logging.Config     `group:"Logging" namespace:"logging"`
+	Matching          matching.Config    `group:"Matching" namespace:"matching"`
+	Markets           markets.Config     `group:"Markets" namespace:"markets"`
+	Orders            orders.Config      `group:"Orders" namespace:"orders"`
+	Liquidity         liquidity.Config   `group:"Liquidity" namespace:"liquidity"`
+	Parties           parties.Config     `group:"Parties" namespace:"parties"`
+	Position          positions.Config   `group:"Position" namespace:"position"`
+	Risk              risk.Config        `group:"Risk" namespace:"risk"`
+	Settlement        settlement.Config  `group:"Settlement" namespace:"settlement"`
+	Storage           storage.Config     `group:"Storage" namespace:"storage"`
+	Trades            trades.Config      `group:"Trades" namespace:"trades"`
+	Time              vegatime.Config    `group:"Time" namespace:"time"`
+	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
+	Gateway           gateway.Config     `group:"Gateway" namespace:"gateway"`
+	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
+	Transfers         transfers.Config   `group:"Transfers" namespace:"transfers"`
+	Governance        governance.Config  `group:"Governance" namespace:"governance"`
+	NodeWallet        nodewallet.Config  `group:"NodeWallet" namespace:"nodewallet"`
+	Assets            assets.Config      `group:"Assets" namespace:"assets"`
+	Notary            notary.Config      `group:"Notary" namespace:"notary"`
+	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
+	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
+	Genesis           genesis.Config     `group:"Genesis" namespace:"genesis"`
+	Validators        validators.Config  `group:"Validators" namespace:"validators"`
+	Banking           banking.Config     `group:"Banking" namespace:"banking"`
+	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
@@ -96,6 +98,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		API:               api.NewDefaultConfig(),
 		Accounts:          accounts.NewDefaultConfig(),
 		Orders:            orders.NewDefaultConfig(),
+		Liquidity:         liquidity.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
 		Markets:           markets.NewDefaultConfig(),
 		Matching:          matching.NewDefaultConfig(),

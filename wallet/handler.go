@@ -163,6 +163,10 @@ func (h *Handler) GetPublicKey(token, pubKey string) (*Keypair, error) {
 	return nil, ErrPubKeyDoesNotExist
 }
 
+func (h *Handler) GetWalletName(token string) (string, error) {
+	return h.auth.VerifyToken(token)
+}
+
 func (h *Handler) ListPublicKeys(token string) ([]Keypair, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

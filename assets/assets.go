@@ -8,10 +8,10 @@ import (
 
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/erc20"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
-	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -51,8 +51,6 @@ type Service struct {
 	refs map[string]string
 
 	nw NodeWallet
-
-	idgen *IDgenerator
 }
 
 func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Service, error) {
@@ -66,7 +64,6 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 		pendingAssets: map[string]*Asset{},
 		refs:          map[string]string{},
 		nw:            nw,
-		idgen:         NewIDGen(),
 	}
 	ts.NotifyOnTick(s.onTick)
 	return s, nil
@@ -86,10 +83,7 @@ func (a *Service) ReloadConf(cfg Config) {
 	a.cfg = cfg
 }
 
-func (a *Service) onTick(_ context.Context, t time.Time) {
-	// update block time on id generator
-	a.idgen.NewBatch()
-}
+func (a *Service) onTick(_ context.Context, t time.Time) {}
 
 // Enable move the state of an from pending the list of valid and accepted assets
 func (a *Service) Enable(assetID string) error {
@@ -114,8 +108,6 @@ func (a *Service) IsEnabled(assetID string) bool {
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
 func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
-	// make a new asset id
-	// assetID := s.idgen.NewID()
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:
@@ -157,7 +149,7 @@ func (s *Service) assetHash(asset *Asset) []byte {
 		data.Symbol,
 		data.TotalSupply,
 		data.Decimals)
-	return hash([]byte(buf))
+	return crypto.Hash([]byte(buf))
 }
 
 func (s *Service) Get(assetID string) (*Asset, error) {
@@ -181,7 +173,7 @@ func (s *Service) GetByRef(ref string) (*Asset, error) {
 	return s.Get(id)
 }
 
-// GetAssetHash return an hash of the given asset to be used
+// AssetHash return an hash of the given asset to be used
 // signed to validate the asset on the vega chain
 func (s *Service) AssetHash(assetID string) ([]byte, error) {
 	asset, ok := s.assets[assetID]
@@ -193,10 +185,4 @@ func (s *Service) AssetHash(assetID string) ([]byte, error) {
 		return s.assetHash(asset), nil
 	}
 	return nil, ErrAssetDoesNotExist
-}
-
-func hash(key []byte) []byte {
-	hasher := sha3.New256()
-	hasher.Write([]byte(key))
-	return hasher.Sum(nil)
 }

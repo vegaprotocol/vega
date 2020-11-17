@@ -222,6 +222,7 @@ type tradingDataService struct {
 	DepositService          DepositService
 	MarketDepthService      *subscribers.MarketDepthBuilder
 	NetParamsService        NetParamsService
+	LiquidityService        LiquidityService
 	ctx                     context.Context
 
 	chainID                  string
@@ -232,6 +233,22 @@ type tradingDataService struct {
 	netInfo           *tmctypes.ResultNetInfo
 	netInfoMu         sync.RWMutex
 	netInfoLastUpdate time.Time
+}
+
+func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
+	lps, err := t.LiquidityService.Get(req.Market, req.Party)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*types.LiquidityProvision, 0, len(lps))
+	for _, v := range lps {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.LiquidityProvisionsResponse{
+		LiquidityProvisions: out,
+	}, nil
 }
 
 func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
@@ -2056,6 +2073,15 @@ func (t *tradingDataService) ObserveEventBus(
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
+	if len(req.PartyID) == 0 {
+		// no PartyID filter
+		for _, t := range types {
+			// subscription to TxErr events
+			if t == events.TxErrEvent {
+				return apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing party filter for TxError stream"))
+			}
+		}
+	}
 	filters := []subscribers.EventFilter{}
 	if len(req.MarketID) > 0 && len(req.PartyID) > 0 {
 		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketID, req.PartyID))
@@ -2070,6 +2096,7 @@ func (t *tradingDataService) ObserveEventBus(
 
 	// number of retries to -1 to have pretty much unlimited retries
 	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(req.BatchSize), filters...)
+	defer close(bCh)
 
 	if req.BatchSize > 0 {
 		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
@@ -2111,9 +2138,9 @@ func (t *tradingDataService) recvEventRequest(
 ) (*protoapi.ObserveEventsRequest, error) {
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
 	oebCh := make(chan protoapi.ObserveEventsRequest)
-	defer close(oebCh)
 	var err error
 	go func() {
+		defer close(oebCh)
 		nb := protoapi.ObserveEventsRequest{}
 		if err = stream.RecvMsg(&nb); err != nil {
 			cfunc()

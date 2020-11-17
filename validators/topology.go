@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -163,7 +162,7 @@ func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) e
 			t.isValidator = true
 		}
 
-		nr := &proto.NodeRegistration{
+		nr := &types.NodeRegistration{
 			PubKey:      vegaBytes,
 			ChainPubKey: tmBytes,
 		}
