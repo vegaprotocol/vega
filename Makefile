@@ -155,6 +155,10 @@ spellcheck: ## Run markdown spellcheck container
 staticcheck: ## Run statick analysis checks
 	@./script/build.sh -a staticcheck
 
+.PHONY: semgrep
+semgrep: ## Run semgrep static analysis checks
+	@./script/build.sh -a semgrep
+
 .PHONY: clean
 clean: SHELL:=/bin/bash
 clean: ## Remove previous build
