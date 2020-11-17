@@ -1231,6 +1231,47 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	assert.Equal(t, types.Order_STATUS_PARKED.String(), confirmation.Order.Status.String())
 }
 
+/*func TestPeggedOrderCrash(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	for _, acc := range []string{"user1", "user2", "user3", "user4", "user5", "user6", "user7"} {
+		addAccount(tm, acc)
+		tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	}
+
+	// Set up the best bid/ask values
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user1", 5, 10500)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "user2", 20, 11000)
+
+	// Pegged order buy 35 MID -500
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user3", 35, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -500}
+	_, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+
+	// Pegged order buy 16 BEST_BID -2000
+	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user4", 16, 0)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -2000}
+	_, err = tm.market.SubmitOrder(ctx, &order2)
+	require.NoError(t, err)
+
+	// Pegged order sell 19 BEST_ASK 3000
+	order3 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "user5", 19, 0)
+	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 3000}
+	_, err = tm.market.SubmitOrder(ctx, &order3)
+	require.NoError(t, err)
+
+	// Buy 25 @ 10000
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user6", 25, 10000)
+
+	// Sell 25 @ 10250
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "user7", 25, 10250)
+}*/
+
 func testPeggedOrderRepricing(t *testing.T) {
 	// Create the market
 	now := time.Unix(10, 0)
