@@ -273,7 +273,9 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	if amendment.Price == nil &&
 		amendment.SizeDelta == 0 &&
 		(amendment.ExpiresAt == nil || amendment.ExpiresAt.Value == 0) &&
-		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED {
+		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED &&
+		amendment.PeggedOffset == nil &&
+		amendment.PeggedReference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 		return ErrNoParamsInAmendRequest
 	}
 
