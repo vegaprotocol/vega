@@ -490,12 +490,12 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
 func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64, error) {
-	return b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
+	return b.buy.BestPriceAndVolume()
 }
 
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
 func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64, error) {
-	return b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+	return b.sell.BestPriceAndVolume()
 }
 
 func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationConfirmation, error) {
@@ -916,13 +916,29 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 }
 
 func (b *OrderBook) GetBestBidPrice() (uint64, error) {
-	price, _, err := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
+	price, _, err := b.buy.BestPriceAndVolume()
 	return price, err
 }
 
+func (b *OrderBook) GetBestStaticBidPrice() (uint64, error) {
+	return b.buy.BestStaticPrice()
+}
+
+func (b *OrderBook) GetBestStaticBidPriceAndVolume() (uint64, uint64, error) {
+	return b.buy.BestStaticPriceAndVolume()
+}
+
 func (b *OrderBook) GetBestAskPrice() (uint64, error) {
-	price, _, err := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+	price, _, err := b.sell.BestPriceAndVolume()
 	return price, err
+}
+
+func (b *OrderBook) GetBestStaticAskPrice() (uint64, error) {
+	return b.sell.BestStaticPrice()
+}
+
+func (b *OrderBook) GetBestStaticAskPriceAndVolume() (uint64, uint64, error) {
+	return b.sell.BestStaticPriceAndVolume()
 }
 
 // PrintState prints the actual state of the book.

@@ -305,6 +305,8 @@ func (m *Market) Hash() []byte {
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
+	bestStaticBidPrice, bestStaticBidVolume, _ := m.getBestStaticBidPriceAndVolume()
+	bestStaticOfferPrice, bestStaticOfferVolume, _ := m.getBestStaticAskPriceAndVolume()
 
 	// Auction related values
 	var indicativePrice, indicativeVolume uint64
@@ -325,22 +327,32 @@ func (m *Market) GetMarketData() types.MarketData {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
 
+	var staticMidPrice uint64
+	if bestStaticBidPrice > 0 && bestStaticOfferPrice > 0 {
+		staticMidPrice = (bestStaticBidPrice + bestStaticOfferPrice) / 2
+	}
+
 	return types.MarketData{
-		Market:           m.GetID(),
-		BestBidPrice:     bestBidPrice,
-		BestBidVolume:    bestBidVolume,
-		BestOfferPrice:   bestOfferPrice,
-		BestOfferVolume:  bestOfferVolume,
-		MidPrice:         midPrice,
-		MarkPrice:        m.markPrice,
-		Timestamp:        m.currentTime.UnixNano(),
-		OpenInterest:     m.position.GetOpenInterest(),
-		IndicativePrice:  indicativePrice,
-		IndicativeVolume: indicativeVolume,
-		AuctionStart:     auctionStart,
-		AuctionEnd:       auctionEnd,
-		MarketState:      m.as.Mode(),
-		Trigger:          m.as.Trigger(),
+		Market:                m.GetID(),
+		BestBidPrice:          bestBidPrice,
+		BestBidVolume:         bestBidVolume,
+		BestOfferPrice:        bestOfferPrice,
+		BestOfferVolume:       bestOfferVolume,
+		BestStaticBidPrice:    bestStaticBidPrice,
+		BestStaticBidVolume:   bestStaticBidVolume,
+		BestStaticOfferPrice:  bestStaticOfferPrice,
+		BestStaticOfferVolume: bestStaticOfferVolume,
+		MidPrice:              midPrice,
+		StaticMidPrice:		   staticMidPrice,
+		MarkPrice:             m.markPrice,
+		Timestamp:             m.currentTime.UnixNano(),
+		OpenInterest:          m.position.GetOpenInterest(),
+		IndicativePrice:       indicativePrice,
+		IndicativeVolume:      indicativeVolume,
+		AuctionStart:          auctionStart,
+		AuctionEnd:            auctionEnd,
+		MarketState:           m.as.Mode(),
+		Trigger:               m.as.Trigger(),
 		// FIXME(WITOLD): uncomment set real values here
 		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
@@ -529,11 +541,11 @@ func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uin
 
 	switch order.PeggedOrder.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
-		price, err = m.getMidPrice()
+		price, err = m.getStaticMidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-		price, err = m.getBestBidPrice()
+		price, err = m.getBestStaticBidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-		price, err = m.getBestAskPrice()
+		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
 		return 0, ErrUnableToReprice
@@ -2370,20 +2382,28 @@ func (m *Market) unregisterOrder(order *types.Order) {
 	}
 }
 
-func (m *Market) getBestAskPrice() (uint64, error) {
-	return m.matching.GetBestAskPrice()
+func (m *Market) getBestStaticAskPrice() (uint64, error) {
+	return m.matching.GetBestStaticAskPrice()
 }
 
-func (m *Market) getBestBidPrice() (uint64, error) {
-	return m.matching.GetBestBidPrice()
+func (m *Market) getBestStaticAskPriceAndVolume() (uint64, uint64, error) {
+	return m.matching.GetBestStaticAskPriceAndVolume()
 }
 
-func (m *Market) getMidPrice() (uint64, error) {
-	bid, err := m.matching.GetBestBidPrice()
+func (m *Market) getBestStaticBidPrice() (uint64, error) {
+	return m.matching.GetBestStaticBidPrice()
+}
+
+func (m *Market) getBestStaticBidPriceAndVolume() (uint64, uint64, error) {
+	return m.matching.GetBestStaticBidPriceAndVolume()
+}
+
+func (m *Market) getStaticMidPrice() (uint64, error) {
+	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
 		return 0, err
 	}
-	ask, err := m.matching.GetBestAskPrice()
+	ask, err := m.matching.GetBestStaticAskPrice()
 	if err != nil {
 		return 0, err
 	}
@@ -2399,9 +2419,9 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 	var repricedCount uint64
 	for repricedCount = 1; repricedCount > 0; {
 		// Get the current reference values and compare them to the last saved set
-		newBestBid, _ := m.getBestBidPrice()
-		newBestAsk, _ := m.getBestAskPrice()
-		newMid, _ := m.getMidPrice()
+		newBestBid, _ := m.getBestStaticBidPrice()
+		newBestAsk, _ := m.getBestStaticAskPrice()
+		newMid, _ := m.getStaticMidPrice()
 
 		// Look for a move
 		var changes uint8

@@ -11617,11 +11617,46 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 </tr>
 
                 <tr>
+                  <td>bestStaticBidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Highest price on the order book for buy orders not including pegged orders </p></td>
+                </tr>
+
+                <tr>
+                  <td>bestStaticBidVolume</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Total volume at the best static bid price excluding pegged orders </p></td>
+                </tr>
+
+                <tr>
+                  <td>bestStaticOfferPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Lowest price on the order book for sell orders not including pegged orders </p></td>
+                </tr>
+
+                <tr>
+                  <td>bestStaticOfferVolume</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Total volume at the best static offer price excluding pegged orders </p></td>
+                </tr>
+
+                <tr>
                   <td>midPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Arithmetic average of the best bid price and best offer price, as an integer, for example <tt>123456</tt> is a correctly
  // formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
+                </tr>
+
+                <tr>
+                  <td>staticMidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Arithmetic average of the best static bid price and best static offer price </p></td>
                 </tr>
 
                 <tr>
