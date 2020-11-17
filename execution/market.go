@@ -1701,6 +1701,9 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		return nil, err
 	}
 
+	// Create a slive ready to store the generated events in
+	evts := make([]events.Event, 0, len(m.parkedOrders)+len(cancellations))
+
 	// Check the parked order list of any orders from that same party
 	var parkedCancels []*types.OrderCancellationConfirmation
 	for _, order := range m.parkedOrders {
@@ -1708,7 +1711,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 			order.Status = types.Order_STATUS_CANCELLED
 			m.removePeggedOrder(order)
 			order.UpdatedAt = m.currentTime.UnixNano()
-			m.broker.Send(events.NewOrderEvent(ctx, order))
+			evts = append(evts, events.NewOrderEvent(ctx, order))
 
 			parkedCancel := &types.OrderCancellationConfirmation{
 				Order: order,
@@ -1725,7 +1728,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 
 		// Update the order in our stores (will be marked as cancelled)
 		cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
-		m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
+		evts = append(evts, events.NewOrderEvent(ctx, cancellation.Order))
 		_, err = m.position.UnregisterOrder(cancellation.Order)
 		if err != nil {
 			m.log.Error("Failure unregistering order in positions engine (cancel)",
@@ -1733,6 +1736,9 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 				logging.Error(err))
 		}
 	}
+
+	// Send off all the events in one big batch
+	m.broker.SendBatch(evts)
 
 	m.checkForReferenceMoves(ctx)
 
