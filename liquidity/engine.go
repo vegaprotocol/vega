@@ -16,31 +16,33 @@ var (
 	ErrEmptyShape                     = errors.New("liquidity provision contains an empty shape")
 )
 
+//go:generate mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
+
 // Broker - event bus
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/governance Broker
 type Broker interface {
 	Send(e events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity RiskModel
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
 	GetProjectionHorizon() float64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity PriceMonitor
-// PriceMonitor provides the range of valid prices, that is prices that wouldn't trade the current trading mode
+// PriceMonitor provides the range of valid prices, that is prices that
+// wouldn't trade the current trading mode
 type PriceMonitor interface {
 	GetValidPriceRange() (float64, float64)
 }
 
-type RepricePeggedOrder func(order *types.PeggedOrder) (uint64, error)
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/id_gen_mock.go -package mocks code.vegaprotocol.io/vega/liquidity IDGen
+// IDGen is an id generator for orders.
 type IDGen interface {
 	SetID(*types.Order)
 }
+
+// RepricePeggedOrder reprices a pegged order.
+// This function should be injected by the market.
+type RepricePeggedOrder func(order *types.PeggedOrder) (uint64, error)
 
 // Engine handles Liquidity provision
 type Engine struct {
@@ -167,8 +169,8 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 
 // LiquidityProvisionByPartyID returns the LP associated to a Party if any.
 // If not, it returns nil.
-func (e *Engine) LiquidityProvisionByPartyID(partyId string) *types.LiquidityProvision {
-	return e.provisions[partyId]
+func (e *Engine) LiquidityProvisionByPartyID(partyID string) *types.LiquidityProvision {
+	return e.provisions[partyID]
 }
 
 // Orders provides convenience functions to a slice of *veaga/proto.Orders.
@@ -183,10 +185,10 @@ func (ords Orders) ByParty() map[string][]*types.Order {
 	return parties
 }
 
-func (e *Engine) updatePartyOrders(partyId string, orders []*types.Order) {
+func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 	// These maps are created by SubmitLiquidityProvision
-	m := e.orders[partyId]
-	lm := e.liquidityOrders[partyId]
+	m := e.orders[partyID]
+	lm := e.liquidityOrders[partyID]
 
 	for _, order := range orders {
 		// skip if it's a liquidity order
@@ -301,12 +303,12 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 	return needsCreate, needsUpdate, nil
 }
 
-func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyId string, size uint64) *types.Order {
+func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID string, size uint64) *types.Order {
 	return &types.Order{
 		Side:        side,
 		PeggedOrder: pegged,
 		Price:       price,
-		PartyID:     partyId,
+		PartyID:     partyID,
 		Size:        size,
 		Remaining:   size,
 	}
