@@ -13,6 +13,7 @@ import (
 
 var (
 	ErrLiquidityProvisionDoesNotExist = errors.New("liquidity provision does not exist")
+	ErrEmptyShape                     = errors.New("liquidity provision contains an empty shape")
 )
 
 // Broker - event bus
@@ -99,6 +100,10 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		now                           = e.currentTime.UnixNano()
 	)
 
+	if len(lps.Buys) == 0 && len(lps.Sells) == 0 {
+		return ErrEmptyShape
+	}
+
 	// regardless of the final operaion (create,update or delete) we finish
 	// sending an event.
 	defer func() {
@@ -143,12 +148,14 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE
 
+	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
 	for _, buy := range lps.Buys {
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			LiquidityOrder: buy,
 		})
 	}
 
+	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
 	for _, sell := range lps.Sells {
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			LiquidityOrder: sell,
