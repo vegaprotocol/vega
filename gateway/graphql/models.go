@@ -1079,17 +1079,20 @@ const (
 	LiquidityProvisionStatusStopped LiquidityProvisionStatus = "Stopped"
 	// A Cancelled Liquidity provision
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
+	// A liquidity provision was invalid and got rejected
+	LiquidityProvisionStatusRejected LiquidityProvisionStatus = "Rejected"
 )
 
 var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
 	LiquidityProvisionStatusActive,
 	LiquidityProvisionStatusStopped,
 	LiquidityProvisionStatusCancelled,
+	LiquidityProvisionStatusRejected,
 }
 
 func (e LiquidityProvisionStatus) IsValid() bool {
 	switch e {
-	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled:
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected:
 		return true
 	}
 	return false

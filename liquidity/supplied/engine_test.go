@@ -33,12 +33,12 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
-	liquidity, err := engine.CalculateSuppliedLiquidity(MarkPrice, []types.Order{})
+	liquidity, err := engine.CalculateSuppliedLiquidity(MarkPrice, []*types.Order{})
 	require.NoError(t, err)
 	require.Equal(t, 0.0, liquidity)
 
 	// 1 buy, no sells
-	buyOrder1 := types.Order{
+	buyOrder1 := &types.Order{
 		Price:     102,
 		Size:      30,
 		Remaining: 25,
@@ -49,18 +49,18 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 
-	liquidity, err = engine.CalculateSuppliedLiquidity(MarkPrice, []types.Order{buyOrder1})
+	liquidity, err = engine.CalculateSuppliedLiquidity(MarkPrice, []*types.Order{buyOrder1})
 	require.NoError(t, err)
 	require.Equal(t, 0.0, liquidity)
 
 	// 1 buy, 2 sells
-	sellOrder1 := types.Order{
+	sellOrder1 := &types.Order{
 		Price:     99,
 		Size:      15,
 		Remaining: 11,
 		Side:      types.Side_SIDE_SELL,
 	}
-	sellOrder2 := types.Order{
+	sellOrder2 := &types.Order{
 		Price:     97,
 		Size:      60,
 		Remaining: 60,
@@ -77,12 +77,12 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(sellOrder1.Price), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, Horizon, float64(sellOrder2.Price), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
 
-	liquidity, err = engine.CalculateSuppliedLiquidity(MarkPrice, []types.Order{buyOrder1, sellOrder1, sellOrder2})
+	liquidity, err = engine.CalculateSuppliedLiquidity(MarkPrice, []*types.Order{buyOrder1, sellOrder1, sellOrder2})
 	require.NoError(t, err)
 	require.Equal(t, expectedLiquidity, liquidity)
 
 	// 2 buys, 2 sells
-	buyOrder2 := types.Order{
+	buyOrder2 := &types.Order{
 		Price:     102,
 		Size:      600,
 		Remaining: 599,
@@ -94,7 +94,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice)
 
-	liquidity, err = engine.CalculateSuppliedLiquidity(MarkPrice, []types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2})
+	liquidity, err = engine.CalculateSuppliedLiquidity(MarkPrice, []*types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2})
 	require.NoError(t, err)
 	require.Equal(t, expectedLiquidity, liquidity)
 }
@@ -109,8 +109,8 @@ func Test_InteralConsistency(t *testing.T) {
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
 
-	buyLimitOrders := []types.Order{}
-	sellLimitOrders := []types.Order{}
+	buyLimitOrders := []*types.Order{}
+	sellLimitOrders := []*types.Order{}
 
 	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
 	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
@@ -165,8 +165,8 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(6)
 
-	buyLimitOrders := []types.Order{}
-	sellLimitOrders := []types.Order{}
+	buyLimitOrders := []*types.Order{}
+	sellLimitOrders := []*types.Order{}
 
 	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
 	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
@@ -344,7 +344,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 
 	liquidityObligation := 123.45
 	// Limit orders don't provide enough liquidity
-	buyLimitOrders := []types.Order{
+	buyLimitOrders := []*types.Order{
 		{
 			Price:     95,
 			Size:      500,
@@ -358,7 +358,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Side:      types.Side_SIDE_BUY,
 		},
 	}
-	sellLimitOrders := []types.Order{
+	sellLimitOrders := []*types.Order{
 		{
 			Price:     104,
 			Size:      500,
@@ -394,7 +394,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	require.True(t, totalSuppliedLiquidity < 2*liquidityObligation)
 
 	// Limit buy orders provide enoguh liquidity
-	buyLimitOrders = []types.Order{
+	buyLimitOrders = []*types.Order{
 		{
 			Price:     95,
 			Size:      500,
@@ -408,7 +408,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Side:      types.Side_SIDE_BUY,
 		},
 	}
-	sellLimitOrders = []types.Order{
+	sellLimitOrders = []*types.Order{
 		{
 			Price:     104,
 			Size:      500,
@@ -439,7 +439,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	require.True(t, totalSuppliedLiquidity < 2*liquidityObligation)
 
 	//Limit sell orders provide enoguh liquidity
-	buyLimitOrders = []types.Order{
+	buyLimitOrders = []*types.Order{
 		{
 			Price:     95,
 			Size:      500,
@@ -453,7 +453,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Side:      types.Side_SIDE_BUY,
 		},
 	}
-	sellLimitOrders = []types.Order{
+	sellLimitOrders = []*types.Order{
 		{
 			Price:     104,
 			Size:      500,
@@ -484,7 +484,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	require.True(t, totalSuppliedLiquidity < 2*liquidityObligation)
 
 	// Limit buy & sell orders provide enoguh liquidity
-	buyLimitOrders = []types.Order{
+	buyLimitOrders = []*types.Order{
 		{
 			Price:     95,
 			Size:      500,
@@ -498,7 +498,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Side:      types.Side_SIDE_BUY,
 		},
 	}
-	sellLimitOrders = []types.Order{
+	sellLimitOrders = []*types.Order{
 		{
 			Price:     104,
 			Size:      500,
@@ -538,8 +538,8 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(2)
 
-	buyLimitOrders := []types.Order{}
-	sellLimitOrders := []types.Order{}
+	buyLimitOrders := []*types.Order{}
+	sellLimitOrders := []*types.Order{}
 
 	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
 	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
@@ -585,20 +585,20 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
 	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
 
-	order1 := types.Order{
+	order1 := &types.Order{
 		Price:     minPriceInt,
 		Size:      15,
 		Remaining: 11,
 		Side:      types.Side_SIDE_BUY,
 	}
-	order2 := types.Order{
+	order2 := &types.Order{
 		Price:     maxPriceInt,
 		Size:      60,
 		Remaining: 60,
 		Side:      types.Side_SIDE_SELL,
 	}
 
-	orders := []types.Order{
+	orders := []*types.Order{
 		order1,
 		order2,
 	}
@@ -628,14 +628,14 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 
 }
 
-func collateOrders(buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*supplied.LiquidityOrder, sellShapes []*supplied.LiquidityOrder) []types.Order {
-	allOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders)+len(buyShapes)+len(sellShapes))
+func collateOrders(buyLimitOrders []*types.Order, sellLimitOrders []*types.Order, buyShapes []*supplied.LiquidityOrder, sellShapes []*supplied.LiquidityOrder) []*types.Order {
+	allOrders := make([]*types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders)+len(buyShapes)+len(sellShapes))
 
 	allOrders = append(allOrders, buyLimitOrders...)
 	allOrders = append(allOrders, sellLimitOrders...)
 
 	for _, s := range buyShapes {
-		lo := types.Order{
+		lo := &types.Order{
 			Price:     s.Price,
 			Size:      s.LiquidityImpliedVolume,
 			Remaining: s.LiquidityImpliedVolume,
@@ -645,7 +645,7 @@ func collateOrders(buyLimitOrders []types.Order, sellLimitOrders []types.Order, 
 	}
 
 	for _, s := range sellShapes {
-		lo := types.Order{
+		lo := &types.Order{
 			Price:     s.Price,
 			Size:      s.LiquidityImpliedVolume,
 			Remaining: s.LiquidityImpliedVolume,

@@ -6535,6 +6535,8 @@ enum LiquidityProvisionStatus {
   Stopped
   "A Cancelled Liquidity provision"
   Cancelled
+  "A liquidity provision was invalid and got rejected"
+  Rejected
 }
 
 type LiquidityOrderReference {

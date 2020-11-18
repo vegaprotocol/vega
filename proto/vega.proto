@@ -1156,6 +1156,8 @@ message LiquidityProvision {
     LIQUIDITY_PROVISION_STATUS_STOPPED = 2;
     // The liquidity provision was cancelled by the MM.
     LIQUIDITY_PROVISION_STATUS_CANCELLED = 3;
+    // The liquidity provision was invalid and got rejected.
+    LIQUIDITY_PROVISION_STATUS_REJECTED = 4;
   }
 
   // LiquidityProvision identifier

@@ -3406,10 +3406,11 @@
         "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
         "LIQUIDITY_PROVISION_STATUS_ACTIVE",
         "LIQUIDITY_PROVISION_STATUS_STOPPED",
-        "LIQUIDITY_PROVISION_STATUS_CANCELLED"
+        "LIQUIDITY_PROVISION_STATUS_CANCELLED",
+        "LIQUIDITY_PROVISION_STATUS_REJECTED"
       ],
       "default": "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
-      "description": "- LIQUIDITY_PROVISION_STATUS_UNSPECIFIED: The default value\n - LIQUIDITY_PROVISION_STATUS_ACTIVE: The liquidity provision is active\n - LIQUIDITY_PROVISION_STATUS_STOPPED: The liquidity provision was stopped by the network\n - LIQUIDITY_PROVISION_STATUS_CANCELLED: The liquidity provision was cancelled by the MM.",
+      "description": "- LIQUIDITY_PROVISION_STATUS_UNSPECIFIED: The default value\n - LIQUIDITY_PROVISION_STATUS_ACTIVE: The liquidity provision is active\n - LIQUIDITY_PROVISION_STATUS_STOPPED: The liquidity provision was stopped by the network\n - LIQUIDITY_PROVISION_STATUS_CANCELLED: The liquidity provision was cancelled by the MM.\n - LIQUIDITY_PROVISION_STATUS_REJECTED: The liquidity provision was invalid and got rejected.",
       "title": "the status of a liquidity provision order"
     },
     "vegaLiquidityProvisionSubmission": {

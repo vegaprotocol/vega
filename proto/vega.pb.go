@@ -898,6 +898,8 @@ const (
 	LiquidityProvision_LIQUIDITY_PROVISION_STATUS_STOPPED LiquidityProvision_Status = 2
 	// The liquidity provision was cancelled by the MM.
 	LiquidityProvision_LIQUIDITY_PROVISION_STATUS_CANCELLED LiquidityProvision_Status = 3
+	// The liquidity provision was invalid and got rejected.
+	LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED LiquidityProvision_Status = 4
 )
 
 var LiquidityProvision_Status_name = map[int32]string{
@@ -905,6 +907,7 @@ var LiquidityProvision_Status_name = map[int32]string{
 	1: "LIQUIDITY_PROVISION_STATUS_ACTIVE",
 	2: "LIQUIDITY_PROVISION_STATUS_STOPPED",
 	3: "LIQUIDITY_PROVISION_STATUS_CANCELLED",
+	4: "LIQUIDITY_PROVISION_STATUS_REJECTED",
 }
 
 var LiquidityProvision_Status_value = map[string]int32{
@@ -912,6 +915,7 @@ var LiquidityProvision_Status_value = map[string]int32{
 	"LIQUIDITY_PROVISION_STATUS_ACTIVE":      1,
 	"LIQUIDITY_PROVISION_STATUS_STOPPED":     2,
 	"LIQUIDITY_PROVISION_STATUS_CANCELLED":   3,
+	"LIQUIDITY_PROVISION_STATUS_REJECTED":    4,
 }
 
 func (x LiquidityProvision_Status) String() string {
