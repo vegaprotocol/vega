@@ -66,6 +66,7 @@ func TestLiquidityEngine(t *testing.T) {
 	t.Run("Submission", func(t *testing.T) {
 		t.Run("CreateUpdateDelete", testSubmissionCRUD)
 		t.Run("CancelNonExisting", testCancelNonExistingSubmission)
+		t.Run("FailWhenNoShape", testSubmissionFailWhenNoShape)
 	})
 
 	//t.Run("Update", testUpdate)
@@ -82,16 +83,34 @@ func testSubmissionCRUD(t *testing.T) {
 
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID("some-party"))
 
+	buyShape := []*types.LiquidityOrder{
+		{
+			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+			Offset:     -1,
+			Proportion: 1,
+		},
+	}
+	sellShape := []*types.LiquidityOrder{
+		{
+			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+			Offset:     1,
+			Proportion: 1,
+		},
+	}
+
 	lps1 := &types.LiquidityProvisionSubmission{
 		MarketID: "test", CommitmentAmount: 100, Fee: "0.5",
+		Buys: buyShape, Sells: sellShape,
 	}
 
 	lps2 := &types.LiquidityProvisionSubmission{
 		MarketID: "test", CommitmentAmount: 200, Fee: "0.5",
+		Buys: buyShape, Sells: sellShape,
 	}
 
 	lps3 := &types.LiquidityProvisionSubmission{
 		MarketID: "test", CommitmentAmount: 000, Fee: "0.5",
+		Buys: buyShape, Sells: sellShape,
 	}
 
 	expected := &types.LiquidityProvision{
@@ -102,6 +121,13 @@ func testSubmissionCRUD(t *testing.T) {
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
 		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE,
+		Buys: []*types.LiquidityOrderReference{
+			{LiquidityOrder: buyShape[0]},
+		},
+
+		Sells: []*types.LiquidityOrderReference{
+			{LiquidityOrder: sellShape[0]},
+		},
 	}
 
 	// Create a submission should fire an event
@@ -158,6 +184,13 @@ func testCancelNonExistingSubmission(t *testing.T) {
 
 	lps := &types.LiquidityProvisionSubmission{
 		CommitmentAmount: 0,
+		Buys: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Offset:     -1,
+				Proportion: 1,
+			},
+		},
 	}
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:        "some-id",
@@ -170,6 +203,25 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	err := tng.engine.SubmitLiquidityProvision(ctx,
 		lps, party, "some-id")
 	require.Error(t, err)
+}
+
+func testSubmissionFailWhenNoShape(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		now   = time.Now()
+		tng   = newTestEngine(t, now)
+	)
+	defer tng.ctrl.Finish()
+
+	// Expectations
+	lps := &types.LiquidityProvisionSubmission{
+		CommitmentAmount: 10,
+	}
+
+	require.Error(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+	)
 }
 
 func TestUpdate(t *testing.T) {
