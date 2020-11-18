@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -131,6 +132,7 @@ type Market struct {
 	position           *positions.Engine
 	settlement         *settlement.Engine
 	fee                *fee.Engine
+	liquidity          *liquidity.Engine
 
 	// deps engines
 	collateral *collateral.Engine
@@ -251,6 +253,8 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
+	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
+
 	market := &Market{
 		log:                  log,
 		idgen:                idgen,
@@ -266,6 +270,7 @@ func NewMarket(
 		collateral:           collateralEngine,
 		broker:               broker,
 		fee:                  feeEngine,
+		liquidity:            liqEngine,
 		parties:              map[string]struct{}{},
 		as:                   as,
 		pMonitor:             pMonitor,
@@ -343,7 +348,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		BestStaticOfferPrice:  bestStaticOfferPrice,
 		BestStaticOfferVolume: bestStaticOfferVolume,
 		MidPrice:              midPrice,
-		StaticMidPrice:		   staticMidPrice,
+		StaticMidPrice:        staticMidPrice,
 		MarkPrice:             m.markPrice,
 		Timestamp:             m.currentTime.UnixNano(),
 		OpenInterest:          m.position.GetOpenInterest(),
@@ -392,6 +397,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
+	m.liquidity.OnChainTimeUpdate(ctx, t)
 
 	closed = t.After(m.closingAt)
 	m.closed = closed
