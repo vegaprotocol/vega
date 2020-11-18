@@ -24,15 +24,15 @@ type LiquidityOrder struct {
 	LiquidityImpliedVolume uint64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 // RiskModel allows calculation of min/max price range and a probability of trading.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
 	GetProjectionHorizon() float64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
 // PriceMonitor provides the range of valid prices, that is prices that wouldn't trade the current trading mode
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
 type PriceMonitor interface {
 	GetValidPriceRange() (float64, float64)
 }
@@ -165,8 +165,8 @@ func (e *Engine) getProbabilityOfTrading(currentPrice float64, orderPrice uint64
 		cache = e.bCache
 	}
 
-	if prob, ok := cache[orderPrice]; !ok {
-		prob = e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
+	if _, ok := cache[orderPrice]; !ok {
+		prob := e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
 		cache[orderPrice] = prob
 	}
 	return cache[orderPrice]
