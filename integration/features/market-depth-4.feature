@@ -61,45 +61,21 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
     Then I see the following order events:
       | trader   | id        | side | volume | reference | offset | price | status          |
       | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 130   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 125   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 122   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 121   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 120   | STATUS_ACTIVE   |
+      | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 130   | STATUS_ACTIVE   |
+      | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 130   | STATUS_ACTIVE   |
       | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 115   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 112   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 111   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 110   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 112   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 115   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 118   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 121   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 123   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 124   | STATUS_ACTIVE   |
       | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 70    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 75    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 78    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 81    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 84    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 87    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 88    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 89    | STATUS_ACTIVE   |
-      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 85    | STATUS_ACTIVE   |
-      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 88    | STATUS_ACTIVE   |
-      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 91    | STATUS_ACTIVE   |
-      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 94    | STATUS_ACTIVE   |
-      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 97    | STATUS_ACTIVE   |
-      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 98    | STATUS_ACTIVE   |
-      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 99    | STATUS_ACTIVE   |
+      | pegged4  | ETH/DEC19 | buy  |    500 | MID       | -10    | 90    | STATUS_ACTIVE   |
 ##  Cancel some pegged events, and clear order event buffer so we can ignore the events we checked above 
     Then traders cancel pegged orders and clear:
       | trader  | MarketID  |
-#     | pegged1 | ETH/DEC19 |
+      | pegged1 | ETH/DEC19 |
       | pegged3 | ETH/DEC19 |
       | pegged2 | ETH/DEC19 |
 #   And dump orders
     Then I see the following order events:
       | trader   | id        | side | volume | reference | offset | price | status           |
-      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 89    | STATUS_CANCELLED |
-#     | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 120   | STATUS_CANCELLED |
-      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 124   | STATUS_CANCELLED |
-    And dump orders
+      | pegged3  | ETH/DEC19 | buy  |    500 | BID       | -10    | 70    | STATUS_CANCELLED |
+      | pegged1  | ETH/DEC19 | sell |    500 | ASK       | 10     | 130   | STATUS_CANCELLED |
+      | pegged2  | ETH/DEC19 | sell |    500 | MID       | 15     | 115   | STATUS_CANCELLED |
+#   And dump orders
