@@ -276,13 +276,14 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		// Check to see if we are updating the order or removing it
 		if order.Status == types.Order_STATUS_CANCELLED ||
 			order.Status == types.Order_STATUS_EXPIRED ||
-			order.Status == types.Order_STATUS_STOPPED {
-			md.removeOrder(order, order.Remaining)
+			order.Status == types.Order_STATUS_STOPPED ||
+			order.Status == types.Order_STATUS_PARKED {
+			md.removeOrder(originalOrder, order.Remaining)
 		} else {
 			md.updateOrder(originalOrder, order)
 		}
 	} else {
-		if order.Remaining > 0 {
+		if order.Remaining > 0 && order.Status == types.Order_STATUS_ACTIVE {
 			md.addOrder(order)
 		}
 	}
