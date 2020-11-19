@@ -2364,6 +2364,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) (*
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
+// and also any pegged orders that are parked
 func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
@@ -2372,10 +2373,18 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 		return nil, ErrMarketClosed
 	}
 
+	expiredPegs := []types.Order{}
 	for _, order := range m.expiringPeggedOrders.Expire(timestamp) {
 		order := order
 		m.removePeggedOrder(&order)
-		m.unregisterOrder(&order)
+
+		// The pegged expiry orders are copies and do not reflect the
+		// current state of the order, therefore we look it up
+		originalOrder, _, err := m.getOrderByID(order.Id)
+		if err == nil && originalOrder.Status != types.Order_STATUS_PARKED {
+			m.unregisterOrder(&order)
+		}
+		expiredPegs = append(expiredPegs, order)
 	}
 
 	orderList := m.matching.RemoveExpiredOrders(timestamp)
@@ -2384,6 +2393,8 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 		order := order
 		m.unregisterOrder(&order)
 	}
+
+	orderList = append(orderList, expiredPegs...)
 
 	return orderList, nil
 }

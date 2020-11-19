@@ -636,6 +636,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged order reprice when no limit orders", testPeggedOrderRepriceCrashWhenNoLimitOrders)
 	t.Run("pegged order cancel a parked order", testPeggedOrderCancelParked)
 	t.Run("pegged orders cancelall", testPeggedOrderParkCancelAll)
+	t.Run("pegged orders expiring 2", testPeggedOrderExpiring2)
 }
 
 func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
@@ -1282,6 +1283,86 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "user7", 25, 10250)
 }*/
 
+func testPeggedOrderParkCancelAll(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "user")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Send one normal order
+	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user", 10, 100)
+	require.NotEmpty(t, limitOrder)
+
+	// Send one pegged order that is live
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -5}
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+	assert.NotNil(t, confirmation)
+
+	// Send one pegged order that is parked
+	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user", 10, 0)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -5}
+	confirmation2, err := tm.market.SubmitOrder(ctx, &order2)
+	require.NoError(t, err)
+	assert.NotNil(t, confirmation2)
+
+	cancelConf, err := tm.market.CancelAllOrders(ctx, "user")
+	require.NoError(t, err)
+	require.NotNil(t, cancelConf)
+	assert.Equal(t, 3, len(cancelConf))
+}
+
+func testPeggedOrderExpiring2(t *testing.T) {
+	now := time.Unix(10, 0)
+	expire := now.Add(time.Second * 100)
+	afterexpire := now.Add(time.Second * 200)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "user")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Send one normal expiring order
+	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, expire.UnixNano(), types.Side_SIDE_BUY, "user", 10, 100)
+	require.NotEmpty(t, limitOrder)
+
+	// Amend the expiry time
+	amendOrder(t, tm, "user", limitOrder, 0, 0, types.Order_TIF_UNSPECIFIED, now.UnixNano(), true)
+
+	// Send one pegged order that will be parked
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, expire.UnixNano(), types.Side_SIDE_BUY, "user", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -5}
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+	assert.NotNil(t, confirmation)
+
+	// Send one pegged order that will be live
+	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, expire.UnixNano(), types.Side_SIDE_BUY, "user", 10, 0)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -5}
+	confirmation, err = tm.market.SubmitOrder(ctx, &order2)
+	require.NoError(t, err)
+	assert.NotNil(t, confirmation)
+
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
+
+	// Move the time forward
+	orders, err := tm.market.RemoveExpiredOrders(afterexpire.UnixNano())
+	require.NotNil(t, orders)
+	assert.NoError(t, err)
+
+	// Check that we have no pegged orders
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+}
+
 func testPeggedOrderRepricing(t *testing.T) {
 	// Create the market
 	now := time.Unix(10, 0)
@@ -1402,7 +1483,7 @@ func testPeggedOrderExpiring(t *testing.T) {
 
 	orders, err := tm.market.RemoveExpiredOrders(now.Add(25 * time.Minute).UnixNano())
 	require.NoError(t, err)
-	assert.Empty(t, orders, "expiring pegged orders shouldn't be in the books expiring list")
+	assert.Equal(t, 2, len(orders))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
 }
 
