@@ -7,6 +7,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -22,10 +23,18 @@ type chainClientImpl interface {
 	GetNetworkInfo(context.Context) (*tmctypes.ResultNetInfo, error)
 	GetUnconfirmedTxCount(context.Context) (int, error)
 	Health() (*tmctypes.ResultHealth, error)
-	SendTransaction(context.Context, []byte) (bool, error)
+	SendTransactionAsync(context.Context, []byte) (bool, error)
+	SendTransactionSync(context.Context, []byte) (bool, error)
+	SendTransactionCommit(context.Context, []byte) (bool, error)
 	GenesisValidators() ([]*tmtypes.Validator, error)
 	Validators() ([]*tmtypes.Validator, error)
 	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
+}
+
+type UserInputError interface {
+	Code() uint32
+	Details() string
+	Error() string
 }
 
 // Client abstract all communication to the blockchain
@@ -41,7 +50,7 @@ func NewClient(clt chainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
+func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle, ty api.SubmitTransactionRequest_Type) (bool, error) {
 	// unmarshal the transaction
 	tx := &types.Transaction{}
 	err := proto.Unmarshal(bundle.Tx, tx)
@@ -75,11 +84,20 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 		return false, errors.New("order message empty after marshal")
 	}
 
-	return c.sendTx(ctx, bundleBytes)
+	return c.sendTx(ctx, bundleBytes, ty)
 }
 
-func (c *Client) sendTx(ctx context.Context, bytes []byte) (bool, error) {
-	return c.clt.SendTransaction(ctx, bytes)
+func (c *Client) sendTx(ctx context.Context, bytes []byte, ty api.SubmitTransactionRequest_Type) (bool, error) {
+	switch ty {
+	case api.SubmitTransactionRequest_TYPE_ASYNC:
+		return c.clt.SendTransactionAsync(ctx, bytes)
+	case api.SubmitTransactionRequest_TYPE_SYNC:
+		return c.clt.SendTransactionSync(ctx, bytes)
+	case api.SubmitTransactionRequest_TYPE_COMMIT:
+		return c.clt.SendTransactionCommit(ctx, bytes)
+	default:
+		return false, errors.New("invalid submit transaction request type")
+	}
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain

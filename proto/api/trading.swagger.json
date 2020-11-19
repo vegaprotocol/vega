@@ -2147,9 +2147,23 @@
         "tx": {
           "$ref": "#/definitions/vegaSignedBundle",
           "description": "A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain."
+        },
+        "type": {
+          "$ref": "#/definitions/apiSubmitTransactionRequestType"
         }
       },
       "description": "Request for submitting a transaction on Vega."
+    },
+    "apiSubmitTransactionRequestType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_ASYNC",
+        "TYPE_SYNC",
+        "TYPE_COMMIT"
+      ],
+      "default": "TYPE_UNSPECIFIED",
+      "description": " - TYPE_ASYNC: The transaction will be submitted without waiting for response.\n - TYPE_SYNC: The transaction will be submitted, and blocking until the\ntendermint mempool return a response.\n - TYPE_COMMIT: The transaction will submitted, and blocking until the tendermint\nnetwork will have committed it into a block."
     },
     "apiSubmitTransactionResponse": {
       "type": "object",

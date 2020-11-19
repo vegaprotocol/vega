@@ -18,6 +18,15 @@ const (
 	AbciUnknownCommandError uint32 = 80
 )
 
+func IsUserInputError(e uint32) bool {
+	switch e {
+	case AbciTxnDecodingFailure, AbciTxnInternalError, AbciUnknownCommandError, AbciTxnValidationFailure:
+		return true
+	default:
+		return false
+	}
+}
+
 func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
 	state, err := LoadGenesisState(req.AppStateBytes)
 	if err != nil {

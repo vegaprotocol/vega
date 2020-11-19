@@ -126,6 +126,8 @@
     - [WithdrawalsRequest](#api.WithdrawalsRequest)
     - [WithdrawalsResponse](#api.WithdrawalsResponse)
 
+    - [SubmitTransactionRequest.Type](#api.SubmitTransactionRequest.Type)
+
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
 
@@ -1969,20 +1971,11 @@ Request to submit a new order.
 ### SubmitTransactionRequest
 Request for submitting a transaction on Vega.
 
-This request will take the signed `blob` result from a `prepare` call and submit it for inclusion in a block by the Vega blockchain.
-Several commands are available on Vega:
-- SubmitOrder, see [PrepareSubmitOrder](#api.trading).
-- AmendOrder, see [PrepareAmendOrder](#api.trading).
-- CancelOrder, see [PrepareCancelOrder](#api.trading).
-- PrepareProposal, see [PrepareProposal](#api.trading).
-- PrepareVote, see [PrepareVote](#api.trading).
-- Withdraw, see [WithdrawRequest](#api.trading).
-All of these can be prepared using this API. Payload data must be signed using Vega Wallet before submitting a transaction.
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | tx | [vega.SignedBundle](#vega.SignedBundle) |  | A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain. |
+| type | [SubmitTransactionRequest.Type](#api.SubmitTransactionRequest.Type) |  |  |
 
 
 
@@ -2209,6 +2202,20 @@ The response for a list of withdrawals
 
 
 
+
+
+
+<a name="api.SubmitTransactionRequest.Type"></a>
+
+### SubmitTransactionRequest.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TYPE_UNSPECIFIED | 0 |  |
+| TYPE_ASYNC | 1 | The transaction will be submitted without waiting for response. |
+| TYPE_SYNC | 2 | The transaction will be submitted, and blocking until the tendermint mempool return a response. |
+| TYPE_COMMIT | 3 | The transaction will submitted, and blocking until the tendermint network will have committed it into a block. |
 
 
 

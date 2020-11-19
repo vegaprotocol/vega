@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	api "code.vegaprotocol.io/vega/proto/api"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/rpc/core/types"
@@ -127,16 +128,16 @@ func (mr *MockBlockchainClientMockRecorder) Health() *gomock.Call {
 }
 
 // SubmitTransaction mocks base method
-func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle) (bool, error) {
+func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle, arg2 api.SubmitTransactionRequest_Type) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1)
+	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitTransaction indicates an expected call of SubmitTransaction
-func (mr *MockBlockchainClientMockRecorder) SubmitTransaction(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockBlockchainClientMockRecorder) SubmitTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchainClient)(nil).SubmitTransaction), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchainClient)(nil).SubmitTransaction), arg0, arg1, arg2)
 }
