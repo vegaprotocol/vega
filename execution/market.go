@@ -2384,7 +2384,8 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 		if err == nil && originalOrder.Status != types.Order_STATUS_PARKED {
 			m.unregisterOrder(&order)
 		}
-		expiredPegs = append(expiredPegs, order)
+		originalOrder.Status = types.Order_STATUS_EXPIRED
+		expiredPegs = append(expiredPegs, originalOrder)
 	}
 
 	orderList := m.matching.RemoveExpiredOrders(timestamp)
