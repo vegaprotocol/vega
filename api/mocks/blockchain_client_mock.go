@@ -128,12 +128,11 @@ func (mr *MockBlockchainClientMockRecorder) Health() *gomock.Call {
 }
 
 // SubmitTransaction mocks base method
-func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle, arg2 api.SubmitTransactionRequest_Type) (bool, error) {
+func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SubmitTransaction indicates an expected call of SubmitTransaction
