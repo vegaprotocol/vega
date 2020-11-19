@@ -283,7 +283,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 			md.updateOrder(originalOrder, order)
 		}
 	} else {
-		if order.Remaining > 0 {
+		if order.Remaining > 0 && order.Status == types.Order_STATUS_ACTIVE {
 			md.addOrder(order)
 		}
 	}

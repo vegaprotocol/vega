@@ -569,3 +569,23 @@ func TestParkingOrder(t *testing.T) {
 	assert.Equal(t, len(md2.GetBuy()), 1)
 	assert.Equal(t, len(md2.GetSell()), 0)
 }
+
+func TestParkedOrder(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx, true)
+
+	// Create a parked pegged order which should not go on the depth book
+	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 10)
+	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order1.Status = types.Order_STATUS_PARKED
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+
+	md, err := mdb.GetMarketDepth(ctx, "M", 0)
+	assert.Nil(t, err)
+	assert.NotNil(t, md)
+
+	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, len(md.GetBuy()), 0)
+	assert.Equal(t, len(md.GetSell()), 0)
+}
