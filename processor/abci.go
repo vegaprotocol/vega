@@ -23,7 +23,8 @@ import (
 )
 
 var (
-	ErrPublicKeyExceededRateLimit = errors.New("public key excedeed the rate limit")
+	ErrPublicKeyExceededRateLimit                    = errors.New("public key excedeed the rate limit")
+	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
 )
 
 type App struct {
@@ -260,13 +261,20 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 
 	// Check ratelimits
 	limit, isval := app.limitPubkey(tx.PubKey())
+	if isval {
+		return ctx, resp
+	}
+
 	// this is a party
 	// and if we may not want to rate limit it.
 	// in which case we may want to check if it has a balance
 	party := hex.EncodeToString(tx.PubKey())
-	if !isval && limit || !app.banking.HasBalance(party) {
+	if limit {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
+	} else if !app.banking.HasBalance(party) {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
 	}
 
 	return ctx, resp
