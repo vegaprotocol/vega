@@ -2360,7 +2360,6 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 	expiredPegs := []types.Order{}
 	for _, order := range m.expiringPeggedOrders.Expire(timestamp) {
 		order := order
-		m.removePeggedOrder(&order)
 
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
@@ -2368,8 +2367,9 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 		if err == nil && originalOrder.Status != types.Order_STATUS_PARKED {
 			m.unregisterOrder(&order)
 		}
+		m.removePeggedOrder(&order)
 		originalOrder.Status = types.Order_STATUS_EXPIRED
-		expiredPegs = append(expiredPegs, originalOrder)
+		expiredPegs = append(expiredPegs, *originalOrder)
 	}
 
 	orderList := m.matching.RemoveExpiredOrders(timestamp)
