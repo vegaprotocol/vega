@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -19,6 +20,10 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+)
+
+var (
+	ErrPublicKeyExceededRateLimit = errors.New("public key excedeed the rate limit")
 )
 
 type App struct {
@@ -256,6 +261,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// Check ratelimits
 	if app.limitPubkey(tx.PubKey()) {
 		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
 	}
 
 	return ctx, resp

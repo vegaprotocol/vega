@@ -96,7 +96,7 @@ type PartyService interface {
 // BlockchainClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
-	SubmitTransaction(ctx context.Context, tx *types.SignedBundle) (bool, error)
+	SubmitTransaction(ctx context.Context, tx *types.SignedBundle, ty protoapi.SubmitTransactionRequest_Type) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)

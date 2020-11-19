@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	api "code.vegaprotocol.io/vega/proto/api"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,16 +36,15 @@ func (m *MockChain) EXPECT() *MockChainMockRecorder {
 }
 
 // SubmitTransaction mocks base method
-func (m *MockChain) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle) (bool, error) {
+func (m *MockChain) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SubmitTransaction indicates an expected call of SubmitTransaction
-func (mr *MockChainMockRecorder) SubmitTransaction(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockChainMockRecorder) SubmitTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockChain)(nil).SubmitTransaction), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockChain)(nil).SubmitTransaction), arg0, arg1, arg2)
 }
