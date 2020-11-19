@@ -388,8 +388,7 @@ func (s *Service) signTx(t string, w http.ResponseWriter, r *http.Request, _ htt
 	}
 
 	if req.Propagate {
-		err := s.nodeForward.Send(r.Context(), &sb, ty)
-		if err != nil {
+		if err := s.nodeForward.Send(r.Context(), &sb, ty); err != nil {
 			if s, ok := status.FromError(err); ok {
 				details := []string{}
 				for _, v := range s.Details() {
