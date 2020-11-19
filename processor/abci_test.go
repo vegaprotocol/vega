@@ -204,7 +204,7 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor
 }
 
 func (s *AbciTestSuite) testOnCheckTxFailWithNoBalances(t *testing.T, app *processor.App, proc *procTest) {
-	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
 	proc.bank.EXPECT().HasBalance(gomock.Any()).AnyTimes().Return(false)
 
 	tx := txStub{pubkey: []byte("some pubkey")}
@@ -213,7 +213,7 @@ func (s *AbciTestSuite) testOnCheckTxFailWithNoBalances(t *testing.T, app *proce
 }
 
 func (s *AbciTestSuite) testOnCheckTxSuccessWithBalance(t *testing.T, app *processor.App, proc *procTest) {
-	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
 	proc.bank.EXPECT().HasBalance(gomock.Any()).AnyTimes().Return(true)
 
 	tx := txStub{pubkey: []byte("some pubkey")}
