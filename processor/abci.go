@@ -259,7 +259,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	resp := tmtypes.ResponseCheckTx{}
 
 	// Check ratelimits
-	if app.limitPubkey(tx.PubKey()) || true {
+	if app.limitPubkey(tx.PubKey()) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
 	}
