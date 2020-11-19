@@ -57,9 +57,5 @@ Feature: Test market depth events for pegged orders
     Then I see the following order events:
       | trader   | id        | side | volume | reference | offset | price | status          |
       | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 110   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 105   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 102   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 101   | STATUS_ACTIVE   |
-      | pegged1  | ETH/DEC19 | sell |   1000 | MID       | 10     | 100   | STATUS_ACTIVE   |
-      | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 75    | STATUS_ACTIVE   |
-      | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 80    | STATUS_ACTIVE   |
+      | pegged2  | ETH/DEC19 | buy  |    500 | MID       | -15    | 85    | STATUS_ACTIVE   |
+      | pegged3  | ETH/DEC19 | buy  |    500 | MID       | -10    | 90    | STATUS_ACTIVE   |
