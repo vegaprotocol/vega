@@ -450,7 +450,9 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	case aa.IsERC20Deposit():
 		// here the event queue send us a 0x... pubkey
 		// we do the slice operation to remove it ([2:]
-
+		dep := e.deposits[aa.id]
+		dep.TxHash = aa.ref.hash
+		e.deposits[aa.id] = dep
 		aa.deposit.partyID = strings.TrimPrefix(aa.deposit.partyID, "0x")
 		return e.finalizeDeposit(ctx, aa.deposit, aa.id)
 	case aa.IsERC20AssetList():
