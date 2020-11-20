@@ -420,7 +420,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	require.NoError(t, err)
 
 	end = types.AuctionDuration{Duration: p1.AuctionExtension}
-	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(math.Floor(referencePrice))+2*maxMoveUp4, now)
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(referencePrice)+2*maxMoveUp4, now)
 	require.NoError(t, err)
 }
 
@@ -875,6 +875,6 @@ func TestPricesValidAfterAuctionEnds(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(1)
 
-	err = pm.CheckPrice(context.TODO(), auctionStateMock, p1ViolatingPrice, afterInitialAuction) //price should be accepted now
-
+	err = pm.CheckPrice(context.Background(), auctionStateMock, p1ViolatingPrice, afterInitialAuction) //price should be accepted now
+	require.NoError(t, err)
 }

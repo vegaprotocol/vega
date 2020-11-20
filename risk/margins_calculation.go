@@ -25,48 +25,48 @@ func addMarginLevels(ml *types.MarginLevels, maintenance float64, scalingFactors
 	ml.CollateralReleaseLevel += uint64(maintenance * scalingFactors.CollateralRelease)
 }
 
-func (r *Engine) calculateAuctionMargins(e events.Margin, markPrice int64, rf types.RiskFactor) *types.MarginLevels {
+func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice int64, rf types.RiskFactor) *types.MarginLevels {
 	// calculate margins without order positions
-	ml := r.calculateMargins(e, markPrice, rf, false)
+	ml := e.calculateMargins(m, markPrice, rf, false)
 	// now add the margin levels for orders
-	long, short := e.Buy(), e.Sell()
+	long, short := m.Buy(), m.Sell()
 	var (
 		lMargin, sMargin float64
 	)
 	if long > 0 {
-		lMargin = float64(long) * (rf.Long * float64(e.VWBuy()))
+		lMargin = float64(long) * (rf.Long * float64(m.VWBuy()))
 	}
 	if short > 0 {
-		sMargin = float64(short) * (rf.Short * float64(e.VWSell()))
+		sMargin = float64(short) * (rf.Short * float64(m.VWSell()))
 	}
 	// add buy/sell order margins to the margin requirements
 	if lMargin > sMargin {
-		addMarginLevels(ml, lMargin, r.marginCalculator.ScalingFactors)
+		addMarginLevels(ml, lMargin, e.marginCalculator.ScalingFactors)
 	} else {
-		addMarginLevels(ml, sMargin, r.marginCalculator.ScalingFactors)
+		addMarginLevels(ml, sMargin, e.marginCalculator.ScalingFactors)
 	}
 	// this is a bit of a hack, perhaps, but it keeps the remaining flow in the core simple:
 	// artificially increase the release level so we never release the margin balance during auction
-	ml.CollateralReleaseLevel += e.MarginBalance()
+	ml.CollateralReleaseLevel += m.MarginBalance()
 	return ml
 }
 
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
-func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
+func (e *Engine) calculateMargins(m events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
 	var (
 		marginMaintenanceLng float64
 		marginMaintenanceSht float64
 	)
-	openVolume := e.Size()
+	openVolume := m.Size()
 	var (
 		riskiestLng = openVolume
 		riskiestSht = openVolume
 	)
 	if withPotentialBuyAndSell {
 		// calculate both long and short riskiest positions
-		riskiestLng += e.Buy()
-		riskiestSht -= e.Sell()
+		riskiestLng += m.Buy()
+		riskiestSht -= m.Sell()
 	}
 
 	// calculate margin maintenance long only if riskiest is > 0
@@ -77,15 +77,15 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 			slippagePerUnit int64
 		)
 		if slippageVolume > 0 {
-			exitPrice, err := r.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_SIDE_BUY)
-			if err != nil && r.log.GetLevel() == logging.DebugLevel {
-				r.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
+			exitPrice, err := e.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_SIDE_BUY)
+			if err != nil && e.log.GetLevel() == logging.DebugLevel {
+				e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
 					logging.Error(err))
 			}
 			slippagePerUnit = markPrice - int64(exitPrice)
 		}
 
-		marginMaintenanceLng = float64(max(slippageVolume*slippagePerUnit, 0)) + float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(e.Buy()) * rf.Long *
+		marginMaintenanceLng = float64(max(slippageVolume*slippagePerUnit, 0)) + float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(m.Buy()) * rf.Long *
 			float64(markPrice))
 	}
 	// calculate margin maintenance short only if riskiest is < 0
@@ -97,23 +97,23 @@ func (r *Engine) calculateMargins(e events.Margin, markPrice int64, rf types.Ris
 		)
 		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume < 0 {
-			exitPrice, err := r.ob.GetCloseoutPrice(uint64(-slippageVolume), types.Side_SIDE_SELL)
-			if err != nil && r.log.GetLevel() == logging.DebugLevel {
-				r.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
+			exitPrice, err := e.ob.GetCloseoutPrice(uint64(-slippageVolume), types.Side_SIDE_SELL)
+			if err != nil && e.log.GetLevel() == logging.DebugLevel {
+				e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
 					logging.Error(err))
 			}
 			slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
 
-		marginMaintenanceSht = float64(max(abs(slippageVolume)*slippagePerUnit, 0)) + float64(abs(slippageVolume))*(rf.Short*float64(markPrice)) + (float64(abs(e.Sell())) * rf.Short * float64(markPrice))
+		marginMaintenanceSht = float64(max(abs(slippageVolume)*slippagePerUnit, 0)) + float64(abs(slippageVolume))*(rf.Short*float64(markPrice)) + (float64(abs(m.Sell())) * rf.Short * float64(markPrice))
 	}
 
 	// the greatest liability is the most positive number
 	if marginMaintenanceLng > marginMaintenanceSht && marginMaintenanceLng > 0 {
-		return newMarginLevels(marginMaintenanceLng, r.marginCalculator.ScalingFactors)
+		return newMarginLevels(marginMaintenanceLng, e.marginCalculator.ScalingFactors)
 	}
 	if marginMaintenanceSht > 0 {
-		return newMarginLevels(marginMaintenanceSht, r.marginCalculator.ScalingFactors)
+		return newMarginLevels(marginMaintenanceSht, e.marginCalculator.ScalingFactors)
 	}
 
 	return &types.MarginLevels{}

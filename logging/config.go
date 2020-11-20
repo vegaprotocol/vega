@@ -2,7 +2,7 @@ package logging
 
 // Config contains the configurable items for this package
 type Config struct {
-	Environment string  `long:"env" choice:"dev" choice:"custom"`
+	Environment string  `long:"env" choice:"dev" choice:"custom"` //lint:ignore SA5008 go-flags allows to define many choices using the same struct tag.
 	Custom      *Custom `tomlcp:"This section takes effect only when Environment is set to \"custom\"."`
 }
 

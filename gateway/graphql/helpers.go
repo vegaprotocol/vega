@@ -75,16 +75,6 @@ func datetimeToSecondsTS(timestamp string) (int64, error) {
 	return converted.UTC().Unix(), nil
 }
 
-func removePointers(input []*string) []string {
-	result := make([]string, 0, len(input))
-	for _, sPtr := range input {
-		if sPtr != nil {
-			result = append(result, *sPtr)
-		}
-	}
-	return result
-}
-
 func convertVersion(version *int) (uint64, error) {
 	const defaultValue = 0
 

@@ -572,11 +572,11 @@ func TestAmendToFill(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// test_AmendMarketOrderFail
-	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100) // 1 - a8
-	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110)  // 1 - a8
-	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120)  // 1 - a8
-	orderId = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50)    // 1 - a8
-	amendOrder(t, tm, "party2", orderId, 0, 500, types.Order_TIF_UNSPECIFIED, 0, true)
+	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)      // 1 - a8
+	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110)      // 1 - a8
+	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120)      // 1 - a8
+	orderID := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50) // 1 - a8
+	amendOrder(t, tm, "party2", orderID, 0, 500, types.Order_TIF_UNSPECIFIED, 0, true)
 }
 
 func TestUnableToAmendGFAGFN(t *testing.T) {
@@ -589,22 +589,22 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// test_AmendMarketOrderFail
-	orderId := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
-	amendOrder(t, tm, "party1", orderId, 0, 0, types.Order_TIF_GFA, 0, false)
-	amendOrder(t, tm, "party1", orderId, 0, 0, types.Order_TIF_GFN, 0, false)
+	orderID := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	amendOrder(t, tm, "party1", orderID, 0, 0, types.Order_TIF_GFA, 0, false)
+	amendOrder(t, tm, "party1", orderID, 0, 0, types.Order_TIF_GFN, 0, false)
 
-	orderId2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, 0, types.Side_SIDE_SELL, "party1", 10, 100)
-	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GTC, 0, false)
-	amendOrder(t, tm, "party1", orderId2, 0, 0, types.Order_TIF_GFA, 0, false)
+	orderID2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	amendOrder(t, tm, "party1", orderID2, 0, 0, types.Order_TIF_GTC, 0, false)
+	amendOrder(t, tm, "party1", orderID2, 0, 0, types.Order_TIF_GFA, 0, false)
 
 	// EnterAuction should actually trigger an auction here...
 	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
 		Duration: closeSec / 10, // some time in the future, before closing
 	})
 	tm.market.EnterAuction(context.Background())
-	orderId3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
-	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GTC, 0, false)
-	amendOrder(t, tm, "party1", orderId3, 0, 0, types.Order_TIF_GFN, 0, false)
+	orderID3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	amendOrder(t, tm, "party1", orderID3, 0, 0, types.Order_TIF_GTC, 0, false)
+	amendOrder(t, tm, "party1", orderID3, 0, 0, types.Order_TIF_GFN, 0, false)
 }
 
 func TestPeggedOrders(t *testing.T) {

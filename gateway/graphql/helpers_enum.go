@@ -1,3 +1,5 @@
+//lint:file-ignore U1000 although many convert functions are unused, we'll keep it for now.
+
 package gql
 
 import (

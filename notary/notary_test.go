@@ -15,10 +15,9 @@ import (
 
 type testNotary struct {
 	*notary.Notary
-	ctrl   *gomock.Controller
-	top    *mocks.MockValidatorTopology
-	broker *mocks.MockBroker
-	cmd    *mocks.MockCommander
+	ctrl *gomock.Controller
+	top  *mocks.MockValidatorTopology
+	cmd  *mocks.MockCommander
 }
 
 func getTestNotary(t *testing.T) *testNotary {

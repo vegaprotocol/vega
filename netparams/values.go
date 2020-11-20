@@ -397,17 +397,17 @@ func (d *Duration) ToDuration() (time.Duration, error) {
 	return d.value, nil
 }
 
-func (i *Duration) Validate(value string) error {
+func (d *Duration) Validate(value string) error {
 	vali, err := time.ParseDuration(value)
 	if err != nil {
 		return err
 	}
 
-	if !i.mutable {
+	if !d.mutable {
 		return errors.New("value is not mutable")
 	}
 
-	for _, fn := range i.rules {
+	for _, fn := range d.rules {
 		if newerr := fn(vali); newerr != nil {
 			if err != nil {
 				err = fmt.Errorf("%v, %w", err, newerr)
@@ -419,8 +419,8 @@ func (i *Duration) Validate(value string) error {
 	return err
 }
 
-func (i *Duration) Update(value string) error {
-	if !i.mutable {
+func (d *Duration) Update(value string) error {
+	if !d.mutable {
 		return errors.New("value is not mutable")
 	}
 	vali, err := time.ParseDuration(value)
@@ -428,7 +428,7 @@ func (i *Duration) Update(value string) error {
 		return err
 	}
 
-	for _, fn := range i.rules {
+	for _, fn := range d.rules {
 		if newerr := fn(vali); newerr != nil {
 			if err != nil {
 				err = fmt.Errorf("%v, %w", err, newerr)
@@ -439,28 +439,27 @@ func (i *Duration) Update(value string) error {
 	}
 
 	if err == nil {
-		i.rawval = value
-		i.value = vali
+		d.rawval = value
+		d.value = vali
 	}
 
 	return err
 }
 
-func (i *Duration) Mutable(b bool) *Duration {
-	i.mutable = b
-	return i
+func (d *Duration) Mutable(b bool) *Duration {
+	d.mutable = b
+	return d
 }
 
-func (i *Duration) MustUpdate(value string) *Duration {
-	err := i.Update(value)
-	if err != nil {
+func (d *Duration) MustUpdate(value string) *Duration {
+	if err := d.Update(value); err != nil {
 		panic(err)
 	}
-	return i
+	return d
 }
 
-func (i *Duration) String() string {
-	return i.rawval
+func (d *Duration) String() string {
+	return d.rawval
 }
 
 func DurationGTE(i time.Duration) func(time.Duration) error {

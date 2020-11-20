@@ -84,7 +84,7 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 	atomic.StoreUint32(&np.state, newState)
 }
 
-// returns validated proposal by all nodes
+// OnChainTimeUpdate returns validated proposal by all nodes
 func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Proposal, rejected []*types.Proposal) {
 	n.currentTimestamp = t
 

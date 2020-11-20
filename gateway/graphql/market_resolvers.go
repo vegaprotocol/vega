@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -201,11 +200,11 @@ func (r *myMarketResolver) OpeningAuction(ctx context.Context, obj *types.Market
 	}, nil
 }
 
-func (r *myMarketResolver) PriceMonitoringSettings(ctx context.Context, obj *proto.Market) (*PriceMonitoringSettings, error) {
+func (r *myMarketResolver) PriceMonitoringSettings(ctx context.Context, obj *types.Market) (*PriceMonitoringSettings, error) {
 	return PriceMonitoringSettingsFromProto(obj.PriceMonitoringSettings)
 }
 
-func (r *myMarketResolver) TradingMode(ctx context.Context, obj *proto.Market) (TradingMode, error) {
+func (r *myMarketResolver) TradingMode(ctx context.Context, obj *types.Market) (TradingMode, error) {
 	return TradingModeFromProto(obj.TradingMode)
 }
 

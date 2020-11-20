@@ -230,9 +230,8 @@ type tradingDataService struct {
 	hasGenesisTimeAndChainID uint32
 	mu                       sync.Mutex
 
-	netInfo           *tmctypes.ResultNetInfo
-	netInfoMu         sync.RWMutex
-	netInfoLastUpdate time.Time
+	netInfo   *tmctypes.ResultNetInfo
+	netInfoMu sync.RWMutex
 }
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
