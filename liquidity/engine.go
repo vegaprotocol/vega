@@ -342,7 +342,6 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 		if o.LiquidityImpliedVolume == 0 {
 			delete(lm, ref.OrderID)
 			ref.OrderID = ""
-			order.Status = types.Order_STATUS_CANCELLED
 		}
 
 		if o.LiquidityImpliedVolume != order.Size {

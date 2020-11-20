@@ -266,8 +266,8 @@ func TestUpdate(t *testing.T) {
 	}).AnyTimes()
 
 	orders := []*types.Order{
-		{Id: "1", PartyID: party, Price: 10, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
-		{Id: "2", PartyID: party, Price: 11, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
+		{Id: "1", PartyID: party, Price: 10, Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
+		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
 	creates, updates, err := tng.engine.Update(markPrice, fn, orders)
@@ -284,7 +284,6 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, updates, 3)
 	for _, order := range updates {
 		assert.EqualValues(t, 0, order.Size)
-		assert.Equal(t, types.Order_STATUS_CANCELLED, order.Status)
 	}
 
 	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
