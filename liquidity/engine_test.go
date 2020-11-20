@@ -62,14 +62,10 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	}
 }
 
-func TestLiquidityEngine(t *testing.T) {
-	t.Run("Submission", func(t *testing.T) {
-		t.Run("CreateUpdateDelete", testSubmissionCRUD)
-		t.Run("CancelNonExisting", testCancelNonExistingSubmission)
-		t.Run("FailWhenNoShape", testSubmissionFailWhenNoShape)
-	})
-
-	//t.Run("Update", testUpdate)
+func TestSubmissions(t *testing.T) {
+	t.Run("CreateUpdateDelete", testSubmissionCRUD)
+	t.Run("CancelNonExisting", testCancelNonExistingSubmission)
+	t.Run("FailWhenNoShape", testSubmissionFailWhenNoShape)
 }
 
 func testSubmissionCRUD(t *testing.T) {
@@ -290,4 +286,9 @@ func TestUpdate(t *testing.T) {
 		assert.EqualValues(t, 0, order.Size)
 		assert.Equal(t, types.Order_STATUS_CANCELLED, order.Status)
 	}
+
+	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
+	require.NoError(t, err)
+	require.Len(t, creates, 0)
+	require.Len(t, updates, 0)
 }
