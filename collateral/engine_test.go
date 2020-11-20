@@ -80,6 +80,12 @@ func TestEnableAssets(t *testing.T) {
 	t.Run("create new account for bad asset - failure", testCreateNewAccountForBadAsset)
 }
 
+func TestBalanceTracking(t *testing.T) {
+	t.Run("test a party without any account has no balance", testPartyWithoutAccountHasNoBalance)
+	t.Run("test a party with an account has a balance", testPartyWithAccountHasABalance)
+	t.Run("test a party with accounts cleared out has no balance", testPartyWithAccountsClearedOutHasNoBalance)
+}
+
 func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
 	t.Run("Fees transfer continuous - no transfer", testFeesTransferContinuousNoTransfer)
 	t.Run("fees transfer continuous - not funds", testFeeTransferContinuousNoFunds)
@@ -94,6 +100,52 @@ func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
 func TestCreateBondAccount(t *testing.T) {
 	t.Run("create a bond account with success", testCreateBondAccountSuccess)
 	t.Run("create a bond account with - failure no general account", testCreateBondAccountFailureNoGeneral)
+}
+
+func testPartyWithoutAccountHasNoBalance(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	party := "myparty"
+	assert.False(t, eng.HasBalance(party))
+}
+
+func testPartyWithAccountHasABalance(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	party := "myparty"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	assert.NoError(t, err)
+
+	// then add some monites
+	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
+	assert.Nil(t, err)
+
+	assert.True(t, eng.HasBalance(party))
+}
+
+func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
+	eng := getTestEngine(t, "test-market", 0)
+	defer eng.Finish()
+
+	party := "myparty"
+	// create trader
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	assert.NoError(t, err)
+
+	// then add some monites
+	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
+	assert.Nil(t, err)
+
+	// then add some monites
+	err = eng.Engine.DecrementBalance(context.Background(), acc, 500)
+	assert.Nil(t, err)
+
+	assert.False(t, eng.HasBalance(party))
 }
 
 func testCreateBondAccountFailureNoGeneral(t *testing.T) {

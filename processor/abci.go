@@ -23,7 +23,8 @@ import (
 )
 
 var (
-	ErrPublicKeyExceededRateLimit = errors.New("public key excedeed the rate limit")
+	ErrPublicKeyExceededRateLimit                    = errors.New("public key excedeed the rate limit")
+	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
 )
 
 type App struct {
@@ -259,29 +260,41 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	resp := tmtypes.ResponseCheckTx{}
 
 	// Check ratelimits
-	if app.limitPubkey(tx.PubKey()) {
+	limit, isval := app.limitPubkey(tx.PubKey())
+	if isval {
+		return ctx, resp
+	}
+
+	// this is a party
+	// and if we may not want to rate limit it.
+	// in which case we may want to check if it has a balance
+	party := hex.EncodeToString(tx.PubKey())
+	if limit {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
+	} else if !app.banking.HasBalance(party) {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
 	}
 
 	return ctx, resp
 }
 
 // limitPubkey returns whether a request should be rate limited or not
-func (app *App) limitPubkey(pk []byte) bool {
+func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
 	// Do not rate limit validators nodes.
 	if app.top.Exists(pk) {
-		return false
+		return false, true
 	}
 
 	key := ratelimit.Key(pk).String()
 	if !app.rates.Allow(key) {
 		app.log.Error("Rate limit exceeded", logging.String("key", key))
-		return true
+		return true, false
 	}
 
 	app.log.Debug("RateLimit allowance", logging.String("key", key), logging.Int("count", app.rates.Count(key)))
-	return false
+	return false, false
 }
 
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
