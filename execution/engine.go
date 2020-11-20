@@ -339,25 +339,6 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 	return confirmations, nil
 }
 
-// CancelOrderByID attempts to locate order by its Id and cancel it if exists.
-func (e *Engine) CancelOrderByID(orderID string, marketID string) (*types.OrderCancellationConfirmation, error) {
-	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Cancel order by id", logging.String("order-id", orderID))
-	}
-	mkt, ok := e.markets[marketID]
-	if !ok {
-		return nil, types.ErrInvalidMarketID
-	}
-	conf, err := mkt.CancelOrderByID(orderID)
-	if err != nil {
-		return nil, err
-	}
-	if conf.Order.Status == types.Order_STATUS_CANCELLED {
-		metrics.OrderGaugeAdd(-1, marketID)
-	}
-	return conf, nil
-}
-
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 

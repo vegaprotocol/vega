@@ -45,12 +45,6 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	// Cancel it (generates one order message)
-	cancelled, err := tm.market.CancelOrderByID(confirmation.Order.Id)
-	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
-	assert.NoError(t, err)
-	assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
-
 	// Create a new order (generates one order message)
 	orderAmend.Id = "amendingorder"
 	orderAmend.Reference = "amendingorderreference"
@@ -1015,11 +1009,6 @@ func testPeggedOrderCancelParked(t *testing.T) {
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
-
-	// Attempt to cancel the parked order
-	cancelled, err := tm.market.CancelOrderByID(confirmation.Order.Id)
-	require.NotNil(t, cancelled)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, cancelled.Order.Status)
 }
 
 func testPeggedOrderTIFs(t *testing.T) {

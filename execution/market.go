@@ -1847,17 +1847,6 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	}
 }
 
-// CancelOrderByID locates order by its Id and cancels it
-// @TODO This function should not exist. Needs to be removed
-func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
-	ctx := context.TODO()
-	order, _, err := m.getOrderByID(orderID)
-	if err != nil {
-		return nil, err
-	}
-	return m.CancelOrder(ctx, order.PartyID, order.Id)
-}
-
 // AmendOrder amend an existing order from the order book
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")

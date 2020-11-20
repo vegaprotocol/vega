@@ -96,11 +96,4 @@ func TestVersioning(t *testing.T) {
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
-
-	// Cancel the order and check the version does not increase from 8
-	cancelled, err := tm.market.CancelOrderByID(orderID)
-	assert.NoError(t, err)
-	if assert.NotNil(t, cancelled, "cancelled freshly submitted order") {
-		assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
-	}
 }
