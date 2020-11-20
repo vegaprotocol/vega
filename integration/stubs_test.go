@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type brokerStub struct {
@@ -121,6 +122,26 @@ func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
 		}
 	}
 	b.mu.Unlock()
+	return ret
+}
+
+func (b *brokerStub) clearOrderEvents() {
+	t := events.OrderEvent
+	b.mu.Lock()
+	r := b.data[t]
+	// reallocate new slice
+	b.data[t] = make([]events.Event, 0, cap(r))
+	b.mu.Unlock()
+}
+
+func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Order {
+	orders := b.GetOrderEvents()
+	ret := []types.Order{}
+	for _, oe := range orders {
+		if o := oe.Order(); o.MarketID == market && o.PartyID == party {
+			ret = append(ret, *o)
+		}
+	}
 	return ret
 }
 
@@ -252,6 +273,29 @@ func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (proto.Accoun
 	}
 
 	return proto.Account{}, errors.New("account does not exist")
+}
+
+func (b *brokerStub) clearOrderByReference(party, ref string) error {
+	b.mu.Lock()
+	data := b.data[events.OrderEvent]
+	cleared := make([]events.Event, 0, cap(data))
+	for _, evt := range data {
+		var o *types.Order
+		switch e := evt.(type) {
+		case *events.Order:
+			o = e.Order()
+		case events.Order:
+			o = e.Order()
+		default:
+			return errors.New("non-order event ended up in order event group")
+		}
+		if o.Reference != ref || o.PartyID != party {
+			cleared = append(cleared, evt)
+		}
+	}
+	b.data[events.OrderEvent] = cleared
+	b.mu.Unlock()
+	return nil
 }
 
 func (b *brokerStub) getFirstByReference(party, ref string) (proto.Order, error) {
