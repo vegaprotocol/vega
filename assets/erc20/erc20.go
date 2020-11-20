@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	MAX_NONCE             = 100000000
+	MaxNonce              = 100000000
 	whitelistContractName = "whitelist_asset"
 	withdrawContractName  = "withdraw_asset"
 )
@@ -108,7 +108,7 @@ func (b *ERC20) Validate() error {
 	return nil
 }
 
-// SignBridgewhitelisting create and sign the message to
+// SignBridgeWhitelisting create and sign the message to
 // be sent to the bridge to whitelist the asset
 // return the generated message and the signature for this message
 func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
@@ -148,7 +148,7 @@ func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
 		},
 	})
 
-	nonce, err := rand.Int(rand.Reader, big.NewInt(MAX_NONCE))
+	nonce, err := rand.Int(rand.Reader, big.NewInt(MaxNonce))
 	if err != nil {
 		return nil, nil, err
 	}

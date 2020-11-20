@@ -399,7 +399,6 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 				logging.Error(err),
 			)
 		}
-		err = ErrFeeAccountsMissing
 	}
 
 	if liqui, err = e.GetAccountByID(liquiID); err != nil {
@@ -411,6 +410,9 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 				logging.Error(err),
 			)
 		}
+	}
+
+	if err != nil {
 		err = ErrFeeAccountsMissing
 	}
 
@@ -841,7 +843,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 	return response, closed, nil
 }
 
-// MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
+// RollbackMarginUpdateOnOrder moves funds from the margin to the general account.
 func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error) {
 	margin, err := e.GetAccountByID(e.accountID(marketID, transfer.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
 	if err != nil {
@@ -1370,7 +1372,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	return generalID, nil
 }
 
-// CreatePartyLockWithdrawAccount create an account to lock funds to be withrawn by a party
+// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withrawn by a party
 func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyID, asset string) (*types.Account, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID

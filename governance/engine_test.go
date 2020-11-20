@@ -786,7 +786,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	assert.Len(t, passed, howMany)
 	assert.Len(t, declined, howMany)
 
-	for id, _ := range passed {
+	for id := range passed {
 		eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
 			ve, ok := e.(*events.Vote)
 			assert.True(t, ok)
@@ -806,7 +806,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		})
 		assert.NoError(t, err)
 	}
-	for id, _ := range declined {
+	for id := range declined {
 		eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
 			ve, ok := e.(*events.Vote)
 			assert.True(t, ok)
@@ -880,20 +880,6 @@ func getTestEngine(t *testing.T) *tstEngine {
 		erc:    erc,
 		// netp:   netp,
 	}
-}
-
-type testVegaWallet struct {
-	chain string
-	key   []byte
-	sig   []byte
-}
-
-func (w testVegaWallet) Chain() string { return w.chain }
-func (w testVegaWallet) Sign([]byte) ([]byte, error) {
-	return w.sig, nil
-}
-func (w testVegaWallet) PubKeyOrAddress() []byte {
-	return w.key
 }
 
 func newValidMarketTerms() *types.ProposalTerms_NewMarket {

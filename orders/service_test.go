@@ -2,7 +2,6 @@ package orders_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -36,10 +35,6 @@ type testService struct {
 	orderStore *mocks.MockOrderStore
 	timeSvc    *mocks.MockTimeService
 	svc        *orders.Svc
-}
-
-type orderMatcher struct {
-	e types.Order
 }
 
 func TestPrepareOrder(t *testing.T) {
@@ -242,28 +237,4 @@ func getTestService(t *testing.T) *testService {
 		timeSvc:    timeSvc,
 		svc:        svc,
 	}
-}
-
-func (m orderMatcher) String() string {
-	return fmt.Sprintf("%#v", m.e)
-}
-
-func (m orderMatcher) Matches(x interface{}) bool {
-	var v types.Order
-	switch val := x.(type) {
-	case *types.Order:
-		v = *val
-	case types.Order:
-		v = val
-	default:
-		return false
-	}
-	if m.e.Id != v.Id && m.e.MarketID != v.MarketID {
-		return false
-	}
-	if m.e.PartyID != v.PartyID {
-		return false
-	}
-
-	return (m.e.ExpiresAt == v.ExpiresAt)
 }

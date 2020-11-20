@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet/eth/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -188,9 +189,11 @@ func testNewFailureMissingRequiredWallets(t *testing.T) {
 	defer ctrl.Finish()
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
-	err = nw.EnsureRequireWallets()
+	require.NoError(t, err)
 
-	assert.EqualError(t, err, "missing required wallet for vega chain")
+	assert.EqualError(t, nw.EnsureRequireWallets(),
+		"missing required wallet for vega chain",
+	)
 	assert.NoError(t, os.RemoveAll(rootDir))
 
 }

@@ -49,8 +49,8 @@ func (tx *Tx) BlockHeight() uint64 { return tx.tx.BlockHeight }
 func (tx *Tx) Signature() []byte { return tx.signature }
 
 // Command returns the Command of the Tx
-func (t *Tx) Command() txn.Command {
-	cmd := t.tx.InputData[TxHashLen]
+func (tx *Tx) Command() txn.Command {
+	cmd := tx.tx.InputData[TxHashLen]
 	return txn.Command(cmd)
 }
 
@@ -66,9 +66,9 @@ func (tx *Tx) Unmarshal(i interface{}) error {
 }
 
 // toProto decodes a tx given its command into the respective proto type
-func (t *Tx) toProto() (interface{}, error) {
+func (tx *Tx) toProto() (interface{}, error) {
 	var msg proto.Message
-	switch t.Command() {
+	switch tx.Command() {
 	case txn.SubmitOrderCommand:
 		msg = &types.OrderSubmission{}
 	case txn.CancelOrderCommand:
@@ -92,10 +92,10 @@ func (t *Tx) toProto() (interface{}, error) {
 	case txn.ChainEventCommand:
 		msg = &types.ChainEvent{}
 	default:
-		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", t.Command().String())
+		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", tx.Command().String())
 	}
 
-	if err := t.Unmarshal(msg); err != nil {
+	if err := tx.Unmarshal(msg); err != nil {
 		return nil, err
 	}
 

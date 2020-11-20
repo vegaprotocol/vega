@@ -26,12 +26,6 @@ func i64val(rows *gherkin.TableRow, idx int) int64 {
 	return ret
 }
 
-func i32val(rows *gherkin.TableRow, idx int) int32 {
-	s := rows.Cells[idx].Value
-	ret, _ := strconv.ParseInt(s, 10, 0)
-	return int32(ret)
-}
-
 func f64val(rows *gherkin.TableRow, idx int) float64 {
 	s := rows.Cells[idx].Value
 	ret, _ := strconv.ParseFloat(s, 10)

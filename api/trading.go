@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/hex"
-	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/evtforward"
@@ -76,7 +75,6 @@ type tradingService struct {
 	evtForwarder      EvtForwarder
 
 	statusChecker *monitoring.Status
-	mu            sync.Mutex
 }
 
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {

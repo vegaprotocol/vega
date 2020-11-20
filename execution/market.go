@@ -115,8 +115,6 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	matchingConfig matching.Config
-
 	mkt         *types.Market
 	closingAt   time.Time
 	currentTime time.Time
@@ -292,15 +290,15 @@ func appendBytes(bz ...[]byte) []byte {
 }
 
 func (m *Market) Hash() []byte {
-	mId := logging.String("market-id", m.GetID())
+	mID := logging.String("market-id", m.GetID())
 	matchingHash := m.matching.Hash()
-	m.log.Debug("orderbook state hash", logging.Hash(matchingHash), mId)
+	m.log.Debug("orderbook state hash", logging.Hash(matchingHash), mID)
 
 	positionHash := m.position.Hash()
-	m.log.Debug("positions state hash", logging.Hash(positionHash), mId)
+	m.log.Debug("positions state hash", logging.Hash(positionHash), mID)
 
 	accountsHash := m.collateral.Hash()
-	m.log.Debug("accounts state hash", logging.Hash(accountsHash), mId)
+	m.log.Debug("accounts state hash", logging.Hash(accountsHash), mID)
 
 	return crypto.Hash(appendBytes(
 		matchingHash, positionHash, accountsHash,
@@ -2304,7 +2302,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			return nil, err
 		}
 
-		conf, err = m.matching.SubmitOrder(newOrder)
+		conf, err = m.matching.SubmitOrder(newOrder) //lint:ignore SA4006 this value might be overwriter, careful!
 		// replace the trades in the confirmation to have
 		// the ones with the fees embbeded
 		conf.Trades = trades

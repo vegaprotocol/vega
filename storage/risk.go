@@ -119,7 +119,7 @@ func (r *Risk) Close() error {
 	return nil
 }
 
-// SaveMarginLevelsBatch writes a slice of account changes to the underlying store.
+// SaveRiskFactorBatch writes a slice of account changes to the underlying store.
 func (r *Risk) SaveRiskFactorBatch(batch []types.RiskFactor) {
 	if len(batch) == 0 {
 		return
