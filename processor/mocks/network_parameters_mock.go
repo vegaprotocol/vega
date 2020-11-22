@@ -34,15 +34,15 @@ func (m *MockNetworkParameters) EXPECT() *MockNetworkParametersMockRecorder {
 }
 
 // DispatchChanges mocks base method
-func (m *MockNetworkParameters) DispatchChanges() {
+func (m *MockNetworkParameters) DispatchChanges(arg0 context.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DispatchChanges")
+	m.ctrl.Call(m, "DispatchChanges", arg0)
 }
 
 // DispatchChanges indicates an expected call of DispatchChanges
-func (mr *MockNetworkParametersMockRecorder) DispatchChanges() *gomock.Call {
+func (mr *MockNetworkParametersMockRecorder) DispatchChanges(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DispatchChanges", reflect.TypeOf((*MockNetworkParameters)(nil).DispatchChanges))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DispatchChanges", reflect.TypeOf((*MockNetworkParameters)(nil).DispatchChanges), arg0)
 }
 
 // Update mocks base method
