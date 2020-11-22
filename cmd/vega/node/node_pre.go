@@ -581,7 +581,7 @@ func (l *NodeCommand) setupNetParameters() error {
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketFeeFactorsInfrastructureFee,
-			Watcher: l.executionEngine.OnMarketFeeFactorsMakerInfrastructureUpdate,
+			Watcher: l.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 	)
 }

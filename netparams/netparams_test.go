@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/mocks"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -57,7 +58,7 @@ func testRegisterDispatchFunctionFailure(t *testing.T) {
 		},
 	)
 
-	assert.EqualError(t, err, "invalid type, expected func(time.Duration) error")
+	assert.EqualError(t, err, "invalid type, expected func(context.Context, time.Duration) error")
 }
 
 func testDispatchAfterUpdate(t *testing.T) {
