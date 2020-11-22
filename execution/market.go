@@ -2624,3 +2624,35 @@ func (m *Market) getTargetStake() float64 {
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
 }
+
+func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
+	if err := m.risk.OnMarginScalingFactorsUpdate(sf); err != nil {
+		return err
+	}
+
+	// update our market definition, and dispatch update through the event bus
+	m.mkt.TradableInstrument.MarginCalculator.ScalingFactors = sf
+	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
+
+	return nil
+}
+
+func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
+	if err := m.fee.OnFeeFactorsMakerFeeUpdate(ctx, f); err != nil {
+		return err
+	}
+	m.mkt.Fees.Factors.MakerFee = fmt.Sprintf("%f", f)
+	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
+
+	return nil
+}
+
+func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
+	if err := m.fee.OnFeeFactorsInfrastructureFeeUpdate(ctx, f); err != nil {
+		return err
+	}
+	m.mkt.Fees.Factors.InfrastructureFee = fmt.Sprintf("%f", f)
+	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
+
+	return nil
+}

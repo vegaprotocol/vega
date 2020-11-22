@@ -91,6 +91,15 @@ func NewEngine(
 	}
 }
 
+func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
+	if sf.CollateralRelease < sf.InitialMargin || sf.InitialMargin < sf.SearchLevel {
+		return errors.New("incompatible margins scaling factors")
+	}
+
+	e.marginCalculator.ScalingFactors = sf
+	return nil
+}
+
 func (e *Engine) OnTimeUpdate(t time.Time) {
 	e.currTime = t.UnixNano()
 }

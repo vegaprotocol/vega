@@ -603,5 +603,5 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	// we call the dispatch updates here then
 	// just so we are sure all netparams updates are dispatches one by one
 	// in a deterministic order
-	app.netp.DispatchChanges()
+	app.netp.DispatchChanges(ctx)
 }

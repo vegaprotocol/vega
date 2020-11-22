@@ -67,7 +67,7 @@ func testDispatchAfterUpdate(t *testing.T) {
 	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	newDuration := "10s"
 	var wasCalled bool
-	f := func(d time.Duration) error {
+	f := func(_ context.Context, d time.Duration) error {
 		assert.Equal(t, d, 10*time.Second)
 		wasCalled = true
 		return nil
@@ -85,7 +85,7 @@ func testDispatchAfterUpdate(t *testing.T) {
 	err = netp.Update(context.Background(), netparams.GovernanceProposalAssetMaxClose, newDuration)
 	assert.NoError(t, err)
 
-	netp.DispatchChanges()
+	netp.DispatchChanges(context.Background())
 	assert.True(t, wasCalled)
 }
 

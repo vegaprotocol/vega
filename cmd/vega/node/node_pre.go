@@ -557,8 +557,10 @@ func (l *NodeCommand) setupNetParameters() error {
 	// through runtime checks
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
 	if err := l.netParams.AddRules(
-		netparams.GovernanceVoteAsset,
-		checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+		netparams.ParamStringRules(
+			netparams.GovernanceVoteAsset,
+			checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+		),
 	); err != nil {
 		return err
 	}
@@ -568,6 +570,18 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.GovernanceVoteAsset,
 			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMarginScalingFactors,
+			Watcher: l.executionEngine.OnMarketMarginScalingFactorsUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsMakerFee,
+			Watcher: l.executionEngine.OnMarketFeeFactorsMakerFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsInfrastructureFee,
+			Watcher: l.executionEngine.OnMarketFeeFactorsMakerInfrastructureUpdate,
 		},
 	)
 }

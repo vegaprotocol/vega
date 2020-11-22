@@ -433,3 +433,35 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 	return mkt.SubmitLiquidityProvision(ctx, sub, party, id)
 }
+
+func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v interface{}) error {
+	scalingFactors, ok := v.(*types.ScalingFactors)
+	if !ok {
+		return errors.New("invalid types for Margin ScalingFactors")
+	}
+
+	for _, mkt := range e.marketsCpy {
+		if err := mkt.OnMarginScalingFactorsUpdate(ctx, scalingFactors); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
+	for _, mkt := range e.marketsCpy {
+		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, f); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
+	for _, mkt := range e.marketsCpy {
+		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, f); err != nil {
+			return err
+		}
+	}
+	return nil
+}
