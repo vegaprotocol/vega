@@ -558,7 +558,6 @@ func (j *JSON) CheckDispatch(fn interface{}) error {
 
 func (j *JSON) AddRules(fns ...interface{}) error {
 	for _, fn := range fns {
-		fmt.Printf("JSONRULE: %#v\n", fn)
 		// asset they have the right type
 		v, ok := fn.(JSONRule)
 		if !ok {
@@ -688,7 +687,6 @@ func (s *String) AddRules(fns ...interface{}) error {
 		// asset they have the right type
 		v, ok := fn.(StringRule)
 		if !ok {
-			fmt.Printf("v: %#v\n", v)
 			return errors.New("strings require StringRule functions")
 		}
 		s.rules = append(s.rules, v)
