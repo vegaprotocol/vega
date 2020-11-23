@@ -167,20 +167,23 @@ func (l *NodeCommand) loadMarketsConfig() error {
 }
 
 func (l *NodeCommand) setupSubscibers() {
+	// these are needed all the timee
+	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
+	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
+
+	// return if stores are not enabled
 	if !l.conf.StoresEnabled {
 		return
 	}
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
-	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
-	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
 	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
 	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, true)
 	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, true)
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
-	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
@@ -442,12 +445,18 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
 
 	l.broker = broker.New(l.ctx)
+
+	// add these all the time
+	l.broker.SubscribeBatch(
+		l.accountSub, l.partySub, l.newMarketSub, l.assetPlugin)
+
+	// only if the stores are enabled
 	if l.conf.StoresEnabled {
 		l.broker.SubscribeBatch(
-			l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
-			l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
+			l.marketEventSub, l.transferSub, l.orderSub,
+			l.tradeSub, l.marginLevelSub, l.governanceSub,
 			l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
-			l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
+			l.candleSub, l.withdrawalPlugin,
 			l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 			l.liquidityService)
 	}
