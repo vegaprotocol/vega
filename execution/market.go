@@ -603,6 +603,27 @@ func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 	m.parkedOrders = failedToUnpark
 }
 
+// unparkAllPeggedOrders Attempt to place all parked orders back onto the order book
+func (m *Market) unparkAllParkedOrders(ctx context.Context) {
+	// Create slice to put any orders that we can't unpack
+	failedToUnpark := make([]*types.Order, 0)
+	for _, order := range m.parkedOrders {
+		// Reprice the order and submit it
+		err := m.repricePeggedOrder(ctx, order)
+		if err != nil {
+			// Failed to reprice
+			failedToUnpark = append(failedToUnpark, order)
+		} else {
+			_, err := m.submitValidatedOrder(ctx, order)
+			if err != nil {
+				// Failed to place the order on the book
+				failedToUnpark = append(failedToUnpark, order)
+			}
+		}
+	}
+	m.parkedOrders = failedToUnpark
+}
+
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	// Change market type to auction
@@ -2468,7 +2489,7 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		// If we have any parked orders, see if we can get a
 		// valid price for them and try to submit them
 		if len(m.parkedOrders) > 0 {
-			m.unparkAllPeggedOrders(ctx)
+			m.unparkAllParkedOrders(ctx)
 		}
 	}
 }
