@@ -235,17 +235,7 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 			}
 		}
 
-		liq, err := e.suppliedEngine.CalculateSuppliedLiquidity(float64(markPrice), append(buyOrders, sellOrders...))
-		if err != nil {
-			return nil, nil, err
-		}
-
 		obligation := float64(lp.CommitmentAmount) * e.suppliedFactor
-		if liq >= obligation {
-			// We satisfy the liquidity obligations, move on.
-			continue
-		}
-
 		var (
 			buysShape  = make([]*supplied.LiquidityOrder, len(lp.Buys))
 			sellsShape = make([]*supplied.LiquidityOrder, len(lp.Sells))
@@ -352,7 +342,6 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 		if o.LiquidityImpliedVolume == 0 {
 			delete(lm, ref.OrderID)
 			ref.OrderID = ""
-			continue
 		}
 
 		if o.LiquidityImpliedVolume != order.Size {
