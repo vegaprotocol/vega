@@ -14,7 +14,6 @@ import (
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -1650,13 +1649,13 @@ func (r *myMutationResolver) PrepareWithdrawal(
 
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
 
-	pty := api.SubmitTransactionRequest_TYPE_ASYNC
+	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
 	if ty != nil {
 		switch *ty {
 		case SubmitTransactionTypeSync:
-			pty = api.SubmitTransactionRequest_TYPE_SYNC
+			pty = protoapi.SubmitTransactionRequest_TYPE_SYNC
 		case SubmitTransactionTypeCommit:
-			pty = api.SubmitTransactionRequest_TYPE_COMMIT
+			pty = protoapi.SubmitTransactionRequest_TYPE_COMMIT
 		}
 	}
 
