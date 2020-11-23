@@ -2609,8 +2609,9 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 	return rf, nil
 }
 
+// SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
-	return nil
+	return m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id)
 }
 
 func (m *Market) getTargetStake() float64 {
