@@ -64,7 +64,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	_, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	order = types.Order{
@@ -76,7 +76,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 		TimeInForce: types.Order_TIF_FOK,
 		Type:        types.Order_TYPE_MARKET,
 	}
-	confirm, err = book.SubmitOrder(&order)
+	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	// Verify that the response price for the unfilled order is zero
@@ -105,7 +105,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 		TimeInForce: types.Order_TIF_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	_, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	order2 := types.Order{
@@ -117,7 +117,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 		TimeInForce: types.Order_TIF_IOC,
 		Type:        types.Order_TYPE_MARKET,
 	}
-	confirm, err = book.SubmitOrder(&order2)
+	confirm, err := book.SubmitOrder(&order2)
 	assert.NoError(t, err)
 
 	// Verify that the response price for the unfilled order is zero
@@ -130,5 +130,4 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	// One order
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, 1, len(confirm.PassiveOrdersAffected))
-
 }

@@ -41,40 +41,40 @@ func NewDeposit(ctx context.Context) *Deposit {
 	return w
 }
 
-func (w *Deposit) Push(evts ...events.Event) {
+func (d *Deposit) Push(evts ...events.Event) {
 	for _, e := range evts {
 		select {
-		case <-w.Closed():
+		case <-d.Closed():
 			return
 		default:
 			if wse, ok := e.(DepositEvent); ok {
-				w.ch <- wse.Deposit()
+				d.ch <- wse.Deposit()
 			}
 		}
 	}
 }
 
-func (w *Deposit) consume() {
-	defer func() { close(w.ch) }()
+func (d *Deposit) consume() {
+	defer func() { close(d.ch) }()
 	for {
 		select {
-		case <-w.Closed():
+		case <-d.Closed():
 			return
-		case dep, ok := <-w.ch:
+		case dep, ok := <-d.ch:
 			if !ok {
 				// cleanup base
-				w.Halt()
+				d.Halt()
 				// channel is closed
 				return
 			}
-			w.mu.Lock()
-			deposits, ok := w.deposits[dep.PartyID]
+			d.mu.Lock()
+			deposits, ok := d.deposits[dep.PartyID]
 			if !ok {
 				deposits = map[string]types.Deposit{}
-				w.deposits[dep.PartyID] = deposits
+				d.deposits[dep.PartyID] = deposits
 			}
 			deposits[dep.Id] = dep
-			w.mu.Unlock()
+			d.mu.Unlock()
 		}
 	}
 }
@@ -108,7 +108,7 @@ func (d *Deposit) GetByParty(party string, openOnly bool) []types.Deposit {
 	return out
 }
 
-func (n *Deposit) Types() []events.Type {
+func (*Deposit) Types() []events.Type {
 	return []events.Type{
 		events.DepositEvent,
 	}

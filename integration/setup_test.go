@@ -2,7 +2,6 @@ package core_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -46,23 +44,20 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 }
 
 type marketTestSetup struct {
-	market   *proto.Market
-	ctrl     *gomock.Controller
-	core     *execution.Market
-	accounts *accStub
-	proposal *ProposalStub
-	votes    *VoteStub
+	market *types.Market
+	ctrl   *gomock.Controller
+	core   *execution.Market
 
 	// accounts   *cmocks.MockAccountBuffer
 	accountIDs map[string]struct{}
-	traderAccs map[string]map[proto.AccountType]*proto.Account
+	traderAccs map[string]map[types.AccountType]*types.Account
 
 	// we need to call this engine directly
 	colE   *collateral.Engine
 	broker *brokerStub
 }
 
-func getMarketTestSetup(market *proto.Market) *marketTestSetup {
+func getMarketTestSetup(market *types.Market) *marketTestSetup {
 	if mktsetup != nil {
 		mktsetup.ctrl.Finish()
 		mktsetup = nil // ready for GC
@@ -104,7 +99,7 @@ func getMarketTestSetup(market *proto.Market) *marketTestSetup {
 		market:     market,
 		ctrl:       ctrl,
 		accountIDs: map[string]struct{}{},
-		traderAccs: map[string]map[proto.AccountType]*proto.Account{},
+		traderAccs: map[string]map[types.AccountType]*types.Account{},
 		colE:       colE,
 		broker:     broker,
 	}
@@ -129,7 +124,7 @@ type executionTestSetup struct {
 
 	// save trader accounts state
 	accs map[string][]account
-	mkts []proto.Market
+	mkts []types.Market
 
 	InsurancePoolInitialBalance uint64
 }
@@ -142,7 +137,7 @@ func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTe
 	return execsetup
 }
 
-func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionTestSetup {
+func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
 		// execsetup = nil
@@ -167,7 +162,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()
-		execsetup.collateral.EnableAsset(context.Background(), proto.Asset{
+		execsetup.collateral.EnableAsset(context.Background(), types.Asset{
 			ID:     asset,
 			Symbol: asset,
 		})
@@ -208,32 +203,14 @@ func getExecutionTestSetup(startTime time.Time, mkts []proto.Market) *executionT
 
 type account struct {
 	Balance uint64
-	Type    proto.AccountType
+	Type    types.AccountType
 	Market  string
 	Asset   string
 }
 
-func getTraderMarginAccount(accs []account, market string) (account, error) {
-	for _, v := range accs {
-		if v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.Market == market {
-			return v, nil
-		}
-	}
-	return account{}, errors.New("account does not exist")
-}
-
-func getTraderGeneralAccount(accs []account, asset string) (account, error) {
-	for _, v := range accs {
-		if v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			return v, nil
-		}
-	}
-	return account{}, errors.New("account does not exist")
-}
-
 func traderHaveGeneralAccount(accs []account, asset string) bool {
 	for _, v := range accs {
-		if v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+		if v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			return true
 		}
 	}

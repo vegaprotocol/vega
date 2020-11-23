@@ -108,7 +108,7 @@ func (w *Withdrawal) GetByParty(party string, openOnly bool) []types.Withdrawal 
 	return out
 }
 
-func (n *Withdrawal) Types() []events.Type {
+func (*Withdrawal) Types() []events.Type {
 	return []events.Type{
 		events.WithdrawalEvent,
 	}

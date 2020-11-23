@@ -62,14 +62,10 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	}
 }
 
-func TestLiquidityEngine(t *testing.T) {
-	t.Run("Submission", func(t *testing.T) {
-		t.Run("CreateUpdateDelete", testSubmissionCRUD)
-		t.Run("CancelNonExisting", testCancelNonExistingSubmission)
-		t.Run("FailWhenNoShape", testSubmissionFailWhenNoShape)
-	})
-
-	//t.Run("Update", testUpdate)
+func TestSubmissions(t *testing.T) {
+	t.Run("CreateUpdateDelete", testSubmissionCRUD)
+	t.Run("CancelNonExisting", testCancelNonExistingSubmission)
+	t.Run("FailWhenNoShape", testSubmissionFailWhenNoShape)
 }
 
 func testSubmissionCRUD(t *testing.T) {
@@ -270,13 +266,25 @@ func TestUpdate(t *testing.T) {
 	}).AnyTimes()
 
 	orders := []*types.Order{
-		{Id: "1", PartyID: party, Price: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
+		{Id: "1", PartyID: party, Price: 10, Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
+		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
 	creates, updates, err := tng.engine.Update(markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 	require.Len(t, updates, 0)
+
+	// Manual order satisfies the commitment, LiqOrders should be removed
+	orders[0].Remaining, orders[0].Size = 1000, 1000
+	orders[1].Remaining, orders[1].Size = 1000, 1000
+	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
+	require.NoError(t, err)
+	require.Len(t, creates, 0)
+	require.Len(t, updates, 3)
+	for _, order := range updates {
+		assert.EqualValues(t, 0, order.Size)
+	}
 
 	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
 	require.NoError(t, err)

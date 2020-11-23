@@ -20,10 +20,6 @@ var (
 	}
 )
 
-type amendMatcher struct {
-	e proto.OrderAmendment
-}
-
 func TestPrepareAmendOrder(t *testing.T) {
 	t.Run("Prepare amend order price - success", testPrepareAmendOrderJustPriceSuccess)
 	t.Run("Prepare amend order reduce - success", testPrepareAmendOrderJustReduceSuccess)

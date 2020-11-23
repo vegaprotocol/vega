@@ -12,10 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testSub struct {
-	*subscribers.GovernanceDataSub
-}
-
 func TestFilterMany(t *testing.T) {
 	t.Run("Filter proposals by status", testFilterByState)
 	t.Run("Filter proposals by party", testFilterByParty)
@@ -187,67 +183,4 @@ func testNoFilterVotes(t *testing.T) {
 	no := special[0]
 	assert.Empty(t, no.Yes)
 	assert.NotEmpty(t, no.No)
-}
-
-// event stubs here
-type propEvt struct {
-	ctx context.Context
-	p   types.Proposal
-}
-
-type voteEvt struct {
-	ctx context.Context
-	v   types.Vote
-}
-
-func (p propEvt) Type() events.Type {
-	return events.ProposalEvent
-}
-
-func (p propEvt) Context() context.Context {
-	return p.ctx
-}
-
-func (p propEvt) TraceID() string {
-	return "propEvt-test"
-}
-
-func (p propEvt) ProposalID() string {
-	return p.p.ID
-}
-
-func (p propEvt) PartyID() string {
-	return p.p.PartyID
-}
-
-func (p propEvt) Proposal() types.Proposal {
-	return p.p
-}
-
-func (v voteEvt) Type() events.Type {
-	return events.VoteEvent
-}
-
-func (v voteEvt) Context() context.Context {
-	return v.ctx
-}
-
-func (c voteEvt) TradeID() string {
-	return "voteEvt-test"
-}
-
-func (v voteEvt) ProposalID() string {
-	return v.v.ProposalID
-}
-
-func (v voteEvt) PartyID() string {
-	return v.v.PartyID
-}
-
-func (v voteEvt) Vote() types.Vote {
-	return v.v
-}
-
-func (v voteEvt) Value() types.Vote_Value {
-	return v.v.Value
 }

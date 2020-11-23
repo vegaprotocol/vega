@@ -28,36 +28,34 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	return &tob
 }
 
-func (ob *OrderBook) getNumberOfBuyLevels() int {
-	buys := ob.buy.getLevels()
-
+func (b *OrderBook) getNumberOfBuyLevels() int {
+	buys := b.buy.getLevels()
 	return len(buys)
 }
 
-func (ob *OrderBook) getNumberOfSellLevels() int {
-	sells := ob.sell.getLevels()
-
+func (b *OrderBook) getNumberOfSellLevels() int {
+	sells := b.sell.getLevels()
 	return len(sells)
 }
 
-func (ob *OrderBook) getTotalBuyVolume() uint64 {
+func (b *OrderBook) getTotalBuyVolume() uint64 {
 	var volume uint64 = 0
 
-	buys := ob.buy.getLevels()
+	buys := b.buy.getLevels()
 	for _, pl := range buys {
 		volume += pl.volume
 	}
 	return volume
 }
 
-func (ob *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
+func (b *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
 	if side == types.Side_SIDE_BUY {
-		priceLevel := ob.buy.getPriceLevel(price)
+		priceLevel := b.buy.getPriceLevel(price)
 		if priceLevel != nil {
 			return priceLevel.volume
 		}
 	} else {
-		priceLevel := ob.sell.getPriceLevel(price)
+		priceLevel := b.sell.getPriceLevel(price)
 		if priceLevel != nil {
 			return priceLevel.volume
 		}
@@ -65,9 +63,9 @@ func (ob *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
 	return 0
 }
 
-func (ob *OrderBook) getTotalSellVolume() uint64 {
+func (b *OrderBook) getTotalSellVolume() uint64 {
 	var volume uint64 = 0
-	sells := ob.sell.getLevels()
+	sells := b.sell.getLevels()
 	for _, pl := range sells {
 		volume += pl.volume
 	}

@@ -504,48 +504,6 @@ func TestSetMarketID(t *testing.T) {
 	})
 }
 
-func TestMarketCancelOrder(t *testing.T) {
-	party1 := "party1"
-	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
-
-	addAccount(tm, party1)
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	orderBuy := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_GTT,
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
-		Size:        100,
-		Price:       100,
-		Remaining:   100,
-		CreatedAt:   now.UnixNano(),
-		ExpiresAt:   closingAt.UnixNano(),
-		Reference:   "party1-buy-order",
-	}
-	confirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
-	assert.NotNil(t, confirmation)
-	assert.NoError(t, err)
-
-	cancelled, err := tm.market.CancelOrderByID(confirmation.Order.Id)
-	assert.NotNil(t, cancelled, "cancelled freshly submitted order")
-	assert.NoError(t, err)
-	assert.EqualValues(t, confirmation.Order.Id, cancelled.Order.Id)
-
-	cancelled, err = tm.market.CancelOrderByID(confirmation.Order.Id)
-	assert.Nil(t, cancelled, "cancelling same order twice should not work")
-	assert.Error(t, err, "it should be an error to cancel same order twice")
-
-	cancelled, err = tm.market.CancelOrderByID("an id that does not exist")
-	assert.Nil(t, cancelled, "cancelling non-exitant order should not work")
-	assert.Error(t, err, "it should be an error to cancel an order that does not exist")
-}
-
 func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"

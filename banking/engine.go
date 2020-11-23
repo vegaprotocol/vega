@@ -52,6 +52,7 @@ type Collateral interface {
 	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
 	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
 	EnableAsset(ctx context.Context, asset types.Asset) error
+	HasBalance(party string) bool
 }
 
 // ExtResChecker provide foreign chain resources validations
@@ -139,6 +140,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.cfg = cfg
+}
+
+func (e *Engine) HasBalance(party string) bool {
+	return e.col.HasBalance(party)
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {

@@ -17,10 +17,6 @@ var (
 	}
 )
 
-type cancelMatcher struct {
-	e proto.OrderCancellation
-}
-
 func TestCancelOrder(t *testing.T) {
 	t.Run("Cancel order - success", testCancelOrderSuccess)
 	t.Run("Cancel order - missing orderID", testCancelOrderNoOrderID)

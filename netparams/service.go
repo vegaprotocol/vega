@@ -73,7 +73,7 @@ func (s *Service) consume() {
 	}
 }
 
-func (n *Service) Types() []events.Type {
+func (*Service) Types() []events.Type {
 	return []events.Type{
 		events.NetworkParameterEvent,
 	}
