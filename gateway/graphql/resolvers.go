@@ -1648,7 +1648,18 @@ func (r *myMutationResolver) PrepareWithdrawal(
 	}, nil
 }
 
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error) {
+func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
+
+	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
+	if ty != nil {
+		switch *ty {
+		case SubmitTransactionTypeSync:
+			pty = protoapi.SubmitTransactionRequest_TYPE_SYNC
+		case SubmitTransactionTypeCommit:
+			pty = protoapi.SubmitTransactionRequest_TYPE_COMMIT
+		}
+	}
+
 	decodedData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, err
@@ -1666,6 +1677,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 				Algo:    sig.Algo,
 			},
 		},
+		Type: pty,
 	}
 	res, err := r.tradingClient.SubmitTransaction(ctx, req)
 	if err != nil {
