@@ -1397,7 +1397,7 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	assert.Equal(t, types.Order_STATUS_ACTIVE, confirmation.Order.Status)
 
 	// Cancel the normal order to park the pegged order
-	tm.market.CancelOrderByID(limitOrder)
+	tm.market.CancelOrder(ctx, "user2", limitOrder)
 	require.Equal(t, types.Order_STATUS_PARKED, confirmation.Order.Status)
 	assert.Equal(t, uint64(5), tm.orderEventCount)
 
