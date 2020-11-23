@@ -1030,8 +1030,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0) ||
 		// Also do it if specifically we went against a wash trade
-		(order.Status == types.Order_STATUS_REJECTED &&
-			order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING) {
+		order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
