@@ -129,7 +129,9 @@ type Mutation {
     data: String!
     "The signature"
     sig: SignatureInput!
-  ): TransactionSubmitted!
+    "The way to send the transaction"
+    type: SubmitTransactionType
+): TransactionSubmitted!
 
   "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
@@ -144,6 +146,16 @@ type Mutation {
     "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
     buys:  [LiquidityOrderInput!]!
   ): PreparedLiquidityProvision!
+}
+
+"The way the transaction is sent to the blockchain"
+enum SubmitTransactionType {
+  "The call will return as soon as submitted"
+  Async
+  "The call will return once the mempool has run CheckTx on the transaction"
+  Sync
+  "The call will return once the transaction has been processed by the core"
+  Commit
 }
 
 "Create an order linked to an index rather than a price"
@@ -1673,7 +1685,7 @@ enum OrderRejectionReason {
 
   "Cannot change pegged order fields on a non pegged order"
   CannotAmendPeggedOrderDetailsOnNonPeggedOrder
-  
+
   "Unable to reprice a pegged order"
   UnableToRepricePeggedOrder
 }

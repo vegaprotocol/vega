@@ -366,7 +366,7 @@ type ComplexityRoot struct {
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote               func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
 		PrepareWithdrawal         func(childComplexity int, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
-		SubmitTransaction         func(childComplexity int, data string, sig SignatureInput) int
+		SubmitTransaction         func(childComplexity int, data string, sig SignatureInput, typeArg *SubmitTransactionType) int
 	}
 
 	NetworkParameter struct {
@@ -849,7 +849,7 @@ type MutationResolver interface {
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
 	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
-	SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error)
+	SubmitTransaction(ctx context.Context, data string, sig SignatureInput, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
 	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error)
 }
 type NewAssetResolver interface {
@@ -2350,7 +2350,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(SignatureInput)), true
+		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(SignatureInput), args["type"].(*SubmitTransactionType)), true
 
 	case "NetworkParameter.key":
 		if e.complexity.NetworkParameter.Key == nil {
@@ -4261,7 +4261,9 @@ type Mutation {
     data: String!
     "The signature"
     sig: SignatureInput!
-  ): TransactionSubmitted!
+    "The way to send the transaction"
+    type: SubmitTransactionType
+): TransactionSubmitted!
 
   "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
@@ -4276,6 +4278,16 @@ type Mutation {
     "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
     buys:  [LiquidityOrderInput!]!
   ): PreparedLiquidityProvision!
+}
+
+"The way the transaction is sent to the blockchain"
+enum SubmitTransactionType {
+  "The call will return as soon as submitted"
+  Async
+  "The call will return once the mempool has run CheckTx on the transaction"
+  Sync
+  "The call will return once the transaction has been processed by the core"
+  Commit
 }
 
 "Create an order linked to an index rather than a price"
@@ -5805,7 +5817,7 @@ enum OrderRejectionReason {
 
   "Cannot change pegged order fields on a non pegged order"
   CannotAmendPeggedOrderDetailsOnNonPeggedOrder
-  
+
   "Unable to reprice a pegged order"
   UnableToRepricePeggedOrder
 }
@@ -7021,6 +7033,14 @@ func (ec *executionContext) field_Mutation_submitTransaction_args(ctx context.Co
 		}
 	}
 	args["sig"] = arg1
+	var arg2 *SubmitTransactionType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg2, err = ec.unmarshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg2
 	return args, nil
 }
 
@@ -13874,7 +13894,7 @@ func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["data"].(string), args["sig"].(SignatureInput))
+		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["data"].(string), args["sig"].(SignatureInput), args["type"].(*SubmitTransactionType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32014,6 +32034,30 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOSubmitTransactionType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx context.Context, v interface{}) (SubmitTransactionType, error) {
+	var res SubmitTransactionType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOSubmitTransactionType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx context.Context, sel ast.SelectionSet, v SubmitTransactionType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx context.Context, v interface{}) (*SubmitTransactionType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSubmitTransactionType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx context.Context, sel ast.SelectionSet, v *SubmitTransactionType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOTrade2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTrade(ctx context.Context, sel ast.SelectionSet, v proto.Trade) graphql.Marshaler {

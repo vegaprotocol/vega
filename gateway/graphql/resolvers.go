@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -1648,7 +1649,18 @@ func (r *myMutationResolver) PrepareWithdrawal(
 	}, nil
 }
 
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error) {
+func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
+
+	pty := api.SubmitTransactionRequest_TYPE_ASYNC
+	if ty != nil {
+		switch *ty {
+		case SubmitTransactionTypeSync:
+			pty = api.SubmitTransactionRequest_TYPE_SYNC
+		case SubmitTransactionTypeCommit:
+			pty = api.SubmitTransactionRequest_TYPE_COMMIT
+		}
+	}
+
 	decodedData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, err
@@ -1666,6 +1678,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 				Algo:    sig.Algo,
 			},
 		},
+		Type: pty,
 	}
 	res, err := r.tradingClient.SubmitTransaction(ctx, req)
 	if err != nil {
