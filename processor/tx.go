@@ -36,39 +36,39 @@ func NewTx(tx *types.Transaction, signature []byte) (*Tx, error) {
 
 // Hash returns hash of the given Tx. Hashes are unique to every vega tx.
 // The hash is the first TxHeaderLen bytes.
-func (tx *Tx) Hash() []byte { return tx.tx.InputData[:TxHashLen] }
+func (t *Tx) Hash() []byte { return t.tx.InputData[:TxHashLen] }
 
 // PubKey returns the Tx's public key.
-func (tx *Tx) PubKey() []byte { return tx.tx.GetPubKey() }
+func (t *Tx) PubKey() []byte { return t.tx.GetPubKey() }
 
 // BlockHeight returns the target block for which the Tx has been broadcasted.
 // The Tx might be included on a higher block height.
 // Depending on the tolerance of the chain the Tx might be included or rejected.
-func (tx *Tx) BlockHeight() uint64 { return tx.tx.BlockHeight }
+func (t *Tx) BlockHeight() uint64 { return t.tx.BlockHeight }
 
-func (tx *Tx) Signature() []byte { return tx.signature }
+func (t *Tx) Signature() []byte { return t.signature }
 
 // Command returns the Command of the Tx
-func (tx *Tx) Command() txn.Command {
-	cmd := tx.tx.InputData[TxHashLen]
+func (t *Tx) Command() txn.Command {
+	cmd := t.tx.InputData[TxHashLen]
 	return txn.Command(cmd)
 }
 
 // payload returns the payload of the transaction, this is all the bytes,
 // excluding the prefix and the command.
-func (tx *Tx) payload() []byte { return tx.tx.InputData[TxHeaderLen:] }
+func (t *Tx) payload() []byte { return t.tx.InputData[TxHeaderLen:] }
 
-func (tx *Tx) Unmarshal(i interface{}) error {
-	if t, ok := i.(proto.Message); ok {
-		return proto.Unmarshal(tx.payload(), t)
+func (t *Tx) Unmarshal(i interface{}) error {
+	if msg, ok := i.(proto.Message); ok {
+		return proto.Unmarshal(t.payload(), msg)
 	}
 	return nil
 }
 
 // toProto decodes a tx given its command into the respective proto type
-func (tx *Tx) toProto() (interface{}, error) {
+func (t *Tx) toProto() (interface{}, error) {
 	var msg proto.Message
-	switch tx.Command() {
+	switch t.Command() {
 	case txn.SubmitOrderCommand:
 		msg = &types.OrderSubmission{}
 	case txn.CancelOrderCommand:
@@ -92,10 +92,10 @@ func (tx *Tx) toProto() (interface{}, error) {
 	case txn.ChainEventCommand:
 		msg = &types.ChainEvent{}
 	default:
-		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", tx.Command().String())
+		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", t.Command().String())
 	}
 
-	if err := tx.Unmarshal(msg); err != nil {
+	if err := t.Unmarshal(msg); err != nil {
 		return nil, err
 	}
 
@@ -103,13 +103,13 @@ func (tx *Tx) toProto() (interface{}, error) {
 }
 
 // Validate verifies that the pubkey matches
-func (tx *Tx) Validate() error {
-	cmd, err := tx.toProto()
+func (t *Tx) Validate() error {
+	cmd, err := t.toProto()
 	if err != nil {
 		return err
 	}
 
-	pubkey := hex.EncodeToString(tx.PubKey())
+	pubkey := hex.EncodeToString(t.PubKey())
 	// Verify party ID on those types who have it.
 	if t, ok := cmd.(interface{ GetPartyID() string }); ok {
 		if t.GetPartyID() != pubkey {
