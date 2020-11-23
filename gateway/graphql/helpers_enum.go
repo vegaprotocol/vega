@@ -1,5 +1,3 @@
-//lint:file-ignore U1000 although many convert functions are unused, we'll keep it for now.
-
 package gql
 
 import (
@@ -7,20 +5,6 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 )
-
-func convertLiquidityProvisionStatusToProto(x LiquidityProvisionStatus) (types.LiquidityProvision_Status, error) {
-	switch x {
-	case LiquidityProvisionStatusActive:
-		return types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE, nil
-	case LiquidityProvisionStatusStopped:
-		return types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_STOPPED, nil
-	case LiquidityProvisionStatusCancelled:
-		return types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_CANCELLED, nil
-	default:
-		err := fmt.Errorf("failed to convert LiquidityProvisionStatus from GraphQL to Proto: %v", x)
-		return types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_UNSPECIFIED, err
-	}
-}
 
 func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status) (LiquidityProvisionStatus, error) {
 	switch x {
@@ -38,20 +22,6 @@ func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status)
 	}
 }
 
-func convertDepositStatusToProto(x DepositStatus) (types.Deposit_Status, error) {
-	switch x {
-	case DepositStatusOpen:
-		return types.Deposit_DEPOSIT_STATUS_OPEN, nil
-	case DepositStatusCancelled:
-		return types.Deposit_DEPOSIT_STATUS_CANCELLED, nil
-	case DepositStatusFinalized:
-		return types.Deposit_DEPOSIT_STATUS_FINALIZED, nil
-	default:
-		err := fmt.Errorf("failed to convert DepositStatus from GraphQL to Proto: %v", x)
-		return types.Deposit_DEPOSIT_STATUS_UNSPECIFIED, err
-	}
-}
-
 func convertDepositStatusFromProto(x types.Deposit_Status) (DepositStatus, error) {
 	switch x {
 	case types.Deposit_DEPOSIT_STATUS_OPEN:
@@ -66,20 +36,6 @@ func convertDepositStatusFromProto(x types.Deposit_Status) (DepositStatus, error
 	}
 }
 
-func convertWithdrawalStatusToProto(x WithdrawalStatus) (types.Withdrawal_Status, error) {
-	switch x {
-	case WithdrawalStatusOpen:
-		return types.Withdrawal_WITHDRAWAL_STATUS_OPEN, nil
-	case WithdrawalStatusCancelled:
-		return types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED, nil
-	case WithdrawalStatusFinalized:
-		return types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED, nil
-	default:
-		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
-		return types.Withdrawal_WITHDRAWAL_STATUS_UNSPECIFIED, err
-	}
-}
-
 func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStatus, error) {
 	switch x {
 	case types.Withdrawal_WITHDRAWAL_STATUS_OPEN:
@@ -91,18 +47,6 @@ func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStat
 	default:
 		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
 		return WithdrawalStatusOpen, err
-	}
-}
-
-func convertNodeSignatureKindToToProto(x NodeSignatureKind) (types.NodeSignatureKind, error) {
-	switch x {
-	case NodeSignatureKindAssetNew:
-		return types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW, nil
-	case NodeSignatureKindAssetWithdrawal:
-		return types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL, nil
-	default:
-		err := fmt.Errorf("failed to convert NodeSignatureKind from GraphQL to Proto: %v", x)
-		return types.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED, err
 	}
 }
 
@@ -368,56 +312,6 @@ func convertProposalStateFromProto(x types.Proposal_State) (ProposalState, error
 	default:
 		err := fmt.Errorf("failed to convert ProposalState from Proto to GraphQL: %v", x)
 		return ProposalStateFailed, err
-	}
-}
-
-func convertProposalRejectionReasonToProto(x ProposalRejectionReason) (types.ProposalError, error) {
-	switch x {
-	case ProposalRejectionReasonCloseTimeTooSoon:
-		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON, nil
-	case ProposalRejectionReasonCloseTimeTooLate:
-		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE, nil
-	case ProposalRejectionReasonEnactTimeTooSoon:
-		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON, nil
-	case ProposalRejectionReasonEnactTimeTooLate:
-		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, nil
-	case ProposalRejectionReasonInsufficientTokens:
-		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, nil
-	case ProposalRejectionReasonInvalidInstrumentSecurity:
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY, nil
-	case ProposalRejectionReasonNoProduct:
-		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, nil
-	case ProposalRejectionReasonUnsupportedProduct:
-		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, nil
-	case ProposalRejectionReasonInvalidFutureMaturityTimestamp:
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, nil
-	case ProposalRejectionReasonProductMaturityIsPassed:
-		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, nil
-	case ProposalRejectionReasonNoTradingMode:
-		return types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE, nil
-	case ProposalRejectionReasonUnsupportedTradingMode:
-		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE, nil
-	case ProposalRejectionReasonNodeValidationFailed:
-		return types.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED, nil
-	case ProposalRejectionReasonMissingBuiltinAssetField:
-		return types.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, nil
-	case ProposalRejectionReasonMissingERC20ContractAddress:
-		return types.ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS, nil
-	case ProposalRejectionReasonIncompatibleTimestamps:
-		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, nil
-	case ProposalRejectionReasonInvalidAsset:
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, nil
-	case ProposalRejectionReasonNoRiskParameters:
-		return types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, nil
-	case ProposalRejectionReasonNetworkParameterInvalidKey:
-		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, nil
-	case ProposalRejectionReasonNetworkParameterInvalidValue:
-		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, nil
-	case ProposalRejectionReasonNetworkParameterValidationFailed:
-		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED, nil
-	default:
-		err := fmt.Errorf("failed to convert ProposalRejectionReason from GraphQL to Proto: %v", x)
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 }
 
@@ -740,21 +634,6 @@ func convertOrderTimeInForceFromProto(x types.Order_TimeInForce) (OrderTimeInFor
 	default:
 		err := fmt.Errorf("failed to convert OrderTimeInForce from Proto to GraphQL: %v", x)
 		return OrderTimeInForceGtc, err
-	}
-}
-
-// convertTradeTypeToProto converts a GraphQL enum to a Proto enum
-func convertTradeTypeToProto(x TradeType) (types.Trade_Type, error) {
-	switch x {
-	case TradeTypeDefault:
-		return types.Trade_TYPE_DEFAULT, nil
-	case TradeTypeNetworkCloseOutBad:
-		return types.Trade_TYPE_NETWORK_CLOSE_OUT_BAD, nil
-	case TradeTypeNetworkCloseOutGood:
-		return types.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD, nil
-	default:
-		err := fmt.Errorf("failed to convert TradeType from GraphQL to Proto: %v", x)
-		return types.Trade_TYPE_UNSPECIFIED, err
 	}
 }
 
