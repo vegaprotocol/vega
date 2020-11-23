@@ -2611,7 +2611,31 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
-	return m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id)
+	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
+		return err
+	}
+
+	// This is an adapter for getNewPeggedPrice.
+	// TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
+	// 1. do not accept a context, since it's not being used
+	// 2. receive a PeggedOrder instead of an Order.
+	fn := func(po *types.PeggedOrder) (uint64, error) {
+		return m.getNewPeggedPrice(
+			context.Background(),
+			&types.Order{PeggedOrder: po},
+		)
+	}
+
+	orders, err := m.liquidity.CreateInitialOrders(m.markPrice, party, fn)
+	if err != nil {
+		return err
+	}
+
+	for _, order := range orders {
+		m.addPeggedOrder(order)
+	}
+
+	return nil
 }
 
 func (m *Market) getTargetStake() float64 {
