@@ -51,6 +51,10 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 	}
 	base := float64(o.Price * o.Size)
 	maker, infra, liqui, err := s.feeFactors(mkt)
+	if err != nil {
+		return nil, err
+	}
+
 	fee := &types.Fee{
 		MakerFee:          uint64(math.Ceil(base * maker)),
 		InfrastructureFee: uint64(math.Ceil(base * infra)),

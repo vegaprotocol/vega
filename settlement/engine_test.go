@@ -27,10 +27,9 @@ type testEngine struct {
 }
 
 type posValue struct {
-	trader        string
-	price         uint64 // absolute Mark price
-	size          int64
-	vwBuy, vwSell uint64
+	trader string
+	price  uint64 // absolute Mark price
+	size   int64
 }
 
 type marginVal struct {

@@ -70,37 +70,37 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 }
 
 // ReloadConf updates the internal configuration
-func (a *Service) ReloadConf(cfg Config) {
-	a.log.Info("reloading configuration")
-	if a.log.GetLevel() != cfg.Level.Get() {
-		a.log.Info("updating log level",
-			logging.String("old", a.log.GetLevel().String()),
+func (s *Service) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		a.log.SetLevel(cfg.Level.Get())
+		s.log.SetLevel(cfg.Level.Get())
 	}
 
-	a.cfg = cfg
+	s.cfg = cfg
 }
 
-func (a *Service) onTick(_ context.Context, t time.Time) {}
+func (*Service) onTick(_ context.Context, t time.Time) {}
 
 // Enable move the state of an from pending the list of valid and accepted assets
-func (a *Service) Enable(assetID string) error {
-	asset, ok := a.pendingAssets[assetID]
+func (s *Service) Enable(assetID string) error {
+	asset, ok := s.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
 	}
 	if asset.IsValid() {
-		a.assets[assetID] = asset
-		delete(a.pendingAssets, assetID)
+		s.assets[assetID] = asset
+		delete(s.pendingAssets, assetID)
 		return nil
 	}
 	return ErrAssetInvalid
 }
 
-func (a *Service) IsEnabled(assetID string) bool {
-	_, ok := a.assets[assetID]
+func (s *Service) IsEnabled(assetID string) bool {
+	_, ok := s.assets[assetID]
 	return ok
 }
 

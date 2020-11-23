@@ -80,7 +80,7 @@ func (m *MarginLevelSub) flush() {
 	m.store.SaveMarginLevelsBatch(batch)
 }
 
-func (t *MarginLevelSub) Types() []events.Type {
+func (*MarginLevelSub) Types() []events.Type {
 	return []events.Type{
 		events.MarginLevelsEvent,
 		events.TimeUpdate,

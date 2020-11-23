@@ -240,24 +240,6 @@ func (bs *badgerStore) accountPartyPrefix(accType types.AccountType, party strin
 	return bs.getPrefix(bs.getAccountTypePrefix(accType), party, descending)
 }
 
-func (bs *badgerStore) accountPartyMarketPrefix(accType types.AccountType, partyID string, marketID string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
-	validForPrefix = []byte(fmt.Sprintf("%s:%s_M:%s_", bs.getAccountTypePrefix(accType), partyID, marketID))
-	keyPrefix = validForPrefix
-	if descending {
-		keyPrefix = append(keyPrefix, 0xFF)
-	}
-	return keyPrefix, validForPrefix
-}
-
-func (bs *badgerStore) accountPartyAssetPrefix(partyID string, asset string, descending bool) (keyPrefix []byte, validForPrefix []byte) {
-	validForPrefix = []byte(fmt.Sprintf("A:%s_%s_ID:", asset, partyID))
-	keyPrefix = validForPrefix
-	if descending {
-		keyPrefix = append(keyPrefix, 0xFF)
-	}
-	return keyPrefix, validForPrefix
-}
-
 func (bs *badgerStore) readTransaction() *badger.Txn {
 	return bs.db.NewTransaction(false)
 }
@@ -359,12 +341,6 @@ func (bs *badgerStore) accountWithdrawIDKey(partyID string, assetID string) []by
 func (bs *badgerStore) accountMarginIDKey(partyID string, marketID string, assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_M:%s_A:%s",
 		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_MARGIN), partyID, marketID, assetID))
-}
-
-// accountBondKey is composed from a party market and asset, has a market index (future work could add an asset index)
-func (bs *badgerStore) accountBondIDKey(partyID string, marketID string, assetID string) []byte {
-	return []byte(fmt.Sprintf("%s:%s_M:%s_A:%s",
-		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_BOND), partyID, marketID, assetID))
 }
 
 // accountMarketKey is used to provide an index of all accounts for a particular market (no party scope).

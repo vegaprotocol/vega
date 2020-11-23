@@ -25,8 +25,7 @@ type OrderBookSide struct {
 	side types.Side
 	log  *logging.Logger
 	// Config
-	levels       []*PriceLevel
-	parkedOrders []*types.Order
+	levels []*PriceLevel
 }
 
 func (s *OrderBookSide) Hash() []byte {
@@ -39,21 +38,6 @@ func (s *OrderBookSide) Hash() []byte {
 		i += 8
 	}
 	return crypto.Hash(output)
-}
-
-// When we enter an auction we have to park all pegged orders
-// and cancel all orders that are GFN
-func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
-	ordersToCancel := make([]*types.Order, 0)
-	for _, pricelevel := range s.levels {
-		for _, order := range pricelevel.orders {
-			// Place holder for when pegged orders are added
-			if order.Id == "PeggedOrder" {
-				s.parkedOrders = append(s.parkedOrders, order)
-			}
-		}
-	}
-	return ordersToCancel, nil
 }
 
 // When we leave an auction we need to remove any orders marked as GFA
@@ -75,14 +59,6 @@ func (s *OrderBookSide) getOrdersToCancelOrPark(auction bool) ([]*types.Order, [
 		}
 	}
 	return ordersToCancel, ordersToPark, nil
-}
-
-// When we leave an auction period we need to put back all the orders
-// that were parked into the order book
-func (s *OrderBookSide) unparkOrders() {
-	for _, order := range s.parkedOrders {
-		s.addOrder(order)
-	}
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order) {

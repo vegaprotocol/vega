@@ -914,24 +914,6 @@ func AssetFromProto(passet *types.Asset) (*Asset, error) {
 	}, nil
 }
 
-func defaultFutureProductConfiguration() *types.InstrumentConfiguration_Future {
-	return &types.InstrumentConfiguration_Future{
-		Future: &types.FutureProduct{
-			Asset:    "",
-			Maturity: "",
-		},
-	}
-}
-
-func defaultInstrumentConfiguration() *types.InstrumentConfiguration {
-	return &types.InstrumentConfiguration{
-		Name:      "",
-		Code:      "",
-		QuoteName: "",
-		Product:   defaultFutureProductConfiguration(),
-	}
-}
-
 func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
 	return &types.NewMarketConfiguration_LogNormal{
 		LogNormal: &types.LogNormalRiskModel{
@@ -964,16 +946,6 @@ func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
 	}
 }
 
-func defaultNewMarket() *types.NewMarketConfiguration {
-	return &types.NewMarketConfiguration{
-		Instrument:     defaultInstrumentConfiguration(),
-		RiskParameters: defaultRiskParameters(),
-		Metadata:       []string{},
-		DecimalPlaces:  0,
-		TradingMode:    defaultTradingMode(),
-	}
-}
-
 func WithdrawDetailsFromProto(w *types.WithdrawExt) WithdrawalDetails {
 	if w == nil {
 		return nil
@@ -992,9 +964,9 @@ func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
 		return nil, err
 	}
 
-	var withdrawnTs, txHash *string
+	var withdrawnTS, txHash *string
 	if w.WithdrawnTimestamp != 0 {
-		*withdrawnTs = vegatime.Format(vegatime.UnixNano(w.WithdrawnTimestamp))
+		*withdrawnTS = vegatime.Format(vegatime.UnixNano(w.WithdrawnTimestamp))
 	}
 	if len(w.TxHash) > 0 {
 		*txHash = w.TxHash
@@ -1008,7 +980,7 @@ func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
 		Ref:                w.Ref,
 		Expiry:             vegatime.Format(vegatime.UnixNano(w.Expiry)),
 		CreatedTimestamp:   vegatime.Format(vegatime.UnixNano(w.CreatedTimestamp)),
-		WithdrawnTimestamp: withdrawnTs,
+		WithdrawnTimestamp: withdrawnTS,
 		TxHash:             txHash,
 		Details:            WithdrawDetailsFromProto(w.Ext),
 	}, nil

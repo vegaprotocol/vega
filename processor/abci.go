@@ -166,17 +166,17 @@ func (app *App) RequireValidatorPubKeyW(
 }
 
 // ReloadConf updates the internal configuration
-func (a *App) ReloadConf(cfg Config) {
-	a.log.Info("reloading configuration")
-	if a.log.GetLevel() != cfg.Level.Get() {
-		a.log.Info("updating log level",
-			logging.String("old", a.log.GetLevel().String()),
+func (app *App) ReloadConf(cfg Config) {
+	app.log.Info("reloading configuration")
+	if app.log.GetLevel() != cfg.Level.Get() {
+		app.log.Info("updating log level",
+			logging.String("old", app.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		a.log.SetLevel(cfg.Level.Get())
+		app.log.SetLevel(cfg.Level.Get())
 	}
 
-	a.cfg = cfg
+	app.cfg = cfg
 }
 
 func (app *App) Abci() *abci.App {
@@ -255,7 +255,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	return resp
 }
 
-// OnCheckTxHandler performs validations like ratelimiting
+// OnCheckTx performs soft validations.
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
 
