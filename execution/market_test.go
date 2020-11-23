@@ -27,11 +27,6 @@ import (
 const MAXMOVEUP = 10
 const MINMOVEDOWN = -5
 
-type OE interface {
-	events.Event
-	Order() *types.Order
-}
-
 type testMarket struct {
 	market          *execution.Market
 	log             *logging.Logger
@@ -68,8 +63,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 		func(evt events.Event) {
 			te := evt.Type()
 			if te == events.OrderEvent {
-				//oe := evt.(OE)
-				//fmt.Println(oe.Order())
 				tm.orderEventCount++
 			}
 			tm.eventCount++
