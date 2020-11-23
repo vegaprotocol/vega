@@ -907,6 +907,19 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+	conf, err := m.submitOrder(ctx, order)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}
+
+func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1046,6 +1059,10 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				logging.Order(*order),
 				logging.Error(err))
 		}
+		return nil, err
+	}
+
+	if err := m.liquidityUpdate(ctx, confirmation.PassiveOrdersAffected); err != nil {
 		return nil, err
 	}
 
@@ -1836,6 +1853,13 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	m.checkForReferenceMoves(ctx)
+
+	if foundOnBook {
+		if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
+			return nil, err
+		}
+	}
+
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
 
@@ -1873,6 +1897,19 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 // AmendOrder amend an existing order from the order book
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+	conf, err := m.amendOrder(ctx, orderAmendment)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}
+
+func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2609,30 +2646,52 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 	return rf, nil
 }
 
+// repriceFuncW is an adapter for getNewPeggedPrice.
+// TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
+// 1. do not accept a context, since it's not being used
+// 2. receive a PeggedOrder instead of an Order.
+func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
+	return m.getNewPeggedPrice(
+		context.Background(),
+		&types.Order{PeggedOrder: po},
+	)
+}
+
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
 		return err
 	}
 
-	// This is an adapter for getNewPeggedPrice.
-	// TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
-	// 1. do not accept a context, since it's not being used
-	// 2. receive a PeggedOrder instead of an Order.
-	fn := func(po *types.PeggedOrder) (uint64, error) {
-		return m.getNewPeggedPrice(
-			context.Background(),
-			&types.Order{PeggedOrder: po},
-		)
-	}
-
-	orders, err := m.liquidity.CreateInitialOrders(m.markPrice, party, fn)
+	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, m.repriceFuncW)
 	if err != nil {
 		return err
 	}
 
-	for _, order := range orders {
-		m.addPeggedOrder(order)
+	// TODO(gchaincl,jeremyletang): calculate the amount of the bound account first
+	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+}
+
+func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
+	newOrders, amendments, err := m.liquidity.Update(m.markPrice, m.repriceFuncW, orders)
+	if err != nil {
+		return err
+	}
+
+	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+}
+
+func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) error {
+	for _, order := range newOrders {
+		if _, err := m.submitOrder(ctx, order); err != nil {
+			return err
+		}
+	}
+
+	for _, order := range amendments {
+		if _, err := m.amendOrder(ctx, order); err != nil {
+			return err
+		}
 	}
 
 	return nil
