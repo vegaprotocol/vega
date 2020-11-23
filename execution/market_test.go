@@ -66,7 +66,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 				tm.orderEventCount++
 			}
 			tm.eventCount++
-			return
 		},
 	)
 
