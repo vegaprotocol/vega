@@ -628,6 +628,7 @@ func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders cancelall", testPeggedOrderParkCancelAll)
 	t.Run("pegged orders expiring 2", testPeggedOrderExpiring2)
 	t.Run("pegged orders test for events produced", testPeggedOrderOutputMessages)
+	t.Run("pegged orders test for events produced 2", testPeggedOrderOutputMessages2)
 }
 
 func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
@@ -1378,6 +1379,49 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 
 	limitOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user6", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
+	assert.Equal(t, uint64(10), tm.orderEventCount)
+}
+
+func testPeggedOrderOutputMessages2(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "user1")
+	addAccount(tm, "user2")
+
+	// Create a pegged parked order
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user1", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_PARKED, confirmation.Order.Status)
+	assert.NotNil(t, confirmation)
+	assert.Equal(t, uint64(1), tm.orderEventCount)
+
+	// Send normal order to unpark the pegged order
+	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user2", 1000, 120)
+	require.NotEmpty(t, limitOrder)
+	assert.Equal(t, uint64(3), tm.orderEventCount)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, confirmation.Order.Status)
+
+	// Cancel the normal order to park the pegged order
+	tm.market.CancelOrderByID(limitOrder)
+	require.Equal(t, types.Order_STATUS_PARKED, confirmation.Order.Status)
+	assert.Equal(t, uint64(5), tm.orderEventCount)
+
+	// Send a new normal order to unpark the pegged order
+	limitOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "user2", 1000, 80)
+	require.NotEmpty(t, limitOrder2)
+	require.Equal(t, types.Order_STATUS_ACTIVE, confirmation.Order.Status)
+	assert.Equal(t, uint64(7), tm.orderEventCount)
+
+	// Fill that order to park the pegged order
+	limitOrder3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "user1", 1000, 80)
+	require.NotEmpty(t, limitOrder3)
+	require.Equal(t, types.Order_STATUS_PARKED, confirmation.Order.Status)
 	assert.Equal(t, uint64(10), tm.orderEventCount)
 }
 
