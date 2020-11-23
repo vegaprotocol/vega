@@ -46,7 +46,7 @@ type Service struct {
 	// proposal, they can later on be promoted to the asset lists once
 	// the proposal is accepted by both the nodes and the users
 	pendingAssets map[string]*Asset
-	apmu          sync.RWMutex
+	pamu          sync.RWMutex
 
 	// map of reference to proposal id
 	// use to find back an asset when the governance process
@@ -91,8 +91,8 @@ func (*Service) onTick(_ context.Context, t time.Time) {}
 
 // Enable move the state of an from pending the list of valid and accepted assets
 func (s *Service) Enable(assetID string) error {
-	s.apmu.Lock()
-	defer s.apmu.Unlock()
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
 	asset, ok := s.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
@@ -118,8 +118,8 @@ func (s *Service) IsEnabled(assetID string) bool {
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
 func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
-	s.apmu.Lock()
-	defer s.apmu.Unlock()
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:
@@ -148,8 +148,8 @@ func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string,
 
 // RemovePending remove and asset from the list of pending assets
 func (s *Service) RemovePending(assetID string) error {
-	s.apmu.Lock()
-	defer s.apmu.Unlock()
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
 	_, ok := s.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
@@ -176,8 +176,8 @@ func (s *Service) Get(assetID string) (*Asset, error) {
 	if ok {
 		return asset, nil
 	}
-	s.apmu.RLock()
-	defer s.apmu.RUnlock()
+	s.pamu.RLock()
+	defer s.pamu.RUnlock()
 	asset, ok = s.pendingAssets[assetID]
 	if ok {
 		return asset, nil
