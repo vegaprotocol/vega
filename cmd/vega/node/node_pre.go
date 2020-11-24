@@ -115,7 +115,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	if err := l.setupStorages(); err != nil {
 		return err
 	}
-
 	l.setupSubscibers()
 
 	if !l.conf.StoresEnabled {
@@ -167,9 +166,6 @@ func (l *NodeCommand) loadMarketsConfig() error {
 }
 
 func (l *NodeCommand) setupSubscibers() {
-	if !l.conf.StoresEnabled {
-		return
-	}
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
@@ -442,15 +438,13 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
 
 	l.broker = broker.New(l.ctx)
-	if l.conf.StoresEnabled {
-		l.broker.SubscribeBatch(
-			l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
-			l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
-			l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
-			l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-			l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-			l.liquidityService)
-	}
+	l.broker.SubscribeBatch(
+		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
+		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
+		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
+		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
+		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
+		l.liquidityService)
 
 	now, _ := l.timeService.GetTimeNow()
 
