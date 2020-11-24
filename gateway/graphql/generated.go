@@ -296,7 +296,7 @@ type ComplexityRoot struct {
 		OpeningAuction          func(childComplexity int) int
 		Orders                  func(childComplexity int, skip *int, first *int, last *int) int
 		PriceMonitoringSettings func(childComplexity int) int
-		TargetStake             func(childComplexity int) int
+		TargetStakeParameters   func(childComplexity int) int
 		TradableInstrument      func(childComplexity int) int
 		Trades                  func(childComplexity int, skip *int, first *int, last *int) int
 		TradingMode             func(childComplexity int) int
@@ -792,7 +792,7 @@ type MarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *proto.Market) (int, error)
 	OpeningAuction(ctx context.Context, obj *proto.Market) (*AuctionDuration, error)
 	PriceMonitoringSettings(ctx context.Context, obj *proto.Market) (*PriceMonitoringSettings, error)
-	TargetStake(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error)
+	TargetStakeParameters(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error)
 	Orders(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Accounts(ctx context.Context, obj *proto.Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
@@ -1948,12 +1948,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.PriceMonitoringSettings(childComplexity), true
 
-	case "Market.targetStake":
-		if e.complexity.Market.TargetStake == nil {
+	case "Market.targetStakeParameters":
+		if e.complexity.Market.TargetStakeParameters == nil {
 			break
 		}
 
-		return e.complexity.Market.TargetStake(childComplexity), true
+		return e.complexity.Market.TargetStakeParameters(childComplexity), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -5012,7 +5012,7 @@ type Market {
   priceMonitoringSettings: PriceMonitoringSettings!
 
   "Taget stake parameter"
-  targetStake: TargetStakeParameters!
+  targetStakeParameters: TargetStakeParameters!
 
   "Orders on a market"
   orders (
@@ -11985,7 +11985,7 @@ func (ec *executionContext) _Market_priceMonitoringSettings(ctx context.Context,
 	return ec.marshalNPriceMonitoringSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Market_targetStake(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
+func (ec *executionContext) _Market_targetStakeParameters(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12002,7 +12002,7 @@ func (ec *executionContext) _Market_targetStake(ctx context.Context, field graph
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().TargetStake(rctx, obj)
+		return ec.resolvers.Market().TargetStakeParameters(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24978,7 +24978,7 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				}
 				return res
 			})
-		case "targetStake":
+		case "targetStakeParameters":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -24986,7 +24986,7 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Market_targetStake(ctx, field, obj)
+				res = ec._Market_targetStakeParameters(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

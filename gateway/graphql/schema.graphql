@@ -938,7 +938,7 @@ type Market {
   priceMonitoringSettings: PriceMonitoringSettings!
 
   "Taget stake parameter"
-  targetStake: TargetStakeParameters!
+  targetStakeParameters: TargetStakeParameters!
 
   "Orders on a market"
   orders (
