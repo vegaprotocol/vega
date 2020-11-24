@@ -546,7 +546,7 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, order2.Status, types.Order_STATUS_PARTIALLY_FILLED)
+	assert.Equal(t, order2.Status, types.Order_STATUS_STOPPED)
 }
 
 func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T) {
