@@ -171,6 +171,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
 	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
 	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
+	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 
 	// return if stores are not enabled
 	if !l.conf.StoresEnabled {
@@ -185,7 +186,6 @@ func (l *NodeCommand) setupSubscibers() {
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
-	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
 }
 
@@ -448,7 +448,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// add these all the time
 	l.broker.SubscribeBatch(
-		l.accountSub, l.partySub, l.newMarketSub, l.assetPlugin)
+		l.accountSub, l.partySub, l.newMarketSub, l.assetPlugin, l.marketDepthSub)
 
 	// only if the stores are enabled
 	if l.conf.StoresEnabled {
@@ -457,7 +457,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			l.tradeSub, l.marginLevelSub, l.governanceSub,
 			l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 			l.candleSub, l.withdrawalPlugin,
-			l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
+			l.depositPlugin, l.riskFactorSub, l.netParamsService,
 			l.liquidityService)
 	}
 
