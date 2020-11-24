@@ -6,7 +6,6 @@ package proto
 import (
 	fmt "fmt"
 	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
@@ -217,9 +216,9 @@ func (this *Market) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
 		}
 	}
-	if this.TargetStake != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TargetStake); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("TargetStake", err)
+	if this.TargetStakeParameters != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TargetStakeParameters); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("TargetStakeParameters", err)
 		}
 	}
 	return nil

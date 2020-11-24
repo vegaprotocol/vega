@@ -242,5 +242,5 @@ message Market {
   PriceMonitoringSettings priceMonitoringSettings = 6;
 
   // TargetStakeParameters for the market
-  TargetStakeParameters targetStake = 7;
+  TargetStakeParameters targetStakeParameters = 7;
 }
