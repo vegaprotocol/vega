@@ -129,7 +129,9 @@ type Mutation {
     data: String!
     "The signature"
     sig: SignatureInput!
-  ): TransactionSubmitted!
+    "The way to send the transaction"
+    type: SubmitTransactionType
+): TransactionSubmitted!
 
   "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
@@ -144,6 +146,16 @@ type Mutation {
     "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
     buys:  [LiquidityOrderInput!]!
   ): PreparedLiquidityProvision!
+}
+
+"The way the transaction is sent to the blockchain"
+enum SubmitTransactionType {
+  "The call will return as soon as submitted"
+  Async
+  "The call will return once the mempool has run CheckTx on the transaction"
+  Sync
+  "The call will return once the transaction has been processed by the core"
+  Commit
 }
 
 "Create an order linked to an index rather than a price"
@@ -316,8 +328,18 @@ type MarketData {
   bestOfferPrice: String!
   "the aggregated volume being offered at the best offer price."
   bestOfferVolume: String!
+  "the highest price level on an order book for buy orders not including pegged orders."
+  bestStaticBidPrice: String!
+  "the aggregated volume being offered at the best static bid price, excluding pegged orders"
+  bestStaticBidVolume: String!
+  "the lowest price level on an order book for offer orders not including pegged orders."
+  bestStaticOfferPrice: String!
+  "the aggregated volume being offered at the best static offer price, excluding pegged orders."
+  bestStaticOfferVolume: String!
   "the arithmetic average of the best bid price and best offer price."
   midPrice: String!
+  "the arithmetic average of the best static bid price and best static offer price"
+  staticMidPrice: String!
   "time at which this mark price was relevant"
   timestamp: String!
   "the sum of the size of all positions greater than 0."
@@ -1663,7 +1685,7 @@ enum OrderRejectionReason {
 
   "Cannot change pegged order fields on a non pegged order"
   CannotAmendPeggedOrderDetailsOnNonPeggedOrder
-  
+
   "Unable to reprice a pegged order"
   UnableToRepricePeggedOrder
 }
@@ -2356,6 +2378,8 @@ enum LiquidityProvisionStatus {
   Stopped
   "A Cancelled Liquidity provision"
   Cancelled
+  "A liquidity provision was invalid and got rejected"
+  Rejected
 }
 
 type LiquidityOrderReference {

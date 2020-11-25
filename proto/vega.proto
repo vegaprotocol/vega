@@ -1005,33 +1005,42 @@ message MarketData {
   // Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
   //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 bestOfferVolume = 5;
+  // Highest price on the order book for buy orders not including pegged orders
+  uint64 bestStaticBidPrice = 6;
+  // Total volume at the best static bid price excluding pegged orders
+  uint64 bestStaticBidVolume = 7;
+  // Lowest price on the order book for sell orders not including pegged orders
+  uint64 bestStaticOfferPrice = 8;
+  // Total volume at the best static offer price excluding pegged orders
+  uint64 bestStaticOfferVolume = 9;
   // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
   //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  uint64 midPrice = 6;
+  uint64 midPrice = 10;
+  // Arithmetic average of the best static bid price and best static offer price
+  uint64 staticMidPrice = 11;
   // Market identifier for the data.
-  string market = 7;
+  string market = 12;
   // Timestamp at which this mark price was relevant, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-  int64 timestamp = 8;
+  int64 timestamp = 13;
   // The sum of the size of all positions greater than 0 on the market.
-  uint64 openInterest = 9;
+  uint64 openInterest = 14;
   // Time in seconds until the end of the auction (0 if currently not in auction period).
-  int64 auctionEnd = 10;
+  int64 auctionEnd = 15;
   // Time until next auction (used in FBA's) - currently always 0.
-  int64 auctionStart = 11;
+  int64 auctionStart = 16;
   // indicative price (zero if not in auction)
-  uint64 indicativePrice = 12;
+  uint64 indicativePrice = 17;
   // indicative volume (zero if not in auction)
-  uint64 indicativeVolume = 13;
+  uint64 indicativeVolume = 18;
   // the current state of the market
-  MarketState marketState = 14;
+  MarketState marketState = 19;
   // if the market is in auction state, this field indicates what triggered the auction
-  AuctionTrigger trigger = 15;
+  AuctionTrigger trigger = 20;
   // the targeted stake for the given market
-  string targetStake = 16;
+  string targetStake = 21;
   // the available stake fo the given market
-  string suppliedStake = 17;
-
+  string suppliedStake = 22;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
@@ -1149,6 +1158,8 @@ message LiquidityProvision {
     LIQUIDITY_PROVISION_STATUS_STOPPED = 2;
     // The liquidity provision was cancelled by the MM.
     LIQUIDITY_PROVISION_STATUS_CANCELLED = 3;
+    // The liquidity provision was invalid and got rejected.
+    LIQUIDITY_PROVISION_STATUS_REJECTED = 4;
   }
 
   // LiquidityProvision identifier

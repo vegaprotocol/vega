@@ -1,7 +1,7 @@
 package proto
 
-// Expires returns true if the order is persistent.  A
-// persistent order is a Limit type order that might be
+// IsPersistent returns true if the order is persistent.
+// A persistent order is a Limit type order that might be
 // matched in the future.
 func (o *Order) IsPersistent() bool {
 	return (o.TimeInForce == Order_TIF_GTC ||

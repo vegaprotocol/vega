@@ -64,6 +64,18 @@ message PropagateChainEventResponse {
 
 // Request for submitting a transaction on Vega.
 message SubmitTransactionRequest {
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    // The transaction will be submitted without waiting for response.
+    TYPE_ASYNC = 1;
+    // The transaction will be submitted, and blocking until the
+    // tendermint mempool return a response.
+    TYPE_SYNC = 2;
+    // The transaction will submitted, and blocking until the tendermint
+    // network will have committed it into a block.
+    TYPE_COMMIT = 3;
+  }
+
   // This request will take the signed `blob` result from a `prepare` call and submit it for inclusion in a block by the Vega blockchain.
   // Several commands are available on Vega:
   // - SubmitOrder, see [PrepareSubmitOrder](#api.trading).
@@ -76,6 +88,7 @@ message SubmitTransactionRequest {
 
   // A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain.
   vega.SignedBundle tx = 1;
+  Type type = 2;
 }
 
 // Response for submitting a transaction on Vega.

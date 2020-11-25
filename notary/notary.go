@@ -122,7 +122,7 @@ func (n *Notary) IsSigned(resID string, kind types.NodeSignatureKind) ([]types.N
 	// aggregate node sig
 	sig := map[string]struct{}{}
 	out := []types.NodeSignature{}
-	for k, _ := range n.sigs[idKind{resID, kind}] {
+	for k := range n.sigs[idKind{resID, kind}] {
 		// is node sig is part of the registered nodes,
 		// add it to the map
 		// we may have a node which have been unregistered there, hence

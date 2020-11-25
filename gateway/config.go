@@ -1,3 +1,5 @@
+//lint:file-ignore SA5008 duplicated struct tags are ok for config
+
 package gateway
 
 import (

@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	namedLogger = "evtforward"
-
 	// how often the evtforward needs to select a node to
 	// send the event if nothing was received
 	defaultRetryRate = 10 * time.Second

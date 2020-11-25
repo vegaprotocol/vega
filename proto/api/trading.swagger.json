@@ -2147,9 +2147,23 @@
         "tx": {
           "$ref": "#/definitions/vegaSignedBundle",
           "description": "A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain."
+        },
+        "type": {
+          "$ref": "#/definitions/apiSubmitTransactionRequestType"
         }
       },
       "description": "Request for submitting a transaction on Vega."
+    },
+    "apiSubmitTransactionRequestType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_ASYNC",
+        "TYPE_SYNC",
+        "TYPE_COMMIT"
+      ],
+      "default": "TYPE_UNSPECIFIED",
+      "description": " - TYPE_ASYNC: The transaction will be submitted without waiting for response.\n - TYPE_SYNC: The transaction will be submitted, and blocking until the\ntendermint mempool return a response.\n - TYPE_COMMIT: The transaction will submitted, and blocking until the tendermint\nnetwork will have committed it into a block."
     },
     "apiSubmitTransactionResponse": {
       "type": "object",
@@ -3406,10 +3420,11 @@
         "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
         "LIQUIDITY_PROVISION_STATUS_ACTIVE",
         "LIQUIDITY_PROVISION_STATUS_STOPPED",
-        "LIQUIDITY_PROVISION_STATUS_CANCELLED"
+        "LIQUIDITY_PROVISION_STATUS_CANCELLED",
+        "LIQUIDITY_PROVISION_STATUS_REJECTED"
       ],
       "default": "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
-      "description": "- LIQUIDITY_PROVISION_STATUS_UNSPECIFIED: The default value\n - LIQUIDITY_PROVISION_STATUS_ACTIVE: The liquidity provision is active\n - LIQUIDITY_PROVISION_STATUS_STOPPED: The liquidity provision was stopped by the network\n - LIQUIDITY_PROVISION_STATUS_CANCELLED: The liquidity provision was cancelled by the MM.",
+      "description": "- LIQUIDITY_PROVISION_STATUS_UNSPECIFIED: The default value\n - LIQUIDITY_PROVISION_STATUS_ACTIVE: The liquidity provision is active\n - LIQUIDITY_PROVISION_STATUS_STOPPED: The liquidity provision was stopped by the network\n - LIQUIDITY_PROVISION_STATUS_CANCELLED: The liquidity provision was cancelled by the MM.\n - LIQUIDITY_PROVISION_STATUS_REJECTED: The liquidity provision was invalid and got rejected.",
       "title": "the status of a liquidity provision order"
     },
     "vegaLiquidityProvisionSubmission": {
@@ -3624,10 +3639,35 @@
           "format": "uint64",
           "description": "Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly\n // formatted price of `1.23456` assuming market configured to 5 decimal places."
         },
+        "bestStaticBidPrice": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Highest price on the order book for buy orders not including pegged orders"
+        },
+        "bestStaticBidVolume": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Total volume at the best static bid price excluding pegged orders"
+        },
+        "bestStaticOfferPrice": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Lowest price on the order book for sell orders not including pegged orders"
+        },
+        "bestStaticOfferVolume": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Total volume at the best static offer price excluding pegged orders"
+        },
         "midPrice": {
           "type": "string",
           "format": "uint64",
           "description": "Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly\n // formatted price of `1.23456` assuming market configured to 5 decimal places."
+        },
+        "staticMidPrice": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Arithmetic average of the best static bid price and best static offer price"
         },
         "market": {
           "type": "string",

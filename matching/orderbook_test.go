@@ -24,7 +24,6 @@ type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
 	expectedPassiveOrdersAffected []types.Order
 	expectedTrades                []types.Trade
-	expectedAggressiveOrderStatus types.Order_Status
 }
 
 type tstOB struct {
@@ -2052,12 +2051,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
-	iocOrderId := "1000000000000000000000" //Must be 22 characters
+	iocOrderID := "1000000000000000000000" //Must be 22 characters
 	iocOrder := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		MarketID:    market,
-		Id:          iocOrderId,
+		Id:          iocOrderID,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		PartyID:     "B",
@@ -2072,12 +2071,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, iocOrderId, confirmation.Order.Id)
+	assert.Equal(t, iocOrderID, confirmation.Order.Id)
 	assert.Equal(t, 1, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	// Check to see if the order still exists (it should not)
-	nonorder, err := book.GetOrderByID(iocOrderId)
+	nonorder, err := book.GetOrderByID(iocOrderID)
 	assert.Equal(t, matching.ErrOrderDoesNotExist, err)
 	assert.Nil(t, nonorder)
 }

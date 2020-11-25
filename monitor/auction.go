@@ -80,7 +80,7 @@ func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration
 	a.end = d
 }
 
-// ExtendDuration - extend current auction, leaving trigger etc... in tact
+// ExtendAuction extends the current auction, leaving trigger etc... in tact
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume

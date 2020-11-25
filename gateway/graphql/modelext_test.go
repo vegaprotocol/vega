@@ -245,10 +245,6 @@ func TestModelConverters(t *testing.T) {
 
 }
 
-func intptr(i int) *int {
-	return &i
-}
-
 func stringptr(s string) *string {
 	return &s
 }

@@ -25,8 +25,7 @@ type OrderBookSide struct {
 	side types.Side
 	log  *logging.Logger
 	// Config
-	levels       []*PriceLevel
-	parkedOrders []*types.Order
+	levels []*PriceLevel
 }
 
 func (s *OrderBookSide) Hash() []byte {
@@ -39,21 +38,6 @@ func (s *OrderBookSide) Hash() []byte {
 		i += 8
 	}
 	return crypto.Hash(output)
-}
-
-// When we enter an auction we have to park all pegged orders
-// and cancel all orders that are GFN
-func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
-	ordersToCancel := make([]*types.Order, 0)
-	for _, pricelevel := range s.levels {
-		for _, order := range pricelevel.orders {
-			// Place holder for when pegged orders are added
-			if order.Id == "PeggedOrder" {
-				s.parkedOrders = append(s.parkedOrders, order)
-			}
-		}
-	}
-	return ordersToCancel, nil
 }
 
 // When we leave an auction we need to remove any orders marked as GFA
@@ -77,14 +61,6 @@ func (s *OrderBookSide) getOrdersToCancelOrPark(auction bool) ([]*types.Order, [
 	return ordersToCancel, ordersToPark, nil
 }
 
-// When we leave an auction period we need to put back all the orders
-// that were parked into the order book
-func (s *OrderBookSide) unparkOrders() {
-	for _, order := range s.parkedOrders {
-		s.addOrder(order)
-	}
-}
-
 func (s *OrderBookSide) addOrder(o *types.Order) {
 	// update the price-volume map
 	s.getPriceLevel(o.Price).addOrder(o)
@@ -92,11 +68,55 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 
 // BestPriceAndVolume returns the top of book price and volume
 // returns an error if the book is empty
-func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64, error) {
+func (s OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, 0, errors.New("no orders on the book")
 	}
 	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume, nil
+}
+
+// BestStaticPrice returns the top of book price for non pegged orders
+// We do not keep count of the volume which makes this slightly quicker
+// returns an error if the book is empty
+func (s OrderBookSide) BestStaticPrice() (uint64, error) {
+	if len(s.levels) <= 0 {
+		return 0, errors.New("no orders on the book")
+	}
+
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		pricelevel := s.levels[i]
+		for _, order := range pricelevel.orders {
+			if order.PeggedOrder == nil {
+				return pricelevel.price, nil
+			}
+		}
+	}
+	return 0, errors.New("no non pegged orders found on the book")
+}
+
+// BestStaticPriceAndVolume returns the top of book price for non pegged orders
+// returns an error if the book is empty
+func (s OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
+	if len(s.levels) <= 0 {
+		return 0, 0, errors.New("no orders on the book")
+	}
+
+	var bestPrice uint64
+	var bestVolume uint64
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		pricelevel := s.levels[i]
+		for _, order := range pricelevel.orders {
+			if order.PeggedOrder == nil {
+				bestPrice = pricelevel.price
+				bestVolume += order.Remaining
+			}
+		}
+		// If we found a price, return it
+		if bestPrice > 0 {
+			return bestPrice, bestVolume, nil
+		}
+	}
+	return 0, 0, errors.New("no non pegged orders found on the book")
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {

@@ -295,16 +295,8 @@ run() {
 		return "$?"
 		;;
 	staticcheck) ## Run staticcheck
-		f="$(mktemp)"
-		(
-			go list ./... | grep -v /integration | xargs staticcheck
-			find integration -name '*.go' -print0 | xargs -0 staticcheck | grep -v 'could not load export data'
-		) | tee "$f"
-		count="$(wc -l <"$f")"
-		rm -f "$f"
-		if test "$count" -gt 0 ; then
-			return 1
-		fi
+		staticcheck -checks 'all,-SA1019,-ST1000,-ST1021' ./...
+		return $?
 		;;
 	semgrep) ## Run semgrep
 		semgrep -f "p/dgryski.semgrep-go"

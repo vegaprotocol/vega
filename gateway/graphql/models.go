@@ -1071,17 +1071,20 @@ const (
 	LiquidityProvisionStatusStopped LiquidityProvisionStatus = "Stopped"
 	// A Cancelled Liquidity provision
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
+	// A liquidity provision was invalid and got rejected
+	LiquidityProvisionStatusRejected LiquidityProvisionStatus = "Rejected"
 )
 
 var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
 	LiquidityProvisionStatusActive,
 	LiquidityProvisionStatusStopped,
 	LiquidityProvisionStatusCancelled,
+	LiquidityProvisionStatusRejected,
 }
 
 func (e LiquidityProvisionStatus) IsValid() bool {
 	switch e {
-	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled:
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected:
 		return true
 	}
 	return false
@@ -1794,6 +1797,53 @@ func (e *Side) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Side) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The way the transaction is sent to the blockchain
+type SubmitTransactionType string
+
+const (
+	// The call will return as soon as submitted
+	SubmitTransactionTypeAsync SubmitTransactionType = "Async"
+	// The call will return once the mempool has run CheckTx on the transaction
+	SubmitTransactionTypeSync SubmitTransactionType = "Sync"
+	// The call will return once the transaction has been processed by the core
+	SubmitTransactionTypeCommit SubmitTransactionType = "Commit"
+)
+
+var AllSubmitTransactionType = []SubmitTransactionType{
+	SubmitTransactionTypeAsync,
+	SubmitTransactionTypeSync,
+	SubmitTransactionTypeCommit,
+}
+
+func (e SubmitTransactionType) IsValid() bool {
+	switch e {
+	case SubmitTransactionTypeAsync, SubmitTransactionTypeSync, SubmitTransactionTypeCommit:
+		return true
+	}
+	return false
+}
+
+func (e SubmitTransactionType) String() string {
+	return string(e)
+}
+
+func (e *SubmitTransactionType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SubmitTransactionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SubmitTransactionType", str)
+	}
+	return nil
+}
+
+func (e SubmitTransactionType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

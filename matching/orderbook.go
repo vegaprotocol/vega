@@ -54,14 +54,6 @@ func (b *OrderBook) Hash() []byte {
 	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
-func isPersistent(o *types.Order) bool {
-	return o.GetType() == types.Order_TYPE_LIMIT &&
-		(o.GetTimeInForce() == types.Order_TIF_GTC ||
-			o.GetTimeInForce() == types.Order_TIF_GTT ||
-			o.GetTimeInForce() == types.Order_TIF_GFN ||
-			o.GetTimeInForce() == types.Order_TIF_GFA)
-}
-
 // NewOrderBook create an order book with a given name
 // TODO(jeremy): At the moment it takes as a parameter the initialMarkPrice from the market
 // framework. This is used in order to calculate the CloseoutPNL when there's no volume in the
@@ -490,12 +482,12 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
 func (b *OrderBook) BestBidPriceAndVolume() (uint64, uint64, error) {
-	return b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
+	return b.buy.BestPriceAndVolume()
 }
 
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
 func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64, error) {
-	return b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+	return b.sell.BestPriceAndVolume()
 }
 
 func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationConfirmation, error) {
@@ -571,7 +563,7 @@ func (b *OrderBook) RemoveOrder(order *types.Order) error {
 	return nil
 }
 
-// AmendOrder amend an order which is an active order on the book
+// AmendOrder amends an order which is an active order on the book
 func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	if originalOrder == nil {
 		return types.ErrOrderNotFound
@@ -916,13 +908,29 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 }
 
 func (b *OrderBook) GetBestBidPrice() (uint64, error) {
-	price, _, err := b.buy.BestPriceAndVolume(types.Side_SIDE_BUY)
+	price, _, err := b.buy.BestPriceAndVolume()
 	return price, err
 }
 
+func (b *OrderBook) GetBestStaticBidPrice() (uint64, error) {
+	return b.buy.BestStaticPrice()
+}
+
+func (b *OrderBook) GetBestStaticBidPriceAndVolume() (uint64, uint64, error) {
+	return b.buy.BestStaticPriceAndVolume()
+}
+
 func (b *OrderBook) GetBestAskPrice() (uint64, error) {
-	price, _, err := b.sell.BestPriceAndVolume(types.Side_SIDE_SELL)
+	price, _, err := b.sell.BestPriceAndVolume()
 	return price, err
+}
+
+func (b *OrderBook) GetBestStaticAskPrice() (uint64, error) {
+	return b.sell.BestStaticPrice()
+}
+
+func (b *OrderBook) GetBestStaticAskPriceAndVolume() (uint64, uint64, error) {
+	return b.sell.BestStaticPriceAndVolume()
 }
 
 // PrintState prints the actual state of the book.

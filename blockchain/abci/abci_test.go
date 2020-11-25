@@ -67,22 +67,28 @@ const (
 	testCommandC = txn.Command(0x03)
 )
 
+type testCtxKey int
+
+var (
+	testKey testCtxKey
+)
+
 func TestABCICheckTx(t *testing.T) {
 	cdc := newTestCodec()
 
 	app := abci.New(cdc).
 		HandleCheckTx(testCommandA, func(ctx context.Context, tx abci.Tx) error {
-			require.Equal(t, "val", ctx.Value("key"))
+			require.Equal(t, "val", ctx.Value(testKey))
 			return nil
 		}).
 		HandleCheckTx(testCommandB, func(ctx context.Context, tx abci.Tx) error {
-			require.Equal(t, "val", ctx.Value("key"))
+			require.Equal(t, "val", ctx.Value(testKey))
 			return errors.New("boom")
 		})
 
 	app.OnCheckTx = func(ctx context.Context, req types.RequestCheckTx, _ abci.Tx) (context.Context, types.ResponseCheckTx) {
 		resp := types.ResponseCheckTx{}
-		return context.WithValue(ctx, "key", "val"), resp
+		return context.WithValue(ctx, testKey, "val"), resp
 	}
 
 	t.Run("CommandWithNoError", func(t *testing.T) {

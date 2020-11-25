@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets/builtin"
@@ -39,16 +40,19 @@ type Service struct {
 	// id to asset
 	// these assets exists and have been save
 	assets map[string]*Asset
+	amu    sync.RWMutex
 
 	// this is a list of pending asset which are currently going through
 	// proposal, they can later on be promoted to the asset lists once
 	// the proposal is accepted by both the nodes and the users
 	pendingAssets map[string]*Asset
+	pamu          sync.RWMutex
 
 	// map of reference to proposal id
 	// use to find back an asset when the governance process
 	// is still ongoing
 	refs map[string]string
+	rmu  sync.RWMutex
 
 	nw NodeWallet
 }
@@ -70,37 +74,43 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 }
 
 // ReloadConf updates the internal configuration
-func (a *Service) ReloadConf(cfg Config) {
-	a.log.Info("reloading configuration")
-	if a.log.GetLevel() != cfg.Level.Get() {
-		a.log.Info("updating log level",
-			logging.String("old", a.log.GetLevel().String()),
+func (s *Service) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		a.log.SetLevel(cfg.Level.Get())
+		s.log.SetLevel(cfg.Level.Get())
 	}
 
-	a.cfg = cfg
+	s.cfg = cfg
 }
 
-func (a *Service) onTick(_ context.Context, t time.Time) {}
+func (*Service) onTick(_ context.Context, t time.Time) {}
 
 // Enable move the state of an from pending the list of valid and accepted assets
-func (a *Service) Enable(assetID string) error {
-	asset, ok := a.pendingAssets[assetID]
+func (s *Service) Enable(assetID string) error {
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
+	asset, ok := s.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
 	}
 	if asset.IsValid() {
-		a.assets[assetID] = asset
-		delete(a.pendingAssets, assetID)
+		s.amu.Lock()
+		defer s.amu.Unlock()
+		s.assets[assetID] = asset
+		delete(s.pendingAssets, assetID)
 		return nil
 	}
 	return ErrAssetInvalid
 }
 
-func (a *Service) IsEnabled(assetID string) bool {
-	_, ok := a.assets[assetID]
+func (s *Service) IsEnabled(assetID string) bool {
+	s.amu.RLock()
+	defer s.amu.RUnlock()
+	_, ok := s.assets[assetID]
 	return ok
 }
 
@@ -108,6 +118,8 @@ func (a *Service) IsEnabled(assetID string) bool {
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
 func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
 	src := assetSrc.Source
 	switch assetSrcImpl := src.(type) {
 	case *types.AssetSource_BuiltinAsset:
@@ -125,6 +137,9 @@ func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string,
 	default:
 		return "", ErrUnknowAssetSource
 	}
+
+	s.rmu.Lock()
+	defer s.rmu.Unlock()
 	// setup the ref lookup table
 	s.refs[assetID] = assetID
 
@@ -133,6 +148,8 @@ func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string,
 
 // RemovePending remove and asset from the list of pending assets
 func (s *Service) RemovePending(assetID string) error {
+	s.pamu.Lock()
+	defer s.pamu.Unlock()
 	_, ok := s.pendingAssets[assetID]
 	if !ok {
 		return ErrAssetDoesNotExist
@@ -153,10 +170,14 @@ func (s *Service) assetHash(asset *Asset) []byte {
 }
 
 func (s *Service) Get(assetID string) (*Asset, error) {
+	s.amu.RLock()
+	defer s.amu.RUnlock()
 	asset, ok := s.assets[assetID]
 	if ok {
 		return asset, nil
 	}
+	s.pamu.RLock()
+	defer s.pamu.RUnlock()
 	asset, ok = s.pendingAssets[assetID]
 	if ok {
 		return asset, nil
@@ -165,6 +186,8 @@ func (s *Service) Get(assetID string) (*Asset, error) {
 }
 
 func (s *Service) GetByRef(ref string) (*Asset, error) {
+	s.rmu.RLock()
+	defer s.rmu.RUnlock()
 	id, ok := s.refs[ref]
 	if !ok {
 		return nil, ErrNoAssetForRef
@@ -176,13 +199,9 @@ func (s *Service) GetByRef(ref string) (*Asset, error) {
 // AssetHash return an hash of the given asset to be used
 // signed to validate the asset on the vega chain
 func (s *Service) AssetHash(assetID string) ([]byte, error) {
-	asset, ok := s.assets[assetID]
-	if ok {
-		return s.assetHash(asset), nil
+	asset, err := s.Get(assetID)
+	if err != nil {
+		return nil, ErrAssetDoesNotExist
 	}
-	asset, ok = s.pendingAssets[assetID]
-	if ok {
-		return s.assetHash(asset), nil
-	}
-	return nil, ErrAssetDoesNotExist
+	return s.assetHash(asset), nil
 }

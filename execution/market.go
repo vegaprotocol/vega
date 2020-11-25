@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -114,8 +115,6 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	matchingConfig matching.Config
-
 	mkt         *types.Market
 	closingAt   time.Time
 	currentTime time.Time
@@ -131,6 +130,7 @@ type Market struct {
 	position           *positions.Engine
 	settlement         *settlement.Engine
 	fee                *fee.Engine
+	liquidity          *liquidity.Engine
 
 	// deps engines
 	collateral *collateral.Engine
@@ -251,6 +251,8 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
+	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
+
 	market := &Market{
 		log:                  log,
 		idgen:                idgen,
@@ -266,6 +268,7 @@ func NewMarket(
 		collateral:           collateralEngine,
 		broker:               broker,
 		fee:                  feeEngine,
+		liquidity:            liqEngine,
 		parties:              map[string]struct{}{},
 		as:                   as,
 		pMonitor:             pMonitor,
@@ -287,15 +290,15 @@ func appendBytes(bz ...[]byte) []byte {
 }
 
 func (m *Market) Hash() []byte {
-	mId := logging.String("market-id", m.GetID())
+	mID := logging.String("market-id", m.GetID())
 	matchingHash := m.matching.Hash()
-	m.log.Debug("orderbook state hash", logging.Hash(matchingHash), mId)
+	m.log.Debug("orderbook state hash", logging.Hash(matchingHash), mID)
 
 	positionHash := m.position.Hash()
-	m.log.Debug("positions state hash", logging.Hash(positionHash), mId)
+	m.log.Debug("positions state hash", logging.Hash(positionHash), mID)
 
 	accountsHash := m.collateral.Hash()
-	m.log.Debug("accounts state hash", logging.Hash(accountsHash), mId)
+	m.log.Debug("accounts state hash", logging.Hash(accountsHash), mID)
 
 	return crypto.Hash(appendBytes(
 		matchingHash, positionHash, accountsHash,
@@ -305,6 +308,8 @@ func (m *Market) Hash() []byte {
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
+	bestStaticBidPrice, bestStaticBidVolume, _ := m.getBestStaticBidPriceAndVolume()
+	bestStaticOfferPrice, bestStaticOfferVolume, _ := m.getBestStaticAskPriceAndVolume()
 
 	// Auction related values
 	var indicativePrice, indicativeVolume uint64
@@ -325,22 +330,32 @@ func (m *Market) GetMarketData() types.MarketData {
 		midPrice = (bestBidPrice + bestOfferPrice) / 2
 	}
 
+	var staticMidPrice uint64
+	if bestStaticBidPrice > 0 && bestStaticOfferPrice > 0 {
+		staticMidPrice = (bestStaticBidPrice + bestStaticOfferPrice) / 2
+	}
+
 	return types.MarketData{
-		Market:           m.GetID(),
-		BestBidPrice:     bestBidPrice,
-		BestBidVolume:    bestBidVolume,
-		BestOfferPrice:   bestOfferPrice,
-		BestOfferVolume:  bestOfferVolume,
-		MidPrice:         midPrice,
-		MarkPrice:        m.markPrice,
-		Timestamp:        m.currentTime.UnixNano(),
-		OpenInterest:     m.position.GetOpenInterest(),
-		IndicativePrice:  indicativePrice,
-		IndicativeVolume: indicativeVolume,
-		AuctionStart:     auctionStart,
-		AuctionEnd:       auctionEnd,
-		MarketState:      m.as.Mode(),
-		Trigger:          m.as.Trigger(),
+		Market:                m.GetID(),
+		BestBidPrice:          bestBidPrice,
+		BestBidVolume:         bestBidVolume,
+		BestOfferPrice:        bestOfferPrice,
+		BestOfferVolume:       bestOfferVolume,
+		BestStaticBidPrice:    bestStaticBidPrice,
+		BestStaticBidVolume:   bestStaticBidVolume,
+		BestStaticOfferPrice:  bestStaticOfferPrice,
+		BestStaticOfferVolume: bestStaticOfferVolume,
+		MidPrice:              midPrice,
+		StaticMidPrice:        staticMidPrice,
+		MarkPrice:             m.markPrice,
+		Timestamp:             m.currentTime.UnixNano(),
+		OpenInterest:          m.position.GetOpenInterest(),
+		IndicativePrice:       indicativePrice,
+		IndicativeVolume:      indicativeVolume,
+		AuctionStart:          auctionStart,
+		AuctionEnd:            auctionEnd,
+		MarketState:           m.as.Mode(),
+		Trigger:               m.as.Trigger(),
 		// FIXME(WITOLD): uncomment set real values here
 		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
@@ -380,6 +395,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
+	m.liquidity.OnChainTimeUpdate(ctx, t)
 
 	closed = t.After(m.closingAt)
 	m.closed = closed
@@ -529,11 +545,11 @@ func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uin
 
 	switch order.PeggedOrder.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
-		price, err = m.getMidPrice()
+		price, err = m.getStaticMidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-		price, err = m.getBestBidPrice()
+		price, err = m.getBestStaticBidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-		price, err = m.getBestAskPrice()
+		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
 		return 0, ErrUnableToReprice
@@ -1819,17 +1835,6 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	}
 }
 
-// CancelOrderByID locates order by its Id and cancels it
-// @TODO This function should not exist. Needs to be removed
-func (m *Market) CancelOrderByID(orderID string) (*types.OrderCancellationConfirmation, error) {
-	ctx := context.TODO()
-	order, _, err := m.getOrderByID(orderID)
-	if err != nil {
-		return nil, err
-	}
-	return m.CancelOrder(ctx, order.PartyID, order.Id)
-}
-
 // AmendOrder amend an existing order from the order book
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
@@ -2297,7 +2302,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			return nil, err
 		}
 
-		conf, err = m.matching.SubmitOrder(newOrder)
+		conf, err = m.matching.SubmitOrder(newOrder) //lint:ignore SA4006 this value might be overwriter, careful!
 		// replace the trades in the confirmation to have
 		// the ones with the fees embbeded
 		conf.Trades = trades
@@ -2336,6 +2341,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) (*
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
+// and also any pegged orders that are parked
 func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
@@ -2344,10 +2350,19 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 		return nil, ErrMarketClosed
 	}
 
+	expiredPegs := []types.Order{}
 	for _, order := range m.expiringPeggedOrders.Expire(timestamp) {
 		order := order
+
+		// The pegged expiry orders are copies and do not reflect the
+		// current state of the order, therefore we look it up
+		originalOrder, _, err := m.getOrderByID(order.Id)
+		if err == nil && originalOrder.Status != types.Order_STATUS_PARKED {
+			m.unregisterOrder(&order)
+		}
 		m.removePeggedOrder(&order)
-		m.unregisterOrder(&order)
+		originalOrder.Status = types.Order_STATUS_EXPIRED
+		expiredPegs = append(expiredPegs, *originalOrder)
 	}
 
 	orderList := m.matching.RemoveExpiredOrders(timestamp)
@@ -2356,6 +2371,8 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 		order := order
 		m.unregisterOrder(&order)
 	}
+
+	orderList = append(orderList, expiredPegs...)
 
 	return orderList, nil
 }
@@ -2370,20 +2387,28 @@ func (m *Market) unregisterOrder(order *types.Order) {
 	}
 }
 
-func (m *Market) getBestAskPrice() (uint64, error) {
-	return m.matching.GetBestAskPrice()
+func (m *Market) getBestStaticAskPrice() (uint64, error) {
+	return m.matching.GetBestStaticAskPrice()
 }
 
-func (m *Market) getBestBidPrice() (uint64, error) {
-	return m.matching.GetBestBidPrice()
+func (m *Market) getBestStaticAskPriceAndVolume() (uint64, uint64, error) {
+	return m.matching.GetBestStaticAskPriceAndVolume()
 }
 
-func (m *Market) getMidPrice() (uint64, error) {
-	bid, err := m.matching.GetBestBidPrice()
+func (m *Market) getBestStaticBidPrice() (uint64, error) {
+	return m.matching.GetBestStaticBidPrice()
+}
+
+func (m *Market) getBestStaticBidPriceAndVolume() (uint64, uint64, error) {
+	return m.matching.GetBestStaticBidPriceAndVolume()
+}
+
+func (m *Market) getStaticMidPrice() (uint64, error) {
+	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
 		return 0, err
 	}
-	ask, err := m.matching.GetBestAskPrice()
+	ask, err := m.matching.GetBestStaticAskPrice()
 	if err != nil {
 		return 0, err
 	}
@@ -2399,9 +2424,9 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 	var repricedCount uint64
 	for repricedCount = 1; repricedCount > 0; {
 		// Get the current reference values and compare them to the last saved set
-		newBestBid, _ := m.getBestBidPrice()
-		newBestAsk, _ := m.getBestAskPrice()
-		newMid, _ := m.getMidPrice()
+		newBestBid, _ := m.getBestStaticBidPrice()
+		newBestAsk, _ := m.getBestStaticAskPrice()
+		newMid, _ := m.getStaticMidPrice()
 
 		// Look for a move
 		var changes uint8

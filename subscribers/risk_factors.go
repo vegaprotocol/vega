@@ -76,7 +76,7 @@ func (m *RiskFactorSub) flush() {
 	m.store.SaveRiskFactorBatch(batch)
 }
 
-func (t *RiskFactorSub) Types() []events.Type {
+func (*RiskFactorSub) Types() []events.Type {
 	return []events.Type{
 		events.RiskFactorEvent,
 		events.TimeUpdate,

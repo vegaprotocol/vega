@@ -90,6 +90,20 @@ func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3)
 }
 
+// HasBalance mocks base method
+func (m *MockBanking) HasBalance(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasBalance", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasBalance indicates an expected call of HasBalance
+func (mr *MockBankingMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasBalance", reflect.TypeOf((*MockBanking)(nil).HasBalance), arg0)
+}
+
 // LockWithdrawalERC20 mocks base method
 func (m *MockBanking) LockWithdrawalERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 uint64, arg5 *proto.Erc20WithdrawExt) error {
 	m.ctrl.T.Helper()

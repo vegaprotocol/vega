@@ -14,7 +14,6 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -175,7 +174,7 @@ func (r *VegaResolverRoot) MarketDepth() MarketDepthResolver {
 	return (*myMarketDepthResolver)(r)
 }
 
-// MarketDepth returns the market depth update resolver
+// MarketDepthUpdate returns the market depth update resolver
 func (r *VegaResolverRoot) MarketDepthUpdate() MarketDepthUpdateResolver {
 	return (*myMarketDepthUpdateResolver)(r)
 }
@@ -395,7 +394,7 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 
 type myAssetResolver VegaResolverRoot
 
-func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error) {
+func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*types.Account, error) {
 	if len(obj.ID) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
@@ -840,14 +839,13 @@ func (r *myPartyResolver) LiquidityProvisions(
 func (r *myPartyResolver) Margins(ctx context.Context,
 	party *types.Party, marketID *string) ([]*types.MarginLevels, error) {
 
-	var marketId string
-	if marketID != nil {
-		marketId = *marketID
-	}
 	req := protoapi.MarginLevelsRequest{
-		PartyID:  party.Id,
-		MarketID: marketId,
+		PartyID: party.Id,
 	}
+	if marketID != nil {
+		req.MarketID = *marketID
+	}
+
 	res, err := r.tradingDataClient.MarginLevels(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -1135,6 +1133,14 @@ func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketDa
 	return strconv.FormatUint(m.BestBidPrice, 10), nil
 }
 
+func (r *myMarketDataResolver) BestStaticBidPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestStaticBidPrice, 10), nil
+}
+
+func (r *myMarketDataResolver) BestStaticBidVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestStaticBidVolume, 10), nil
+}
+
 func (r *myMarketDataResolver) OpenInterest(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.OpenInterest, 10), nil
 }
@@ -1147,12 +1153,24 @@ func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.Market
 	return strconv.FormatUint(m.BestOfferPrice, 10), nil
 }
 
+func (r *myMarketDataResolver) BestStaticOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestStaticOfferPrice, 10), nil
+}
+
+func (r *myMarketDataResolver) BestStaticOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.BestStaticOfferVolume, 10), nil
+}
+
 func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.BestOfferVolume, 10), nil
 }
 
 func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) (string, error) {
 	return strconv.FormatUint(m.MidPrice, 10), nil
+}
+
+func (r *myMarketDataResolver) StaticMidPrice(_ context.Context, m *types.MarketData) (string, error) {
+	return strconv.FormatUint(m.StaticMidPrice, 10), nil
 }
 
 func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
@@ -1430,7 +1448,7 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 	return res.Party, nil
 }
 
-func (r *myTradeResolver) Type(ctx context.Context, obj *proto.Trade) (TradeType, error) {
+func (r *myTradeResolver) Type(ctx context.Context, obj *types.Trade) (TradeType, error) {
 	return convertTradeTypeFromProto(obj.Type)
 }
 
@@ -1630,7 +1648,18 @@ func (r *myMutationResolver) PrepareWithdrawal(
 	}, nil
 }
 
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput) (*TransactionSubmitted, error) {
+func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
+
+	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
+	if ty != nil {
+		switch *ty {
+		case SubmitTransactionTypeSync:
+			pty = protoapi.SubmitTransactionRequest_TYPE_SYNC
+		case SubmitTransactionTypeCommit:
+			pty = protoapi.SubmitTransactionRequest_TYPE_COMMIT
+		}
+	}
+
 	decodedData, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, err
@@ -1648,6 +1677,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 				Algo:    sig.Algo,
 			},
 		},
+		Type: pty,
 	}
 	res, err := r.tradingClient.SubmitTransaction(ctx, req)
 	if err != nil {
@@ -1860,7 +1890,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		}
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
-	order.Price = &proto.Price{Value: pricevalue}
+	order.Price = &types.Price{Value: pricevalue}
 
 	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
@@ -1884,7 +1914,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
 		}
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = &proto.Timestamp{Value: expiresAt.UnixNano()}
+		order.ExpiresAt = &types.Timestamp{Value: expiresAt.UnixNano()}
 	}
 
 	if peggedOffset != nil {
@@ -1918,7 +1948,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketId string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error) {
+func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error) {
 	if commitmentAmount < 0 {
 		return nil, errors.New("commitmentAmount can't be negative")
 	}
@@ -1935,7 +1965,7 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 
 	req := &protoapi.PrepareLiquidityProvisionRequest{
 		Submission: &types.LiquidityProvisionSubmission{
-			MarketID:         marketId,
+			MarketID:         marketID,
 			CommitmentAmount: uint64(commitmentAmount),
 			Fee:              fee,
 			Buys:             pBuys,

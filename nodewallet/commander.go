@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -15,7 +16,7 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
 type Chain interface {
-	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
+	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle, ty api.SubmitTransactionRequest_Type) error
 }
 
 type Commander struct {
@@ -84,8 +85,7 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 			Version: c.wal.Version(),
 		},
 	}
-	_, err = c.bc.SubmitTransaction(ctx, wrapped)
-	return err
+	return c.bc.SubmitTransaction(ctx, wrapped, api.SubmitTransactionRequest_TYPE_ASYNC)
 }
 
 func makeNonce() uint64 {

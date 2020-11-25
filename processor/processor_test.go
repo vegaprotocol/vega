@@ -5,10 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor/mocks"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 )
@@ -105,18 +103,3 @@ func (s stubWallet) PubKeyOrAddress() []byte {
 func (s stubWallet) Sign(_ []byte) ([]byte, error) {
 	return s.signed, s.err
 }
-
-type assetStub struct {
-	valid bool
-	err   error
-}
-
-func (a assetStub) Data() *types.Asset                      { return nil }
-func (a assetStub) GetAssetClass() common.AssetClass        { return common.ERC20 }
-func (a assetStub) IsValid() bool                           { return a.valid }
-func (a assetStub) Validate() error                         { return a.err }
-func (a assetStub) SignBridgeAllowlisting() ([]byte, error) { return nil, nil }
-func (a assetStub) ValidateWithdrawal() error               { return nil }
-func (a assetStub) SignWithdrawal() ([]byte, error)         { return nil, nil }
-func (a assetStub) ValidateDeposit() error                  { return nil }
-func (a assetStub) String() string                          { return "" }

@@ -16,21 +16,23 @@ var (
 
 // LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book
 type LiquidityOrder struct {
+	OrderID string
+
 	Price      uint64
 	Proportion uint64
 
 	LiquidityImpliedVolume uint64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 // RiskModel allows calculation of min/max price range and a probability of trading.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
 	GetProjectionHorizon() float64
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
 // PriceMonitor provides the range of valid prices, that is prices that wouldn't trade the current trading mode
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
 type PriceMonitor interface {
 	GetValidPriceRange() (float64, float64)
 }
@@ -54,11 +56,13 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		pm: priceMonitor,
 
 		horizon: riskModel.GetProjectionHorizon(),
+		bCache:  map[uint64]float64{},
+		sCache:  map[uint64]float64{},
 	}
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set
-func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []types.Order) (float64, error) {
+func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []*types.Order) (float64, error) {
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
 	bLiq, sLiq, err := e.calculateBuySellLiquidityWithMinMax(markPrice, orders, minPrice, maxPrice)
 	if err != nil {
@@ -70,10 +74,10 @@ func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []types.Or
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Current markt price, liquidity obligation, and orders must be specified.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
-func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation float64, buyLimitOrders []types.Order, sellLimitOrders []types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
+func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation float64, buyLimitOrders, sellLimitOrders []*types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
 
-	limitOrders := make([]types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders))
+	limitOrders := make([]*types.Order, 0, len(buyLimitOrders)+len(sellLimitOrders))
 	limitOrders = append(limitOrders, buyLimitOrders...)
 	limitOrders = append(limitOrders, sellLimitOrders...)
 
@@ -96,7 +100,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e *Engine) calculateBuySellLiquidityWithMinMax(currentPrice float64, orders []types.Order, minPrice, maxPrice float64) (float64, float64, error) {
+func (e *Engine) calculateBuySellLiquidityWithMinMax(currentPrice float64, orders []*types.Order, minPrice, maxPrice float64) (float64, float64, error) {
 	bLiq := 0.0
 	sLiq := 0.0
 	for _, o := range orders {
@@ -161,8 +165,8 @@ func (e *Engine) getProbabilityOfTrading(currentPrice float64, orderPrice uint64
 		cache = e.bCache
 	}
 
-	if prob, ok := cache[orderPrice]; !ok {
-		prob = e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
+	if _, ok := cache[orderPrice]; !ok {
+		prob := e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
 		cache[orderPrice] = prob
 	}
 	return cache[orderPrice]

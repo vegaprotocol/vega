@@ -161,4 +161,5 @@ type Banking interface {
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64) error
 	LockWithdrawalERC20(context.Context, string, string, string, uint64, *types.Erc20WithdrawExt) error
 	WithdrawalERC20(*types.ERC20Withdrawal, uint64, uint64) error
+	HasBalance(string) bool
 }

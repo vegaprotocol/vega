@@ -52,6 +52,7 @@ type Collateral interface {
 	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
 	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
 	EnableAsset(ctx context.Context, asset types.Asset) error
+	HasBalance(party string) bool
 }
 
 // ExtResChecker provide foreign chain resources validations
@@ -139,6 +140,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.cfg = cfg
+}
+
+func (e *Engine) HasBalance(party string) bool {
+	return e.col.HasBalance(party)
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {
@@ -450,7 +455,9 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	case aa.IsERC20Deposit():
 		// here the event queue send us a 0x... pubkey
 		// we do the slice operation to remove it ([2:]
-
+		dep := e.deposits[aa.id]
+		dep.TxHash = aa.ref.hash
+		e.deposits[aa.id] = dep
 		aa.deposit.partyID = strings.TrimPrefix(aa.deposit.partyID, "0x")
 		return e.finalizeDeposit(ctx, aa.deposit, aa.id)
 	case aa.IsERC20AssetList():
