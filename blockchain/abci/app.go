@@ -112,6 +112,5 @@ func (app *App) getTx(bytes []byte) (Tx, uint32, error) {
 		return nil, code, err
 	}
 
-	app.cacheTx(bytes, tx)
 	return tx, 0, nil
 }
