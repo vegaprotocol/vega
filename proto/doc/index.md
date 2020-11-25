@@ -3561,7 +3561,7 @@ Market definition.
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
 | priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | PriceMonitoringSettings for the market. |
-| targetStake | [TargetStakeParameters](#vega.TargetStakeParameters) |  | TargetStakeParameters for the market |
+| targetStakeParameters | [TargetStakeParameters](#vega.TargetStakeParameters) |  | TargetStakeParameters for the market |
 
 
 

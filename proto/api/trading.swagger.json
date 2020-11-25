@@ -3608,7 +3608,7 @@
           "$ref": "#/definitions/vegaPriceMonitoringSettings",
           "description": "PriceMonitoringSettings for the market."
         },
-        "targetStake": {
+        "targetStakeParameters": {
           "$ref": "#/definitions/vegaTargetStakeParameters",
           "title": "TargetStakeParameters for the market"
         }
