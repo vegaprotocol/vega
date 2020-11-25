@@ -208,7 +208,7 @@ func (r *myMarketResolver) TradingMode(ctx context.Context, obj *types.Market) (
 	return TradingModeFromProto(obj.TradingMode)
 }
 
-func (r *myMarketResolver) TargetStakeParameters(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error) {
+func (r *myMarketResolver) TargetStakeParameters(ctx context.Context, obj *types.Market) (*TargetStakeParameters, error) {
 	return &TargetStakeParameters{
 		TimeWindow:    int(obj.TargetStakeParameters.TimeWindow),
 		ScalingFactor: obj.TargetStakeParameters.ScalingFactor,
