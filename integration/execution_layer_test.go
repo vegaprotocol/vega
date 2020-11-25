@@ -1070,7 +1070,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
-		TargetStakeParameters: &proto.TargetStakeParameters{
+		TargetStakeParameters: &types.TargetStakeParameters{
 			TimeWindow:    3600,
 			ScalingFactor: 10,
 		},
