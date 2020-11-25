@@ -23,7 +23,7 @@ func MarginScalingFactor() func(interface{}) error {
 			return err
 		}
 		if sf.SearchLevel >= sf.InitialMargin || sf.InitialMargin >= sf.CollateralRelease {
-			return errors.New("invalid scaling factors (searchLeve < initialMargin < collateralRelease)")
+			return errors.New("invalid scaling factors (searchLevel < initialMargin < collateralRelease)")
 		}
 		return nil
 	}

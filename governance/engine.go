@@ -93,7 +93,7 @@ type Engine struct {
 	currentTime time.Time
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
-	// them in order of arrival, which makes their processing determinisitcs
+	// them in order of arrival, which makes their processing deterministic
 	activeProposals        []*proposalData
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
@@ -185,7 +185,7 @@ func (e *Engine) removeProposal(id string) {
 	for i, p := range e.activeProposals {
 		if p.ID == id {
 			copy(e.activeProposals[i:], e.activeProposals[i+1:])
-			e.activeProposals[len(e.activeProposals)-1] = nil // or the zero value of T
+			e.activeProposals[len(e.activeProposals)-1] = nil
 			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
 			return
 		}

@@ -97,7 +97,7 @@ func (n *NodeValidation) removeProposal(id string) {
 	for i, p := range n.nodeProposals {
 		if p.ID == id {
 			copy(n.nodeProposals[i:], n.nodeProposals[i+1:])
-			n.nodeProposals[len(n.nodeProposals)-1] = nil // or the zero value of T
+			n.nodeProposals[len(n.nodeProposals)-1] = nil
 			n.nodeProposals = n.nodeProposals[:len(n.nodeProposals)-1]
 			return
 		}
