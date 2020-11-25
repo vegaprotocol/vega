@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"

@@ -365,95 +365,6 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 	}
 }
 
-// convertRejectionReasonToProto converts a GraphQL enum to a Proto enum
-func convertOrderRejectionReasonToProto(x OrderRejectionReason) (types.OrderError, error) {
-	switch x {
-	case OrderRejectionReasonInvalidMarketID:
-		return types.OrderError_ORDER_ERROR_INVALID_MARKET_ID, nil
-	case OrderRejectionReasonInvalidOrderID:
-		return types.OrderError_ORDER_ERROR_INVALID_ORDER_ID, nil
-	case OrderRejectionReasonOrderOutOfSequence:
-		return types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE, nil
-	case OrderRejectionReasonInvalidRemainingSize:
-		return types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE, nil
-	case OrderRejectionReasonTimeFailure:
-		return types.OrderError_ORDER_ERROR_TIME_FAILURE, nil
-	case OrderRejectionReasonOrderRemovalFailure:
-		return types.OrderError_ORDER_ERROR_REMOVAL_FAILURE, nil
-	case OrderRejectionReasonInvalidExpirationTime:
-		return types.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME, nil
-	case OrderRejectionReasonInvalidOrderReference:
-		return types.OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE, nil
-	case OrderRejectionReasonEditNotAllowed:
-		return types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, nil
-	case OrderRejectionReasonOrderAmendFailure:
-		return types.OrderError_ORDER_ERROR_AMEND_FAILURE, nil
-	case OrderRejectionReasonOrderNotFound:
-		return types.OrderError_ORDER_ERROR_NOT_FOUND, nil
-	case OrderRejectionReasonInvalidPartyID:
-		return types.OrderError_ORDER_ERROR_INVALID_PARTY_ID, nil
-	case OrderRejectionReasonMarketClosed:
-		return types.OrderError_ORDER_ERROR_MARKET_CLOSED, nil
-	case OrderRejectionReasonMarginCheckFailed:
-		return types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED, nil
-	case OrderRejectionReasonInsufficientFundsToPayFees:
-		return types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES, nil
-	case OrderRejectionReasonSelfTrading:
-		return types.OrderError_ORDER_ERROR_SELF_TRADING, nil
-	case OrderRejectionReasonInternalError:
-		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, nil
-	case OrderRejectionReasonInvalidTimeInForce:
-		return types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE, nil
-	case OrderRejectionReasonAmendToGTTWithoutExpiryAt:
-		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT, nil
-	case OrderRejectionReasonExpiryAtBeforeCreatedAt:
-		return types.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT, nil
-	case OrderRejectionReasonGTCWithExpiryAtNotValid:
-		return types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT, nil
-	case OrderRejectionReasonCannotAmendToFOKOrIoc:
-		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC, nil
-	case OrderRejectionReasonCannotAmendToGFAOrGfn:
-		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN, nil
-	case OrderRejectionReasonCannotAmendFromGFAOrGfn:
-		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN, nil
-	case OrderRejectionReasonInvalidMarketType:
-		return types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE, nil
-	case OrderRejectionReasonGFAOrderDuringAuction:
-		return types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING, nil
-	case OrderRejectionReasonGFNOrderDuringContinuousTrading:
-		return types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION, nil
-	case OrderRejectionReasonIOCOrderDuringAuction:
-		return types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION, nil
-	case OrderRejectionReasonFOKOrderDuringAuction:
-		return types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION, nil
-	case OrderRejectionReasonPeggedOrderMustBeLimitOrder:
-		return types.OrderError_ORDER_ERROR_MUST_BE_LIMIT_ORDER, nil
-	case OrderRejectionReasonPeggedOrderMustBeGTTOrGtc:
-		return types.OrderError_ORDER_ERROR_MUST_BE_GTT_OR_GTC, nil
-	case OrderRejectionReasonPeggedOrderWithoutReferencePrice:
-		return types.OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE, nil
-	case OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice:
-		return types.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE, nil
-	case OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero:
-		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO, nil
-	case OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero:
-		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO, nil
-	case OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero:
-		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO, nil
-	case OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice:
-		return types.OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE, nil
-	case OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero:
-		return types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO, nil
-	case OrderRejectionReasonInsufficientAssetBalance:
-		return types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE, nil
-	case OrderRejectionReasonUnableToRepricePeggedOrder:
-		return types.OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER, nil
-	default:
-		err := fmt.Errorf("failed to convert RejectionReason from GraphQL to Proto: %v", x)
-		return types.OrderError_ORDER_ERROR_INTERNAL_ERROR, err
-	}
-}
-
 // convertRejectionReasonFromProto converts a Proto enum to a GraphQL enum
 func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionReason, error) {
 	switch x {
@@ -533,6 +444,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, nil
 	case types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE:
 		return OrderRejectionReasonInsufficientAssetBalance, nil
+	case types.OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER:
+		return OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, nil
 	case types.OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER:
 		return OrderRejectionReasonUnableToRepricePeggedOrder, nil
 	default:

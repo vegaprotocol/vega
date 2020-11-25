@@ -5328,7 +5328,8 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE | 41 | Sell pegged order cannot reference best bid price |
 | ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO | 42 | Pegged order offset must be &gt; zero |
 | ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
-| ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 44 | We are unable to reprice a pegged order because a market price is unavailable |
+| ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER | 44 | Cannot amend a non pegged orders details |
+| ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 45 | We are unable to reprice a pegged order because a market price is unavailable |
 
 
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -1914,6 +1915,25 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		}
 		// move to pure timestamps or convert an RFC format shortly
 		order.ExpiresAt = &types.Timestamp{Value: expiresAt.UnixNano()}
+	}
+
+	if peggedOffset != nil {
+		po, err := strconv.ParseInt(*peggedOffset, 10, 64)
+		if err != nil {
+			if r.log.GetLevel() == logging.DebugLevel {
+				r.log.Debug("unable to parse pegged offset in order amend", logging.Error(err))
+			}
+			return nil, errors.New("invalid pegged offset, could not convert to proto pegged offset")
+		}
+		order.PeggedOffset = &wrapperspb.Int64Value{Value: po}
+	}
+
+	order.PeggedReference, err = convertPeggedReferenceToProto(*peggedReference)
+	if err != nil {
+		if r.log.GetLevel() == logging.DebugLevel {
+			r.log.Debug("unable to parse pegged reference in order amend", logging.Error(err))
+		}
+		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
 	}
 
 	/*	if po != nil {

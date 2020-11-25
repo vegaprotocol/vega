@@ -532,9 +532,16 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 				} else {
 					// Amend the order on the orderbook
 					m.amendPeggedOrder(ctx, order, price)
-					repriceCount++
+				}
+			} else {
+				// If we are parked then try to add back to the book
+				orderConf, err := m.submitValidatedOrder(ctx, order)
+				if err == nil {
+					// Added correctly now remove from parked order list
+					m.removeParkedOrder(orderConf.Order)
 				}
 			}
+			repriceCount++
 		}
 	}
 	return repriceCount
@@ -2509,6 +2516,18 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 			m.parkedOrders[len(m.parkedOrders)-1] = nil
 			m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
 			break
+		}
+	}
+}
+
+func (m *Market) removeParkedOrder(o *types.Order) {
+	// Remove from parked list
+	for i, order := range m.parkedOrders {
+		if order.Id == o.Id {
+			copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
+			m.parkedOrders[len(m.parkedOrders)-1] = nil
+			m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
+			return
 		}
 	}
 }
