@@ -139,7 +139,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 			},
 			UpdateFrequency: 0,
 		},
-		TargetStake: &proto.TargetStakeParameters{
+		TargetStakeParameters: &proto.TargetStakeParameters{
 			TimeWindow:    3600,
 			ScalingFactor: 10,
 		},

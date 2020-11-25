@@ -260,9 +260,8 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStake)
+	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
-	tsCalc := liqTarget.NewEngine(*mkt.TargetStake)
 
 	market := &Market{
 		log:                  log,

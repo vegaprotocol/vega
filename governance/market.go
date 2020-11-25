@@ -194,7 +194,7 @@ func createMarket(
 			Parameters:      definition.PriceMonitoringParameters,
 			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
 		},
-		TargetStake: &types.TargetStakeParameters{
+		TargetStakeParameters: &types.TargetStakeParameters{
 			TimeWindow:    int64(tsTimeWindow.Seconds()),
 			ScalingFactor: tsScalingFactor,
 		},

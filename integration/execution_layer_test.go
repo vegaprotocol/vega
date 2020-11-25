@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
@@ -1070,7 +1071,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
-		TargetStake: &proto.TargetStakeParameters{
+		TargetStakeParameters: &proto.TargetStakeParameters{
 			TimeWindow:    3600,
 			ScalingFactor: 10,
 		},

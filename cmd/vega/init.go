@@ -298,7 +298,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				},
 				UpdateFrequency: 60,
 			},
-			TargetStake: &proto.TargetStakeParameters{
+			TargetStakeParameters: &proto.TargetStakeParameters{
 				TimeWindow:    3600, // seconds = 1h
 				ScalingFactor: 10,
 			},
