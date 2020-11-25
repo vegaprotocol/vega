@@ -87,11 +87,11 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	if err != nil {
 		return NewResponseDeliverTx(code, err.Error())
 	}
+	app.removeTxFromCache(req.GetTx())
 
 	if err := app.replayProtector.DeliverTx(tx); err != nil {
 		return NewResponseDeliverTx(AbciTxnValidationFailure, err.Error())
 	}
-	app.removeTxFromCache(req.GetTx())
 
 	// It's been validated by CheckTx so we can skip the validation here
 	ctx := app.ctx
