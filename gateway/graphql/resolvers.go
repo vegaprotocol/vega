@@ -1936,13 +1936,6 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
 	}
 
-	/*	if po != nil {
-		reference := convertPeggedReferenceToProto(po.Reference)
-		offset := strconv.ParseInt(po.Offset, 10, 64)
-		order.PeggedOrder = &types.PeggedOrder{Reference: reference,
-			Offset: offset}
-	}*/
-
 	req := protoapi.AmendOrderRequest{
 		Amendment: order,
 	}
