@@ -23,6 +23,8 @@ import (
 )
 
 var (
+	ErrLiquidityProvisionCommandNotSupported         = errors.New("command LiquidityProvisionSubmittion is not supported")
+	ErrPeggedOrderNotSupported                       = errors.New("pegged order are not supported")
 	ErrPublicKeyExceededRateLimit                    = errors.New("public key excedeed the rate limit")
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
 )
@@ -260,6 +262,44 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 // OnCheckTx performs soft validations.
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
+
+	// FIXME(): The three following checks are here just to ensure
+	// some features are disabled in the .28.0 release.
+
+	// First we do not allow parties to create LiquidityProvision
+	if tx.Command() == txn.LiquidityProvisionCommand {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(ErrLiquidityProvisionCommandNotSupported.Error())
+		return ctx, resp
+	}
+
+	// Second we reject all orders containing a PeggedOrder field
+	if tx.Command() == txn.SubmitOrderCommand {
+		s := &types.OrderSubmission{}
+		if err := tx.Unmarshal(s); err != nil {
+			resp.Code = abci.AbciTxnDecodingFailure
+			return ctx, resp
+		}
+		if s.PeggedOrder != nil {
+			resp.Code = abci.AbciTxnValidationFailure
+			resp.Data = []byte(ErrPeggedOrderNotSupported.Error())
+			return ctx, resp
+		}
+	}
+
+	// finally we make sure that no amendment amend into a pegged order or so
+	if tx.Command() == txn.AmendOrderCommand {
+		s := &types.OrderAmendment{}
+		if err := tx.Unmarshal(s); err != nil {
+			resp.Code = abci.AbciTxnDecodingFailure
+			return ctx, resp
+		}
+		if s.PeggedOffset != nil || s.PeggedReference != types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+			resp.Code = abci.AbciTxnValidationFailure
+			resp.Data = []byte(ErrPeggedOrderNotSupported.Error())
+			return ctx, resp
+		}
+	}
 
 	// Check ratelimits
 	limit, isval := app.limitPubkey(tx.PubKey())
