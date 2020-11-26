@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.28.0
+
+*2020-11-25*
+
+Vega release logs contain a 🔥 emoji to denote breaking API changes. 🔥🔥 is a new combination denoting something that may significantly change your experience - from this release forward, transactions from keys that have no collateral on the network will *always* be rejected. As there are no transactions that don't either require collateral themselves, or an action to have been taken that already required collateral, we are now rejecting these as soon as possible. 
+
+We've also added support for synchronously submitting transactions. This can make error states easier to catch. Along with this you can now subscribe to error events in the event bus.
+
+Also: Note that you'll see a lot of changes related to **Pegged Orders** and **Liquidity Commitments**. These are still in testing, so these two types cannot currently be used in _Testnet_.
+
+### New
+- [#2634](https://github.com/vegaprotocol/vega/pull/2634) Avoid caching transactions before they are rate/balance limited
+- [#2626](https://github.com/vegaprotocol/vega/pull/2626) Add a transaction submit type to GraphQL
+- [#2624](https://github.com/vegaprotocol/vega/pull/2624) Add mutexes to assets maps
+- [#2593](https://github.com/vegaprotocol/vega/pull/2503) 🔥🔥 Reject transactions
+- [#2453](https://github.com/vegaprotocol/vega/pull/2453) 🔥 Remove `baseName` field from markets
+- [#2536](https://github.com/vegaprotocol/vega/pull/2536) Add Liquidity Measurement engine
+- [#2539](https://github.com/vegaprotocol/vega/pull/2539) Add Liquidity Provisioning Commitment handling to markets
+- [#2540](https://github.com/vegaprotocol/vega/pull/2540) Add support for amending pegged orders
+- [#2549](https://github.com/vegaprotocol/vega/pull/2549) Add calculation for liquidity order sizes
+- [#2553](https://github.com/vegaprotocol/vega/pull/2553) Allow pegged orders to have a price of 0
+- [#2555](https://github.com/vegaprotocol/vega/pull/2555) Update Event stream votes to contain proposal ID
+- [#2556](https://github.com/vegaprotocol/vega/pull/2556) Update Event stream to contain error events
+- [#2560](https://github.com/vegaprotocol/vega/pull/2560) Add Pegged Order details to GraphQL
+- [#2607](https://github.com/vegaprotocol/vega/pull/2807) Add support for parking orders during auction
+
+### Improvements
+- [#2634](https://github.com/vegaprotocol/vega/pull/2634) Avoid caching transactions before they are rate/balance limited
+- [#2626](https://github.com/vegaprotocol/vega/pull/2626) Add a transaction submit type to GraphQL
+- [#2624](https://github.com/vegaprotocol/vega/pull/2624) Add mutexes to assets maps
+- [#2623](https://github.com/vegaprotocol/vega/pull/2623) Fix concurrent map access in assets
+- [#2608](https://github.com/vegaprotocol/vega/pull/2608) Add sync/async equivalents for `submitTX` 
+- [#2618](https://github.com/vegaprotocol/vega/pull/2618) Disable storing API-related data on validator nodes
+- [#2615](https://github.com/vegaprotocol/vega/pull/2618) Expand static checks
+- [#2613](https://github.com/vegaprotocol/vega/pull/2613) Remove unused internal `cancelOrderById` function
+- [#2530](https://github.com/vegaprotocol/vega/pull/2530) Governance asset for the network is now set in the genesis block
+- [#2533](https://github.com/vegaprotocol/vega/pull/2533) More efficiently close channels in subscriptions
+- [#2554](https://github.com/vegaprotocol/vega/pull/2554) Fix mid-price to 0 when best bid and average are unavailable and pegged order price is 0
+- [#2565](https://github.com/vegaprotocol/vega/pull/2565) Cancelled pegged orders now have the correct status
+- [#2568](https://github.com/vegaprotocol/vega/pull/2568) Prevent pegged orders from being repriced
+- [#2570](https://github.com/vegaprotocol/vega/pull/2570) Expose probability of trading 
+- [#2576](https://github.com/vegaprotocol/vega/pull/2576) Use static best bid/ask price for pegged order repricing 
+- [#2581](https://github.com/vegaprotocol/vega/pull/2581) Fix order of messages when cancelling a pegged order
+- [#2586](https://github.com/vegaprotocol/vega/pull/2586) Fix blank `txHash` in deposit API types
+- [#2591](https://github.com/vegaprotocol/vega/pull/2591) Pegged orders are now cancelled when all orders are cancelled
+- [#2609](https://github.com/vegaprotocol/vega/pull/2609) Improve expiry of pegged orders
+- [#2610](https://github.com/vegaprotocol/vega/pull/2609) Improve removal of liquidity commitment orders when manual orders satisfy liquidity provisioning commitments
+
 ## 0.27.0
 
 *2020-10-30*

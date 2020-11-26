@@ -21,6 +21,10 @@ type Broker interface {
 	Send(e events.Event)
 }
 
+type Reset interface {
+	Reset()
+}
+
 type value interface {
 	Validate(value string) error
 	Update(value string) error
@@ -31,14 +35,19 @@ type value interface {
 	ToBool() (bool, error)
 	ToString() (string, error)
 	ToDuration() (time.Duration, error)
-	ToJSONStruct(interface{ Reset() }) error
+	ToJSONStruct(Reset) error
+	AddRules(...interface{}) error
+	GetDispatch() func(interface{}) error
+	CheckDispatch(interface{}) error
 }
 
-type NetParamWatcher func(string, string)
-
 type WatchParam struct {
-	param   string
-	watcher NetParamWatcher
+	Param string
+	// this is to be cast to a function accepting the
+	// inner type of the parameters
+	// e.g: for a String value, the expected function
+	// is to be of the type: func(string) error
+	Watcher interface{}
 }
 
 type Store struct {
@@ -48,7 +57,7 @@ type Store struct {
 	mu     sync.RWMutex
 	broker Broker
 
-	watchers     map[string][]NetParamWatcher
+	watchers     map[string][]WatchParam
 	paramUpdates map[string]struct{}
 }
 
@@ -60,7 +69,7 @@ func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 		cfg:          cfg,
 		store:        defaultNetParams(),
 		broker:       broker,
-		watchers:     map[string][]NetParamWatcher{},
+		watchers:     map[string][]WatchParam{},
 		paramUpdates: map[string]struct{}{},
 	}
 }
@@ -88,18 +97,50 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 		}
 	}
 
+	// now we can iterate again over ALL the net params,
+	// and dispatch the value of them all so any watchers can get updated
+	// with genesis values
+	for k := range s.store {
+		if err := s.dispatchUpdate(k); err != nil {
+			return fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
+		}
+	}
+
 	return nil
 }
 
 // Watch a list of parameters updates
-func (s *Store) Watch(wp ...WatchParam) {
+func (s *Store) Watch(wp ...WatchParam) error {
 	for _, v := range wp {
-		if watchers, ok := s.watchers[v.param]; ok {
-			s.watchers[v.param] = append(watchers, v.watcher)
+		// type check the function to dispatch updates to
+		if err := s.store[v.Param].CheckDispatch(v.Watcher); err != nil {
+			return err
+		}
+		if watchers, ok := s.watchers[v.Param]; ok {
+			s.watchers[v.Param] = append(watchers, v)
 		} else {
-			s.watchers[v.param] = []NetParamWatcher{v.watcher}
+			s.watchers[v.Param] = []WatchParam{v}
 		}
 	}
+	return nil
+}
+
+// dispatch the update of a network parameters to all the listeners
+func (s *Store) dispatchUpdate(p string) error {
+	val := s.store[p]
+	fn := val.GetDispatch()
+
+	var err error
+	for _, v := range s.watchers[p] {
+		if newerr := fn(v.Watcher); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+	return err
 }
 
 // OnChainTimeUpdate is trigger once per blocks
@@ -108,10 +149,9 @@ func (s *Store) OnChainTimeUpdate(_ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
-	for k, _ := range s.paramUpdates {
-		val, _ := s.Get(k)
-		for _, w := range s.watchers[k] {
-			w(k, val)
+	for k := range s.paramUpdates {
+		if err := s.dispatchUpdate(k); err != nil {
+			s.log.Debug("unable to dispatch netparams update", logging.Error(err))
 		}
 	}
 	s.paramUpdates = map[string]struct{}{}
@@ -237,7 +277,7 @@ func (s *Store) GetString(key string) (string, error) {
 }
 
 // GetJSONStruct a value associated to the given key
-func (s *Store) GetJSONStruct(key string, v interface{ Reset() }) error {
+func (s *Store) GetJSONStruct(key string, v Reset) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	svalue, ok := s.store[key]
@@ -245,4 +285,15 @@ func (s *Store) GetJSONStruct(key string, v interface{ Reset() }) error {
 		return ErrUnknownKey
 	}
 	return svalue.ToJSONStruct(v)
+}
+
+func (s *Store) AddRules(key string, fns ...interface{}) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	value, ok := s.store[key]
+	if !ok {
+		return ErrUnknownKey
+	}
+	return value.AddRules(fns...)
+
 }

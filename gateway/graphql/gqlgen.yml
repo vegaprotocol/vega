@@ -42,7 +42,14 @@ models:
     model: code.vegaprotocol.io/vega/proto.LiquidityProvision
   LiquidityOrderReference:
     model: code.vegaprotocol.io/vega/proto.LiquidityOrderReference
+  Future:
+    model: code.vegaprotocol.io/vega/proto.Future
+  TradableInstrument:
+    model: code.vegaprotocol.io/vega/proto.TradableInstrument
+  Instrument:
+    model: code.vegaprotocol.io/vega/proto.Instrument
   Market:
+    model: code.vegaprotocol.io/vega/proto.Market
     fields:
       orders:
         resolver: true
@@ -75,9 +82,25 @@ models:
         resolver: true
   Proposal:
     model: code.vegaprotocol.io/vega/proto.GovernanceData
+  ProposalTerms:
+    model: code.vegaprotocol.io/vega/proto.ProposalTerms
+  NewMarket:
+    model: code.vegaprotocol.io/vega/proto.NewMarket
+  NewAsset:
+    model: code.vegaprotocol.io/vega/proto.NewAsset
+  UpdateMarket:
+    model: code.vegaprotocol.io/vega/proto.UpdateMarket
+  UpdateNetworkParameter:
+    model: code.vegaprotocol.io/vega/proto.UpdateNetworkParameter
+  InstrumentConfiguration:
+    model: code.vegaprotocol.io/vega/proto.InstrumentConfiguration
+  FutureProduct:
+    model: code.vegaprotocol.io/vega/proto.FutureProduct
   Asset:
     fields:
       infrastructureFeeAccount:
         resolver: true
   Deposit:
     model: code.vegaprotocol.io/vega/proto.Deposit
+  PeggedOrder:
+    model: code.vegaprotocol.io/vega/proto.PeggedOrder

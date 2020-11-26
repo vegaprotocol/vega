@@ -9,7 +9,6 @@ import (
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 
@@ -93,8 +92,8 @@ func getTestMarket() *types.Market {
 					},
 				},
 			},
-			MarginCalculator: &proto.MarginCalculator{
-				ScalingFactors: &proto.ScalingFactors{
+			MarginCalculator: &types.MarginCalculator{
+				ScalingFactors: &types.ScalingFactors{
 					SearchLevel:       1.1,
 					InitialMargin:     1.2,
 					CollateralRelease: 1.4,
@@ -140,11 +139,6 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 		return &protoapi.MarketByIDResponse{Market: m}, nil
 	})
 
-	incompleteMarket := &types.Market{
-		Id: "foobar",
-	}
-	root.tradingDataClient.EXPECT().Markets(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.MarketsResponse{Markets: []*types.Market{incompleteMarket}}, nil)
-
 	name := "BTC/DEC19"
 	vMarkets, err := root.Query().Markets(ctx, &name)
 	assert.Nil(t, err)
@@ -153,10 +147,6 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	name = "ETH/USD18"
 	vMarkets, err = root.Query().Markets(ctx, &name)
-	assert.Error(t, err)
-	assert.Nil(t, vMarkets)
-
-	vMarkets, err = root.Query().Markets(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, vMarkets)
 
@@ -180,8 +170,8 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	ctx := context.Background()
 
 	marketID := "BTC/DEC19"
-	market := &gql.Market{
-		ID: marketID,
+	market := &types.Market{
+		Id: marketID,
 	}
 
 	root.tradingDataClient.EXPECT().OrdersByMarket(gomock.Any(), gomock.Any()).Times(1).Return(&protoapi.OrdersByMarketResponse{Orders: []*types.Order{

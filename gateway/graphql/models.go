@@ -239,25 +239,6 @@ type Fees struct {
 	Factors *FeeFactors `json:"factors"`
 }
 
-// A Future product
-type Future struct {
-	// The maturity date of the product (ISO8601/RFC3339 timestamp)
-	Maturity string `json:"maturity"`
-	// The name of the asset (string)
-	Asset *Asset `json:"asset"`
-	// The oracle used for this product (Oracle union)
-	Oracle Oracle `json:"oracle"`
-}
-
-func (Future) IsProduct() {}
-
-type FutureProduct struct {
-	// Future product maturity (ISO8601/RFC3339 timestamp)
-	Maturity string `json:"maturity"`
-	// Product asset name
-	Asset *Asset `json:"asset"`
-}
-
 // Future product configuration
 type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
@@ -266,44 +247,11 @@ type FutureProductInput struct {
 	Asset string `json:"asset"`
 }
 
-// Describe something that can be traded on Vega
-type Instrument struct {
-	// Uniquely identify an instrument accrods all instruments available on Vega (string)
-	ID string `json:"id"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18) (string)
-	Code string `json:"code"`
-	// Full and fairly descriptive name for the instrument
-	Name string `json:"name"`
-	// String representing the base (e.g. BTCUSD -> BTC is base)
-	BaseName string `json:"baseName"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
-	// Metadata for this instrument
-	Metadata *InstrumentMetadata `json:"metadata"`
-	// A reference to or instance of a fully specified product, including all required product parameters for that product (Product union)
-	Product Product `json:"product"`
-}
-
-type InstrumentConfiguration struct {
-	// Full and fairly descriptive name for the instrument
-	Name string `json:"name"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
-	Code string `json:"code"`
-	// String representing the base (e.g. BTCUSD -> BTC is base)
-	BaseName string `json:"baseName"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
-	// Future product specification
-	FutureProduct *FutureProduct `json:"futureProduct"`
-}
-
 type InstrumentConfigurationInput struct {
 	// Full and fairly descriptive name for the instrument
 	Name string `json:"name"`
 	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
 	Code string `json:"code"`
-	// String representing the base (e.g. BTCUSD -> BTC is base)
-	BaseName string `json:"baseName"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
 	// Future product specification
@@ -397,56 +345,6 @@ type MarginCalculator struct {
 	ScalingFactors *ScalingFactors `json:"scalingFactors"`
 }
 
-// Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history
-type Market struct {
-	// Market ID
-	ID string `json:"id"`
-	// Market full name
-	Name string `json:"name"`
-	// Fees related data
-	Fees *Fees `json:"fees"`
-	// An instance of or reference to a tradable instrument.
-	TradableInstrument *TradableInstrument `json:"tradableInstrument"`
-	// Definitions and required configuration for the trading mode
-	TradingMode TradingMode `json:"tradingMode"`
-	// decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
-	// number denominated in the currency of the Market. (uint64)
-	//
-	// Examples:
-	//   Currency     Balance  decimalPlaces  Real Balance
-	//   GBP              100              0       GBP 100
-	//   GBP              100              2       GBP   1.00
-	//   GBP              100              4       GBP   0.01
-	//   GBP                1              4       GBP   0.0001   (  0.01p  )
-	//
-	//   GBX (pence)      100              0       GBP   1.00     (100p     )
-	//   GBX (pence)      100              2       GBP   0.01     (  1p     )
-	//   GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-	//   GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
-	DecimalPlaces int `json:"decimalPlaces"`
-	// Auction duration specifies how long the opening auction will run (minimum
-	// duration and optionally a minimum traded volume).
-	OpeningAuction *AuctionDuration `json:"openingAuction"`
-	// Price monitoring settings for the market
-	PriceMonitoringSettings *PriceMonitoringSettings `json:"priceMonitoringSettings"`
-	// Orders on a market
-	Orders []*proto.Order `json:"orders"`
-	// Get account for a party or market
-	Accounts []*proto.Account `json:"accounts"`
-	// Trades on a market
-	Trades []*proto.Trade `json:"trades"`
-	// Current depth on the orderbook for this market
-	Depth *proto.MarketDepth `json:"depth"`
-	// Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params
-	Candles []*proto.Candle `json:"candles"`
-	// marketData for the given market
-	Data *proto.MarketData `json:"data"`
-	// The list of the liquidity provision commitment for this market
-	LiquidityProvisions []*proto.LiquidityProvision `json:"liquidityProvisions"`
-}
-
-func (Market) IsEvent() {}
-
 // The MM commitments for this market
 type MarketDataCommitments struct {
 	// a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
@@ -481,14 +379,6 @@ type NetworkParameterInput struct {
 	Value string `json:"value"`
 }
 
-// A new asset proposal change
-type NewAsset struct {
-	// the source of the new Asset
-	Source AssetSource `json:"source"`
-}
-
-func (NewAsset) IsProposalChange() {}
-
 // A new asset to be added into vega
 type NewAssetInput struct {
 	// A new builtin assed to be created
@@ -496,21 +386,6 @@ type NewAssetInput struct {
 	// A new ERC20 asset to be created
 	Erc20 *ERC20Input `json:"erc20"`
 }
-
-type NewMarket struct {
-	// New market instrument configuration
-	Instrument *InstrumentConfiguration `json:"instrument"`
-	// Decimal places used for the new market
-	DecimalPlaces int `json:"decimalPlaces"`
-	// New market risk configuration
-	RiskParameters RiskModel `json:"riskParameters"`
-	// Metadata for this instrument, tags
-	Metadata []string `json:"metadata"`
-	// Trading mode
-	TradingMode TradingMode `json:"tradingMode"`
-}
-
-func (NewMarket) IsProposalChange() {}
 
 // Allows creating new markets on the network
 type NewMarketInput struct {
@@ -525,7 +400,7 @@ type NewMarketInput struct {
 	// The proposed duration for the opening auction for this market in seconds
 	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
 	// Price monitoring configuration
-	PriceMonitoringSettings *PriceMonitoringSettingsInput `json:"priceMonitoringSettings"`
+	PriceMonitoringParameters *PriceMonitoringParametersInput `json:"priceMonitoringParameters"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
@@ -543,7 +418,7 @@ type OrderEstimate struct {
 }
 
 // Create an order linked to an index rather than a price
-type PeggedOrder struct {
+type PeggedOrderInput struct {
 	// Index to link this order to
 	Reference PeggedReference `json:"reference"`
 	// Price offset from the peg
@@ -603,34 +478,22 @@ type PreparedWithdrawal struct {
 	Blob string `json:"blob"`
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+// PriceMonitoringParameters holds a list of triggers
 type PriceMonitoringParameters struct {
-	// Price monitoring projection horizon τ in seconds (> 0).
-	HorizonSecs int `json:"horizonSecs"`
-	// Price monitoring probability level p. (>0 and < 1)
-	Probability float64 `json:"probability"`
-	// Price monitoring auction extension duration in seconds should the price
-	// breach it's theoretical level over the specified horizon at the specified
-	// probability level (> 0)
-	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+	// The list of triggers for this price monitoring
+	Triggers []*PriceMonitoringTrigger `json:"triggers"`
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+// PriceMonitoringParameters holds a list of triggers
 type PriceMonitoringParametersInput struct {
-	// Price monitoring projection horizon τ in seconds (> 0).
-	HorizonSecs int `json:"horizonSecs"`
-	// Price monitoring probability level p. (>0 and < 1)
-	Probability float64 `json:"probability"`
-	// Price monitoring auction extension duration in seconds should the price
-	// breach it's theoretical level over the specified horizon at the specified
-	// probability level (> 0)
-	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+	// The list of triggers for this price monitoring
+	Triggers []*PriceMonitoringTriggerInput `json:"triggers"`
 }
 
 // Configuration of a market price monitorings auctions triggers
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
-	Parameters []*PriceMonitoringParameters `json:"parameters"`
+	Parameters *PriceMonitoringParameters `json:"parameters"`
 	// How often (in seconds) the price monitoring bounds should be updated
 	UpdateFrequencySecs int `json:"updateFrequencySecs"`
 }
@@ -638,20 +501,33 @@ type PriceMonitoringSettings struct {
 // Configuration of a market price monitorings auctions triggers
 type PriceMonitoringSettingsInput struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
-	Parameters []*PriceMonitoringParametersInput `json:"parameters"`
+	Parameters *PriceMonitoringParametersInput `json:"parameters"`
 	// How often (in seconds) the price monitoring bounds should be updated
 	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
 }
 
-type ProposalTerms struct {
-	// ISO-8601 time and date when voting closes for this proposal.
-	// Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
-	ClosingDatetime string `json:"closingDatetime"`
-	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
-	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
-	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Actual change being introduced by the proposal - action the proposal triggers if passed and enacted.
-	Change ProposalChange `json:"change"`
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringTrigger struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+type PriceMonitoringTriggerInput struct {
+	// Price monitoring projection horizon τ in seconds (> 0).
+	HorizonSecs int `json:"horizonSecs"`
+	// Price monitoring probability level p. (>0 and < 1)
+	Probability float64 `json:"probability"`
+	// Price monitoring auction extension duration in seconds should the price
+	// breach it's theoretical level over the specified horizon at the specified
+	// probability level (> 0)
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
@@ -767,16 +643,6 @@ type TimeUpdate struct {
 
 func (TimeUpdate) IsEvent() {}
 
-// A tradable instrument is a combination of an instrument and a risk model
-type TradableInstrument struct {
-	// An instance of or reference to a fully specified instrument.
-	Instrument *Instrument `json:"instrument"`
-	// A reference to a risk model that is valid for the instrument
-	RiskModel RiskModel `json:"riskModel"`
-	// Margin calculation info, currently only the scaling factors (search, initial, release) for this tradable instrument
-	MarginCalculator *MarginCalculator `json:"marginCalculator"`
-}
-
 // The fee paid by the party when a trade occurs
 type TradeFee struct {
 	// The maker fee, aggressive party to the other party (the one who had an order in the book)
@@ -819,24 +685,9 @@ type TransferResponses struct {
 
 func (TransferResponses) IsEvent() {}
 
-// Incomplete change definition for governance proposal terms
-// TODO: complete the type
-type UpdateMarket struct {
-	MarketID string `json:"marketId"`
-}
-
-func (UpdateMarket) IsProposalChange() {}
-
 type UpdateMarketInput struct {
 	MarketID string `json:"marketId"`
 }
-
-// Allows submitting a proposal for changing network parameters
-type UpdateNetworkParameter struct {
-	NetworkParameter *proto.NetworkParameter `json:"networkParameter"`
-}
-
-func (UpdateNetworkParameter) IsProposalChange() {}
 
 // Allows submitting a proposal for changing network parameters
 type UpdateNetworkParameterInput struct {
@@ -850,6 +701,8 @@ type Vote struct {
 	Party *proto.Party `json:"party"`
 	// ISO-8601 time and date when the vote reached Vega network
 	Datetime string `json:"datetime"`
+	// The ID of the proposal this vote applies to
+	ProposalID string `json:"proposalId"`
 }
 
 func (Vote) IsEvent() {}
@@ -1218,17 +1071,20 @@ const (
 	LiquidityProvisionStatusStopped LiquidityProvisionStatus = "Stopped"
 	// A Cancelled Liquidity provision
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
+	// A liquidity provision was invalid and got rejected
+	LiquidityProvisionStatusRejected LiquidityProvisionStatus = "Rejected"
 )
 
 var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
 	LiquidityProvisionStatusActive,
 	LiquidityProvisionStatusStopped,
 	LiquidityProvisionStatusCancelled,
+	LiquidityProvisionStatusRejected,
 }
 
 func (e LiquidityProvisionStatus) IsValid() bool {
 	switch e {
-	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled:
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected:
 		return true
 	}
 	return false
@@ -1439,6 +1295,10 @@ const (
 	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero OrderRejectionReason = "PeggedOrderOffsetMustBeGreaterThanZero"
 	// Insufficient balance to submit the order (no deposit made)
 	OrderRejectionReasonInsufficientAssetBalance OrderRejectionReason = "InsufficientAssetBalance"
+	// Cannot change pegged order fields on a non pegged order
+	OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder OrderRejectionReason = "CannotAmendPeggedOrderDetailsOnNonPeggedOrder"
+	// Unable to reprice a pegged order
+	OrderRejectionReasonUnableToRepricePeggedOrder OrderRejectionReason = "UnableToRepricePeggedOrder"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1485,11 +1345,13 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice,
 	OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero,
 	OrderRejectionReasonInsufficientAssetBalance,
+	OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder,
+	OrderRejectionReasonUnableToRepricePeggedOrder,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, OrderRejectionReasonUnableToRepricePeggedOrder:
 		return true
 	}
 	return false
@@ -1535,6 +1397,8 @@ const (
 	OrderStatusRejected OrderStatus = "Rejected"
 	// This order was partially filled.
 	OrderStatusPartiallyFilled OrderStatus = "PartiallyFilled"
+	// This order has been removed from the order book and applies to pegged orders only
+	OrderStatusParked OrderStatus = "Parked"
 )
 
 var AllOrderStatus = []OrderStatus{
@@ -1545,11 +1409,12 @@ var AllOrderStatus = []OrderStatus{
 	OrderStatusFilled,
 	OrderStatusRejected,
 	OrderStatusPartiallyFilled,
+	OrderStatusParked,
 }
 
 func (e OrderStatus) IsValid() bool {
 	switch e {
-	case OrderStatusActive, OrderStatusExpired, OrderStatusCancelled, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected, OrderStatusPartiallyFilled:
+	case OrderStatusActive, OrderStatusExpired, OrderStatusCancelled, OrderStatusStopped, OrderStatusFilled, OrderStatusRejected, OrderStatusPartiallyFilled, OrderStatusParked:
 		return true
 	}
 	return false
@@ -1932,6 +1797,53 @@ func (e *Side) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Side) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The way the transaction is sent to the blockchain
+type SubmitTransactionType string
+
+const (
+	// The call will return as soon as submitted
+	SubmitTransactionTypeAsync SubmitTransactionType = "Async"
+	// The call will return once the mempool has run CheckTx on the transaction
+	SubmitTransactionTypeSync SubmitTransactionType = "Sync"
+	// The call will return once the transaction has been processed by the core
+	SubmitTransactionTypeCommit SubmitTransactionType = "Commit"
+)
+
+var AllSubmitTransactionType = []SubmitTransactionType{
+	SubmitTransactionTypeAsync,
+	SubmitTransactionTypeSync,
+	SubmitTransactionTypeCommit,
+}
+
+func (e SubmitTransactionType) IsValid() bool {
+	switch e {
+	case SubmitTransactionTypeAsync, SubmitTransactionTypeSync, SubmitTransactionTypeCommit:
+		return true
+	}
+	return false
+}
+
+func (e SubmitTransactionType) String() string {
+	return string(e)
+}
+
+func (e *SubmitTransactionType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SubmitTransactionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SubmitTransactionType", str)
+	}
+	return nil
+}
+
+func (e SubmitTransactionType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

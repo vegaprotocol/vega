@@ -19,14 +19,20 @@ func NewTxFromSignedBundlePayload(payload []byte) (*Transaction, *SignedBundle, 
 	return tx, bundle, nil
 }
 
-// Implement these IsEvent methods so we can used mapped types in GQL union
-func (_ Order) IsEvent()          {}
-func (_ Account) IsEvent()        {}
-func (_ Trade) IsEvent()          {}
-func (_ Party) IsEvent()          {}
-func (_ MarginLevels) IsEvent()   {}
-func (_ MarketData) IsEvent()     {}
-func (_ NodeSignature) IsEvent()  {}
-func (_ GovernanceData) IsEvent() {}
-func (_ RiskFactor) IsEvent()     {}
-func (_ Deposit) IsEvent()        {}
+// IsEvent methods needs to be implemented so we can used mapped types in GQL union
+func (Order) IsEvent()                           {}
+func (Account) IsEvent()                         {}
+func (Trade) IsEvent()                           {}
+func (Party) IsEvent()                           {}
+func (MarginLevels) IsEvent()                    {}
+func (MarketData) IsEvent()                      {}
+func (NodeSignature) IsEvent()                   {}
+func (GovernanceData) IsEvent()                  {}
+func (RiskFactor) IsEvent()                      {}
+func (Deposit) IsEvent()                         {}
+func (Market) IsEvent()                          {}
+func (Future) IsProduct()                        {}
+func (NewMarket) IsProposalChange()              {}
+func (NewAsset) IsProposalChange()               {}
+func (UpdateMarket) IsProposalChange()           {}
+func (UpdateNetworkParameter) IsProposalChange() {}

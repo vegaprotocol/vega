@@ -99,4 +99,10 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^verify the status of the order reference:$`, verifyTheStatusOfTheOrderReference)
 	s.Step(`^executed trades:$`, executedTrades)
 	s.Step(`^dump orders$`, dumpOrders)
+	s.Step(`^clear order events$`, clearOrderEvents)
+	s.Step(`^traders place pegged orders:$`, tradersPlacePeggedOrders)
+	s.Step(`^I see the following order events:$`, seeTheFollowingOrderEvents)
+	s.Step(`^clear order events by reference:$`, clearOrdersByRef)
+	s.Step(`^traders cancel pegged orders:$`, tradersCancelPeggedOrders)
+	s.Step(`^traders cancel pegged orders and clear:$`, tradersCancelPeggedOrdersAndClear)
 }

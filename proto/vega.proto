@@ -4,6 +4,7 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
+import "google/protobuf/wrappers.proto";
 
 // A side relates to the direction of an order, to Buy, or Sell.
 enum Side {
@@ -122,7 +123,7 @@ enum PeggedReference {
   PEGGED_REFERENCE_MID = 1;
   // BEST BID price
   PEGGED_REFERENCE_BEST_BID = 2;
-  // BEST BID price
+  // BEST ASK price
   PEGGED_REFERENCE_BEST_ASK = 3;
 }
 
@@ -149,10 +150,8 @@ message Order {
     TIF_IOC = 3;
     // Fill or kill.
     TIF_FOK = 4;
-
     // good for auction
     TIF_GFA = 5;
-
     // good for normal
     TIF_GFN = 6;
 
@@ -196,6 +195,8 @@ message Order {
     STATUS_REJECTED = 6;
     // Used for closed partially filled IOC orders.
     STATUS_PARTIALLY_FILLED = 7;
+    // The order ha been removed from the book and has been parked, applies to pegged order only
+    STATUS_PARKED = 8;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -373,6 +374,10 @@ enum OrderError {
   // a general account to submit the order (no deposits made
   // for the required asset).
   ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE = 43;
+  // Cannot amend a non pegged orders details
+  ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER = 44;
+  // We are unable to reprice a pegged order because a market price is unavailable
+  ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 45;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -741,6 +746,11 @@ message OrderAmendment {
   // Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
   // See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`.
   Order.TimeInForce timeInForce = 7;
+  // Amend the pegged order offset for the order
+  google.protobuf.Int64Value peggedOffset = 8;
+  // Amend the pegged order reference for the order
+  // See [`PeggedReference`](#api.PeggedReference).
+  PeggedReference peggedReference = 9;
 }
 
 // An order submission is a request to submit or create a new order on Vega.
@@ -995,33 +1005,42 @@ message MarketData {
   // Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
   //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
   uint64 bestOfferVolume = 5;
+  // Highest price on the order book for buy orders not including pegged orders
+  uint64 bestStaticBidPrice = 6;
+  // Total volume at the best static bid price excluding pegged orders
+  uint64 bestStaticBidVolume = 7;
+  // Lowest price on the order book for sell orders not including pegged orders
+  uint64 bestStaticOfferPrice = 8;
+  // Total volume at the best static offer price excluding pegged orders
+  uint64 bestStaticOfferVolume = 9;
   // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
   //  // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  uint64 midPrice = 6;
+  uint64 midPrice = 10;
+  // Arithmetic average of the best static bid price and best static offer price
+  uint64 staticMidPrice = 11;
   // Market identifier for the data.
-  string market = 7;
+  string market = 12;
   // Timestamp at which this mark price was relevant, in nanoseconds since the epoch.
   // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`.
-  int64 timestamp = 8;
+  int64 timestamp = 13;
   // The sum of the size of all positions greater than 0 on the market.
-  uint64 openInterest = 9;
+  uint64 openInterest = 14;
   // Time in seconds until the end of the auction (0 if currently not in auction period).
-  int64 auctionEnd = 10;
+  int64 auctionEnd = 15;
   // Time until next auction (used in FBA's) - currently always 0.
-  int64 auctionStart = 11;
+  int64 auctionStart = 16;
   // indicative price (zero if not in auction)
-  uint64 indicativePrice = 12;
+  uint64 indicativePrice = 17;
   // indicative volume (zero if not in auction)
-  uint64 indicativeVolume = 13;
+  uint64 indicativeVolume = 18;
   // the current state of the market
-  MarketState marketState = 14;
+  MarketState marketState = 19;
   // if the market is in auction state, this field indicates what triggered the auction
-  AuctionTrigger trigger = 15;
+  AuctionTrigger trigger = 20;
   // the targeted stake for the given market
-  string targetStake = 16;
+  string targetStake = 21;
   // the available stake fo the given market
-  string suppliedStake = 17;
-
+  string suppliedStake = 22;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
@@ -1139,6 +1158,8 @@ message LiquidityProvision {
     LIQUIDITY_PROVISION_STATUS_STOPPED = 2;
     // The liquidity provision was cancelled by the MM.
     LIQUIDITY_PROVISION_STATUS_CANCELLED = 3;
+    // The liquidity provision was invalid and got rejected.
+    LIQUIDITY_PROVISION_STATUS_REJECTED = 4;
   }
 
   // LiquidityProvision identifier

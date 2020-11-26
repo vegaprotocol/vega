@@ -25,8 +25,7 @@ type OrderBookSide struct {
 	side types.Side
 	log  *logging.Logger
 	// Config
-	levels       []*PriceLevel
-	parkedOrders []*types.Order
+	levels []*PriceLevel
 }
 
 func (s *OrderBookSide) Hash() []byte {
@@ -41,24 +40,10 @@ func (s *OrderBookSide) Hash() []byte {
 	return crypto.Hash(output)
 }
 
-// When we enter an auction we have to park all pegged orders
-// and cancel all orders that are GFN
-func (s *OrderBookSide) parkOrCancelOrders() ([]*types.Order, error) {
-	ordersToCancel := make([]*types.Order, 0)
-	for _, pricelevel := range s.levels {
-		for _, order := range pricelevel.orders {
-			// Place holder for when pegged orders are added
-			if order.Id == "PeggedOrder" {
-				s.parkedOrders = append(s.parkedOrders, order)
-			}
-		}
-	}
-	return ordersToCancel, nil
-}
-
 // When we leave an auction we need to remove any orders marked as GFA
-func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) {
+func (s *OrderBookSide) getOrdersToCancelOrPark(auction bool) ([]*types.Order, []*types.Order, error) {
 	ordersToCancel := make([]*types.Order, 0)
+	ordersToPark := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
 			// Find orders to cancel
@@ -67,17 +52,13 @@ func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) 
 				// Save order to send back to client
 				ordersToCancel = append(ordersToCancel, order)
 			}
+
+			if auction && order.PeggedOrder != nil {
+				ordersToPark = append(ordersToPark, order)
+			}
 		}
 	}
-	return ordersToCancel, nil
-}
-
-// When we leave an auction period we need to put back all the orders
-// that were parked into the order book
-func (s *OrderBookSide) unparkOrders() {
-	for _, order := range s.parkedOrders {
-		s.addOrder(order)
-	}
+	return ordersToCancel, ordersToPark, nil
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order) {
@@ -85,35 +66,57 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 	s.getPriceLevel(o.Price).addOrder(o)
 }
 
-func (s *OrderBookSide) getHighestOrderPrice() (uint64, error) {
+// BestPriceAndVolume returns the top of book price and volume
+// returns an error if the book is empty
+func (s OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
-		return 0, ErrNoOrder
+		return 0, 0, errors.New("no orders on the book")
 	}
-	// sell order descending
-	if s.side == types.Side_SIDE_SELL {
-		return s.levels[0].price, nil
-	}
-	// buy order ascending
-	return s.levels[len(s.levels)-1].price, nil
+	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume, nil
 }
 
-func (s *OrderBookSide) getLowestOrderPrice() (uint64, error) {
+// BestStaticPrice returns the top of book price for non pegged orders
+// We do not keep count of the volume which makes this slightly quicker
+// returns an error if the book is empty
+func (s OrderBookSide) BestStaticPrice() (uint64, error) {
 	if len(s.levels) <= 0 {
-		return 0, ErrNoOrder
+		return 0, errors.New("no orders on the book")
 	}
-	// sell order descending
-	if s.side == types.Side_SIDE_SELL {
-		return s.levels[len(s.levels)-1].price, nil
+
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		pricelevel := s.levels[i]
+		for _, order := range pricelevel.orders {
+			if order.PeggedOrder == nil {
+				return pricelevel.price, nil
+			}
+		}
 	}
-	// buy order ascending
-	return s.levels[0].price, nil
+	return 0, errors.New("no non pegged orders found on the book")
 }
 
-func (s OrderBookSide) BestPriceAndVolume(side types.Side) (uint64, uint64) {
+// BestStaticPriceAndVolume returns the top of book price for non pegged orders
+// returns an error if the book is empty
+func (s OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
-		return 0, 0
+		return 0, 0, errors.New("no orders on the book")
 	}
-	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume
+
+	var bestPrice uint64
+	var bestVolume uint64
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		pricelevel := s.levels[i]
+		for _, order := range pricelevel.orders {
+			if order.PeggedOrder == nil {
+				bestPrice = pricelevel.price
+				bestVolume += order.Remaining
+			}
+		}
+		// If we found a price, return it
+		if bestPrice > 0 {
+			return bestPrice, bestVolume, nil
+		}
+	}
+	return 0, 0, errors.New("no non pegged orders found on the book")
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {

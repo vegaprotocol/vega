@@ -89,6 +89,12 @@ func (this *SimpleModelParams) Validate() error {
 	if !(this.MinMoveDown <= 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("MinMoveDown", fmt.Errorf(`value '%v' must be lower than or equal to '0'`, this.MinMoveDown))
 	}
+	if !(this.ProbabilityOfTrading >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProbabilityOfTrading", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.ProbabilityOfTrading))
+	}
+	if !(this.ProbabilityOfTrading <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProbabilityOfTrading", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.ProbabilityOfTrading))
+	}
 	return nil
 }
 func (this *ScalingFactors) Validate() error {
@@ -140,7 +146,7 @@ func (this *Fees) Validate() error {
 	}
 	return nil
 }
-func (this *PriceMonitoringParameters) Validate() error {
+func (this *PriceMonitoringTrigger) Validate() error {
 	if !(this.Horizon > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Horizon", fmt.Errorf(`value '%v' must be greater than '0'`, this.Horizon))
 	}
@@ -155,12 +161,20 @@ func (this *PriceMonitoringParameters) Validate() error {
 	}
 	return nil
 }
-func (this *PriceMonitoringSettings) Validate() error {
-	for _, item := range this.PriceMonitoringParameters {
+func (this *PriceMonitoringParameters) Validate() error {
+	for _, item := range this.Triggers {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringParameters", err)
+				return github_com_mwitkow_go_proto_validators.FieldError("Triggers", err)
 			}
+		}
+	}
+	return nil
+}
+func (this *PriceMonitoringSettings) Validate() error {
+	if this.Parameters != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Parameters); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Parameters", err)
 		}
 	}
 	return nil

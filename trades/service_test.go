@@ -24,7 +24,6 @@ type testService struct {
 	log   *logging.Logger
 	ctrl  *gomock.Controller
 	trade *mocks.MockTradeStore
-	pos   *mocks.MockPositionsPlugin
 }
 
 func getTestService(t *testing.T) *testService {

@@ -96,7 +96,7 @@ type PartyService interface {
 // BlockchainClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
-	SubmitTransaction(ctx context.Context, tx *types.SignedBundle) (bool, error)
+	SubmitTransaction(ctx context.Context, tx *types.SignedBundle, ty protoapi.SubmitTransactionRequest_Type) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
@@ -230,9 +230,8 @@ type tradingDataService struct {
 	hasGenesisTimeAndChainID uint32
 	mu                       sync.Mutex
 
-	netInfo           *tmctypes.ResultNetInfo
-	netInfoMu         sync.RWMutex
-	netInfoLastUpdate time.Time
+	netInfo   *tmctypes.ResultNetInfo
+	netInfoMu sync.RWMutex
 }
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
@@ -2073,6 +2072,15 @@ func (t *tradingDataService) ObserveEventBus(
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
+	if len(req.PartyID) == 0 {
+		// no PartyID filter
+		for _, t := range types {
+			// subscription to TxErr events
+			if t == events.TxErrEvent {
+				return apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing party filter for TxError stream"))
+			}
+		}
+	}
 	filters := []subscribers.EventFilter{}
 	if len(req.MarketID) > 0 && len(req.PartyID) > 0 {
 		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketID, req.PartyID))
@@ -2087,6 +2095,7 @@ func (t *tradingDataService) ObserveEventBus(
 
 	// number of retries to -1 to have pretty much unlimited retries
 	ch, bCh := t.eventService.ObserveEvents(ctx, t.Config.StreamRetries, types, int(req.BatchSize), filters...)
+	defer close(bCh)
 
 	if req.BatchSize > 0 {
 		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
@@ -2128,9 +2137,9 @@ func (t *tradingDataService) recvEventRequest(
 ) (*protoapi.ObserveEventsRequest, error) {
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
 	oebCh := make(chan protoapi.ObserveEventsRequest)
-	defer close(oebCh)
 	var err error
 	go func() {
+		defer close(oebCh)
 		nb := protoapi.ObserveEventsRequest{}
 		if err = stream.RecvMsg(&nb); err != nil {
 			cfunc()

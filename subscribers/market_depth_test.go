@@ -528,3 +528,64 @@ func TestMarketDepthFields(t *testing.T) {
 	assert.Equal(t, pl.Price, uint64(101))
 	assert.Equal(t, pl.Volume, uint64(10))
 }
+
+func TestParkingOrder(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx, true)
+
+	// Create a valid and live pegged order
+	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 10)
+	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+
+	// Park it
+	order2 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 0, 10, 10)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order2.Status = types.Order_STATUS_PARKED
+	event2 := events.NewOrderEvent(ctx, order2)
+	mdb.Push(event2)
+
+	md, err := mdb.GetMarketDepth(ctx, "M", 0)
+	assert.Nil(t, err)
+	assert.NotNil(t, md)
+
+	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, len(md.GetBuy()), 0)
+	assert.Equal(t, len(md.GetSell()), 0)
+
+	// Unpark it
+	order3 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 10)
+	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order3.Status = types.Order_STATUS_ACTIVE
+	event3 := events.NewOrderEvent(ctx, order3)
+	mdb.Push(event3)
+
+	md2, err := mdb.GetMarketDepth(ctx, "M", 0)
+	assert.Nil(t, err)
+	assert.NotNil(t, md2)
+
+	assert.Equal(t, md2.MarketID, "M")
+	assert.Equal(t, len(md2.GetBuy()), 1)
+	assert.Equal(t, len(md2.GetSell()), 0)
+}
+
+func TestParkedOrder(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx, true)
+
+	// Create a parked pegged order which should not go on the depth book
+	order1 := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 101, 10, 10)
+	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order1.Status = types.Order_STATUS_PARKED
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+
+	md, err := mdb.GetMarketDepth(ctx, "M", 0)
+	assert.Nil(t, err)
+	assert.NotNil(t, md)
+
+	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, len(md.GetBuy()), 0)
+	assert.Equal(t, len(md.GetSell()), 0)
+}

@@ -126,6 +126,8 @@
     - [WithdrawalsRequest](#api.WithdrawalsRequest)
     - [WithdrawalsResponse](#api.WithdrawalsResponse)
 
+    - [SubmitTransactionRequest.Type](#api.SubmitTransactionRequest.Type)
+
     - [trading](#api.trading)
     - [trading_data](#api.trading_data)
 
@@ -168,6 +170,7 @@
     - [TimeUpdate](#vega.TimeUpdate)
     - [TradeSettlement](#vega.TradeSettlement)
     - [TransferResponses](#vega.TransferResponses)
+    - [TxErrorEvent](#vega.TxErrorEvent)
 
     - [BusEventType](#vega.BusEventType)
 
@@ -206,6 +209,7 @@
     - [Market](#vega.Market)
     - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
     - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
+    - [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger)
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
@@ -1966,20 +1970,11 @@ Request to submit a new order.
 ### SubmitTransactionRequest
 Request for submitting a transaction on Vega.
 
-This request will take the signed `blob` result from a `prepare` call and submit it for inclusion in a block by the Vega blockchain.
-Several commands are available on Vega:
-- SubmitOrder, see [PrepareSubmitOrder](#api.trading).
-- AmendOrder, see [PrepareAmendOrder](#api.trading).
-- CancelOrder, see [PrepareCancelOrder](#api.trading).
-- PrepareProposal, see [PrepareProposal](#api.trading).
-- PrepareVote, see [PrepareVote](#api.trading).
-- Withdraw, see [WithdrawRequest](#api.trading).
-All of these can be prepared using this API. Payload data must be signed using Vega Wallet before submitting a transaction.
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | tx | [vega.SignedBundle](#vega.SignedBundle) |  | A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain. |
+| type | [SubmitTransactionRequest.Type](#api.SubmitTransactionRequest.Type) |  |  |
 
 
 
@@ -2206,6 +2201,20 @@ The response for a list of withdrawals
 
 
 
+
+
+
+<a name="api.SubmitTransactionRequest.Type"></a>
+
+### SubmitTransactionRequest.Type
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TYPE_UNSPECIFIED | 0 |  |
+| TYPE_ASYNC | 1 | The transaction will be submitted without waiting for response. |
+| TYPE_SYNC | 2 | The transaction will be submitted, and blocking until the tendermint mempool return a response. |
+| TYPE_COMMIT | 3 | The transaction will submitted, and blocking until the tendermint network will have committed it into a block. |
 
 
 
@@ -2784,6 +2793,7 @@ A bus event is a container for event bus events emitted by Vega
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
 | liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
+| txErrEvent | [TxErrorEvent](#vega.TxErrorEvent) |  | Transaction error events - separate category, not included in ALL events |
 
 
 
@@ -2942,6 +2952,27 @@ A transfer responses event contains a collection of transfer information
 
 
 
+<a name="vega.TxErrorEvent"></a>
+
+### TxErrorEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| PartyID | [string](#string) |  | the party who had a tx fail |
+| errMsg | [string](#string) |  | error message describing what went wrong |
+| orderSubmission | [OrderSubmission](#vega.OrderSubmission) |  |  |
+| orderAmendment | [OrderAmendment](#vega.OrderAmendment) |  |  |
+| orderCancellation | [OrderCancellation](#vega.OrderCancellation) |  |  |
+| proposal | [Proposal](#vega.Proposal) |  |  |
+| vote | [Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
 
 
 <a name="vega.BusEventType"></a>
@@ -2981,6 +3012,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
 | BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
+| BUS_EVENT_TYPE_TX_ERROR | 201 | Event used to report failed transactions back to a user - excluded from the ALL type |
 
 
 
@@ -3075,7 +3107,6 @@ Instrument configuration.
 | ----- | ---- | ----- | ----------- |
 | name | [string](#string) |  | Instrument name. |
 | code | [string](#string) |  | Instrument code. |
-| baseName | [string](#string) |  | Base security used as the reference. |
 | quoteName | [string](#string) |  | Quote (secondary) security. |
 | future | [FutureProduct](#vega.FutureProduct) |  | Futures. |
 
@@ -3126,7 +3157,7 @@ Configuration for a new market on Vega.
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags. |
 | openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
-| priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | price monitoring configuration |
+| PriceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) |  | price monitoring configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous trading. |
@@ -3439,7 +3470,6 @@ Instrument definition.
 | id | [string](#string) |  | Instrument identifier. |
 | code | [string](#string) |  | Code for the instrument. |
 | name | [string](#string) |  | Name of the instrument. |
-| baseName | [string](#string) |  | Base name of the instrument. |
 | quoteName | [string](#string) |  | Quote name of the instrument. |
 | metadata | [InstrumentMetadata](#vega.InstrumentMetadata) |  | A collection of instrument meta-data. |
 | initialMarkPrice | [uint64](#uint64) |  | An initial mark price for the instrument. |
@@ -3539,14 +3569,12 @@ Market definition.
 <a name="vega.PriceMonitoringParameters"></a>
 
 ### PriceMonitoringParameters
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+PriceMonitoringParameters contain a collection of triggers to be used for a given market.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
-| probability | [double](#double) |  | Price monitoirng probability level p. |
-| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
+| triggers | [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger) | repeated |  |
 
 
 
@@ -3561,8 +3589,25 @@ PriceMonitoringParameters holds together price projection horizon τ, probabilit
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) | repeated | Specifies a set of PriceMonitoringParameters to be used for price monitoring purposes |
+| parameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) |  | Specifies PriceMonitoringParameters to be used for price monitoring purposes |
 | updateFrequency | [int64](#int64) |  | Specifies how often (expressed in seconds) the price monitoring bounds should be updated. |
+
+
+
+
+
+
+<a name="vega.PriceMonitoringTrigger"></a>
+
+### PriceMonitoringTrigger
+PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| horizon | [int64](#int64) |  | Price monitoring projection horizon τ in seconds. |
+| probability | [double](#double) |  | Price monitoirng probability level p. |
+| auctionExtension | [int64](#int64) |  | Price monitoring auction extension duration in seconds should the price breach it&#39;s theoretical level over the specified horizon at the specified probability level. |
 
 
 
@@ -3598,6 +3643,7 @@ Risk model parameters for simple modelling.
 | factorShort | [double](#double) |  | Pre-defined risk factor value for short. |
 | maxMoveUp | [double](#double) |  | Pre-defined maximum price move up that the model considers as valid. |
 | minMoveDown | [double](#double) |  | Pre-defined minimum price move down that the model considers as valid. |
+| probabilityOfTrading | [double](#double) |  | Pre-defined constant probability of trading |
 
 
 
@@ -4319,7 +4365,12 @@ Represents data generated by a market when open.
 | bestBidVolume | [uint64](#uint64) |  | Aggregated volume being bid at the best bid price. |
 | bestOfferPrice | [uint64](#uint64) |  | Lowest price level on an order book for offer orders. |
 | bestOfferVolume | [uint64](#uint64) |  | Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly // formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| bestStaticBidPrice | [uint64](#uint64) |  | Highest price on the order book for buy orders not including pegged orders |
+| bestStaticBidVolume | [uint64](#uint64) |  | Total volume at the best static bid price excluding pegged orders |
+| bestStaticOfferPrice | [uint64](#uint64) |  | Lowest price on the order book for sell orders not including pegged orders |
+| bestStaticOfferVolume | [uint64](#uint64) |  | Total volume at the best static offer price excluding pegged orders |
 | midPrice | [uint64](#uint64) |  | Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly // formatted price of `1.23456` assuming market configured to 5 decimal places. |
+| staticMidPrice | [uint64](#uint64) |  | Arithmetic average of the best static bid price and best static offer price |
 | market | [string](#string) |  | Market identifier for the data. |
 | timestamp | [int64](#int64) |  | Timestamp at which this mark price was relevant, in nanoseconds since the epoch. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | openInterest | [uint64](#uint64) |  | The sum of the size of all positions greater than 0 on the market. |
@@ -4488,6 +4539,8 @@ The `orderID`, `partyID` and `marketID` fields are used for lookup of the order 
 | sizeDelta | [int64](#int64) |  | Amend the size for the order by the delta specified. To reduce the size from the current value set a negative integer value. To increase the size from the current value, set a positive integer value. To leave the size unchanged set a value of zero. |
 | expiresAt | [Timestamp](#vega.Timestamp) |  | Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged. See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. |
 | timeInForce | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged. See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`. |
+| peggedOffset | [google.protobuf.Int64Value](#google.protobuf.Int64Value) |  | Amend the pegged order offset for the order |
+| peggedReference | [PeggedReference](#vega.PeggedReference) |  | Amend the pegged order reference for the order See [`PeggedReference`](#api.PeggedReference). |
 
 
 
@@ -5121,6 +5174,7 @@ the status of a liquidity provision order
 | LIQUIDITY_PROVISION_STATUS_ACTIVE | 1 | The liquidity provision is active |
 | LIQUIDITY_PROVISION_STATUS_STOPPED | 2 | The liquidity provision was stopped by the network |
 | LIQUIDITY_PROVISION_STATUS_CANCELLED | 3 | The liquidity provision was cancelled by the MM. |
+| LIQUIDITY_PROVISION_STATUS_REJECTED | 4 | The liquidity provision was invalid and got rejected. |
 
 
 
@@ -5168,6 +5222,7 @@ See resulting status in [What order types are available to trade on Vega?](https
 | STATUS_FILLED | 5 | Used for closed fully filled orders. |
 | STATUS_REJECTED | 6 | Used for orders when not enough collateral was available to fill the margin requirements. |
 | STATUS_PARTIALLY_FILLED | 7 | Used for closed partially filled IOC orders. |
+| STATUS_PARKED | 8 | The order ha been removed from the book and has been parked, applies to pegged order only |
 
 
 
@@ -5255,6 +5310,8 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE | 41 | Sell pegged order cannot reference best bid price |
 | ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO | 42 | Pegged order offset must be &gt; zero |
 | ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
+| ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER | 44 | Cannot amend a non pegged orders details |
+| ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 45 | We are unable to reprice a pegged order because a market price is unavailable |
 
 
 
@@ -5268,7 +5325,7 @@ Which price point is the pegged order linked to
 | PEGGED_REFERENCE_UNSPECIFIED | 0 | No reference given |
 | PEGGED_REFERENCE_MID | 1 | MID price |
 | PEGGED_REFERENCE_BEST_BID | 2 | BEST BID price |
-| PEGGED_REFERENCE_BEST_ASK | 3 | BEST BID price |
+| PEGGED_REFERENCE_BEST_ASK | 3 | BEST ASK price |
 
 
 

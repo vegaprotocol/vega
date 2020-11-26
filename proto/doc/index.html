@@ -663,6 +663,10 @@
                 </li>
 
 
+                <li>
+                  <a href="#api.SubmitTransactionRequest.Type"><span class="badge">E</span>SubmitTransactionRequest.Type</a>
+                </li>
+
 
 
                 <li>
@@ -839,6 +843,10 @@
                   <a href="#vega.TransferResponses"><span class="badge">M</span>TransferResponses</a>
                 </li>
 
+                <li>
+                  <a href="#vega.TxErrorEvent"><span class="badge">M</span>TxErrorEvent</a>
+                </li>
+
 
                 <li>
                   <a href="#vega.BusEventType"><span class="badge">E</span>BusEventType</a>
@@ -987,6 +995,10 @@
 
                 <li>
                   <a href="#vega.PriceMonitoringSettings"><span class="badge">M</span>PriceMonitoringSettings</a>
+                </li>
+
+                <li>
+                  <a href="#vega.PriceMonitoringTrigger"><span class="badge">M</span>PriceMonitoringTrigger</a>
                 </li>
 
                 <li>
@@ -5194,7 +5206,7 @@ Important - success does not mean that the event is confirmed by consensus. </p>
 
 
         <h3 id="api.SubmitTransactionRequest">SubmitTransactionRequest</h3>
-        <p>Request for submitting a transaction on Vega.</p><p>This request will take the signed <tt>blob</tt> result from a <tt>prepare</tt> call and submit it for inclusion in a block by the Vega blockchain.</p><p>Several commands are available on Vega:</p><p>- SubmitOrder, see <a href="#api.trading">PrepareSubmitOrder</a>.</p><p>- AmendOrder, see <a href="#api.trading">PrepareAmendOrder</a>.</p><p>- CancelOrder, see <a href="#api.trading">PrepareCancelOrder</a>.</p><p>- PrepareProposal, see <a href="#api.trading">PrepareProposal</a>.</p><p>- PrepareVote, see <a href="#api.trading">PrepareVote</a>.</p><p>- Withdraw, see <a href="#api.trading">WithdrawRequest</a>.</p><p>All of these can be prepared using this API. Payload data must be signed using Vega Wallet before submitting a transaction.</p>
+        <p>Request for submitting a transaction on Vega.</p>
 
 
           <table class="field-table">
@@ -5208,6 +5220,13 @@ Important - success does not mean that the event is confirmed by consensus. </p>
                   <td><a href="#vega.SignedBundle">vega.SignedBundle</a></td>
                   <td></td>
                   <td><p>A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain. </p></td>
+                </tr>
+
+                <tr>
+                  <td>type</td>
+                  <td><a href="#api.SubmitTransactionRequest.Type">SubmitTransactionRequest.Type</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
 
             </tbody>
@@ -5665,6 +5684,43 @@ Nanoseconds since the epoch, for example <tt>1580473859111222333</tt> correspond
 
 
 
+
+        <h3 id="api.SubmitTransactionRequest.Type">SubmitTransactionRequest.Type</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+
+              <tr>
+                <td>TYPE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+
+              <tr>
+                <td>TYPE_ASYNC</td>
+                <td>1</td>
+                <td><p>The transaction will be submitted without waiting for response.</p></td>
+              </tr>
+
+              <tr>
+                <td>TYPE_SYNC</td>
+                <td>2</td>
+                <td><p>The transaction will be submitted, and blocking until the
+tendermint mempool return a response.</p></td>
+              </tr>
+
+              <tr>
+                <td>TYPE_COMMIT</td>
+                <td>3</td>
+                <td><p>The transaction will submitted, and blocking until the tendermint
+network will have committed it into a block.</p></td>
+              </tr>
+
+          </tbody>
+        </table>
 
 
 
@@ -7318,6 +7374,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td><p>Market tick events, see <a href="#vega.MarketEvent">MarketEvent</a> </p></td>
                 </tr>
 
+                <tr>
+                  <td>txErrEvent</td>
+                  <td><a href="#vega.TxErrorEvent">TxErrorEvent</a></td>
+                  <td></td>
+                  <td><p>Transaction error events - separate category, not included in ALL events </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -7644,6 +7707,72 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
 
 
 
+        <h3 id="vega.TxErrorEvent">TxErrorEvent</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>PartyID</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the party who had a tx fail </p></td>
+                </tr>
+
+                <tr>
+                  <td>errMsg</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>error message describing what went wrong </p></td>
+                </tr>
+
+                <tr>
+                  <td>orderSubmission</td>
+                  <td><a href="#vega.OrderSubmission">OrderSubmission</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>orderAmendment</td>
+                  <td><a href="#vega.OrderAmendment">OrderAmendment</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>orderCancellation</td>
+                  <td><a href="#vega.OrderCancellation">OrderCancellation</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>proposal</td>
+                  <td><a href="#vega.Proposal">Proposal</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+                <tr>
+                  <td>vote</td>
+                  <td><a href="#vega.Vote">Vote</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
 
 
         <h3 id="vega.BusEventType">BusEventType</h3>
@@ -7814,6 +7943,12 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 <td>BUS_EVENT_TYPE_MARKET</td>
                 <td>101</td>
                 <td><p>Event indicating a market related event, for example when a market opens</p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_TX_ERROR</td>
+                <td>201</td>
+                <td><p>Event used to report failed transactions back to a user - excluded from the ALL type</p></td>
               </tr>
 
           </tbody>
@@ -8043,13 +8178,6 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
 
                 <tr>
-                  <td>baseName</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Base security used as the reference. </p></td>
-                </tr>
-
-                <tr>
                   <td>quoteName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -8092,17 +8220,6 @@ value (Vote) is the vote cast by the given party </p></td>
 
                 <tr>
                   <td>code</td>
-                  <td>
-                    <ul>
-
-                      <li>string_not_empty: true</li>
-
-                    </ul>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>baseName</td>
                   <td>
                     <ul>
 
@@ -8271,8 +8388,8 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
 
                 <tr>
-                  <td>priceMonitoringSettings</td>
-                  <td><a href="#vega.PriceMonitoringSettings">PriceMonitoringSettings</a></td>
+                  <td>PriceMonitoringParameters</td>
+                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
                   <td></td>
                   <td><p>price monitoring configuration </p></td>
                 </tr>
@@ -9265,13 +9382,6 @@ Constrained by <tt>minEnactInSeconds</tt> and <tt>maxEnactInSeconds</tt> network
                 </tr>
 
                 <tr>
-                  <td>baseName</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Base name of the instrument. </p></td>
-                </tr>
-
-                <tr>
                   <td>quoteName</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
@@ -9507,7 +9617,62 @@ duration and optionally a minimum traded volume). </p></td>
 
 
         <h3 id="vega.PriceMonitoringParameters">PriceMonitoringParameters</h3>
-        <p>PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration</p>
+        <p>PriceMonitoringParameters contain a collection of triggers to be used for a given market.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>triggers</td>
+                  <td><a href="#vega.PriceMonitoringTrigger">PriceMonitoringTrigger</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringSettings">PriceMonitoringSettings</h3>
+        <p></p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>parameters</td>
+                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
+                  <td></td>
+                  <td><p>Specifies PriceMonitoringParameters to be used for price monitoring purposes </p></td>
+                </tr>
+
+                <tr>
+                  <td>updateFrequency</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Specifies how often (expressed in seconds) the price monitoring bounds should be updated. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringTrigger">PriceMonitoringTrigger</h3>
+        <p>PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration</p>
 
 
           <table class="field-table">
@@ -9597,38 +9762,6 @@ probability level. </p></td>
 
 
 
-        <h3 id="vega.PriceMonitoringSettings">PriceMonitoringSettings</h3>
-        <p></p>
-
-
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-
-                <tr>
-                  <td>priceMonitoringParameters</td>
-                  <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
-                  <td>repeated</td>
-                  <td><p>Specifies a set of PriceMonitoringParameters to be used for price
-monitoring purposes </p></td>
-                </tr>
-
-                <tr>
-                  <td>updateFrequency</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Specifies how often (expressed in seconds) the price monitoring bounds should be updated. </p></td>
-                </tr>
-
-            </tbody>
-          </table>
-
-
-
-
-
         <h3 id="vega.ScalingFactors">ScalingFactors</h3>
         <p>Scaling Factors (for use in margin calculation).</p>
 
@@ -9705,6 +9838,13 @@ monitoring purposes </p></td>
                   <td><p>Pre-defined minimum price move down that the model considers as valid. </p></td>
                 </tr>
 
+                <tr>
+                  <td>probabilityOfTrading</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Pre-defined constant probability of trading </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -9738,6 +9878,19 @@ monitoring purposes </p></td>
                     <ul>
 
                       <li>float_lte: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>probabilityOfTrading</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gte: 0</li>
+
+                      <li>float_lte: 1</li>
 
                     </ul>
                   </td>
@@ -11512,11 +11665,46 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 </tr>
 
                 <tr>
+                  <td>bestStaticBidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Highest price on the order book for buy orders not including pegged orders </p></td>
+                </tr>
+
+                <tr>
+                  <td>bestStaticBidVolume</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Total volume at the best static bid price excluding pegged orders </p></td>
+                </tr>
+
+                <tr>
+                  <td>bestStaticOfferPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Lowest price on the order book for sell orders not including pegged orders </p></td>
+                </tr>
+
+                <tr>
+                  <td>bestStaticOfferVolume</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Total volume at the best static offer price excluding pegged orders </p></td>
+                </tr>
+
+                <tr>
                   <td>midPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Arithmetic average of the best bid price and best offer price, as an integer, for example <tt>123456</tt> is a correctly
  // formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal places. </p></td>
+                </tr>
+
+                <tr>
+                  <td>staticMidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Arithmetic average of the best static bid price and best static offer price </p></td>
                 </tr>
 
                 <tr>
@@ -12115,6 +12303,21 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td></td>
                   <td><p>Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged.
 See <a href="#api.VegaTimeResponse"><tt>TimeInForce</tt></a>.<tt>timestamp</tt>. </p></td>
+                </tr>
+
+                <tr>
+                  <td>peggedOffset</td>
+                  <td><a href="#google.protobuf.Int64Value">google.protobuf.Int64Value</a></td>
+                  <td></td>
+                  <td><p>Amend the pegged order offset for the order </p></td>
+                </tr>
+
+                <tr>
+                  <td>peggedReference</td>
+                  <td><a href="#vega.PeggedReference">PeggedReference</a></td>
+                  <td></td>
+                  <td><p>Amend the pegged order reference for the order
+See <a href="#api.PeggedReference"><tt>PeggedReference</tt></a>. </p></td>
                 </tr>
 
             </tbody>
@@ -14019,6 +14222,12 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td><p>The liquidity provision was cancelled by the MM.</p></td>
               </tr>
 
+              <tr>
+                <td>LIQUIDITY_PROVISION_STATUS_REJECTED</td>
+                <td>4</td>
+                <td><p>The liquidity provision was invalid and got rejected.</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -14146,6 +14355,12 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td>STATUS_PARTIALLY_FILLED</td>
                 <td>7</td>
                 <td><p>Used for closed partially filled IOC orders.</p></td>
+              </tr>
+
+              <tr>
+                <td>STATUS_PARKED</td>
+                <td>8</td>
+                <td><p>The order ha been removed from the book and has been parked, applies to pegged order only</p></td>
               </tr>
 
           </tbody>
@@ -14514,6 +14729,18 @@ a general account to submit the order (no deposits made
 for the required asset).</p></td>
               </tr>
 
+              <tr>
+                <td>ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER</td>
+                <td>44</td>
+                <td><p>Cannot amend a non pegged orders details</p></td>
+              </tr>
+
+              <tr>
+                <td>ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER</td>
+                <td>45</td>
+                <td><p>We are unable to reprice a pegged order because a market price is unavailable</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -14546,7 +14773,7 @@ for the required asset).</p></td>
               <tr>
                 <td>PEGGED_REFERENCE_BEST_ASK</td>
                 <td>3</td>
-                <td><p>BEST BID price</p></td>
+                <td><p>BEST ASK price</p></td>
               </tr>
 
           </tbody>

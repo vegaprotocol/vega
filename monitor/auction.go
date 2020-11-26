@@ -69,7 +69,18 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 	a.end = d
 }
 
-// ExtendDuration - extend current auction, leaving trigger etc... in tact
+// StartOpeningAuction - set the state to start an opening auction (used for testing)
+// @TODO these functions will be removed once the types are in proto
+func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration) {
+	a.mode = types.MarketState_MARKET_STATE_OPENING_AUCTION
+	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_OPENING
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = d
+}
+
+// ExtendAuction extends the current auction, leaving trigger etc... in tact
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume

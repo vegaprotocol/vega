@@ -66,7 +66,7 @@ func testSignedCommandSuccess(t *testing.T) {
 	payload := &types.NodeVote{}
 	ctx := context.Background()
 
-	commander.chain.EXPECT().SubmitTransaction(ctx, gomock.Any()).Times(1)
+	commander.chain.EXPECT().SubmitTransaction(ctx, gomock.Any(), gomock.Any()).Times(1)
 	assert.NoError(t, commander.Command(ctx, cmd, payload))
 }
 

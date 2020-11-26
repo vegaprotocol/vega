@@ -120,7 +120,7 @@ func (e ExtResChecker) Stop() {
 	}
 }
 
-// AddNodeVote registers a vote from a validator node for a given resource
+// AddNodeCheck registers a vote from a validator node for a given resource
 func (e *ExtResChecker) AddNodeCheck(ctx context.Context, nv *types.NodeVote) error {
 	// get the node proposal first
 	r, ok := e.resources[nv.Reference]

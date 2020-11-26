@@ -144,14 +144,14 @@ func (n *NOOPChain) SendTransaction(ctx context.Context, tx []byte) (bool, error
 	return true, nil
 }
 
-func (c *NOOPChain) Validators() ([]*tmtypes.Validator, error) {
+func (n *NOOPChain) Validators() ([]*tmtypes.Validator, error) {
 	return nil, nil
 }
 
-func (c *NOOPChain) GenesisValidators() ([]*tmtypes.Validator, error) {
+func (n *NOOPChain) GenesisValidators() ([]*tmtypes.Validator, error) {
 	return nil, nil
 }
 
-func (c *NOOPChain) Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error {
+func (n *NOOPChain) Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error {
 	return nil
 }

@@ -26,12 +26,6 @@ func i64val(rows *gherkin.TableRow, idx int) int64 {
 	return ret
 }
 
-func i32val(rows *gherkin.TableRow, idx int) int32 {
-	s := rows.Cells[idx].Value
-	ret, _ := strconv.ParseInt(s, 10, 0)
-	return int32(ret)
-}
-
 func f64val(rows *gherkin.TableRow, idx int) float64 {
 	s := rows.Cells[idx].Value
 	ret, _ := strconv.ParseFloat(s, 10)
@@ -114,4 +108,16 @@ func boolval(rows *gherkin.TableRow, idx int) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("invalid bool value: %v", val)
+}
+
+func peggedRef(rows *gherkin.TableRow, i int) proto.PeggedReference {
+	switch rows.Cells[i].Value {
+	case "MID":
+		return proto.PeggedReference_PEGGED_REFERENCE_MID
+	case "ASK":
+		return proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+	case "BID":
+		return proto.PeggedReference_PEGGED_REFERENCE_BEST_BID
+	}
+	return proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
 }

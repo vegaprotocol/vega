@@ -3,6 +3,7 @@ package price
 import (
 	"context"
 	"errors"
+	"math"
 	"sort"
 	"time"
 
@@ -48,8 +49,15 @@ type AuctionState interface {
 
 // bound holds the limits for the valid price movement
 type bound struct {
+	Active      bool
 	MaxMoveUp   float64
 	MinMoveDown float64
+	Trigger     *types.PriceMonitoringTrigger
+}
+
+type priceRange struct {
+	MinPrice float64
+	MaxPrice float64
 }
 
 type pastPrice struct {
@@ -66,7 +74,6 @@ type RangeProvider interface {
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
 	riskModel       RangeProvider
-	parameters      []*types.PriceMonitoringParameters
 	updateFrequency time.Duration
 
 	initialised bool
@@ -75,7 +82,10 @@ type Engine struct {
 	update      time.Time
 	pricesNow   []uint64
 	pricesPast  []pastPrice
-	bounds      map[*types.PriceMonitoringParameters]bound
+	bounds      []*bound
+
+	priceRangeCacheTime time.Time
+	priceRangesCache    map[*bound]priceRange
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
@@ -84,9 +94,10 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		return nil, ErrNilRangeProvider
 	}
 
-	parameters := make([]*types.PriceMonitoringParameters, 0, len(settings.PriceMonitoringParameters))
-	for _, p := range settings.PriceMonitoringParameters {
-		parameters = append(parameters, &(*p))
+	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
+	for _, p := range settings.Parameters.Triggers {
+		p := *p
+		parameters = append(parameters, &p)
 	}
 
 	// Other functions depend on this sorting
@@ -102,13 +113,45 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 			h[p.Horizon] = float64(p.Horizon) / secondsPerYear
 		}
 	}
+
+	bounds := make([]*bound, 0, len(parameters))
+	for _, p := range parameters {
+		bounds = append(bounds, &bound{Active: true, Trigger: p})
+	}
+
 	e := &Engine{
 		riskModel:       riskModel,
-		parameters:      parameters,
 		fpHorizons:      h,
 		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
+		bounds:          bounds,
 	}
 	return e, nil
+}
+
+// GetHorizonYearFractions returns horizons of all the triggers specifed, expressed as year fraction, sorted in ascending order.
+func (e *Engine) GetHorizonYearFractions() []float64 {
+	h := make([]float64, 0, len(e.bounds))
+	for _, v := range e.fpHorizons {
+		h = append(h, v)
+	}
+
+	sort.Slice(h, func(i, j int) bool { return h[i] < h[j] })
+	return h
+}
+
+// GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction
+func (e *Engine) GetValidPriceRange() (float64, float64) {
+	min := -math.MaxFloat64
+	max := math.MaxFloat64
+	for _, pr := range e.getCurrentPriceRanges() {
+		if pr.MinPrice > min {
+			min = pr.MinPrice
+		}
+		if pr.MaxPrice < max {
+			max = pr.MaxPrice
+		}
+	}
+	return min, max
 }
 
 // CheckPrice checks how current price and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
@@ -195,27 +238,22 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 	return nil
 }
 
-func (e *Engine) initialise(price uint64, now time.Time) {
-	if !e.initialised {
-		e.reset(price, now)
-		e.initialised = true
-	}
-}
-
 // reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
 func (e *Engine) reset(price uint64, now time.Time) {
 	e.now = now
 	e.update = now
+	e.priceRangeCacheTime = time.Time{}
 	e.pricesNow = []uint64{price}
 	e.pricesPast = []pastPrice{}
-	e.initilizeBounds()
+	e.resetBounds()
 	e.updateBounds()
 }
 
-func (e *Engine) initilizeBounds() {
-	e.bounds = make(map[*types.PriceMonitoringParameters]bound, len(e.parameters))
-	for _, p := range e.parameters {
-		e.bounds[p] = bound{}
+func (e *Engine) resetBounds() {
+	for _, b := range e.bounds {
+		b.Active = true
+		b.MinMoveDown = 0
+		b.MaxMoveUp = 0
 	}
 }
 
@@ -248,57 +286,49 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 	return nil
 }
 
-func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonitoringParameters {
-	var (
-		fp  float64                            = float64(p)                           // price as float
-		ph  int64                                                                     // previous horizon
-		ref float64                                                                   // reference price
-		ret []*types.PriceMonitoringParameters = []*types.PriceMonitoringParameters{} // returned price projections, empty if all good
-	)
-	for _, p := range e.parameters {
-		b, ok := e.bounds[p]
-		if !ok {
+func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonitoringTrigger {
+	var fp float64 = float64(p)                                                 // price as float                                                                                                                       // reference price
+	var ret []*types.PriceMonitoringTrigger = []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
+
+	priceRanges := e.getCurrentPriceRanges()
+	for _, b := range e.bounds {
+		if !b.Active {
 			continue
 		}
+		priceRange := priceRanges[b]
 
-		if p.Horizon != ph {
-			ph = p.Horizon
-			ref = e.getReferencePrice(e.now.Add(time.Duration(-ph) * time.Second))
-		}
-
-		diff := fp - ref
-		if diff < b.MinMoveDown || diff > b.MaxMoveUp {
-			ret = append(ret, p)
-			// Remove bound that gets violated so it doesn't prevent auction from terminating
-			delete(e.bounds, p)
+		if fp < priceRange.MinPrice || fp > priceRange.MaxPrice {
+			ret = append(ret, b.Trigger)
+			// Disactivate the bound that just got violated so it doesn't prevent auction from terminating
+			b.Active = false
 		}
 	}
 	return ret
 }
 
-// checkBoundViolations returns a map of horizon and probability level pair to boolean.
-// A true value indicates that a bound corresponding to a given horizon and probability level pair has been violated.
-func (e *Engine) checkBoundViolations(price uint64) map[*types.PriceMonitoringParameters]bool {
-	fpPrice := float64(price)
-	checks := make(map[*types.PriceMonitoringParameters]bool, len(e.parameters))
-	var prevHorizon int64
-	var ref float64
-	for _, p := range e.parameters {
-		// horizonProbabilityLevelPairs are sorted by Horizon to avoid repeated price lookup
-		if p.Horizon != prevHorizon {
-			ref = e.getReferencePrice(e.now.Add(time.Duration(-p.Horizon) * time.Second))
-			prevHorizon = p.Horizon
-		}
+func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
+	if e.priceRangeCacheTime != e.now {
+		e.priceRangesCache = make(map[*bound]priceRange, len(e.priceRangesCache))
 
-		priceDiff := fpPrice - ref
-		bounds := e.bounds[p]
-		checks[p] = priceDiff < bounds.MinMoveDown || priceDiff > bounds.MaxMoveUp
+		var ph int64    // previous horizon
+		var ref float64 // reference price
+		for _, b := range e.bounds {
+			if !b.Active {
+				continue
+			}
+			if b.Trigger.Horizon != ph {
+				ph = b.Trigger.Horizon
+				ref = e.getReferencePrice(e.now.Add(time.Duration(-ph) * time.Second))
+			}
+			e.priceRangesCache[b] = priceRange{MinPrice: ref + b.MinMoveDown, MaxPrice: ref + b.MaxMoveUp}
+		}
+		e.priceRangeCacheTime = e.now
 	}
-	return checks
+	return e.priceRangesCache
 }
 
 func (e *Engine) updateBounds() {
-	if e.now.Before(e.update) || len(e.parameters) == 0 {
+	if e.now.Before(e.update) || len(e.bounds) == 0 {
 		return
 	}
 
@@ -313,15 +343,18 @@ func (e *Engine) updateBounds() {
 	} else {
 		latestPrice = e.pricesPast[len(e.pricesPast)-1].AveragePrice
 	}
-	for p := range e.bounds {
-
-		minPrice, maxPrice := e.riskModel.PriceRange(latestPrice, e.fpHorizons[p.Horizon], p.Probability)
-		e.bounds[p] = bound{MinMoveDown: minPrice - latestPrice, MaxMoveUp: maxPrice - latestPrice}
+	for _, b := range e.bounds {
+		if !b.Active {
+			continue
+		}
+		minPrice, maxPrice := e.riskModel.PriceRange(latestPrice, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
+		b.MinMoveDown = minPrice - latestPrice
+		b.MaxMoveUp = maxPrice - latestPrice
 	}
 	// Remove redundant average prices
 	minRequiredHorizon := e.now
-	if len(e.parameters) > 0 {
-		maxTau := e.parameters[len(e.parameters)-1].Horizon
+	if len(e.bounds) > 0 {
+		maxTau := e.bounds[len(e.bounds)-1].Trigger.Horizon
 		minRequiredHorizon = e.now.Add(time.Duration(-maxTau) * time.Second)
 	}
 

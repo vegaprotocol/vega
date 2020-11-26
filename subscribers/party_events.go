@@ -36,15 +36,15 @@ func NewPartySub(ctx context.Context, store PartyStore, ack bool) *PartySub {
 	return a
 }
 
-func (a *PartySub) loop(ctx context.Context) {
+func (p *PartySub) loop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			a.Halt()
+			p.Halt()
 			return
-		case e := <-a.ch:
-			if a.isRunning() {
-				a.Push(e...)
+		case e := <-p.ch:
+			if p.isRunning() {
+				p.Push(e...)
 			}
 		}
 	}
@@ -64,7 +64,7 @@ func (p *PartySub) Push(evts ...events.Event) {
 	}
 }
 
-func (p *PartySub) Types() []events.Type {
+func (*PartySub) Types() []events.Type {
 	return []events.Type{
 		events.PartyEvent,
 		events.TimeUpdate,

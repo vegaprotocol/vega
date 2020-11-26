@@ -59,8 +59,8 @@ var (
 	ErrPeggedOrderMustBeGTTOrGTC = errors.New("pegged orders must be GTT or GTC orders")
 	// ErrPeggedOrderWithoutReferencePrice pegged order message with no reference price
 	ErrPeggedOrderWithoutReferencePrice = errors.New("pegged order missing a reference price")
-	// ErrPeggedOrderBuyCannotReferenceBestAskPrice pegged buy order cannot refernce best ask
-	ErrPeggedOrderBuyCannotReferenceBestAskPrice = errors.New("pegged buy order cannot refernce best ask")
+	// ErrPeggedOrderBuyCannotReferenceBestAskPrice pegged buy order cannot reference best ask
+	ErrPeggedOrderBuyCannotReferenceBestAskPrice = errors.New("pegged buy order cannot reference best ask")
 	// ErrPeggedOrderOffsetMustBeLessOrEqualToZero pegged order offset must be <= 0
 	ErrPeggedOrderOffsetMustBeLessOrEqualToZero = errors.New("pegged order offset must be <= 0")
 	// ErrPeggedOrderOffsetMustBeLessThanZero pegged order offset must be < 0
@@ -179,7 +179,8 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		(sub.TimeInForce != types.Order_TIF_FOK && sub.TimeInForce != types.Order_TIF_IOC) {
 		return ErrInvalidTimeInForceForMarketOrder
 	}
-	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 {
+	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 &&
+		sub.PeggedOrder == nil {
 		return ErrInvalidPriceForLimitOrder
 	}
 	if sub.Type == types.Order_TYPE_NETWORK {
@@ -272,7 +273,9 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	if amendment.Price == nil &&
 		amendment.SizeDelta == 0 &&
 		(amendment.ExpiresAt == nil || amendment.ExpiresAt.Value == 0) &&
-		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED {
+		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED &&
+		amendment.PeggedOffset == nil &&
+		amendment.PeggedReference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 		return ErrNoParamsInAmendRequest
 	}
 

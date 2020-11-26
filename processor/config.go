@@ -8,10 +8,6 @@ import (
 
 const (
 	namedLogger = "processor"
-
-	minValidationPeriod = 600       // ten minutes
-	maxValidationPeriod = 48 * 3600 // 2 days
-	nodeApproval        = 1         // float for percentage
 )
 
 // Config represent the configuration of the processor package

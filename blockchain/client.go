@@ -7,6 +7,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -22,7 +23,9 @@ type chainClientImpl interface {
 	GetNetworkInfo(context.Context) (*tmctypes.ResultNetInfo, error)
 	GetUnconfirmedTxCount(context.Context) (int, error)
 	Health() (*tmctypes.ResultHealth, error)
-	SendTransaction(context.Context, []byte) (bool, error)
+	SendTransactionAsync(context.Context, []byte) error
+	SendTransactionSync(context.Context, []byte) error
+	SendTransactionCommit(context.Context, []byte) error
 	GenesisValidators() ([]*tmtypes.Validator, error)
 	Validators() ([]*tmtypes.Validator, error)
 	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
@@ -41,45 +44,54 @@ func NewClient(clt chainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error) {
+func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle, ty api.SubmitTransactionRequest_Type) error {
 	// unmarshal the transaction
 	tx := &types.Transaction{}
 	err := proto.Unmarshal(bundle.Tx, tx)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// first verify the transaction in the bundle is valid + signature is OK
 	_, command, err := txn.Decode(tx.InputData)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// if the command is invalid, the String() func will return an empty string
 	if command.String() == "" {
 		// @TODO create err variable
-		return false, fmt.Errorf("invalid command: %v", int(command))
+		return fmt.Errorf("invalid command: %v", int(command))
 	}
 
 	// check sig
 	if err := verifyBundle(nil, tx, bundle); err != nil {
-		return false, err
+		return err
 	}
 
 	// marshal the bundle then
 	bundleBytes, err := proto.Marshal(bundle)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if len(bundleBytes) == 0 {
-		return false, errors.New("order message empty after marshal")
+		return errors.New("order message empty after marshal")
 	}
 
-	return c.sendTx(ctx, bundleBytes)
+	return c.sendTx(ctx, bundleBytes, ty)
 }
 
-func (c *Client) sendTx(ctx context.Context, bytes []byte) (bool, error) {
-	return c.clt.SendTransaction(ctx, bytes)
+func (c *Client) sendTx(ctx context.Context, bytes []byte, ty api.SubmitTransactionRequest_Type) error {
+	switch ty {
+	case api.SubmitTransactionRequest_TYPE_ASYNC:
+		return c.clt.SendTransactionAsync(ctx, bytes)
+	case api.SubmitTransactionRequest_TYPE_SYNC:
+		return c.clt.SendTransactionSync(ctx, bytes)
+	case api.SubmitTransactionRequest_TYPE_COMMIT:
+		return c.clt.SendTransactionCommit(ctx, bytes)
+	default:
+		return errors.New("invalid submit transaction request type")
+	}
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain

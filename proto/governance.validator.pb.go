@@ -33,9 +33,6 @@ func (this *InstrumentConfiguration) Validate() error {
 	if this.Code == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("Code", fmt.Errorf(`value '%v' must not be an empty string`, this.Code))
 	}
-	if this.BaseName == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("BaseName", fmt.Errorf(`value '%v' must not be an empty string`, this.BaseName))
-	}
 	if this.QuoteName == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("QuoteName", fmt.Errorf(`value '%v' must not be an empty string`, this.QuoteName))
 	}
@@ -60,9 +57,9 @@ func (this *NewMarketConfiguration) Validate() error {
 	if !(this.DecimalPlaces < 150) {
 		return github_com_mwitkow_go_proto_validators.FieldError("DecimalPlaces", fmt.Errorf(`value '%v' must be less than '150'`, this.DecimalPlaces))
 	}
-	if this.PriceMonitoringSettings != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PriceMonitoringSettings); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
+	if this.PriceMonitoringParameters != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PriceMonitoringParameters); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringParameters", err)
 		}
 	}
 	if oneOfNester, ok := this.GetRiskParameters().(*NewMarketConfiguration_Simple); ok {

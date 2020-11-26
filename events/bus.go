@@ -85,6 +85,7 @@ const (
 	DepositEvent
 	RiskFactorEvent
 	NetworkParameterEvent
+	TxErrEvent
 )
 
 var (
@@ -122,6 +123,7 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:         RiskFactorEvent,
 		types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:   NetworkParameterEvent,
 		types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION: LiquidityProvisionEvent,
+		types.BusEventType_BUS_EVENT_TYPE_TX_ERROR:            TxErrEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
@@ -150,6 +152,7 @@ var (
 		RiskFactorEvent:         types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR,
 		NetworkParameterEvent:   types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER,
 		LiquidityProvisionEvent: types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
+		TxErrEvent:              types.BusEventType_BUS_EVENT_TYPE_TX_ERROR,
 	}
 
 	eventStrings = map[Type]string{
@@ -179,6 +182,7 @@ var (
 		RiskFactorEvent:         "RiskFactorEvent",
 		NetworkParameterEvent:   "NetworkParameterEvent",
 		LiquidityProvisionEvent: "LiquidityProvisionEvent",
+		TxErrEvent:              "TxErrEvent",
 	}
 )
 

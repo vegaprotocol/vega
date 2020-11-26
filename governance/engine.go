@@ -2,11 +2,13 @@ package governance
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
 
@@ -79,6 +81,7 @@ type NetParams interface {
 	GetFloat(string) (float64, error)
 	GetInt(string) (int64, error)
 	GetDuration(string) (time.Duration, error)
+	GetJSONStruct(string, netparams.Reset) error
 	Get(string) (string, error)
 }
 
@@ -297,49 +300,69 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 
-	if proposal.Terms.ClosingTimestamp < e.currentTime.Add(params.MinClose).Unix() {
+	closeTime := time.Unix(proposal.Terms.ClosingTimestamp, 0)
+	minCloseTime := e.currentTime.Add(params.MinClose)
+	if closeTime.Before(minCloseTime) {
 		e.log.Debug("proposal close time is too soon",
-			logging.Int64("expected-min", e.currentTime.Add(params.MinClose).Unix()),
-			logging.Int64("provided", proposal.Terms.ClosingTimestamp),
+			logging.Time("expected-min", minCloseTime),
+			logging.Time("provided", closeTime),
 			logging.String("id", proposal.ID))
-		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON, ErrProposalCloseTimeTooSoon
-	}
-	if proposal.Terms.ClosingTimestamp > e.currentTime.Add(params.MaxClose).Unix() {
-		e.log.Debug("proposal close time is too late",
-			logging.Int64("expected-max", e.currentTime.Add(params.MaxClose).Unix()),
-			logging.Int64("provided", proposal.Terms.ClosingTimestamp),
-			logging.String("id", proposal.ID))
-		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE, ErrProposalCloseTimeTooLate
-	}
-	if proposal.Terms.EnactmentTimestamp < e.currentTime.Add(params.MinEnact).Unix() {
-		e.log.Debug("proposal enact time is too soon",
-			logging.Int64("expected-min", e.currentTime.Add(params.MinEnact).Unix()),
-			logging.Int64("provided", proposal.Terms.EnactmentTimestamp),
-			logging.String("id", proposal.ID))
-		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON, ErrProposalEnactTimeTooSoon
-	}
-	if proposal.Terms.EnactmentTimestamp > e.currentTime.Add(params.MaxEnact).Unix() {
-		e.log.Debug("proposal enact time is too late",
-			logging.Int64("expected-max", e.currentTime.Add(params.MaxEnact).Unix()),
-			logging.Int64("provided", proposal.Terms.EnactmentTimestamp),
-			logging.String("id", proposal.ID))
-		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE, ErrProposalEnactTimeTooLate
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON,
+			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime, closeTime)
 	}
 
-	if proposal.Terms.ClosingTimestamp <= proposal.Terms.ValidationTimestamp {
-		e.log.Debug("proposal closing time can't be smaller or equal than validation time",
-			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
-			logging.Int64("validation-time", proposal.Terms.ValidationTimestamp),
+	maxCloseTime := e.currentTime.Add(params.MaxClose)
+	if closeTime.After(maxCloseTime) {
+		e.log.Debug("proposal close time is too late",
+			logging.Time("expected-max", maxCloseTime),
+			logging.Time("provided", closeTime),
 			logging.String("id", proposal.ID))
-		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE,
+			fmt.Errorf("proposal closing time too late, expected < %v, got %v", maxCloseTime, closeTime)
 	}
-	if proposal.Terms.EnactmentTimestamp < proposal.Terms.ClosingTimestamp {
+
+	enactTime := time.Unix(proposal.Terms.EnactmentTimestamp, 0)
+	minEnactTime := e.currentTime.Add(params.MinEnact)
+	if enactTime.Before(minEnactTime) {
+		e.log.Debug("proposal enact time is too soon",
+			logging.Time("expected-min", minEnactTime),
+			logging.Time("provided", enactTime),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON,
+			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime, enactTime)
+	}
+
+	maxEnactTime := e.currentTime.Add(params.MaxEnact)
+	if enactTime.After(maxEnactTime) {
+		e.log.Debug("proposal enact time is too late",
+			logging.Time("expected-max", maxEnactTime),
+			logging.Time("provided", enactTime),
+			logging.String("id", proposal.ID))
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE,
+			fmt.Errorf("proposal enactment time too lat, expected < %v, got %v", maxEnactTime, enactTime)
+	}
+
+	if e.isTwoStepsProposal(&proposal) {
+		validationTime := time.Unix(proposal.Terms.ValidationTimestamp, 0)
+		if closeTime.Before(validationTime) {
+			e.log.Debug("proposal closing time can't be smaller or equal than validation time",
+				logging.Time("closing-time", closeTime),
+				logging.Time("validation-time", validationTime),
+				logging.String("id", proposal.ID))
+			return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS,
+				fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
+		}
+	}
+
+	if enactTime.Before(closeTime) {
 		e.log.Debug("proposal enactment time can't be smaller than closing time",
-			logging.Int64("enactment-time", proposal.Terms.EnactmentTimestamp),
-			logging.Int64("closing-time", proposal.Terms.ClosingTimestamp),
+			logging.Time("enactment-time", enactTime),
+			logging.Time("closing-time", closeTime),
 			logging.String("id", proposal.ID))
-		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS, ErrIncompatibleTimestamps
+		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS,
+			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
 	}
+
 	proposerTokens, err := getGovernanceTokens(e.accs, proposal.PartyID)
 	if err != nil {
 		e.log.Debug("proposer have no governance token",
@@ -348,13 +371,15 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
 	totalTokens := e.accs.GetTotalTokens()
-	if float64(proposerTokens) < float64(totalTokens)*params.MinProposerBalance {
+	expectedTokensBalance := float64(totalTokens) * params.MinProposerBalance
+	if float64(proposerTokens) < expectedTokensBalance {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.Float64("expect-balance", float64(totalTokens)*params.MinProposerBalance),
+			logging.Float64("expect-balance", expectedTokensBalance),
 			logging.Uint64("proposer-balance", proposerTokens),
 			logging.String("party-id", proposal.PartyID),
 			logging.String("id", proposal.ID))
-		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, ErrProposalInsufficientTokens
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS,
+			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", expectedTokensBalance, proposerTokens)
 	}
 	return e.validateChange(proposal.Terms)
 }
@@ -376,6 +401,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
 	proposal, err := e.validateVote(vote)
 	if err != nil {
+		// vote was not created/accepted, send TxErrEvent
+		e.broker.Send(events.NewTxErrEvent(ctx, err, vote.PartyID, vote))
 		return err
 	}
 	// we only want to count the last vote, so add to yes/no map, delete from the other

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/hex"
-	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/evtforward"
@@ -61,7 +60,7 @@ type EvtForwarder interface {
 // Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/api  Blockchain
 type Blockchain interface {
-	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle) (bool, error)
+	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle, ty protoapi.SubmitTransactionRequest_Type) error
 }
 
 type tradingService struct {
@@ -76,7 +75,6 @@ type tradingService struct {
 	evtForwarder      EvtForwarder
 
 	statusChecker *monitoring.Status
-	mu            sync.Mutex
 }
 
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
@@ -144,8 +142,22 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	if ok, err := s.blockchain.SubmitTransaction(ctx, req.Tx); err != nil || !ok {
+	var ty = req.Type
+	// FIXME(jeremy): in order to keep compatibility with existing clients
+	// we allow no submiting the Type field, and default to old behaviour
+	if ty == protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED {
+		ty = protoapi.SubmitTransactionRequest_TYPE_ASYNC
+	}
+
+	if err := s.blockchain.SubmitTransaction(ctx, req.Tx, ty); err != nil {
 		s.log.Error("unable to submit transaction", logging.Error(err))
+		if _, ok := err.(interface {
+			Code() uint32
+			Details() string
+			Error() string
+		}); ok {
+			return nil, apiError(codes.InvalidArgument, err)
+		}
 		return nil, apiError(codes.Internal, err)
 	}
 

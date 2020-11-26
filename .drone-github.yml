@@ -89,6 +89,7 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       - failed=""
+      - make staticcheck
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
           make retest || exit 1 ;
           for target in gqlgen_check print_check proto_check race vet ;
@@ -107,7 +108,6 @@ steps:
           --bindings gateway/rest/grpc-rest-bindings.yml
           --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
       - difflint "$$DRONE_COMMIT_BEFORE" "$$DRONE_COMMIT_AFTER" || failed="$$failed multilint"
-      # - make staticcheck  # No point running this until warnings are fixed.
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
       - build-PR
@@ -116,7 +116,7 @@ steps:
         - pull_request
 
   - name: systemtests-PR
-    image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:latest
+    image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:develop
     pull: always
     environment:
       GITHUB_API_TOKEN:

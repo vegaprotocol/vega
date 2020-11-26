@@ -8,9 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
@@ -39,7 +37,7 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 }
 
 func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
-	mkts := []proto.Market{}
+	mkts := []types.Market{}
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "name" {
 			continue
@@ -82,7 +80,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 
 			if !traderHaveGeneralAccount(execsetup.accs[val(row, 0)], asset) {
 				acc := account{
-					Type:    proto.AccountType_ACCOUNT_TYPE_GENERAL,
+					Type:    types.AccountType_ACCOUNT_TYPE_GENERAL,
 					Balance: u64val(row, 1),
 					Asset:   asset,
 				}
@@ -90,7 +88,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			}
 
 			acc := account{
-				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
+				Type:    types.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: 0,
 				Market:  mkt.Id,
 				Asset:   asset,
@@ -135,12 +133,12 @@ func haveOnlyOneAccountPerAsset(arg1 string) error {
 	assets := map[string]struct{}{}
 
 	accs := execsetup.broker.GetAccounts()
-	data := make([]proto.Account, 0, len(accs))
+	data := make([]types.Account, 0, len(accs))
 	for _, a := range accs {
 		data = append(data, a.Account())
 	}
 	for _, acc := range data {
-		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.Owner == arg1 && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			if _, ok := assets[acc.Asset]; ok {
 				return fmt.Errorf("trader=%v have multiple account for asset=%v", arg1, acc.Asset)
 			}
@@ -154,12 +152,12 @@ func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	assets := map[string]struct{}{}
 
 	accs := execsetup.broker.GetAccounts()
-	data := make([]proto.Account, 0, len(accs))
+	data := make([]types.Account, 0, len(accs))
 	for _, a := range accs {
 		data = append(data, a.Account())
 	}
 	for _, acc := range data {
-		if acc.Owner == arg1 && acc.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN {
+		if acc.Owner == arg1 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
 			if _, ok := assets[acc.MarketID]; ok {
 				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
 			}
@@ -173,13 +171,9 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
 
-	err := execsetup.collateral.Deposit(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return execsetup.collateral.Deposit(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
@@ -197,22 +191,21 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 }
 
 func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
+	amount, err := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
-
-	err := execsetup.collateral.LockFundsForWithdraw(
-		context.Background(), trader, asset, amount)
-	if err != nil {
-		return err
-	}
-	err = execsetup.collateral.Withdraw(
-		context.Background(), trader, asset, amount)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if err := execsetup.collateral.LockFundsForWithdraw(
+		context.Background(), trader, asset, amount,
+	); err != nil {
+		return err
+	}
 
+	return execsetup.collateral.Withdraw(
+		context.Background(), trader, asset, amount,
+	)
 }
 
 func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
@@ -235,7 +228,7 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
 		}
 
-		order := proto.Order{
+		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -281,7 +274,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
 		}
 
-		order := proto.Order{
+		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -323,7 +316,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
 		}
 
-		order := proto.Order{
+		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -360,7 +353,7 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 			return err
 		}
 
-		cancel := proto.OrderCancellation{
+		cancel := types.OrderCancellation{
 			OrderID:  o.Id,
 			PartyID:  o.PartyID,
 			MarketID: o.MarketID,
@@ -385,7 +378,7 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 			return err
 		}
 
-		cancel := proto.OrderCancellation{
+		cancel := types.OrderCancellation{
 			OrderID:  o.Id,
 			PartyID:  o.PartyID,
 			MarketID: o.MarketID,
@@ -410,7 +403,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			return err
 		}
 
-		cancel := proto.OrderCancellation{
+		cancel := types.OrderCancellation{
 			OrderID:  o.Id,
 			PartyID:  o.PartyID,
 			MarketID: o.MarketID,
@@ -422,6 +415,66 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 		}
 	}
 
+	return nil
+}
+
+func tradersCancelPeggedOrders(data *gherkin.DataTable) error {
+	for _, row := range data.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		cancel := types.OrderCancellation{
+			PartyID:  trader,
+			MarketID: val(row, 1),
+			OrderID:  val(row, 2),
+		}
+		_, err := execsetup.engine.CancelOrder(context.Background(), &cancel)
+		if err != nil {
+			return fmt.Errorf("unable to cancel order: %+v", err)
+		}
+	}
+	return nil
+}
+
+func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
+	cancellations := make([]types.OrderCancellation, 0, len(data.Rows))
+	for _, row := range data.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		mkt := val(row, 1)
+		orders := execsetup.broker.getOrdersByPartyAndMarket(trader, mkt)
+		if len(orders) == 0 {
+			return fmt.Errorf("no orders found for party %s on market %s", trader, mkt)
+		}
+		// orders have to be pegged:
+		found := false
+		for _, o := range orders {
+			if o.PeggedOrder != nil && o.Status != types.Order_STATUS_CANCELLED && o.Status != types.Order_STATUS_REJECTED {
+				cancellations = append(cancellations, types.OrderCancellation{
+					PartyID:  trader,
+					MarketID: mkt,
+					OrderID:  o.Id,
+				})
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("no valid pegged order found for %s on market %s", trader, mkt)
+		}
+	}
+	// do the clear stuff
+	if err := clearOrderEvents(); err != nil {
+		return err
+	}
+	for _, c := range cancellations {
+		if _, err := execsetup.engine.CancelOrder(context.Background(), &c); err != nil {
+			return fmt.Errorf("failed to cancel pegged order %s for %s on market %s", c.OrderID, c.PartyID, c.MarketID)
+		}
+	}
 	return nil
 }
 
@@ -466,7 +519,8 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 		data = append(data, e.Account())
 	}
 	for _, v := range data {
-		if v.Asset != collateral.TokenAsset {
+		// remove vote token
+		if v.Asset != "VOTE" {
 			cumul += uint64(v.Balance)
 		}
 	}
@@ -483,10 +537,10 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		fromAccountID := accountID(val(row, 4), val(row, 0), val(row, 6), proto.AccountType_value[val(row, 2)])
-		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), proto.AccountType_value[val(row, 3)])
+		fromAccountID := accountID(val(row, 4), val(row, 0), val(row, 6), types.AccountType_value[val(row, 2)])
+		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), types.AccountType_value[val(row, 3)])
 
-		var ledgerEntry *proto.LedgerEntry
+		var ledgerEntry *types.LedgerEntry
 		transferEvents := execsetup.broker.GetTransferResponses()
 		data := make([]*types.TransferResponse, 0, len(transferEvents))
 		for _, e := range transferEvents {
@@ -560,7 +614,7 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			continue
 		}
 
-		order := proto.Order{
+		order := types.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -569,8 +623,8 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIF_GTT,
+			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err := execsetup.engine.SubmitOrder(context.Background(), &order)
@@ -629,7 +683,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
-		order := proto.Order{
+		order := types.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
 			PartyID:     val(row, 0),
@@ -639,7 +693,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        oty,
-			TimeInForce: proto.Order_TIF_GTT,
+			TimeInForce: types.Order_TIF_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
@@ -665,7 +719,7 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 		for _, o := range data {
 			v := o.Order()
 			if v.PartyID == val(row, 0) && v.MarketID == val(row, 1) &&
-				v.Status == proto.Order_STATUS_REJECTED && v.Reason.String() == val(row, 2) {
+				v.Status == types.Order_STATUS_REJECTED && v.Reason.String() == val(row, 2) {
 				ordCnt -= 1
 			}
 		}
@@ -682,7 +736,7 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 
 	party, volume, realisedPNL, unrealisedPNL := val(row, 0), i64val(row, 1), i64val(row, 3), i64val(row, 2)
 
-	var pos []*proto.Position
+	var pos []*types.Position
 	sleepTime := 100 // milliseconds
 	for retries > 0 {
 		pos, err = execsetup.positionPlugin.GetPositionsByParty(party)
@@ -741,11 +795,11 @@ func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
 }
 
 func theMarketStateIs(market, marketStateStr string) error {
-	ms, ok := proto.MarketState_value[marketStateStr]
+	ms, ok := types.MarketState_value[marketStateStr]
 	if !ok {
 		return fmt.Errorf("invalid market state: %v", marketStateStr)
 	}
-	marketState := proto.MarketState(ms)
+	marketState := types.MarketState(ms)
 
 	mktdata, err := execsetup.engine.GetMarketData(market)
 	if err != nil {
@@ -829,12 +883,12 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 		}
 
 		value := u64val(row, 2)
-		var price *proto.Price
+		var price *types.Price
 		if value != 0 {
-			price = &proto.Price{Value: value}
+			price = &types.Price{Value: value}
 		}
 
-		amend := proto.OrderAmendment{
+		amend := types.OrderAmendment{
 			OrderID:     o.Id,
 			PartyID:     o.PartyID,
 			MarketID:    o.MarketID,
@@ -893,9 +947,9 @@ func dumpTransfers() error {
 }
 
 func accountID(marketID, partyID, asset string, _ty int32) string {
-	ty := proto.AccountType(_ty)
+	ty := types.AccountType(_ty)
 	idbuf := make([]byte, 256)
-	if ty == proto.AccountType_ACCOUNT_TYPE_GENERAL {
+	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
 		marketID = ""
 	}
 	if partyID == "market" {
@@ -924,7 +978,7 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 	return string(idbuf[:ln+1])
 }
 
-func baseMarket(row *gherkin.TableRow) proto.Market {
+func baseMarket(row *gherkin.TableRow) types.Market {
 	horizons, err := i64arr(row, 21, ",")
 	if err != nil {
 		log.Fatalf("Can't parse horizons (%v) to int64 array: %v", row.Cells[21].Value, err)
@@ -945,45 +999,46 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 			len(durations))
 	}
 
-	params := make([]*proto.PriceMonitoringParameters, 0, n)
+	triggs := make([]*types.PriceMonitoringTrigger, 0, n)
 	for i := 0; i < n; i++ {
-		p := &proto.PriceMonitoringParameters{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
-		params = append(params, p)
+		p := &types.PriceMonitoringTrigger{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
+		triggs = append(triggs, p)
 	}
-	pMonitorSettings := &proto.PriceMonitoringSettings{
-		PriceMonitoringParameters: params,
-		UpdateFrequency:           i64val(row, 20),
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: triggs,
+		},
+		UpdateFrequency: i64val(row, 20),
 	}
 
-	mkt := proto.Market{
+	mkt := types.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
-		Fees: &proto.Fees{
-			Factors: &proto.FeeFactors{
+		Fees: &types.Fees{
+			Factors: &types.FeeFactors{
 				LiquidityFee:      val(row, 17),
 				InfrastructureFee: val(row, 18),
 				MakerFee:          val(row, 19),
 			},
 		},
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
 				Id:        fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
 				Code:      fmt.Sprintf("CRYPTO/%v", val(row, 0)),
 				Name:      fmt.Sprintf("%s future", val(row, 0)),
-				BaseName:  val(row, 1),
 				QuoteName: val(row, 2),
-				Metadata: &proto.InstrumentMetadata{
+				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
 						"product:futures",
 					},
 				},
 				InitialMarkPrice: u64val(row, 4),
-				Product: &proto.Instrument_Future{
-					Future: &proto.Future{
+				Product: &types.Instrument_Future{
+					Future: &types.Future{
 						Maturity: marketExpiry,
-						Oracle: &proto.Future_EthereumEvent{
-							EthereumEvent: &proto.EthereumEvent{
+						Oracle: &types.Future_EthereumEvent{
+							EthereumEvent: &types.EthereumEvent{
 								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 								Value:      u64val(row, 14),
@@ -993,9 +1048,9 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 					},
 				},
 			},
-			RiskModel: &proto.TradableInstrument_SimpleRiskModel{
-				SimpleRiskModel: &proto.SimpleRiskModel{
-					Params: &proto.SimpleModelParams{
+			RiskModel: &types.TradableInstrument_SimpleRiskModel{
+				SimpleRiskModel: &types.SimpleRiskModel{
+					Params: &types.SimpleModelParams{
 						FactorLong:  f64val(row, 6),
 						FactorShort: f64val(row, 7),
 						MaxMoveUp:   f64val(row, 8),
@@ -1003,26 +1058,26 @@ func baseMarket(row *gherkin.TableRow) proto.Market {
 					},
 				},
 			},
-			MarginCalculator: &proto.MarginCalculator{
-				ScalingFactors: &proto.ScalingFactors{
+			MarginCalculator: &types.MarginCalculator{
+				ScalingFactors: &types.ScalingFactors{
 					SearchLevel:       f64val(row, 13),
 					InitialMargin:     f64val(row, 12),
 					CollateralRelease: f64val(row, 11),
 				},
 			},
 		},
-		TradingMode: &proto.Market_Continuous{
-			Continuous: &proto.ContinuousTrading{},
+		TradingMode: &types.Market_Continuous{
+			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
 	}
 
 	if val(row, 5) == "forward" {
-		mkt.TradableInstrument.RiskModel = &proto.TradableInstrument_LogNormalRiskModel{
-			LogNormalRiskModel: &proto.LogNormalRiskModel{
+		mkt.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+			LogNormalRiskModel: &types.LogNormalRiskModel{
 				RiskAversionParameter: f64val(row, 6), // 6
 				Tau:                   f64val(row, 7), // 7
-				Params: &proto.LogNormalModelParams{
+				Params: &types.LogNormalModelParams{
 					Mu:    f64val(row, 8),  // 8
 					R:     f64val(row, 9),  // 9
 					Sigma: f64val(row, 10), //10
@@ -1067,6 +1122,111 @@ func dumpOrders() error {
 	for _, v := range data {
 		o := *v.Order()
 		fmt.Printf("order %s: %v\n", o.Id, o)
+	}
+	return nil
+}
+
+func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
+	for i, row := range orders.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		id, side, vol, ref, offset, price := val(row, 1), val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
+		o := &types.Order{
+			Status:      types.Order_STATUS_ACTIVE,
+			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.Order_TIF_GTC,
+			Id:          "someid",
+			Side:        types.Side_SIDE_BUY,
+			PartyID:     trader,
+			MarketID:    id,
+			Size:        vol,
+			Price:       price,
+			Remaining:   vol,
+			Reference:   fmt.Sprintf("%s-pegged-order-%d", trader, i),
+			PeggedOrder: &types.PeggedOrder{
+				Reference: ref,
+				Offset:    offset,
+			},
+		}
+		if side == "sell" {
+			o.Side = types.Side_SIDE_SELL
+		}
+		_, err := execsetup.engine.SubmitOrder(context.Background(), o)
+		if err != nil {
+			fmt.Println("DUMP ORDER ERROR")
+			fmt.Printf("Error: %v\n", err)
+			fmt.Println("DUMP ORDER")
+			fmt.Printf("%#v\n", *o)
+			return err
+		}
+	}
+	return nil
+}
+
+func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
+	data := execsetup.broker.GetOrderEvents()
+	for _, row := range evts.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		// | trader   | id        | side | volume | reference | offset |
+		id, sside, vol, ref, offset, price := val(row, 1),
+			val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
+		status, err := orderstatusval(row, 7)
+		if err != nil {
+			return err
+		}
+		side := types.Side_SIDE_BUY
+		if sside == "sell" {
+			side = types.Side_SIDE_SELL
+		}
+		match := false
+		for _, e := range data {
+			o := e.Order()
+			if o.Status != status || o.MarketID != id || o.Side != side || o.Size != vol || o.Price != price {
+				// if o.MarketID != id || o.Side != side || o.Size != vol || o.Price != price {
+				continue
+			}
+			// check if pegged:
+			if offset != 0 {
+				// nope
+				if o.PeggedOrder == nil {
+					continue
+				}
+				if o.PeggedOrder.Offset != offset || o.PeggedOrder.Reference != ref {
+					continue
+				}
+				// this matches
+			}
+			// we've checked all fields and found this order to be a match
+			match = true
+			break
+		}
+		if !match {
+			return errors.New("no matching order event found")
+		}
+	}
+	return nil
+}
+
+func clearOrderEvents() error {
+	execsetup.broker.clearOrderEvents()
+	return nil
+}
+
+func clearOrdersByRef(in *gherkin.DataTable) error {
+	for _, row := range in.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		ref := val(row, 1)
+		if err := execsetup.broker.clearOrderByReference(trader, ref); err != nil {
+			return err
+		}
 	}
 	return nil
 }

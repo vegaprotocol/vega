@@ -54,7 +54,7 @@ func (c *Client) Mint(party, asset string, amount uint64) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	res, err := c.clt.Do(req)
 	if err != nil {
 		return err

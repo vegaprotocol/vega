@@ -45,13 +45,32 @@ func NewClient(addr string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) SendTransaction(ctx context.Context, bytes []byte) (bool, error) {
+func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) error {
 	// Fire off the transaction for consensus
 	_, err := c.tmclt.BroadcastTxAsync(bytes)
+	return err
+}
+
+func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) error {
+	// Fire off the transaction for consensus
+	r, err := c.tmclt.BroadcastTxSync(bytes)
 	if err != nil {
-		return false, err
+		return err
+	} else if r.Code != 0 {
+		return newUserInputError(r.Code, string(r.Data))
 	}
-	return true, nil
+	return nil
+}
+
+func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) error {
+	// Fire off the transaction for consensus
+	r, err := c.tmclt.BroadcastTxCommit(bytes)
+	if err != nil {
+		return err
+	} else if r.CheckTx.Code != 0 {
+		return newUserInputError(r.CheckTx.Code, string(r.CheckTx.Data))
+	}
+	return nil
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain
@@ -168,4 +187,26 @@ func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) er
 	defer c.tmclt.UnsubscribeAll(context.Background(), "vega")
 
 	return <-errCh
+}
+
+type userInputError struct {
+	code    uint32
+	details string
+}
+
+func newUserInputError(code uint32, details string) userInputError {
+	return userInputError{
+		code:    code,
+		details: details,
+	}
+}
+
+func (e userInputError) Code() uint32 {
+	return e.code
+}
+func (e userInputError) Details() string {
+	return e.details
+}
+func (e userInputError) Error() string {
+	return e.details
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/txn"
+	lru "github.com/hashicorp/golang-lru"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -33,19 +34,20 @@ type App struct {
 
 	// checkedTxs holds a map of valid transactions (validated by CheckTx)
 	// They are consumed by DeliverTx to avoid double validation.
-	checkedTxs map[string]Tx
+	checkedTxs *lru.Cache // map[string]Tx
 
 	// the current block context
 	ctx context.Context
 }
 
 func New(codec Codec) *App {
+	lruCache, _ := lru.New(1024)
 	return &App{
 		codec:           codec,
 		replayProtector: &replayProtectorNoop{},
 		checkTxs:        map[txn.Command]TxHandler{},
 		deliverTxs:      map[txn.Command]TxHandler{},
-		checkedTxs:      map[string]Tx{},
+		checkedTxs:      lruCache,
 		ctx:             context.Background(),
 	}
 }
@@ -79,24 +81,22 @@ func (app *App) decodeAndValidateTx(bytes []byte) (Tx, uint32, error) {
 
 // cacheTx adds a Tx to the cache.
 func (app *App) cacheTx(in []byte, tx Tx) {
-	app.checkedTxs[string(in)] = tx
+	app.checkedTxs.Add(string(in), tx)
 }
 
 // txFromCache retrieves (and remove if found) a Tx from the cache,
 // it returns the Tx or nil if not found.
 func (app *App) txFromCache(in []byte) Tx {
-	key := string(in)
-	tx, ok := app.checkedTxs[key]
+	tx, ok := app.checkedTxs.Get(string(in))
 	if !ok {
 		return nil
 	}
 
-	return tx
+	return tx.(Tx)
 }
 
 func (app *App) removeTxFromCache(in []byte) {
-	key := string(in)
-	delete(app.checkedTxs, key)
+	app.checkedTxs.Remove(string(in))
 }
 
 // getTx returns an internal Tx given a []byte.
@@ -114,6 +114,5 @@ func (app *App) getTx(bytes []byte) (Tx, uint32, error) {
 		return nil, code, err
 	}
 
-	app.cacheTx(bytes, tx)
 	return tx, 0, nil
 }

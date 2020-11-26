@@ -9,12 +9,11 @@ import (
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type brokerStub struct {
 	mu   sync.Mutex
-	err  error
 	data map[events.Type][]events.Event
 	subT map[events.Type][]broker.Subscriber
 }
@@ -124,6 +123,26 @@ func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
 	return ret
 }
 
+func (b *brokerStub) clearOrderEvents() {
+	t := events.OrderEvent
+	b.mu.Lock()
+	r := b.data[t]
+	// reallocate new slice
+	b.data[t] = make([]events.Event, 0, cap(r))
+	b.mu.Unlock()
+}
+
+func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Order {
+	orders := b.GetOrderEvents()
+	ret := []types.Order{}
+	for _, oe := range orders {
+		if o := oe.Order(); o.MarketID == market && o.PartyID == party {
+			ret = append(ret, *o)
+		}
+	}
+	return ret
+}
+
 func (b *brokerStub) GetOrderEvents() []events.Order {
 	batch := b.GetBatch(events.OrderEvent)
 	if len(batch) == 0 {
@@ -179,82 +198,105 @@ func (b *brokerStub) GetAccounts() []events.Acc {
 	return s
 }
 
-func (b *brokerStub) getMarginByPartyAndMarket(partyID, marketID string) (proto.MarginLevels, error) {
+func (b *brokerStub) getMarginByPartyAndMarket(partyID, marketID string) (types.MarginLevels, error) {
 	batch := b.GetBatch(events.MarginLevelsEvent)
-	mapped := map[string]map[string]proto.MarginLevels{}
+	mapped := map[string]map[string]types.MarginLevels{}
 	for _, e := range batch {
 		switch et := e.(type) {
 		case *events.MarginLevels:
 			ml := et.MarginLevels()
 			if _, ok := mapped[ml.PartyID]; !ok {
-				mapped[ml.PartyID] = map[string]proto.MarginLevels{}
+				mapped[ml.PartyID] = map[string]types.MarginLevels{}
 			}
 			mapped[ml.PartyID][ml.MarketID] = ml
 		case events.MarginLevels:
 			ml := et.MarginLevels()
 			if _, ok := mapped[ml.PartyID]; !ok {
-				mapped[ml.PartyID] = map[string]proto.MarginLevels{}
+				mapped[ml.PartyID] = map[string]types.MarginLevels{}
 			}
 			mapped[ml.PartyID][ml.MarketID] = ml
 		}
 	}
 	mkts, ok := mapped[partyID]
 	if !ok {
-		return proto.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
+		return types.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
 	}
 	ml, ok := mkts[marketID]
 	if !ok {
-		return proto.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
+		return types.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
 	}
 	return ml, nil
 }
 
-func (b *brokerStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
+func (b *brokerStub) getMarketInsurancePoolAccount(market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_INSURANCE {
+		if v.Owner == "*" && v.MarketID == market && v.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
 			return v, nil
 		}
 	}
-	return proto.Account{}, errors.New("account does not exist")
+	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getTraderMarginAccount(trader, market string) (proto.Account, error) {
+func (b *brokerStub) getTraderMarginAccount(trader, market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
+		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
 			return v, nil
 		}
 	}
-	return proto.Account{}, errors.New("account does not exist")
+	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getMarketSettlementAccount(market string) (proto.Account, error) {
+func (b *brokerStub) getMarketSettlementAccount(market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_SETTLEMENT {
+		if v.Owner == "*" && v.MarketID == market && v.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			return v, nil
 		}
 	}
-	return proto.Account{}, errors.New("account does not exist")
+	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
+func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			return v, nil
 		}
 	}
 
-	return proto.Account{}, errors.New("account does not exist")
+	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getFirstByReference(party, ref string) (proto.Order, error) {
+func (b *brokerStub) clearOrderByReference(party, ref string) error {
+	b.mu.Lock()
+	data := b.data[events.OrderEvent]
+	cleared := make([]events.Event, 0, cap(data))
+	for _, evt := range data {
+		var o *types.Order
+		switch e := evt.(type) {
+		case *events.Order:
+			o = e.Order()
+		case events.Order:
+			o = e.Order()
+		default:
+			return errors.New("non-order event ended up in order event group")
+		}
+		if o.Reference != ref || o.PartyID != party {
+			cleared = append(cleared, evt)
+		}
+	}
+	b.data[events.OrderEvent] = cleared
+	b.mu.Unlock()
+	return nil
+}
+
+func (b *brokerStub) getFirstByReference(party, ref string) (types.Order, error) {
 	data := b.GetOrderEvents()
 	for _, o := range data {
 		v := o.Order()
@@ -262,13 +304,13 @@ func (b *brokerStub) getFirstByReference(party, ref string) (proto.Order, error)
 			return *v, nil
 		}
 	}
-	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
 }
 
-func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
+func (b *brokerStub) getByReference(party, ref string) (types.Order, error) {
 	data := b.GetOrderEvents()
 
-	var last proto.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
+	var last types.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
 	var matched bool = false
 	for _, o := range data {
 		v := o.Order()
@@ -280,12 +322,12 @@ func (b *brokerStub) getByReference(party, ref string) (proto.Order, error) {
 	if matched == true {
 		return last, nil
 	}
-	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
 }
 
-func (b *brokerStub) getTrades() []proto.Trade {
+func (b *brokerStub) getTrades() []types.Trade {
 	data := b.GetTradeEvents()
-	trades := make([]proto.Trade, 0, len(data))
+	trades := make([]types.Trade, 0, len(data))
 	for _, t := range data {
 		trades = append(trades, t.Trade())
 	}
@@ -302,251 +344,6 @@ func (b *brokerStub) Reset() {
 	b.mu.Lock()
 	b.data = map[events.Type][]events.Event{}
 	b.mu.Unlock()
-}
-
-type marginsStub struct {
-	data map[string]map[string]proto.MarginLevels
-	mu   sync.Mutex
-	err  error // for future use
-}
-
-func NewMarginsStub() *marginsStub {
-	return &marginsStub{
-		data: map[string]map[string]proto.MarginLevels{},
-	}
-}
-
-func (m *marginsStub) Add(ml proto.MarginLevels) {
-	m.mu.Lock()
-	if _, ok := m.data[ml.PartyID]; !ok {
-		m.data[ml.PartyID] = map[string]proto.MarginLevels{}
-	}
-	m.data[ml.PartyID][ml.MarketID] = ml
-	m.mu.Unlock()
-}
-
-func (m *marginsStub) getMarginByPartyAndMarket(partyID, marketID string) (proto.MarginLevels, error) {
-	mkts, ok := m.data[partyID]
-	if !ok {
-		return proto.MarginLevels{}, fmt.Errorf("no margin levels for party (%v)", partyID)
-	}
-	ml, ok := mkts[marketID]
-	if !ok {
-		return proto.MarginLevels{}, fmt.Errorf("party (%v) have no margin levels for market (%v)", partyID, marketID)
-	}
-	return ml, nil
-}
-
-func (m *marginsStub) Flush() {}
-
-type accStub struct {
-	data map[string]proto.Account
-	mu   *sync.Mutex
-}
-
-func NewAccountStub() *accStub {
-	return &accStub{
-		data: map[string]proto.Account{},
-		mu:   &sync.Mutex{},
-	}
-}
-
-func (d *accStub) Add(acc proto.Account) {
-	d.mu.Lock()
-	d.data[acc.Id] = acc
-	d.mu.Unlock()
-}
-
-func (s *accStub) getTraderMarginAccount(trader, market string) (proto.Account, error) {
-	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
-			return v, nil
-		}
-	}
-	return proto.Account{}, errors.New("account does not exist")
-}
-
-func (s *accStub) getMarketSettlementAccount(market string) (proto.Account, error) {
-	for _, v := range s.data {
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_SETTLEMENT {
-			return v, nil
-		}
-	}
-	return proto.Account{}, errors.New("account does not exist")
-}
-
-func (s *accStub) getMarketInsurancePoolAccount(market string) (proto.Account, error) {
-	for _, v := range s.data {
-		if v.Owner == "*" && v.MarketID == market && v.Type == proto.AccountType_ACCOUNT_TYPE_INSURANCE {
-			return v, nil
-		}
-	}
-	return proto.Account{}, errors.New("account does not exist")
-}
-
-func (s *accStub) getTraderGeneralAccount(trader, asset string) (proto.Account, error) {
-	for _, v := range s.data {
-		if v.Owner == trader && v.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			return v, nil
-		}
-	}
-
-	return proto.Account{}, errors.New("account does not exist")
-}
-
-func (d *accStub) Get(id string) *proto.Account {
-	var ret *proto.Account
-	d.mu.Lock()
-	if acc, ok := d.data[id]; ok {
-		ret = &acc
-	}
-	d.mu.Unlock()
-	return ret
-}
-
-func (a *accStub) Flush() error {
-	return nil
-}
-
-type orderStub struct {
-	data map[string]proto.Order
-	mu   *sync.Mutex
-	err  error
-}
-
-func (o *orderStub) getByReference(party, ref string) (proto.Order, error) {
-	for _, v := range o.data {
-		if v.Reference == ref && v.PartyID == party {
-			return v, nil
-		}
-	}
-	return proto.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
-}
-
-func NewOrderStub() *orderStub {
-	return &orderStub{
-		data: map[string]proto.Order{},
-		mu:   &sync.Mutex{},
-	}
-}
-
-func (o *orderStub) Add(order proto.Order) {
-	o.mu.Lock()
-	o.data[order.Id] = order
-	o.mu.Unlock()
-}
-
-func (o *orderStub) Flush() error {
-	o.mu.Lock()
-	err := o.err
-	o.mu.Unlock()
-	return err
-}
-
-// GetByPartyAndID is only used in the execution engine, we're not integrating with that component
-// this stub is used on the market integration level
-func (o *orderStub) GetByPartyAndID(_ context.Context, party, id string) (*proto.Order, error) {
-	var ret *proto.Order
-	o.mu.Lock()
-	order, ok := o.data[id]
-	err := o.err
-	o.mu.Unlock()
-	if ok && order.PartyID == party {
-		ret = &order // should be a pointer to local copy from map already
-	}
-	return ret, err
-}
-
-func (o *orderStub) GetByReference(ref string) (*proto.Order, error) {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	for _, v := range o.data {
-		if v.Reference == ref {
-			cpy := v
-			return &cpy, nil
-		}
-	}
-	return nil, fmt.Errorf("reference %s not found", ref)
-}
-
-func (o *orderStub) Get(id string) *proto.Order {
-	var ret *proto.Order
-	o.mu.Lock()
-	if order, ok := o.data[id]; ok {
-		ret = &order
-	}
-	o.mu.Unlock()
-	return ret
-}
-
-type transferStub struct {
-	data []*proto.TransferResponse
-	mu   *sync.Mutex
-}
-
-func NewTransferStub() *transferStub {
-	return &transferStub{
-		data: []*proto.TransferResponse{},
-		mu:   &sync.Mutex{},
-	}
-}
-
-func (t *transferStub) Flush() error {
-	t.data = []*proto.TransferResponse{}
-	return nil
-}
-
-func (t *transferStub) Add(b []*proto.TransferResponse) {
-	t.mu.Lock()
-	t.data = append(t.data, b...)
-	t.mu.Unlock()
-}
-
-func (t *transferStub) GetBatch() []*proto.TransferResponse {
-	t.mu.Lock()
-	b := t.data
-	t.mu.Unlock()
-	return b
-}
-
-func (t *transferStub) Reset() {
-	t.mu.Lock()
-	t.data = []*proto.TransferResponse{}
-	t.mu.Unlock()
-}
-
-type tradeStub struct {
-	data map[string]proto.Trade
-	err  error
-	mu   *sync.Mutex
-}
-
-func NewTradeStub() *tradeStub {
-	return &tradeStub{
-		data: map[string]proto.Trade{},
-		mu:   &sync.Mutex{},
-	}
-}
-
-func (t *tradeStub) Flush() error {
-	t.mu.Lock()
-	err := t.err
-	t.data = map[string]proto.Trade{}
-	t.mu.Unlock()
-	return err
-}
-
-func (t *tradeStub) Add(v proto.Trade) {
-	t.mu.Lock()
-	t.data[v.Id] = v
-	t.mu.Unlock()
-}
-
-func (t *tradeStub) Get(id string) proto.Trade {
-	t.mu.Lock()
-	v := t.data[id]
-	t.mu.Unlock()
-	return v
 }
 
 type timeStub struct {
@@ -567,49 +364,33 @@ func (t *timeStub) NotifyOnTick(f func(context.Context, time.Time)) {
 	t.notify = f
 }
 
-type SettleStub struct {
-	data []events.SettlePosition
-}
-
-func NewSettlementStub() *SettleStub {
-	return &SettleStub{
-		data: []events.SettlePosition{},
-	}
-}
-
-func (p *SettleStub) Add(e []events.SettlePosition) {
-	p.data = append(p.data, e...)
-}
-
-func (p *SettleStub) Flush() {}
-
 type ProposalStub struct {
-	data []proto.Proposal
+	data []types.Proposal
 }
 
 func NewProposalStub() *ProposalStub {
 	return &ProposalStub{
-		data: []proto.Proposal{},
+		data: []types.Proposal{},
 	}
 }
 
-func (p *ProposalStub) Add(v proto.Proposal) {
+func (p *ProposalStub) Add(v types.Proposal) {
 	p.data = append(p.data, v)
 }
 
 func (p *ProposalStub) Flush() {}
 
 type VoteStub struct {
-	data []proto.Vote
+	data []types.Vote
 }
 
 func NewVoteStub() *VoteStub {
 	return &VoteStub{
-		data: []proto.Vote{},
+		data: []types.Vote{},
 	}
 }
 
-func (v *VoteStub) Add(vote proto.Vote) {
+func (v *VoteStub) Add(vote types.Vote) {
 	v.data = append(v.data, vote)
 }
 

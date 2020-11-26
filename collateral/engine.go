@@ -22,22 +22,6 @@ const (
 	// if needed
 	systemOwner = "*"
 	noMarket    = "!"
-
-	TokenAsset = "VOTE"
-)
-
-var (
-	TokenAssetSource = &types.AssetSource{
-		Source: &types.AssetSource_BuiltinAsset{
-			BuiltinAsset: &types.BuiltinAsset{
-				Name:                "VOTE",
-				Symbol:              "VOTE",
-				TotalSupply:         "0",
-				Decimals:            5,
-				MaxFaucetAmountMint: "1000",
-			},
-		},
-	}
 )
 
 var (
@@ -66,6 +50,8 @@ var (
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
 	// ErrNotEnoughFundsToWithdraa a party requested to withdraw more than on its general account
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
+	// ErrGovernanceAssetIDMatchNoAsset
+	ErrGovernanceAssetIDMatchNoAsset = errors.New("governance asset ID match no asset")
 )
 
 // Broker send events
@@ -81,10 +67,13 @@ type Engine struct {
 	log   *logging.Logger
 	cfgMu sync.Mutex
 
-	accs         map[string]*types.Account
+	accs map[string]*types.Account
+	// map of partyID -> account ID -> account
+	// this is used to check if a party have any balances in
+	// any assets at all
+	partiesAccs  map[string]map[string]*types.Account
 	hashableAccs []*types.Account
 	broker       Broker
-	totalTokens  uint64
 	// could be a unix.Time but storing it like this allow us to now time.UnixNano() all the time
 	currentTime int64
 
@@ -92,6 +81,11 @@ type Engine struct {
 
 	// asset ID to asset
 	enabledAssets map[string]types.Asset
+
+	// assetid -> total amount for the asset
+	totalAmounts map[string]uint64
+	// keep track of what's the current governanceAsset
+	governanceAsset string
 }
 
 // New instantiates a new collateral engine
@@ -103,11 +97,13 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 		log:           log,
 		Config:        conf,
 		accs:          make(map[string]*types.Account, initialAccountSize),
+		partiesAccs:   map[string]map[string]*types.Account{},
 		hashableAccs:  []*types.Account{},
 		broker:        broker,
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
+		totalAmounts:  map[string]uint64{},
 	}, nil
 }
 
@@ -115,6 +111,44 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 // in order to be called when the chain time is updated (basically EndBlock)
 func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 	e.currentTime = t.UnixNano()
+}
+
+func (e *Engine) HasBalance(party string) bool {
+	accs, ok := e.partiesAccs[party]
+	if !ok {
+		return false
+	}
+
+	for _, acc := range accs {
+		if acc.Balance > 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {
+	accs, ok := e.partiesAccs[party]
+	if !ok {
+		accs = map[string]*types.Account{}
+		e.partiesAccs[party] = accs
+	}
+	// this is called only when an account is created first time
+	// and never twice
+	accs[accid] = acc
+}
+
+func (e *Engine) rmPartyAccount(party, accid string) {
+	// this cannot be called for a party which do not have an account already
+	// so no risk here
+	accs := e.partiesAccs[party]
+	delete(accs, accid)
+	// delete if the number of accounts for the party
+	// is down to 0
+	if len(accs) <= 0 {
+		delete(e.partiesAccs, party)
+	}
 }
 
 func (e *Engine) removeAccountFromHashableSlice(id string) {
@@ -172,7 +206,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 // EnableAsset adds a new asset in the collateral engine
 // this enable the asset to be used by new markets or
 // parties to deposit funds
-// FIXME(): use the ID later on
 func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	if e.AssetExists(asset.ID) {
 		return ErrAssetAlreadyEnabled
@@ -198,6 +231,28 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.ID))
+	return nil
+}
+
+func (e *Engine) UpdateGovernanceAsset(asset string) error {
+	if !e.AssetExists(asset) {
+		return ErrGovernanceAssetIDMatchNoAsset
+	}
+
+	var (
+		nextAsset = e.enabledAssets[asset]
+		prevAsset types.Asset
+	)
+	if len(e.governanceAsset) > 0 {
+		prevAsset = e.enabledAssets[e.governanceAsset]
+	}
+	e.log.Info("governance asset update successfully",
+		logging.String("new-asset-id", nextAsset.ID),
+		logging.String("new-asset", nextAsset.Symbol),
+		logging.String("prev-asset-id", prevAsset.ID),
+		logging.String("prev-asset", prevAsset.Symbol),
+	)
+	e.governanceAsset = asset
 	return nil
 }
 
@@ -344,7 +399,6 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 				logging.Error(err),
 			)
 		}
-		err = ErrFeeAccountsMissing
 	}
 
 	if liqui, err = e.GetAccountByID(liquiID); err != nil {
@@ -356,6 +410,9 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 				logging.Error(err),
 			)
 		}
+	}
+
+	if err != nil {
 		err = ErrFeeAccountsMissing
 	}
 
@@ -786,7 +843,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 	return response, closed, nil
 }
 
-// MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
+// RollbackMarginUpdateOnOrder moves funds from the margin to the general account.
 func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error) {
 	margin, err := e.GetAccountByID(e.accountID(marketID, transfer.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
 	if err != nil {
@@ -1245,6 +1302,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 			Type:     types.AccountType_ACCOUNT_TYPE_BOND,
 		}
 		e.accs[bondID] = &acc
+		e.addPartyAccount(partyID, bondID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
@@ -1281,6 +1339,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 		}
 		e.accs[marginID] = &acc
+		e.addPartyAccount(partyID, marginID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
@@ -1304,29 +1363,16 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
 		e.accs[generalID] = &acc
+		e.addPartyAccount(partyID, generalID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
-		e.broker.Send(events.NewAccountEvent(ctx, acc))
-	}
-	tID := e.accountID(noMarket, partyID, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
-	if _, ok := e.accs[tID]; !ok {
-		acc := types.Account{
-			Id:       tID,
-			Asset:    TokenAsset,
-			MarketID: noMarket,
-			Balance:  0,
-			Owner:    partyID,
-			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
-		}
-		e.accs[tID] = &acc
-		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 
 	return generalID, nil
 }
 
-// CreatePartyLockWithdrawAccount create an account to lock funds to be withrawn by a party
+// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withrawn by a party
 func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyID, asset string) (*types.Account, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
@@ -1347,6 +1393,7 @@ func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyI
 			Type:     types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
 		}
 		e.accs[id] = acc
+		e.addPartyAccount(partyID, id, acc)
 		e.addAccountToHashableSlice(acc)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
@@ -1396,6 +1443,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		if err := e.removeAccount(acc.Id); err != nil {
 			return nil, err
 		}
+		// remove account from balances tracking
+		e.rmPartyAccount(trader.Party(), acc.Id)
 
 	}
 	return &resp, nil
@@ -1558,6 +1607,11 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 	if err := e.DecrementBalance(ctx, acc.Id, amount); err != nil {
 		return err
 	}
+
+	// reduce the total amount for this asset
+	bal := e.totalAmounts[asset]
+	e.totalAmounts[asset] = bal - amount
+
 	return nil
 }
 
@@ -1572,6 +1626,10 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint
 		return err
 	}
 
+	// increment balance of the given asset
+	bal := e.totalAmounts[asset]
+	e.totalAmounts[asset] = bal + amount
+
 	return e.IncrementBalance(ctx, accID, amount)
 }
 
@@ -1581,23 +1639,9 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 	if !ok {
 		return ErrAccountDoesNotExist
 	}
-	if acc.Asset == TokenAsset {
-		e.totalTokens -= uint64(acc.Balance)
-		e.totalTokens += uint64(balance)
-		e.updateVoteToken(ctx)
-	}
 	acc.Balance = balance
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
-}
-
-func (e *Engine) updateVoteToken(ctx context.Context) {
-	tokAsset := e.enabledAssets[TokenAsset]
-	totalSupplyStr := fmt.Sprintf("%v", e.totalTokens)
-	tokAsset.TotalSupply = totalSupplyStr
-	tokAsset.GetSource().GetBuiltinAsset().TotalSupply = totalSupplyStr
-	e.enabledAssets[TokenAsset] = tokAsset
-	e.broker.Send(events.NewAssetEvent(ctx, tokAsset))
 }
 
 // IncrementBalance will increment the balance of a given account
@@ -1608,10 +1652,6 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance += inc
-	if acc.Asset == TokenAsset {
-		e.totalTokens += inc
-		e.updateVoteToken(ctx)
-	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
 }
@@ -1624,10 +1664,6 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance -= dec
-	if acc.Asset == TokenAsset {
-		e.totalTokens -= dec
-		e.updateVoteToken(ctx)
-	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
 }
@@ -1642,9 +1678,9 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	return &acccpy, nil
 }
 
-// GetPartyTokenBalance - get the token account for a given user
+// GetPartyTokenAccount - get the token account for a given user
 func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
-	tID := e.accountID(noMarket, id, TokenAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
+	tID := e.accountID(noMarket, id, e.governanceAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	acc, ok := e.accs[tID]
 	if !ok {
 		return nil, ErrPartyHasNoTokenAccount
@@ -1655,7 +1691,7 @@ func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
 
 // GetTotalTokens - returns total amount of tokens in the network
 func (e *Engine) GetTotalTokens() uint64 {
-	return e.totalTokens
+	return e.totalAmounts[e.governanceAsset]
 }
 
 func (e *Engine) removeAccount(id string) error {

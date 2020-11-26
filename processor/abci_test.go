@@ -1,6 +1,7 @@
 package processor_test
 
 import (
+	"context"
 	"crypto"
 	"encoding/hex"
 	"testing"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
@@ -201,6 +203,24 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor
 	})
 }
 
+func (s *AbciTestSuite) testOnCheckTxFailWithNoBalances(t *testing.T, app *processor.App, proc *procTest) {
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
+	proc.bank.EXPECT().HasBalance(gomock.Any()).AnyTimes().Return(false)
+
+	tx := txStub{pubkey: []byte("some pubkey")}
+	_, resp := app.OnCheckTx(context.Background(), tmtypes.RequestCheckTx{}, tx)
+	assert.Equal(t, resp.Code, uint32(51))
+}
+
+func (s *AbciTestSuite) testOnCheckTxSuccessWithBalance(t *testing.T, app *processor.App, proc *procTest) {
+	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
+	proc.bank.EXPECT().HasBalance(gomock.Any()).AnyTimes().Return(true)
+
+	tx := txStub{pubkey: []byte("some pubkey")}
+	_, resp := app.OnCheckTx(context.Background(), tmtypes.RequestCheckTx{}, tx)
+	assert.Equal(t, resp.Code, uint32(0))
+}
+
 func TestAbci(t *testing.T) {
 	sig := vegacrypto.NewEd25519()
 	s := &AbciTestSuite{
@@ -215,6 +235,8 @@ func TestAbci(t *testing.T) {
 
 		{"Call Begin and Commit - success", s.testBeginCommitSuccess},
 		{"Call Begin twice, only calls commander once", s.testBeginCallsCommanderOnce},
+		{"OnCheckTx fail with no balance", s.testOnCheckTxFailWithNoBalances},
+		{"OnCheckTx success with balance", s.testOnCheckTxSuccessWithBalance},
 	}
 
 	for _, test := range tests {
@@ -229,3 +251,15 @@ func TestAbci(t *testing.T) {
 		})
 	}
 }
+
+type txStub struct {
+	pubkey []byte
+}
+
+func (txStub) Command() txn.Command        { return txn.SubmitOrderCommand }
+func (txStub) Unmarshal(interface{}) error { return nil }
+func (t txStub) PubKey() []byte            { return t.pubkey }
+func (txStub) Hash() []byte                { return nil }
+func (txStub) Signature() []byte           { return nil }
+func (txStub) Validate() error             { return nil }
+func (txStub) BlockHeight() uint64         { return 0 }
