@@ -91,6 +91,21 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
 }
 
+func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
+	lp := e.provisions[party]
+	if lp == nil {
+		return errors.New("party have no liquidity provision orders")
+	}
+
+	lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+
+	// now delete all stuff
+	delete(e.liquidityOrders, party)
+	delete(e.orders, party)
+	return nil
+}
+
 // SubmitLiquidityProvision handles a new liquidity provision submission.
 // It's used to create, update or delete a LiquidityProvision.
 // The LiquidityProvision is created if submited for the first time, updated if a
