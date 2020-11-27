@@ -2705,18 +2705,87 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 }
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
-func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
 		return err
 	}
+
+	defer func() {
+		if err == nil {
+			return
+		}
+		if newerr := m.liquidity.CancelLiquidityProvision(ctx, party); err != nil {
+			m.log.Debug("unable to submit cancel liquidity provision submission",
+				logging.String("party", party),
+				logging.String("id", id),
+				logging.Error(newerr))
+			err = fmt.Errorf("%v, %w", err, newerr)
+		}
+
+	}()
+
+	// WE WANT TO APPLY THECOMMITMENT IN BOND ACCOUNT
+	asset, _ := m.mkt.GetAsset()
+	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, party, m.GetID(), asset)
+	if err != nil {
+		return err
+	}
+
+	// now we calculate the amount that needs to be moved into the account
+	amount := int64(sub.CommitmentAmount - bondAcc.Balance)
+	ty := types.TransferType_TRANSFER_TYPE_BOND_LOW
+	if amount < 0 {
+		ty = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+	}
+	transfer := &types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: amount,
+			Asset:  asset,
+		},
+		Type:      ty,
+		MinAmount: amount,
+	}
+
+	tresp, err := m.collateral.BondUpdateOnOrder(ctx, m.GetID(), party, transfer)
+	if err != nil {
+		return err
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+
+	// if something happen, rollback the transfer
+	defer func() {
+		if err == nil {
+			return
+		}
+		if transfer.Type == types.TransferType_TRANSFER_TYPE_BOND_HIGH {
+			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_LOW
+		}
+		transfer.Amount.Amount = -transfer.Amount.Amount
+		transfer.MinAmount = -transfer.MinAmount
+
+		tresp, newerr := m.collateral.BondUpdateOnOrder(ctx, m.GetID(), party, transfer)
+		if newerr != nil {
+			m.log.Debug("unable to rollback bon account topup",
+				logging.String("party", party),
+				logging.Int64("amount", amount),
+				logging.Error(err))
+			err = fmt.Errorf("%v, %w", err, newerr)
+		}
+		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	}()
 
 	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, m.repriceFuncW)
 	if err != nil {
 		return err
 	}
 
-	// TODO(gchaincl,jeremyletang): calculate the amount of the bound account first
-	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+		// TODO() need roll back
+		return nil
+	}
+
+	return nil
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
@@ -2728,17 +2797,60 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 	return m.createAndUpdateOrders(ctx, newOrders, amendments)
 }
 
-func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) error {
+func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
+	submittedIDs := []string{}
+	// submitted order rollback
+	defer func() {
+		if err == nil || len(newOrders) <= 0 {
+			return
+		}
+		party := newOrders[0].PartyID
+		for _, v := range submittedIDs {
+			_, newerr := m.CancelOrder(ctx, party, v)
+			if newerr != nil {
+				m.log.Error("unable to rollback order via cancel",
+					logging.Error(newerr),
+					logging.String("party", party),
+					logging.String("order-id", v))
+				err = fmt.Errorf("%v, %w", err, newerr)
+			}
+		}
+	}()
+
 	for _, order := range newOrders {
 		if _, err := m.submitOrder(ctx, order); err != nil {
 			return err
 		}
+		submittedIDs = append(submittedIDs, order.Id)
 	}
+
+	// amendment rollback
+	amendmentsRollBack := []*types.OrderAmendment{}
+	// submitted order rollback
+	defer func() {
+		if err == nil || len(amendmentsRollBack) <= 0 {
+			return
+		}
+		for _, v := range amendmentsRollBack {
+			_, newerr := m.amendOrder(ctx, v)
+			if newerr != nil {
+				m.log.Error("unable to rollback order via cancel",
+					logging.Error(newerr),
+					logging.String("party", v.PartyID),
+					logging.String("order-id", v.OrderID))
+				err = fmt.Errorf("%v, %w", err, newerr)
+			}
+		}
+	}()
 
 	for _, order := range amendments {
 		if _, err := m.amendOrder(ctx, order); err != nil {
 			return err
 		}
+
+		arb := *order
+		arb.SizeDelta = -arb.SizeDelta
+		amendmentsRollBack = append(amendmentsRollBack, &arb)
 	}
 
 	return nil
