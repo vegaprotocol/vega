@@ -1272,6 +1272,16 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	return resps, nil
 }
 
+// GetPartyBondAccount returns a bond account given a set of parameters.
+func (e *Engine) GetPartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error) {
+	if !e.AssetExists(asset) {
+		return nil, ErrInvalidAssetID
+	}
+
+	bondID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_BOND)
+	return e.GetAccountByID(bondID)
+}
+
 // CreatePartyBondAccount creates a bond account if it does not exist, will return an error
 // if no general account exist for the trader for the given asset
 func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (string, error) {
