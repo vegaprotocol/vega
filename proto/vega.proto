@@ -906,6 +906,10 @@ enum TransferType {
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
   // Pay liquidity fee.
   TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
+  // Bond too low.
+  TRANSFER_TYPE_BOND_LOW = 13;
+  // Bond too high.
+  TRANSFER_TYPE_BOND_HIGH = 14;
 }
 
 // Represents a financial transfer within Vega.
