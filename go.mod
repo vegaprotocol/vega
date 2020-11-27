@@ -16,7 +16,6 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.4.0
 	github.com/google/btree v1.0.0
-	github.com/google/martian v2.1.0+incompatible
 	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.9.5
@@ -43,5 +42,4 @@ require (
 	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a // indirect
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.23.0
-	gotest.tools v2.2.0+incompatible // indirect
 )
