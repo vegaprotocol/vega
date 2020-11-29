@@ -102,7 +102,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		now                           = e.currentTime.UnixNano()
 	)
 
-	if len(lps.Buys) == 0 && len(lps.Sells) == 0 {
+	if len(lps.Buys) == 0 || len(lps.Sells) == 0 {
 		return ErrEmptyShape
 	}
 
