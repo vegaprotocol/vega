@@ -326,6 +326,24 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, creates, 3)
 	require.Len(t, updates, 0)
 
+	initialSizes := make([]uint64, 0, len(creates))
+	for _, c := range creates {
+		initialSizes = append(initialSizes, c.Size)
+	}
+
+	// Manual orders provide more liquidity, LiqOrders should decrease
+	orders[0].Remaining, orders[0].Size = 10, 10
+	orders[1].Remaining, orders[1].Size = 10, 10
+
+	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
+	require.NoError(t, err)
+	require.Len(t, creates, 0)
+	require.Len(t, updates, 3)
+	for i, order := range updates {
+		assert.Greater(t, order.Size, uint64(0))
+		require.Less(t, order.Size, initialSizes[i])
+	}
+
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
