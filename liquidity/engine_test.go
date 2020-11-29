@@ -361,5 +361,66 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, updates, 0)
 }
 
-// TODO (WG): Write a test where new limit orders should reduce the liquidity deployed with shapes.
-// TODO (WG): Cover the case when pegs outside valid range.
+func TestAllPegsInvalid(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		now   = time.Now()
+		tng   = newTestEngine(t, now)
+	)
+	defer tng.ctrl.Finish()
+
+	// We don't care about the following calls
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Send a submission to create the shape
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID: "test", CommitmentAmount: 100, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -3},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -4},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 5},
+		},
+	}
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+	)
+
+	var (
+		markPrice = uint64(10)
+	)
+
+	fn := func(order *types.PeggedOrder) (uint64, error) {
+		return markPrice + uint64(order.Offset), nil
+	}
+
+	// Expectations
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(9.0, 11.0).AnyTimes()
+	any := gomock.Any()
+	tng.riskModel.EXPECT().ProbabilityOfTrading(
+		any, any, any, any, any, any, any,
+	).AnyTimes().Return(0.0)
+	tng.idGen.EXPECT().SetID(gomock.Any()).Do(func(order *types.Order) {
+		order.Id = uuid.NewV4().String()
+	}).AnyTimes()
+
+	orders := []*types.Order{
+		{Id: "1", PartyID: party, Price: 10, Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
+		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
+	}
+
+	tng.engine.OnChainTimeUpdate(context.Background(), now)
+
+	creates, updates, err := tng.engine.Update(markPrice, fn, orders)
+	require.Error(t, err)
+	require.Len(t, creates, 0)
+	require.Len(t, updates, 0)
+
+	// TODO (WG): I'd like that to be triggered when no orders change too (perhaps during OnChainTimeUpdate)
+	// creates, updates, err = tng.engine.Update(markPrice, fn, nil)
+	// require.Error(t, err)
+	// require.Len(t, creates, 0)
+	// require.Len(t, updates, 0)
+}
