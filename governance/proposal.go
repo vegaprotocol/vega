@@ -14,7 +14,7 @@ type ProposalParameters struct {
 	MaxEnact              time.Duration
 	RequiredParticipation float64
 	RequiredMajority      float64
-	MinProposerBalance    float64
+	MinProposerBalance    uint64
 	MinVoterBalance       float64
 }
 
