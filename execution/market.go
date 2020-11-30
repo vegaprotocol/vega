@@ -934,7 +934,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			// Maybe should return an orderConfirmation with order state PARKED
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 			return &types.OrderConfirmation{Order: order}, nil
-
 		} else {
 			// Reprice
 			err := m.repricePeggedOrder(ctx, order)
