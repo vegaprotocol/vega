@@ -3876,7 +3876,7 @@
           "format": "int64",
           "description": "Time duration for the opening auction to last."
         },
-        "PriceMonitoringParameters": {
+        "priceMonitoringParameters": {
           "$ref": "#/definitions/vegaPriceMonitoringParameters",
           "title": "price monitoring configuration"
         },

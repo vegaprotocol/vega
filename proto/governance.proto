@@ -46,7 +46,7 @@ message NewMarketConfiguration {
   // Time duration for the opening auction to last.
   int64 openingAuctionDuration = 4;
   // price monitoring configuration
-  PriceMonitoringParameters PriceMonitoringParameters = 5;
+  PriceMonitoringParameters priceMonitoringParameters = 5;
   // New market risk model parameters
   oneof riskParameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
