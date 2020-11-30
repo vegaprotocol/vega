@@ -818,7 +818,7 @@ Request for a governance proposal given a proposal reference.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| Reference | [string](#string) |  | Proposal reference. Required field. |
+| reference | [string](#string) |  | Proposal reference. Required field. |
 
 
 
