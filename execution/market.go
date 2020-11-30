@@ -2778,12 +2778,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
-		// TODO() need roll back
-		return nil
-	}
-
-	return nil
+	return m.createAndUpdateOrders(ctx, newOrders, amendments)
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
