@@ -924,7 +924,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			// Maybe should return an orderConfirmation with order state PARKED
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 			return &types.OrderConfirmation{Order: order}, nil
-
 		} else {
 			// Reprice
 			err := m.repricePeggedOrder(ctx, order)
@@ -999,9 +998,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
-	if confirmation == nil || err != nil {
-		_, err := m.position.UnregisterOrder(order)
-		if err != nil {
+	if err != nil {
+		if _, err := m.position.UnregisterOrder(order); err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
@@ -1053,7 +1051,10 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
 	if err == nil && len(trades) > 0 {
-		err = m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime)
+		if err := m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime); err != nil {
+			m.log.Error("Price monitoring error", logging.Error(err))
+			// @TODO handle or panic? (panic is last resort)
+		}
 		if m.as.AuctionStart() {
 			m.EnterAuction(ctx)
 			return nil, err
