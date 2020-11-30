@@ -15,7 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
-	liqTarget "code.vegaprotocol.io/vega/liquidity/target"
+	liquiditytarget "code.vegaprotocol.io/vega/liquidity/target"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -260,7 +260,7 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
-	tsCalc := liqTarget.NewEngine(*mkt.TargetStakeParameters)
+	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
 
 	market := &Market{
@@ -2596,6 +2596,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 func (m *Market) getTargetStake() float64 {
 	rf, err := m.getRiskFactors()
 	if err != nil {
+		logging.Error(err)
 		m.log.Debug("unable to get risk factors, can't calculate target")
 		return 0
 	}
