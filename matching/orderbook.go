@@ -258,8 +258,11 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	}
 
 	// get the maximum volume price from the median of all the maximum tradable price levels
-	uncrossPrice := (prices[len(prices)-1] + prices[0]) / 2
+	var uncrossPrice uint64
 	var uncrossSide types.Side
+	if len(prices) > 0 {
+		uncrossPrice = (prices[len(prices)-1] + prices[0]) / 2
+	}
 
 	// See which side we should fully process when we uncross
 	ordersToFill := int64(maxTradableAmount)
@@ -299,11 +302,11 @@ func (b *OrderBook) GetIndicativePrice() uint64 {
 		}
 	}
 
-	// We need to sort the prices list as they are not in order
-	sort.Slice(prices, func(i, j int) bool { return prices[i] < prices[j] })
-
-	// get the maximum volume price from the median of all the maximum tradable price levels
-	return prices[len(prices)/2]
+	// get the maximum volume price from the average of the minimum and maximum tradable price levels
+	if len(prices) > 0 {
+		return (prices[len(prices)-1] + prices[0]) / 2
+	}
+	return 0
 }
 
 // buildCumulativePriceLevels this returns a slice of all the price levels with the
@@ -357,7 +360,7 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) ([]Cum
 	var (
 		cumulativeVolumeSell, cumulativeVolumeBuy, maxTradable uint64
 		cumulativeVolumes                                      = make([]CumulativeVolumeLevel, len(mpls))
-		ln, halfln                                             = len(mpls) - 1, (len(mpls) - 1) / 2
+		ln                                                     = len(mpls) - 1
 	)
 	for i := ln; i >= 0; i-- {
 		j := ln - i
@@ -375,11 +378,9 @@ func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) ([]Cum
 		cumulativeVolumes[j].cumulativeBidVolume = cumulativeVolumeBuy
 		cumulativeVolumes[i].cumulativeAskVolume = cumulativeVolumeSell
 
-		if i >= halfln {
-			cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
-			cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
-			maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
-		}
+		cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
+		cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
+		maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
 	}
 
 	return cumulativeVolumes, maxTradable
