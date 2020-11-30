@@ -310,66 +310,78 @@ func (b *OrderBook) GetIndicativePrice() uint64 {
 // cumulative volume for each level. Also returns the max tradable size
 func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) ([]CumulativeVolumeLevel, uint64) {
 	type maybePriceLevel struct {
-		price uint64
-		pl    *PriceLevel
+		price  uint64
+		buypl  *PriceLevel
+		sellpl *PriceLevel
 	}
 
-	// Get the levels per side of the book
-	buyLevels := b.buy.getPriceLevelsAndVolume()
-	sellLevels := b.sell.getPriceLevelsAndVolume()
+	// we'll keep track of all the pl we encounter
+	mplm := map[uint64]maybePriceLevel{}
 
-	// Build up the set of unique active pricelevels
-	activePrices := map[uint64]bool{}
-	for _, pav := range buyLevels {
-		activePrices[pav.price] = true
+	for i := len(b.buy.levels) - 1; i >= 0; i-- {
+		if b.buy.levels[i].price < minPrice {
+			break
+		}
+
+		mplm[b.buy.levels[i].price] = maybePriceLevel{price: b.buy.levels[i].price, buypl: b.buy.levels[i]}
 	}
 
-	for _, pav := range sellLevels {
-		if _, ok := activePrices[pav.price]; !ok {
-			activePrices[pav.price] = true
+	// now we add all the sells
+	// to our list of pricelevel
+	// making sure we have no duplicates
+	for i := len(b.sell.levels) - 1; i >= 0; i-- {
+		var price = b.sell.levels[i].price
+		if price > maxPrice {
+			break
+		}
+
+		if mpl, ok := mplm[price]; ok {
+			mpl.sellpl = b.sell.levels[i]
+			mplm[price] = mpl
+		} else {
+			mplm[price] = maybePriceLevel{price: price, sellpl: b.sell.levels[i]}
 		}
 	}
 
-	// Turn map of prices into a slice of cumulative volumes
-	cumulativeVolumes := make([]CumulativeVolumeLevel, len(activePrices))
-	i := 0
-	for price, _ := range activePrices {
-		cumulativeVolumes[i] = CumulativeVolumeLevel{price: price}
-		i++
-	}
-	// Sort the slice on price biggest to smallest
-	sort.Slice(cumulativeVolumes, func(i, j int) bool { return cumulativeVolumes[i].price > cumulativeVolumes[j].price })
-
-	// Now fill in the values starting with the buys
-	buyOffset := len(buyLevels) - 1
-	cumVol := uint64(0)
-	for index, _ := range cumulativeVolumes {
-		if cumulativeVolumes[index].price == buyLevels[buyOffset].price {
-			cumVol += buyLevels[buyOffset].volume
-			cumulativeVolumes[index].bidVolume = buyLevels[buyOffset].volume
-			if buyOffset > 0 {
-				buyOffset--
-			}
-		}
-		cumulativeVolumes[index].cumulativeBidVolume = cumVol
+	// now we insert them all in the slice.
+	// so we can sort them
+	mpls := make([]maybePriceLevel, 0, len(mplm))
+	for _, v := range mplm {
+		mpls = append(mpls, v)
 	}
 
-	// Update the buys and calculate the max tradable per level
-	sellOffset := len(sellLevels) - 1
-	cumVol = uint64(0)
-	maxTradable := uint64(0)
-	for index := len(cumulativeVolumes) - 1; index >= 0; index-- {
-		if cumulativeVolumes[index].price == sellLevels[sellOffset].price {
-			cumVol += sellLevels[sellOffset].volume
-			cumulativeVolumes[index].askVolume = sellLevels[sellOffset].volume
-			if sellOffset > 0 {
-				sellOffset--
-			}
+	// sort the slice so we can go through each levels nicely
+	sort.Slice(mpls, func(i, j int) bool { return mpls[i].price > mpls[j].price })
+
+	// now we iterate other all the OK price levels
+	var (
+		cumulativeVolumeSell, cumulativeVolumeBuy, maxTradable uint64
+		cumulativeVolumes                                      = make([]CumulativeVolumeLevel, len(mpls))
+		ln, halfln                                             = len(mpls) - 1, (len(mpls) - 1) / 2
+	)
+	for i := ln; i >= 0; i-- {
+		j := ln - i
+		cumulativeVolumes[i].price = mpls[i].price
+		if mpls[j].buypl != nil {
+			cumulativeVolumeBuy += mpls[j].buypl.volume
+			cumulativeVolumes[j].bidVolume = mpls[j].buypl.volume
 		}
-		cumulativeVolumes[index].cumulativeAskVolume = cumVol
-		cumulativeVolumes[index].maxTradableAmount = min(cumulativeVolumes[index].cumulativeBidVolume, cumulativeVolumes[index].cumulativeAskVolume)
-		maxTradable = max(maxTradable, cumulativeVolumes[index].maxTradableAmount)
+
+		if mpls[i].sellpl != nil {
+			cumulativeVolumeSell += mpls[i].sellpl.volume
+			cumulativeVolumes[i].askVolume = mpls[i].sellpl.volume
+
+		}
+		cumulativeVolumes[j].cumulativeBidVolume = cumulativeVolumeBuy
+		cumulativeVolumes[i].cumulativeAskVolume = cumulativeVolumeSell
+
+		if i >= halfln {
+			cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
+			cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
+			maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
+		}
 	}
+
 	return cumulativeVolumes, maxTradable
 }
 
