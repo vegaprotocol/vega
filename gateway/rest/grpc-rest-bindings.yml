@@ -101,8 +101,12 @@ http:
     - selector: api.trading.PrepareWithdraw
       post: '/parties/prepare/withdraw'
       body: '*'
+
+    # governance stuff by party
     - selector: api.trading_data.GetProposalsByParty
       get: '/parties/{partyID}/proposals'
+    - selector: api.trading_data.GetVotesByParty
+      get: '/parties/{partyID}/votes'
 
     # withdrawals
     - selector: api.trading_data.Withdrawal
@@ -125,6 +129,17 @@ http:
     - selector: api.trading.PrepareVote
       post: '/governance/prepare/vote'
       body: "*"
+
+    # Governance queries
+    - selector: api.trading_data.GetProposalByID
+      get: '/governance/proposal/{proposalID}'
+    - selector: api.trading_data.GetProposalByReference
+      get: '/governance/proposal/reference/{reference}'
+    - selector: api.trading_data.GetNewMarketProposals
+      get: '/governance/market/proposals'
+    - selector: api.trading_data.GetNewAssetProposals
+      get: '/governance/asset/proposals'
+
 
     # LiquidityProvision
     - selector: api.trading.PrepareLiquidityProvision
