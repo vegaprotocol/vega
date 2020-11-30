@@ -3607,6 +3607,10 @@
         "priceMonitoringSettings": {
           "$ref": "#/definitions/vegaPriceMonitoringSettings",
           "description": "PriceMonitoringSettings for the market."
+        },
+        "targetStakeParameters": {
+          "$ref": "#/definitions/vegaTargetStakeParameters",
+          "title": "TargetStakeParameters for the market"
         }
       },
       "description": "Market definition."
@@ -4833,6 +4837,22 @@
         }
       },
       "description": "Vega domain specific statistics as reported by the node the caller is connected to."
+    },
+    "vegaTargetStakeParameters": {
+      "type": "object",
+      "properties": {
+        "timeWindow": {
+          "type": "string",
+          "format": "int64",
+          "title": "Specifies length of time window expressed in seconds for target stake calculation"
+        },
+        "scalingFactor": {
+          "type": "number",
+          "format": "double",
+          "title": "Specifies scaling factors used in target stake calculation"
+        }
+      },
+      "title": "TargetStakeParameters contains parameters used in target stake calculation"
     },
     "vegaTimeUpdate": {
       "type": "object",

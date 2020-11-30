@@ -213,6 +213,7 @@
     - [ScalingFactors](#vega.ScalingFactors)
     - [SimpleModelParams](#vega.SimpleModelParams)
     - [SimpleRiskModel](#vega.SimpleRiskModel)
+    - [TargetStakeParameters](#vega.TargetStakeParameters)
     - [TradableInstrument](#vega.TradableInstrument)
 
 - [proto/tm/replay.proto](#proto/tm/replay.proto)
@@ -3560,6 +3561,7 @@ Market definition.
 | continuous | [ContinuousTrading](#vega.ContinuousTrading) |  | Continuous. |
 | discrete | [DiscreteTrading](#vega.DiscreteTrading) |  | Discrete. |
 | priceMonitoringSettings | [PriceMonitoringSettings](#vega.PriceMonitoringSettings) |  | PriceMonitoringSettings for the market. |
+| targetStakeParameters | [TargetStakeParameters](#vega.TargetStakeParameters) |  | TargetStakeParameters for the market |
 
 
 
@@ -3659,6 +3661,22 @@ Risk model for simple modelling.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | params | [SimpleModelParams](#vega.SimpleModelParams) |  | Risk model params for simple modelling. |
+
+
+
+
+
+
+<a name="vega.TargetStakeParameters"></a>
+
+### TargetStakeParameters
+TargetStakeParameters contains parameters used in target stake calculation
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| timeWindow | [int64](#int64) |  | Specifies length of time window expressed in seconds for target stake calculation |
+| scalingFactor | [double](#double) |  | Specifies scaling factors used in target stake calculation |
 
 
 

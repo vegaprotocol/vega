@@ -139,6 +139,10 @@ func theMarket(mSetup *gherkin.DataTable) error {
 			},
 			UpdateFrequency: 0,
 		},
+		TargetStakeParameters: &proto.TargetStakeParameters{
+			TimeWindow:    3600,
+			ScalingFactor: 10,
+		},
 	}
 	for _, row := range mSetup.Rows {
 		// skip header

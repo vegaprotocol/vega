@@ -297,6 +297,7 @@ type ComplexityRoot struct {
 		OpeningAuction          func(childComplexity int) int
 		Orders                  func(childComplexity int, skip *int, first *int, last *int) int
 		PriceMonitoringSettings func(childComplexity int) int
+		TargetStakeParameters   func(childComplexity int) int
 		TradableInstrument      func(childComplexity int) int
 		Trades                  func(childComplexity int, skip *int, first *int, last *int) int
 		TradingMode             func(childComplexity int) int
@@ -637,6 +638,11 @@ type ComplexityRoot struct {
 		Votes             func(childComplexity int, proposalID *string, partyID *string) int
 	}
 
+	TargetStakeParameters struct {
+		ScalingFactor func(childComplexity int) int
+		TimeWindow    func(childComplexity int) int
+	}
+
 	TimeUpdate struct {
 		Timestamp func(childComplexity int) int
 	}
@@ -799,6 +805,7 @@ type MarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *proto.Market) (int, error)
 	OpeningAuction(ctx context.Context, obj *proto.Market) (*AuctionDuration, error)
 	PriceMonitoringSettings(ctx context.Context, obj *proto.Market) (*PriceMonitoringSettings, error)
+	TargetStakeParameters(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error)
 	Orders(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Accounts(ctx context.Context, obj *proto.Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
@@ -1963,6 +1970,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.PriceMonitoringSettings(childComplexity), true
+
+	case "Market.targetStakeParameters":
+		if e.complexity.Market.TargetStakeParameters == nil {
+			break
+		}
+
+		return e.complexity.Market.TargetStakeParameters(childComplexity), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -3720,6 +3734,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Votes(childComplexity, args["proposalId"].(*string), args["partyID"].(*string)), true
 
+	case "TargetStakeParameters.scalingFactor":
+		if e.complexity.TargetStakeParameters.ScalingFactor == nil {
+			break
+		}
+
+		return e.complexity.TargetStakeParameters.ScalingFactor(childComplexity), true
+
+	case "TargetStakeParameters.timeWindow":
+		if e.complexity.TargetStakeParameters.TimeWindow == nil {
+			break
+		}
+
+		return e.complexity.TargetStakeParameters.TimeWindow(childComplexity), true
+
 	case "TimeUpdate.timestamp":
 		if e.complexity.TimeUpdate.Timestamp == nil {
 			break
@@ -5049,6 +5077,15 @@ type PriceMonitoringSettings {
   updateFrequencySecs: Int!
 }
 
+"TargetStakeParameters contains parameters used in target stake calculation"
+type TargetStakeParameters {
+  "Specifies length of time window expressed in seconds for target stake calculation"
+  timeWindow: Int!
+
+  "Specifies scaling factors used in target stake calculation"
+  scalingFactor: Float!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
@@ -5093,6 +5130,9 @@ type Market {
 
   "Price monitoring settings for the market"
   priceMonitoringSettings: PriceMonitoringSettings!
+
+  "Taget stake parameter"
+  targetStakeParameters: TargetStakeParameters!
 
   "Orders on a market"
   orders (
@@ -12098,6 +12138,40 @@ func (ec *executionContext) _Market_priceMonitoringSettings(ctx context.Context,
 	res := resTmp.(*PriceMonitoringSettings)
 	fc.Result = res
 	return ec.marshalNPriceMonitoringSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_targetStakeParameters(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().TargetStakeParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TargetStakeParameters)
+	fc.Result = res
+	return ec.marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
@@ -20008,6 +20082,74 @@ func (ec *executionContext) _Subscription_busEvents(ctx context.Context, field g
 	}
 }
 
+func (ec *executionContext) _TargetStakeParameters_timeWindow(ctx context.Context, field graphql.CollectedField, obj *TargetStakeParameters) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TargetStakeParameters",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TimeWindow, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TargetStakeParameters_scalingFactor(ctx context.Context, field graphql.CollectedField, obj *TargetStakeParameters) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TargetStakeParameters",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScalingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TimeUpdate_timestamp(ctx context.Context, field graphql.CollectedField, obj *TimeUpdate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25294,6 +25436,20 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				}
 				return res
 			})
+		case "targetStakeParameters":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_targetStakeParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "orders":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -28305,6 +28461,38 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 }
 
+var targetStakeParametersImplementors = []string{"TargetStakeParameters"}
+
+func (ec *executionContext) _TargetStakeParameters(ctx context.Context, sel ast.SelectionSet, obj *TargetStakeParameters) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, targetStakeParametersImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TargetStakeParameters")
+		case "timeWindow":
+			out.Values[i] = ec._TargetStakeParameters_timeWindow(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "scalingFactor":
+			out.Values[i] = ec._TargetStakeParameters_scalingFactor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var timeUpdateImplementors = []string{"TimeUpdate", "Event"}
 
 func (ec *executionContext) _TimeUpdate(ctx context.Context, sel ast.SelectionSet, obj *TimeUpdate) graphql.Marshaler {
@@ -30257,6 +30445,20 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTargetStakeParameters2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx context.Context, sel ast.SelectionSet, v TargetStakeParameters) graphql.Marshaler {
+	return ec._TargetStakeParameters(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx context.Context, sel ast.SelectionSet, v *TargetStakeParameters) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TargetStakeParameters(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v proto.TradableInstrument) graphql.Marshaler {
