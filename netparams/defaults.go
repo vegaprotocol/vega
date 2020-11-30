@@ -42,7 +42,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalAssetMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalAssetRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalAssetRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalAssetMinProposerBalance:    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalAssetMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		GovernanceProposalAssetMinVoterBalance:       NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 
 		// governance update market proposal
