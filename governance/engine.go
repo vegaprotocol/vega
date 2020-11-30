@@ -404,16 +404,14 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 			logging.String("id", proposal.ID))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
-	totalTokens := e.accs.GetTotalTokens()
-	expectedTokensBalance := float64(totalTokens) * params.MinProposerBalance
-	if float64(proposerTokens) < expectedTokensBalance {
+	if proposerTokens < params.MinProposerBalance {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.Float64("expect-balance", expectedTokensBalance),
+			logging.Uint64("expect-balance", params.MinProposerBalance),
 			logging.Uint64("proposer-balance", proposerTokens),
 			logging.String("party-id", proposal.PartyID),
 			logging.String("id", proposal.ID))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS,
-			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", expectedTokensBalance, proposerTokens)
+			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", params.MinProposerBalance, proposerTokens)
 	}
 	return e.validateChange(proposal.Terms)
 }
