@@ -20,12 +20,6 @@ var (
 	ErrNoOrder = errors.New("no orders in the book side")
 )
 
-// PriceAndVolume holds a price and volume for each price level
-type PriceAndVolume struct {
-	price  uint64
-	volume uint64
-}
-
 // OrderBookSide represent a side of the book, either Sell or Buy
 type OrderBookSide struct {
 	side types.Side
@@ -586,12 +580,4 @@ func (s *OrderBookSide) getOrderCount() int64 {
 		orderCount = orderCount + int64(len(level.orders))
 	}
 	return orderCount
-}
-
-func (s *OrderBookSide) getPriceLevelsAndVolume() []PriceAndVolume {
-	var pav []PriceAndVolume = make([]PriceAndVolume, len(s.levels))
-	for index, level := range s.levels {
-		pav[index] = PriceAndVolume{price: level.price, volume: level.volume}
-	}
-	return pav
 }
