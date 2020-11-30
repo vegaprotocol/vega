@@ -257,29 +257,28 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 		}
 	}
 
-	// We need to sort the prices list as they are not in order
-	sort.Slice(prices, func(i, j int) bool { return prices[i] < prices[j] })
-
 	// get the maximum volume price from the median of all the maximum tradable price levels
-	uncrossPrice := prices[len(prices)/2]
+	uncrossPrice := (prices[len(prices)-1] + prices[0]) / 2
 	var uncrossSide types.Side
 
 	// See which side we should fully process when we uncross
+	ordersToFill := int64(maxTradableAmount)
 	for _, value := range cumulativeVolumes {
-		if value.price == uncrossPrice {
-			if value.cumulativeAskVolume >= value.cumulativeBidVolume {
-				// More sells, so we process the buys
-				uncrossSide = types.Side_SIDE_BUY
-			} else {
-				uncrossSide = types.Side_SIDE_SELL
-			}
+		ordersToFill -= int64(value.bidVolume)
+		if ordersToFill == 0 {
+			// Buys fill exactly, uncross from the buy side
+			uncrossSide = types.Side_SIDE_BUY
+			break
+		} else if ordersToFill < 0 {
+			// Buys are not exact, uncross from the sell side
+			uncrossSide = types.Side_SIDE_SELL
 			break
 		}
 	}
 	return uncrossPrice, maxTradableAmount, uncrossSide
 }
 
-// GetIndicativePrice Calculates the indicative price of the order book without modifing the order book state
+// GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePrice() uint64 {
 	bestBid, _ := b.GetBestBidPrice()
 	bestAsk, _ := b.GetBestAskPrice()
