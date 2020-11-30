@@ -236,7 +236,7 @@ func (b OrderBook) InAuction() bool {
 	return b.auction
 }
 
-// GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifing the order book state
+// GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	bestBid, _ := b.GetBestBidPrice()
 	bestAsk, _ := b.GetBestAskPrice()
@@ -247,15 +247,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	}
 
 	// Generate a set of price level pairs with their maximum tradable volumes
-	cumulativeVolumes := b.buildCumulativePriceLevels(bestBid, bestAsk)
-
-	// Find the maximum tradable amount
-	var maxTradableAmount uint64
-	for k, value := range cumulativeVolumes {
-		value.maxTradableAmount = min(value.cumulativeAskVolume, value.cumulativeBidVolume)
-		cumulativeVolumes[k] = value
-		maxTradableAmount = max(maxTradableAmount, value.maxTradableAmount)
-	}
+	cumulativeVolumes, maxTradableAmount := b.buildCumulativePriceLevels(bestBid, bestAsk)
 
 	// Pull out all prices that match that volume
 	prices := make([]uint64, 0, len(cumulativeVolumes))
@@ -298,13 +290,7 @@ func (b *OrderBook) GetIndicativePrice() uint64 {
 	}
 
 	// Generate a set of price level pairs with their maximum tradable volumes
-	cumulativeVolumes := b.buildCumulativePriceLevels(bestBid, bestAsk)
-
-	// Find the maximum tradable amount
-	var maxTradableAmount uint64
-	for _, value := range cumulativeVolumes {
-		maxTradableAmount = max(maxTradableAmount, value.maxTradableAmount)
-	}
+	cumulativeVolumes, maxTradableAmount := b.buildCumulativePriceLevels(bestBid, bestAsk)
 
 	// Pull out all prices that match that volume
 	prices := make([]uint64, 0, len(cumulativeVolumes))
@@ -321,78 +307,71 @@ func (b *OrderBook) GetIndicativePrice() uint64 {
 	return prices[len(prices)/2]
 }
 
-func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) map[uint64]CumulativeVolumeLevel {
-	cumulativeVolumes := map[uint64]CumulativeVolumeLevel{}
-
+// buildCumulativePriceLevels this returns a slice of all the price levels with the
+// cumulative volume for each level. Also returns the max tradable size
+func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) ([]CumulativeVolumeLevel, uint64) {
 	type maybePriceLevel struct {
 		price uint64
 		pl    *PriceLevel
 	}
 
-	// Run through the bid prices and build cumulative volume
-	var cumulativeVolume uint64
+	// Get the levels per side of the book
+	buyLevels := b.buy.getPriceLevelsAndVolume()
+	sellLevels := b.sell.getPriceLevelsAndVolume()
 
-	// we'll keep track of all the pl we encounter
-	mplm := map[uint64]maybePriceLevel{}
-
-	for i := len(b.buy.levels) - 1; i >= 0; i-- {
-		if b.buy.levels[i].price < minPrice {
-			break
-		}
-		cumulativeVolume += b.buy.levels[i].volume
-		cumulativeVolumes[b.buy.levels[i].price] = CumulativeVolumeLevel{
-			price:               b.buy.levels[i].price,
-			bidVolume:           b.buy.levels[i].volume,
-			cumulativeBidVolume: cumulativeVolume,
-		}
-
-		mplm[b.buy.levels[i].price] = maybePriceLevel{price: b.buy.levels[i].price}
+	// Build up the set of unique active pricelevels
+	activePrices := map[uint64]bool{}
+	for _, pav := range buyLevels {
+		activePrices[pav.price] = true
 	}
 
-	// now we add all the sells
-	// to our list of pricelevel
-	// making sure we have no duplicates
-	for i := len(b.sell.levels) - 1; i >= 0; i-- {
-		var price = b.sell.levels[i].price
-		if price > maxPrice {
-			break
-		}
-
-		if mpl, ok := mplm[price]; ok {
-			mpl.pl = b.sell.levels[i]
-			mplm[price] = mpl
-		} else {
-			mplm[price] = maybePriceLevel{price: price, pl: b.sell.levels[i]}
+	for _, pav := range sellLevels {
+		if _, ok := activePrices[pav.price]; !ok {
+			activePrices[pav.price] = true
 		}
 	}
 
-	// now we insert them all in the slice.
-	// so we can sort them
-	mpls := make([]maybePriceLevel, 0, len(mplm))
-	for _, v := range mplm {
-		mpls = append(mpls, v)
+	// Turn map of prices into a slice of cumulative volumes
+	cumulativeVolumes := make([]CumulativeVolumeLevel, len(activePrices))
+	i := 0
+	for price, _ := range activePrices {
+		cumulativeVolumes[i] = CumulativeVolumeLevel{price: price}
+		i++
 	}
+	// Sort the slice on price biggest to smallest
+	sort.Slice(cumulativeVolumes, func(i, j int) bool { return cumulativeVolumes[i].price > cumulativeVolumes[j].price })
 
-	// sort the slice so we can go through each levels nicely
-	sort.Slice(mpls, func(i, j int) bool { return mpls[i].price > mpls[j].price })
-
-	// now we iterate other all the OK price levels
-	cumulativeVolume = 0
-	for i := len(mpls) - 1; i >= 0; i-- {
-		// Lookup the existing structure from the map
-		cvl := cumulativeVolumes[mpls[i].price]
-
-		if mpls[i].pl != nil {
-			cumulativeVolume += mpls[i].pl.volume
-			cvl.askVolume = mpls[i].pl.volume
+	// Now fill in the values starting with the buys
+	buyOffset := len(buyLevels) - 1
+	cumVol := uint64(0)
+	for index, _ := range cumulativeVolumes {
+		if cumulativeVolumes[index].price == buyLevels[buyOffset].price {
+			cumVol += buyLevels[buyOffset].volume
+			cumulativeVolumes[index].bidVolume = buyLevels[buyOffset].volume
+			if buyOffset > 0 {
+				buyOffset--
+			}
 		}
-
-		cvl.cumulativeAskVolume = cumulativeVolume
-		cvl.maxTradableAmount = min(cvl.cumulativeAskVolume, cvl.cumulativeBidVolume)
-		cumulativeVolumes[mpls[i].price] = cvl
+		cumulativeVolumes[index].cumulativeBidVolume = cumVol
 	}
 
-	return cumulativeVolumes
+	// Update the buys and calculate the max tradable per level
+	sellOffset := len(sellLevels) - 1
+	cumVol = uint64(0)
+	maxTradable := uint64(0)
+	for index := len(cumulativeVolumes) - 1; index >= 0; index-- {
+		if cumulativeVolumes[index].price == sellLevels[sellOffset].price {
+			cumVol += sellLevels[sellOffset].volume
+			cumulativeVolumes[index].askVolume = sellLevels[sellOffset].volume
+			if sellOffset > 0 {
+				sellOffset--
+			}
+		}
+		cumulativeVolumes[index].cumulativeAskVolume = cumVol
+		cumulativeVolumes[index].maxTradableAmount = min(cumulativeVolumes[index].cumulativeBidVolume, cumulativeVolumes[index].cumulativeAskVolume)
+		maxTradable = max(maxTradable, cumulativeVolumes[index].maxTradableAmount)
+	}
+	return cumulativeVolumes, maxTradable
 }
 
 // Uncrosses the book to generate the maximum volume set of trades

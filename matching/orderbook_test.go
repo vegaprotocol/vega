@@ -2951,6 +2951,84 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	assert.Equal(t, len(cancels), 0)
 }
 
+func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+
+	order1 := getOrder(t, book, market, "Order1", types.Side_SIDE_BUY, 16, "Tamlyn", 100)
+	order1.TimeInForce = types.Order_TIF_GFA
+	conf, err := book.SubmitOrder(order1)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order2 := getOrder(t, book, market, "Order2", types.Side_SIDE_SELL, 20, "Tamlyn", 100)
+	order2.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order2)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order3 := getOrder(t, book, market, "Order3", types.Side_SIDE_SELL, 3, "Tamlyn", 100)
+	order3.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order3)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order4 := getOrder(t, book, market, "Order4", types.Side_SIDE_SELL, 18, "David", 100)
+	order4.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order4)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order5 := getOrder(t, book, market, "Order5", types.Side_SIDE_BUY, 1000, "Tamlyn", 100)
+	order5.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order5)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order6 := getOrder(t, book, market, "Order6", types.Side_SIDE_BUY, 2000, "David", 100)
+	order6.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order6)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order7 := getOrder(t, book, market, "Order7", types.Side_SIDE_SELL, 14, "Tamlyn", 15)
+	order7.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order7)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order8 := getOrder(t, book, market, "Order8", types.Side_SIDE_BUY, 14, "Tamlyn", 2)
+	order8.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order8)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	order9 := getOrder(t, book, market, "Order9", types.Side_SIDE_SELL, 1, "David", 10)
+	order9.TimeInForce = types.Order_TIF_GFA
+	conf, err = book.SubmitOrder(order9)
+	require.NoError(t, err)
+	assert.NotNil(t, conf)
+
+	// Get indicative auction price and volume
+	//	price, volume, side := book.GetIndicativePriceAndVolume()
+	//	assert.Equal(t, price, uint64(100))
+	//	assert.Equal(t, volume, uint64(5))
+	//	assert.Equal(t, side, types.Side_SIDE_BUY)
+
+	// Leave auction and uncross the book
+	//	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	//	assert.Nil(t, err)
+	//	assert.Equal(t, len(uncrossedOrders), 1)
+	//	assert.Equal(t, len(cancels), 0)
+}
+
 // Add some pegged orders to the order book and check they are parked when going into auction
 func TestOrderBook_PeggedOrders(t *testing.T) {
 	market := "testOrderbook"
