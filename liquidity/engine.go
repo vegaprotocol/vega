@@ -224,17 +224,6 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 		// update our internal orders
 		e.updatePartyOrders(party, orders)
 
-		// Create a slice shaped copy of the orders
-		buyOrders := make([]*types.Order, 0, len(e.orders[party])/2)
-		sellOrders := make([]*types.Order, 0, len(e.orders[party])/2)
-		for _, order := range e.orders[party] {
-			if order.Side == types.Side_SIDE_BUY {
-				buyOrders = append(buyOrders, order)
-			} else {
-				sellOrders = append(sellOrders, order)
-			}
-		}
-
 		obligation := float64(lp.CommitmentAmount) * e.suppliedFactor
 		var (
 			buysShape  = make([]*supplied.LiquidityOrder, len(lp.Buys))
@@ -273,10 +262,15 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 			}
 		}
 
+		orders := make([]*types.Order, 0, len(e.orders[party]))
+		for _, o := range e.orders[party] {
+			orders = append(orders, o)
+		}
+
 		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
 			float64(markPrice),
 			obligation,
-			buyOrders, sellOrders,
+			orders,
 			buysShape, sellsShape,
 		); err != nil {
 			return nil, nil, err
