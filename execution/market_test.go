@@ -284,6 +284,47 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	assert.True(t, closed)
 }
 
+func TestMarketSubmitInvalidOrderReturnError(t *testing.T) {
+	party1 := "party1"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	defer tm.ctrl.Finish()
+	// add 2 traders to the party engine
+	// this will create 2 traders, credit their account
+	// and move some monies to the market
+	addAccount(tm, party1)
+
+	// submit orders
+	// party1 buys
+	// party2 sells
+	orderBuy := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GFA,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+
+	// submit orders
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
+	assert.Nil(t, err)
+	if err != nil {
+		t.Fail()
+	}
+}
+
 func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
