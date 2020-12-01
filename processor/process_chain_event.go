@@ -75,6 +75,7 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 
 	switch act := evt.Action.(type) {
 	case *types.ERC20Event_AssetList:
+		act.AssetList.VegaAssetID = strings.TrimPrefix(act.AssetList.VegaAssetID, "0x")
 		if err := app.checkVegaAssetID(act.AssetList, "ERC20.AssetList"); err != nil {
 			return err
 		}

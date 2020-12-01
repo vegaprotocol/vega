@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -69,14 +70,33 @@ type res struct {
 	res Resource
 	// how long to run the check
 	checkUntil time.Time
-	// checks vote sent by the nodes
-	votes map[string]struct{}
+	mu         sync.Mutex
+	votes      map[string]struct{} // checks vote sent by the nodes
 	// the stated of the checking
 	state uint32
 	// the context used to notify the routine to exit
 	cfunc context.CancelFunc
 	// the function to call one validation is done
 	cb func(interface{}, bool)
+}
+
+func (r *res) addVote(key string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	_, ok := r.votes[key]
+	if ok {
+		return ErrDuplicateVoteFromNode
+	}
+
+	// add the vote
+	r.votes[key] = struct{}{}
+	return nil
+}
+
+func (r *res) voteCount() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.votes)
 }
 
 type ExtResChecker struct {
@@ -143,15 +163,7 @@ func (e *ExtResChecker) AddNodeCheck(ctx context.Context, nv *types.NodeVote) er
 		return ErrVoteFromNonValidator
 	}
 
-	_, ok = r.votes[string(nv.PubKey)]
-	if ok {
-		return ErrDuplicateVoteFromNode
-	}
-
-	// add the vote
-	r.votes[string(nv.PubKey)] = struct{}{}
-
-	return nil
+	return r.addVote(string(nv.PubKey))
 }
 
 func (e *ExtResChecker) StartCheck(
@@ -237,7 +249,7 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 	// check if any resources passed checks
 	for k, v := range e.resources {
 		state := atomic.LoadUint32(&v.state)
-		votesLen := len(v.votes)
+		votesLen := v.voteCount()
 
 		// if the time is expired,
 		if v.checkUntil.Before(t) ||

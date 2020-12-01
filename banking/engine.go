@@ -17,7 +17,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/validators"
-	"github.com/prometheus/common/log"
 )
 
 var (
@@ -418,7 +417,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			// check if this transaction have been seen before then
 			if _, ok := e.seen[v.ref]; ok {
 				// do nothing of this transaction, just display an error
-				log.Error("chain event reference a transaction already processed",
+				e.log.Error("chain event reference a transaction already processed",
 					logging.String("asset-class", string(v.ref.asset)),
 					logging.String("tx-hash", v.ref.hash),
 					logging.String("action", v.String()))
