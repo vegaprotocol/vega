@@ -12,6 +12,7 @@ import (
 
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
 
@@ -49,20 +50,21 @@ type ValidatorTopology interface {
 // and will try to send them to the vega chain.
 // this will select a node in the network to forward the event
 type EvtForwarder struct {
-	log         *logging.Logger
-	cfg         Config
-	cmd         Commander
-	nodes       []nodeHash
-	self        string
-	ackedEvts   map[string]*types.ChainEvent
-	evts        map[string]tsEvt
-	currentTime time.Time
-	top         ValidatorTopology
-	mu          sync.RWMutex
-	evtsmu      sync.Mutex
+	log  *logging.Logger
+	cfg  Config
+	cmd  Commander
+	self string
 
-	// this is actually an map[string]struct{}
-	bcQueueAllowlist atomic.Value
+	evtsmu    sync.Mutex
+	ackedEvts map[string]*types.ChainEvent
+	evts      map[string]tsEvt
+
+	mu               sync.RWMutex
+	bcQueueAllowlist atomic.Value // this is actually an map[string]struct{}
+	currentTime      time.Time
+	nodes            []nodeHash
+
+	top ValidatorTopology
 }
 
 type tsEvt struct {
@@ -130,11 +132,17 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 // Ack will return true if the event is newly acknowledge
 // if the event already exist and was already acknowledge this will return false
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
+	var res string = "ok"
+	defer func() {
+		metrics.EvtForwardInc("ack", res)
+	}()
+
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 	key := string(crypto.Hash([]byte(evt.String())))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
+		res = "alreadyacked"
 		// this was already acknowledged, nothing to be done, return false
 		return false
 	}
@@ -158,8 +166,13 @@ func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
 // Forward will forward an ChainEvent to the tendermint network
 // we expect the pubkey to be an ed25519 pubkey hex encoded
 func (e *EvtForwarder) Forward(ctx context.Context, evt *types.ChainEvent, pubkey string) error {
+	var res string = "ok"
+	defer func() {
+		metrics.EvtForwardInc("forward", res)
+	}()
 	// check if the sender of the event is whitelisted
 	if !e.isAllowlisted(pubkey) {
+		res = "pubkeynotallowed"
 		return ErrPubKeyNotAllowlisted
 	}
 
@@ -169,6 +182,7 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *types.ChainEvent, pubke
 	key := string(crypto.Hash([]byte(evt.String())))
 	_, ok, _ := e.getEvt(key)
 	if ok {
+		res = "dupevt"
 		return ErrEvtAlreadyExist
 	}
 
