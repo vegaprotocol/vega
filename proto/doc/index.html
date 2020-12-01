@@ -1014,6 +1014,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.TargetStakeParameters"><span class="badge">M</span>TargetStakeParameters</a>
+                </li>
+
+                <li>
                   <a href="#vega.TradableInstrument"><span class="badge">M</span>TradableInstrument</a>
                 </li>
 
@@ -2484,7 +2488,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
             <tbody>
 
                 <tr>
-                  <td>Reference</td>
+                  <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Proposal reference. Required field. </p></td>
@@ -2507,7 +2511,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
               <tbody>
 
                 <tr>
-                  <td>Reference</td>
+                  <td>reference</td>
                   <td>
                     <ul>
 
@@ -9609,6 +9613,13 @@ duration and optionally a minimum traded volume). </p></td>
                   <td><p>PriceMonitoringSettings for the market. </p></td>
                 </tr>
 
+                <tr>
+                  <td>targetStakeParameters</td>
+                  <td><a href="#vega.TargetStakeParameters">TargetStakeParameters</a></td>
+                  <td></td>
+                  <td><p>TargetStakeParameters for the market </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -9922,6 +9933,75 @@ probability level. </p></td>
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="vega.TargetStakeParameters">TargetStakeParameters</h3>
+        <p>TargetStakeParameters contains parameters used in target stake calculation</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>timeWindow</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Specifies length of time window expressed in seconds for target stake calculation </p></td>
+                </tr>
+
+                <tr>
+                  <td>scalingFactor</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Specifies scaling factors used in target stake calculation </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>timeWindow</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>scalingFactor</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 

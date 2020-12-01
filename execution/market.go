@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
+	liquiditytarget "code.vegaprotocol.io/vega/liquidity/target"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -85,6 +86,12 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
 }
 
+// TargetStakeCalculator interface
+type TargetStakeCalculator interface {
+	RecordOpenInterest(oi uint64, now time.Time) error
+	GetTargetStake(rf types.RiskFactor, now time.Time) float64
+}
+
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
 // keep the interface for documentation purposes
 type AuctionState interface {
@@ -140,7 +147,9 @@ type Market struct {
 
 	parties map[string]struct{}
 
-	pMonitor PriceMonitor // @TODO initialise and assign
+	pMonitor PriceMonitor
+
+	tsCalc TargetStakeCalculator
 
 	as *monitor.AuctionState // @TODO this should be an interface
 
@@ -251,6 +260,7 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
+	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
 
 	market := &Market{
@@ -272,6 +282,7 @@ func NewMarket(
 		parties:              map[string]struct{}{},
 		as:                   as,
 		pMonitor:             pMonitor,
+		tsCalc:               tsCalc,
 		expiringPeggedOrders: matching.NewExpiringOrders(),
 	}
 
@@ -356,10 +367,9 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:            auctionEnd,
 		MarketState:           m.as.Mode(),
 		Trigger:               m.as.Trigger(),
+		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
 		// FIXME(WITOLD): uncomment set real values here
-		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
-
 	}
 }
 
@@ -943,7 +953,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			// Maybe should return an orderConfirmation with order state PARKED
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 			return &types.OrderConfirmation{Order: order}, nil
-
 		} else {
 			// Reprice
 			err := m.repricePeggedOrder(ctx, order)
@@ -1018,9 +1027,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
-	if confirmation == nil || err != nil {
-		_, err := m.position.UnregisterOrder(order)
-		if err != nil {
+	if err != nil {
+		if _, err := m.position.UnregisterOrder(order); err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
@@ -1049,8 +1057,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0) ||
 		// Also do it if specifically we went against a wash trade
-		(order.Status == types.Order_STATUS_REJECTED &&
-			order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING) {
+		order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -1073,7 +1080,10 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
 	if err == nil && len(trades) > 0 {
-		err = m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime)
+		if err := m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime); err != nil {
+			m.log.Error("Price monitoring error", logging.Error(err))
+			// @TODO handle or panic? (panic is last resort)
+		}
 		if m.as.AuctionStart() {
 			m.EnterAuction(ctx)
 			return nil, err
@@ -1186,6 +1196,13 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
+			// Record open inteterest change
+			err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
+			if err != nil {
+				m.log.Debug("unable record open interest",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
 		}
@@ -2380,6 +2397,9 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 			m.unregisterOrder(&order)
 		}
 		m.removePeggedOrder(&order)
+		if err != nil || originalOrder == nil {
+			continue
+		}
 		originalOrder.Status = types.Order_STATUS_EXPIRED
 		expiredPegs = append(expiredPegs, *originalOrder)
 	}
@@ -2577,6 +2597,28 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 	}
 }
 
+func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
+	a, err := m.mkt.GetAsset()
+	if err != nil {
+		return nil, err
+	}
+	rf, err := m.risk.GetRiskFactors(a)
+	if err != nil {
+		return nil, err
+	}
+	return rf, nil
+}
+
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
 	return nil
+}
+
+func (m *Market) getTargetStake() float64 {
+	rf, err := m.getRiskFactors()
+	if err != nil {
+		logging.Error(err)
+		m.log.Debug("unable to get risk factors, can't calculate target")
+		return 0
+	}
+	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
 }

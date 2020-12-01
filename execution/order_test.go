@@ -464,7 +464,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	confirmation, err = tm.market.SubmitOrder(context.Background(), orderBuy1)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
-	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_REJECTED)
+	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARTIALLY_FILLED)
 	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
 }
 

@@ -136,6 +136,80 @@
         ]
       }
     },
+    "/governance/asset/proposals": {
+      "get": {
+        "summary": "Get governance data (proposals and votes) for proposals aiming to create new assets",
+        "operationId": "GetNewAssetProposals",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetNewAssetProposalsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "selectInState.value",
+            "description": "Proposal state value.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execution could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal enacted.\n - STATE_WAITING_FOR_NODE_VOTE: Waiting for node validation of the proposal",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "STATE_FAILED",
+              "STATE_OPEN",
+              "STATE_PASSED",
+              "STATE_REJECTED",
+              "STATE_DECLINED",
+              "STATE_ENACTED",
+              "STATE_WAITING_FOR_NODE_VOTE"
+            ],
+            "default": "STATE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/governance/market/proposals": {
+      "get": {
+        "summary": "Get governance data (proposals and votes) for proposals that aim creating new markets",
+        "operationId": "GetNewMarketProposals",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetNewMarketProposalsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "selectInState.value",
+            "description": "Proposal state value.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execution could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal enacted.\n - STATE_WAITING_FOR_NODE_VOTE: Waiting for node validation of the proposal",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "STATE_FAILED",
+              "STATE_OPEN",
+              "STATE_PASSED",
+              "STATE_REJECTED",
+              "STATE_DECLINED",
+              "STATE_ENACTED",
+              "STATE_WAITING_FOR_NODE_VOTE"
+            ],
+            "default": "STATE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/governance/prepare/proposal": {
       "post": {
         "summary": "Prepare a governance proposal",
@@ -187,6 +261,58 @@
         ],
         "tags": [
           "trading"
+        ]
+      }
+    },
+    "/governance/proposal/reference/{reference}": {
+      "get": {
+        "summary": "Get governance data (proposals and votes) for a proposal located by reference",
+        "operationId": "GetProposalByReference",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetProposalByReferenceResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reference",
+            "description": "Proposal reference. Required field.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/governance/proposal/{proposalID}": {
+      "get": {
+        "summary": "Get governance data (proposals and votes) for a proposal located by ID",
+        "operationId": "GetProposalByID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetProposalByIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "proposalID",
+            "description": "Proposal identifier. Required field.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "trading_data"
         ]
       }
     },
@@ -1213,6 +1339,32 @@
             "required": false,
             "type": "boolean",
             "format": "boolean"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
+    "/parties/{partyID}/votes": {
+      "get": {
+        "summary": "Get votes by party casting them",
+        "operationId": "GetVotesByParty",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetVotesByPartyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "partyID",
+            "description": "Party identifier. Required field.",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -3607,6 +3759,10 @@
         "priceMonitoringSettings": {
           "$ref": "#/definitions/vegaPriceMonitoringSettings",
           "description": "PriceMonitoringSettings for the market."
+        },
+        "targetStakeParameters": {
+          "$ref": "#/definitions/vegaTargetStakeParameters",
+          "title": "TargetStakeParameters for the market"
         }
       },
       "description": "Market definition."
@@ -4833,6 +4989,22 @@
         }
       },
       "description": "Vega domain specific statistics as reported by the node the caller is connected to."
+    },
+    "vegaTargetStakeParameters": {
+      "type": "object",
+      "properties": {
+        "timeWindow": {
+          "type": "string",
+          "format": "int64",
+          "title": "Specifies length of time window expressed in seconds for target stake calculation"
+        },
+        "scalingFactor": {
+          "type": "number",
+          "format": "double",
+          "title": "Specifies scaling factors used in target stake calculation"
+        }
+      },
+      "title": "TargetStakeParameters contains parameters used in target stake calculation"
     },
     "vegaTimeUpdate": {
       "type": "object",

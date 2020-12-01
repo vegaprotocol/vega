@@ -683,6 +683,14 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
+		tif := types.Order_TIF_GTT
+		if len(row.Cells) > 7 {
+			tif, err = tifval(row, 7)
+			if err != nil {
+				return err
+			}
+		}
+
 		order := types.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -693,7 +701,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        oty,
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
@@ -705,7 +713,6 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 		}
 	}
 	return nil
-
 }
 
 func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
@@ -1070,6 +1077,10 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
+		TargetStakeParameters: &types.TargetStakeParameters{
+			TimeWindow:    3600,
+			ScalingFactor: 10,
+		},
 	}
 
 	if val(row, 5) == "forward" {

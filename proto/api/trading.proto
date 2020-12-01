@@ -529,7 +529,7 @@ message GetProposalByIDResponse {
 message GetProposalByReferenceRequest {
 
   // Proposal reference. Required field.
-  string Reference = 1 [(validator.field) = {string_not_empty : true}];
+  string reference = 1 [(validator.field) = {string_not_empty : true}];
 }
 
 // Response for a governance proposal given a proposal reference.

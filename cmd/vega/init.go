@@ -298,6 +298,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 				},
 				UpdateFrequency: 60,
 			},
+			TargetStakeParameters: &proto.TargetStakeParameters{
+				TimeWindow:    3600, // seconds = 1h
+				ScalingFactor: 10,
+			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
 		err = createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))

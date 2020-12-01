@@ -448,6 +448,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, nil
 	case types.OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER:
 		return OrderRejectionReasonUnableToRepricePeggedOrder, nil
+	case types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE:
+		return OrderRejectionReasonInvalidTimeInForce, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err
