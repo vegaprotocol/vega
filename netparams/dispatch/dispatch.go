@@ -1,6 +1,7 @@
 package dispatch
 
 import (
+	"context"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -18,8 +19,8 @@ func GovernanceAssetUpdate(
 	log *logging.Logger,
 	assets Assets,
 	collateral Collateral,
-) func(value string) error {
-	return func(value string) error {
+) func(context.Context, string) error {
+	return func(ctx context.Context, value string) error {
 		if !assets.IsEnabled(value) {
 			log.Debug("tried to push a governance update with an non-enabled asset",
 				logging.String("asset-id", value))

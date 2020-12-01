@@ -1,7 +1,9 @@
 package fee
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -489,3 +491,15 @@ type feesTransfer struct {
 
 func (f *feesTransfer) TotalFeesAmountPerParty() map[string]uint64 { return f.totalFeesAmountsPerParty }
 func (f *feesTransfer) Transfers() []*types.Transfer               { return f.transfers }
+
+func (e *Engine) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
+	e.feeCfg.Factors.MakerFee = fmt.Sprintf("%f", f)
+	e.f.makerFee = f
+	return nil
+}
+
+func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
+	e.feeCfg.Factors.InfrastructureFee = fmt.Sprintf("%f", f)
+	e.f.infrastructureFee = f
+	return nil
+}

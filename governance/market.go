@@ -144,10 +144,8 @@ func createMarket(
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
 	liquiFee, _ := netp.Get(netparams.MarketFeeFactorsLiquidityFee)
 	// get the margin scaling factors
-	searchLevel, _ := netp.GetFloat(netparams.MarketMarginScalingFactorSearchLevel)
-	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
-	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
-
+	scalingFactors := types.ScalingFactors{}
+	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
 	// get price monitoring parameters
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.PriceMonitoringParameters == nil {
@@ -184,9 +182,9 @@ func createMarket(
 			Instrument: instrument,
 			MarginCalculator: &types.MarginCalculator{
 				ScalingFactors: &types.ScalingFactors{
-					CollateralRelease: collateralRelease,
-					InitialMargin:     intialMargin,
-					SearchLevel:       searchLevel,
+					CollateralRelease: scalingFactors.CollateralRelease,
+					InitialMargin:     scalingFactors.InitialMargin,
+					SearchLevel:       scalingFactors.SearchLevel,
 				},
 			},
 		},

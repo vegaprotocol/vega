@@ -163,3 +163,10 @@ type Banking interface {
 	WithdrawalERC20(*types.ERC20Withdrawal, uint64, uint64) error
 	HasBalance(string) bool
 }
+
+// NetworkParameters ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/network_parameters_mock.go -package mocks code.vegaprotocol.io/vega/processor NetworkParameters
+type NetworkParameters interface {
+	Update(ctx context.Context, key, value string) error
+	DispatchChanges(ctx context.Context)
+}

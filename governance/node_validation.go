@@ -37,7 +37,7 @@ type NodeValidation struct {
 	log              *logging.Logger
 	assets           Assets
 	currentTimestamp time.Time
-	nodeProposals    map[string]*nodeProposal
+	nodeProposals    []*nodeProposal
 	erc              ExtResChecker
 }
 
@@ -63,7 +63,7 @@ func NewNodeValidation(
 ) (*NodeValidation, error) {
 	return &NodeValidation{
 		log:              log,
-		nodeProposals:    map[string]*nodeProposal{},
+		nodeProposals:    []*nodeProposal{},
 		assets:           assets,
 		currentTimestamp: now,
 		erc:              erc,
@@ -84,12 +84,34 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 	atomic.StoreUint32(&np.state, newState)
 }
 
+func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
+	for _, v := range n.nodeProposals {
+		if v.ID == id {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
+func (n *NodeValidation) removeProposal(id string) {
+	for i, p := range n.nodeProposals {
+		if p.ID == id {
+			copy(n.nodeProposals[i:], n.nodeProposals[i+1:])
+			n.nodeProposals[len(n.nodeProposals)-1] = nil
+			n.nodeProposals = n.nodeProposals[:len(n.nodeProposals)-1]
+			return
+		}
+	}
+}
+
 // OnChainTimeUpdate returns validated proposal by all nodes
 func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Proposal, rejected []*types.Proposal) {
 	n.currentTimestamp = t
 
+	var toRemove []string // id of proposals to remove
+
 	// check that any proposal is ready
-	for k, prop := range n.nodeProposals {
+	for _, prop := range n.nodeProposals {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
 		// time expired, or all vote agregated, and own vote sent
 		state := atomic.LoadUint32(&prop.state)
@@ -103,7 +125,12 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 		case rejectedProposal:
 			rejected = append(rejected, prop.Proposal)
 		}
-		delete(n.nodeProposals, k)
+		toRemove = append(toRemove, prop.ID)
+	}
+
+	// now we iterate over all proposal ids to remove them from the list
+	for _, id := range toRemove {
+		n.removeProposal(id)
 	}
 
 	return accepted, rejected
@@ -126,7 +153,7 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		return ErrNoNodeValidationRequired
 	}
 
-	_, ok := n.nodeProposals[p.ID]
+	_, ok := n.getProposal(p.ID)
 	if ok {
 		return ErrProposalReferenceDuplicate
 	}
@@ -144,7 +171,7 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		state:    pendingValidationProposal,
 		checker:  checker,
 	}
-	n.nodeProposals[p.ID] = np
+	n.nodeProposals = append(n.nodeProposals, np)
 
 	return n.erc.StartCheck(np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
