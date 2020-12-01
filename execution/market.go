@@ -2690,6 +2690,9 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f floa
 	return nil
 }
 
+func (m *Market) OnSuppliedStakeToObligationFactorUpdate(v float64) {
+	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(v)
+}
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
 // TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
