@@ -205,7 +205,7 @@ func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackO
 	return backoff.WithContext(bo, ctx)
 }
 
-func (e ExtResChecker) start2(ctx context.Context, r *res) {
+func (e ExtResChecker) start(ctx context.Context, r *res) {
 	backff := newBackoff(ctx, r.checkUntil.Sub(e.now))
 	f := func() error {
 		e.log.Debug("Checking the resource",
@@ -228,42 +228,6 @@ func (e ExtResChecker) start2(ctx context.Context, r *res) {
 
 	// check succeeded
 	atomic.StoreUint32(&r.state, validated)
-}
-
-func (e ExtResChecker) start(ctx context.Context, r *res) {
-	// wait time between call to validation
-	var (
-		err    error
-		ticker = time.NewTicker(500 * time.Millisecond)
-	)
-	defer ticker.Stop()
-	for {
-		// first try to validate the asset
-		e.log.Debug("Checking the resource",
-			logging.String("asset-source", r.res.GetID()),
-		)
-
-		// call checking
-		err = r.res.Check()
-		if err != nil {
-			// we just log the error, but these are not criticals, as it may be
-			// things unrelated to the current node, and would recover later on.
-			// it's just informative
-			e.log.Warn("error checking resource", logging.Error(err))
-		} else {
-			atomic.StoreUint32(&r.state, validated)
-			return
-		}
-
-		// wait or break if the time's up
-		select {
-		case <-ctx.Done():
-			e.log.Error("resource checking context done",
-				logging.Error(ctx.Err()))
-			return
-		case <-ticker.C:
-		}
-	}
 }
 
 func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
