@@ -33,6 +33,7 @@ var (
 	unconfirmedTxGauge prometheus.Gauge
 	engineTime         *prometheus.CounterVec
 	orderCounter       *prometheus.CounterVec
+	ethCallCounter     *prometheus.CounterVec
 	orderGauge         *prometheus.GaugeVec
 	// Call counters for each request type per API
 	apiRequestCallCounter *prometheus.CounterVec
@@ -350,6 +351,22 @@ func setupMetrics() error {
 	}
 	orderCounter = ot
 
+	h, err = AddInstrument(
+		Counter,
+		"eth_calls_total",
+		Namespace("vega"),
+		Vectors("func", "asset", "respcode"),
+		Help("Number of call made to the ethereum node"),
+	)
+	if err != nil {
+		return err
+	}
+	ethCalls, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	ethCallCounter = ethCalls
+
 	// now add the orders gauge
 	h, err = AddInstrument(
 		Gauge,
@@ -432,6 +449,14 @@ func OrderCounterInc(labelValues ...string) {
 		return
 	}
 	orderCounter.WithLabelValues(labelValues...).Inc()
+}
+
+// EthCallInc increments the eth call counter
+func EthCallInc(labelValues ...string) {
+	if ethCallCounter == nil {
+		return
+	}
+	ethCallCounter.WithLabelValues(labelValues...).Inc()
 }
 
 // OrderGaugeAdd incement the order gauge

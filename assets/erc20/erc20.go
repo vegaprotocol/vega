@@ -6,9 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"net/http"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
+	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -194,6 +197,11 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 		return "", err
 	}
 
+	var resp string = "ok"
+	defer func() {
+		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
+	}()
+
 	iter, err := bf.FilterAssetWhitelisted(
 		&bind.FilterOpts{
 			Start: blockNumber - 1,
@@ -204,6 +212,7 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 	)
 
 	if err != nil {
+		resp = getMaybeHTTPStatus(err)
 		return "", err
 	}
 
@@ -324,6 +333,11 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		return nil, "", err
 	}
 
+	var resp string = "ok"
+	defer func() {
+		metrics.EthCallInc("validate_withdrawal", b.asset.ID, resp)
+	}()
+
 	iter, err := bf.FilterAssetWithdrawn(
 		&bind.FilterOpts{
 			Start: blockNumber - 1,
@@ -335,6 +349,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		[]*big.Int{})
 
 	if err != nil {
+		resp = getMaybeHTTPStatus(err)
 		return nil, "", err
 	}
 
@@ -368,6 +383,11 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return "", "", "", 0, err
 	}
 
+	var resp string = "ok"
+	defer func() {
+		metrics.EthCallInc("validate_deposit", b.asset.ID, resp)
+	}()
+
 	iter, err := bf.FilterAssetDeposited(
 		&bind.FilterOpts{
 			Start: blockNumber - 1,
@@ -379,6 +399,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		[]*big.Int{})
 
 	if err != nil {
+		resp = getMaybeHTTPStatus(err)
 		return "", "", "", 0, err
 	}
 
@@ -406,4 +427,20 @@ func (b *ERC20) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
 		b.asset.ID, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
 		b.asset.Decimals)
+}
+
+func getMaybeHTTPStatus(err error) string {
+	errstr := err.Error()
+	if len(errstr) < 3 {
+		return "tooshort"
+	}
+	i, err := strconv.Atoi(errstr[:3])
+	if err != nil {
+		return "nan"
+	}
+	if http.StatusText(i) == "" {
+		return "unknown"
+	}
+
+	return errstr[:3]
 }
