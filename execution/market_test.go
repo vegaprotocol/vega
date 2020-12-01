@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/fee"
@@ -36,6 +37,8 @@ type testMarket struct {
 	now             time.Time
 	asset           string
 	mas             *monitor.AuctionState
+	eventCount      uint64
+	orderEventCount uint64
 	mktCfg          *types.Market
 }
 
@@ -47,12 +50,26 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
 	feeConfig := fee.NewDefaultConfig()
-
 	broker := mocks.NewMockBroker(ctrl)
+
+	tm := &testMarket{
+		log:    log,
+		ctrl:   ctrl,
+		broker: broker,
+		now:    now,
+	}
 
 	// catch all expected calls
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(
+		func(evt events.Event) {
+			te := evt.Type()
+			if te == events.OrderEvent {
+				tm.orderEventCount++
+			}
+			tm.eventCount++
+		},
+	)
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
@@ -108,17 +125,17 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 	_, _, err = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), asset, 0)
 	assert.NoError(t, err)
 
-	return &testMarket{
-		market:          mktEngine,
-		log:             log,
-		ctrl:            ctrl,
-		collateraEngine: collateralEngine,
-		broker:          broker,
-		now:             now,
-		asset:           asset,
-		mas:             mas,
-		mktCfg:          mktCfg,
-	}
+	tm.market = mktEngine
+	tm.collateraEngine = collateralEngine
+	tm.asset = asset
+	tm.mas = mas
+	tm.mktCfg = mktCfg
+
+	// Reset event counters
+	tm.eventCount = 0
+	tm.orderEventCount = 0
+
+	return tm
 }
 
 func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings) []types.Market {
