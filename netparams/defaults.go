@@ -32,7 +32,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalMarketMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalMarketRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalMarketRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalMarketMinProposerBalance:    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalMarketMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		GovernanceProposalMarketMinVoterBalance:       NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 
 		// governance asset proposal
@@ -42,7 +42,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalAssetMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalAssetRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalAssetRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalAssetMinProposerBalance:    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalAssetMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		GovernanceProposalAssetMinVoterBalance:       NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 
 		// governance update market proposal
@@ -52,7 +52,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateMarketMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalUpdateMarketRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateMarketRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateMarketMinProposerBalance:    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalUpdateMarketMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		GovernanceProposalUpdateMarketMinVoterBalance:       NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 
 		// governance UpdateNetParam proposal
@@ -62,7 +62,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalUpdateNetParamRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateNetParamRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateNetParamMinProposerBalance:    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalUpdateNetParamMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		GovernanceProposalUpdateNetParamMinVoterBalance:       NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 
 		// no validation for this initially as we configure the
