@@ -270,15 +270,14 @@ func TestUpdate(t *testing.T) {
 		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, updates, err := tng.engine.Update(markPrice, fn, orders)
+	creates, err := tng.engine.CreateInitialOrders(markPrice, party, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
-	require.Len(t, updates, 0)
 
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
+	creates, updates, err := tng.engine.Update(markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, creates, 0)
 	require.Len(t, updates, 3)
