@@ -451,7 +451,7 @@ func OrderCounterInc(labelValues ...string) {
 	orderCounter.WithLabelValues(labelValues...).Inc()
 }
 
-// EthCallInc increments the order counter
+// EthCallInc increments the eth call counter
 func EthCallInc(labelValues ...string) {
 	if ethCallCounter == nil {
 		return
