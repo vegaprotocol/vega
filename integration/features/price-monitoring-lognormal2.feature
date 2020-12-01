@@ -337,10 +337,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
-    Then traders place following orders:
-    | trader  | id        | type | volume |   price  | resulting trades | type       | tif     |
-    | trader1 | ETH/DEC20 | sell |      1 |   95877  |                0 | TYPE_LIMIT | TIF_GTC |
-    | trader2 | ETH/DEC20 | buy  |      1 |   95877  |                0 | TYPE_LIMIT | TIF_FOK |
+    Then traders place following orders with references:
+    | trader  | id        | type | volume |   price  | resulting trades | type       | tif     | reference |
+    | trader1 | ETH/DEC20 | sell |      1 |   95877  |                0 | TYPE_LIMIT | TIF_GTC | cancel-me |
+    | trader2 | ETH/DEC20 | buy  |      1 |   95877  |                0 | TYPE_LIMIT | TIF_FOK |           |
 
     And the mark price for the market "ETH/DEC20" is "104251"
 
@@ -350,6 +350,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:04:01Z"
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+  Then traders cancels the following orders reference:
+    | trader   |  reference |
+    | trader1  |  cancel-me |
 
   Then traders place following orders:
     | trader  | id        | type | volume |   price   | resulting trades | type       | tif     |
