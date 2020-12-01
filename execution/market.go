@@ -604,16 +604,14 @@ func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 // unparkAllPeggedOrders Attempt to place all parked orders back onto the order book
 func (m *Market) unparkAllParkedOrders(ctx context.Context) {
 	// Create slice to put any orders that we can't unpack
-	failedToUnpark := make([]*types.Order, 0)
+	failedToUnpark := make([]*types.Order, 0, len(m.parkedOrders))
 	for _, order := range m.parkedOrders {
 		// Reprice the order and submit it
-		err := m.repricePeggedOrder(ctx, order)
-		if err != nil {
+		if err := m.repricePeggedOrder(ctx, order); err != nil {
 			// Failed to reprice
 			failedToUnpark = append(failedToUnpark, order)
 		} else {
-			_, err := m.submitValidatedOrder(ctx, order)
-			if err != nil {
+			if _, err := m.submitValidatedOrder(ctx, order); err != nil {
 				// Failed to place the order on the book
 				failedToUnpark = append(failedToUnpark, order)
 			}
