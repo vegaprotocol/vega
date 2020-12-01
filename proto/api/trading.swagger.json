@@ -2957,7 +2957,7 @@
           "description": "The Vega network internal identifier of the asset."
         }
       },
-      "description": "An asset deny-listing for an ERC20 token."
+      "description": "An asset denylisting for an ERC20 token."
     },
     "vegaERC20AssetList": {
       "type": "object",
@@ -2967,7 +2967,7 @@
           "description": "The Vega network internal identifier of the asset."
         }
       },
-      "description": "An asset allow-listing for an ERC20 token."
+      "description": "An asset allowlisting for an ERC20 token."
     },
     "vegaERC20Deposit": {
       "type": "object",

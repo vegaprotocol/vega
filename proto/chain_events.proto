@@ -36,14 +36,14 @@ message BuiltinAssetEvent {
   }
 }
 
-// An asset allow-listing for an ERC20 token.
+// An asset allowlisting for an ERC20 token.
 message ERC20AssetList {
 
   // The Vega network internal identifier of the asset.
   string vegaAssetID = 1;
 }
 
-// An asset deny-listing for an ERC20 token.
+// An asset denylisting for an ERC20 token.
 message ERC20AssetDelist {
 
   // The Vega network internal identifier of the asset.

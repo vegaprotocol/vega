@@ -2577,7 +2577,7 @@ An event forwarded to the Vega network to provide information on events happenin
 <a name="vega.ERC20AssetDelist"></a>
 
 ### ERC20AssetDelist
-An asset deny-listing for an ERC20 token.
+An asset denylisting for an ERC20 token.
 
 
 | Field | Type | Label | Description |
@@ -2592,7 +2592,7 @@ An asset deny-listing for an ERC20 token.
 <a name="vega.ERC20AssetList"></a>
 
 ### ERC20AssetList
-An asset allow-listing for an ERC20 token.
+An asset allowlisting for an ERC20 token.
 
 
 | Field | Type | Label | Description |
