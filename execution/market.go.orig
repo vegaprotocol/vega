@@ -84,7 +84,6 @@ var (
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
-	GetCurrentBounds() []*types.PriceMonitoringBounds
 }
 
 // TargetStakeCalculator interface
@@ -372,7 +371,6 @@ func (m *Market) GetMarketData() types.MarketData {
 		// FIXME(WITOLD): uncomment set real values here
 		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
-		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}
 }
 
@@ -606,25 +604,6 @@ func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 		} else {
 			_, err := m.submitValidatedOrder(ctx, order)
 			if err != nil {
-				// Failed to place the order on the book
-				failedToUnpark = append(failedToUnpark, order)
-			}
-		}
-	}
-	m.parkedOrders = failedToUnpark
-}
-
-// unparkAllPeggedOrders Attempt to place all parked orders back onto the order book
-func (m *Market) unparkAllParkedOrders(ctx context.Context) {
-	// Create slice to put any orders that we can't unpack
-	failedToUnpark := make([]*types.Order, 0, len(m.parkedOrders))
-	for _, order := range m.parkedOrders {
-		// Reprice the order and submit it
-		if err := m.repricePeggedOrder(ctx, order); err != nil {
-			// Failed to reprice
-			failedToUnpark = append(failedToUnpark, order)
-		} else {
-			if _, err := m.submitValidatedOrder(ctx, order); err != nil {
 				// Failed to place the order on the book
 				failedToUnpark = append(failedToUnpark, order)
 			}
@@ -969,6 +948,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			// Maybe should return an orderConfirmation with order state PARKED
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 			return &types.OrderConfirmation{Order: order}, nil
+
 		} else {
 			// Reprice
 			err := m.repricePeggedOrder(ctx, order)
@@ -1043,8 +1023,9 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
-	if err != nil {
-		if _, err := m.position.UnregisterOrder(order); err != nil {
+	if confirmation == nil || err != nil {
+		_, err := m.position.UnregisterOrder(order)
+		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
@@ -1101,10 +1082,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
 	if err == nil && len(trades) > 0 {
-		if err := m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime); err != nil {
-			m.log.Error("Price monitoring error", logging.Error(err))
-			// @TODO handle or panic? (panic is last resort)
-		}
+		err = m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime)
 		if m.as.AuctionStart() {
 			m.EnterAuction(ctx)
 			return nil, err
@@ -2535,7 +2513,7 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		// If we have any parked orders, see if we can get a
 		// valid price for them and try to submit them
 		if len(m.parkedOrders) > 0 {
-			m.unparkAllParkedOrders(ctx)
+			m.unparkAllPeggedOrders(ctx)
 		}
 	}
 }
@@ -2638,16 +2616,21 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 	}
 }
 
+<<<<<<< HEAD
 func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 	a, err := m.mkt.GetAsset()
 	if err != nil {
-		return nil, err
+		Threreturn nil, err
 	}
 	rf, err := m.risk.GetRiskFactors(a)
 	if err != nil {
 		return nil, err
 	}
 	return rf, nil
+}
+
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
+	return nil
 }
 
 func (m *Market) getTargetStake() float64 {
@@ -2658,41 +2641,7 @@ func (m *Market) getTargetStake() float64 {
 		return 0
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
-}
-
-func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
-	if err := m.risk.OnMarginScalingFactorsUpdate(sf); err != nil {
-		return err
-	}
-
-	// update our market definition, and dispatch update through the event bus
-	m.mkt.TradableInstrument.MarginCalculator.ScalingFactors = sf
-	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
-
-	return nil
-}
-
-func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
-	if err := m.fee.OnFeeFactorsMakerFeeUpdate(ctx, f); err != nil {
-		return err
-	}
-	m.mkt.Fees.Factors.MakerFee = fmt.Sprintf("%f", f)
-	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
-
-	return nil
-}
-
-func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
-	if err := m.fee.OnFeeFactorsInfrastructureFeeUpdate(ctx, f); err != nil {
-		return err
-	}
-	m.mkt.Fees.Factors.InfrastructureFee = fmt.Sprintf("%f", f)
-	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
-
-	return nil
-}
-
-
+=======
 // repriceFuncW is an adapter for getNewPeggedPrice.
 // TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
 // 1. do not accept a context, since it's not being used
@@ -2702,6 +2651,7 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 		context.Background(),
 		&types.Order{PeggedOrder: po},
 	)
+>>>>>>> 010d4635 (integrate Market with LiqEngine)
 }
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
