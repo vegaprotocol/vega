@@ -116,7 +116,7 @@ Feature: Price monitoring test using simple risk model
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
-    And the mark price for the market "ETH/DEC20" is "112"
+    And the mark price for the market "ETH/DEC20" is "111"
 
   Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction, auction gets extended due to 2nd trigger and eventually terminates with a trade from order that originally triggered the auction.
    
