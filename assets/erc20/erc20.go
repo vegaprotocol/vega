@@ -432,11 +432,11 @@ func (b *ERC20) String() string {
 func getMaybeHTTPStatus(err error) string {
 	errstr := err.Error()
 	if len(errstr) < 3 {
-		return "unknown"
+		return "tooshort"
 	}
 	i, err := strconv.Atoi(errstr[:3])
 	if err != nil {
-		return "unknown"
+		return "nan"
 	}
 	if http.StatusText(i) == "" {
 		return "unknown"
