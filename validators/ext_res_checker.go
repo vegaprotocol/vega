@@ -217,7 +217,7 @@ func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackO
 	return backoff.WithContext(bo, ctx)
 }
 
-func (e *ExtResChecker) start(ctx context.Context, r *res) {
+func (e ExtResChecker) start(ctx context.Context, r *res) {
 	backff := newBackoff(ctx, r.checkUntil.Sub(e.now))
 	f := func() error {
 		e.log.Debug("Checking the resource",
