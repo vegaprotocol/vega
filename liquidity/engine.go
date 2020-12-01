@@ -51,8 +51,8 @@ type Engine struct {
 	idGen          IDGen
 	suppliedEngine *supplied.Engine
 
-	currentTime    time.Time
-	suppliedFactor float64
+	currentTime             time.Time
+	stakeToObligationFactor float64
 
 	// state
 	provisions map[string]*types.LiquidityProvision
@@ -75,20 +75,24 @@ func NewEngine(
 	priceMonitor PriceMonitor,
 ) *Engine {
 	return &Engine{
-		log:             log,
-		broker:          broker,
-		idGen:           idGen,
-		suppliedEngine:  supplied.NewEngine(riskModel, priceMonitor),
-		suppliedFactor:  1,
-		provisions:      map[string]*types.LiquidityProvision{},
-		orders:          map[string]map[string]*types.Order{},
-		liquidityOrders: map[string]map[string]*types.Order{},
+		log:                     log,
+		broker:                  broker,
+		idGen:                   idGen,
+		suppliedEngine:          supplied.NewEngine(riskModel, priceMonitor),
+		stakeToObligationFactor: 1,
+		provisions:              map[string]*types.LiquidityProvision{},
+		orders:                  map[string]map[string]*types.Order{},
+		liquidityOrders:         map[string]map[string]*types.Order{},
 	}
 }
 
 // OnChainTimeUpdate updates the internal engine current time
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
+}
+
+func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
+	e.stakeToObligationFactor = v
 }
 
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
@@ -273,7 +277,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		}
 	}
 
-	obligation := float64(lp.CommitmentAmount) * e.suppliedFactor
+	obligation := float64(lp.CommitmentAmount) * e.stakeToObligationFactor
 	var (
 		buysShape  = make([]*supplied.LiquidityOrder, len(lp.Buys))
 		sellsShape = make([]*supplied.LiquidityOrder, len(lp.Sells))
