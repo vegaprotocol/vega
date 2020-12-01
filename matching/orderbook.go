@@ -257,7 +257,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 		}
 	}
 
-	// get the maximum volume price from the median of all the maximum tradable price levels
+	// get the maximum volume price from the average of the maximum and minimum tradable price levels
 	var uncrossPrice uint64
 	var uncrossSide types.Side
 	if len(prices) > 0 {
