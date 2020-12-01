@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"math/rand"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
+	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -56,6 +58,12 @@ const (
 	maxValidationPeriod = 48 * 3600 // 2 days
 	nodeApproval        = 1         // float for percentage
 )
+
+func init() {
+	// we seed the random generator just in case
+	// as the backoff library use random internally
+	rand.Seed(time.Now().UnixNano())
+}
 
 type res struct {
 	res Resource
@@ -160,7 +168,7 @@ func (e *ExtResChecker) StartCheck(
 		return err
 	}
 
-	ctx, cfunc := context.WithCancel(context.Background())
+	ctx, cfunc := context.WithDeadline(context.Background(), checkUntil)
 	rs := &res{
 		res:        r,
 		checkUntil: checkUntil,
@@ -188,6 +196,38 @@ func (e *ExtResChecker) validateCheckUntil(checkUntil time.Time) error {
 	}
 	return nil
 
+}
+
+func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackOff {
+	bo := backoff.NewExponentialBackOff()
+	bo.MaxElapsedTime = maxElapsedTime
+	bo.InitialInterval = 1 * time.Second
+	return backoff.WithContext(bo, ctx)
+}
+
+func (e ExtResChecker) start2(ctx context.Context, r *res) {
+	backff := newBackoff(ctx, r.checkUntil.Sub(e.now))
+	f := func() error {
+		e.log.Debug("Checking the resource",
+			logging.String("asset-source", r.res.GetID()),
+		)
+		err := r.res.Check()
+		if err != nil {
+			e.log.Warn("error checking resource", logging.Error(err))
+			// dump error
+			return err
+		}
+		return nil
+	}
+
+	err := backoff.Retry(f, backff)
+	if err != nil {
+
+		return
+	}
+
+	// check succeeded
+	atomic.StoreUint32(&r.state, validated)
 }
 
 func (e ExtResChecker) start(ctx context.Context, r *res) {
