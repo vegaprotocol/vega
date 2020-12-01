@@ -189,6 +189,9 @@ func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 	// These maps are created by SubmitLiquidityProvision
 	m := e.orders[partyID]
 	lm := e.liquidityOrders[partyID]
+	if lm == nil {
+		return
+	}
 
 	for _, order := range orders {
 		// skip if it's a liquidity order
@@ -207,17 +210,19 @@ func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 	}
 }
 
-func (e *Engine) CreateInitialOrders(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, error) {
-	creates, _, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
-	return creates, err
+// CreateInitialOrders returns two slices of orders, one are the one to be
+// created and the other the one to be updates.
+func (e *Engine) CreateInitialOrders(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
+	creates, amendments, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
+	return creates, amendments, err
 }
 
 // Update gets the order changes.
 // It keeps track of all LP orders.
-func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.Order, error) {
+func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
 	var (
-		needsCreate []*types.Order
-		needsUpdate []*types.Order
+		newOrders  []*types.Order
+		amendments []*types.OrderAmendment
 	)
 
 	for party, orders := range Orders(orders).ByParty() {
@@ -229,14 +234,14 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 			return nil, nil, err
 		}
 
-		needsCreate = append(needsCreate, creates...)
-		needsUpdate = append(needsUpdate, updates...)
+		newOrders = append(newOrders, creates...)
+		amendments = append(amendments, updates...)
 	}
 
-	return needsCreate, needsUpdate, nil
+	return newOrders, amendments, nil
 }
 
-func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.Order, error) {
+func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
 	lp := e.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return nil, nil, nil
@@ -319,13 +324,13 @@ func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyI
 	}
 }
 
-func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.Order) {
+func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.OrderAmendment) {
 	lm := e.liquidityOrders[party]
 	lp := e.LiquidityProvisionByPartyID(party)
 
 	var (
-		needsCreate []*types.Order
-		needsUpdate []*types.Order
+		newOrders  []*types.Order
+		amendments []*types.OrderAmendment
 	)
 
 	for i, o := range supplied {
@@ -348,7 +353,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			}
 			order = buildOrder(side, p, o.Price, party, o.LiquidityImpliedVolume)
 			e.idGen.SetID(order)
-			needsCreate = append(needsCreate, order)
+			newOrders = append(newOrders, order)
 			lm[order.Id] = order
 			ref.OrderID = order.Id
 			continue
@@ -359,12 +364,10 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref.OrderID = ""
 		}
 
-		if o.LiquidityImpliedVolume != order.Size {
-			order.Size = o.LiquidityImpliedVolume
-			order.Remaining = o.LiquidityImpliedVolume
-			needsUpdate = append(needsUpdate, order)
+		if newSize := o.LiquidityImpliedVolume; newSize != order.Size {
+			amendments = append(amendments, order.AmendSize(int64(newSize)))
 		}
 	}
 
-	return needsCreate, needsUpdate
+	return newOrders, amendments
 }
