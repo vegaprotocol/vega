@@ -62,7 +62,8 @@ func (e *Engine) getProposalParametersFromNetParams(
 	pp.MaxEnact, _ = e.netp.GetDuration(maxEnactKey)
 	pp.RequiredParticipation, _ = e.netp.GetFloat(requiredParticipationKey)
 	pp.RequiredMajority, _ = e.netp.GetFloat(requiredMajorityKey)
-	pp.MinProposerBalance, _ = e.netp.GetFloat(minProposerBalanceKey)
+	mpb, _ := e.netp.GetInt(minProposerBalanceKey)
+	pp.MinProposerBalance = uint64(mpb)
 	pp.MinVoterBalance, _ = e.netp.GetFloat(minVoterBalanceKey)
 	return &pp, nil
 }
