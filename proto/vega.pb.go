@@ -604,13 +604,13 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_bb6b8173ee11af27, []int{8}
 }
 
-// The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.
+// The kind of the signature created by a node, for example, allowlisting a new asset, withdrawal etc.
 type NodeSignatureKind int32
 
 const (
 	// represents a unspecified / missing value from the input
 	NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED NodeSignatureKind = 0
-	// represents a signature for a new asset whitelisting
+	// represents a signature for a new asset allowlisting
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW NodeSignatureKind = 1
 	// represents a signature for a asset withdrawal
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL NodeSignatureKind = 2

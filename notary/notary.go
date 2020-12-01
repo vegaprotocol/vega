@@ -38,7 +38,7 @@ type Commander interface {
 
 // Notary will aggregate all signatures of a node for
 // a specific Command
-// e.g: asset withdrawal, asset whitelisting, etc
+// e.g: asset withdrawal, asset allowlisting, etc
 type Notary struct {
 	cfg Config
 	log *logging.Logger

@@ -301,7 +301,7 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 			logging.Error(err))
 		if err == evtforward.ErrEvtAlreadyExist {
 			return nil, apiError(codes.AlreadyExists, err)
-		} else if err == evtforward.ErrPubKeyNotWhitelisted {
+		} else if err == evtforward.ErrPubKeyNotAllowlisted {
 			return nil, apiError(codes.PermissionDenied, err)
 		} else {
 			return nil, apiError(codes.Internal, err)

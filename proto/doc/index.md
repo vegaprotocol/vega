@@ -2578,7 +2578,7 @@ An event forwarded to the Vega network to provide information on events happenin
 <a name="vega.ERC20AssetDelist"></a>
 
 ### ERC20AssetDelist
-An asset black-listing for an ERC20 token.
+An asset denylisting for an ERC20 token.
 
 
 | Field | Type | Label | Description |
@@ -2593,7 +2593,7 @@ An asset black-listing for an ERC20 token.
 <a name="vega.ERC20AssetList"></a>
 
 ### ERC20AssetList
-An asset white-listing for an ERC20 token.
+An asset allowlisting for an ERC20 token.
 
 
 | Field | Type | Label | Description |
@@ -5214,12 +5214,12 @@ What mode is the market currently running, also known as market state.
 <a name="vega.NodeSignatureKind"></a>
 
 ### NodeSignatureKind
-The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.
+The kind of the signature created by a node, for example, allowlisting a new asset, withdrawal etc.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | NODE_SIGNATURE_KIND_UNSPECIFIED | 0 | represents a unspecified / missing value from the input |
-| NODE_SIGNATURE_KIND_ASSET_NEW | 1 | represents a signature for a new asset whitelisting |
+| NODE_SIGNATURE_KIND_ASSET_NEW | 1 | represents a signature for a new asset allowlisting |
 | NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 2 | represents a signature for a asset withdrawal |
 
 

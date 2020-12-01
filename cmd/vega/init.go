@@ -111,9 +111,9 @@ func (opts *InitCmd) Execute(_ []string) error {
 		if err != nil {
 			return err
 		}
-		// add the pubkey to the whitelis
-		cfg.EvtForward.BlockchainQueueWhitelist = append(
-			cfg.EvtForward.BlockchainQueueWhitelist, pubkey)
+		// add the pubkey to the allowlist
+		cfg.EvtForward.BlockchainQueueAllowlist = append(
+			cfg.EvtForward.BlockchainQueueAllowlist, pubkey)
 	}
 
 	// setup the defaults markets

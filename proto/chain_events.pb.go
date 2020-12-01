@@ -219,7 +219,7 @@ func (*BuiltinAssetEvent) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// An asset white-listing for an ERC20 token.
+// An asset allowlisting for an ERC20 token.
 type ERC20AssetList struct {
 	// The Vega network internal identifier of the asset.
 	VegaAssetID          string   `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`
@@ -260,7 +260,7 @@ func (m *ERC20AssetList) GetVegaAssetID() string {
 	return ""
 }
 
-// An asset black-listing for an ERC20 token.
+// An asset denylisting for an ERC20 token.
 type ERC20AssetDelist struct {
 	// The Vega network internal identifier of the asset.
 	VegaAssetID          string   `protobuf:"bytes,1,opt,name=vegaAssetID,proto3" json:"vegaAssetID,omitempty"`

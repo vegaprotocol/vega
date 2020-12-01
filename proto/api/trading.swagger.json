@@ -3109,7 +3109,7 @@
           "description": "The Vega network internal identifier of the asset."
         }
       },
-      "description": "An asset black-listing for an ERC20 token."
+      "description": "An asset denylisting for an ERC20 token."
     },
     "vegaERC20AssetList": {
       "type": "object",
@@ -3119,7 +3119,7 @@
           "description": "The Vega network internal identifier of the asset."
         }
       },
-      "description": "An asset white-listing for an ERC20 token."
+      "description": "An asset allowlisting for an ERC20 token."
     },
     "vegaERC20Deposit": {
       "type": "object",
@@ -4082,7 +4082,7 @@
         "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
       ],
       "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
-      "description": "The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.\n\n - NODE_SIGNATURE_KIND_UNSPECIFIED: represents a unspecified / missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: represents a signature for a new asset whitelisting\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: represents a signature for a asset withdrawal"
+      "description": "The kind of the signature created by a node, for example, allowlisting a new asset, withdrawal etc.\n\n - NODE_SIGNATURE_KIND_UNSPECIFIED: represents a unspecified / missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: represents a signature for a new asset allowlisting\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: represents a signature for a asset withdrawal"
     },
     "vegaOrder": {
       "type": "object",

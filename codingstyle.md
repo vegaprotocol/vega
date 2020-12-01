@@ -280,3 +280,9 @@ func DoSomething(id string) error {
 ```
 
 The omission of the identifier `id` means that we don't know which call to `DoSomething` was the one that caused the error.
+
+## Inappropriate wording
+Some of the wording that was used as a standard 10 years ago is no long considered correct for use in open source software. We should use the updated version of these naming schemes in all of our code and documentation.
+
+* Blacklist/Whitelist -> Denylist/Allowlist
+* Master/Slave -> Primary/Replica

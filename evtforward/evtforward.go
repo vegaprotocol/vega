@@ -19,9 +19,12 @@ import (
 )
 
 var (
-	ErrEvtAlreadyExist      = errors.New("event already exist")
-	ErrMissingVegaWallet    = errors.New("missing vega wallet")
-	ErrPubKeyNotWhitelisted = errors.New("pubkey not whitelisted")
+	// ErrEvtAlreadyExist we have already handled this event
+	ErrEvtAlreadyExist = errors.New("event already exist")
+	// ErrMissingVegaWallet we cannot find the vega wallet
+	ErrMissingVegaWallet = errors.New("missing vega wallet")
+	// ErrPubKeyNotAllowlisted this pubkey is not part of the allowlist
+	ErrPubKeyNotAllowlisted = errors.New("pubkey not allowlisted")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/evtforward TimeService
@@ -59,7 +62,7 @@ type EvtForwarder struct {
 	evtsmu      sync.Mutex
 
 	// this is actually an map[string]struct{}
-	bcQueueWhitelist atomic.Value
+	bcQueueAllowlist atomic.Value
 }
 
 type tsEvt struct {
@@ -72,14 +75,15 @@ type nodeHash struct {
 	hash uint64
 }
 
+// New creates a new instance of the event forwarder
 func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) (*EvtForwarder, error) {
 	now, err := time.GetTimeNow()
 	if err != nil {
 		return nil, err
 	}
 
-	var whitelist atomic.Value
-	whitelist.Store(buildWhitelist(cfg))
+	var allowlist atomic.Value
+	allowlist.Store(buildAllowlist(cfg))
 	evtf := &EvtForwarder{
 		cfg:              cfg,
 		log:              log,
@@ -90,19 +94,19 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		ackedEvts:        map[string]*types.ChainEvent{},
 		evts:             map[string]tsEvt{},
 		top:              top,
-		bcQueueWhitelist: whitelist,
+		bcQueueAllowlist: allowlist,
 	}
 	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
 	return evtf, nil
 }
 
-func buildWhitelist(cfg Config) map[string]struct{} {
-	whitelist := make(map[string]struct{}, len(cfg.BlockchainQueueWhitelist))
-	for _, v := range cfg.BlockchainQueueWhitelist {
-		whitelist[v] = struct{}{}
+func buildAllowlist(cfg Config) map[string]struct{} {
+	allowlist := make(map[string]struct{}, len(cfg.BlockchainQueueAllowlist))
+	for _, v := range cfg.BlockchainQueueAllowlist {
+		allowlist[v] = struct{}{}
 	}
-	return whitelist
+	return allowlist
 }
 
 // ReloadConf updates the internal configuration of the collateral engine
@@ -117,11 +121,10 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 	}
 
 	e.cfg = cfg
-	// update the whitelist
-	e.log.Info("evtforward whitelist updated",
-		logging.Reflect("list", cfg.BlockchainQueueWhitelist))
-	e.bcQueueWhitelist.Store(buildWhitelist(cfg))
-
+	// update the allowlist
+	e.log.Info("evtforward allowlist updated",
+		logging.Reflect("list", cfg.BlockchainQueueAllowlist))
+	e.bcQueueAllowlist.Store(buildAllowlist(cfg))
 }
 
 // Ack will return true if the event is newly acknowledge
@@ -146,9 +149,9 @@ func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 	return true
 }
 
-func (e *EvtForwarder) isWhitelisted(pubkey string) bool {
-	whitelist := e.bcQueueWhitelist.Load().(map[string]struct{})
-	_, ok := whitelist[pubkey]
+func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
+	allowlist := e.bcQueueAllowlist.Load().(map[string]struct{})
+	_, ok := allowlist[pubkey]
 	return ok
 }
 
@@ -156,8 +159,8 @@ func (e *EvtForwarder) isWhitelisted(pubkey string) bool {
 // we expect the pubkey to be an ed25519 pubkey hex encoded
 func (e *EvtForwarder) Forward(ctx context.Context, evt *types.ChainEvent, pubkey string) error {
 	// check if the sender of the event is whitelisted
-	if !e.isWhitelisted(pubkey) {
-		return ErrPubKeyNotWhitelisted
+	if !e.isAllowlisted(pubkey) {
+		return ErrPubKeyNotAllowlisted
 	}
 
 	e.evtsmu.Lock()
