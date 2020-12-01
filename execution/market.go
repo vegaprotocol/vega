@@ -1059,7 +1059,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0) ||
 		// Also do it if specifically we went against a wash trade
-		order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING {
+		(order.Status == types.Order_STATUS_REJECTED &&
+			order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING) {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -2611,10 +2612,6 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 	return rf, nil
 }
 
-func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
-	return nil
-}
-
 func (m *Market) getTargetStake() float64 {
 	rf, err := m.getRiskFactors()
 	if err != nil {
@@ -2655,4 +2652,9 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f floa
 	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
 
 	return nil
+}
+
+// SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
+	return m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id)
 }
