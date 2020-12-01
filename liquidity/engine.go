@@ -46,6 +46,7 @@ type RepricePeggedOrder func(order *types.PeggedOrder) (uint64, error)
 
 // Engine handles Liquidity provision
 type Engine struct {
+	marketID       string
 	log            *logging.Logger
 	broker         Broker
 	idGen          IDGen
@@ -73,8 +74,10 @@ func NewEngine(
 	idGen IDGen,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
+	marketID string,
 ) *Engine {
 	return &Engine{
+		marketID:        marketID,
 		log:             log,
 		broker:          broker,
 		idGen:           idGen,
@@ -270,11 +273,11 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 
 	obligation := float64(lp.CommitmentAmount) * e.suppliedFactor
 	var (
-		buysShape  = make([]*supplied.LiquidityOrder, len(lp.Buys))
-		sellsShape = make([]*supplied.LiquidityOrder, len(lp.Sells))
+		buysShape  = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
+		sellsShape = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 	)
 
-	for i, buy := range lp.Buys {
+	for _, buy := range lp.Buys {
 		pegged := &types.PeggedOrder{
 			Reference: buy.LiquidityOrder.Reference,
 			Offset:    buy.LiquidityOrder.Offset,
@@ -283,14 +286,14 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		if err != nil {
 			continue
 		}
-		buysShape[i] = &supplied.LiquidityOrder{
+		buysShape = append(buysShape, &supplied.LiquidityOrder{
 			OrderID:    buy.OrderID,
 			Price:      price,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
-		}
+		})
 	}
 
-	for i, sell := range lp.Sells {
+	for _, sell := range lp.Sells {
 		pegged := &types.PeggedOrder{
 			Reference: sell.LiquidityOrder.Reference,
 			Offset:    sell.LiquidityOrder.Offset,
@@ -299,11 +302,11 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		if err != nil {
 			continue
 		}
-		sellsShape[i] = &supplied.LiquidityOrder{
+		sellsShape = append(sellsShape, &supplied.LiquidityOrder{
 			OrderID:    sell.OrderID,
 			Price:      price,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
-		}
+		})
 	}
 
 	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
@@ -323,8 +326,9 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		nil
 }
 
-func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID string, size uint64) *types.Order {
+func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64) *types.Order {
 	return &types.Order{
+		MarketID:    marketID,
 		Side:        side,
 		PeggedOrder: pegged,
 		Price:       price,
@@ -361,7 +365,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 				Reference: ref.LiquidityOrder.Reference,
 				Offset:    ref.LiquidityOrder.Offset,
 			}
-			order = buildOrder(side, p, o.Price, party, o.LiquidityImpliedVolume)
+			order = buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume)
 			e.idGen.SetID(order)
 			newOrders = append(newOrders, order)
 			lm[order.Id] = order

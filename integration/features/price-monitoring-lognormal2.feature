@@ -3,8 +3,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
     And the executon engine have these markets:
-      | name      | baseName | quoteName | asset |   markprice  | risk model |     lamd/long |              tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq.   |    p. m. horizons | p. m. probs  | p. m. durations |
-      | ETH/DEC20 | BTC      | ETH       | ETH   |      100000  | forward    |      0.000001 | 0.00011407711613050422 |              0 | 0.016           |   2.0 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 6000                 |         3600,7200 |   0.95,0.999 |         240,360 |
+      | name      | baseName | quoteName | asset |   markprice  | risk model |     lamd/long |              tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq.   |    p. m. horizons | p. m. probs  | p. m. durations | Prob of trading |
+      | ETH/DEC20 | BTC      | ETH       | ETH   |      100000  | forward    |      0.000001 | 0.00011407711613050422 |              0 | 0.016           |   2.0 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 6000                 |         3600,7200 |   0.95,0.999 |         240,360 | 0.1             |
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 

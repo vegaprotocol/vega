@@ -1058,10 +1058,11 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			RiskModel: &types.TradableInstrument_SimpleRiskModel{
 				SimpleRiskModel: &types.SimpleRiskModel{
 					Params: &types.SimpleModelParams{
-						FactorLong:  f64val(row, 6),
-						FactorShort: f64val(row, 7),
-						MaxMoveUp:   f64val(row, 8),
-						MinMoveDown: f64val(row, 9),
+						FactorLong:           f64val(row, 6),
+						FactorShort:          f64val(row, 7),
+						MaxMoveUp:            f64val(row, 8),
+						MinMoveDown:          f64val(row, 9),
+						ProbabilityOfTrading: f64val(row, 24),
 					},
 				},
 			},
@@ -1236,6 +1237,49 @@ func clearOrdersByRef(in *gherkin.DataTable) error {
 		}
 		ref := val(row, 1)
 		if err := execsetup.broker.clearOrderByReference(trader, ref); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// liquidity provisioning
+
+func submitLP(in *gherkin.DataTable) error {
+	lps := map[string]*types.LiquidityProvisionSubmission{}
+	parties := map[string]string{}
+	// build the LPs to submit
+	for _, row := range in.Rows {
+		id := val(row, 0)
+		if id == "id" {
+			continue
+		}
+		lp, ok := lps[id]
+		if !ok {
+			lp = &types.LiquidityProvisionSubmission{
+				MarketID:         val(row, 2),
+				CommitmentAmount: u64val(row, 3),
+				Fee:              val(row, 4),
+				Sells:            []*types.LiquidityOrder{},
+				Buys:             []*types.LiquidityOrder{},
+			}
+			parties[id] = val(row, 1)
+			lps[id] = lp
+		}
+		lo := &types.LiquidityOrder{
+			Reference:  peggedRef(row, 6),
+			Proportion: uint32(u64val(row, 7)),
+			Offset:     i64val(row, 8),
+		}
+		if side := val(row, 5); side == "buy" {
+			lp.Buys = append(lp.Buys, lo)
+		} else {
+			lp.Sells = append(lp.Sells, lo)
+		}
+	}
+	for id, sub := range lps {
+		party, _ := parties[id]
+		if err := execsetup.engine.SubmitLiquidityProvision(context.Background(), sub, party, id); err != nil {
 			return err
 		}
 	}
