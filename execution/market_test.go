@@ -1387,8 +1387,6 @@ func TestOrderBook_Crash2651(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Switch to auction mode
-	//book.EnterAuction()
-	//	tm.market.EnterAuction(ctx)
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
 	tm.mas.AuctionStarted(ctx)
 	tm.market.EnterAuction(ctx)
@@ -1453,6 +1451,8 @@ func TestOrderBook_Crash2651(t *testing.T) {
 
 	// Leave auction and uncross the book
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	require.Equal(t, 3, tm.market.GetPeggedOrderCount())
+	require.Equal(t, 3, tm.market.GetParkedOrderCount())
 
 	o12 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order12", types.Side_SIDE_SELL, "613f", 22, 9023)
 	o12conf, err := tm.market.SubmitOrder(ctx, o12)
@@ -1468,5 +1468,69 @@ func TestOrderBook_Crash2651(t *testing.T) {
 	o14 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order14", types.Side_SIDE_BUY, "qqqq", 34, 11513)
 	o14conf, err := tm.market.SubmitOrder(ctx, o14)
 	require.NotNil(t, o14conf)
+	require.NoError(t, err)
+}
+
+func TestOrderBook_Crash2599(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "A")
+	addAccount(tm, "B")
+	addAccount(tm, "C")
+	addAccount(tm, "D")
+	addAccount(tm, "E")
+	addAccount(tm, "F")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "A", 5, 10500)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "B", 20, 11000)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_BUY, "A", 10, 10500)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIF_IOC, "Order04", types.Side_SIDE_SELL, "C", 5, 0)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order05", types.Side_SIDE_BUY, "C", 35, 0)
+	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -500}
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order06", types.Side_SIDE_BUY, "D", 16, 0)
+	o6.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -2000}
+	o6conf, err := tm.market.SubmitOrder(ctx, o6)
+	require.NotNil(t, o6conf)
+	require.NoError(t, err)
+
+	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order07", types.Side_SIDE_SELL, "E", 19, 0)
+	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +3000}
+	o7conf, err := tm.market.SubmitOrder(ctx, o7)
+	require.NotNil(t, o7conf)
+	require.NoError(t, err)
+
+	o8 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order08", types.Side_SIDE_BUY, "E", 25, 10000)
+	o8conf, err := tm.market.SubmitOrder(ctx, o8)
+	require.NotNil(t, o8conf)
+	require.NoError(t, err)
+
+	// This one should crash
+	o9 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order09", types.Side_SIDE_SELL, "F", 25, 10250)
+	o9conf, err := tm.market.SubmitOrder(ctx, o9)
+	require.NotNil(t, o9conf)
 	require.NoError(t, err)
 }
