@@ -129,6 +129,7 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
+
 	key := string(crypto.Hash([]byte(evt.String())))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {

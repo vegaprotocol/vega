@@ -413,6 +413,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		if state == pendingState {
 			continue
 		}
+
 		switch state {
 		case okState:
 			// check if this transaction have been seen before then
