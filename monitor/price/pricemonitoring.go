@@ -154,15 +154,18 @@ func (e *Engine) GetValidPriceRange() (float64, float64) {
 	return min, max
 }
 
+// GetCurrentBounds returns a list of valid price ranges per price monitoring trigger. Note these are subject to change as the time progresses.
 func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 	priceRanges := e.getCurrentPriceRanges()
-	ret := make([]*types.PriceMonitoringBounds, len(priceRanges))
+	ret := make([]*types.PriceMonitoringBounds, 0, len(priceRanges))
 	for b, pr := range priceRanges {
-		ret = append(ret,
-			&types.PriceMonitoringBounds{
-				MinValidPrice: uint64(math.Ceil(pr.MinPrice)),
-				MaxValidPrice: uint64(math.Floor(pr.MaxPrice)),
-				Trigger:       b.Trigger})
+		if b.Active {
+			ret = append(ret,
+				&types.PriceMonitoringBounds{
+					MinValidPrice: uint64(math.Ceil(pr.MinPrice)),
+					MaxValidPrice: uint64(math.Floor(pr.MaxPrice)),
+					Trigger:       b.Trigger})
+		}
 	}
 	return ret
 }
