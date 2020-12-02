@@ -28,6 +28,7 @@ type withdrawal struct {
 type txRef struct {
 	asset common.AssetClass
 	hash  string
+	index uint64
 }
 
 type assetAction struct {
@@ -131,7 +132,7 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 	asset, _ := t.asset.BuiltinAsset()
 	// builtin deposits do not have hash, and we don't need one
 	// so let's just add some random id
-	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String()}
+	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String(), 0}
 	return nil
 }
 
@@ -146,7 +147,7 @@ func (t *assetAction) checkERC20Deposit() error {
 		partyID: partyID,
 		assetID: assetID,
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex}
 	return nil
 }
 
@@ -159,7 +160,7 @@ func (t *assetAction) checkERC20Withdrawal() error {
 	t.withdrawal = &withdrawal{
 		nonce: nonce,
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex}
 	return nil
 }
 
@@ -169,6 +170,6 @@ func (t *assetAction) checkERC20AssetList() error {
 	if err != nil {
 		return err
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex}
 	return nil
 }
