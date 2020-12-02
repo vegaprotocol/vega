@@ -34,6 +34,13 @@ type Config struct {
 	Enabled     bool              `long:"enabled"`
 	Port        uint16            `long:"port"`
 	ProfilesDir string            `long:"profiles-dir"`
+	// To include every blocking event in the profile, pass rate = 1.
+	// To turn off profiling entirely, pass rate <= 0.
+	BlockProfileRate int `long:"block-profile-rate"`
+	// To turn off profiling entirely, pass rate 0.
+	// To just read the current rate, pass rate < 0.
+	// (For n>1 the details of sampling may change.)
+	MutexProfileFraction int `long:"mutex-profile-fraction"`
 }
 
 // Pprofhandler is handling pprof profile management
@@ -48,10 +55,12 @@ type Pprofhandler struct {
 // NewDefaultConfig create a new default configuration for the pprof handler
 func NewDefaultConfig() Config {
 	return Config{
-		Level:       encoding.LogLevel{Level: logging.InfoLevel},
-		Enabled:     false,
-		Port:        6060,
-		ProfilesDir: "/tmp",
+		Level:                encoding.LogLevel{Level: logging.InfoLevel},
+		Enabled:              false,
+		Port:                 6060,
+		ProfilesDir:          "/tmp",
+		BlockProfileRate:     0,
+		MutexProfileFraction: 0,
 	}
 }
 
@@ -60,6 +69,9 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+
+	runtime.SetBlockProfileRate(config.BlockProfileRate)
+	runtime.SetMutexProfileFraction(config.MutexProfileFraction)
 
 	t := time.Now()
 	memprofileFile := fmt.Sprintf("%s-%s%s", memprofileName, t.Format("2006-01-02-15-04-05"), profileExt)
@@ -112,6 +124,8 @@ func (p *Pprofhandler) ReloadConf(cfg Config) {
 
 	// the config will not be used anyway, just use the log level in here
 	p.Config = cfg
+	runtime.SetBlockProfileRate(cfg.BlockProfileRate)
+	runtime.SetMutexProfileFraction(cfg.MutexProfileFraction)
 }
 
 // Stop is meant to be use to stop the pprof profile, should be use with defer probably
