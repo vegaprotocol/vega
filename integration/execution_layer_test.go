@@ -1018,6 +1018,11 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 		UpdateFrequency: i64val(row, 20),
 	}
 
+	// probability of trading
+	pot := 0.0
+	if len(row.Cells) > 24 {
+		pot = f64val(row, 24)
+	}
 	mkt := types.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
@@ -1062,7 +1067,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 						FactorShort:          f64val(row, 7),
 						MaxMoveUp:            f64val(row, 8),
 						MinMoveDown:          f64val(row, 9),
-						ProbabilityOfTrading: f64val(row, 24),
+						ProbabilityOfTrading: pot,
 					},
 				},
 			},
