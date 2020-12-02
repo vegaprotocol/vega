@@ -5,6 +5,8 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "google/protobuf/wrappers.proto";
+import "proto/markets.proto";
+
 
 // A side relates to the direction of an order, to Buy, or Sell.
 enum Side {
@@ -1041,6 +1043,13 @@ message MarketData {
   string targetStake = 21;
   // the available stake fo the given market
   string suppliedStake = 22;
+  repeated PriceMonitoringBounds priceMonitoringBounds = 23;
+}
+
+message PriceMonitoringBounds {
+  uint64 minValidPrice = 1;
+  uint64 maxValidPrice = 2;
+  PriceMonitoringTrigger trigger = 3;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.

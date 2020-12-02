@@ -154,6 +154,19 @@ func (e *Engine) GetValidPriceRange() (float64, float64) {
 	return min, max
 }
 
+func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
+	priceRanges := e.getCurrentPriceRanges()
+	ret := make([]*types.PriceMonitoringBounds, len(priceRanges))
+	for b, pr := range priceRanges {
+		ret = append(ret,
+			&types.PriceMonitoringBounds{
+				MinValidPrice: uint64(math.Ceil(pr.MinPrice)),
+				MaxValidPrice: uint64(math.Floor(pr.MaxPrice)),
+				Trigger:       b.Trigger})
+	}
+	return ret
+}
+
 // CheckPrice checks how current price and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
 func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now time.Time) error {
 	// initialise with the first price & time provided, otherwise there won't be any bounds
