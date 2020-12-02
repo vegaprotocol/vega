@@ -1654,10 +1654,10 @@ enum OrderRejectionReason {
   InvalidMarketType
 
   "Good for normal order received during an auction"
-  GFAOrderDuringAuction
+  GFNOrderDuringAuction
 
   "Good for auction order received during continuous trading"
-  GFNOrderDuringContinuousTrading
+  GFAOrderDuringContinuousTrading
 
   "IOC orders are not allowed during auction"
   IOCOrderDuringAuction
