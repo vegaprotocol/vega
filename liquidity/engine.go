@@ -51,8 +51,8 @@ type Engine struct {
 	idGen          IDGen
 	suppliedEngine *supplied.Engine
 
-	currentTime    time.Time
-	suppliedFactor float64
+	currentTime             time.Time
+	stakeToObligationFactor float64
 
 	// state
 	provisions map[string]*types.LiquidityProvision
@@ -75,20 +75,39 @@ func NewEngine(
 	priceMonitor PriceMonitor,
 ) *Engine {
 	return &Engine{
-		log:             log,
-		broker:          broker,
-		idGen:           idGen,
-		suppliedEngine:  supplied.NewEngine(riskModel, priceMonitor),
-		suppliedFactor:  1,
-		provisions:      map[string]*types.LiquidityProvision{},
-		orders:          map[string]map[string]*types.Order{},
-		liquidityOrders: map[string]map[string]*types.Order{},
+		log:                     log,
+		broker:                  broker,
+		idGen:                   idGen,
+		suppliedEngine:          supplied.NewEngine(riskModel, priceMonitor),
+		stakeToObligationFactor: 1,
+		provisions:              map[string]*types.LiquidityProvision{},
+		orders:                  map[string]map[string]*types.Order{},
+		liquidityOrders:         map[string]map[string]*types.Order{},
 	}
 }
 
 // OnChainTimeUpdate updates the internal engine current time
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
+}
+
+func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
+	e.stakeToObligationFactor = v
+}
+
+func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
+	lp := e.provisions[party]
+	if lp == nil {
+		return errors.New("party have no liquidity provision orders")
+	}
+
+	lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+
+	// now delete all stuff
+	delete(e.liquidityOrders, party)
+	delete(e.orders, party)
+	return nil
 }
 
 // SubmitLiquidityProvision handles a new liquidity provision submission.
@@ -189,6 +208,9 @@ func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 	// These maps are created by SubmitLiquidityProvision
 	m := e.orders[partyID]
 	lm := e.liquidityOrders[partyID]
+	if lm == nil {
+		return
+	}
 
 	for _, order := range orders {
 		// skip if it's a liquidity order
@@ -207,90 +229,107 @@ func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 	}
 }
 
+// CreateInitialOrders returns two slices of orders, one are the one to be
+// created and the other the one to be updates.
+func (e *Engine) CreateInitialOrders(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
+	creates, amendments, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
+	return creates, amendments, err
+}
+
 // Update gets the order changes.
 // It keeps track of all LP orders.
-func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.Order, error) {
+func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
 	var (
-		needsCreate []*types.Order
-		needsUpdate []*types.Order
+		newOrders  []*types.Order
+		amendments []*types.OrderAmendment
 	)
 
 	for party, orders := range Orders(orders).ByParty() {
-		lp := e.LiquidityProvisionByPartyID(party)
-		if lp == nil {
-			continue
-		}
-
 		// update our internal orders
 		e.updatePartyOrders(party, orders)
 
-		// Create a slice shaped copy of the orders
-		buyOrders := make([]*types.Order, 0, len(e.orders[party])/2)
-		sellOrders := make([]*types.Order, 0, len(e.orders[party])/2)
-		for _, order := range e.orders[party] {
-			if order.Side == types.Side_SIDE_BUY {
-				buyOrders = append(buyOrders, order)
-			} else {
-				sellOrders = append(sellOrders, order)
-			}
-		}
-
-		obligation := float64(lp.CommitmentAmount) * e.suppliedFactor
-		var (
-			buysShape  = make([]*supplied.LiquidityOrder, len(lp.Buys))
-			sellsShape = make([]*supplied.LiquidityOrder, len(lp.Sells))
-		)
-
-		for i, buy := range lp.Buys {
-			pegged := &types.PeggedOrder{
-				Reference: buy.LiquidityOrder.Reference,
-				Offset:    buy.LiquidityOrder.Offset,
-			}
-			price, err := repriceFn(pegged)
-			if err != nil {
-				continue
-			}
-			buysShape[i] = &supplied.LiquidityOrder{
-				OrderID:    buy.OrderID,
-				Price:      price,
-				Proportion: uint64(buy.LiquidityOrder.Proportion),
-			}
-		}
-
-		for i, sell := range lp.Sells {
-			pegged := &types.PeggedOrder{
-				Reference: sell.LiquidityOrder.Reference,
-				Offset:    sell.LiquidityOrder.Offset,
-			}
-			price, err := repriceFn(pegged)
-			if err != nil {
-				continue
-			}
-			sellsShape[i] = &supplied.LiquidityOrder{
-				OrderID:    sell.OrderID,
-				Price:      price,
-				Proportion: uint64(sell.LiquidityOrder.Proportion),
-			}
-		}
-
-		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-			float64(markPrice),
-			obligation,
-			buyOrders, sellOrders,
-			buysShape, sellsShape,
-		); err != nil {
+		creates, updates, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
+		if err != nil {
 			return nil, nil, err
 		}
 
-		needsCreateBuys, needsUpdateBuys := e.createOrdersFromShape(party, buysShape, types.Side_SIDE_BUY)
-		needsCreateSells, needsUpdateSells := e.createOrdersFromShape(party, sellsShape, types.Side_SIDE_SELL)
-		needsCreate = append(needsCreate, needsCreateBuys...)
-		needsCreate = append(needsCreate, needsCreateSells...)
-		needsUpdate = append(needsUpdate, needsUpdateBuys...)
-		needsUpdate = append(needsUpdate, needsUpdateSells...)
+		newOrders = append(newOrders, creates...)
+		amendments = append(amendments, updates...)
 	}
 
-	return needsCreate, needsUpdate, nil
+	return newOrders, amendments, nil
+}
+
+func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
+	lp := e.LiquidityProvisionByPartyID(party)
+	if lp == nil {
+		return nil, nil, nil
+	}
+
+	// Create a slice shaped copy of the orders
+	buyOrders := make([]*types.Order, 0, len(e.orders[party])/2)
+	sellOrders := make([]*types.Order, 0, len(e.orders[party])/2)
+	for _, order := range e.orders[party] {
+		if order.Side == types.Side_SIDE_BUY {
+			buyOrders = append(buyOrders, order)
+		} else {
+			sellOrders = append(sellOrders, order)
+		}
+	}
+
+	obligation := float64(lp.CommitmentAmount) * e.stakeToObligationFactor
+	var (
+		buysShape  = make([]*supplied.LiquidityOrder, len(lp.Buys))
+		sellsShape = make([]*supplied.LiquidityOrder, len(lp.Sells))
+	)
+
+	for i, buy := range lp.Buys {
+		pegged := &types.PeggedOrder{
+			Reference: buy.LiquidityOrder.Reference,
+			Offset:    buy.LiquidityOrder.Offset,
+		}
+		price, err := repriceFn(pegged)
+		if err != nil {
+			continue
+		}
+		buysShape[i] = &supplied.LiquidityOrder{
+			OrderID:    buy.OrderID,
+			Price:      price,
+			Proportion: uint64(buy.LiquidityOrder.Proportion),
+		}
+	}
+
+	for i, sell := range lp.Sells {
+		pegged := &types.PeggedOrder{
+			Reference: sell.LiquidityOrder.Reference,
+			Offset:    sell.LiquidityOrder.Offset,
+		}
+		price, err := repriceFn(pegged)
+		if err != nil {
+			continue
+		}
+		sellsShape[i] = &supplied.LiquidityOrder{
+			OrderID:    sell.OrderID,
+			Price:      price,
+			Proportion: uint64(sell.LiquidityOrder.Proportion),
+		}
+	}
+
+	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
+		float64(markPrice),
+		obligation,
+		buyOrders, sellOrders,
+		buysShape, sellsShape,
+	); err != nil {
+		return nil, nil, err
+	}
+
+	needsCreateBuys, needsUpdateBuys := e.createOrdersFromShape(party, buysShape, types.Side_SIDE_BUY)
+	needsCreateSells, needsUpdateSells := e.createOrdersFromShape(party, sellsShape, types.Side_SIDE_SELL)
+
+	return append(needsCreateBuys, needsCreateSells...),
+		append(needsUpdateBuys, needsUpdateSells...),
+		nil
 }
 
 func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID string, size uint64) *types.Order {
@@ -304,13 +343,13 @@ func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyI
 	}
 }
 
-func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.Order) {
+func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.OrderAmendment) {
 	lm := e.liquidityOrders[party]
 	lp := e.LiquidityProvisionByPartyID(party)
 
 	var (
-		needsCreate []*types.Order
-		needsUpdate []*types.Order
+		newOrders  []*types.Order
+		amendments []*types.OrderAmendment
 	)
 
 	for i, o := range supplied {
@@ -333,7 +372,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			}
 			order = buildOrder(side, p, o.Price, party, o.LiquidityImpliedVolume)
 			e.idGen.SetID(order)
-			needsCreate = append(needsCreate, order)
+			newOrders = append(newOrders, order)
 			lm[order.Id] = order
 			ref.OrderID = order.Id
 			continue
@@ -344,12 +383,10 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref.OrderID = ""
 		}
 
-		if o.LiquidityImpliedVolume != order.Size {
-			order.Size = o.LiquidityImpliedVolume
-			order.Remaining = o.LiquidityImpliedVolume
-			needsUpdate = append(needsUpdate, order)
+		if newSize := o.LiquidityImpliedVolume; newSize != order.Size {
+			amendments = append(amendments, order.AmendSize(int64(newSize)))
 		}
 	}
 
-	return needsCreate, needsUpdate
+	return newOrders, amendments
 }

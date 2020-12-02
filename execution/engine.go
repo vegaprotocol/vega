@@ -465,3 +465,10 @@ func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, 
 	}
 	return nil
 }
+
+func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, v float64) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnSuppliedStakeToObligationFactorUpdate(v)
+	}
+	return nil
+}

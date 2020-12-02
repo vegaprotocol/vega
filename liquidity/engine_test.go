@@ -270,24 +270,25 @@ func TestUpdate(t *testing.T) {
 		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, updates, err := tng.engine.Update(markPrice, fn, orders)
+	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
-	require.Len(t, updates, 0)
 
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
+	newOrders, amendments, err := tng.engine.Update(markPrice, fn, orders)
 	require.NoError(t, err)
-	require.Len(t, creates, 0)
-	require.Len(t, updates, 3)
-	for _, order := range updates {
-		assert.EqualValues(t, 0, order.Size)
+	require.Len(t, newOrders, 0)
+	require.Len(t, amendments, 3)
+	for i, amend := range amendments {
+		assert.Zero(t, creates[i].Size+uint64(amend.SizeDelta),
+			"Size should be cancelled (== 0)  by the amendment",
+		)
 	}
 
-	creates, updates, err = tng.engine.Update(markPrice, fn, orders)
+	newOrders, amendments, err = tng.engine.Update(markPrice, fn, orders)
 	require.NoError(t, err)
-	require.Len(t, creates, 0)
-	require.Len(t, updates, 0)
+	require.Len(t, newOrders, 0)
+	require.Len(t, amendments, 0)
 }

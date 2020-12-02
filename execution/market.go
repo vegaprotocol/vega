@@ -369,6 +369,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		Trigger:               m.as.Trigger(),
 		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
 		// FIXME(WITOLD): uncomment set real values here
+		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
 	}
 }
@@ -907,6 +908,19 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+	conf, err := m.submitOrder(ctx, order)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}
+
+func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1049,6 +1063,10 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		return nil, err
 	}
 
+	if err := m.liquidityUpdate(ctx, confirmation.PassiveOrdersAffected); err != nil {
+		return nil, err
+	}
+
 	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
@@ -1057,7 +1075,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0) ||
 		// Also do it if specifically we went against a wash trade
-		order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING {
+		(order.Status == types.Order_STATUS_REJECTED &&
+			order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING) {
 		_, err := m.position.UnregisterOrder(order)
 		if err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
@@ -1836,6 +1855,13 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	m.checkForReferenceMoves(ctx)
+
+	if foundOnBook {
+		if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
+			return nil, err
+		}
+	}
+
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
 
@@ -1873,6 +1899,19 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 // AmendOrder amend an existing order from the order book
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+	conf, err := m.amendOrder(ctx, orderAmendment)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}
+
+func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2609,10 +2648,6 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 	return rf, nil
 }
 
-func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
-	return nil
-}
-
 func (m *Market) getTargetStake() float64 {
 	rf, err := m.getRiskFactors()
 	if err != nil {
@@ -2651,6 +2686,168 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f floa
 	}
 	m.mkt.Fees.Factors.InfrastructureFee = fmt.Sprintf("%f", f)
 	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
+
+	return nil
+}
+
+func (m *Market) OnSuppliedStakeToObligationFactorUpdate(v float64) {
+	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(v)
+}
+
+// repriceFuncW is an adapter for getNewPeggedPrice.
+// TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
+// 1. do not accept a context, since it's not being used
+// 2. receive a PeggedOrder instead of an Order.
+func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
+	return m.getNewPeggedPrice(
+		context.Background(),
+		&types.Order{PeggedOrder: po},
+	)
+}
+
+// SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
+	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
+		return err
+	}
+
+	defer func() {
+		if err == nil {
+			return
+		}
+		if newerr := m.liquidity.CancelLiquidityProvision(ctx, party); err != nil {
+			m.log.Debug("unable to submit cancel liquidity provision submission",
+				logging.String("party", party),
+				logging.String("id", id),
+				logging.Error(newerr))
+			err = fmt.Errorf("%v, %w", err, newerr)
+		}
+
+	}()
+
+	// WE WANT TO APPLY THECOMMITMENT IN BOND ACCOUNT
+	asset, _ := m.mkt.GetAsset()
+	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, party, m.GetID(), asset)
+	if err != nil {
+		return err
+	}
+
+	// now we calculate the amount that needs to be moved into the account
+	amount := int64(sub.CommitmentAmount - bondAcc.Balance)
+	ty := types.TransferType_TRANSFER_TYPE_BOND_LOW
+	if amount < 0 {
+		ty = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+	}
+	transfer := &types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: amount,
+			Asset:  asset,
+		},
+		Type:      ty,
+		MinAmount: amount,
+	}
+
+	tresp, err := m.collateral.BondUpdateOnOrder(ctx, m.GetID(), party, transfer)
+	if err != nil {
+		return err
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+
+	// if something happen, rollback the transfer
+	defer func() {
+		if err == nil {
+			return
+		}
+		if transfer.Type == types.TransferType_TRANSFER_TYPE_BOND_HIGH {
+			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_LOW
+		}
+		transfer.Amount.Amount = -transfer.Amount.Amount
+		transfer.MinAmount = -transfer.MinAmount
+
+		tresp, newerr := m.collateral.BondUpdateOnOrder(ctx, m.GetID(), party, transfer)
+		if newerr != nil {
+			m.log.Debug("unable to rollback bon account topup",
+				logging.String("party", party),
+				logging.Int64("amount", amount),
+				logging.Error(err))
+			err = fmt.Errorf("%v, %w", err, newerr)
+		}
+		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	}()
+
+	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, m.repriceFuncW)
+	if err != nil {
+		return err
+	}
+
+	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+}
+
+func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
+	newOrders, amendments, err := m.liquidity.Update(m.markPrice, m.repriceFuncW, orders)
+	if err != nil {
+		return err
+	}
+
+	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+}
+
+func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
+	submittedIDs := []string{}
+	// submitted order rollback
+	defer func() {
+		if err == nil || len(newOrders) <= 0 {
+			return
+		}
+		party := newOrders[0].PartyID
+		for _, v := range submittedIDs {
+			_, newerr := m.CancelOrder(ctx, party, v)
+			if newerr != nil {
+				m.log.Error("unable to rollback order via cancel",
+					logging.Error(newerr),
+					logging.String("party", party),
+					logging.String("order-id", v))
+				err = fmt.Errorf("%v, %w", err, newerr)
+			}
+		}
+	}()
+
+	for _, order := range newOrders {
+		if _, err := m.submitOrder(ctx, order); err != nil {
+			return err
+		}
+		submittedIDs = append(submittedIDs, order.Id)
+	}
+
+	// amendment rollback
+	amendmentsRollBack := []*types.OrderAmendment{}
+	// submitted order rollback
+	defer func() {
+		if err == nil || len(amendmentsRollBack) <= 0 {
+			return
+		}
+		for _, v := range amendmentsRollBack {
+			_, newerr := m.amendOrder(ctx, v)
+			if newerr != nil {
+				m.log.Error("unable to rollback order via cancel",
+					logging.Error(newerr),
+					logging.String("party", v.PartyID),
+					logging.String("order-id", v.OrderID))
+				err = fmt.Errorf("%v, %w", err, newerr)
+			}
+		}
+	}()
+
+	for _, order := range amendments {
+		if _, err := m.amendOrder(ctx, order); err != nil {
+			return err
+		}
+
+		arb := *order
+		arb.SizeDelta = -arb.SizeDelta
+		amendmentsRollBack = append(amendmentsRollBack, &arb)
+	}
 
 	return nil
 }
