@@ -23,15 +23,15 @@ import (
 
 const (
 	MaxNonce              = 100000000
-	whitelistContractName = "whitelist_asset"
+	listAssetContractName = "list_asset"
 	withdrawContractName  = "withdraw_asset"
 )
 
 var (
-	ErrMissingETHWalletFromNodeWallet  = errors.New("missing eth wallet from node wallet")
-	ErrUnableToFindDeposit             = errors.New("unable to find erc20 deposit event")
-	ErrUnableToFindWithdrawal          = errors.New("unable to find erc20 withdrawal event")
-	ErrUnableToFindERC20AssetWhitelist = errors.New("unable to find erc20 asset whitelist event")
+	ErrMissingETHWalletFromNodeWallet = errors.New("missing eth wallet from node wallet")
+	ErrUnableToFindDeposit            = errors.New("unable to find erc20 deposit event")
+	ErrUnableToFindWithdrawal         = errors.New("unable to find erc20 withdrawal event")
+	ErrUnableToFindERC20AssetList     = errors.New("unable to find erc20 asset list event")
 )
 
 type ERC20 struct {
@@ -111,10 +111,10 @@ func (b *ERC20) Validate() error {
 	return nil
 }
 
-// SignBridgeWhitelisting create and sign the message to
+// SignBridgeListing create and sign the message to
 // be sent to the bridge to whitelist the asset
 // return the generated message and the signature for this message
-func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
+func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	typAddr, err := abi.NewType("address", "", nil)
 	if err != nil {
 		return nil, nil, err
@@ -156,7 +156,7 @@ func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 	addr := ethcmn.HexToAddress(b.address)
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), nonce, whitelistContractName}...)
+	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -190,7 +190,7 @@ func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex uint64) (hash string, err error) {
+func (b *ERC20) ValidateList(w *types.ERC20AssetList, blockNumber, txIndex uint64) (hash string, err error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
@@ -202,7 +202,7 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
 	}()
 
-	iter, err := bf.FilterAssetWhitelisted(
+	iter, err := bf.FilterAssetListed(
 		&bind.FilterOpts{
 			Start: blockNumber - 1,
 		},
@@ -217,7 +217,7 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 	}
 
 	defer iter.Close()
-	var event *bridge.BridgeAssetWhitelisted
+	var event *bridge.BridgeAssetListed
 	for iter.Next() {
 		if hex.EncodeToString(iter.Event.VegaId[:]) == w.VegaAssetID {
 			event = iter.Event
@@ -226,7 +226,7 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 	}
 
 	if event == nil {
-		return "", ErrUnableToFindERC20AssetWhitelist
+		return "", ErrUnableToFindERC20AssetList
 	}
 
 	return event.Raw.TxHash.Hex(), nil
