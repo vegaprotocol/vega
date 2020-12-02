@@ -1191,7 +1191,129 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	require.NotNil(t, mktData)
 
 	require.Equal(t, fmt.Sprintf("%.f", expectedTargetStake), mktData.TargetStake)
+}
 
+func getMarketOrder(tm *testMarket,
+	now time.Time,
+	orderType types.Order_Type,
+	orderTIF types.Order_TimeInForce,
+	id string,
+	side types.Side,
+	partyId string,
+	size uint64,
+	price uint64) *types.Order {
+	order := &types.Order{
+		Type:        orderType,
+		TimeInForce: orderTIF,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          id,
+		Side:        side,
+		PartyID:     partyId,
+		MarketID:    tm.market.GetID(),
+		Size:        size,
+		Price:       price,
+		Remaining:   size,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "marketorder",
+	}
+	return order
+}
+
+func TestOrderBook_Crash2651(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "613f")
+	addAccount(tm, "f9e7")
+	addAccount(tm, "98e1")
+	addAccount(tm, "qqqq")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Switch to auction mode
+	//book.EnterAuction()
+	//	tm.market.EnterAuction(ctx)
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx)
+	tm.market.EnterAuction(ctx)
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order01", types.Side_SIDE_BUY, "613f", 5, 9000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order02", types.Side_SIDE_SELL, "f9e7", 5, 9000)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order03", types.Side_SIDE_BUY, "613f", 4, 8000)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order04", types.Side_SIDE_SELL, "f9e7", 4, 8000)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order05", types.Side_SIDE_BUY, "613f", 4, 3000)
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order06", types.Side_SIDE_SELL, "f9e7", 3, 3000)
+	o6conf, err := tm.market.SubmitOrder(ctx, o6)
+	require.NotNil(t, o6conf)
+	require.NoError(t, err)
+
+	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order07", types.Side_SIDE_SELL, "f9e7", 20, 0)
+	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1000}
+	o7conf, err := tm.market.SubmitOrder(ctx, o7)
+	require.NotNil(t, o7conf)
+	require.NoError(t, err)
+
+	o8 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order08", types.Side_SIDE_SELL, "613f", 5, 10001)
+	o8conf, err := tm.market.SubmitOrder(ctx, o8)
+	require.NotNil(t, o8conf)
+	require.NoError(t, err)
+
+	o9 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFA, "Order09", types.Side_SIDE_BUY, "613f", 5, 15001)
+	o9conf, err := tm.market.SubmitOrder(ctx, o9)
+	require.NotNil(t, o9conf)
+	require.NoError(t, err)
+
+	o10 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order10", types.Side_SIDE_BUY, "f9e7", 12, 0)
+	o10.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1000}
+	o10conf, err := tm.market.SubmitOrder(ctx, o10)
+	require.NotNil(t, o10conf)
+	require.NoError(t, err)
+
+	o11 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order11", types.Side_SIDE_BUY, "613f", 21, 0)
+	o11.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -2000}
+	o11conf, err := tm.market.SubmitOrder(ctx, o11)
+	require.NotNil(t, o11conf)
+	require.NoError(t, err)
+
+	// Leave auction and uncross the book
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+
+	o12 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order12", types.Side_SIDE_SELL, "613f", 22, 9023)
+	o12conf, err := tm.market.SubmitOrder(ctx, o12)
+	require.NotNil(t, o12conf)
+	require.NoError(t, err)
+
+	o13 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order13", types.Side_SIDE_BUY, "98e1", 23, 11119)
+	o13conf, err := tm.market.SubmitOrder(ctx, o13)
+	require.NotNil(t, o13conf)
+	require.NoError(t, err)
+
+	// This order should cause a crash
+	o14 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order14", types.Side_SIDE_BUY, "qqqq", 34, 11513)
+	o14conf, err := tm.market.SubmitOrder(ctx, o14)
+	require.NotNil(t, o14conf)
+	require.NoError(t, err)
 }
 
 func TestTriggerAfterOpeningAuction(t *testing.T) {
