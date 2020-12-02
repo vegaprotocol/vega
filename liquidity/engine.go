@@ -335,6 +335,8 @@ func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyI
 		PartyID:     partyID,
 		Size:        size,
 		Remaining:   size,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTC,
 	}
 }
 
