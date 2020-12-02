@@ -42,5 +42,4 @@ require (
 	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a // indirect
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.23.0
-	gotest.tools v2.2.0+incompatible // indirect
 )

@@ -52,8 +52,8 @@ type Engine struct {
 	idGen          IDGen
 	suppliedEngine *supplied.Engine
 
-	currentTime    time.Time
-	suppliedFactor float64
+	currentTime             time.Time
+	stakeToObligationFactor float64
 
 	// state
 	provisions map[string]*types.LiquidityProvision
@@ -77,21 +77,40 @@ func NewEngine(
 	marketID string,
 ) *Engine {
 	return &Engine{
-		marketID:        marketID,
-		log:             log,
-		broker:          broker,
-		idGen:           idGen,
-		suppliedEngine:  supplied.NewEngine(riskModel, priceMonitor),
-		suppliedFactor:  1,
-		provisions:      map[string]*types.LiquidityProvision{},
-		orders:          map[string]map[string]*types.Order{},
-		liquidityOrders: map[string]map[string]*types.Order{},
+		marketID:                marketID,
+		log:                     log,
+		broker:                  broker,
+		idGen:                   idGen,
+		suppliedEngine:          supplied.NewEngine(riskModel, priceMonitor),
+		stakeToObligationFactor: 1,
+		provisions:              map[string]*types.LiquidityProvision{},
+		orders:                  map[string]map[string]*types.Order{},
+		liquidityOrders:         map[string]map[string]*types.Order{},
 	}
 }
 
 // OnChainTimeUpdate updates the internal engine current time
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
+}
+
+func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
+	e.stakeToObligationFactor = v
+}
+
+func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
+	lp := e.provisions[party]
+	if lp == nil {
+		return errors.New("party have no liquidity provision orders")
+	}
+
+	lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+
+	// now delete all stuff
+	delete(e.liquidityOrders, party)
+	delete(e.orders, party)
+	return nil
 }
 
 // SubmitLiquidityProvision handles a new liquidity provision submission.
@@ -271,7 +290,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		}
 	}
 
-	obligation := float64(lp.CommitmentAmount) * e.suppliedFactor
+	obligation := float64(lp.CommitmentAmount) * e.stakeToObligationFactor
 	var (
 		buysShape  = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
 		sellsShape = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))

@@ -899,6 +899,33 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 	return res, nil
 }
 
+func (e *Engine) BondUpdateOnOrder(ctx context.Context, market, party string, transfer *types.Transfer) (*types.TransferResponse, error) {
+	req, err := e.getBondTransferRequest(transfer, market)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range res.GetTransfers() {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("account-id", v.ToAccount),
+				logging.Uint64("amount", v.Amount),
+				logging.Error(err),
+			)
+		}
+	}
+
+	return res, nil
+
+}
+
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error) {
 	// create "fake" settle account for market ID
@@ -1004,6 +1031,62 @@ func (e *Engine) getFeeTransferRequest(
 		return treq, nil
 	default:
 		return nil, ErrInvalidTransferTypeForFeeRequest
+	}
+}
+
+func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*types.TransferRequest, error) {
+	bond, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_BOND))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	general, err := e.GetAccountByID(e.accountID(noMarket, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	switch t.Type {
+	case types.TransferType_TRANSFER_TYPE_BOND_LOW:
+		return &types.TransferRequest{
+			FromAccount: []*types.Account{
+				general,
+			},
+			ToAccount: []*types.Account{
+				bond,
+			},
+			Amount:    uint64(t.Amount.Amount),
+			MinAmount: uint64(t.Amount.Amount),
+			Asset:     t.Amount.Asset,
+			Reference: t.Type.String(),
+		}, nil
+	case types.TransferType_TRANSFER_TYPE_BOND_HIGH:
+		return &types.TransferRequest{
+			FromAccount: []*types.Account{
+				bond,
+			},
+			ToAccount: []*types.Account{
+				general,
+			},
+			Amount:    uint64(t.Amount.Amount),
+			MinAmount: uint64(t.Amount.Amount),
+			Asset:     t.Amount.Asset,
+			Reference: t.Type.String(),
+		}, nil
+	default:
+		return nil, errors.New("unsupported transfer type for bond account")
 	}
 }
 
@@ -1270,6 +1353,20 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	}
 
 	return resps, nil
+}
+
+// GetOrCreatePartyBondAccount returns a bond account given a set of parameters.
+// crates it if not exists
+func (e *Engine) GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error) {
+	if !e.AssetExists(asset) {
+		return nil, ErrInvalidAssetID
+	}
+
+	bondID, err := e.CreatePartyBondAccount(ctx, partyID, marketID, asset)
+	if err != nil {
+		return nil, err
+	}
+	return e.GetAccountByID(bondID)
 }
 
 // CreatePartyBondAccount creates a bond account if it does not exist, will return an error
