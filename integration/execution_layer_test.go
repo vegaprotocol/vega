@@ -1278,7 +1278,10 @@ func submitLP(in *gherkin.DataTable) error {
 		}
 	}
 	for id, sub := range lps {
-		party, _ := parties[id]
+		party, ok := parties[id]
+		if !ok {
+			return errors.New("party for LP not found")
+		}
 		if err := execsetup.engine.SubmitLiquidityProvision(context.Background(), sub, party, id); err != nil {
 			return err
 		}
