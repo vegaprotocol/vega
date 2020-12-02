@@ -13,8 +13,8 @@ import (
 var (
 	gdOpts = godog.Options{
 		Output: colors.Colored(os.Stdout),
-		// Format: "progress",
-		Format: "pretty", // default to pretty output so we can diagnose failed CI builds more easily
+		Format: "progress",
+		// Format: "pretty", // default to pretty output so we can diagnose failed CI builds more easily
 	}
 )
 
