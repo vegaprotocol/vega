@@ -556,7 +556,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	switch {
 	case asset.IsERC20():
 		asset, _ := asset.ERC20()
-		_, sig, err = asset.SignBridgeWhitelisting()
+		_, sig, err = asset.SignBridgeListing()
 	}
 	if err != nil {
 		app.log.Error("unable to sign whitelisting transaction",

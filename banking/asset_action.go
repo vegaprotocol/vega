@@ -165,7 +165,7 @@ func (t *assetAction) checkERC20Withdrawal() error {
 
 func (t *assetAction) checkERC20AssetList() error {
 	asset, _ := t.asset.ERC20()
-	hash, err := asset.ValidateWhitelist(t.erc20AL, t.blockNumber, t.txIndex)
+	hash, err := asset.ValidateList(t.erc20AL, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
