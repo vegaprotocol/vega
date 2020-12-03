@@ -7,7 +7,7 @@ There are two options:
 2) You can attach the `dlv` debugger to the intergation tests. 
 
 For both you'll need to
-- You will need to read and follow instructions in `GETTING_STARTED.md` first.
+- Read and follow instructions in `GETTING_STARTED.md` first.
 - Install `dlv` if you've not already done so. In `VSCode` you can do this by launching the "Command Palette" and running `Go: Install/Update Tools`, select `dlv`, press OK.
 
 
@@ -70,11 +70,11 @@ Once you have successfully installed `V E G A` with `tendermint` these are the s
 
 ## Debugging integration tests
 
-- Build a debug version of the `godog` test harness
+- Build a debug version of the `godog` test harness: from the root of the `V E G A` core repository
 
-```bash
+    ```bash
     DEBUGVEGA=yes go test -c ./integration/...
-```
+    ```
 
 - Use "Command Palette" to run `Debug: Open launch.json`. If you didn't already have a `launch.json` file, this will create one with the below default configuration which can be used to debug the current package. Enter the following into `launch.json` (which will be by default created inside `vega/.vscode/`):
 
