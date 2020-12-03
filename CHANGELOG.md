@@ -4,16 +4,16 @@
 
 *2020-11-25*
 
-This is a patch version bringing fixes to a few crashes, missing APIs in REST, and some issues related to the ethereum bridge.
+This is a patch version bringing fixes to a few crashes, missing APIs in REST, and some issues related to the Ethereum bridge.
 
 ### Fixes
 - [2645](https://github.com/vegaprotocol/vega/pull/2645) Add governance missing endpoints
-- [2653](https://github.com/vegaprotocol/vega/pull/2653) Fix calculation of cumulative volume (orderbook)
+- [2653](https://github.com/vegaprotocol/vega/pull/2653) Fix calculation of cumulative volume (order book)
 - [2649](https://github.com/vegaprotocol/vega/pull/2649) Fix typo in rest API
-- [2650](https://github.com/vegaprotocol/vega/pull/2650) Fix minProposerBalance network parameter usage
+- [2650](https://github.com/vegaprotocol/vega/pull/2650) Fix min proposer balance network parameter usage
 - [2659](https://github.com/vegaprotocol/vega/pull/2659) Fix a panic in execution engine happening when an auction was trigged by price monitoring
 - [2674](https://github.com/vegaprotocol/vega/pull/2674) Update the bridge and token ABI
-- [2683](https://github.com/vegaprotocol/vega/pull/2653) Fix handling of events sent by the Event_Queue
+- [2683](https://github.com/vegaprotocol/vega/pull/2653) Fix handling of events sent by the event queue
 
 
 ## 0.28.0
