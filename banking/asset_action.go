@@ -26,8 +26,10 @@ type withdrawal struct {
 }
 
 type txRef struct {
-	asset common.AssetClass
-	hash  string
+	asset    common.AssetClass
+	hash     string
+	index    uint64
+	logIndex uint
 }
 
 type assetAction struct {
@@ -131,13 +133,13 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 	asset, _ := t.asset.BuiltinAsset()
 	// builtin deposits do not have hash, and we don't need one
 	// so let's just add some random id
-	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String()}
+	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String(), 0, 0}
 	return nil
 }
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	partyID, assetID, hash, amount, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
+	partyID, assetID, hash, amount, logIndex, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
@@ -146,29 +148,29 @@ func (t *assetAction) checkERC20Deposit() error {
 		partyID: partyID,
 		assetID: assetID,
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
 }
 
 func (t *assetAction) checkERC20Withdrawal() error {
 	asset, _ := t.asset.ERC20()
-	nonce, hash, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
+	nonce, hash, logIndex, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
 	t.withdrawal = &withdrawal{
 		nonce: nonce,
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
 }
 
 func (t *assetAction) checkERC20AssetList() error {
 	asset, _ := t.asset.ERC20()
-	hash, err := asset.ValidateWhitelist(t.erc20AL, t.blockNumber, t.txIndex)
+	hash, logIndex, err := asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
 }
