@@ -14,6 +14,7 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -1205,6 +1206,23 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 		Sells: sells,
 		Buys:  buys,
 	}, nil
+}
+
+func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *proto.MarketData) ([]*PriceMonitoringBounds, error) {
+	ret := make([]*PriceMonitoringBounds, 0, len(obj.PriceMonitoringBounds))
+	for _, b := range obj.PriceMonitoringBounds {
+		bounds := &PriceMonitoringBounds{
+			MinValidPrice: strconv.FormatUint(b.MinValidPrice, 10),
+			MaxValidPrice: strconv.FormatUint(b.MaxValidPrice, 10),
+			Trigger: &PriceMonitoringTrigger{
+				HorizonSecs:          int(b.Trigger.Horizon),
+				Probability:          b.Trigger.Probability,
+				AuctionExtensionSecs: int(b.Trigger.AuctionExtension),
+			},
+		}
+		ret = append(ret, bounds)
+	}
+	return ret, nil
 }
 
 func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) (*types.Market, error) {
