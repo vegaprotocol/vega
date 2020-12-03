@@ -4746,14 +4746,14 @@ Represents a price level from market depth or order book data.
 <a name="vega.PriceMonitoringBounds"></a>
 
 ### PriceMonitoringBounds
-
+Represents a list of valid (at the current time) price ranges per associated trigger
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| minValidPrice | [uint64](#uint64) |  |  |
-| maxValidPrice | [uint64](#uint64) |  |  |
-| trigger | [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger) |  |  |
+| minValidPrice | [uint64](#uint64) |  | Minimum price that isn&#39;t currently breaching the specified price monitoring trigger |
+| maxValidPrice | [uint64](#uint64) |  | Maximum price that isn&#39;t currently breaching the specified price monitoring trigger |
+| trigger | [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger) |  | Price monitoring trigger associated with the bounds |
 
 
 

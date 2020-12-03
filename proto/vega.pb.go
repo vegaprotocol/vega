@@ -4310,9 +4310,13 @@ func (m *MarketData) GetPriceMonitoringBounds() []*PriceMonitoringBounds {
 	return nil
 }
 
+// Represents a list of valid (at the current time) price ranges per associated trigger
 type PriceMonitoringBounds struct {
-	MinValidPrice        uint64                  `protobuf:"varint,1,opt,name=minValidPrice,proto3" json:"minValidPrice,omitempty"`
-	MaxValidPrice        uint64                  `protobuf:"varint,2,opt,name=maxValidPrice,proto3" json:"maxValidPrice,omitempty"`
+	// Minimum price that isn't currently breaching the specified price monitoring trigger
+	MinValidPrice uint64 `protobuf:"varint,1,opt,name=minValidPrice,proto3" json:"minValidPrice,omitempty"`
+	// Maximum price that isn't currently breaching the specified price monitoring trigger
+	MaxValidPrice uint64 `protobuf:"varint,2,opt,name=maxValidPrice,proto3" json:"maxValidPrice,omitempty"`
+	// Price monitoring trigger associated with the bounds
 	Trigger              *PriceMonitoringTrigger `protobuf:"bytes,3,opt,name=trigger,proto3" json:"trigger,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`

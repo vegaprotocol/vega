@@ -1050,9 +1050,13 @@ message MarketData {
   repeated PriceMonitoringBounds priceMonitoringBounds = 23;
 }
 
+// Represents a list of valid (at the current time) price ranges per associated trigger
 message PriceMonitoringBounds {
+  // Minimum price that isn't currently breaching the specified price monitoring trigger
   uint64 minValidPrice = 1;
+  // Maximum price that isn't currently breaching the specified price monitoring trigger
   uint64 maxValidPrice = 2;
+  // Price monitoring trigger associated with the bounds
   PriceMonitoringTrigger trigger = 3;
 }
 

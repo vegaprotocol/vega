@@ -13022,7 +13022,7 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
 
 
         <h3 id="vega.PriceMonitoringBounds">PriceMonitoringBounds</h3>
-        <p></p>
+        <p>Represents a list of valid (at the current time) price ranges per associated trigger</p>
 
 
           <table class="field-table">
@@ -13035,21 +13035,21 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                   <td>minValidPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Minimum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
                 </tr>
 
                 <tr>
                   <td>maxValidPrice</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Maximum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
                 </tr>
 
                 <tr>
                   <td>trigger</td>
                   <td><a href="#vega.PriceMonitoringTrigger">PriceMonitoringTrigger</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Price monitoring trigger associated with the bounds </p></td>
                 </tr>
 
             </tbody>

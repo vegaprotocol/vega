@@ -4507,16 +4507,20 @@
       "properties": {
         "minValidPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "Minimum price that isn't currently breaching the specified price monitoring trigger"
         },
         "maxValidPrice": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "Maximum price that isn't currently breaching the specified price monitoring trigger"
         },
         "trigger": {
-          "$ref": "#/definitions/vegaPriceMonitoringTrigger"
+          "$ref": "#/definitions/vegaPriceMonitoringTrigger",
+          "title": "Price monitoring trigger associated with the bounds"
         }
-      }
+      },
+      "title": "Represents a list of valid (at the current time) price ranges per associated trigger"
     },
     "vegaPriceMonitoringParameters": {
       "type": "object",
