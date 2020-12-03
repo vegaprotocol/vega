@@ -1,10 +1,26 @@
 # Changelog
 
+## 0.28.2
+
+*2020-11-25*
+
+This is a patch version bringing fixes to a few crashes, missing APIs in REST, and some issues related to the ethereum bridge.
+
+### Fixes
+- [2645](https://github.com/vegaprotocol/vega/pull/2645) Add governance missing endpoints
+- [2653](https://github.com/vegaprotocol/vega/pull/2653) Fix calculation of cumulative volume (orderbook)
+- [2649](https://github.com/vegaprotocol/vega/pull/2649) Fix typo in rest API
+- [2650](https://github.com/vegaprotocol/vega/pull/2650) Fix minProposerBalance network parameter usage
+- [2659](https://github.com/vegaprotocol/vega/pull/2659) Fix a panic in execution engine happening when an auction was trigged by price monitoring
+- [2674](https://github.com/vegaprotocol/vega/pull/2674) Update the bridge and token ABI
+- [2683](https://github.com/vegaprotocol/vega/pull/2653) Fix handling of events sent by the Event_Queue
+
+
 ## 0.28.0
 
 *2020-11-25*
 
-Vega release logs contain a 🔥 emoji to denote breaking API changes. 🔥🔥 is a new combination denoting something that may significantly change your experience - from this release forward, transactions from keys that have no collateral on the network will *always* be rejected. As there are no transactions that don't either require collateral themselves, or an action to have been taken that already required collateral, we are now rejecting these as soon as possible. 
+Vega release logs contain a 🔥 emoji to denote breaking API changes. 🔥🔥 is a new combination denoting something that may significantly change your experience - from this release forward, transactions from keys that have no collateral on the network will *always* be rejected. As there are no transactions that don't either require collateral themselves, or an action to have been taken that already required collateral, we are now rejecting these as soon as possible.
 
 We've also added support for synchronously submitting transactions. This can make error states easier to catch. Along with this you can now subscribe to error events in the event bus.
 
@@ -31,7 +47,7 @@ Also: Note that you'll see a lot of changes related to **Pegged Orders** and **L
 - [#2626](https://github.com/vegaprotocol/vega/pull/2626) Add a transaction submit type to GraphQL
 - [#2624](https://github.com/vegaprotocol/vega/pull/2624) Add mutexes to assets maps
 - [#2623](https://github.com/vegaprotocol/vega/pull/2623) Fix concurrent map access in assets
-- [#2608](https://github.com/vegaprotocol/vega/pull/2608) Add sync/async equivalents for `submitTX` 
+- [#2608](https://github.com/vegaprotocol/vega/pull/2608) Add sync/async equivalents for `submitTX`
 - [#2618](https://github.com/vegaprotocol/vega/pull/2618) Disable storing API-related data on validator nodes
 - [#2615](https://github.com/vegaprotocol/vega/pull/2618) Expand static checks
 - [#2613](https://github.com/vegaprotocol/vega/pull/2613) Remove unused internal `cancelOrderById` function
@@ -40,8 +56,8 @@ Also: Note that you'll see a lot of changes related to **Pegged Orders** and **L
 - [#2554](https://github.com/vegaprotocol/vega/pull/2554) Fix mid-price to 0 when best bid and average are unavailable and pegged order price is 0
 - [#2565](https://github.com/vegaprotocol/vega/pull/2565) Cancelled pegged orders now have the correct status
 - [#2568](https://github.com/vegaprotocol/vega/pull/2568) Prevent pegged orders from being repriced
-- [#2570](https://github.com/vegaprotocol/vega/pull/2570) Expose probability of trading 
-- [#2576](https://github.com/vegaprotocol/vega/pull/2576) Use static best bid/ask price for pegged order repricing 
+- [#2570](https://github.com/vegaprotocol/vega/pull/2570) Expose probability of trading
+- [#2576](https://github.com/vegaprotocol/vega/pull/2576) Use static best bid/ask price for pegged order repricing
 - [#2581](https://github.com/vegaprotocol/vega/pull/2581) Fix order of messages when cancelling a pegged order
 - [#2586](https://github.com/vegaprotocol/vega/pull/2586) Fix blank `txHash` in deposit API types
 - [#2591](https://github.com/vegaprotocol/vega/pull/2591) Pegged orders are now cancelled when all orders are cancelled
