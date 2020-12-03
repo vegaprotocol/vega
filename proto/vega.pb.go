@@ -4117,7 +4117,8 @@ type MarketData struct {
 	// the targeted stake for the given market
 	TargetStake string `protobuf:"bytes,21,opt,name=targetStake,proto3" json:"targetStake,omitempty"`
 	// the available stake fo the given market
-	SuppliedStake         string                   `protobuf:"bytes,22,opt,name=suppliedStake,proto3" json:"suppliedStake,omitempty"`
+	SuppliedStake string `protobuf:"bytes,22,opt,name=suppliedStake,proto3" json:"suppliedStake,omitempty"`
+	// a list of price monitoring bounds per current time
 	PriceMonitoringBounds []*PriceMonitoringBounds `protobuf:"bytes,23,rep,name=priceMonitoringBounds,proto3" json:"priceMonitoringBounds,omitempty"`
 	XXX_NoUnkeyedLiteral  struct{}                 `json:"-"`
 	XXX_unrecognized      []byte                   `json:"-"`

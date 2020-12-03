@@ -1047,6 +1047,7 @@ message MarketData {
   string targetStake = 21;
   // the available stake fo the given market
   string suppliedStake = 22;
+  // a list of price monitoring bounds per current time
   repeated PriceMonitoringBounds priceMonitoringBounds = 23;
 }
 
