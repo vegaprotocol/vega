@@ -4,7 +4,7 @@ This document is a guide describing how to debug with `dlv` and `VSCode`.
 
 There are two options:
 1) You can start entire `V E G A` and `tendermint` and fire instructions at your node and debug the results.
-2) You can attach the `dlv` debugger to the intergation tests.
+2) You can attach the `dlv` debugger to the integration tests.
 
 For both you'll need to
 - Read and follow instructions in `GETTING_STARTED.md` first.
