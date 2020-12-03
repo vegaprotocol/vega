@@ -1485,17 +1485,17 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	addAccount(tm, "F")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "A", 5, 10500)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order01", types.Side_SIDE_BUY, "A", 5, 11500)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "B", 20, 11000)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order02", types.Side_SIDE_SELL, "B", 20, 11000)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_BUY, "A", 10, 10500)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order03", types.Side_SIDE_BUY, "A", 10, 10500)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -1517,13 +1517,14 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, o6conf)
 	require.NoError(t, err)
 
-	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order07", types.Side_SIDE_SELL, "E", 19, 0)
+	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order07", types.Side_SIDE_SELL, "E", 19, 0)
 	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +3000}
+	o7.ExpiresAt = now.Add(time.Second * 60).UnixNano()
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)
 
-	o8 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order08", types.Side_SIDE_BUY, "E", 25, 10000)
+	o8 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order08", types.Side_SIDE_BUY, "F", 25, 10000)
 	o8conf, err := tm.market.SubmitOrder(ctx, o8)
 	require.NotNil(t, o8conf)
 	require.NoError(t, err)
