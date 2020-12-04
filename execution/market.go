@@ -729,7 +729,10 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *t))
 		}
 	}
-	m.broker.SendBatch(tradeEvts)
+	// now that we're left the auction, we can mark all positions
+	// in case any trader is distressed (Which shouldn't be possible)
+	// we'll fall back to the a network order at the new mark price (mid-price)
+	m.confirmMTM(ctx, &types.Order{Price: m.markPrice})
 
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.AuctionEnded(ctx, now)
@@ -1224,6 +1227,7 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 			}
 		}
 	}
+	end := m.as.AuctionEnd()
 
 	if len(confirmation.Trades) > 0 {
 
@@ -1258,26 +1262,32 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 		}
 		m.broker.SendBatch(tradeEvts)
 
-		// now let's get the transfers for MTM settlement
-		evts := m.position.UpdateMarkPrice(m.markPrice)
-		settle := m.settlement.SettleMTM(ctx, m.markPrice, evts)
+		if !end {
+			m.confirmMTM(ctx, order)
+		}
+	}
+}
 
-		// Only process collateral and risk once per order, not for every trade
-		margins := m.collateralAndRisk(ctx, settle)
-		if len(margins) > 0 {
+func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
+	// now let's get the transfers for MTM settlement
+	evts := m.position.UpdateMarkPrice(m.markPrice)
+	settle := m.settlement.SettleMTM(ctx, m.markPrice, evts)
 
-			transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
-			if err == nil && len(transfers) > 0 {
-				evt := events.NewTransferResponse(ctx, transfers)
-				m.broker.Send(evt)
-			}
-			if len(closed) > 0 {
-				err = m.resolveClosedOutTraders(ctx, closed, order)
-				if err != nil {
-					m.log.Error("unable to close out traders",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
+	// Only process collateral and risk once per order, not for every trade
+	margins := m.collateralAndRisk(ctx, settle)
+	if len(margins) > 0 {
+
+		transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+		if err == nil && len(transfers) > 0 {
+			evt := events.NewTransferResponse(ctx, transfers)
+			m.broker.Send(evt)
+		}
+		if len(closed) > 0 {
+			err = m.resolveClosedOutTraders(ctx, closed, order)
+			if err != nil {
+				m.log.Error("unable to close out traders",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
 			}
 		}
 		m.updateLiquidityFee(ctx)
