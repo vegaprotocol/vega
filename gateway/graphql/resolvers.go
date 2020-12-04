@@ -1207,6 +1207,23 @@ func (r *myMarketDataResolver) Commitments(ctx context.Context, m *types.MarketD
 	}, nil
 }
 
+func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *types.MarketData) ([]*PriceMonitoringBounds, error) {
+	ret := make([]*PriceMonitoringBounds, 0, len(obj.PriceMonitoringBounds))
+	for _, b := range obj.PriceMonitoringBounds {
+		bounds := &PriceMonitoringBounds{
+			MinValidPrice: strconv.FormatUint(b.MinValidPrice, 10),
+			MaxValidPrice: strconv.FormatUint(b.MaxValidPrice, 10),
+			Trigger: &PriceMonitoringTrigger{
+				HorizonSecs:          int(b.Trigger.Horizon),
+				Probability:          b.Trigger.Probability,
+				AuctionExtensionSecs: int(b.Trigger.AuctionExtension),
+			},
+		}
+		ret = append(ret, bounds)
+	}
+	return ret, nil
+}
+
 func (r *myMarketDataResolver) Market(ctx context.Context, m *types.MarketData) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, m.Market)
 }

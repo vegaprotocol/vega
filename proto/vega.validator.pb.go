@@ -314,6 +314,21 @@ func (this *MarginLevels) Validate() error {
 	return nil
 }
 func (this *MarketData) Validate() error {
+	for _, item := range this.PriceMonitoringBounds {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringBounds", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *PriceMonitoringBounds) Validate() error {
+	if this.Trigger != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Trigger); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Trigger", err)
+		}
+	}
 	return nil
 }
 func (this *ErrorDetail) Validate() error {

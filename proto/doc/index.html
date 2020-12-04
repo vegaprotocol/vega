@@ -1264,6 +1264,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.PriceMonitoringBounds"><span class="badge">M</span>PriceMonitoringBounds</a>
+                </li>
+
+                <li>
                   <a href="#vega.RiskFactor"><span class="badge">M</span>RiskFactor</a>
                 </li>
 
@@ -11865,6 +11869,13 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><p>the available stake fo the given market </p></td>
                 </tr>
 
+                <tr>
+                  <td>priceMonitoringBounds</td>
+                  <td><a href="#vega.PriceMonitoringBounds">PriceMonitoringBounds</a></td>
+                  <td>repeated</td>
+                  <td><p>a list of price monitoring bounds per current time </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -13001,6 +13012,44 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Volume at the price level. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringBounds">PriceMonitoringBounds</h3>
+        <p>Represents a list of valid (at the current time) price ranges per associated trigger</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>minValidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Minimum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
+                </tr>
+
+                <tr>
+                  <td>maxValidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Maximum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
+                </tr>
+
+                <tr>
+                  <td>trigger</td>
+                  <td><a href="#vega.PriceMonitoringTrigger">PriceMonitoringTrigger</a></td>
+                  <td></td>
+                  <td><p>Price monitoring trigger associated with the bounds </p></td>
                 </tr>
 
             </tbody>

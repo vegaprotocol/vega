@@ -84,6 +84,7 @@ var (
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
+	GetCurrentBounds() []*types.PriceMonitoringBounds
 }
 
 // TargetStakeCalculator interface
@@ -371,6 +372,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		// FIXME(WITOLD): uncomment set real values here
 		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
+		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}
 }
 

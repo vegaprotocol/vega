@@ -478,6 +478,16 @@ type PreparedWithdrawal struct {
 	Blob string `json:"blob"`
 }
 
+// Range of valid prices and the associated price monitoring trigger
+type PriceMonitoringBounds struct {
+	// Minimum price that isn't currently breaching the specified price monitoring trigger
+	MinValidPrice string `json:"minValidPrice"`
+	// Maximum price that isn't currently breaching the specified price monitoring trigger
+	MaxValidPrice string `json:"maxValidPrice"`
+	// Price monitoring trigger associated with the bounds
+	Trigger *PriceMonitoringTrigger `json:"trigger"`
+}
+
 // PriceMonitoringParameters holds a list of triggers
 type PriceMonitoringParameters struct {
 	// The list of triggers for this price monitoring
