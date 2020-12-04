@@ -15,6 +15,10 @@ type LiquidityProvisions []*types.LiquidityProvision
 // ordered list to find the liquidity providers that supply the liquidity
 // that's required. If no such k exists we set k=N.
 func (l LiquidityProvisions) feeForTarget(t uint64) string {
+	if len(l) == 0 {
+		return ""
+	}
+
 	var n uint64
 
 	for _, i := range l {

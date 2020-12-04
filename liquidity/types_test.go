@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProvisionsSatisfyTarget(t *testing.T) {
@@ -31,4 +32,10 @@ func TestProvisionsSatisfyTarget(t *testing.T) {
 		got := parties.FeeForTarget(test.stake)
 		assert.Equal(t, test.fee, got, "Case #%d", i)
 	}
+
+	t.Run("EmptyProvisions", func(t *testing.T) {
+		parties := ProvisionsPerParty{}
+		got := parties.FeeForTarget(100)
+		require.Empty(t, got)
+	})
 }
