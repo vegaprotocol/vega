@@ -61,7 +61,8 @@ steps:
   - name: markdownspellcheck-PR
     image: docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest
     pull: always
-    environment: {}
+    environment:
+      FORCE_COLOR: 1  # show colour in CI
     commands:
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -c '\.md$$' git_diff.txt)" -gt 0 ; then
           mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md' || exit 1 ;
