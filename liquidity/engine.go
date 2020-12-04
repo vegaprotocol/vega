@@ -55,7 +55,7 @@ type Engine struct {
 	stakeToObligationFactor float64
 
 	// state
-	provisions map[string]*types.LiquidityProvision
+	provisions ProvisionsPerParty
 
 	// orders stores all the market orders (except the liquidity orders) explicitly submited by a given party.
 	// indexed as: map of PartyID -> OrderID -> order to easy access
@@ -108,6 +108,11 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) err
 	delete(e.liquidityOrders, party)
 	delete(e.orders, party)
 	return nil
+}
+
+// ProvisionsPerParty returns the resgistered a map of party-id -> LiquidityProvision.
+func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
+	return e.provisions
 }
 
 // SubmitLiquidityProvision handles a new liquidity provision submission.
@@ -190,18 +195,6 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 // If not, it returns nil.
 func (e *Engine) LiquidityProvisionByPartyID(partyID string) *types.LiquidityProvision {
 	return e.provisions[partyID]
-}
-
-// Orders provides convenience functions to a slice of *veaga/proto.Orders.
-type Orders []*types.Order
-
-// ByParty returns the orders grouped by it's PartyID
-func (ords Orders) ByParty() map[string][]*types.Order {
-	parties := map[string][]*types.Order{}
-	for _, order := range ords {
-		parties[order.PartyID] = append(parties[order.PartyID], order)
-	}
-	return parties
 }
 
 func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
