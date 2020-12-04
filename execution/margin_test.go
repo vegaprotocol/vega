@@ -15,7 +15,7 @@ func TestMargins(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	price := uint64(100)
 	size := uint64(100)
 
@@ -74,7 +74,7 @@ func TestPartialFillMargins(t *testing.T) {
 	party3 := "party3"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)

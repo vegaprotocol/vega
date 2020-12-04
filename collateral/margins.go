@@ -27,9 +27,15 @@ func (n marginUpdate) MarketID() string {
 }
 
 func (n marginUpdate) MarginBalance() uint64 {
+	if n.margin == nil {
+		return 0
+	}
 	return uint64(n.margin.Balance)
 }
 
 func (n marginUpdate) GeneralBalance() uint64 {
+	if n.general == nil {
+		return 0
+	}
 	return uint64(n.general.Balance)
 }

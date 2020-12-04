@@ -11,7 +11,7 @@ const (
 	MarketInitialMarkPrice                        = "market.initialMarkPrice"
 	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stateToCcySiskas"
+	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stakeToCcySiskas"
 	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                = "market.stake.target.scalingFactor"
 	MarketPriceMonitoringDefaultParameters        = "market.monitor.price.defaultParameters"

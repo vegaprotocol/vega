@@ -416,14 +416,20 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	// check price auction end
 	if m.as.InAuction() {
+		p := m.matching.GetIndicativePrice()
 		if m.as.IsOpeningAuction() {
 			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
 				// mark opening auction as ending
+				if p != 0 {
+					// Prime price monitoring engine with the uncrossing price of the opening auction
+					if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
+						m.log.Error("Price monitoring error", logging.Error(err))
+					}
+				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
 			}
 		} else if m.as.IsPriceAuction() {
-			p := m.matching.GetIndicativePrice()
 			// ending auction now would result in no trades so feed the last mark price into pMonitor
 			if p == 0 {
 				p = m.markPrice
@@ -1638,6 +1644,11 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	if m.as.InAuction() {
 		if ip := m.matching.GetIndicativePrice(); ip != 0 {
 			price = ip
+		}
+		// in opening auctions, there might not be price data at all, in which case we should default to
+		// the order price to base our margin requirements on
+		if m.as.IsOpeningAuction() && price < order.Price {
+			price = order.Price
 		}
 	}
 	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, price, pos)
