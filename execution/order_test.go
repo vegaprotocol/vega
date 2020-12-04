@@ -1601,7 +1601,7 @@ func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 	amendOrder(t, tm, "party1", buyOrder1, 0, 100, types.Order_TIF_UNSPECIFIED, 0, true)
 
 	// Try to delete the pegged order
-	cancelconf, err := tm.market.CancelOrder(context.TODO(), "party1", order.Id)
+	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order.Id)
 	assert.NotNil(t, cancelconf)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, cancelconf.Order.Status)
 }
