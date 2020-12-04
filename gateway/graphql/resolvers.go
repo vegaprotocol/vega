@@ -1218,7 +1218,7 @@ func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *t
 				Probability:          b.Trigger.Probability,
 				AuctionExtensionSecs: int(b.Trigger.AuctionExtension),
 			},
-			ReferencePrice:       b.ReferencePrice,
+			ReferencePrice: strconv.FormatFloat(b.ReferencePrice, 'f', -1, 64),
 		}
 		ret = append(ret, bounds)
 	}

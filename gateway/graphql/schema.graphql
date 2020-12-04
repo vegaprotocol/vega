@@ -928,7 +928,7 @@ type PriceMonitoringBounds {
   "Price monitoring trigger associated with the bounds"
   trigger: PriceMonitoringTrigger!
   "Reference price used to calculate the valid price range"
-  referencePrice: Float!
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"

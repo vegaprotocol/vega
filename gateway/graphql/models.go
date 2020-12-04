@@ -487,7 +487,7 @@ type PriceMonitoringBounds struct {
 	// Price monitoring trigger associated with the bounds
 	Trigger *PriceMonitoringTrigger `json:"trigger"`
 	// Reference price used to calculate the valid price range
-	ReferencePrice float64 `json:"referencePrice"`
+	ReferencePrice string `json:"referencePrice"`
 }
 
 // PriceMonitoringParameters holds a list of triggers

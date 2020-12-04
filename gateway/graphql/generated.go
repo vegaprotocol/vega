@@ -5132,7 +5132,7 @@ type PriceMonitoringBounds {
   "Price monitoring trigger associated with the bounds"
   trigger: PriceMonitoringTrigger!
   "Reference price used to calculate the valid price range"
-  referencePrice: Float!
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"
@@ -16577,9 +16577,9 @@ func (ec *executionContext) _PriceMonitoringBounds_referencePrice(ctx context.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceMonitoringParameters_triggers(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
