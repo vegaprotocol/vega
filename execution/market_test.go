@@ -1482,39 +1482,52 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	addAccount(tm, "D")
 	addAccount(tm, "E")
 	addAccount(tm, "F")
+	addAccount(tm, "G")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order01", types.Side_SIDE_BUY, "A", 5, 11500)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order02", types.Side_SIDE_SELL, "B", 20, 11000)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order02", types.Side_SIDE_SELL, "B", 25, 11000)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order03", types.Side_SIDE_BUY, "A", 10, 10500)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o4 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIF_IOC, "Order04", types.Side_SIDE_SELL, "C", 5, 0)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order05", types.Side_SIDE_BUY, "C", 35, 0)
 	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -500}
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order06", types.Side_SIDE_BUY, "D", 16, 0)
 	o6.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -2000}
 	o6conf, err := tm.market.SubmitOrder(ctx, o6)
 	require.NotNil(t, o6conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order07", types.Side_SIDE_SELL, "E", 19, 0)
 	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +3000}
@@ -1522,17 +1535,37 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o8 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order08", types.Side_SIDE_BUY, "F", 25, 10000)
 	o8conf, err := tm.market.SubmitOrder(ctx, o8)
 	require.NotNil(t, o8conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	// This one should crash
 	o9 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order09", types.Side_SIDE_SELL, "F", 25, 10250)
 	o9conf, err := tm.market.SubmitOrder(ctx, o9)
 	require.NotNil(t, o9conf)
 	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+
+	o10 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order10", types.Side_SIDE_BUY, "G", 45, 14000)
+	o10conf, err := tm.market.SubmitOrder(ctx, o10)
+	require.NotNil(t, o10conf)
+	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+
+	o11 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order11", types.Side_SIDE_SELL, "G", 45, 8500)
+	o11conf, err := tm.market.SubmitOrder(ctx, o11)
+	require.NotNil(t, o11conf)
+	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 }
 
 func TestTriggerAfterOpeningAuction(t *testing.T) {
