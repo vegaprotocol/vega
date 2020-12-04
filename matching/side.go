@@ -249,24 +249,14 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 		return nil, types.ErrOrderNotFound
 	}
 
-	// orders are order by timestamp (CreatedAt)
-	oidx := sort.Search(len(s.levels[i].orders), func(j int) bool {
-		return s.levels[i].orders[j].CreatedAt >= o.CreatedAt
-	})
-	// we did not find the order
-	if oidx >= len(s.levels[i].orders) {
-		return nil, types.ErrOrderNotFound
-	}
-
 	// now we may have a few orders with the same timestamp
 	// lets iterate over them in order to find the right one
 	finaloidx := -1
-	for oidx < len(s.levels[i].orders) && s.levels[i].orders[oidx].CreatedAt == o.CreatedAt {
-		if s.levels[i].orders[oidx].Id == o.Id {
-			finaloidx = oidx
+	for index, order := range s.levels[i].orders {
+		if order.Id == o.Id {
+			finaloidx = index
 			break
 		}
-		oidx++
 	}
 
 	var order *types.Order
@@ -580,4 +570,16 @@ func (s *OrderBookSide) getOrderCount() int64 {
 		orderCount = orderCount + int64(len(level.orders))
 	}
 	return orderCount
+}
+
+func (s *OrderBookSide) logSide() {
+	s.log.Error("OrderBookSide", logging.String("Side:", s.side.String()))
+
+	for _, level := range s.levels {
+		s.log.Error("PriceLevel", logging.Uint64("Price", level.price))
+		for _, order := range level.orders {
+			s.log.Error("Orders", logging.Order(*order))
+		}
+	}
+
 }

@@ -2392,7 +2392,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 
 		conf, err = m.matching.SubmitOrder(newOrder) //lint:ignore SA4006 this value might be overwriter, careful!
 		// replace the trades in the confirmation to have
-		// the ones with the fees embbeded
+		// the ones with the fees embedded
 		conf.Trades = trades
 	}
 
