@@ -163,9 +163,10 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 		if b.Active {
 			ret = append(ret,
 				&types.PriceMonitoringBounds{
-					MinValidPrice: uint64(math.Ceil(pr.MinPrice)),
-					MaxValidPrice: uint64(math.Floor(pr.MaxPrice)),
-					Trigger:       b.Trigger})
+					MinValidPrice:  uint64(math.Ceil(pr.MinPrice)),
+					MaxValidPrice:  uint64(math.Floor(pr.MaxPrice)),
+					Trigger:        b.Trigger,
+					ReferencePrice: pr.ReferencePrice})
 		}
 	}
 	sort.SliceStable(ret,
