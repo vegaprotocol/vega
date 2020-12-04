@@ -1154,14 +1154,16 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	expectedPmRange1 := types.PriceMonitoringBounds{
-		MinValidPrice: uint64(int64(initialPrice) + MINMOVEDOWN),
-		MaxValidPrice: initialPrice + MAXMOVEUP,
-		Trigger:       t1,
+		MinValidPrice:  uint64(int64(initialPrice) + MINMOVEDOWN),
+		MaxValidPrice:  initialPrice + MAXMOVEUP,
+		Trigger:        t1,
+		ReferencePrice: float64(initialPrice),
 	}
 	expectedPmRange2 := types.PriceMonitoringBounds{
-		MinValidPrice: uint64(int64(initialPrice) + MINMOVEDOWN),
-		MaxValidPrice: initialPrice + MAXMOVEUP,
-		Trigger:       t2,
+		MinValidPrice:  uint64(int64(initialPrice) + MINMOVEDOWN),
+		MaxValidPrice:  initialPrice + MAXMOVEUP,
+		Trigger:        t2,
+		ReferencePrice: float64(initialPrice),
 	}
 
 	addAccount(tm, party1)
