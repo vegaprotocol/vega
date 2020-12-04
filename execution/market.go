@@ -1637,6 +1637,11 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		if ip := m.matching.GetIndicativePrice(); ip != 0 {
 			price = ip
 		}
+		// in opening auctions, there might not be price data at all, in which case we should default to
+		// the order price to base our margin requirements on
+		if m.as.IsOpeningAuction() && price < order.Price {
+			price = order.Price
+		}
 	}
 	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, price, pos)
 	if err != nil {
