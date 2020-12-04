@@ -1151,7 +1151,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	auctionEndTime := now.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	var initialPrice uint64 = 100
 	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
-	tm := getTestMarket(t, now, closingAt, pMonitorSettings)
+	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	expectedPmRange1 := types.PriceMonitoringBounds{
 		MinValidPrice: uint64(int64(initialPrice) + MINMOVEDOWN),
