@@ -4559,7 +4559,7 @@ type MarketData {
   "The liquidity commitments for a given market"
   commitments: MarketDataCommitments!
   "A list of valid price ranges per associated trigger"
-  priceMonitoringBounds: [PriceMonitoringBounds!]!
+  priceMonitoringBounds: [PriceMonitoringBounds!]
 }
 
 "The MM commitments for this market"
@@ -13281,14 +13281,11 @@ func (ec *executionContext) _MarketData_priceMonitoringBounds(ctx context.Contex
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*PriceMonitoringBounds)
 	fc.Result = res
-	return ec.marshalNPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx, field.Selections, res)
+	return ec.marshalOPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataCommitments_sells(ctx context.Context, field graphql.CollectedField, obj *MarketDataCommitments) (ret graphql.Marshaler) {
@@ -26040,9 +26037,6 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._MarketData_priceMonitoringBounds(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
@@ -30480,43 +30474,6 @@ func (ec *executionContext) marshalNPriceMonitoringBounds2codeᚗvegaprotocolᚗ
 	return ec._PriceMonitoringBounds(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceMonitoringBounds) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNPriceMonitoringBounds2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalNPriceMonitoringBounds2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx context.Context, sel ast.SelectionSet, v *PriceMonitoringBounds) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -32172,6 +32129,46 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceMonitoringBounds) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPriceMonitoringBounds2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

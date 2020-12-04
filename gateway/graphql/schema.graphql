@@ -363,7 +363,7 @@ type MarketData {
   "The liquidity commitments for a given market"
   commitments: MarketDataCommitments!
   "A list of valid price ranges per associated trigger"
-  priceMonitoringBounds: [PriceMonitoringBounds!]!
+  priceMonitoringBounds: [PriceMonitoringBounds!]
 }
 
 "The MM commitments for this market"
