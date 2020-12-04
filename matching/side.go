@@ -571,15 +571,3 @@ func (s *OrderBookSide) getOrderCount() int64 {
 	}
 	return orderCount
 }
-
-func (s *OrderBookSide) logSide() {
-	s.log.Error("OrderBookSide", logging.String("Side:", s.side.String()))
-
-	for _, level := range s.levels {
-		s.log.Error("PriceLevel", logging.Uint64("Price", level.price))
-		for _, order := range level.orders {
-			s.log.Error("Orders", logging.Order(*order))
-		}
-	}
-
-}
