@@ -2725,7 +2725,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
 		return err
 	}
-	m.updateLiquidityFee(ctx)
 
 	defer func() {
 		if err == nil {
@@ -2797,7 +2796,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+		return err
+	}
+
+	m.updateLiquidityFee(ctx)
+	return nil
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
