@@ -1,4 +1,4 @@
-Feature: Price monitoring test for issue 2668
+Feature: Price monitoring test for issue 2681
 
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
