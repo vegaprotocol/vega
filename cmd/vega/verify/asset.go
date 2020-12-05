@@ -1,13 +1,9 @@
 package verify
 
 import (
-	"bytes"
-	"io/ioutil"
-	"os"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
-	"github.com/golang/protobuf/jsonpb"
 )
 
 type AssetCmd struct{}
@@ -16,30 +12,9 @@ func (opts *AssetCmd) Execute(params []string) error {
 	return verifier(params, verifyAsset)
 }
 
-func readFile(r *reporter, path string) []byte {
-	f, err := os.Open(path)
-	if err != nil {
-		r.Err("%v, no such file or directory", path)
-		return nil
-	}
-	bytes, err := ioutil.ReadAll(f)
-	if err != nil {
-		r.Err("unable to read file: %v", err)
-		return nil
-	}
-
-	return bytes
-}
-
 func verifyAsset(r *reporter, bs []byte) string {
 	prop := &types.Proposal{}
-	u := jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}
-
-	err := u.Unmarshal(bytes.NewBuffer(bs), prop)
-	if err != nil {
-		r.Err("unable to unmarshal file: %v", err)
+	if !unmarshal(r, bs, prop) {
 		return ""
 	}
 
@@ -61,12 +36,7 @@ func verifyAsset(r *reporter, bs []byte) string {
 		verifyAssetTerms(r, prop)
 	}
 
-	m := jsonpb.Marshaler{
-		Indent:       " ",
-		EmitDefaults: true,
-	}
-	buf, _ := m.MarshalToString(prop)
-	return string(buf)
+	return marshal(prop)
 }
 
 func verifyAssetTerms(r *reporter, prop *types.Proposal) {
