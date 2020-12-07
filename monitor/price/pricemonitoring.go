@@ -333,16 +333,11 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 	if e.priceRangeCacheTime != e.now {
 		e.priceRangesCache = make(map[*bound]priceRange, len(e.priceRangesCache))
 
-		var ph int64    // previous horizon
-		var ref float64 // reference price
 		for _, b := range e.bounds {
 			if !b.Active {
 				continue
 			}
-			if b.Trigger.Horizon != ph {
-				ph = b.Trigger.Horizon
-				ref = e.getRefPrice(ph)
-			}
+			ref := e.getRefPrice(b.Trigger.Horizon)
 			e.priceRangesCache[b] = priceRange{MinPrice: ref * b.Down, MaxPrice: ref * b.Up}
 		}
 		e.priceRangeCacheTime = e.now
