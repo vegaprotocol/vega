@@ -11,7 +11,6 @@ import (
 )
 
 var (
-
 	// ErrNilRangeProvider signals that nil was supplied in place of RangeProvider
 	ErrNilRangeProvider = errors.New("nil RangeProvider")
 	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
@@ -49,10 +48,10 @@ type AuctionState interface {
 
 // bound holds the limits for the valid price movement
 type bound struct {
-	Active      bool
-	MaxMoveUp   float64
-	MinMoveDown float64
-	Trigger     *types.PriceMonitoringTrigger
+	Active  bool
+	Up      float64
+	Down    float64
+	Trigger *types.PriceMonitoringTrigger
 }
 
 type priceRange struct {
@@ -273,8 +272,8 @@ func (e *Engine) reset(price uint64, now time.Time) {
 func (e *Engine) resetBounds() {
 	for _, b := range e.bounds {
 		b.Active = true
-		b.MinMoveDown = 0
-		b.MaxMoveUp = 0
+		b.Down = 0
+		b.Up = 0
 	}
 }
 
@@ -339,9 +338,9 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 			}
 			if b.Trigger.Horizon != ph {
 				ph = b.Trigger.Horizon
-				ref = e.getReferencePrice(e.now.Add(time.Duration(-ph) * time.Second))
+				ref = e.getReferencePrice(ph)
 			}
-			e.priceRangesCache[b] = priceRange{MinPrice: ref + b.MinMoveDown, MaxPrice: ref + b.MaxMoveUp}
+			e.priceRangesCache[b] = priceRange{MinPrice: ref * b.Down, MaxPrice: ref * b.Up}
 		}
 		e.priceRangeCacheTime = e.now
 	}
@@ -358,19 +357,14 @@ func (e *Engine) updateBounds() {
 		e.update = e.update.Add(e.updateFrequency)
 	}
 
-	var latestPrice float64
-	if len(e.pricesPast) == 0 {
-		latestPrice = float64(e.pricesNow[len(e.pricesNow)-1])
-	} else {
-		latestPrice = e.pricesPast[len(e.pricesPast)-1].AveragePrice
-	}
 	for _, b := range e.bounds {
 		if !b.Active {
 			continue
 		}
-		minPrice, maxPrice := e.riskModel.PriceRange(latestPrice, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
-		b.MinMoveDown = minPrice - latestPrice
-		b.MaxMoveUp = maxPrice - latestPrice
+		ref := e.getReferencePrice(b.Trigger.Horizon)
+		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
+		b.Down = minPrice / ref
+		b.Up = maxPrice / ref
 	}
 	// Remove redundant average prices
 	minRequiredHorizon := e.now
@@ -389,7 +383,8 @@ func (e *Engine) updateBounds() {
 	e.pricesPast = e.pricesPast[i:]
 }
 
-func (e *Engine) getReferencePrice(t time.Time) float64 {
+func (e *Engine) getReferencePrice(horizon int64) float64 {
+	t := e.now.Add(time.Duration(-horizon) * time.Second)
 	var ref float64
 	if len(e.pricesPast) < 1 {
 		ref = float64(e.pricesNow[0])
