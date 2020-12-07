@@ -21,7 +21,7 @@ var (
 		[]byte("another-pubkey2"),
 	}
 	okEventEmitter = "somechaineventpubkey"
-	whitelist      = []string{okEventEmitter}
+	allowlist      = []string{okEventEmitter}
 	initTime       = time.Unix(10, 0)
 )
 
@@ -51,7 +51,7 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 
 	cfg := evtforward.NewDefaultConfig()
 	// add the pubkeys
-	cfg.BlockchainQueueWhitelist = whitelist
+	cfg.BlockchainQueueAllowlist = allowlist
 	evtfwd, err := evtforward.New(
 		logging.NewTestLogger(), cfg,
 		cmd, tim, top)
@@ -73,18 +73,18 @@ func TestEvtForwarder(t *testing.T) {
 	t.Run("test ensure validators lists are updated", testUpdateValidatorList)
 	t.Run("test ack success", testAckSuccess)
 	t.Run("test ack failure already acked", testAckFailureAlreadyAcked)
-	t.Run("error event emitter not whitelisted", testEventEmitterNotWhitelisted)
+	t.Run("error event emitter not allowlisted", testEventEmitterNotAllowlisted)
 }
 
-func testEventEmitterNotWhitelisted(t *testing.T) {
+func testEventEmitterNotAllowlisted(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(11, 0))
-	err := evtfwd.Forward(context.Background(), evt, "not whitelisted")
-	assert.EqualError(t, err, evtforward.ErrPubKeyNotWhitelisted.Error())
+	err := evtfwd.Forward(context.Background(), evt, "not allowlisted")
+	assert.EqualError(t, err, evtforward.ErrPubKeyNotAllowlisted.Error())
 }
 
 func testForwardSuccessNodeIsForwarder(t *testing.T) {

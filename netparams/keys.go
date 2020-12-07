@@ -2,9 +2,7 @@ package netparams
 
 const (
 	// market related parameters
-	MarketMarginScalingFactorSearchLevel          = "market.margin.scalingFactor.searchLevel"
-	MarketMarginScalingFactorInitialMargin        = "market.margin.scalingFactor.initialMargin"
-	MarketMarginScalingFactorCollateralRelease    = "market.margin.scalingFactor.collateralRelease"
+	MarketMarginScalingFactors                    = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee                      = "market.fee.factors.makerFee"
 	MarketFeeFactorsInfrastructureFee             = "market.fee.factors.infrastructureFee"
 	MarketFeeFactorsLiquidityFee                  = "market.fee.factors.liquidityFee"
@@ -13,7 +11,7 @@ const (
 	MarketInitialMarkPrice                        = "market.initialMarkPrice"
 	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stateToCcySiskas"
+	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stakeToCcySiskas"
 	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                = "market.stake.target.scalingFactor"
 	MarketPriceMonitoringDefaultParameters        = "market.monitor.price.defaultParameters"

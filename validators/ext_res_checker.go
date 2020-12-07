@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"math/rand"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
+	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -57,18 +60,43 @@ const (
 	nodeApproval        = 1         // float for percentage
 )
 
+func init() {
+	// we seed the random generator just in case
+	// as the backoff library use random internally
+	rand.Seed(time.Now().UnixNano())
+}
+
 type res struct {
 	res Resource
 	// how long to run the check
 	checkUntil time.Time
-	// checks vote sent by the nodes
-	votes map[string]struct{}
+	mu         sync.Mutex
+	votes      map[string]struct{} // checks vote sent by the nodes
 	// the stated of the checking
 	state uint32
 	// the context used to notify the routine to exit
 	cfunc context.CancelFunc
 	// the function to call one validation is done
 	cb func(interface{}, bool)
+}
+
+func (r *res) addVote(key string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	_, ok := r.votes[key]
+	if ok {
+		return ErrDuplicateVoteFromNode
+	}
+
+	// add the vote
+	r.votes[key] = struct{}{}
+	return nil
+}
+
+func (r *res) voteCount() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.votes)
 }
 
 type ExtResChecker struct {
@@ -135,15 +163,7 @@ func (e *ExtResChecker) AddNodeCheck(ctx context.Context, nv *types.NodeVote) er
 		return ErrVoteFromNonValidator
 	}
 
-	_, ok = r.votes[string(nv.PubKey)]
-	if ok {
-		return ErrDuplicateVoteFromNode
-	}
-
-	// add the vote
-	r.votes[string(nv.PubKey)] = struct{}{}
-
-	return nil
+	return r.addVote(string(nv.PubKey))
 }
 
 func (e *ExtResChecker) StartCheck(
@@ -160,7 +180,7 @@ func (e *ExtResChecker) StartCheck(
 		return err
 	}
 
-	ctx, cfunc := context.WithCancel(context.Background())
+	ctx, cfunc := context.WithDeadline(context.Background(), checkUntil)
 	rs := &res{
 		res:        r,
 		checkUntil: checkUntil,
@@ -190,40 +210,36 @@ func (e *ExtResChecker) validateCheckUntil(checkUntil time.Time) error {
 
 }
 
+func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackOff {
+	bo := backoff.NewExponentialBackOff()
+	bo.MaxElapsedTime = maxElapsedTime
+	bo.InitialInterval = 1 * time.Second
+	return backoff.WithContext(bo, ctx)
+}
+
 func (e ExtResChecker) start(ctx context.Context, r *res) {
-	// wait time between call to validation
-	var (
-		err    error
-		ticker = time.NewTicker(500 * time.Millisecond)
-	)
-	defer ticker.Stop()
-	for {
-		// first try to validate the asset
+	backff := newBackoff(ctx, r.checkUntil.Sub(e.now))
+	f := func() error {
 		e.log.Debug("Checking the resource",
 			logging.String("asset-source", r.res.GetID()),
 		)
-
-		// call checking
-		err = r.res.Check()
+		err := r.res.Check()
 		if err != nil {
-			// we just log the error, but these are not criticals, as it may be
-			// things unrelated to the current node, and would recover later on.
-			// it's just informative
 			e.log.Warn("error checking resource", logging.Error(err))
-		} else {
-			atomic.StoreUint32(&r.state, validated)
-			return
+			// dump error
+			return err
 		}
-
-		// wait or break if the time's up
-		select {
-		case <-ctx.Done():
-			e.log.Error("resource checking context done",
-				logging.Error(ctx.Err()))
-			return
-		case <-ticker.C:
-		}
+		return nil
 	}
+
+	err := backoff.Retry(f, backff)
+	if err != nil {
+
+		return
+	}
+
+	// check succeeded
+	atomic.StoreUint32(&r.state, validated)
 }
 
 func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
@@ -233,7 +249,7 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 	// check if any resources passed checks
 	for k, v := range e.resources {
 		state := atomic.LoadUint32(&v.state)
-		votesLen := len(v.votes)
+		votesLen := v.voteCount()
 
 		// if the time is expired,
 		if v.checkUntil.Before(t) ||

@@ -15,12 +15,12 @@ In order to prevent spam from non-validator node, the faucet needs to be connect
 
 The configuration of the faucet is done through the vega config.toml file.
 
-The whitelisted public key must be added in the following section.
+The allowlisted public key must be added in the following section.
 ```toml
 [EvtForward]
   Level = "Info"
   RetryRate = "10s"
-  BlockchainQueueWhitelist = ["c65af95865b4e970c48860f5c854c5ca8f340416372f9e72a98ff09e365aa0cf"]
+  BlockchainQueueAllowlist = ["c65af95865b4e970c48860f5c854c5ca8f340416372f9e72a98ff09e365aa0cf"]
 ```
 
 The faucet also has its own configuration inside the vega config.toml file:
@@ -37,7 +37,7 @@ The faucet also has its own configuration inside the vega config.toml file:
     Retries = 5
 ```
 
-This configuration can be generated automatically when running `vega init`. The following command will generate the faucet section in the configuration file, and add the generated public key to the `EvtForward` whitelist section.
+This configuration can be generated automatically when running `vega init`. The following command will generate the faucet section in the configuration file, and add the generated public key to the `EvtForward` allowlist section.
 ```shell
 vega init -f --gen-dev-nodewallet --gen-builtinasset-faucet
 ```

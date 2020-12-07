@@ -37,7 +37,7 @@ type value interface {
 	ToDuration() (time.Duration, error)
 	ToJSONStruct(Reset) error
 	AddRules(...interface{}) error
-	GetDispatch() func(interface{}) error
+	GetDispatch() func(context.Context, interface{}) error
 	CheckDispatch(interface{}) error
 }
 
@@ -101,7 +101,7 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 	// and dispatch the value of them all so any watchers can get updated
 	// with genesis values
 	for k := range s.store {
-		if err := s.dispatchUpdate(k); err != nil {
+		if err := s.dispatchUpdate(ctx, k); err != nil {
 			return fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
 		}
 	}
@@ -126,13 +126,13 @@ func (s *Store) Watch(wp ...WatchParam) error {
 }
 
 // dispatch the update of a network parameters to all the listeners
-func (s *Store) dispatchUpdate(p string) error {
+func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 	val := s.store[p]
 	fn := val.GetDispatch()
 
 	var err error
 	for _, v := range s.watchers[p] {
-		if newerr := fn(v.Watcher); newerr != nil {
+		if newerr := fn(ctx, v.Watcher); newerr != nil {
 			if err != nil {
 				err = fmt.Errorf("%v, %w", err, newerr)
 			} else {
@@ -145,12 +145,24 @@ func (s *Store) dispatchUpdate(p string) error {
 
 // OnChainTimeUpdate is trigger once per blocks
 // we will send parameters update to watchers
-func (s *Store) OnChainTimeUpdate(_ time.Time) {
+func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
 	for k := range s.paramUpdates {
-		if err := s.dispatchUpdate(k); err != nil {
+		if err := s.dispatchUpdate(ctx, k); err != nil {
+			s.log.Debug("unable to dispatch netparams update", logging.Error(err))
+		}
+	}
+	s.paramUpdates = map[string]struct{}{}
+}
+
+func (s *Store) DispatchChanges(ctx context.Context) {
+	if len(s.paramUpdates) <= 0 {
+		return
+	}
+	for k := range s.paramUpdates {
+		if err := s.dispatchUpdate(ctx, k); err != nil {
 			s.log.Debug("unable to dispatch netparams update", logging.Error(err))
 		}
 	}
@@ -287,13 +299,77 @@ func (s *Store) GetJSONStruct(key string, v Reset) error {
 	return svalue.ToJSONStruct(v)
 }
 
-func (s *Store) AddRules(key string, fns ...interface{}) error {
+func (s *Store) AddRules(params ...AddParamRules) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	value, ok := s.store[key]
-	if !ok {
-		return ErrUnknownKey
+	for _, v := range params {
+		value, ok := s.store[v.Param]
+		if !ok {
+			return ErrUnknownKey
+		}
+		if err := value.AddRules(v.Rules...); err != nil {
+			return err
+		}
 	}
-	return value.AddRules(fns...)
+	return nil
+}
 
+type AddParamRules struct {
+	Param string
+	Rules []interface{}
+}
+
+func ParamStringRules(key string, rules ...StringRule) AddParamRules {
+	irules := []interface{}{}
+	for _, v := range rules {
+		irules = append(irules, v)
+	}
+	return AddParamRules{
+		Param: key,
+		Rules: irules,
+	}
+}
+
+func ParamFloatRules(key string, rules ...FloatRule) AddParamRules {
+	irules := []interface{}{}
+	for _, v := range rules {
+		irules = append(irules, v)
+	}
+	return AddParamRules{
+		Param: key,
+		Rules: irules,
+	}
+}
+
+func ParamIntRules(key string, rules ...IntRule) AddParamRules {
+	irules := []interface{}{}
+	for _, v := range rules {
+		irules = append(irules, v)
+	}
+	return AddParamRules{
+		Param: key,
+		Rules: irules,
+	}
+}
+
+func ParamDurationRules(key string, rules ...DurationRule) AddParamRules {
+	irules := []interface{}{}
+	for _, v := range rules {
+		irules = append(irules, v)
+	}
+	return AddParamRules{
+		Param: key,
+		Rules: irules,
+	}
+}
+
+func ParamJSONRules(key string, rules ...JSONRule) AddParamRules {
+	irules := []interface{}{}
+	for _, v := range rules {
+		irules = append(irules, v)
+	}
+	return AddParamRules{
+		Param: key,
+		Rules: irules,
+	}
 }

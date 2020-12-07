@@ -3,18 +3,22 @@
 # global dictionary is at the start, file overrides afterwards
 # one word per line, to define a file override use ' - filename'
 # where filename is relative to this configuration file
+ABI
+ABIs
 allowlist
 allowlisted
 api
 async
 barnabee
 base64
+codegen
 blockchain
 datestamps
 datetime
 Ed25519
 enum
 enums
+ERC20
 Ethereum
 faucet
 github
@@ -49,3 +53,5 @@ whitepaper
 xor
 MarkToMarket
 specs
+denylist
+allowlist

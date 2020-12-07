@@ -683,6 +683,14 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
+		tif := types.Order_TIF_GTT
+		if len(row.Cells) > 7 {
+			tif, err = tifval(row, 7)
+			if err != nil {
+				return err
+			}
+		}
+
 		order := types.Order{
 			Id:          uuid.NewV4().String(),
 			MarketID:    val(row, 1),
@@ -693,7 +701,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        oty,
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
@@ -705,7 +713,6 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 		}
 	}
 	return nil
-
 }
 
 func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
@@ -1011,6 +1018,14 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 		UpdateFrequency: i64val(row, 20),
 	}
 
+	openingAuction := &types.AuctionDuration{
+		Duration: i64val(row, 15),
+	}
+
+	if openingAuction.Duration <= 0 {
+		openingAuction = nil
+	}
+
 	mkt := types.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
@@ -1066,11 +1081,17 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 				},
 			},
 		},
+		OpeningAuction: openingAuction,
 		TradingMode: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
+		TargetStakeParameters: &types.TargetStakeParameters{
+			TimeWindow:    3600,
+			ScalingFactor: 10,
+		},
 	}
+	fmt.Printf("\nOpening duration: %v\n", i64val(row, 15))
 
 	if val(row, 5) == "forward" {
 		mkt.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{

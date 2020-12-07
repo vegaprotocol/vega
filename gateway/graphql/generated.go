@@ -297,6 +297,7 @@ type ComplexityRoot struct {
 		OpeningAuction          func(childComplexity int) int
 		Orders                  func(childComplexity int, skip *int, first *int, last *int) int
 		PriceMonitoringSettings func(childComplexity int) int
+		TargetStakeParameters   func(childComplexity int) int
 		TradableInstrument      func(childComplexity int) int
 		Trades                  func(childComplexity int, skip *int, first *int, last *int) int
 		TradingMode             func(childComplexity int) int
@@ -321,6 +322,7 @@ type ComplexityRoot struct {
 		MarketState           func(childComplexity int) int
 		MidPrice              func(childComplexity int) int
 		OpenInterest          func(childComplexity int) int
+		PriceMonitoringBounds func(childComplexity int) int
 		StaticMidPrice        func(childComplexity int) int
 		SuppliedStake         func(childComplexity int) int
 		TargetStake           func(childComplexity int) int
@@ -492,6 +494,12 @@ type ComplexityRoot struct {
 		Volume         func(childComplexity int) int
 	}
 
+	PriceMonitoringBounds struct {
+		MaxValidPrice func(childComplexity int) int
+		MinValidPrice func(childComplexity int) int
+		Trigger       func(childComplexity int) int
+	}
+
 	PriceMonitoringParameters struct {
 		Triggers func(childComplexity int) int
 	}
@@ -635,6 +643,11 @@ type ComplexityRoot struct {
 		Proposals         func(childComplexity int, partyID *string) int
 		Trades            func(childComplexity int, marketID *string, partyID *string) int
 		Votes             func(childComplexity int, proposalID *string, partyID *string) int
+	}
+
+	TargetStakeParameters struct {
+		ScalingFactor func(childComplexity int) int
+		TimeWindow    func(childComplexity int) int
 	}
 
 	TimeUpdate struct {
@@ -799,6 +812,7 @@ type MarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *proto.Market) (int, error)
 	OpeningAuction(ctx context.Context, obj *proto.Market) (*AuctionDuration, error)
 	PriceMonitoringSettings(ctx context.Context, obj *proto.Market) (*PriceMonitoringSettings, error)
+	TargetStakeParameters(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error)
 	Orders(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Accounts(ctx context.Context, obj *proto.Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
@@ -830,6 +844,7 @@ type MarketDataResolver interface {
 	Trigger(ctx context.Context, obj *proto.MarketData) (AuctionTrigger, error)
 
 	Commitments(ctx context.Context, obj *proto.MarketData) (*MarketDataCommitments, error)
+	PriceMonitoringBounds(ctx context.Context, obj *proto.MarketData) ([]*PriceMonitoringBounds, error)
 }
 type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepth) (*proto.Market, error)
@@ -1964,6 +1979,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.PriceMonitoringSettings(childComplexity), true
 
+	case "Market.targetStakeParameters":
+		if e.complexity.Market.TargetStakeParameters == nil {
+			break
+		}
+
+		return e.complexity.Market.TargetStakeParameters(childComplexity), true
+
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
 			break
@@ -2115,6 +2137,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.OpenInterest(childComplexity), true
+
+	case "MarketData.priceMonitoringBounds":
+		if e.complexity.MarketData.PriceMonitoringBounds == nil {
+			break
+		}
+
+		return e.complexity.MarketData.PriceMonitoringBounds(childComplexity), true
 
 	case "MarketData.staticMidPrice":
 		if e.complexity.MarketData.StaticMidPrice == nil {
@@ -2864,6 +2893,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PriceLevel.Volume(childComplexity), true
+
+	case "PriceMonitoringBounds.maxValidPrice":
+		if e.complexity.PriceMonitoringBounds.MaxValidPrice == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.MaxValidPrice(childComplexity), true
+
+	case "PriceMonitoringBounds.minValidPrice":
+		if e.complexity.PriceMonitoringBounds.MinValidPrice == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.MinValidPrice(childComplexity), true
+
+	case "PriceMonitoringBounds.trigger":
+		if e.complexity.PriceMonitoringBounds.Trigger == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.Trigger(childComplexity), true
 
 	case "PriceMonitoringParameters.triggers":
 		if e.complexity.PriceMonitoringParameters.Triggers == nil {
@@ -3720,6 +3770,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Votes(childComplexity, args["proposalId"].(*string), args["partyID"].(*string)), true
 
+	case "TargetStakeParameters.scalingFactor":
+		if e.complexity.TargetStakeParameters.ScalingFactor == nil {
+			break
+		}
+
+		return e.complexity.TargetStakeParameters.ScalingFactor(childComplexity), true
+
+	case "TargetStakeParameters.timeWindow":
+		if e.complexity.TargetStakeParameters.TimeWindow == nil {
+			break
+		}
+
+		return e.complexity.TargetStakeParameters.TimeWindow(childComplexity), true
+
 	case "TimeUpdate.timestamp":
 		if e.complexity.TimeUpdate.Timestamp == nil {
 			break
@@ -4494,6 +4558,8 @@ type MarketData {
   suppliedStake: String
   "The liquidity commitments for a given market"
   commitments: MarketDataCommitments!
+  "A list of valid price ranges per associated trigger"
+  priceMonitoringBounds: [PriceMonitoringBounds!]
 }
 
 "The MM commitments for this market"
@@ -5049,6 +5115,25 @@ type PriceMonitoringSettings {
   updateFrequencySecs: Int!
 }
 
+"Range of valid prices and the associated price monitoring trigger"
+type PriceMonitoringBounds {
+  "Minimum price that isn't currently breaching the specified price monitoring trigger"
+  minValidPrice: String!
+  "Maximum price that isn't currently breaching the specified price monitoring trigger"
+  maxValidPrice: String!
+  "Price monitoring trigger associated with the bounds"
+  trigger: PriceMonitoringTrigger!
+}
+
+"TargetStakeParameters contains parameters used in target stake calculation"
+type TargetStakeParameters {
+  "Specifies length of time window expressed in seconds for target stake calculation"
+  timeWindow: Int!
+
+  "Specifies scaling factors used in target stake calculation"
+  scalingFactor: Float!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
@@ -5093,6 +5178,9 @@ type Market {
 
   "Price monitoring settings for the market"
   priceMonitoringSettings: PriceMonitoringSettings!
+
+  "Taget stake parameter"
+  targetStakeParameters: TargetStakeParameters!
 
   "Orders on a market"
   orders (
@@ -5774,10 +5862,10 @@ enum OrderRejectionReason {
   InvalidMarketType
 
   "Good for normal order received during an auction"
-  GFAOrderDuringAuction
+  GFNOrderDuringAuction
 
   "Good for auction order received during continuous trading"
-  GFNOrderDuringContinuousTrading
+  GFAOrderDuringContinuousTrading
 
   "IOC orders are not allowed during auction"
   IOCOrderDuringAuction
@@ -12100,6 +12188,40 @@ func (ec *executionContext) _Market_priceMonitoringSettings(ctx context.Context,
 	return ec.marshalNPriceMonitoringSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Market_targetStakeParameters(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().TargetStakeParameters(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TargetStakeParameters)
+	fc.Result = res
+	return ec.marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -13133,6 +13255,37 @@ func (ec *executionContext) _MarketData_commitments(ctx context.Context, field g
 	res := resTmp.(*MarketDataCommitments)
 	fc.Result = res
 	return ec.marshalNMarketDataCommitments2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketDataCommitments(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_priceMonitoringBounds(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().PriceMonitoringBounds(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*PriceMonitoringBounds)
+	fc.Result = res
+	return ec.marshalOPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketDataCommitments_sells(ctx context.Context, field graphql.CollectedField, obj *MarketDataCommitments) (ret graphql.Marshaler) {
@@ -16281,6 +16434,108 @@ func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, fiel
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_minValidPrice(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinValidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_maxValidPrice(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxValidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_trigger(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Trigger, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PriceMonitoringTrigger)
+	fc.Result = res
+	return ec.marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceMonitoringParameters_triggers(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
@@ -20006,6 +20261,74 @@ func (ec *executionContext) _Subscription_busEvents(ctx context.Context, field g
 			w.Write([]byte{'}'})
 		})
 	}
+}
+
+func (ec *executionContext) _TargetStakeParameters_timeWindow(ctx context.Context, field graphql.CollectedField, obj *TargetStakeParameters) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TargetStakeParameters",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TimeWindow, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TargetStakeParameters_scalingFactor(ctx context.Context, field graphql.CollectedField, obj *TargetStakeParameters) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TargetStakeParameters",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScalingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TimeUpdate_timestamp(ctx context.Context, field graphql.CollectedField, obj *TimeUpdate) (ret graphql.Marshaler) {
@@ -25294,6 +25617,20 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				}
 				return res
 			})
+		case "targetStakeParameters":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_targetStakeParameters(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "orders":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -25689,6 +26026,17 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "priceMonitoringBounds":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_priceMonitoringBounds(ctx, field, obj)
 				return res
 			})
 		default:
@@ -27075,6 +27423,43 @@ func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var priceMonitoringBoundsImplementors = []string{"PriceMonitoringBounds"}
+
+func (ec *executionContext) _PriceMonitoringBounds(ctx context.Context, sel ast.SelectionSet, obj *PriceMonitoringBounds) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, priceMonitoringBoundsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PriceMonitoringBounds")
+		case "minValidPrice":
+			out.Values[i] = ec._PriceMonitoringBounds_minValidPrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maxValidPrice":
+			out.Values[i] = ec._PriceMonitoringBounds_maxValidPrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "trigger":
+			out.Values[i] = ec._PriceMonitoringBounds_trigger(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var priceMonitoringParametersImplementors = []string{"PriceMonitoringParameters"}
 
 func (ec *executionContext) _PriceMonitoringParameters(ctx context.Context, sel ast.SelectionSet, obj *PriceMonitoringParameters) graphql.Marshaler {
@@ -28303,6 +28688,38 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
+}
+
+var targetStakeParametersImplementors = []string{"TargetStakeParameters"}
+
+func (ec *executionContext) _TargetStakeParameters(ctx context.Context, sel ast.SelectionSet, obj *TargetStakeParameters) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, targetStakeParametersImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TargetStakeParameters")
+		case "timeWindow":
+			out.Values[i] = ec._TargetStakeParameters_timeWindow(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "scalingFactor":
+			out.Values[i] = ec._TargetStakeParameters_scalingFactor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
 }
 
 var timeUpdateImplementors = []string{"TimeUpdate", "Event"}
@@ -30053,6 +30470,20 @@ func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._PriceLevel(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPriceMonitoringBounds2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringBounds) graphql.Marshaler {
+	return ec._PriceMonitoringBounds(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPriceMonitoringBounds2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx context.Context, sel ast.SelectionSet, v *PriceMonitoringBounds) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PriceMonitoringBounds(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPriceMonitoringSettings2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringSettings) graphql.Marshaler {
 	return ec._PriceMonitoringSettings(ctx, sel, &v)
 }
@@ -30257,6 +30688,20 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTargetStakeParameters2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx context.Context, sel ast.SelectionSet, v TargetStakeParameters) graphql.Marshaler {
+	return ec._TargetStakeParameters(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx context.Context, sel ast.SelectionSet, v *TargetStakeParameters) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TargetStakeParameters(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTradableInstrument2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐTradableInstrument(ctx context.Context, sel ast.SelectionSet, v proto.TradableInstrument) graphql.Marshaler {
@@ -31684,6 +32129,46 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceMonitoringBounds) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPriceMonitoringBounds2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

@@ -478,6 +478,16 @@ type PreparedWithdrawal struct {
 	Blob string `json:"blob"`
 }
 
+// Range of valid prices and the associated price monitoring trigger
+type PriceMonitoringBounds struct {
+	// Minimum price that isn't currently breaching the specified price monitoring trigger
+	MinValidPrice string `json:"minValidPrice"`
+	// Maximum price that isn't currently breaching the specified price monitoring trigger
+	MaxValidPrice string `json:"maxValidPrice"`
+	// Price monitoring trigger associated with the bounds
+	Trigger *PriceMonitoringTrigger `json:"trigger"`
+}
+
 // PriceMonitoringParameters holds a list of triggers
 type PriceMonitoringParameters struct {
 	// The list of triggers for this price monitoring
@@ -634,6 +644,14 @@ type SimpleRiskModelParamsInput struct {
 	FactorLong float64 `json:"factorLong"`
 	// Risk factor for short
 	FactorShort float64 `json:"factorShort"`
+}
+
+// TargetStakeParameters contains parameters used in target stake calculation
+type TargetStakeParameters struct {
+	// Specifies length of time window expressed in seconds for target stake calculation
+	TimeWindow int `json:"timeWindow"`
+	// Specifies scaling factors used in target stake calculation
+	ScalingFactor float64 `json:"scalingFactor"`
 }
 
 type TimeUpdate struct {
@@ -1268,9 +1286,9 @@ const (
 	// Invalid Market Type
 	OrderRejectionReasonInvalidMarketType OrderRejectionReason = "InvalidMarketType"
 	// Good for normal order received during an auction
-	OrderRejectionReasonGFAOrderDuringAuction OrderRejectionReason = "GFAOrderDuringAuction"
+	OrderRejectionReasonGFNOrderDuringAuction OrderRejectionReason = "GFNOrderDuringAuction"
 	// Good for auction order received during continuous trading
-	OrderRejectionReasonGFNOrderDuringContinuousTrading OrderRejectionReason = "GFNOrderDuringContinuousTrading"
+	OrderRejectionReasonGFAOrderDuringContinuousTrading OrderRejectionReason = "GFAOrderDuringContinuousTrading"
 	// IOC orders are not allowed during auction
 	OrderRejectionReasonIOCOrderDuringAuction OrderRejectionReason = "IOCOrderDuringAuction"
 	// FOK orders are not allowed during auction
@@ -1331,8 +1349,8 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonCannotAmendToGFAOrGfn,
 	OrderRejectionReasonCannotAmendFromGFAOrGfn,
 	OrderRejectionReasonInvalidMarketType,
-	OrderRejectionReasonGFAOrderDuringAuction,
-	OrderRejectionReasonGFNOrderDuringContinuousTrading,
+	OrderRejectionReasonGFNOrderDuringAuction,
+	OrderRejectionReasonGFAOrderDuringContinuousTrading,
 	OrderRejectionReasonIOCOrderDuringAuction,
 	OrderRejectionReasonFOKOrderDuringAuction,
 	OrderRejectionReasonPeggedOrderMustBeLimitOrder,
@@ -1351,7 +1369,7 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFAOrderDuringAuction, OrderRejectionReasonGFNOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, OrderRejectionReasonUnableToRepricePeggedOrder:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFNOrderDuringAuction, OrderRejectionReasonGFAOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, OrderRejectionReasonUnableToRepricePeggedOrder:
 		return true
 	}
 	return false

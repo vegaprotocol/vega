@@ -589,3 +589,79 @@ func TestParkedOrder(t *testing.T) {
 	assert.Equal(t, len(md.GetBuy()), 0)
 	assert.Equal(t, len(md.GetSell()), 0)
 }
+
+func TestParkedOrder2(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx, true)
+
+	// Create parked pegged order
+	order1 := buildOrder("Pegged1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 0, 10, 10)
+	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order1.Status = types.Order_STATUS_PARKED
+	event1 := events.NewOrderEvent(ctx, order1)
+	mdb.Push(event1)
+
+	// Create normal order
+	order2 := buildOrder("Normal1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 1, 1)
+	event2 := events.NewOrderEvent(ctx, order2)
+	mdb.Push(event2)
+
+	// Unpark pegged order
+	order3 := buildOrder("Pegged1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 99, 10, 10)
+	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order3.Status = types.Order_STATUS_ACTIVE
+	event3 := events.NewOrderEvent(ctx, order3)
+	mdb.Push(event3)
+
+	// Cancel normal order
+	order4 := buildOrder("Normal1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 1, 1)
+	order4.Status = types.Order_STATUS_CANCELLED
+	event4 := events.NewOrderEvent(ctx, order4)
+	mdb.Push(event4)
+
+	// Park pegged order
+	order5 := buildOrder("Pegged1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 99, 10, 10)
+	order5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order5.Status = types.Order_STATUS_PARKED
+	event5 := events.NewOrderEvent(ctx, order5)
+	mdb.Push(event5)
+
+	// Create normal order
+	order6 := buildOrder("Normal2", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 1, 1)
+	event6 := events.NewOrderEvent(ctx, order6)
+	mdb.Push(event6)
+
+	// Unpark pegged order
+	order7 := buildOrder("Pegged1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 99, 10, 10)
+	order7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order7.Status = types.Order_STATUS_ACTIVE
+	event7 := events.NewOrderEvent(ctx, order7)
+	mdb.Push(event7)
+
+	// Fill normal order
+	order8 := buildOrder("Normal2", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 1, 0)
+	order8.Status = types.Order_STATUS_FILLED
+	event8 := events.NewOrderEvent(ctx, order8)
+	mdb.Push(event8)
+
+	// Create new matching order
+	order9 := buildOrder("Normal3", types.Side_SIDE_SELL, types.Order_TYPE_LIMIT, 100, 1, 0)
+	order9.Status = types.Order_STATUS_FILLED
+	event9 := events.NewOrderEvent(ctx, order9)
+	mdb.Push(event9)
+
+	// Park pegged order
+	order10 := buildOrder("Pegged1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 99, 10, 10)
+	order10.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order10.Status = types.Order_STATUS_PARKED
+	event10 := events.NewOrderEvent(ctx, order10)
+	mdb.Push(event10)
+
+	md, err := mdb.GetMarketDepth(ctx, "M", 0)
+	assert.Nil(t, err)
+	assert.NotNil(t, md)
+
+	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, 0, len(md.GetBuy()))
+	assert.Equal(t, 0, len(md.GetSell()))
+}

@@ -6,9 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"net/http"
+	"strconv"
 
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
+	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -20,15 +23,15 @@ import (
 
 const (
 	MaxNonce              = 100000000
-	whitelistContractName = "whitelist_asset"
+	listAssetContractName = "list_asset"
 	withdrawContractName  = "withdraw_asset"
 )
 
 var (
-	ErrMissingETHWalletFromNodeWallet  = errors.New("missing eth wallet from node wallet")
-	ErrUnableToFindDeposit             = errors.New("unable to find erc20 deposit event")
-	ErrUnableToFindWithdrawal          = errors.New("unable to find erc20 withdrawal event")
-	ErrUnableToFindERC20AssetWhitelist = errors.New("unable to find erc20 asset whitelist event")
+	ErrMissingETHWalletFromNodeWallet = errors.New("missing eth wallet from node wallet")
+	ErrUnableToFindDeposit            = errors.New("unable to find erc20 deposit event")
+	ErrUnableToFindWithdrawal         = errors.New("unable to find erc20 withdrawal event")
+	ErrUnableToFindERC20AssetList     = errors.New("unable to find erc20 asset list event")
 )
 
 type ERC20 struct {
@@ -108,10 +111,10 @@ func (b *ERC20) Validate() error {
 	return nil
 }
 
-// SignBridgeWhitelisting create and sign the message to
+// SignBridgeListing create and sign the message to
 // be sent to the bridge to whitelist the asset
 // return the generated message and the signature for this message
-func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
+func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	typAddr, err := abi.NewType("address", "", nil)
 	if err != nil {
 		return nil, nil, err
@@ -153,7 +156,7 @@ func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 	addr := ethcmn.HexToAddress(b.address)
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), nonce, whitelistContractName}...)
+	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -187,14 +190,19 @@ func (b *ERC20) SignBridgeWhitelisting() (msg []byte, sig []byte, err error) {
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex uint64) (hash string, err error) {
+func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) (hash string, logIndex uint, err error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	iter, err := bf.FilterAssetWhitelisted(
+	var resp string = "ok"
+	defer func() {
+		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
+	}()
+
+	iter, err := bf.FilterAssetListed(
 		&bind.FilterOpts{
 			Start: blockNumber - 1,
 		},
@@ -204,11 +212,12 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 	)
 
 	if err != nil {
-		return "", err
+		resp = getMaybeHTTPStatus(err)
+		return "", 0, err
 	}
 
 	defer iter.Close()
-	var event *bridge.BridgeAssetWhitelisted
+	var event *bridge.BridgeAssetListed
 	for iter.Next() {
 		if hex.EncodeToString(iter.Event.VegaId[:]) == w.VegaAssetID {
 			event = iter.Event
@@ -217,10 +226,10 @@ func (b *ERC20) ValidateWhitelist(w *types.ERC20AssetList, blockNumber, txIndex 
 	}
 
 	if event == nil {
-		return "", ErrUnableToFindERC20AssetWhitelist
+		return "", 0, ErrUnableToFindERC20AssetList
 	}
 
-	return event.Raw.TxHash.Hex(), nil
+	return event.Raw.TxHash.Hex(), event.Raw.Index, nil
 }
 
 func (b *ERC20) SignWithdrawal(
@@ -317,12 +326,17 @@ func (b *ERC20) SignWithdrawal(
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, error) {
+func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
+
+	var resp string = "ok"
+	defer func() {
+		metrics.EthCallInc("validate_withdrawal", b.asset.ID, resp)
+	}()
 
 	iter, err := bf.FilterAssetWithdrawn(
 		&bind.FilterOpts{
@@ -335,7 +349,8 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		[]*big.Int{})
 
 	if err != nil {
-		return nil, "", err
+		resp = getMaybeHTTPStatus(err)
+		return nil, "", 0, err
 	}
 
 	defer iter.Close()
@@ -348,25 +363,30 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		// we do the slice operation to remove it ([2:]
 		if nonce.Cmp(iter.Event.Nonce) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.TxIndex) == txIndex {
+			uint64(iter.Event.Raw.Index) == txIndex {
 			event = iter.Event
 			break
 		}
 	}
 
 	if event == nil {
-		return nil, "", ErrUnableToFindWithdrawal
+		return nil, "", 0, ErrUnableToFindWithdrawal
 	}
 
-	return nonce, event.Raw.TxHash.Hex(), nil
+	return nonce, event.Raw.TxHash.Hex(), event.Raw.Index, nil
 }
 
-func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) (partyID, assetID, hash string, amount uint64, err error) {
+func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) (partyID, assetID, hash string, amount uint64, logIndex uint, err error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
-		return "", "", "", 0, err
+		return "", "", "", 0, 0, err
 	}
+
+	var resp string = "ok"
+	defer func() {
+		metrics.EthCallInc("validate_deposit", b.asset.ID, resp)
+	}()
 
 	iter, err := bf.FilterAssetDeposited(
 		&bind.FilterOpts{
@@ -379,7 +399,8 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		[]*big.Int{})
 
 	if err != nil {
-		return "", "", "", 0, err
+		resp = getMaybeHTTPStatus(err)
+		return "", "", "", 0, 0, err
 	}
 
 	defer iter.Close()
@@ -389,21 +410,37 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		// we do the slice operation to remove it ([2:]
 		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyID[2:] &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.TxIndex) == txIndex {
+			uint64(iter.Event.Raw.Index) == txIndex {
 			event = iter.Event
 			break
 		}
 	}
 
 	if event == nil {
-		return "", "", "", 0, ErrUnableToFindDeposit
+		return "", "", "", 0, 0, ErrUnableToFindDeposit
 	}
 
-	return d.TargetPartyID, d.VegaAssetID, event.Raw.TxHash.Hex(), iter.Event.Amount.Uint64(), nil
+	return d.TargetPartyID, d.VegaAssetID, event.Raw.TxHash.Hex(), iter.Event.Amount.Uint64(), event.Raw.Index, nil
 }
 
 func (b *ERC20) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
 		b.asset.ID, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
 		b.asset.Decimals)
+}
+
+func getMaybeHTTPStatus(err error) string {
+	errstr := err.Error()
+	if len(errstr) < 3 {
+		return "tooshort"
+	}
+	i, err := strconv.Atoi(errstr[:3])
+	if err != nil {
+		return "nan"
+	}
+	if http.StatusText(i) == "" {
+		return "unknown"
+	}
+
+	return errstr[:3]
 }

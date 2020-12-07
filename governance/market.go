@@ -144,9 +144,8 @@ func createMarket(
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
 	liquiFee, _ := netp.Get(netparams.MarketFeeFactorsLiquidityFee)
 	// get the margin scaling factors
-	searchLevel, _ := netp.GetFloat(netparams.MarketMarginScalingFactorSearchLevel)
-	intialMargin, _ := netp.GetFloat(netparams.MarketMarginScalingFactorInitialMargin)
-	collateralRelease, _ := netp.GetFloat(netparams.MarketMarginScalingFactorCollateralRelease)
+	scalingFactors := types.ScalingFactors{}
+	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
 	// get price monitoring parameters
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.PriceMonitoringParameters == nil {
@@ -154,6 +153,10 @@ func createMarket(
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
 		definition.PriceMonitoringParameters = pmParams
 	}
+
+	// get target stake parameters
+	tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
+	tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
 
 	// if the openingAuctionDuration == 0 we need to default
 	// to the network parameter
@@ -179,15 +182,19 @@ func createMarket(
 			Instrument: instrument,
 			MarginCalculator: &types.MarginCalculator{
 				ScalingFactors: &types.ScalingFactors{
-					CollateralRelease: collateralRelease,
-					InitialMargin:     intialMargin,
-					SearchLevel:       searchLevel,
+					CollateralRelease: scalingFactors.CollateralRelease,
+					InitialMargin:     scalingFactors.InitialMargin,
+					SearchLevel:       scalingFactors.SearchLevel,
 				},
 			},
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
 			Parameters:      definition.PriceMonitoringParameters,
 			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
+		},
+		TargetStakeParameters: &types.TargetStakeParameters{
+			TimeWindow:    int64(tsTimeWindow.Seconds()),
+			ScalingFactor: tsScalingFactor,
 		},
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {

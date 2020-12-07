@@ -1014,6 +1014,10 @@
                 </li>
 
                 <li>
+                  <a href="#vega.TargetStakeParameters"><span class="badge">M</span>TargetStakeParameters</a>
+                </li>
+
+                <li>
                   <a href="#vega.TradableInstrument"><span class="badge">M</span>TradableInstrument</a>
                 </li>
 
@@ -1257,6 +1261,10 @@
 
                 <li>
                   <a href="#vega.PriceLevel"><span class="badge">M</span>PriceLevel</a>
+                </li>
+
+                <li>
+                  <a href="#vega.PriceMonitoringBounds"><span class="badge">M</span>PriceMonitoringBounds</a>
                 </li>
 
                 <li>
@@ -2484,7 +2492,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
             <tbody>
 
                 <tr>
-                  <td>Reference</td>
+                  <td>reference</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Proposal reference. Required field. </p></td>
@@ -2507,7 +2515,7 @@ Set to an asset ID to return a single infrastructure fee account for a given ass
               <tbody>
 
                 <tr>
-                  <td>Reference</td>
+                  <td>reference</td>
                   <td>
                     <ul>
 
@@ -6796,7 +6804,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.ERC20AssetDelist">ERC20AssetDelist</h3>
-        <p>An asset black-listing for an ERC20 token.</p>
+        <p>An asset denylisting for an ERC20 token.</p>
 
 
           <table class="field-table">
@@ -6820,7 +6828,7 @@ these data are being used to bundle the call to the smart contract on the ethere
 
 
         <h3 id="vega.ERC20AssetList">ERC20AssetList</h3>
-        <p>An asset white-listing for an ERC20 token.</p>
+        <p>An asset allowlisting for an ERC20 token.</p>
 
 
           <table class="field-table">
@@ -8388,7 +8396,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
 
                 <tr>
-                  <td>PriceMonitoringParameters</td>
+                  <td>priceMonitoringParameters</td>
                   <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
                   <td></td>
                   <td><p>price monitoring configuration </p></td>
@@ -9609,6 +9617,13 @@ duration and optionally a minimum traded volume). </p></td>
                   <td><p>PriceMonitoringSettings for the market. </p></td>
                 </tr>
 
+                <tr>
+                  <td>targetStakeParameters</td>
+                  <td><a href="#vega.TargetStakeParameters">TargetStakeParameters</a></td>
+                  <td></td>
+                  <td><p>TargetStakeParameters for the market </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -9922,6 +9937,75 @@ probability level. </p></td>
 
             </tbody>
           </table>
+
+
+
+
+
+        <h3 id="vega.TargetStakeParameters">TargetStakeParameters</h3>
+        <p>TargetStakeParameters contains parameters used in target stake calculation</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>timeWindow</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Specifies length of time window expressed in seconds for target stake calculation </p></td>
+                </tr>
+
+                <tr>
+                  <td>scalingFactor</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Specifies scaling factors used in target stake calculation </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>timeWindow</td>
+                  <td>
+                    <ul>
+
+                      <li>int_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>scalingFactor</td>
+                  <td>
+                    <ul>
+
+                      <li>float_gt: 0</li>
+
+                    </ul>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
 
 
 
@@ -11785,6 +11869,13 @@ See <a href="#api.VegaTimeResponse"><tt>VegaTimeResponse</tt></a>.<tt>timestamp<
                   <td><p>the available stake fo the given market </p></td>
                 </tr>
 
+                <tr>
+                  <td>priceMonitoringBounds</td>
+                  <td><a href="#vega.PriceMonitoringBounds">PriceMonitoringBounds</a></td>
+                  <td>repeated</td>
+                  <td><p>a list of price monitoring bounds per current time </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -12921,6 +13012,44 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Volume at the price level. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="vega.PriceMonitoringBounds">PriceMonitoringBounds</h3>
+        <p>Represents a list of valid (at the current time) price ranges per associated trigger</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>minValidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Minimum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
+                </tr>
+
+                <tr>
+                  <td>maxValidPrice</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Maximum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
+                </tr>
+
+                <tr>
+                  <td>trigger</td>
+                  <td><a href="#vega.PriceMonitoringTrigger">PriceMonitoringTrigger</a></td>
+                  <td></td>
+                  <td><p>Price monitoring trigger associated with the bounds </p></td>
                 </tr>
 
             </tbody>
@@ -14273,7 +14402,7 @@ These fees reward traders who provide the best priced liquidity that actually al
         </table>
 
         <h3 id="vega.NodeSignatureKind">NodeSignatureKind</h3>
-        <p>The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.</p>
+        <p>The kind of the signature created by a node, for example, allowlisting a new asset, withdrawal etc.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -14289,7 +14418,7 @@ These fees reward traders who provide the best priced liquidity that actually al
               <tr>
                 <td>NODE_SIGNATURE_KIND_ASSET_NEW</td>
                 <td>1</td>
-                <td><p>represents a signature for a new asset whitelisting</p></td>
+                <td><p>represents a signature for a new asset allowlisting</p></td>
               </tr>
 
               <tr>
@@ -14929,6 +15058,18 @@ with a distressed party in order to zero-out the position of the party.</p></td>
                 <td>TRANSFER_TYPE_LIQUIDITY_FEE_PAY</td>
                 <td>12</td>
                 <td><p>Pay liquidity fee.</p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_BOND_LOW</td>
+                <td>13</td>
+                <td><p>Bond too low.</p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_BOND_HIGH</td>
+                <td>14</td>
+                <td><p>Bond too high.</p></td>
               </tr>
 
           </tbody>

@@ -14,7 +14,7 @@ type ProposalParameters struct {
 	MaxEnact              time.Duration
 	RequiredParticipation float64
 	RequiredMajority      float64
-	MinProposerBalance    float64
+	MinProposerBalance    uint64
 	MinVoterBalance       float64
 }
 
@@ -42,7 +42,7 @@ func (t ToEnact) IsUpdateMarket() bool {
 	return (t.u != nil)
 }
 
-func (t ToEnact) IsUpdateNetwork() bool {
+func (t ToEnact) IsUpdateNetworkParameter() bool {
 	return (t.n != nil)
 }
 
@@ -62,7 +62,7 @@ func (t *ToEnact) NewAssetSource() *types.AssetSource {
 	return t.as
 }
 
-func (t *ToEnact) UpdateNetwork() *types.NetworkParameter {
+func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 	return t.n
 }
 

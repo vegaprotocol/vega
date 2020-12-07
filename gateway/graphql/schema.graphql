@@ -362,6 +362,8 @@ type MarketData {
   suppliedStake: String
   "The liquidity commitments for a given market"
   commitments: MarketDataCommitments!
+  "A list of valid price ranges per associated trigger"
+  priceMonitoringBounds: [PriceMonitoringBounds!]
 }
 
 "The MM commitments for this market"
@@ -917,6 +919,25 @@ type PriceMonitoringSettings {
   updateFrequencySecs: Int!
 }
 
+"Range of valid prices and the associated price monitoring trigger"
+type PriceMonitoringBounds {
+  "Minimum price that isn't currently breaching the specified price monitoring trigger"
+  minValidPrice: String!
+  "Maximum price that isn't currently breaching the specified price monitoring trigger"
+  maxValidPrice: String!
+  "Price monitoring trigger associated with the bounds"
+  trigger: PriceMonitoringTrigger!
+}
+
+"TargetStakeParameters contains parameters used in target stake calculation"
+type TargetStakeParameters {
+  "Specifies length of time window expressed in seconds for target stake calculation"
+  timeWindow: Int!
+
+  "Specifies scaling factors used in target stake calculation"
+  scalingFactor: Float!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
 
@@ -961,6 +982,9 @@ type Market {
 
   "Price monitoring settings for the market"
   priceMonitoringSettings: PriceMonitoringSettings!
+
+  "Taget stake parameter"
+  targetStakeParameters: TargetStakeParameters!
 
   "Orders on a market"
   orders (
@@ -1642,10 +1666,10 @@ enum OrderRejectionReason {
   InvalidMarketType
 
   "Good for normal order received during an auction"
-  GFAOrderDuringAuction
+  GFNOrderDuringAuction
 
   "Good for auction order received during continuous trading"
-  GFNOrderDuringContinuousTrading
+  GFAOrderDuringContinuousTrading
 
   "IOC orders are not allowed during auction"
   IOCOrderDuringAuction

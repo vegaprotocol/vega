@@ -2,6 +2,7 @@ package netparams
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -59,18 +60,18 @@ func NewFloat(rules ...FloatRule) *Float {
 	}
 }
 
-func (f *Float) GetDispatch() func(interface{}) error {
-	return func(rawfn interface{}) error {
+func (f *Float) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
 		// there can't be errors here, as all dispatcher
 		// should have been check earlier when being register
-		fn := rawfn.(func(float64) error)
-		return fn(f.value)
+		fn := rawfn.(func(context.Context, float64) error)
+		return fn(ctx, f.value)
 	}
 }
 
 func (f *Float) CheckDispatch(fn interface{}) error {
-	if _, ok := fn.(func(float64) error); !ok {
-		return errors.New("invalid type, expected func(float64) error")
+	if _, ok := fn.(func(context.Context, float64) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, float64) error")
 	}
 	return nil
 }
@@ -212,18 +213,18 @@ func NewInt(rules ...IntRule) *Int {
 	}
 }
 
-func (i *Int) GetDispatch() func(interface{}) error {
-	return func(rawfn interface{}) error {
+func (i *Int) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
 		// there can't be errors here, as all dispatcher
 		// should have been check earlier when being register
-		fn := rawfn.(func(int64) error)
-		return fn(i.value)
+		fn := rawfn.(func(context.Context, int64) error)
+		return fn(ctx, i.value)
 	}
 }
 
 func (i *Int) CheckDispatch(fn interface{}) error {
-	if _, ok := fn.(func(int64) error); !ok {
-		return errors.New("invalid type, expected func(int64) error")
+	if _, ok := fn.(func(context.Context, int64) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, int64) error")
 	}
 	return nil
 }
@@ -364,18 +365,18 @@ func NewDuration(rules ...DurationRule) *Duration {
 	}
 }
 
-func (d *Duration) GetDispatch() func(interface{}) error {
-	return func(rawfn interface{}) error {
+func (d *Duration) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
 		// there can't be errors here, as all dispatcher
 		// should have been check earlier when being register
-		fn := rawfn.(func(time.Duration) error)
-		return fn(d.value)
+		fn := rawfn.(func(context.Context, time.Duration) error)
+		return fn(ctx, d.value)
 	}
 }
 
 func (d *Duration) CheckDispatch(fn interface{}) error {
-	if _, ok := fn.(func(time.Duration) error); !ok {
-		return errors.New("invalid type, expected func(time.Duration) error")
+	if _, ok := fn.(func(context.Context, time.Duration) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, time.Duration) error")
 	}
 	return nil
 }
@@ -538,19 +539,19 @@ func (j *JSON) ToJSONStruct(v Reset) error {
 	return json.Unmarshal([]byte(j.rawval), v)
 }
 
-func (j *JSON) GetDispatch() func(interface{}) error {
-	return func(rawfn interface{}) error {
+func (j *JSON) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
 		// there can't be errors here, as all dispatcher
 		// should have been check earlier when being register
-		fn := rawfn.(func(interface{}) error)
+		fn := rawfn.(func(context.Context, interface{}) error)
 		json.Unmarshal([]byte(j.rawval), j.value)
-		return fn(j.value)
+		return fn(ctx, j.value)
 	}
 }
 
 func (j *JSON) CheckDispatch(fn interface{}) error {
-	if _, ok := fn.(func(interface{}) error); !ok {
-		return errors.New("invalid type, expected func(float64) error")
+	if _, ok := fn.(func(context.Context, interface{}) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, float64) error")
 	}
 	return nil
 }
@@ -665,18 +666,18 @@ func NewString(rules ...StringRule) *String {
 	}
 }
 
-func (s *String) GetDispatch() func(interface{}) error {
-	return func(rawfn interface{}) error {
+func (s *String) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
 		// there can't be errors here, as all dispatcher
 		// should have been check earlier when being register
-		fn := rawfn.(func(string) error)
-		return fn(s.rawval)
+		fn := rawfn.(func(context.Context, string) error)
+		return fn(ctx, s.rawval)
 	}
 }
 
 func (s *String) CheckDispatch(fn interface{}) error {
-	if _, ok := fn.(func(string) error); !ok {
-		return errors.New("invalid type, expected func(string) error")
+	if _, ok := fn.(func(context.Context, string) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, string) error")
 	}
 	return nil
 }

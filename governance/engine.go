@@ -88,10 +88,13 @@ type NetParams interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	log                    *logging.Logger
-	accs                   Accounts
-	currentTime            time.Time
-	activeProposals        map[string]*proposalData
+	log         *logging.Logger
+	accs        Accounts
+	currentTime time.Time
+	// we store proposals in slice
+	// not as easy to access them directly, but by doing this we can keep
+	// them in order of arrival, which makes their processing deterministic
+	activeProposals        []*proposalData
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 	assets                 Assets
@@ -127,7 +130,7 @@ func NewEngine(
 		accs:                   accs,
 		log:                    log,
 		currentTime:            now,
-		activeProposals:        map[string]*proposalData{},
+		activeProposals:        []*proposalData{},
 		nodeProposalValidation: nodeValidation,
 		broker:                 broker,
 		assets:                 assets,
@@ -166,6 +169,8 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 			return nil, perr, err
 		}
 		te.m = mkt
+	case *types.ProposalTerms_UpdateNetworkParameter:
+		te.n = change.UpdateNetworkParameter.Changes
 	case *types.ProposalTerms_NewAsset:
 		asset, err := e.assets.Get(p.GetID())
 		if err != nil {
@@ -176,23 +181,38 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	return
 }
 
+func (e *Engine) removeProposal(id string) {
+	for i, p := range e.activeProposals {
+		if p.ID == id {
+			copy(e.activeProposals[i:], e.activeProposals[i+1:])
+			e.activeProposals[len(e.activeProposals)-1] = nil
+			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
+			return
+		}
+	}
+}
+
 // OnChainTimeUpdate triggers time bound state changes.
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact {
 	e.currentTime = t
-	var toBeEnacted []*ToEnact
+	var (
+		toBeEnacted []*ToEnact
+		toBeRemoved []string // ids
+	)
+
 	if len(e.activeProposals) > 0 {
 		now := t.Unix()
 
 		totalStake := e.accs.GetTotalTokens()
 		counter := newStakeCounter(e.log, e.accs)
 
-		for id, proposal := range e.activeProposals {
+		for _, proposal := range e.activeProposals {
 			if proposal.Terms.ClosingTimestamp < now {
 				e.closeProposal(ctx, proposal, counter, totalStake)
 			}
 
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
-				delete(e.activeProposals, id)
+				toBeRemoved = append(toBeRemoved, proposal.ID)
 			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
 				enact, _, err := e.preEnactProposal(proposal.Proposal)
 				if err != nil {
@@ -201,11 +221,16 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 						logging.String("proposal-id", proposal.ID),
 						logging.Error(err))
 				} else {
+					toBeRemoved = append(toBeRemoved, proposal.ID)
 					toBeEnacted = append(toBeEnacted, enact)
 				}
-				delete(e.activeProposals, id)
 			}
 		}
+	}
+
+	// now we iterate over all proposal ids to remove them from the list
+	for _, id := range toBeRemoved {
+		e.removeProposal(id)
 	}
 
 	// then get all proposal accepted through node validation, and start their vote time.
@@ -229,13 +254,22 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 	return toBeEnacted
 }
 
+func (e *Engine) getProposal(id string) (*proposalData, bool) {
+	for _, v := range e.activeProposals {
+		if v.ID == id {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
 // Only open can be submitted and validated at this point. No further validation happens.
 func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string) error {
 	p.ID = id
 	p.Timestamp = e.currentTime.UnixNano()
 
-	if _, exists := e.activeProposals[p.ID]; exists {
+	if _, ok := e.getProposal(p.ID); ok {
 		return ErrProposalIsDuplicate // state is not allowed to change externally
 	}
 	if p.State == types.Proposal_STATE_OPEN {
@@ -262,11 +296,11 @@ func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string
 }
 
 func (e *Engine) startProposal(p *types.Proposal) {
-	e.activeProposals[p.ID] = &proposalData{
+	e.activeProposals = append(e.activeProposals, &proposalData{
 		Proposal: p,
 		yes:      map[string]*types.Vote{},
 		no:       map[string]*types.Vote{},
-	}
+	})
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
@@ -370,16 +404,14 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 			logging.String("id", proposal.ID))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
-	totalTokens := e.accs.GetTotalTokens()
-	expectedTokensBalance := float64(totalTokens) * params.MinProposerBalance
-	if float64(proposerTokens) < expectedTokensBalance {
+	if proposerTokens < params.MinProposerBalance {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.Float64("expect-balance", expectedTokensBalance),
+			logging.Uint64("expect-balance", params.MinProposerBalance),
 			logging.Uint64("proposer-balance", proposerTokens),
 			logging.String("party-id", proposal.PartyID),
 			logging.String("id", proposal.ID))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS,
-			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", expectedTokensBalance, proposerTokens)
+			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", params.MinProposerBalance, proposerTokens)
 	}
 	return e.validateChange(proposal.Terms)
 }
@@ -419,7 +451,7 @@ func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
 }
 
 func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
-	proposal, found := e.activeProposals[vote.ProposalID]
+	proposal, found := e.getProposal(vote.ProposalID)
 	if !found {
 		return nil, ErrProposalNotFound
 	} else if proposal.State == types.Proposal_STATE_PASSED {

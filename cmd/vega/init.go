@@ -111,9 +111,9 @@ func (opts *InitCmd) Execute(_ []string) error {
 		if err != nil {
 			return err
 		}
-		// add the pubkey to the whitelis
-		cfg.EvtForward.BlockchainQueueWhitelist = append(
-			cfg.EvtForward.BlockchainQueueWhitelist, pubkey)
+		// add the pubkey to the allowlist
+		cfg.EvtForward.BlockchainQueueAllowlist = append(
+			cfg.EvtForward.BlockchainQueueAllowlist, pubkey)
 	}
 
 	// setup the defaults markets
@@ -297,6 +297,10 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 					Triggers: []*proto.PriceMonitoringTrigger{},
 				},
 				UpdateFrequency: 60,
+			},
+			TargetStakeParameters: &proto.TargetStakeParameters{
+				TimeWindow:    3600, // seconds = 1h
+				ScalingFactor: 10,
 			},
 		}
 		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)

@@ -33,6 +33,8 @@ var (
 	unconfirmedTxGauge prometheus.Gauge
 	engineTime         *prometheus.CounterVec
 	orderCounter       *prometheus.CounterVec
+	ethCallCounter     *prometheus.CounterVec
+	evtForwardCounter  *prometheus.CounterVec
 	orderGauge         *prometheus.GaugeVec
 	// Call counters for each request type per API
 	apiRequestCallCounter *prometheus.CounterVec
@@ -350,6 +352,38 @@ func setupMetrics() error {
 	}
 	orderCounter = ot
 
+	h, err = AddInstrument(
+		Counter,
+		"eth_calls_total",
+		Namespace("vega"),
+		Vectors("func", "asset", "respcode"),
+		Help("Number of call made to the ethereum node"),
+	)
+	if err != nil {
+		return err
+	}
+	ethCalls, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	ethCallCounter = ethCalls
+
+	h, err = AddInstrument(
+		Counter,
+		"evt_forward_total",
+		Namespace("vega"),
+		Vectors("func", "res"),
+		Help("Number of call made forward/ack event from ethereum"),
+	)
+	if err != nil {
+		return err
+	}
+	evtFwd, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	evtForwardCounter = evtFwd
+
 	// now add the orders gauge
 	h, err = AddInstrument(
 		Gauge,
@@ -432,6 +466,22 @@ func OrderCounterInc(labelValues ...string) {
 		return
 	}
 	orderCounter.WithLabelValues(labelValues...).Inc()
+}
+
+// EthCallInc increments the eth call counter
+func EthCallInc(labelValues ...string) {
+	if ethCallCounter == nil {
+		return
+	}
+	ethCallCounter.WithLabelValues(labelValues...).Inc()
+}
+
+// EvtForwardInc increments the evt forward counter
+func EvtForwardInc(labelValues ...string) {
+	if evtForwardCounter == nil {
+		return
+	}
+	evtForwardCounter.WithLabelValues(labelValues...).Inc()
 }
 
 // OrderGaugeAdd incement the order gauge

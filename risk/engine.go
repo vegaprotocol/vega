@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrInsufficientFundsForInitialMargin = errors.New("insufficient funds for initial margin")
+	ErrRiskFactorsNotAvailableForAsset   = errors.New("risk factors not available for the specified asset")
 )
 
 // Orderbook represent an abstraction over the orderbook
@@ -90,6 +91,15 @@ func NewEngine(
 	}
 }
 
+func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
+	if sf.CollateralRelease < sf.InitialMargin || sf.InitialMargin < sf.SearchLevel {
+		return errors.New("incompatible margins scaling factors")
+	}
+
+	e.marginCalculator.ScalingFactors = sf
+	return nil
+}
+
 func (e *Engine) OnTimeUpdate(t time.Time) {
 	e.currTime = t.UnixNano()
 }
@@ -140,6 +150,15 @@ func (e *Engine) CalculateFactors(ctx context.Context, now time.Time) {
 	} else {
 		e.waiting = true
 	}
+}
+
+// GetRiskFactors returns risk factors per specified asset if available and an error otherwise
+func (e *Engine) GetRiskFactors(asset string) (*types.RiskFactor, error) {
+	rf, ok := e.factors.RiskFactors[asset]
+	if !ok {
+		return nil, ErrRiskFactorsNotAvailableForAsset
+	}
+	return rf, nil
 }
 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order

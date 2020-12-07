@@ -118,7 +118,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
-    And the mark price for the market "ETH/DEC20" is "112000"
+    And the mark price for the market "ETH/DEC20" is "111500"
 
   Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
    

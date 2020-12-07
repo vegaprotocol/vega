@@ -5,6 +5,8 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "google/protobuf/wrappers.proto";
+import "proto/markets.proto";
+
 
 // A side relates to the direction of an order, to Buy, or Sell.
 enum Side {
@@ -906,6 +908,10 @@ enum TransferType {
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
   // Pay liquidity fee.
   TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
+  // Bond too low.
+  TRANSFER_TYPE_BOND_LOW = 13;
+  // Bond too high.
+  TRANSFER_TYPE_BOND_HIGH = 14;
 }
 
 // Represents a financial transfer within Vega.
@@ -1041,6 +1047,18 @@ message MarketData {
   string targetStake = 21;
   // the available stake fo the given market
   string suppliedStake = 22;
+  // a list of price monitoring bounds per current time
+  repeated PriceMonitoringBounds priceMonitoringBounds = 23;
+}
+
+// Represents a list of valid (at the current time) price ranges per associated trigger
+message PriceMonitoringBounds {
+  // Minimum price that isn't currently breaching the specified price monitoring trigger
+  uint64 minValidPrice = 1;
+  // Maximum price that isn't currently breaching the specified price monitoring trigger
+  uint64 maxValidPrice = 2;
+  // Price monitoring trigger associated with the bounds
+  PriceMonitoringTrigger trigger = 3;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
@@ -1094,11 +1112,11 @@ message SignedBundle {
   Signature sig = 2;
 }
 
-// The kind of the signature created by a node, for example, whitelisting a new asset, withdrawal etc.
+// The kind of the signature created by a node, for example, allowlisting a new asset, withdrawal etc.
 enum NodeSignatureKind {
   // represents a unspecified / missing value from the input
   NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
-  // represents a signature for a new asset whitelisting
+  // represents a signature for a new asset allowlisting
   NODE_SIGNATURE_KIND_ASSET_NEW = 1;
   // represents a signature for a asset withdrawal
   NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;

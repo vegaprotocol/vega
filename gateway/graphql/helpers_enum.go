@@ -417,9 +417,9 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 	case types.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE:
 		return OrderRejectionReasonInvalidMarketType, nil
 	case types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING:
-		return OrderRejectionReasonGFAOrderDuringAuction, nil
+		return OrderRejectionReasonGFAOrderDuringContinuousTrading, nil
 	case types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION:
-		return OrderRejectionReasonGFNOrderDuringContinuousTrading, nil
+		return OrderRejectionReasonGFNOrderDuringAuction, nil
 	case types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION:
 		return OrderRejectionReasonIOCOrderDuringAuction, nil
 	case types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION:
@@ -448,6 +448,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, nil
 	case types.OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER:
 		return OrderRejectionReasonUnableToRepricePeggedOrder, nil
+	case types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE:
+		return OrderRejectionReasonInvalidTimeInForce, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err
