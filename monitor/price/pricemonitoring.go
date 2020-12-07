@@ -85,6 +85,9 @@ type Engine struct {
 
 	priceRangeCacheTime time.Time
 	priceRangesCache    map[*bound]priceRange
+
+	refPriceCacheTime time.Time
+	refPriceCache     map[int64]float64
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
@@ -338,7 +341,7 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 			}
 			if b.Trigger.Horizon != ph {
 				ph = b.Trigger.Horizon
-				ref = e.getReferencePrice(ph)
+				ref = e.getRefPrice(ph)
 			}
 			e.priceRangesCache[b] = priceRange{MinPrice: ref * b.Down, MaxPrice: ref * b.Up}
 		}
@@ -361,7 +364,7 @@ func (e *Engine) updateBounds() {
 		if !b.Active {
 			continue
 		}
-		ref := e.getReferencePrice(b.Trigger.Horizon)
+		ref := e.getRefPrice(b.Trigger.Horizon)
 		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
 		b.Down = minPrice / ref
 		b.Up = maxPrice / ref
@@ -383,7 +386,18 @@ func (e *Engine) updateBounds() {
 	e.pricesPast = e.pricesPast[i:]
 }
 
-func (e *Engine) getReferencePrice(horizon int64) float64 {
+func (e *Engine) getRefPrice(horizon int64) float64 {
+	if e.refPriceCacheTime != e.now {
+		e.refPriceCache = make(map[int64]float64, len(e.refPriceCache))
+	}
+
+	if _, ok := e.refPriceCache[horizon]; !ok {
+		e.refPriceCache[horizon] = e.calculateRefPrice(horizon)
+	}
+	return e.refPriceCache[horizon]
+}
+
+func (e *Engine) calculateRefPrice(horizon int64) float64 {
 	t := e.now.Add(time.Duration(-horizon) * time.Second)
 	var ref float64
 	if len(e.pricesPast) < 1 {
