@@ -54,7 +54,7 @@ func verifyGenesis(r *reporter, bs []byte) string {
 			broker.New(context.Background()),
 		)
 		// first check for no missing keys
-		for k, _ := range netparams.AllKeys {
+		for k := range netparams.AllKeys {
 			if _, ok := g.AppState.NetworkParameters[k]; !ok {
 				val, _ := netp.Get(k)
 				r.Warn("missing network parameter `%v`, default value will be used `%v`", k, val)
