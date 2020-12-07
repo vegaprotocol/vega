@@ -50,10 +50,10 @@ func Main(ctx context.Context) error {
 		Init,
 		Node,
 		NodeWallet,
+		Verify,
 		Version,
 		Wallet,
 		Watch,
-		Verify,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

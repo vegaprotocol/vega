@@ -19,7 +19,7 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	var g = &struct {
 		AppState *struct {
 			Network *struct {
-				ReplayAttackTreshold *int `json:"ReplayAttackThreshold"`
+				ReplayAttackThreshold *int `json:"ReplayAttackThreshold"`
 			} `json:"network"`
 			NetworkParameters map[string]string `json:"network_parameters"`
 			Validators        map[string]string `json:"validators"`
@@ -39,9 +39,9 @@ func verifyGenesis(r *reporter, bs []byte) string {
 
 	if g.AppState.Network == nil {
 		r.Err("app_state.network is missing")
-	} else if g.AppState.Network.ReplayAttackTreshold == nil {
+	} else if g.AppState.Network.ReplayAttackThreshold == nil {
 		r.Err("app_state.network.ReplayAttackTreshold is missing")
-	} else if *g.AppState.Network.ReplayAttackTreshold < 0 {
+	} else if *g.AppState.Network.ReplayAttackThreshold < 0 {
 		r.Err("app_state.network.ReplayAttackTreshold can't be < 0")
 	}
 
