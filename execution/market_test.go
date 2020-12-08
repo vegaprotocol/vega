@@ -1691,3 +1691,56 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	closed = tm.market.OnChainTimeUpdate(context.Background(), afterPMonitorAuciton)
 	assert.False(t, closed)
 }
+
+func TestOrderBook_Crash2718(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "aaa")
+	addAccount(tm, "bbb")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// We start in continuous trading, create order to set best bid
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "aaa", 1, 100)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+
+	// Now the pegged order which will be live
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_BUY, "bbb", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
+	assert.Equal(t, uint64(90), o2.Price)
+
+	// Force the pegged order to reprice
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_BUY, "aaa", 1, 110)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
+	assert.Equal(t, uint64(100), o2.Price)
+
+	// Flip to auction so the pegged order will be parked
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx)
+	tm.market.EnterAuction(ctx)
+	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
+	assert.Equal(t, uint64(0), o2.Price)
+
+	// Flip out of auction to un-park it
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
+	assert.Equal(t, uint64(100), o2.Price)
+
+}
