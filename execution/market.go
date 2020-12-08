@@ -68,10 +68,14 @@ var (
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
 	// ErrInvalidMarketType is returned if the order is not valid for the current market type (auction/continuous)
 	ErrInvalidMarketType = errors.New("invalid market type")
-	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continous trading state
+	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continuous trading state
 	ErrGFAOrderReceivedDuringContinuousTrading = errors.New("gfa order received during continuous trading")
 	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state
 	ErrGFNOrderReceivedAuctionTrading = errors.New("gfn order received during auction trading")
+	// ErrIOCOrderReceivedAuctionTrading is returned if a ioc order hits the market when in auction state
+	ErrIOCOrderReceivedAuctionTrading = errors.New("ioc order received during auction trading")
+	// ErrFOKOrderReceivedAuctionTrading is returned if a fok order hits the market when in auction state
+	ErrFOKOrderReceivedAuctionTrading = errors.New("fok order received during auction trading")
 	// ErrUnableToReprice we are unable to get a price required to reprice
 	ErrUnableToReprice = errors.New("unable to reprice")
 	// ErrOrderNotFound we cannot find the order in the market
@@ -771,21 +775,21 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return ErrGFAOrderReceivedDuringContinuousTrading
+		return ErrGFNOrderReceivedAuctionTrading
 	}
 
 	if isAuction && order.TimeInForce == types.Order_TIF_IOC {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return ErrGFAOrderReceivedDuringContinuousTrading
+		return ErrIOCOrderReceivedAuctionTrading
 	}
 
 	if isAuction && order.TimeInForce == types.Order_TIF_FOK {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return ErrGFAOrderReceivedDuringContinuousTrading
+		return ErrFOKOrderReceivedAuctionTrading
 	}
 
 	if !isAuction && order.TimeInForce == types.Order_TIF_GFA {
