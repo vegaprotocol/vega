@@ -14,7 +14,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader1 | 100000000000  |
       | trader2 | 100000000000  |
 
-  # WG: Ideally, this should come from the opening auction
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell |      1 |   100000  |                0 | TYPE_LIMIT | TIF_GTC |

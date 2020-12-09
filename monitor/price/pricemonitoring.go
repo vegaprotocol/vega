@@ -207,7 +207,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 		if err := e.recordTimeChange(now); err != nil {
 			return err
 		}
-		bounds := e.checkBounds(ctx, p)
+		bounds := e.checkBounds(ctx, p, v)
 		// no bounds violations - update price, and we're done (unless we initialised as part of this call, then price has alrady been updated)
 		if len(bounds) == 0 {
 			if wasInitialised {
@@ -244,7 +244,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 		return err
 	}
 
-	bounds := e.checkBounds(ctx, p)
+	bounds := e.checkBounds(ctx, p, v)
 	if len(bounds) == 0 {
 		// current auction is price monitoring
 		// check for end of auction, reset monitoring, and end auction
@@ -309,7 +309,9 @@ func (e *Engine) resetBounds() {
 
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime
 func (e *Engine) recordPriceChange(price uint64, volume uint64) {
-	e.pricesNow = append(e.pricesNow, currentPrice{Price: price, Volume: volume})
+	if volume > 0 {
+		e.pricesNow = append(e.pricesNow, currentPrice{Price: price, Volume: volume})
+	}
 }
 
 // recordTimeChange updates the time in the price monitoring module and returns an error if any problems are encountered.
@@ -340,10 +342,12 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 	return nil
 }
 
-func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonitoringTrigger {
-	var fp float64 = float64(p)                                                 // price as float                                                                                                                       // reference price
+func (e *Engine) checkBounds(ctx context.Context, p uint64, v uint64) []*types.PriceMonitoringTrigger {
 	var ret []*types.PriceMonitoringTrigger = []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
-
+	if v == 0 {
+		return ret //volume 0 so no bounds violated
+	}
+	var fp float64 = float64(p) // price as float
 	priceRanges := e.getCurrentPriceRanges()
 	for _, b := range e.bounds {
 		if !b.Active {

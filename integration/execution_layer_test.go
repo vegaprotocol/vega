@@ -1091,8 +1091,6 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			ScalingFactor: 10,
 		},
 	}
-	fmt.Printf("\nOpening duration: %v\n", i64val(row, 15))
-
 	if val(row, 5) == "forward" {
 		mkt.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
 			LogNormalRiskModel: &types.LogNormalRiskModel{
