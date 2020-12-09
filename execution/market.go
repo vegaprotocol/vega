@@ -704,13 +704,18 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	}
 
 	// Apply fee calculations to each trade
+	tradeEvts := []events.Event{}
 	for _, uo := range uncrossedOrders {
 		err := m.applyFees(ctx, uo.Order, uo.Trades)
 		if err != nil {
 			// @TODO this ought to be an event
 			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uo.Order.Id))
 		}
+		for _, t := range uo.Trades {
+			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *t))
+		}
 	}
+	m.broker.SendBatch(tradeEvts)
 
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.AuctionEnded(ctx, now)
@@ -1147,6 +1152,13 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
 		fees, err = m.fee.CalculateForAuctionMode(trades)
+		fmt.Printf("AUCTION MODE FEES: %v#\n", fees)
+		for _, v := range fees.Transfers() {
+			fmt.Printf("transfer: %v# | amount: %v\n", v, v.Amount.Amount)
+		}
+		for _, v := range trades {
+			fmt.Printf("trade: %v\n", v)
+		}
 	} else if m.as.IsFBA() {
 		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
 	}
