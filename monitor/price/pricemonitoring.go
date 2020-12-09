@@ -190,14 +190,14 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 	if v < 0 {
 		return ErrNegativeVolume
 	}
-	//Volume of 0, do nothing
-	if v == 0 {
-		return nil
-	}
 
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
+		//Volume of 0, do nothing
+		if v == 0 {
+			return nil
+		}
 		e.reset(p, v, now)
 		e.initialised = true
 	}
@@ -281,11 +281,22 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 func (e *Engine) reset(price uint64, volume uint64, now time.Time) {
 	e.now = now
 	e.update = now
+	if volume > 0 {
+		e.pricesNow = []currentPrice{{Price: price, Volume: volume}}
+		e.pricesPast = []pastPrice{}
+	} else {
+		// If there's a price history than use the most recent
+		if len(e.pricesPast) > 0 {
+			e.pricesPast = e.pricesPast[len(e.pricesPast)-1:]
+		} else { // Otherwise can't initialise
+			e.initialised = false
+			return
+		}
+	}
 	e.priceRangeCacheTime = time.Time{}
-	e.pricesNow = []currentPrice{currentPrice{Price: price, Volume: volume}}
-	e.pricesPast = []pastPrice{}
 	e.resetBounds()
 	e.updateBounds()
+
 }
 
 func (e *Engine) resetBounds() {

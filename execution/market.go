@@ -428,10 +428,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				m.LeaveAuction(ctx, t)
 			}
 		} else if m.as.IsPriceAuction() {
-			// ending auction now would result in no trades so feed the last mark price into pMonitor
-			if p == 0 {
-				p = m.markPrice
-			}
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
 				m.log.Error("Price monitoring error", logging.Error(err))
 				// @TODO handle or panic? (panic is last resort)
