@@ -1152,13 +1152,6 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	} else if m.as.IsMonitorAuction() {
 		// we are in auction mode
 		fees, err = m.fee.CalculateForAuctionMode(trades)
-		fmt.Printf("AUCTION MODE FEES: %v#\n", fees)
-		for _, v := range fees.Transfers() {
-			fmt.Printf("transfer: %v# | amount: %v\n", v, v.Amount.Amount)
-		}
-		for _, v := range trades {
-			fmt.Printf("trade: %v\n", v)
-		}
 	} else if m.as.IsFBA() {
 		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades)
 	}
