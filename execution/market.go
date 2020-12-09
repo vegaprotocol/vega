@@ -1908,7 +1908,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	order.Price = 0
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	if _, err := m.position.UnregisterOrder(order); err != nil {
-		m.log.Fatal("Failure unregistering order in positions engine (parking)",
+		m.log.Fatal("Failure un-registering order in positions engine (parking)",
 			logging.Order(*order),
 			logging.Error(err))
 	}
@@ -2394,7 +2394,10 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			return nil, err
 		}
 
-		conf, err = m.matching.SubmitOrder(newOrder) //lint:ignore SA4006 this value might be overwriter, careful!
+		// Because other collections might be pointing at the original order
+		// use it's memory when inserting the new version
+		*existingOrder = *newOrder
+		conf, err = m.matching.SubmitOrder(existingOrder) //lint:ignore SA4006 this value might be overwriter, careful!
 		// replace the trades in the confirmation to have
 		// the ones with the fees embedded
 		conf.Trades = trades
