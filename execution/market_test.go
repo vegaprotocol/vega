@@ -908,14 +908,14 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIF_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       auctionTriggeringPrice - 1,
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-2",
@@ -924,7 +924,23 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Equal(t, 0, len(confirmationBuy.Trades))
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
+	amendedOrder := &types.OrderAmendment{
+		OrderID:     orderBuy2.Id,
+		PartyID:     party1,
+		Price:       &types.Price{Value: auctionTriggeringPrice},
+		SizeDelta:   0,
+		TimeInForce: types.Order_TIF_GTC,
+		//ExpiresAt:   &types.Timestamp{Value: orderBuy2.ExpiresAt},
+	}
+
+	conf, err := tm.market.AmendOrder(context.Background(), amendedOrder)
+	require.NoError(t, err)
+	require.NotNil(t, conf)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
