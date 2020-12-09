@@ -3,6 +3,7 @@ package price
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"sort"
 	"time"
@@ -17,6 +18,8 @@ var (
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
 	// ErrExpiresAtNotSet indicates price monitoring auction is endless somehow
 	ErrExpiresAtNotSet = errors.New("price monitoring auction with no end time")
+	// ErrNegativeVolume indicates a price with a negative volume was received
+	ErrNegativeVolume = errors.New("negative volume was received")
 )
 
 const (
@@ -48,10 +51,10 @@ type AuctionState interface {
 
 // bound holds the limits for the valid price movement
 type bound struct {
-	Active  bool
-	Up      float64
-	Down    float64
-	Trigger *types.PriceMonitoringTrigger
+	Active     bool
+	UpFactor   float64
+	DownFactor float64
+	Trigger    *types.PriceMonitoringTrigger
 }
 
 type priceRange struct {
@@ -60,8 +63,13 @@ type priceRange struct {
 }
 
 type pastPrice struct {
-	Time         time.Time
-	AveragePrice float64
+	Time                time.Time
+	VolumeWeightedPrice float64
+}
+
+type currentPrice struct {
+	Price  uint64
+	Volume uint64
 }
 
 // RangeProvider provides the minimium and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
@@ -79,7 +87,7 @@ type Engine struct {
 	fpHorizons  map[int64]float64
 	now         time.Time
 	update      time.Time
-	pricesNow   []uint64
+	pricesNow   []currentPrice
 	pricesPast  []pastPrice
 	bounds      []*bound
 
@@ -177,12 +185,20 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 	return ret
 }
 
-// CheckPrice checks how current price and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
-func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now time.Time) error {
+// CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
+func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v uint64, now time.Time) error {
+	if v < 0 {
+		return ErrNegativeVolume
+	}
+	//Volume of 0, do nothing
+	if v == 0 {
+		return nil
+	}
+
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
-		e.reset(p, now)
+		e.reset(p, v, now)
 		e.initialised = true
 	}
 
@@ -195,7 +211,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 		// no bounds violations - update price, and we're done (unless we initialised as part of this call, then price has alrady been updated)
 		if len(bounds) == 0 {
 			if wasInitialised {
-				e.recordPriceChange(p)
+				e.recordPriceChange(p, v)
 			}
 			return nil
 		}
@@ -243,7 +259,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 			// auction can be terminated
 			as.EndAuction()
 			// reset the engine
-			e.reset(p, now)
+			e.reset(p, v, now)
 		}
 		return nil
 	}
@@ -262,11 +278,11 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, now 
 }
 
 // reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
-func (e *Engine) reset(price uint64, now time.Time) {
+func (e *Engine) reset(price uint64, volume uint64, now time.Time) {
 	e.now = now
 	e.update = now
 	e.priceRangeCacheTime = time.Time{}
-	e.pricesNow = []uint64{price}
+	e.pricesNow = []currentPrice{currentPrice{Price: price, Volume: volume}}
 	e.pricesPast = []pastPrice{}
 	e.resetBounds()
 	e.updateBounds()
@@ -275,14 +291,14 @@ func (e *Engine) reset(price uint64, now time.Time) {
 func (e *Engine) resetBounds() {
 	for _, b := range e.bounds {
 		b.Active = true
-		b.Down = 0
-		b.Up = 0
+		b.DownFactor = 0
+		b.UpFactor = 0
 	}
 }
 
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime
-func (e *Engine) recordPriceChange(price uint64) {
-	e.pricesNow = append(e.pricesNow, price)
+func (e *Engine) recordPriceChange(price uint64, volume uint64) {
+	e.pricesNow = append(e.pricesNow, currentPrice{Price: price, Volume: volume})
 }
 
 // recordTimeChange updates the time in the price monitoring module and returns an error if any problems are encountered.
@@ -292,14 +308,18 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 	}
 	if now.After(e.now) {
 		if len(e.pricesNow) > 0 {
-			var sum uint64 = 0
+			var sumProduct uint64 = 0
+			var volumeSum uint64 = 0
+			fmt.Printf("\n Average prices \n")
 			for _, x := range e.pricesNow {
-				sum += x
+				sumProduct += x.Price * x.Volume
+				volumeSum += x.Volume
+				fmt.Printf("price: %v, volume: %v \n", x.Price, x.Volume)
 			}
 			e.pricesPast = append(e.pricesPast,
 				pastPrice{
-					Time:         e.now,
-					AveragePrice: float64(sum) / float64(len(e.pricesNow)),
+					Time:                e.now,
+					VolumeWeightedPrice: float64(sumProduct) / float64(volumeSum),
 				})
 		}
 		e.pricesNow = e.pricesNow[:0]
@@ -319,7 +339,7 @@ func (e *Engine) checkBounds(ctx context.Context, p uint64) []*types.PriceMonito
 			continue
 		}
 		priceRange := priceRanges[b]
-
+		fmt.Printf("\n Check bounds: ref: %v, MinPrice %v, MaxPrice %v", p, priceRange.MinPrice, priceRange.MaxPrice)
 		if fp < priceRange.MinPrice || fp > priceRange.MaxPrice {
 			ret = append(ret, b.Trigger)
 			// Disactivate the bound that just got violated so it doesn't prevent auction from terminating
@@ -338,7 +358,7 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 				continue
 			}
 			ref := e.getRefPrice(b.Trigger.Horizon)
-			e.priceRangesCache[b] = priceRange{MinPrice: ref * b.Down, MaxPrice: ref * b.Up}
+			e.priceRangesCache[b] = priceRange{MinPrice: ref * b.DownFactor, MaxPrice: ref * b.UpFactor}
 		}
 		e.priceRangeCacheTime = e.now
 	}
@@ -361,8 +381,9 @@ func (e *Engine) updateBounds() {
 		}
 		ref := e.getRefPrice(b.Trigger.Horizon)
 		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
-		b.Down = minPrice / ref
-		b.Up = maxPrice / ref
+		fmt.Printf("\n UPDATE BOUNDS: ref price: %v, min: %v, max: %v", ref, minPrice, maxPrice)
+		b.DownFactor = minPrice / ref
+		b.UpFactor = maxPrice / ref
 	}
 	// Remove redundant average prices
 	minRequiredHorizon := e.now
@@ -396,15 +417,15 @@ func (e *Engine) calculateRefPrice(horizon int64) float64 {
 	t := e.now.Add(time.Duration(-horizon) * time.Second)
 	var ref float64
 	if len(e.pricesPast) < 1 {
-		ref = float64(e.pricesNow[0])
+		ref = float64(e.pricesNow[0].Price)
 	} else {
-		ref = e.pricesPast[0].AveragePrice
+		ref = e.pricesPast[0].VolumeWeightedPrice
 	}
 	for _, p := range e.pricesPast {
 		if p.Time.After(t) {
 			break
 		}
-		ref = p.AveragePrice
+		ref = p.VolumeWeightedPrice
 	}
 	return ref
 }

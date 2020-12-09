@@ -83,7 +83,7 @@ var (
 // PriceMonitor interface to handle price monitoring/auction triggers
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
-	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
+	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, v uint64, now time.Time) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 }
 
@@ -416,15 +416,13 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	// check price auction end
 	if m.as.InAuction() {
-		p := m.matching.GetIndicativePrice()
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if m.as.IsOpeningAuction() {
 			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
 				// mark opening auction as ending
-				if p != 0 {
-					// Prime price monitoring engine with the uncrossing price of the opening auction
-					if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
-						m.log.Error("Price monitoring error", logging.Error(err))
-					}
+				// Prime price monitoring engine with the uncrossing price of the opening auction
+				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
+					m.log.Error("Price monitoring error", logging.Error(err))
 				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
@@ -434,7 +432,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			if p == 0 {
 				p = m.markPrice
 			}
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
 				m.log.Error("Price monitoring error", logging.Error(err))
 				// @TODO handle or panic? (panic is last resort)
 			}
@@ -1106,10 +1104,12 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil && len(trades) > 0 {
-		if err := m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime); err != nil {
-			m.log.Error("Price monitoring error", logging.Error(err))
-			// @TODO handle or panic? (panic is last resort)
+	if err == nil {
+		for _, t := range trades {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); err != nil {
+				m.log.Error("Price monitoring error", logging.Error(err))
+				// @TODO handle or panic? (panic is last resort)
+			}
 		}
 		if m.as.AuctionStart() {
 			m.EnterAuction(ctx)
