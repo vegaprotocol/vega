@@ -1031,9 +1031,9 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 		DecimalPlaces: 2,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				LiquidityFee:      val(row, 17),
+				LiquidityFee:      val(row, 19),
 				InfrastructureFee: val(row, 18),
-				MakerFee:          val(row, 19),
+				MakerFee:          val(row, 17),
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
