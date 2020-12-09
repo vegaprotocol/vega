@@ -1261,7 +1261,22 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 				}
 			}
 		}
+		m.updateLiquidityFee(ctx)
 	}
+}
+
+// updateLiquidityFee computes the current LiquidityProvision fee and updates
+// the fee engine.
+func (m *Market) updateLiquidityFee(ctx context.Context) {
+	stake := m.getTargetStake()
+	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(uint64(stake))
+
+	m.fee.SetLiquidityFee(fee)
+
+	m.mkt.Fees.Factors.LiquidityFee = fee
+	m.broker.Send(
+		events.NewMarketEvent(ctx, *m.mkt),
+	)
 }
 
 // resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
@@ -2801,7 +2816,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+		return err
+	}
+
+	m.updateLiquidityFee(ctx)
+	return nil
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
