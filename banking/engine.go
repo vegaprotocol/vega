@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -249,7 +250,12 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 
 func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id string, blockNumber, txIndex uint64) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, 0)
+	// validate amount
+	a, err := strconv.ParseUint(d.Amount, 10, 64)
+	if err != nil {
+		return err
+	}
+	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, a)
 	if err != nil {
 		return err
 	}
@@ -451,15 +457,15 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
 	case aa.IsBuiltinAssetDeposit():
-		return e.finalizeDeposit(ctx, aa.deposit, aa.id)
+		dep := e.deposits[aa.id]
+		return e.finalizeDeposit(ctx, dep, aa.id)
 	case aa.IsERC20Deposit():
 		// here the event queue send us a 0x... pubkey
 		// we do the slice operation to remove it ([2:]
 		dep := e.deposits[aa.id]
 		dep.TxHash = aa.ref.hash
 		e.deposits[aa.id] = dep
-		aa.deposit.partyID = strings.TrimPrefix(aa.deposit.partyID, "0x")
-		return e.finalizeDeposit(ctx, aa.deposit, aa.id)
+		return e.finalizeDeposit(ctx, dep, aa.id)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20Withdrawal():
@@ -495,12 +501,12 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	return nil, ErrNotMatchingWithdrawalForReference
 }
 
-func (e *Engine) finalizeDeposit(ctx context.Context, d *deposit, id string) error {
-	dep := e.deposits[id]
-	dep.Amount = fmt.Sprintf("%v", d.amount)
-	dep.Status = types.Deposit_DEPOSIT_STATUS_FINALIZED
-	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	return e.col.Deposit(ctx, d.partyID, d.assetID, d.amount)
+func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit, id string) error {
+	d.Status = types.Deposit_DEPOSIT_STATUS_FINALIZED
+	e.broker.Send(events.NewDepositEvent(ctx, *d))
+	// no error this have been done before when starting the deposit
+	amount, _ := strconv.ParseUint(d.Amount, 10, 64)
+	return e.col.Deposit(ctx, d.PartyID, d.Asset, amount)
 }
 
 func (e *Engine) finalizeWithdrawal(ctx context.Context, party, asset string, amount uint64) error {

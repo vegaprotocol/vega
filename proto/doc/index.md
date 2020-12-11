@@ -2617,6 +2617,7 @@ An asset deposit for an ERC20 token.
 | vegaAssetID | [string](#string) |  | The vega network internal identifier of the asset. |
 | sourceEthereumAddress | [string](#string) |  | The Ethereum wallet that initiated the deposit. |
 | targetPartyID | [string](#string) |  | The Vega party identifier (pub-key) which is the target of the deposit. |
+| amount | [string](#string) |  | The amount to be deposited |
 
 
 
