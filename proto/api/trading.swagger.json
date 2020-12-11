@@ -3135,6 +3135,10 @@
         "targetPartyID": {
           "type": "string",
           "description": "The Vega party identifier (pub-key) which is the target of the deposit."
+        },
+        "amount": {
+          "type": "string",
+          "title": "The amount to be deposited"
         }
       },
       "description": "An asset deposit for an ERC20 token."
