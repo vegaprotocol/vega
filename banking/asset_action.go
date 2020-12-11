@@ -15,12 +15,6 @@ var (
 	ErrUnknownAssetAction = errors.New("unknown asset action")
 )
 
-type deposit struct {
-	amount  uint64
-	assetID string
-	partyID string
-}
-
 type withdrawal struct {
 	nonce *big.Int
 }
