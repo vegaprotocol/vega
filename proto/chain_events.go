@@ -105,6 +105,7 @@ func (c *ERC20Deposit) PrepareToSign() ([]byte, error) {
 	out = append(out, []byte(c.VegaAssetID)...)
 	out = append(out, []byte(c.SourceEthereumAddress)...)
 	out = append(out, []byte(c.TargetPartyID)...)
+	out = append(out, []byte(c.Amount)...)
 	return out, nil
 }
 

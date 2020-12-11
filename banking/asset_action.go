@@ -46,7 +46,6 @@ type assetAction struct {
 	txIndex     uint64
 
 	// all deposit related types
-	deposit  *deposit
 	builtinD *types.BuiltinAssetDeposit
 	erc20D   *types.ERC20Deposit
 
@@ -125,11 +124,6 @@ func (t *assetAction) Check() error {
 }
 
 func (t *assetAction) checkBuiltinAssetDeposit() error {
-	t.deposit = &deposit{
-		amount:  t.builtinD.Amount,
-		partyID: t.builtinD.PartyID,
-		assetID: t.builtinD.VegaAssetID,
-	}
 	asset, _ := t.asset.BuiltinAsset()
 	// builtin deposits do not have hash, and we don't need one
 	// so let's just add some random id
@@ -139,14 +133,9 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	partyID, assetID, hash, amount, logIndex, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
+	_, _, hash, _, logIndex, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
-	}
-	t.deposit = &deposit{
-		amount:  amount,
-		partyID: partyID,
-		assetID: assetID,
 	}
 	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
