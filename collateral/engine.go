@@ -1863,12 +1863,24 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 	if !ok {
 		return ErrAccountDoesNotExist
 	}
-	acc.Balance = balance
+	send := true
 	if acc.Type == types.AccountType_ACCOUNT_TYPE_EXTERNAL {
-		// Do not send an event for external account
-		return nil
+		send = false
+		asset := acc.Asset
+		b := e.totalAmounts[asset]
+		if acc.Balance > balance {
+			// the external balance has been reduced -> money has moved into the system
+			b += acc.Balance - balance
+		} else {
+			// money has left tthe system
+			b -= balance - acc.Balance
+		}
+		e.totalAmounts[asset] = b
 	}
-	e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	acc.Balance = balance
+	if send {
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	}
 	return nil
 }
 
@@ -1880,9 +1892,10 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance += inc
+	// moves from internal to external, so total amount reduces
 	if acc.Type == types.AccountType_ACCOUNT_TYPE_EXTERNAL {
 		b := e.totalAmounts[acc.Asset]
-		e.totalAmounts[acc.Asset] = b + inc
+		e.totalAmounts[acc.Asset] = b - inc
 		return nil
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
@@ -1897,9 +1910,10 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance -= dec
+	// decrementing external means external to internal, increment total amount
 	if acc.Type == types.AccountType_ACCOUNT_TYPE_EXTERNAL {
 		b := e.totalAmounts[acc.Asset]
-		e.totalAmounts[acc.Asset] = b - dec
+		e.totalAmounts[acc.Asset] = b + dec
 		return nil
 	}
 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
