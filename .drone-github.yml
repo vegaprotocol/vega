@@ -132,9 +132,9 @@ steps:
       - jenkins-create-job.py
           --baseurl https://jenkins.ops.vega.xyz
           --job dockerised-system-tests
-          --username "$${JENKINS_USERNAME:?}"
-          --token "$${JENKINS_TOKEN:?}"
-          --postdata '{"branch_core":"'"${DRONE_SOURCE_BRANCH:?}"'", "branch_systemtests":"use-dockerisedvega"}'
+          --username "$${JENKINS_USERNAME}"
+          --token "$${JENKINS_TOKEN}"
+          --postdata '{"branch_core":"'"${DRONE_SOURCE_BRANCH}"'", "branch_systemtests":"use-dockerisedvega"}'
     depends_on:
       - test-PR
     when:
