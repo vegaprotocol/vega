@@ -14,7 +14,7 @@ type FeeSplitter struct {
 
 func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 	if t.Before(fs.timeWindowStart) {
-		return errors.New("current time can't be before openingAuctionEnded time")
+		return errors.New("current time can't be before current window time")
 	}
 	fs.currentTime = t
 	return nil
