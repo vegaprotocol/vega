@@ -127,6 +127,7 @@ steps:
     commands:
       - if ! test -x cmd/vega/vega-linux-amd64 ; then
           echo "No vega binary. Skipping Jenkins system-tests." ;
+          echo "ACTIVATE BEFORE MERGING -" exit 0 ;
         fi
       # /usr/local/bin/jenkins-create-job.py
       - jenkins-create-job.py
