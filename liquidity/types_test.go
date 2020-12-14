@@ -39,3 +39,15 @@ func TestProvisionsSatisfyTarget(t *testing.T) {
 		require.Empty(t, got)
 	})
 }
+
+func TestPartiesTotalStake(t *testing.T) {
+	parties := ProvisionsPerParty{
+		"p1": {CommitmentAmount: 10}, // 10
+		"p2": {CommitmentAmount: 20}, // 30
+		"p3": {CommitmentAmount: 30}, // 60
+		"p4": {CommitmentAmount: 40}, // 100
+		"p5": {CommitmentAmount: 50}, // 150
+		"p6": {CommitmentAmount: 60}, // 210
+	}
+	assert.Equal(t, 210, int(parties.TotalStake()))
+}

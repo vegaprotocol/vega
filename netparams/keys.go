@@ -14,6 +14,7 @@ const (
 	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stakeToCcySiskas"
 	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                = "market.stake.target.scalingFactor"
+	MarketValueWindowLength                       = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters        = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency          = "market.monitor.price.updateFrequency"
 
