@@ -316,6 +316,43 @@
         ]
       }
     },
+    "/governance/proposals": {
+      "get": {
+        "summary": "Get governance data (proposals and votes) for all proposals",
+        "operationId": "GetProposals",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiGetProposalsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "selectInState.value",
+            "description": "Proposal state value.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execution could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal enacted.\n - STATE_WAITING_FOR_NODE_VOTE: Waiting for node validation of the proposal",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "STATE_FAILED",
+              "STATE_OPEN",
+              "STATE_PASSED",
+              "STATE_REJECTED",
+              "STATE_DECLINED",
+              "STATE_ENACTED",
+              "STATE_WAITING_FOR_NODE_VOTE"
+            ],
+            "default": "STATE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "trading_data"
+        ]
+      }
+    },
     "/liquidity-provisions": {
       "get": {
         "operationId": "PrepareLiquidityProvision2",
@@ -4524,6 +4561,11 @@
         "trigger": {
           "$ref": "#/definitions/vegaPriceMonitoringTrigger",
           "title": "Price monitoring trigger associated with the bounds"
+        },
+        "referencePrice": {
+          "type": "number",
+          "format": "double",
+          "title": "Reference price used to calculate the valid price range"
         }
       },
       "title": "Represents a list of valid (at the current time) price ranges per associated trigger"

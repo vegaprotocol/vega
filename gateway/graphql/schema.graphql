@@ -927,6 +927,8 @@ type PriceMonitoringBounds {
   maxValidPrice: String!
   "Price monitoring trigger associated with the bounds"
   trigger: PriceMonitoringTrigger!
+  "Reference price used to calculate the valid price range"
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"

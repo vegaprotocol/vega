@@ -56,8 +56,9 @@ type bound struct {
 }
 
 type priceRange struct {
-	MinPrice float64
-	MaxPrice float64
+	MinPrice       float64
+	MaxPrice       float64
+	ReferencePrice float64
 }
 
 type pastPrice struct {
@@ -162,9 +163,10 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 		if b.Active {
 			ret = append(ret,
 				&types.PriceMonitoringBounds{
-					MinValidPrice: uint64(math.Ceil(pr.MinPrice)),
-					MaxValidPrice: uint64(math.Floor(pr.MaxPrice)),
-					Trigger:       b.Trigger})
+					MinValidPrice:  uint64(math.Ceil(pr.MinPrice)),
+					MaxValidPrice:  uint64(math.Floor(pr.MaxPrice)),
+					Trigger:        b.Trigger,
+					ReferencePrice: pr.ReferencePrice})
 		}
 	}
 	sort.SliceStable(ret,
@@ -341,7 +343,7 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 				ph = b.Trigger.Horizon
 				ref = e.getReferencePrice(e.now.Add(time.Duration(-ph) * time.Second))
 			}
-			e.priceRangesCache[b] = priceRange{MinPrice: ref + b.MinMoveDown, MaxPrice: ref + b.MaxMoveUp}
+			e.priceRangesCache[b] = priceRange{MinPrice: ref + b.MinMoveDown, MaxPrice: ref + b.MaxMoveUp, ReferencePrice: ref}
 		}
 		e.priceRangeCacheTime = e.now
 	}

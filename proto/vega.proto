@@ -1061,6 +1061,8 @@ message PriceMonitoringBounds {
   uint64 maxValidPrice = 2;
   // Price monitoring trigger associated with the bounds
   PriceMonitoringTrigger trigger = 3;
+  // Reference price used to calculate the valid price range
+  double referencePrice = 4;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
