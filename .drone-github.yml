@@ -116,6 +116,31 @@ steps:
       event:
         - pull_request
 
+  - name: systemtests-jenkins-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:latest
+    pull: always
+    environment:
+      JENKINS_USERNAME:
+        from_secret: JENKINS_USERNAME
+      JENKINS_TOKEN:
+        from_secret: JENKINS_TOKEN
+    commands:
+      - if ! test -x cmd/vega/vega-linux-amd64 ; then
+          echo "No vega binary. Skipping Jenkins system-tests." ;
+        fi
+      # /usr/local/bin/jenkins-create-job.py
+      - jenkins-create-job.py
+          --baseurl https://jenkins.ops.vega.xyz
+          --job dockerised-system-tests
+          --username "$${JENKINS_USERNAME:?}"
+          --token "$${JENKINS_TOKEN:?}"
+          --postdata '{"branch_core":"'"${DRONE_SOURCE_BRANCH:?}"'", "branch_systemtests":"use-dockerisedvega"}'
+    depends_on:
+      - test-PR
+    when:
+      event:
+        - pull_request
+
   - name: systemtests-PR
     image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:develop
     pull: always
@@ -132,7 +157,7 @@ steps:
           echo "No vega binary. Skipping system-tests." ;
         fi
     depends_on:
-      - test-PR
+      - systemtests-jenkins-PR
     when:
       event:
         - pull_request
