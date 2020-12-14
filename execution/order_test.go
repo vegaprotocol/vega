@@ -17,7 +17,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 
@@ -113,7 +113,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 
@@ -167,7 +167,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -207,7 +207,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -258,7 +258,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 
@@ -308,7 +308,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -368,7 +368,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -408,7 +408,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	party2 := "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -557,7 +557,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 func TestAmendToFill(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 	addAccount(tm, "party2")
@@ -570,11 +570,33 @@ func TestAmendToFill(t *testing.T) {
 	amendOrder(t, tm, "party2", orderID, 0, 500, types.Order_TIF_UNSPECIFIED, 0, true)
 }
 
+func TestAmendToLosePriorityThenCancel(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+
+	addAccount(tm, "party1")
+	addAccount(tm, "party2")
+
+	// Create 2 orders at the same level
+	order1 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+
+	// Amend the first order to make it lose time priority
+	amendOrder(t, tm, "party1", order1, 1, 0, types.Order_TIF_UNSPECIFIED, 0, true)
+
+	// Check we can cancel it
+	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order1)
+	assert.NotNil(t, cancelconf)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, cancelconf.Order.Status)
+
+}
+
 func TestUnableToAmendGFAGFN(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -629,7 +651,7 @@ func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -649,7 +671,7 @@ func testPeggedOrderUnpark(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -675,7 +697,7 @@ func testPeggedOrderAmendToMoveReference(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -699,7 +721,7 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -726,7 +748,7 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -757,7 +779,7 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	auctionClose := now.Add(101 * time.Second)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -791,7 +813,7 @@ func testPeggedOrdersEnteringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -821,7 +843,7 @@ func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -841,7 +863,7 @@ func testPeggedOrderAdd(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -867,7 +889,7 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -895,7 +917,7 @@ func testPeggedOrderParkWhenInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -917,7 +939,7 @@ func testPeggedOrderUnparkAfterLeavingAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -953,7 +975,7 @@ func testPeggedOrderTypes(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -975,7 +997,7 @@ func testPeggedOrderCancelParked(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -991,7 +1013,7 @@ func testPeggedOrderTIFs(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -1031,7 +1053,7 @@ func testPeggedOrderBuys(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -1090,7 +1112,7 @@ func testPeggedOrderSells(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -1149,7 +1171,7 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
@@ -1177,7 +1199,7 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	for _, acc := range []string{"buyer", "seller", "pegged"} {
@@ -1206,7 +1228,7 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	for _, acc := range []string{"user1", "user2", "user3", "user4", "user5", "user6", "user7"} {
@@ -1246,7 +1268,7 @@ func testPeggedOrderParkCancelAll(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "user")
@@ -1281,7 +1303,7 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	afterexpire := now.Add(time.Second * 200)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "user")
@@ -1324,7 +1346,7 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "user1")
@@ -1375,7 +1397,7 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "user1")
@@ -1474,7 +1496,7 @@ func testPeggedOrderRepricing(t *testing.T) {
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
 			// Create market
-			tm := getTestMarket(t, now, closingAt, nil)
+			tm := getTestMarket(t, now, closingAt, nil, nil)
 
 			// Create the party
 			addAccount(tm, "party")
@@ -1503,7 +1525,7 @@ func testPeggedOrderExpiring(t *testing.T) {
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
 
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	addAccount(tm, "party")
 
 	// Create buy and sell orders
@@ -1545,6 +1567,43 @@ func TestPeggedOrdersAmends(t *testing.T) {
 	t.Run("pegged orders amend an orders pegged reference during an auction", testPeggedOrderAmendReferenceInAuction)
 	t.Run("pegged orders amend multiple fields at once", testPeggedOrderAmendMultiple)
 	t.Run("pegged orders amend multiple fields at once in an auction", testPeggedOrderAmendMultipleInAuction)
+	t.Run("pegged orders delete an order that has lost time priority", testPeggedOrderCanDeleteAfterLostPriority)
+}
+
+// We had a case where things crashed when the orders on the same price level were not sorted
+// in createdAt order. Test this by creating a pegged order and repricing to make it lose it's time order
+func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+
+	addAccount(tm, "party1")
+
+	// Place trades so we have a valid BEST_BID
+	buyOrder1 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
+	require.NotNil(t, buyOrder1)
+
+	// Place the pegged order
+	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	require.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// Place a normal limit order behind the pegged order
+	buyOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
+	require.NotNil(t, buyOrder2)
+
+	// Amend first order to move pegged
+	amendOrder(t, tm, "party1", buyOrder1, 0, 101, types.Order_TIF_UNSPECIFIED, 0, true)
+	// Amend again to make the pegged order reprice behind the second limit order
+	amendOrder(t, tm, "party1", buyOrder1, 0, 100, types.Order_TIF_UNSPECIFIED, 0, true)
+
+	// Try to delete the pegged order
+	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order.Id)
+	assert.NotNil(t, cancelconf)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, cancelconf.Order.Status)
 }
 
 // If we amend an order that is parked and not in auction we need to see if the amendment has caused the
@@ -1553,7 +1612,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -1588,7 +1647,7 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -1623,7 +1682,7 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -1657,7 +1716,7 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -1696,7 +1755,7 @@ func testPeggedOrderAmendReference(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 
@@ -1730,7 +1789,7 @@ func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -1770,7 +1829,7 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
@@ -1813,7 +1872,7 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	addAccount(tm, "party1")
 

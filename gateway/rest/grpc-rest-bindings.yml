@@ -139,6 +139,8 @@ http:
       get: '/governance/market/proposals'
     - selector: api.trading_data.GetNewAssetProposals
       get: '/governance/asset/proposals'
+    - selector: api.trading_data.GetProposals
+      get: '/governance/proposals'
 
 
     # LiquidityProvision

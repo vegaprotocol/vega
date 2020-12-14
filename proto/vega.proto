@@ -5,6 +5,8 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "google/protobuf/wrappers.proto";
+import "proto/markets.proto";
+
 
 // A side relates to the direction of an order, to Buy, or Sell.
 enum Side {
@@ -1045,6 +1047,20 @@ message MarketData {
   string targetStake = 21;
   // the available stake fo the given market
   string suppliedStake = 22;
+  // a list of price monitoring bounds per current time
+  repeated PriceMonitoringBounds priceMonitoringBounds = 23;
+}
+
+// Represents a list of valid (at the current time) price ranges per associated trigger
+message PriceMonitoringBounds {
+  // Minimum price that isn't currently breaching the specified price monitoring trigger
+  uint64 minValidPrice = 1;
+  // Maximum price that isn't currently breaching the specified price monitoring trigger
+  uint64 maxValidPrice = 2;
+  // Price monitoring trigger associated with the bounds
+  PriceMonitoringTrigger trigger = 3;
+  // Reference price used to calculate the valid price range
+  double referencePrice = 4;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.

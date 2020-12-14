@@ -362,6 +362,8 @@ type MarketData {
   suppliedStake: String
   "The liquidity commitments for a given market"
   commitments: MarketDataCommitments!
+  "A list of valid price ranges per associated trigger"
+  priceMonitoringBounds: [PriceMonitoringBounds!]
 }
 
 "The MM commitments for this market"
@@ -915,6 +917,18 @@ type PriceMonitoringSettings {
   parameters: PriceMonitoringParameters
   "How often (in seconds) the price monitoring bounds should be updated"
   updateFrequencySecs: Int!
+}
+
+"Range of valid prices and the associated price monitoring trigger"
+type PriceMonitoringBounds {
+  "Minimum price that isn't currently breaching the specified price monitoring trigger"
+  minValidPrice: String!
+  "Maximum price that isn't currently breaching the specified price monitoring trigger"
+  maxValidPrice: String!
+  "Price monitoring trigger associated with the bounds"
+  trigger: PriceMonitoringTrigger!
+  "Reference price used to calculate the valid price range"
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"
@@ -1654,10 +1668,10 @@ enum OrderRejectionReason {
   InvalidMarketType
 
   "Good for normal order received during an auction"
-  GFAOrderDuringAuction
+  GFNOrderDuringAuction
 
   "Good for auction order received during continuous trading"
-  GFNOrderDuringContinuousTrading
+  GFAOrderDuringContinuousTrading
 
   "IOC orders are not allowed during auction"
   IOCOrderDuringAuction

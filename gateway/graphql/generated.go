@@ -322,6 +322,7 @@ type ComplexityRoot struct {
 		MarketState           func(childComplexity int) int
 		MidPrice              func(childComplexity int) int
 		OpenInterest          func(childComplexity int) int
+		PriceMonitoringBounds func(childComplexity int) int
 		StaticMidPrice        func(childComplexity int) int
 		SuppliedStake         func(childComplexity int) int
 		TargetStake           func(childComplexity int) int
@@ -491,6 +492,13 @@ type ComplexityRoot struct {
 		NumberOfOrders func(childComplexity int) int
 		Price          func(childComplexity int) int
 		Volume         func(childComplexity int) int
+	}
+
+	PriceMonitoringBounds struct {
+		MaxValidPrice  func(childComplexity int) int
+		MinValidPrice  func(childComplexity int) int
+		ReferencePrice func(childComplexity int) int
+		Trigger        func(childComplexity int) int
 	}
 
 	PriceMonitoringParameters struct {
@@ -837,6 +845,7 @@ type MarketDataResolver interface {
 	Trigger(ctx context.Context, obj *proto.MarketData) (AuctionTrigger, error)
 
 	Commitments(ctx context.Context, obj *proto.MarketData) (*MarketDataCommitments, error)
+	PriceMonitoringBounds(ctx context.Context, obj *proto.MarketData) ([]*PriceMonitoringBounds, error)
 }
 type MarketDepthResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepth) (*proto.Market, error)
@@ -2130,6 +2139,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.OpenInterest(childComplexity), true
 
+	case "MarketData.priceMonitoringBounds":
+		if e.complexity.MarketData.PriceMonitoringBounds == nil {
+			break
+		}
+
+		return e.complexity.MarketData.PriceMonitoringBounds(childComplexity), true
+
 	case "MarketData.staticMidPrice":
 		if e.complexity.MarketData.StaticMidPrice == nil {
 			break
@@ -2878,6 +2894,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PriceLevel.Volume(childComplexity), true
+
+	case "PriceMonitoringBounds.maxValidPrice":
+		if e.complexity.PriceMonitoringBounds.MaxValidPrice == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.MaxValidPrice(childComplexity), true
+
+	case "PriceMonitoringBounds.minValidPrice":
+		if e.complexity.PriceMonitoringBounds.MinValidPrice == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.MinValidPrice(childComplexity), true
+
+	case "PriceMonitoringBounds.referencePrice":
+		if e.complexity.PriceMonitoringBounds.ReferencePrice == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.ReferencePrice(childComplexity), true
+
+	case "PriceMonitoringBounds.trigger":
+		if e.complexity.PriceMonitoringBounds.Trigger == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.Trigger(childComplexity), true
 
 	case "PriceMonitoringParameters.triggers":
 		if e.complexity.PriceMonitoringParameters.Triggers == nil {
@@ -4522,6 +4566,8 @@ type MarketData {
   suppliedStake: String
   "The liquidity commitments for a given market"
   commitments: MarketDataCommitments!
+  "A list of valid price ranges per associated trigger"
+  priceMonitoringBounds: [PriceMonitoringBounds!]
 }
 
 "The MM commitments for this market"
@@ -5075,6 +5121,18 @@ type PriceMonitoringSettings {
   parameters: PriceMonitoringParameters
   "How often (in seconds) the price monitoring bounds should be updated"
   updateFrequencySecs: Int!
+}
+
+"Range of valid prices and the associated price monitoring trigger"
+type PriceMonitoringBounds {
+  "Minimum price that isn't currently breaching the specified price monitoring trigger"
+  minValidPrice: String!
+  "Maximum price that isn't currently breaching the specified price monitoring trigger"
+  maxValidPrice: String!
+  "Price monitoring trigger associated with the bounds"
+  trigger: PriceMonitoringTrigger!
+  "Reference price used to calculate the valid price range"
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"
@@ -5814,10 +5872,10 @@ enum OrderRejectionReason {
   InvalidMarketType
 
   "Good for normal order received during an auction"
-  GFAOrderDuringAuction
+  GFNOrderDuringAuction
 
   "Good for auction order received during continuous trading"
-  GFNOrderDuringContinuousTrading
+  GFAOrderDuringContinuousTrading
 
   "IOC orders are not allowed during auction"
   IOCOrderDuringAuction
@@ -13209,6 +13267,37 @@ func (ec *executionContext) _MarketData_commitments(ctx context.Context, field g
 	return ec.marshalNMarketDataCommitments2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketDataCommitments(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MarketData_priceMonitoringBounds(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().PriceMonitoringBounds(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*PriceMonitoringBounds)
+	fc.Result = res
+	return ec.marshalOPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MarketDataCommitments_sells(ctx context.Context, field graphql.CollectedField, obj *MarketDataCommitments) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16341,6 +16430,142 @@ func (ec *executionContext) _PriceLevel_numberOfOrders(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.PriceLevel().NumberOfOrders(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_minValidPrice(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinValidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_maxValidPrice(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxValidPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_trigger(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Trigger, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PriceMonitoringTrigger)
+	fc.Result = res
+	return ec.marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_referencePrice(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReferencePrice, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25847,6 +26072,17 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		case "priceMonitoringBounds":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_priceMonitoringBounds(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -27220,6 +27456,48 @@ func (ec *executionContext) _PriceLevel(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var priceMonitoringBoundsImplementors = []string{"PriceMonitoringBounds"}
+
+func (ec *executionContext) _PriceMonitoringBounds(ctx context.Context, sel ast.SelectionSet, obj *PriceMonitoringBounds) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, priceMonitoringBoundsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PriceMonitoringBounds")
+		case "minValidPrice":
+			out.Values[i] = ec._PriceMonitoringBounds_minValidPrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maxValidPrice":
+			out.Values[i] = ec._PriceMonitoringBounds_maxValidPrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "trigger":
+			out.Values[i] = ec._PriceMonitoringBounds_trigger(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "referencePrice":
+			out.Values[i] = ec._PriceMonitoringBounds_referencePrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -30241,6 +30519,20 @@ func (ec *executionContext) marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._PriceLevel(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPriceMonitoringBounds2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringBounds) graphql.Marshaler {
+	return ec._PriceMonitoringBounds(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPriceMonitoringBounds2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx context.Context, sel ast.SelectionSet, v *PriceMonitoringBounds) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PriceMonitoringBounds(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPriceMonitoringSettings2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx context.Context, sel ast.SelectionSet, v PriceMonitoringSettings) graphql.Marshaler {
 	return ec._PriceMonitoringSettings(ctx, sel, &v)
 }
@@ -31886,6 +32178,46 @@ func (ec *executionContext) marshalOPriceLevel2ᚕᚖcodeᚗvegaprotocolᚗioᚋ
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNPriceLevel2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPriceLevel(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOPriceMonitoringBounds2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBoundsᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceMonitoringBounds) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPriceMonitoringBounds2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringBounds(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

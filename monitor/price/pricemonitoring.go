@@ -56,8 +56,9 @@ type bound struct {
 }
 
 type priceRange struct {
-	MinPrice float64
-	MaxPrice float64
+	MinPrice       float64
+	MaxPrice       float64
+	ReferencePrice float64
 }
 
 type pastPrice struct {
@@ -152,6 +153,28 @@ func (e *Engine) GetValidPriceRange() (float64, float64) {
 		}
 	}
 	return min, max
+}
+
+// GetCurrentBounds returns a list of valid price ranges per price monitoring trigger. Note these are subject to change as the time progresses.
+func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
+	priceRanges := e.getCurrentPriceRanges()
+	ret := make([]*types.PriceMonitoringBounds, 0, len(priceRanges))
+	for b, pr := range priceRanges {
+		if b.Active {
+			ret = append(ret,
+				&types.PriceMonitoringBounds{
+					MinValidPrice:  uint64(math.Ceil(pr.MinPrice)),
+					MaxValidPrice:  uint64(math.Floor(pr.MaxPrice)),
+					Trigger:        b.Trigger,
+					ReferencePrice: pr.ReferencePrice})
+		}
+	}
+	sort.SliceStable(ret,
+		func(i, j int) bool {
+			return ret[i].Trigger.Horizon <= ret[j].Trigger.Horizon &&
+				ret[i].Trigger.Probability <= ret[j].Trigger.Probability
+		})
+	return ret
 }
 
 // CheckPrice checks how current price and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
@@ -320,7 +343,7 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 				ph = b.Trigger.Horizon
 				ref = e.getReferencePrice(e.now.Add(time.Duration(-ph) * time.Second))
 			}
-			e.priceRangesCache[b] = priceRange{MinPrice: ref + b.MinMoveDown, MaxPrice: ref + b.MaxMoveUp}
+			e.priceRangesCache[b] = priceRange{MinPrice: ref + b.MinMoveDown, MaxPrice: ref + b.MaxMoveUp, ReferencePrice: ref}
 		}
 		e.priceRangeCacheTime = e.now
 	}

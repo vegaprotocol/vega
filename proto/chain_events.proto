@@ -59,6 +59,8 @@ message ERC20Deposit {
   string sourceEthereumAddress = 2;
   // The Vega party identifier (pub-key) which is the target of the deposit.
   string targetPartyID = 3;
+  // The amount to be deposited
+  string amount = 4;
 }
 
 // An asset withdrawal for an ERC20 token.

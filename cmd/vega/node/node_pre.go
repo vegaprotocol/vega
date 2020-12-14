@@ -86,6 +86,9 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		if err != nil {
 			return
 		}
+		l.cfgwatchr.OnConfigUpdate(
+			func(cfg config.Config) { l.pproffhandlr.ReloadConf(cfg.Pprof) },
+		)
 	}
 
 	l.Log.Info("Starting Vega",

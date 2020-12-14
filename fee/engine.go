@@ -72,13 +72,22 @@ func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
 		return err
 	}
 	e.f.infrastructureFee = f
-	f, err = strconv.ParseFloat(fees.Factors.LiquidityFee, 64)
-	if err != nil {
+
+	if err := e.SetLiquidityFee(fees.Factors.LiquidityFee); err != nil {
 		e.log.Error("unable to load liquidityfee", logging.Error(err))
 		return err
 	}
-	e.f.liquidityFee = f
+
 	e.feeCfg = fees
+	return nil
+}
+
+func (e *Engine) SetLiquidityFee(v string) error {
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return err
+	}
+	e.f.liquidityFee = f
 	return nil
 }
 

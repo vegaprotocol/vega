@@ -15,20 +15,15 @@ var (
 	ErrUnknownAssetAction = errors.New("unknown asset action")
 )
 
-type deposit struct {
-	amount  uint64
-	assetID string
-	partyID string
-}
-
 type withdrawal struct {
 	nonce *big.Int
 }
 
 type txRef struct {
-	asset common.AssetClass
-	hash  string
-	index uint64
+	asset    common.AssetClass
+	hash     string
+	index    uint64
+	logIndex uint
 }
 
 type assetAction struct {
@@ -45,7 +40,6 @@ type assetAction struct {
 	txIndex     uint64
 
 	// all deposit related types
-	deposit  *deposit
 	builtinD *types.BuiltinAssetDeposit
 	erc20D   *types.ERC20Deposit
 
@@ -124,52 +118,42 @@ func (t *assetAction) Check() error {
 }
 
 func (t *assetAction) checkBuiltinAssetDeposit() error {
-	t.deposit = &deposit{
-		amount:  t.builtinD.Amount,
-		partyID: t.builtinD.PartyID,
-		assetID: t.builtinD.VegaAssetID,
-	}
 	asset, _ := t.asset.BuiltinAsset()
 	// builtin deposits do not have hash, and we don't need one
 	// so let's just add some random id
-	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String(), 0}
+	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String(), 0, 0}
 	return nil
 }
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	partyID, assetID, hash, amount, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
+	_, _, hash, _, logIndex, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
-	t.deposit = &deposit{
-		amount:  amount,
-		partyID: partyID,
-		assetID: assetID,
-	}
-	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
 }
 
 func (t *assetAction) checkERC20Withdrawal() error {
 	asset, _ := t.asset.ERC20()
-	nonce, hash, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
+	nonce, hash, logIndex, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
 	t.withdrawal = &withdrawal{
 		nonce: nonce,
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
 }
 
 func (t *assetAction) checkERC20AssetList() error {
 	asset, _ := t.asset.ERC20()
-	hash, err := asset.ValidateWhitelist(t.erc20AL, t.blockNumber, t.txIndex)
+	hash, logIndex, err := asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex}
+	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
 }

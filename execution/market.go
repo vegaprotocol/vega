@@ -68,10 +68,14 @@ var (
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
 	// ErrInvalidMarketType is returned if the order is not valid for the current market type (auction/continuous)
 	ErrInvalidMarketType = errors.New("invalid market type")
-	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continous trading state
+	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continuous trading state
 	ErrGFAOrderReceivedDuringContinuousTrading = errors.New("gfa order received during continuous trading")
 	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state
 	ErrGFNOrderReceivedAuctionTrading = errors.New("gfn order received during auction trading")
+	// ErrIOCOrderReceivedAuctionTrading is returned if a ioc order hits the market when in auction state
+	ErrIOCOrderReceivedAuctionTrading = errors.New("ioc order received during auction trading")
+	// ErrFOKOrderReceivedAuctionTrading is returned if a fok order hits the market when in auction state
+	ErrFOKOrderReceivedAuctionTrading = errors.New("fok order received during auction trading")
 	// ErrUnableToReprice we are unable to get a price required to reprice
 	ErrUnableToReprice = errors.New("unable to reprice")
 	// ErrOrderNotFound we cannot find the order in the market
@@ -84,6 +88,7 @@ var (
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
+	GetCurrentBounds() []*types.PriceMonitoringBounds
 }
 
 // TargetStakeCalculator interface
@@ -371,6 +376,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		// FIXME(WITOLD): uncomment set real values here
 		// TargetStake: getTargetStake(),
 		// SuppliedStake: getSuppliedStake(),
+		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}
 }
 
@@ -414,14 +420,20 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	// check price auction end
 	if m.as.InAuction() {
+		p := m.matching.GetIndicativePrice()
 		if m.as.IsOpeningAuction() {
 			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
 				// mark opening auction as ending
+				if p != 0 {
+					// Prime price monitoring engine with the uncrossing price of the opening auction
+					if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
+						m.log.Error("Price monitoring error", logging.Error(err))
+					}
+				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
 			}
 		} else if m.as.IsPriceAuction() {
-			p := m.matching.GetIndicativePrice()
 			// ending auction now would result in no trades so feed the last mark price into pMonitor
 			if p == 0 {
 				p = m.markPrice
@@ -692,13 +704,18 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	}
 
 	// Apply fee calculations to each trade
+	tradeEvts := []events.Event{}
 	for _, uo := range uncrossedOrders {
 		err := m.applyFees(ctx, uo.Order, uo.Trades)
 		if err != nil {
 			// @TODO this ought to be an event
 			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uo.Order.Id))
 		}
+		for _, t := range uo.Trades {
+			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *t))
+		}
 	}
+	m.broker.SendBatch(tradeEvts)
 
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.AuctionEnded(ctx, now)
@@ -763,21 +780,21 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return ErrGFAOrderReceivedDuringContinuousTrading
+		return ErrGFNOrderReceivedAuctionTrading
 	}
 
 	if isAuction && order.TimeInForce == types.Order_TIF_IOC {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return ErrGFAOrderReceivedDuringContinuousTrading
+		return ErrIOCOrderReceivedAuctionTrading
 	}
 
 	if isAuction && order.TimeInForce == types.Order_TIF_FOK {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
-		return ErrGFAOrderReceivedDuringContinuousTrading
+		return ErrFOKOrderReceivedAuctionTrading
 	}
 
 	if !isAuction && order.TimeInForce == types.Order_TIF_GFA {
@@ -1249,7 +1266,22 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 				}
 			}
 		}
+		m.updateLiquidityFee(ctx)
 	}
+}
+
+// updateLiquidityFee computes the current LiquidityProvision fee and updates
+// the fee engine.
+func (m *Market) updateLiquidityFee(ctx context.Context) {
+	stake := m.getTargetStake()
+	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(uint64(stake))
+
+	m.fee.SetLiquidityFee(fee)
+
+	m.mkt.Fees.Factors.LiquidityFee = fee
+	m.broker.Send(
+		events.NewMarketEvent(ctx, *m.mkt),
+	)
 }
 
 // resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
@@ -1637,6 +1669,11 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		if ip := m.matching.GetIndicativePrice(); ip != 0 {
 			price = ip
 		}
+		// in opening auctions, there might not be price data at all, in which case we should default to
+		// the order price to base our margin requirements on
+		if m.as.IsOpeningAuction() && price < order.Price {
+			price = order.Price
+		}
 	}
 	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, price, pos)
 	if err != nil {
@@ -1896,7 +1933,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	order.Price = 0
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	if _, err := m.position.UnregisterOrder(order); err != nil {
-		m.log.Fatal("Failure unregistering order in positions engine (parking)",
+		m.log.Fatal("Failure un-registering order in positions engine (parking)",
 			logging.Order(*order),
 			logging.Error(err))
 	}
@@ -2386,9 +2423,12 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 			return nil, err
 		}
 
-		conf, err = m.matching.SubmitOrder(newOrder) //lint:ignore SA4006 this value might be overwriter, careful!
+		// Because other collections might be pointing at the original order
+		// use it's memory when inserting the new version
+		*existingOrder = *newOrder
+		conf, err = m.matching.SubmitOrder(existingOrder) //lint:ignore SA4006 this value might be overwriter, careful!
 		// replace the trades in the confirmation to have
-		// the ones with the fees embbeded
+		// the ones with the fees embedded
 		conf.Trades = trades
 	}
 
@@ -2790,7 +2830,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+		return err
+	}
+
+	m.updateLiquidityFee(ctx)
+	return nil
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {

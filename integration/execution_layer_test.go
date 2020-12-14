@@ -1018,14 +1018,22 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 		UpdateFrequency: i64val(row, 20),
 	}
 
+	openingAuction := &types.AuctionDuration{
+		Duration: i64val(row, 15),
+	}
+
+	if openingAuction.Duration <= 0 {
+		openingAuction = nil
+	}
+
 	mkt := types.Market{
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				LiquidityFee:      val(row, 17),
+				LiquidityFee:      val(row, 19),
 				InfrastructureFee: val(row, 18),
-				MakerFee:          val(row, 19),
+				MakerFee:          val(row, 17),
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
@@ -1074,6 +1082,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 				},
 			},
 		},
+		OpeningAuction: openingAuction,
 		TradingMode: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
@@ -1083,6 +1092,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			ScalingFactor: 10,
 		},
 	}
+	fmt.Printf("\nOpening duration: %v\n", i64val(row, 15))
 
 	if val(row, 5) == "forward" {
 		mkt.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{

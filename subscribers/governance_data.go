@@ -10,7 +10,7 @@ import (
 
 type GovernanceDataSub struct {
 	*Base
-	mu        *sync.Mutex
+	mu        sync.RWMutex
 	proposals map[string]types.Proposal
 	byPID     map[string]*types.GovernanceData
 	all       []*types.GovernanceData
@@ -19,7 +19,6 @@ type GovernanceDataSub struct {
 func NewGovernanceDataSub(ctx context.Context, ack bool) *GovernanceDataSub {
 	gd := &GovernanceDataSub{
 		Base:      NewBase(ctx, 10, ack),
-		mu:        &sync.Mutex{},
 		proposals: map[string]types.Proposal{},
 		byPID:     map[string]*types.GovernanceData{},
 		all:       []*types.GovernanceData{},
@@ -45,6 +44,8 @@ func (g *GovernanceDataSub) loop(ctx context.Context) {
 }
 
 func (g *GovernanceDataSub) Push(evts ...events.Event) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	for _, e := range evts {
 		switch et := e.(type) {
 		case PropE:
@@ -71,7 +72,9 @@ func (g *GovernanceDataSub) Push(evts ...events.Event) {
 // Filter - get filtered proposals, value receiver so no data races
 // uniqueVotes will replace the slice (containing older/duplicate votes) with only the latest votes
 // for each participant
-func (g GovernanceDataSub) Filter(uniqueVotes bool, params ...ProposalFilter) []*types.GovernanceData {
+func (g *GovernanceDataSub) Filter(uniqueVotes bool, params ...ProposalFilter) []*types.GovernanceData {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
 	ret := []*types.GovernanceData{}
 	for id, p := range g.proposals {
 		add := true
@@ -102,8 +105,6 @@ func (g GovernanceDataSub) Filter(uniqueVotes bool, params ...ProposalFilter) []
 }
 
 func (g *GovernanceDataSub) getData(id string) *types.GovernanceData {
-	g.mu.Lock()
-	defer g.mu.Unlock()
 	if gd, ok := g.byPID[id]; ok {
 		return gd
 	}
