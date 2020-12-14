@@ -44,7 +44,9 @@ func TestFeeSplitter(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			fs := &FeeSplitter{}
 			fs.TimeWindowStart(timeWindowStart)
-			fs.MustSetCurrentTime(test.currentTime)
+			require.NoError(t,
+				fs.SetCurrentTime(test.currentTime),
+			)
 			fs.AddTradeValue(test.tradedValue)
 
 			got := fs.MarketValueProxy(marketValueWindowLength, totalStake)

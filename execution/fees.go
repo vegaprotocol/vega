@@ -12,12 +12,6 @@ type FeeSplitter struct {
 	tradeValue      uint64
 }
 
-func (fs *FeeSplitter) MustSetCurrentTime(t time.Time) {
-	if err := fs.SetCurrentTime(t); err != nil {
-		panic(err)
-	}
-}
-
 func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 	if t.Before(fs.timeWindowStart) {
 		return errors.New("current time can't be before openingAuctionEnded time")
@@ -51,8 +45,7 @@ func maxDuration(a, b time.Duration) time.Duration {
 }
 
 func (fs *FeeSplitter) activeWindowLength(mvw time.Duration) time.Duration {
-	// t is the distance between current time and the openingActionEnded time
-	t := fs.currentTime.Sub(fs.timeWindowStart)
+	t := fs.Elapsed()
 	return t - maxDuration(t-mvw, 0)
 }
 
