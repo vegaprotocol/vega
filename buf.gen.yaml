@@ -1,0 +1,17 @@
+version: v1beta1
+plugins:
+  - name: go
+    out: newproto
+    opt: plugins=grpc,paths=source_relative
+  - name: govalidators
+    out: newproto
+    opt: paths=source_relative
+  - name: grpc-gateway
+    out: newproto
+    opt: logtostderr=true,grpc_api_configuration=./gateway/rest/grpc-rest-bindings.yml,paths=source_relative
+  - name: doc
+    out: newproto/doc
+    opt: html,index.html
+  - name: swagger
+    out: newproto
+    opt: logtostderr=true,grpc_api_configuration=./gateway/rest/grpc-rest-bindings.yml
