@@ -2307,6 +2307,11 @@ func (m *Market) validateOrderAmendment(
 			amendment.PeggedReference != types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			return types.OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
 		}
+	} else if order.PeggedOrder != nil {
+		// We cannot change the price on a pegged order
+		if amendment.Price != nil {
+			return types.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
+		}
 	}
 	return nil
 }
