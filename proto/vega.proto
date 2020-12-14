@@ -851,6 +851,9 @@ enum AccountType {
   // This account is created to maintain liquidity providers funds commitments
   ACCOUNT_TYPE_BOND = 9;
 
+  // External account represents an external source (deposit/withdrawal)
+  ACCOUNT_TYPE_EXTERNAL = 10;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
