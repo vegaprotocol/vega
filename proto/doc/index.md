@@ -5418,6 +5418,9 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 | TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
 | TRANSFER_TYPE_BOND_LOW | 13 | Bond too low. |
 | TRANSFER_TYPE_BOND_HIGH | 14 | Bond too high. |
+| TRANSFER_TYPE_WITHDRAW_LOCK | 15 | Lock amount for withdraw. |
+| TRANSFER_TYPE_WITHDRAW | 16 | Actual withdraw from system. |
+| TRANSFER_TYPE_DEPOSIT | 17 | Deposit funds. |
 
 
 
