@@ -1744,5 +1744,37 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
 	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
 	assert.Equal(t, uint64(100), o2.Price)
+}
 
+func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "aaa")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Create a parked pegged order
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "aaa", 1, 0)
+	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+	now = now.Add(time.Second * 1)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+	assert.Equal(t, types.Order_STATUS_PARKED, o1.Status)
+	assert.Equal(t, uint64(0), o1.Price)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID: o1.Id,
+		PartyID: "aaa",
+		Price:   &types.Price{Value: 200},
+	}
+
+	// This should fail as we cannot amend a pegged order price
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	require.Nil(t, amendConf)
+	require.Error(t, types.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER, err)
 }

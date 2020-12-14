@@ -41,6 +41,7 @@ var (
 	ErrInsufficientAssetBalance                    = OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 	ErrCannotAmendPeggedDetailsOnNonPeggedOrder    = OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
 	ErrUnableToRepricePeggedOrder                  = OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER
+	ErrUnableToAmendPeggedOrderPrice               = OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
 )
 
 func IsOrderError(err error) (OrderError, bool) {

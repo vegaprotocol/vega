@@ -5918,6 +5918,9 @@ enum OrderRejectionReason {
 
   "Unable to reprice a pegged order"
   UnableToRepricePeggedOrder
+
+  "Unable to amend pegged order price"
+  UnableToAmendPeggedOrderPrice
 }
 
 enum OrderType {

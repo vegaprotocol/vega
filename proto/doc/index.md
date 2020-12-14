@@ -5351,6 +5351,7 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
 | ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER | 44 | Cannot amend a non pegged orders details |
 | ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 45 | We are unable to reprice a pegged order because a market price is unavailable |
+| ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER | 46 | Users cannot amend the price of a pegged order |
 
 
 
