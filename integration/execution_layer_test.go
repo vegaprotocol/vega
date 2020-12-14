@@ -1256,7 +1256,6 @@ func clearOrdersByRef(in *gherkin.DataTable) error {
 }
 
 // liquidity provisioning
-
 func submitLP(in *gherkin.DataTable) error {
 	lps := map[string]*types.LiquidityProvisionSubmission{}
 	parties := map[string]string{}
@@ -1324,6 +1323,43 @@ func seeLPEvents(in *gherkin.DataTable) error {
 		party, market, commitment := val(row, 1), val(row, 2), u64val(row, 3)
 		if e.PartyID != party || e.MarketID != market || e.CommitmentAmount != commitment {
 			return errors.New("party,  market ID, or commitment amount mismatch")
+		}
+	}
+	return nil
+}
+
+func theOpeningAuctionPeriodEnds(mktName string) error {
+	var mkt *types.Market
+	for _, m := range execsetup.mkts {
+		if m.Id == mktName {
+			mkt = &m
+			break
+		}
+	}
+	if mkt == nil {
+		return fmt.Errorf("market %s not found", mktName)
+	}
+	// double the time, so it's definitely past opening auction time
+	now := execsetup.timesvc.now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
+	execsetup.timesvc.now = now
+	// notify markets
+	execsetup.timesvc.notify(context.Background(), now)
+	return nil
+}
+
+func tradersWithdrawBalance(in *gherkin.DataTable) error {
+	for _, row := range in.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		asset := val(row, 1)
+		if _, err := execsetup.collateral.GetOrCreatePartyLockWithdrawAccount(context.Background(), trader, asset); err != nil {
+			return err
+		}
+		amount := u64val(row, 2)
+		if _, err := execsetup.collateral.Withdraw(context.Background(), trader, asset, amount); err != nil {
+			return err
 		}
 	}
 	return nil
