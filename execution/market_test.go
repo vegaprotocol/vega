@@ -1807,6 +1807,7 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
 	require.Equal(t, 1, len(orders))
+	require.NoError(t, err)
 
 	assert.Equal(t, types.Order_STATUS_EXPIRED, o1.Status)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
