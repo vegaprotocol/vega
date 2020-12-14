@@ -495,9 +495,10 @@ type ComplexityRoot struct {
 	}
 
 	PriceMonitoringBounds struct {
-		MaxValidPrice func(childComplexity int) int
-		MinValidPrice func(childComplexity int) int
-		Trigger       func(childComplexity int) int
+		MaxValidPrice  func(childComplexity int) int
+		MinValidPrice  func(childComplexity int) int
+		ReferencePrice func(childComplexity int) int
+		Trigger        func(childComplexity int) int
 	}
 
 	PriceMonitoringParameters struct {
@@ -2908,6 +2909,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PriceMonitoringBounds.MinValidPrice(childComplexity), true
 
+	case "PriceMonitoringBounds.referencePrice":
+		if e.complexity.PriceMonitoringBounds.ReferencePrice == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.ReferencePrice(childComplexity), true
+
 	case "PriceMonitoringBounds.trigger":
 		if e.complexity.PriceMonitoringBounds.Trigger == nil {
 			break
@@ -5123,6 +5131,8 @@ type PriceMonitoringBounds {
   maxValidPrice: String!
   "Price monitoring trigger associated with the bounds"
   trigger: PriceMonitoringTrigger!
+  "Reference price used to calculate the valid price range"
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"
@@ -16538,6 +16548,40 @@ func (ec *executionContext) _PriceMonitoringBounds_trigger(ctx context.Context, 
 	return ec.marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTrigger(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PriceMonitoringBounds_referencePrice(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReferencePrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PriceMonitoringParameters_triggers(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -27446,6 +27490,11 @@ func (ec *executionContext) _PriceMonitoringBounds(ctx context.Context, sel ast.
 			}
 		case "trigger":
 			out.Values[i] = ec._PriceMonitoringBounds_trigger(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "referencePrice":
+			out.Values[i] = ec._PriceMonitoringBounds_referencePrice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

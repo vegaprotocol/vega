@@ -4560,6 +4560,11 @@
         "trigger": {
           "$ref": "#/definitions/vegaPriceMonitoringTrigger",
           "title": "Price monitoring trigger associated with the bounds"
+        },
+        "referencePrice": {
+          "type": "number",
+          "format": "double",
+          "title": "Reference price used to calculate the valid price range"
         }
       },
       "title": "Represents a list of valid (at the current time) price ranges per associated trigger"

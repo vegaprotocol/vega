@@ -591,9 +591,11 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	require.Equal(t, *bounds[0].Trigger, t1)
 	require.Equal(t, bounds[0].MinValidPrice, t1lb1)
 	require.Equal(t, bounds[0].MaxValidPrice, t1ub1)
+	require.Equal(t, bounds[0].ReferencePrice, referencePrice)
 	require.Equal(t, *bounds[1].Trigger, t2)
 	require.Equal(t, bounds[1].MinValidPrice, t2lb1)
 	require.Equal(t, bounds[1].MaxValidPrice, t2ub1)
+	require.Equal(t, bounds[1].ReferencePrice, referencePrice)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
@@ -614,6 +616,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	require.Equal(t, *bounds[0].Trigger, t2)
 	require.Equal(t, bounds[0].MinValidPrice, uint64(t2lb1))
 	require.Equal(t, bounds[0].MaxValidPrice, uint64(t2ub1))
+	require.Equal(t, bounds[0].ReferencePrice, referencePrice)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
 	now = afterInitialAuction
@@ -649,9 +652,11 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	require.Equal(t, *bounds[0].Trigger, t1)
 	require.Equal(t, bounds[0].MinValidPrice, t1lb2)
 	require.Equal(t, bounds[0].MaxValidPrice, t1ub2)
+	require.Equal(t, bounds[0].ReferencePrice, float64(t2ViolatingPrice))
 	require.Equal(t, *bounds[1].Trigger, t2)
 	require.Equal(t, bounds[1].MinValidPrice, t2lb2)
 	require.Equal(t, bounds[1].MaxValidPrice, t2ub2)
+	require.Equal(t, bounds[0].ReferencePrice, float64(t2ViolatingPrice))
 }
 
 func TestMarketInOpeningAuction(t *testing.T) {
