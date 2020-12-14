@@ -1111,15 +1111,17 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 
 	var err error
 	// the accounts for the trader we need
-	mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the margin trader account",
-			logging.String("owner-id", p.Owner),
-			logging.String("market-id", settle.MarketID),
-			logging.Error(err),
-		)
-		return nil, err
+	if settle != nil {
+		mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		if err != nil {
+			e.log.Error(
+				"Failed to get the margin trader account",
+				logging.String("owner-id", p.Owner),
+				logging.String("market-id", settle.MarketID),
+				logging.Error(err),
+			)
+			return nil, err
+		}
 	}
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
 	mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))

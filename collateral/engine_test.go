@@ -3,7 +3,6 @@ package collateral_test
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"testing"
 	"time"
 
@@ -1851,9 +1850,7 @@ func TestWithdrawalOK(t *testing.T) {
 	trader := "oktrader"
 
 	// create traders
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(e events.Event) {
-		fmt.Printf("call with %#v\n", e)
-	})
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -1861,13 +1858,13 @@ func TestWithdrawalOK(t *testing.T) {
 
 	call := 0
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3).Do(func(evt events.Event) {
-		fmt.Printf("call 2 with %#v\n", evt)
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, 400, int(acc.Balance))
 		} else if acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
+			// once to create the lock account, once to set its balance to 100
 			assert.Equal(t, 100*call, int(acc.Balance))
 			call++
 		} else {
@@ -1899,8 +1896,7 @@ func TestWithdrawalExact(t *testing.T) {
 	trader := "oktrader"
 
 	// create traders
-	// eng.broker.EXPECT().Send(gomock.Any()).Times(5)
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
