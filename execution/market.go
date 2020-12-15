@@ -2058,6 +2058,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
 		// remove the order from the expiring
+		m.expiringPeggedOrders.RemoveOrder(*amendedOrder)
 
 		// Update the existing message in place before we cancel it
 		m.orderAmendInPlace(existingOrder, amendedOrder)
