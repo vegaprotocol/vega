@@ -1353,11 +1353,10 @@ func tradersWithdrawBalance(in *gherkin.DataTable) error {
 		if trader == "trader" {
 			continue
 		}
-		asset := val(row, 1)
-		if _, err := execsetup.collateral.GetOrCreatePartyLockWithdrawAccount(context.Background(), trader, asset); err != nil {
+		asset, amount := val(row, 1), u64val(row, 2)
+		if _, err := execsetup.collateral.LockFundsForWithdraw(context.Background(), trader, asset, amount); err != nil {
 			return err
 		}
-		amount := u64val(row, 2)
 		if _, err := execsetup.collateral.Withdraw(context.Background(), trader, asset, amount); err != nil {
 			return err
 		}
