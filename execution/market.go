@@ -545,7 +545,6 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint64 {
 	var repriceCount uint64
 	for _, order := range m.peggedOrders {
-		fmt.Printf("REPRICING: %#v | %#v\n", *order, *(order.PeggedOrder))
 		if (order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
 			changes&PriceMoveMid > 0) ||
 			(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_BID &&
@@ -564,7 +563,12 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 			} else {
 				// If we are parked then try to add back to the book
 				orderConf, err := m.submitValidatedOrder(ctx, order)
-				if err == nil {
+				if err != nil {
+					// order could not be repriced, it's then been rejected
+					// we just completely remove it.
+					m.removePeggedOrder(order)
+					continue // @Pete is that OK, it skip the repriceCount, but I suppose it's fine.
+				} else {
 					// Added correctly now remove from parked order list
 					m.removeParkedOrder(orderConf.Order)
 				}
@@ -985,8 +989,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	if order.PeggedOrder != nil && order.Status != types.Order_STATUS_ACTIVE && order.Status != types.Order_STATUS_PARKED {
-		fmt.Printf("ORDER IS TYPE: %v\n", order.Status.String())
-		// Add pegged order to time sorted list
+		// remove the pegged order from anywhere
 		m.removePeggedOrder(order)
 	}
 
@@ -1034,13 +1037,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 
 	// Perform check and allocate margin
-	_, err = m.checkMarginForOrder(ctx, pos, order)
-	if err != nil {
-		_, err1 := m.position.UnregisterOrder(order)
-		if err1 != nil {
+	if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
+		if _, err := m.position.UnregisterOrder(order); err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
-				logging.Error(err1))
+				logging.Error(err))
 		}
 
 		// adding order to the buffer first
