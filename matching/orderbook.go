@@ -890,7 +890,7 @@ func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 }
 
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {
-	return b.expiringOrders.RemoveOrder(order)
+	return b.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {

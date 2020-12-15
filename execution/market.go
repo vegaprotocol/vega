@@ -2067,7 +2067,25 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		}, nil
 	}
 
+	// If we have a pegged order that is no longer expiring, we need to remove it
+	var needToRemoveExpiry bool = false
+	var expiresAt int64 = 0
+
 	if existingOrder.PeggedOrder != nil {
+		defer func() {
+			if needToRemoveExpiry {
+				m.expiringPeggedOrders.RemoveOrder(expiresAt, existingOrder.Id)
+			}
+		}()
+
+		// if we are amending from GTT to GTC, remove from expiry list
+		if existingOrder.TimeInForce == types.Order_TIF_GTT &&
+			amendedOrder.TimeInForce == types.Order_TIF_GTC {
+			// We no longer need to handle the expiry
+			needToRemoveExpiry = true
+			expiresAt = existingOrder.ExpiresAt
+		}
+
 		// Amend in place during an auction
 		if m.as.InAuction() {
 			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
