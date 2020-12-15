@@ -61,6 +61,16 @@ func (l ProvisionsPerParty) FeeForTarget(v uint64) string {
 	return l.slice().sortByFee().feeForTarget(v)
 }
 
+// TotalStake returns the sum of all CommitmentAmount, which corresponds to the
+// total stake of a market.
+func (l ProvisionsPerParty) TotalStake() uint64 {
+	var n uint64
+	for _, p := range l {
+		n += p.CommitmentAmount
+	}
+	return n
+}
+
 // Orders provides convenience functions to a slice of *veaga/proto.Orders.
 type Orders []*types.Order
 

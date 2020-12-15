@@ -169,6 +169,9 @@ type Market struct {
 	lastBestBidPrice uint64
 	lastBestAskPrice uint64
 	lastMidPrice     uint64
+
+	marketValueWindowLength time.Duration
+	feeSplitter             *FeeSplitter
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -289,6 +292,7 @@ func NewMarket(
 		pMonitor:             pMonitor,
 		tsCalc:               tsCalc,
 		expiringPeggedOrders: matching.NewExpiringOrders(),
+		feeSplitter:          &FeeSplitter{},
 	}
 
 	if market.as.AuctionStart() {
@@ -432,6 +436,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
+				m.feeSplitter.TimeWindowStart(t)
 			}
 		} else if m.as.IsPriceAuction() {
 			// ending auction now would result in no trades so feed the last mark price into pMonitor
@@ -499,6 +504,15 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			}
 		}
 	}
+
+	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
+		ts := m.liquidity.ProvisionsPerParty().TotalStake()
+		valueProxy := m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
+		_ = valueProxy
+
+		m.feeSplitter.TimeWindowStart(t)
+	}
+
 	return
 }
 
@@ -1233,14 +1247,14 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
 			// Record open inteterest change
-			err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
-			if err != nil {
+			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
+			m.feeSplitter.AddTradeValue(trade.Size * trade.Price)
 		}
 		m.broker.SendBatch(tradeEvts)
 
@@ -2751,6 +2765,10 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f floa
 
 func (m *Market) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(v)
+}
+
+func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
+	m.marketValueWindowLength = d
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
