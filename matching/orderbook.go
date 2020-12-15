@@ -885,7 +885,9 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
-	b.expiringOrders.Insert(ord)
+	if ord.PeggedOrder == nil {
+		b.expiringOrders.Insert(ord)
+	}
 	timer.EngineTimeCounterAdd()
 }
 
