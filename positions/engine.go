@@ -211,6 +211,8 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		err = ErrPositionNotFound
 		return
 	}
+
+	fmt.Printf("updating position: buy(%v) sell(%v) newOrder.Remain(%v), originalOrder.Remain(%v)\n", int(pos.buy), int(pos.sell), int(newOrder.Remaining), int(originalOrder.Remaining))
 	if originalOrder.Side == types.Side_SIDE_BUY {
 		vwap := pos.vwBuyPrice*uint64(pos.buy) - originalOrder.Price*originalOrder.Remaining
 		pos.buy -= int64(originalOrder.Remaining)

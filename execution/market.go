@@ -543,7 +543,21 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 // repriceAllPeggedOrders runs through the slice of pegged orders and reprices all those
 // which are using a reference that has moved. Returns the number of orders that were repriced.
 func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint64 {
-	var repriceCount uint64
+	var (
+		repriceCount uint64
+		toRemove     []*types.Order
+	)
+
+	fmt.Printf("\nPEGGED LIST: \n")
+	for _, o := range m.peggedOrders {
+		fmt.Printf("%v+%v+%v, ", o.Id, o.Status.String(), o.PeggedOrder.Reference.String())
+	}
+	fmt.Printf("\nPARKED LIST: \n")
+	for _, o := range m.parkedOrders {
+		fmt.Printf("%v+%v+%v, ", o.Id, o.Status.String(), o.PeggedOrder.Reference.String())
+	}
+	fmt.Printf("\n\n")
+
 	for _, order := range m.peggedOrders {
 		if (order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
 			changes&PriceMoveMid > 0) ||
@@ -552,21 +566,25 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 			(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_ASK &&
 				changes&PriceMoveBestAsk > 0) {
 			if order.Status != types.Order_STATUS_PARKED {
-				price, err := m.getNewPeggedPrice(ctx, order)
-				if err != nil {
+				if price, err := m.getNewPeggedPrice(ctx, order); err != nil {
+					fmt.Printf("ERROR COULD NOT REPRICE: %v | %v\n", order.Id, err)
 					// We can't reprice so we should remove the order and park it
 					m.parkOrderAndAdd(ctx, order)
 				} else {
+					fmt.Printf("AMENDING: %v\n", order.Id)
 					// Amend the order on the orderbook
-					m.amendPeggedOrder(ctx, order, price)
+					if _, err := m.amendPeggedOrder(ctx, order, price); err != nil {
+						fmt.Printf("ERROR AMEND: i%v | %v\n", order.Id, err)
+						m.log.Debug("unable to amend pegged order", logging.Error(err))
+					}
 				}
 			} else {
 				// If we are parked then try to add back to the book
-				orderConf, err := m.submitValidatedOrder(ctx, order)
-				if err != nil {
+				if orderConf, err := m.submitValidatedOrder(ctx, order); err != nil {
+					fmt.Printf("ERROR SUBMIT: i%v | %v\n", order.Id, err)
 					// order could not be repriced, it's then been rejected
 					// we just completely remove it.
-					m.removePeggedOrder(order)
+					toRemove = append(toRemove, order)
 					continue // @Pete is that OK, it skip the repriceCount, but I suppose it's fine.
 				} else {
 					// Added correctly now remove from parked order list
@@ -576,6 +594,11 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 			repriceCount++
 		}
 	}
+
+	for _, o := range toRemove {
+		m.removePeggedOrder(o)
+	}
+
 	return repriceCount
 }
 
@@ -980,6 +1003,16 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if order.PeggedOrder != nil {
 		// Add pegged order to time sorted list
 		m.addPeggedOrder(order)
+		fmt.Printf("\nPEGGED LIST ON SUBMIT START: \n")
+		for _, o := range m.peggedOrders {
+			fmt.Printf("%v, ", o.Id)
+		}
+		fmt.Printf("\nPARKED LIST START: \n")
+		for _, o := range m.parkedOrders {
+			fmt.Printf("%v, ", o.Id)
+		}
+		fmt.Printf("\n\n")
+
 	}
 
 	// Now that validation is handled, call the code to place the order
@@ -991,6 +1024,15 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if order.PeggedOrder != nil && order.Status != types.Order_STATUS_ACTIVE && order.Status != types.Order_STATUS_PARKED {
 		// remove the pegged order from anywhere
 		m.removePeggedOrder(order)
+		fmt.Printf("\nPEGGED LIST END: \n")
+		for _, o := range m.peggedOrders {
+			fmt.Printf("%v, ", o.Id)
+		}
+		fmt.Printf("\nPARKED LIST END: \n")
+		for _, o := range m.parkedOrders {
+			fmt.Printf("%v, ", o.Id)
+		}
+		fmt.Printf("\n\n")
 	}
 
 	m.checkForReferenceMoves(ctx)
