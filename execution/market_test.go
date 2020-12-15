@@ -1778,3 +1778,37 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 	require.Nil(t, amendConf)
 	require.Error(t, types.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER, err)
 }
+
+func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "aaa")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Create an expiring order
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order01", types.Side_SIDE_BUY, "aaa", 1, 10)
+	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	// Create a pegged order that references it's price
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_BUY, "aaa", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -2}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	// Move the clock forward to expire the first order
+	now = now.Add(time.Second * 10)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
+	require.Equal(t, 1, len(orders))
+	require.NoError(t, err)
+
+	assert.Equal(t, types.Order_STATUS_EXPIRED, o1.Status)
+	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
+}

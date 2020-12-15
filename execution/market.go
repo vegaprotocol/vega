@@ -2497,6 +2497,11 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 
 	orderList = append(orderList, expiredPegs...)
 
+	// If we have removed an expired order, do we need to reprice any
+	if len(orderList) > 0 {
+		m.checkForReferenceMoves(context.Background())
+	}
+
 	return orderList, nil
 }
 
