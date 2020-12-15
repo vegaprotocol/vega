@@ -535,11 +535,12 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 
 func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
-		if val(row, 0) == "from" {
+		from := val(row, 0)
+		if from == "from" {
 			continue
 		}
 
-		fromAccountID := accountID(val(row, 4), val(row, 0), val(row, 6), types.AccountType_value[val(row, 2)])
+		fromAccountID := accountID(val(row, 4), from, val(row, 6), types.AccountType_value[val(row, 2)])
 		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), types.AccountType_value[val(row, 3)])
 
 		var ledgerEntry *types.LedgerEntry
@@ -922,11 +923,12 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 
 func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 	for _, row := range refs.Rows {
-		if val(row, 0) == "trader" {
+		trader := val(row, 0)
+		if trader == "trader" {
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(trader, val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -944,6 +946,7 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 }
 
 func dumpTransfers() error {
+	fmt.Println("DUMPING TRANSFERS")
 	transferEvents := execsetup.broker.GetTransferResponses()
 	for _, e := range transferEvents {
 		for _, t := range e.TransferResponses() {
@@ -1142,6 +1145,7 @@ func executedTrades(trades *gherkin.DataTable) error {
 }
 
 func dumpOrders() error {
+	fmt.Println("DUMPING ORDERS")
 	data := execsetup.broker.GetOrderEvents()
 	for _, v := range data {
 		o := *v.Order()
