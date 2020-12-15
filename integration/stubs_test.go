@@ -160,6 +160,23 @@ func (b *brokerStub) GetOrderEvents() []events.Order {
 	return ret
 }
 
+func (b *brokerStub) GetLPEvents() []events.LiquidityProvision {
+	batch := b.GetBatch(events.LiquidityProvisionEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.LiquidityProvision, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.LiquidityProvision:
+			ret = append(ret, *et)
+		case events.LiquidityProvision:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
 func (b *brokerStub) GetTradeEvents() []events.Trade {
 	batch := b.GetBatch(events.TradeEvent)
 	if len(batch) == 0 {

@@ -266,7 +266,7 @@ func NewMarket(
 	}
 
 	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
-	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor)
+	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
 	market := &Market{
 		log:                  log,
@@ -1843,6 +1843,11 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		return nil, ErrMarketClosed
 	}
 
+	// cancelling and amending an order that is part of the LP commitment isn't allowed
+	if m.liquidity.IsLiquidityOrder(partyID, orderID) {
+		return nil, types.ErrEditNotAllowed
+	}
+
 	order, foundOnBook, err := m.getOrderByID(orderID)
 	if err != nil {
 		return nil, err
@@ -1936,6 +1941,10 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 // AmendOrder amend an existing order from the order book
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+	// explicitly/directly ordering an LP commitment order is not allowed
+	if m.liquidity.IsLiquidityOrder(orderAmendment.PartyID, orderAmendment.OrderID) {
+		return nil, types.ErrEditNotAllowed
+	}
 	conf, err := m.amendOrder(ctx, orderAmendment)
 	if err != nil {
 		return nil, err
