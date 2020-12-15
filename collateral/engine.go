@@ -241,7 +241,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		}
 		e.accs[externalID] = externalAcc
 		// e.addAccountToHashableSlice(externalAcc)
-		// @TODO do we need to send this event?
 	}
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.ID))
@@ -1763,7 +1762,6 @@ func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string
 	if err != nil {
 		return nil, err
 	}
-	// @TODO return transfer response
 	res, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
 		return nil, err
@@ -1850,7 +1848,6 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint
 	if err != nil {
 		return nil, err
 	}
-	// @TODO return transfer response
 	res, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
 		return nil, err

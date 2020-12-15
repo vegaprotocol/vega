@@ -132,14 +132,6 @@ func (b *brokerStub) clearOrderEvents() {
 	b.mu.Unlock()
 }
 
-func (b *brokerStub) clearAccountEvents() {
-	t := events.AccountEvent
-	b.mu.Lock()
-	r := b.data[t]
-	b.data[t] = make([]events.Event, 0, cap(r))
-	b.mu.Unlock()
-}
-
 func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Order {
 	orders := b.GetOrderEvents()
 	ret := []types.Order{}
