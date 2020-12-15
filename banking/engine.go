@@ -48,9 +48,9 @@ type Notary interface {
 // Collateral engine
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/banking Collateral
 type Collateral interface {
-	Deposit(ctx context.Context, partyID, asset string, amount uint64) error
-	Withdraw(ctx context.Context, partyID, asset string, amount uint64) error
-	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error
+	Deposit(ctx context.Context, partyID, asset string, amount uint64) (*types.TransferResponse, error)
+	Withdraw(ctx context.Context, partyID, asset string, amount uint64) (*types.TransferResponse, error)
+	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) (*types.TransferResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	HasBalance(party string) bool
 }
@@ -181,7 +181,8 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 	}
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
-	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
+	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
+	if err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
@@ -193,6 +194,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 		return err
 	}
 	w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 
@@ -349,7 +351,8 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	// try to lock the funds
-	if err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount); err != nil {
+	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
+	if err != nil {
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
@@ -360,6 +363,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 			logging.Error(err))
 		return err
 	}
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 
 	// we were able to lock the funds, then we can send the vote through the network
 	if err := e.notary.StartAggregate(w.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); err != nil {
@@ -506,11 +510,21 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit, id strin
 	e.broker.Send(events.NewDepositEvent(ctx, *d))
 	// no error this have been done before when starting the deposit
 	amount, _ := strconv.ParseUint(d.Amount, 10, 64)
-	return e.col.Deposit(ctx, d.PartyID, d.Asset, amount)
+	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, amount)
+	if err != nil {
+		return err
+	}
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	return nil
 }
 
 func (e *Engine) finalizeWithdrawal(ctx context.Context, party, asset string, amount uint64) error {
-	return e.col.Withdraw(ctx, party, asset, amount)
+	res, err := e.col.Withdraw(ctx, party, asset, amount)
+	if err != nil {
+		return err
+	}
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	return nil
 }
 
 func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {

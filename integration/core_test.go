@@ -230,12 +230,12 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		_ = mktsetup.colE.IncrementBalance(context.Background(), margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
 		mktsetup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
-			proto.AccountType_ACCOUNT_TYPE_MARGIN: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_MARGIN: {
 				Id:      margin,
 				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: marginBal,
 			},
-			proto.AccountType_ACCOUNT_TYPE_GENERAL: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_GENERAL: {
 				Id:      general,
 				Type:    proto.AccountType_ACCOUNT_TYPE_GENERAL,
 				Balance: generalBal,
@@ -243,7 +243,7 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		}
 		trader := row.Cells[0].Value
 		// we should be able to safely ignore the error, if this fails, the tests will
-		_ = mktsetup.colE.Deposit(context.Background(), trader, asset, generalBal)
+		_, _ = mktsetup.colE.Deposit(context.Background(), trader, asset, generalBal)
 	}
 	return nil
 }

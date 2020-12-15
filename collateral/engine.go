@@ -1731,20 +1731,20 @@ func (e *Engine) HasGeneralAccount(party, asset string) bool {
 }
 
 // LockFundsForWithdraw will lock funds in a separate account to be withdrawn later on by the party
-func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) error {
+func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount uint64) (*types.TransferResponse, error) {
 	if !e.AssetExists(asset) {
-		return ErrInvalidAssetID
+		return nil, ErrInvalidAssetID
 	}
 	genacc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 	if err != nil {
-		return ErrAccountDoesNotExist
+		return nil, ErrAccountDoesNotExist
 	}
 	if amount > genacc.Balance {
-		return ErrNotEnoughFundsToWithdraw
+		return nil, ErrNotEnoughFundsToWithdraw
 	}
 	lacc, err := e.GetOrCreatePartyLockWithdrawAccount(ctx, partyID, asset)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	mEvt := marginUpdate{
 		general: genacc,
@@ -1761,37 +1761,36 @@ func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string
 	}
 	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// @TODO return transfer response
 	res, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	// e.broker.Send(events.NewAccountEvent(ctx, *lacc))
-	// ensure events are sentjh
+	// ensure events are sent
 	for _, bal := range res.Balances {
-		if bal.Account.Type == lacc.Type {
-			e.UpdateBalance(ctx, bal.Account.Id, bal.Account.Balance)
+		if err := e.UpdateBalance(ctx, bal.Account.Id, bal.Account.Balance); err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	return res, nil
 }
 
 // Withdraw will remove the specified amount from the trader
 // general account
-func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uint64) error {
+func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uint64) (*types.TransferResponse, error) {
 	if !e.AssetExists(asset) {
-		return ErrInvalidAssetID
+		return nil, ErrInvalidAssetID
 	}
 	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW))
 	if err != nil {
-		return ErrAccountDoesNotExist
+		return nil, ErrAccountDoesNotExist
 	}
 
 	// check we have more money than required to withdraw
 	if uint64(acc.Balance) < amount {
-		return fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
+		return nil, fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
 	}
 
 	transf := types.Transfer{
@@ -1808,31 +1807,31 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 	}
 	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = e.getLedgerEntries(ctx, req)
+	res, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// increment the external account
-	e.IncrementBalance(ctx, req.ToAccount[0].Id, amount)
-	/*for _, bal := range res.Balances {
-		e.UpdateBalance(ctx, bal.Account.Id, bal.Account.Balance)
-	}*/
+	// this could probably be done more generically using the response
+	if err := e.IncrementBalance(ctx, req.ToAccount[0].Id, amount); err != nil {
+		return nil, err
+	}
 
-	return nil
+	return res, nil
 }
 
 // Deposit will deposit the given amount into the party account
-func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint64) error {
+func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint64) (*types.TransferResponse, error) {
 	if !e.AssetExists(asset) {
-		return ErrInvalidAssetID
+		return nil, ErrInvalidAssetID
 	}
 	// this will get or create the account basically
 	accID, err := e.CreatePartyGeneralAccount(ctx, partyID, asset)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	acc, _ := e.GetAccountByID(accID)
 	transf := types.Transfer{
@@ -1849,17 +1848,19 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint
 	}
 	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// @TODO return transfer response
-	_, err = e.getLedgerEntries(ctx, req)
+	res, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// we need to call increment balance here, because we're working on a copy, acc.Balance will still be 100 if we just use Update
-	e.IncrementBalance(ctx, acc.Id, amount)
+	if err := e.IncrementBalance(ctx, acc.Id, amount); err != nil {
+		return nil, err
+	}
 
-	return nil
+	return res, nil
 }
 
 // UpdateBalance will update the balance of a given account
