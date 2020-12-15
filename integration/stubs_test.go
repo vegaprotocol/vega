@@ -132,6 +132,14 @@ func (b *brokerStub) clearOrderEvents() {
 	b.mu.Unlock()
 }
 
+func (b *brokerStub) clearAccountEvents() {
+	t := events.AccountEvent
+	b.mu.Lock()
+	r := b.data[t]
+	b.data[t] = make([]events.Event, 0, cap(r))
+	b.mu.Unlock()
+}
+
 func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Order {
 	orders := b.GetOrderEvents()
 	ret := []types.Order{}
@@ -278,16 +286,19 @@ func (b *brokerStub) getMarketSettlementAccount(market string) (types.Account, e
 	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (types.Account, error) {
+// returns the latest event WRT the trader's general account
+func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (ga types.Account, err error) {
 	batch := b.GetAccounts()
+	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			return v, nil
+			ga = v
+			err = nil
 		}
 	}
 
-	return types.Account{}, errors.New("account does not exist")
+	return
 }
 
 func (b *brokerStub) clearOrderByReference(party, ref string) error {

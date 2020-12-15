@@ -1171,11 +1171,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 			Reference: p.Type.String(),
 		}, nil
 	}
-	var eacc *types.Account
-	if p.Type == types.TransferType_TRANSFER_TYPE_WITHDRAW || p.Type == types.TransferType_TRANSFER_TYPE_DEPOSIT {
-		// external account:
-		eacc, _ = e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_EXTERNAL))
-	}
 	// just in case...
 	if p.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW {
 		return &types.TransferRequest{
@@ -1191,7 +1186,26 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 			Reference: p.Type.String(),
 		}, nil
 	}
+	if p.Type == types.TransferType_TRANSFER_TYPE_MARGIN_HIGH {
+		return &types.TransferRequest{
+			FromAccount: []*types.Account{
+				mEvt.margin,
+			},
+			ToAccount: []*types.Account{
+				mEvt.general,
+			},
+			Amount:    uint64(p.Amount.Amount),
+			MinAmount: uint64(p.MinAmount),
+			Asset:     asset,
+			Reference: p.Type.String(),
+		}, nil
+	}
 
+	var eacc *types.Account
+	if p.Type == types.TransferType_TRANSFER_TYPE_WITHDRAW || p.Type == types.TransferType_TRANSFER_TYPE_DEPOSIT {
+		// external account:
+		eacc, _ = e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_EXTERNAL))
+	}
 	if p.Type == types.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK {
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
@@ -1208,6 +1222,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 	}
 
 	if p.Type == types.TransferType_TRANSFER_TYPE_DEPOSIT {
+		// ensure we have the funds to deposit
 		eacc.Balance += uint64(p.Amount.Amount)
 		return &types.TransferRequest{
 			FromAccount: []*types.Account{
@@ -1237,18 +1252,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		}, nil
 	}
 
-	return &types.TransferRequest{
-		FromAccount: []*types.Account{
-			mEvt.margin,
-		},
-		ToAccount: []*types.Account{
-			mEvt.general,
-		},
-		Amount:    uint64(p.Amount.Amount),
-		MinAmount: uint64(p.MinAmount),
-		Asset:     asset,
-		Reference: p.Type.String(),
-	}, nil
+	return nil, errors.New("unexpected transfer type")
 }
 
 // this builds a TransferResponse for a specific request, we collect all of them and aggregate
@@ -1807,13 +1811,15 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 		return err
 	}
 
-	res, err := e.getLedgerEntries(ctx, req)
+	_, err = e.getLedgerEntries(ctx, req)
 	if err != nil {
 		return err
 	}
-	for _, bal := range res.Balances {
+	// increment the external account
+	e.IncrementBalance(ctx, req.ToAccount[0].Id, amount)
+	/*for _, bal := range res.Balances {
 		e.UpdateBalance(ctx, bal.Account.Id, bal.Account.Balance)
-	}
+	}*/
 
 	return nil
 }
@@ -1846,13 +1852,12 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint
 		return err
 	}
 	// @TODO return transfer response
-	res, err := e.getLedgerEntries(ctx, req)
+	_, err = e.getLedgerEntries(ctx, req)
 	if err != nil {
 		return err
 	}
-	for _, bal := range res.Balances {
-		e.UpdateBalance(ctx, bal.Account.Id, bal.Account.Balance)
-	}
+	// we need to call increment balance here, because we're working on a copy, acc.Balance will still be 100 if we just use Update
+	e.IncrementBalance(ctx, acc.Id, amount)
 
 	return nil
 }
