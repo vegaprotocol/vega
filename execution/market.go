@@ -545,6 +545,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint64 {
 	var repriceCount uint64
 	for _, order := range m.peggedOrders {
+		fmt.Printf("REPRICING: %#v | %#v\n", *order, *(order.PeggedOrder))
 		if (order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
 			changes&PriceMoveMid > 0) ||
 			(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_BID &&
@@ -981,6 +982,12 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	orderConf, err := m.submitValidatedOrder(ctx, order)
 	if err == nil {
 		orderValidity = "valid"
+	}
+
+	if order.PeggedOrder != nil && order.Status != types.Order_STATUS_ACTIVE && order.Status != types.Order_STATUS_PARKED {
+		fmt.Printf("ORDER IS TYPE: %v\n", order.Status.String())
+		// Add pegged order to time sorted list
+		m.removePeggedOrder(order)
 	}
 
 	m.checkForReferenceMoves(ctx)
@@ -2049,6 +2056,8 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
+		// remove the order from the expiring
+
 		// Update the existing message in place before we cancel it
 		m.orderAmendInPlace(existingOrder, amendedOrder)
 		cancellation, err := m.matching.CancelOrder(amendedOrder)
@@ -2368,8 +2377,10 @@ func (m *Market) applyOrderAmendment(
 		UpdatedAt:   currentTime.UnixNano(),
 	}
 	if existingOrder.PeggedOrder != nil {
-		order.PeggedOrder = &types.PeggedOrder{Reference: existingOrder.PeggedOrder.Reference,
-			Offset: existingOrder.PeggedOrder.Offset}
+		order.PeggedOrder = &types.PeggedOrder{
+			Reference: existingOrder.PeggedOrder.Reference,
+			Offset:    existingOrder.PeggedOrder.Offset,
+		}
 	}
 
 	// apply price changes
@@ -2633,6 +2644,9 @@ func (m *Market) addPeggedOrder(order *types.Order) {
 // removePeggedOrder looks through the pegged and parked list
 // and removes the matching order if found
 func (m *Market) removePeggedOrder(order *types.Order) {
+	// remove if order was expiring
+	m.expiringPeggedOrders.RemoveOrder(*order)
+
 	for i, po := range m.peggedOrders {
 		if po.Id == order.Id {
 			// Remove item from slice
@@ -2643,15 +2657,7 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 		}
 	}
 
-	for i, po := range m.parkedOrders {
-		if po.Id == order.Id {
-			// Remove item from slice
-			copy(m.parkedOrders[i:], m.parkedOrders[i+1:])
-			m.parkedOrders[len(m.parkedOrders)-1] = nil
-			m.parkedOrders = m.parkedOrders[:len(m.parkedOrders)-1]
-			break
-		}
-	}
+	m.removeParkedOrder(order)
 }
 
 func (m *Market) removeParkedOrder(o *types.Order) {
