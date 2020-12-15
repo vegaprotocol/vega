@@ -1242,14 +1242,14 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
 			// Record open inteterest change
-			err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime)
-			if err != nil {
+			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
+			m.feeSplitter.AddTradeValue(trade.Size * trade.Price)
 		}
 		m.broker.SendBatch(tradeEvts)
 
