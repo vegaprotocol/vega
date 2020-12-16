@@ -1347,12 +1347,13 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	mktID := m.GetID()
 	// push rm orders into buf
 	// and remove the orders from the positions engine
+	evts := []events.Event{}
 	for _, o := range rmorders {
 		if o.PeggedOrder != nil {
 			m.removePeggedOrder(o)
 		}
 		o.UpdatedAt = m.currentTime.UnixNano()
-		m.broker.Send(events.NewOrderEvent(ctx, o))
+		evts = append(evts, events.NewOrderEvent(ctx, o))
 		if _, err := m.position.UnregisterOrder(o); err != nil {
 			m.log.Error("unable to unregister order for a distressed party",
 				logging.String("party-id", o.PartyID),
@@ -1361,6 +1362,20 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			)
 		}
 	}
+
+	// now we also remove ALL parked order for the different parties
+	for _, v := range distressedPos {
+		orders := m.getAllParkedOrdersForParty(v.Party())
+		for _, o := range orders {
+			m.removePeggedOrder(o)
+			o.UpdatedAt = m.currentTime.UnixNano()
+			o.Status = types.Order_STATUS_STOPPED // closing out = status STOPPED
+			evts = append(evts, events.NewOrderEvent(ctx, o))
+		}
+	}
+
+	// send all orders which got stopped through the event bus
+	m.broker.SendBatch(evts)
 
 	closed := distressedMarginEvts // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
 
@@ -2653,6 +2668,15 @@ func (m *Market) addPeggedOrder(order *types.Order) {
 	if order.IsPersistent() && order.ExpiresAt > 0 {
 		m.expiringPeggedOrders.Insert(*order)
 	}
+}
+
+func (m *Market) getAllParkedOrdersForParty(party string) (orders []*types.Order) {
+	for _, order := range m.parkedOrders {
+		if order.PartyID == party {
+			orders = append(orders, order)
+		}
+	}
+	return
 }
 
 // removePeggedOrder looks through the pegged and parked list
