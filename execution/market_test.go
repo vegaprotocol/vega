@@ -1812,3 +1812,69 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 	assert.Equal(t, types.Order_STATUS_EXPIRED, o1.Status)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
 }
+
+// This is a scenario to test issue: 2734
+// Trader A - 100000000
+//  A - Buy 5@15000 GTC
+// Trader B - 100000000
+//  B - Sell 10 IOC Market
+// Trader C - Deposit 100000
+//  C - Buy GTT 6@1001 (60s)
+// Trader D- Fund 578
+//  D - Pegged 3@BA +1
+// Trader E - Deposit 100000
+//  E - Sell GTC 3@1002
+// C amends order price=1002
+func TestOrderBook_CrashWithDistressedTraderPeggedOrderNotRemovedFromPeggedList2734(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	addAccountWithAmount(tm, "trader-B", 100000000)
+	addAccountWithAmount(tm, "trader-C", 100000)
+	addAccountWithAmount(tm, "trader-D", 578)
+	addAccountWithAmount(tm, "trader-E", 100000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 15000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIF_IOC, "Order02", types.Side_SIDE_SELL, "trader-B", 10, 0)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order03", types.Side_SIDE_BUY, "trader-C", 6, 1001)
+	o3.ExpiresAt = now.Add(60 * time.Second).UnixNano()
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order04", types.Side_SIDE_SELL, "trader-D", 3, 0)
+	o4.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +1}
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order05", types.Side_SIDE_SELL, "trader-E", 3, 1002)
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID: o3.Id,
+		PartyID: "trader-C",
+		Price:   &types.Price{Value: 1002},
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	require.NotNil(t, amendConf)
+	require.NoError(t, err)
+
+	// nothing to do we just expect no crash.
+}
