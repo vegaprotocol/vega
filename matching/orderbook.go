@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -649,10 +648,6 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")
-
-	if order.Id == "V0000000000-0000000003" {
-		fmt.Printf("SUB<ITING IT\n\n")
-	}
 
 	if err := b.validateOrder(order); err != nil {
 		timer.EngineTimeCounterAdd()
