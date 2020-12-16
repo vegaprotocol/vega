@@ -54,6 +54,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | 10000 | 3    | trader2 |
       | trader1 | 10000 | 2    | trader2 |
       | trader1 | 10000 | 3    | trader2 |
+    And the mark price for the market "ETH/DEC19" is "10000"
     ## Network for distressed trader1 -> cancelled, nothing on the book is remaining
     Then verify the status of the order reference:
       | trader  | reference | status           |
@@ -69,3 +70,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     And the following transfers happened:
       | from    | to      | from account type   | to account type      | market ID | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 3479   | BTC   |
+    Then I expect the trader to have a margin:
+      | trader  | asset | id        | margin | general  |
+      | trader2 | BTC   | ETH/DEC19 | 9600   | 3479     |
+      | trader1 | BTC   | ETH/DEC19 | 13440  | 0        |
