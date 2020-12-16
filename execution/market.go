@@ -1971,7 +1971,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	defer m.releaseMarginExcess(ctx, order.PartyID)
 
 	if err := m.matching.RemoveOrder(order); err != nil {
-		m.log.Fatal("Failure to remove order from matching engine",
+		m.log.Panic("Failure to remove order from matching engine",
 			logging.String("party-id", order.PartyID),
 			logging.String("order-id", order.Id),
 			logging.String("market", m.mkt.Id),
@@ -1984,7 +1984,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	order.Price = 0
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	if _, err := m.position.UnregisterOrder(order); err != nil {
-		m.log.Fatal("Failure un-registering order in positions engine (parking)",
+		m.log.Panic("Failure un-registering order in positions engine (parking)",
 			logging.Order(*order),
 			logging.Error(err))
 	}
