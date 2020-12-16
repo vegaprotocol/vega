@@ -472,3 +472,10 @@ func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, v fl
 	}
 	return nil
 }
+
+func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Duration) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketValueWindowLengthUpdate(d)
+	}
+	return nil
+}

@@ -851,6 +851,9 @@ enum AccountType {
   // This account is created to maintain liquidity providers funds commitments
   ACCOUNT_TYPE_BOND = 9;
 
+  // External account represents an external source (deposit/withdrawal)
+  ACCOUNT_TYPE_EXTERNAL = 10;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -914,6 +917,12 @@ enum TransferType {
   TRANSFER_TYPE_BOND_LOW = 13;
   // Bond too high.
   TRANSFER_TYPE_BOND_HIGH = 14;
+  // Lock amount for withdraw.
+  TRANSFER_TYPE_WITHDRAW_LOCK = 15;
+  // Actual withdraw from system.
+  TRANSFER_TYPE_WITHDRAW = 16;
+  // Deposit funds.
+  TRANSFER_TYPE_DEPOSIT = 17;
 }
 
 // Represents a financial transfer within Vega.

@@ -738,7 +738,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
-	// if we did hit a wash trade, set the status to rejected
+	// if we did hit a wash trade, set the status to STOPPED
 	if err == ErrWashTrade {
 		if order.Size > order.Remaining {
 			order.Status = types.Order_STATUS_PARTIALLY_FILLED
@@ -885,7 +885,9 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
-	b.expiringOrders.Insert(ord)
+	if ord.PeggedOrder == nil {
+		b.expiringOrders.Insert(ord)
+	}
 	timer.EngineTimeCounterAdd()
 }
 

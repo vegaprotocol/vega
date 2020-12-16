@@ -35,11 +35,12 @@ func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 }
 
 // Deposit mocks base method
-func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 uint64) (*proto.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Deposit", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*proto.TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Deposit indicates an expected call of Deposit
@@ -77,11 +78,12 @@ func (mr *MockCollateralMockRecorder) HasBalance(arg0 interface{}) *gomock.Call 
 }
 
 // LockFundsForWithdraw mocks base method
-func (m *MockCollateral) LockFundsForWithdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+func (m *MockCollateral) LockFundsForWithdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) (*proto.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LockFundsForWithdraw", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*proto.TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // LockFundsForWithdraw indicates an expected call of LockFundsForWithdraw
@@ -91,11 +93,12 @@ func (mr *MockCollateralMockRecorder) LockFundsForWithdraw(arg0, arg1, arg2, arg
 }
 
 // Withdraw mocks base method
-func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) (*proto.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*proto.TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Withdraw indicates an expected call of Withdraw

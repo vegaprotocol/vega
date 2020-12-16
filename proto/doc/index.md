@@ -5139,6 +5139,7 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 | ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned by placing orders that sit on the book and are then matched with an incoming order to create a trade. These fees reward traders who provide the best priced liquidity that actually allows trading to take place. |
 | ACCOUNT_TYPE_LOCK_WITHDRAW | 8 | This account is created to lock funds to be withdrawn by parties |
 | ACCOUNT_TYPE_BOND | 9 | This account is created to maintain liquidity providers funds commitments |
+| ACCOUNT_TYPE_EXTERNAL | 10 | External account represents an external source (deposit/withdrawal) |
 
 
 
@@ -5418,6 +5419,9 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 | TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
 | TRANSFER_TYPE_BOND_LOW | 13 | Bond too low. |
 | TRANSFER_TYPE_BOND_HIGH | 14 | Bond too high. |
+| TRANSFER_TYPE_WITHDRAW_LOCK | 15 | Lock amount for withdraw. |
+| TRANSFER_TYPE_WITHDRAW | 16 | Actual withdraw from system. |
+| TRANSFER_TYPE_DEPOSIT | 17 | Deposit funds. |
 
 
 
