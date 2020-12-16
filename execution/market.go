@@ -2068,10 +2068,12 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// If we have a pegged order that is no longer expiring, we need to remove it
-	var amendSuccessful bool = false
-	var needToRemoveExpiry bool = false
-	var needToAddExpiry bool = false
-	var expiresAt int64 = 0
+	var (
+		amendSuccessful    bool  = false
+		needToRemoveExpiry bool  = false
+		needToAddExpiry    bool  = false
+		expiresAt          int64 = 0
+	)
 
 	if existingOrder.PeggedOrder != nil {
 		defer func() {
