@@ -2087,7 +2087,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
 		// remove the order from the expiring
-		m.expiringPeggedOrders.RemoveOrder(*amendedOrder)
+		m.expiringPeggedOrders.RemoveOrder(amendedOrder.ExpiresAt, amendedOrder.Id)
 
 		// Update the existing message in place before we cancel it
 		m.orderAmendInPlace(existingOrder, amendedOrder)
@@ -2728,7 +2728,7 @@ func (m *Market) getAllParkedOrdersForParty(party string) (orders []*types.Order
 // and removes the matching order if found
 func (m *Market) removePeggedOrder(order *types.Order) {
 	// remove if order was expiring
-	m.expiringPeggedOrders.RemoveOrder(*order)
+	m.expiringPeggedOrders.RemoveOrder(order.ExpiresAt, order.Id)
 
 	for i, po := range m.peggedOrders {
 		if po.Id == order.Id {
