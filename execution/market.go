@@ -548,16 +548,6 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 		toRemove     []*types.Order
 	)
 
-	fmt.Printf("\nPEGGED LIST: \n")
-	for _, o := range m.peggedOrders {
-		fmt.Printf("%v+%v+%v, ", o.Id, o.Status.String(), o.PeggedOrder.Reference.String())
-	}
-	fmt.Printf("\nPARKED LIST: \n")
-	for _, o := range m.parkedOrders {
-		fmt.Printf("%v+%v+%v, ", o.Id, o.Status.String(), o.PeggedOrder.Reference.String())
-	}
-	fmt.Printf("\n\n")
-
 	for _, order := range m.peggedOrders {
 		if (order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
 			changes&PriceMoveMid > 0) ||
@@ -567,25 +557,21 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 				changes&PriceMoveBestAsk > 0) {
 			if order.Status != types.Order_STATUS_PARKED {
 				if price, err := m.getNewPeggedPrice(ctx, order); err != nil {
-					fmt.Printf("ERROR COULD NOT REPRICE: %v | %v\n", order.Id, err)
 					// We can't reprice so we should remove the order and park it
 					m.parkOrderAndAdd(ctx, order)
 				} else {
-					fmt.Printf("AMENDING: %v\n", order.Id)
 					// Amend the order on the orderbook
 					if _, err := m.amendPeggedOrder(ctx, order, price); err != nil {
-						fmt.Printf("ERROR AMEND: i%v | %v\n", order.Id, err)
 						m.log.Debug("unable to amend pegged order", logging.Error(err))
 					}
 				}
 			} else {
 				// If we are parked then try to add back to the book
 				if orderConf, err := m.submitValidatedOrder(ctx, order); err != nil {
-					fmt.Printf("ERROR SUBMIT: i%v | %v\n", order.Id, err)
 					// order could not be repriced, it's then been rejected
 					// we just completely remove it.
 					toRemove = append(toRemove, order)
-					continue // @Pete is that OK, it skip the repriceCount, but I suppose it's fine.
+					continue
 				} else {
 					// Added correctly now remove from parked order list
 					m.removeParkedOrder(orderConf.Order)
@@ -1003,16 +989,6 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if order.PeggedOrder != nil {
 		// Add pegged order to time sorted list
 		m.addPeggedOrder(order)
-		fmt.Printf("\nPEGGED LIST ON SUBMIT START: \n")
-		for _, o := range m.peggedOrders {
-			fmt.Printf("%v, ", o.Id)
-		}
-		fmt.Printf("\nPARKED LIST START: \n")
-		for _, o := range m.parkedOrders {
-			fmt.Printf("%v, ", o.Id)
-		}
-		fmt.Printf("\n\n")
-
 	}
 
 	// Now that validation is handled, call the code to place the order
@@ -1024,15 +1000,6 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if order.PeggedOrder != nil && order.Status != types.Order_STATUS_ACTIVE && order.Status != types.Order_STATUS_PARKED {
 		// remove the pegged order from anywhere
 		m.removePeggedOrder(order)
-		fmt.Printf("\nPEGGED LIST END: \n")
-		for _, o := range m.peggedOrders {
-			fmt.Printf("%v, ", o.Id)
-		}
-		fmt.Printf("\nPARKED LIST END: \n")
-		for _, o := range m.parkedOrders {
-			fmt.Printf("%v, ", o.Id)
-		}
-		fmt.Printf("\n\n")
 	}
 
 	m.checkForReferenceMoves(ctx)
@@ -1381,6 +1348,9 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// push rm orders into buf
 	// and remove the orders from the positions engine
 	for _, o := range rmorders {
+		if o.PeggedOrder != nil {
+			m.removePeggedOrder(o)
+		}
 		o.UpdatedAt = m.currentTime.UnixNano()
 		m.broker.Send(events.NewOrderEvent(ctx, o))
 		if _, err := m.position.UnregisterOrder(o); err != nil {

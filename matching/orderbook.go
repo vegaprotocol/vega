@@ -738,7 +738,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
-	// if we did hit a wash trade, set the status to rejected
+	// if we did hit a wash trade, set the status to STOPPED
 	if err == ErrWashTrade {
 		if order.Size > order.Remaining {
 			order.Status = types.Order_STATUS_PARTIALLY_FILLED
