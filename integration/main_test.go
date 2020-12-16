@@ -110,4 +110,5 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I see the LP events:$`, seeLPEvents)
 	s.Step(`^the opening auction period for market "([^"]+)" ends$`, theOpeningAuctionPeriodEnds)
 	s.Step(`^traders withdraw balance:$`, tradersWithdrawBalance)
+	s.Step(`^dump trades$`, dumpTrades)
 }

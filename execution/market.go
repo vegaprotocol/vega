@@ -698,7 +698,6 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Process each confirmation & apply fee calculations to each trade
 	evts := make([]events.Event, 0, len(uncrossedOrders))
-	tradeEvts := []events.Event{}
 	for _, uncrossedOrder := range uncrossedOrders {
 		m.handleConfirmation(ctx, uncrossedOrder.Order, uncrossedOrder)
 
@@ -710,13 +709,9 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 			// @TODO this ought to be an event
 			m.log.Error("Unable to apply fees to order", logging.String("OrderID", uncrossedOrder.Order.Id))
 		}
-		for _, t := range uncrossedOrder.Trades {
-			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *t))
-		}
 	}
 	// send order events in a single batch, it's more efficient
 	m.broker.SendBatch(evts)
-	m.broker.SendBatch(tradeEvts)
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {

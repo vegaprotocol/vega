@@ -1154,6 +1154,15 @@ func dumpOrders() error {
 	return nil
 }
 
+func dumpTrades() error {
+	fmt.Println("DUMPING TRADES")
+	data := execsetup.broker.getTrades()
+	for _, t := range data {
+		fmt.Printf("trade %s, %#v\n", t.Id, t)
+	}
+	return nil
+}
+
 func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 	for i, row := range orders.Rows {
 		trader := val(row, 0)

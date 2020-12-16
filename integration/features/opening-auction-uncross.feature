@@ -48,6 +48,12 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | BTC   | ETH/DEC19 |  13079 | 0        |
 #   And dump transfers
     Then the opening auction period for market "ETH/DEC19" ends
+    ## We're seeing these events twice for some reason
+    And executed trades:
+      | buyer   | price | size | seller  |
+      | trader1 | 10000 | 3    | trader2 |
+      | trader1 | 10000 | 2    | trader2 |
+      | trader1 | 10000 | 3    | trader2 |
     ## Network for distressed trader1 -> cancelled, nothing on the book is remaining
     Then verify the status of the order reference:
       | trader  | reference | status           |
@@ -58,6 +64,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-b-3    | STATUS_CANCELLED |
       | trader2 | t2-s-3    | STATUS_FILLED    |
       | network | LS-       | STATUS_STOPPED   |
+#   And dump trades
 #   And dump transfers
     And the following transfers happened:
       | from    | to      | from account type   | to account type      | market ID | amount | asset |
