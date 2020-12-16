@@ -607,7 +607,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	// If we have changed the ExpiresAt or TIF then update Expiry table
-	if expiryChanged {
+	if expiryChanged && amendedOrder.PeggedOrder == nil {
 		b.removePendingGttOrder(ordcpy)
 		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*amendedOrder)

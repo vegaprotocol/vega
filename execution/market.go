@@ -2068,17 +2068,24 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// If we have a pegged order that is no longer expiring, we need to remove it
+	var amendSuccessful bool = false
 	var needToRemoveExpiry bool = false
+	var needToAddExpiry bool = false
 	var expiresAt int64 = 0
 
 	if existingOrder.PeggedOrder != nil {
 		defer func() {
-			if needToRemoveExpiry {
-				m.expiringPeggedOrders.RemoveOrder(expiresAt, existingOrder.Id)
+			if amendSuccessful {
+				if needToRemoveExpiry {
+					m.expiringPeggedOrders.RemoveOrder(expiresAt, existingOrder.Id)
+				}
+				if needToAddExpiry {
+					m.expiringPeggedOrders.Insert(*existingOrder)
+				}
 			}
 		}()
 
-		// if we are amending from GTT to GTC, remove from expiry list
+		// if we are amending from GTT to GTC, flag ready to remove from expiry list
 		if existingOrder.TimeInForce == types.Order_TIF_GTT &&
 			amendedOrder.TimeInForce == types.Order_TIF_GTC {
 			// We no longer need to handle the expiry
@@ -2086,11 +2093,19 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 			expiresAt = existingOrder.ExpiresAt
 		}
 
+		// if we are amending from GTT to GTC, flag ready to remove from expiry list
+		if existingOrder.TimeInForce == types.Order_TIF_GTC &&
+			amendedOrder.TimeInForce == types.Order_TIF_GTT {
+			// We need to handle the expiry
+			needToAddExpiry = true
+		}
+
 		// Amend in place during an auction
 		if m.as.InAuction() {
 			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
 			if err == nil {
 				m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+				amendSuccessful = true
 			}
 			return ret, err
 		}
@@ -2104,6 +2119,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
 			if err == nil {
 				m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+				amendSuccessful = true
 			}
 			return ret, err
 		} else {
@@ -2154,6 +2170,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			amendSuccessful = true
 			m.checkForReferenceMoves(ctx)
 		}
 		return ret, err
@@ -2204,6 +2221,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		if err == nil {
 			m.handleConfirmation(ctx, amendedOrder, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			amendSuccessful = true
 			m.checkForReferenceMoves(ctx)
 		}
 		return confirmation, err
@@ -2221,6 +2239,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			amendSuccessful = true
 			m.checkForReferenceMoves(ctx)
 		}
 		return ret, err
@@ -2504,15 +2523,14 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
 		originalOrder, _, err := m.getOrderByID(order.Id)
-		if err == nil && originalOrder.Status != types.Order_STATUS_PARKED {
-			m.unregisterOrder(&order)
+		if err == nil {
+			if originalOrder.Status != types.Order_STATUS_PARKED {
+				m.unregisterOrder(&order)
+			}
+			originalOrder.Status = types.Order_STATUS_EXPIRED
+			expiredPegs = append(expiredPegs, *originalOrder)
 		}
 		m.removePeggedOrder(&order)
-		if err != nil || originalOrder == nil {
-			continue
-		}
-		originalOrder.Status = types.Order_STATUS_EXPIRED
-		expiredPegs = append(expiredPegs, *originalOrder)
 	}
 
 	orderList := m.matching.RemoveExpiredOrders(timestamp)
@@ -2623,6 +2641,11 @@ func (m *Market) GetPeggedOrderCount() int {
 // GetParkedOrderCount returns hte number of parked orders in the market
 func (m *Market) GetParkedOrderCount() int {
 	return len(m.parkedOrders)
+}
+
+// GetPeggedExpiryOrderCount returns the number of pegged order that can expire
+func (m *Market) GetPeggedExpiryOrderCount() int {
+	return m.expiringPeggedOrders.GetExpiryingOrderCount()
 }
 
 func (m *Market) addPeggedOrder(order *types.Order) {

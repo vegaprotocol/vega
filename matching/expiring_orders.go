@@ -25,6 +25,11 @@ func NewExpiringOrders() *ExpiringOrders {
 	}
 }
 
+func (a *ExpiringOrders) GetExpiryingOrderCount() int {
+	result := a.orders.Len()
+	return result
+}
+
 func (a *ExpiringOrders) Insert(order types.Order) {
 	item := &ordersAtTS{ts: order.ExpiresAt}
 	if item := a.orders.Get(item); item != nil {
