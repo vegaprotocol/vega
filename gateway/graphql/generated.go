@@ -5725,7 +5725,7 @@ enum OrderStatus {
   "This order is fully filled with remaining equals zero."
   Filled
 
-  "This order was rejected while beeing processed in the core."
+  "This order was rejected while being processed in the core."
   Rejected
 
   "This order was partially filled."
@@ -5735,7 +5735,7 @@ enum OrderStatus {
   Parked
 }
 
-"Reason for the proposal beeing rejected by the core node"
+"Reason for the proposal being rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
   CloseTimeTooSoon
@@ -5745,7 +5745,7 @@ enum ProposalRejectionReason {
   EnactTimeTooSoon
   "The specified enactment time is too late based on network parameters"
   EnactTimeTooLate
-  "The proposer for this proposal as insufficient token"
+  "The proposer for this proposal has insufficient token"
   InsufficientTokens
   "The instrument quote name and base name were the same"
   InvalidInstrumentSecurity
@@ -5775,13 +5775,13 @@ enum ProposalRejectionReason {
   NoRiskParameters
   "Invalid key in update network parameter proposal"
   NetworkParameterInvalidKey
-  "Invalid valid in update network parameter proposal"
+  "Invalid value in update network parameter proposal"
   NetworkParameterInvalidValue
   "Validation failed for network parameter proposal"
   NetworkParameterValidationFailed
 }
 
-"Reason for the order beeing rejected by the core node"
+"Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
 
   "Market id is invalid"
@@ -6289,7 +6289,7 @@ input BuiltinAssetInput {
 }
 
 """
-Varoius states a proposal can transition through:
+Various states a proposal can transition through:
   Open ->
       - Passed -> Enacted.
       - Rejected.
