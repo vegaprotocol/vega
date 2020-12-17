@@ -564,6 +564,14 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 					if _, err := m.amendPeggedOrder(ctx, order, price); err != nil {
 						m.log.Debug("unable to amend pegged order", logging.Error(err))
 					}
+
+					// here the order may have trade fully or not
+					// or even wash trade.
+					// so any status != Active is an issue
+					if order.Status != types.Order_STATUS_ACTIVE {
+						toRemove = append(toRemove, order)
+					}
+
 				}
 			} else {
 				// If we are parked then try to add back to the book
@@ -575,6 +583,11 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 				} else {
 					// Added correctly now remove from parked order list
 					m.removeParkedOrder(orderConf.Order)
+
+					// same than just before here
+					if order.Status != types.Order_STATUS_ACTIVE {
+						toRemove = append(toRemove, order)
+					}
 				}
 			}
 			repriceCount++
@@ -2364,8 +2377,8 @@ func (m *Market) amendPeggedOrder(ctx context.Context, existingOrder *types.Orde
 		confirmation = &types.OrderConfirmation{Order: existingOrder}
 
 	}
-	m.broker.Send(events.NewOrderEvent(ctx, &amendedOrder))
-	*existingOrder = amendedOrder
+	m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))
+	*existingOrder = *confirmation.Order
 	return confirmation, err
 }
 
@@ -2502,7 +2515,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	if cancellation == nil {
 		if err != nil {
 			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("Failed to cancel order from matching engine during CancelReplace",
+				m.log.Panic("Failed to cancel order from matching engine during CancelReplace",
 					logging.OrderWithTag(*existingOrder, "existing-order"),
 					logging.OrderWithTag(*newOrder, "new-order"),
 					logging.Error(err))
@@ -2527,7 +2540,10 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		// use it's memory when inserting the new version
 		*existingOrder = *newOrder
 		conf, err = m.matching.SubmitOrder(existingOrder) //lint:ignore SA4006 this value might be overwriter, careful!
-		// replace the trades in the confirmation to have
+		if err != nil {
+			m.log.Panic("unable to submit order", logging.Error(err))
+		}
+		// replace thetrades in the confirmation to have
 		// the ones with the fees embedded
 		conf.Trades = trades
 	}
