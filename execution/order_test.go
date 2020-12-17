@@ -1544,7 +1544,7 @@ func testPeggedOrderExpiring(t *testing.T) {
 	for _, test := range expirations {
 		addAccount(tm, test.party)
 
-		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, test.party, 10, 150)
+		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, 0, types.Side_SIDE_BUY, test.party, 10, 150)
 		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
 		order.ExpiresAt = test.expiration.UnixNano()
 		_, err := tm.market.SubmitOrder(context.Background(), &order)

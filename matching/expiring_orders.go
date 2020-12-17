@@ -25,6 +25,11 @@ func NewExpiringOrders() *ExpiringOrders {
 	}
 }
 
+func (a *ExpiringOrders) GetExpiryingOrderCount() int {
+	result := a.orders.Len()
+	return result
+}
+
 func (a *ExpiringOrders) Insert(order types.Order) {
 	item := &ordersAtTS{ts: order.ExpiresAt}
 	if item := a.orders.Get(item); item != nil {
@@ -35,12 +40,12 @@ func (a *ExpiringOrders) Insert(order types.Order) {
 	a.orders.ReplaceOrInsert(item)
 }
 
-func (a *ExpiringOrders) RemoveOrder(order types.Order) bool {
-	item := &ordersAtTS{ts: order.ExpiresAt}
+func (a *ExpiringOrders) RemoveOrder(expiresAt int64, orderID string) bool {
+	item := &ordersAtTS{ts: expiresAt}
 	if item := a.orders.Get(item); item != nil {
 		oat := item.(*ordersAtTS)
 		for i := 0; i < len(oat.orders); i++ {
-			if oat.orders[i].Id == order.Id {
+			if oat.orders[i].Id == orderID {
 				oat.orders = oat.orders[:i+copy(oat.orders[i:], oat.orders[i+1:])]
 
 				// if the slice is empty, remove the parent container
