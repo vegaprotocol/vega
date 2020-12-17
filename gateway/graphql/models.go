@@ -1225,7 +1225,7 @@ func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Reason for the order beeing rejected by the core node
+// Reason for the order being rejected by the core node
 type OrderRejectionReason string
 
 const (
@@ -1416,7 +1416,7 @@ const (
 	OrderStatusStopped OrderStatus = "Stopped"
 	// This order is fully filled with remaining equals zero.
 	OrderStatusFilled OrderStatus = "Filled"
-	// This order was rejected while beeing processed in the core.
+	// This order was rejected while being processed in the core.
 	OrderStatusRejected OrderStatus = "Rejected"
 	// This order was partially filled.
 	OrderStatusPartiallyFilled OrderStatus = "PartiallyFilled"
@@ -1615,7 +1615,7 @@ func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Reason for the proposal beeing rejected by the core node
+// Reason for the proposal being rejected by the core node
 type ProposalRejectionReason string
 
 const (
@@ -1627,7 +1627,7 @@ const (
 	ProposalRejectionReasonEnactTimeTooSoon ProposalRejectionReason = "EnactTimeTooSoon"
 	// The specified enactment time is too late based on network parameters
 	ProposalRejectionReasonEnactTimeTooLate ProposalRejectionReason = "EnactTimeTooLate"
-	// The proposer for this proposal as insufficient token
+	// The proposer for this proposal has insufficient token
 	ProposalRejectionReasonInsufficientTokens ProposalRejectionReason = "InsufficientTokens"
 	// The instrument quote name and base name were the same
 	ProposalRejectionReasonInvalidInstrumentSecurity ProposalRejectionReason = "InvalidInstrumentSecurity"
@@ -1657,7 +1657,7 @@ const (
 	ProposalRejectionReasonNoRiskParameters ProposalRejectionReason = "NoRiskParameters"
 	// Invalid key in update network parameter proposal
 	ProposalRejectionReasonNetworkParameterInvalidKey ProposalRejectionReason = "NetworkParameterInvalidKey"
-	// Invalid valid in update network parameter proposal
+	// Invalid value in update network parameter proposal
 	ProposalRejectionReasonNetworkParameterInvalidValue ProposalRejectionReason = "NetworkParameterInvalidValue"
 	// Validation failed for network parameter proposal
 	ProposalRejectionReasonNetworkParameterValidationFailed ProposalRejectionReason = "NetworkParameterValidationFailed"
@@ -1716,7 +1716,7 @@ func (e ProposalRejectionReason) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Varoius states a proposal can transition through:
+// Various states a proposal can transition through:
 //   Open ->
 //       - Passed -> Enacted.
 //       - Rejected.
