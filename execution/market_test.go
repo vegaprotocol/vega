@@ -19,6 +19,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -1879,6 +1880,87 @@ func TestOrderBook_CrashWithDistressedTraderPeggedOrderNotRemovedFromPeggedList2
 	// nothing to do we just expect no crash.
 }
 
+func TestOrderBook_Crash2733(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := now.Add(120 * time.Second)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 30})
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 1000000)
+	addAccountWithAmount(tm, "trader-B", 1000000)
+	addAccountWithAmount(tm, "trader-C", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	for i := 1; i <= 10; i += 1 {
+		o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order1%v", i), types.Side_SIDE_BUY, "trader-A", uint64(i), 0)
+		o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -int64(i * 15)}
+		o1conf, err := tm.market.SubmitOrder(ctx, o1)
+		require.NotNil(t, o1conf)
+		require.NoError(t, err)
+
+		o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order2%v", i), types.Side_SIDE_SELL, "trader-A", uint64(i), 0)
+		o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: int64(i * 10)}
+		o2conf, err := tm.market.SubmitOrder(ctx, o2)
+		require.NotNil(t, o2conf)
+		require.NoError(t, err)
+
+		o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order3%v", i), types.Side_SIDE_BUY, "trader-A", uint64(i), 0)
+		o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -int64(i * 5)}
+		o3conf, err := tm.market.SubmitOrder(ctx, o3)
+		require.NotNil(t, o3conf)
+		require.NoError(t, err)
+
+	}
+
+	// now move time to after auction
+	now = now.Add(31 * time.Second)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+
+	for i := 1; i <= 10; i += 1 {
+		o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order4%v", i), types.Side_SIDE_SELL, "trader-B", uint64(i), uint64(i*150))
+		o1conf, err := tm.market.SubmitOrder(ctx, o1)
+		require.NotNil(t, o1conf)
+		require.NoError(t, err)
+
+	}
+
+	for i := 1; i <= 20; i += 1 {
+		o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order5%v", i), types.Side_SIDE_BUY, "trader-C", uint64(i), uint64(i*100))
+		o1conf, err := tm.market.SubmitOrder(ctx, o1)
+		require.NotNil(t, o1conf)
+		require.NoError(t, err)
+
+	}
+}
+
+func TestOrderBook_Bug2747(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	addAccountWithAmount(tm, "trader-B", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 100, 0)
+	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -15}
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID:         o1.Id,
+		PartyID:         "trader-A",
+		PeggedOffset:    &wrapperspb.Int64Value{Value: 20},
+		PeggedReference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+	}
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.Nil(t, amendConf)
+	assert.EqualError(t, err, "OrderError: buy cannot reference best ask price")
+}
+
 func TestOrderBook_AmendTIFForPeggedOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
@@ -1972,57 +2054,4 @@ func TestOrderBook_AmendTIFForPeggedOrder2(t *testing.T) {
 	// The pegged order should be expired
 	assert.Equal(t, types.Order_STATUS_EXPIRED.String(), o2.Status.String())
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
-}
-
-func TestOrderBook_Crash2733(t *testing.T) {
-	now := time.Unix(10, 0)
-	closingAt := now.Add(120 * time.Second)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 30})
-	ctx := context.Background()
-
-	addAccountWithAmount(tm, "trader-A", 1000000)
-	addAccountWithAmount(tm, "trader-B", 1000000)
-	addAccountWithAmount(tm, "trader-C", 100000000)
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	for i := 1; i <= 10; i += 1 {
-		o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order1%v", i), types.Side_SIDE_BUY, "trader-A", uint64(i), 0)
-		o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -int64(i * 15)}
-		o1conf, err := tm.market.SubmitOrder(ctx, o1)
-		require.NotNil(t, o1conf)
-		require.NoError(t, err)
-
-		o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order2%v", i), types.Side_SIDE_SELL, "trader-A", uint64(i), 0)
-		o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: int64(i * 10)}
-		o2conf, err := tm.market.SubmitOrder(ctx, o2)
-		require.NotNil(t, o2conf)
-		require.NoError(t, err)
-
-		o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order3%v", i), types.Side_SIDE_BUY, "trader-A", uint64(i), 0)
-		o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -int64(i * 5)}
-		o3conf, err := tm.market.SubmitOrder(ctx, o3)
-		require.NotNil(t, o3conf)
-		require.NoError(t, err)
-
-	}
-
-	// now move time to after auction
-	now = now.Add(31 * time.Second)
-	tm.market.OnChainTimeUpdate(context.Background(), now)
-
-	for i := 1; i <= 10; i += 1 {
-		o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order4%v", i), types.Side_SIDE_SELL, "trader-B", uint64(i), uint64(i*150))
-		o1conf, err := tm.market.SubmitOrder(ctx, o1)
-		require.NotNil(t, o1conf)
-		require.NoError(t, err)
-
-	}
-
-	for i := 1; i <= 20; i += 1 {
-		o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, fmt.Sprintf("Order5%v", i), types.Side_SIDE_BUY, "trader-C", uint64(i), uint64(i*100))
-		o1conf, err := tm.market.SubmitOrder(ctx, o1)
-		require.NotNil(t, o1conf)
-		require.NoError(t, err)
-
-	}
 }
