@@ -726,7 +726,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// Process each confirmation & apply fee calculations to each trade
 	evts := make([]events.Event, 0, len(uncrossedOrders))
 	for _, uncrossedOrder := range uncrossedOrders {
-		m.handleConfirmation(ctx, uncrossedOrder.Order, uncrossedOrder)
+		m.handleConfirmation(ctx, uncrossedOrder)
 
 		if uncrossedOrder.Order.Remaining == 0 {
 			uncrossedOrder.Order.Status = types.Order_STATUS_FILLED
@@ -1145,7 +1145,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// the contains the fees informations
 	confirmation.Trades = trades
 
-	m.handleConfirmation(ctx, order, confirmation)
+	m.handleConfirmation(ctx, confirmation)
 
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
@@ -1233,10 +1233,10 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	return nil
 }
 
-func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, confirmation *types.OrderConfirmation) {
-	if confirmation.PassiveOrdersAffected != nil {
+func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) {
+	if conf.PassiveOrdersAffected != nil {
 		// Insert or update passive orders siting on the book
-		for _, order := range confirmation.PassiveOrdersAffected {
+		for _, order := range conf.PassiveOrdersAffected {
 			// set the `updatedAt` value as these orders have changed
 			order.UpdatedAt = m.currentTime.UnixNano()
 			m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -1251,21 +1251,21 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 	}
 	end := m.as.AuctionEnd()
 
-	if len(confirmation.Trades) > 0 {
+	if len(conf.Trades) > 0 {
 
 		// Calculate and set current mark price
-		m.setMarkPrice(confirmation.Trades[len(confirmation.Trades)-1])
+		m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
 
 		// Insert all trades resulted from the executed order
-		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
-		for idx, trade := range confirmation.Trades {
-			trade.Id = fmt.Sprintf("%s-%010d", order.Id, idx)
-			if order.Side == types.Side_SIDE_BUY {
-				trade.BuyOrder = order.Id
-				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
+		tradeEvts := make([]events.Event, 0, len(conf.Trades))
+		for idx, trade := range conf.Trades {
+			trade.Id = fmt.Sprintf("%s-%010d", conf.Order.Id, idx)
+			if conf.Order.Side == types.Side_SIDE_BUY {
+				trade.BuyOrder = conf.Order.Id
+				trade.SellOrder = conf.PassiveOrdersAffected[idx].Id
 			} else {
-				trade.SellOrder = order.Id
-				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
+				trade.SellOrder = conf.Order.Id
+				trade.BuyOrder = conf.PassiveOrdersAffected[idx].Id
 			}
 
 			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
@@ -1285,7 +1285,7 @@ func (m *Market) handleConfirmation(ctx context.Context, order *types.Order, con
 		m.broker.SendBatch(tradeEvts)
 
 		if !end {
-			m.confirmMTM(ctx, order)
+			m.confirmMTM(ctx, conf.Order)
 		}
 	}
 }
@@ -2293,8 +2293,8 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	if priceShift || sizeIncrease {
 		confirmation, err := m.orderCancelReplace(ctx, existingOrder, amendedOrder)
 		if err == nil {
-			m.handleConfirmation(ctx, amendedOrder, confirmation)
-			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			m.handleConfirmation(ctx, confirmation)
+			m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))
 			amendSuccessful = true
 			m.checkForReferenceMoves(ctx)
 		}
@@ -2376,7 +2376,7 @@ func (m *Market) amendPeggedOrder(ctx context.Context, existingOrder *types.Orde
 	if existingOrder.Status != types.Order_STATUS_PARKED {
 		confirmation, err = m.orderCancelReplace(ctx, existingOrder, &amendedOrder)
 		if err == nil {
-			m.handleConfirmation(ctx, &amendedOrder, confirmation)
+			m.handleConfirmation(ctx, confirmation)
 		}
 	} else {
 		confirmation = &types.OrderConfirmation{Order: existingOrder}
