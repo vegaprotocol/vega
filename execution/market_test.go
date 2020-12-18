@@ -2055,3 +2055,36 @@ func TestOrderBook_AmendTIFForPeggedOrder2(t *testing.T) {
 	assert.Equal(t, types.Order_STATUS_EXPIRED.String(), o2.Status.String())
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 }
+
+func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	addAccount(tm, "trader-B")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 5, 5000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.NotNil(t, o1conf)
+	assert.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_BUY, "trader-B", 5, 4500)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.NotNil(t, o2conf)
+	assert.NoError(t, err)
+
+	// Amend the pegged order so that is has an expiry
+	amendment := &types.OrderAmendment{
+		OrderID: o2.Id,
+		PartyID: "trader-B",
+		Price:   &types.Price{Value: 5000},
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.NotNil(t, amendConf)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_FILLED, o2.Status)
+}
