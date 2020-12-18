@@ -904,6 +904,8 @@ const (
 	BusEventTypeSettleDistressed BusEventType = "SettleDistressed"
 	// A new market has been created
 	BusEventTypeMarketCreated BusEventType = "MarketCreated"
+	// A market has been updated
+	BusEventTypeMarketUpdated BusEventType = "MarketUpdated"
 	// An asset has been created or update
 	BusEventTypeAsset BusEventType = "Asset"
 	// A market has progressed by one tick
@@ -939,6 +941,7 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeSettlePosition,
 	BusEventTypeSettleDistressed,
 	BusEventTypeMarketCreated,
+	BusEventTypeMarketUpdated,
 	BusEventTypeAsset,
 	BusEventTypeMarketTick,
 	BusEventTypeAuction,
@@ -951,7 +954,7 @@ var AllBusEventType = []BusEventType{
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeMarket:
 		return true
 	}
 	return false

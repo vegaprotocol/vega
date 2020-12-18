@@ -7,43 +7,43 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-type MarketCreated struct {
+type MarketUpdated struct {
 	*Base
 	m types.Market
 }
 
-func NewMarketCreatedEvent(ctx context.Context, m types.Market) *MarketCreated {
-	return &MarketCreated{
-		Base: newBase(ctx, MarketCreatedEvent),
+func NewMarketUpdatedEvent(ctx context.Context, m types.Market) *MarketUpdated {
+	return &MarketUpdated{
+		Base: newBase(ctx, MarketUpdatedEvent),
 		m:    m,
 	}
 }
 
 // MarketEvent -> is needs to be logged as a market event
-func (m MarketCreated) MarketEvent() string {
+func (m MarketUpdated) MarketEvent() string {
 	return fmt.Sprintf("Market ID %s created (%s)", m.m.Id, m.m.String())
 }
 
-func (m MarketCreated) MarketID() string {
+func (m MarketUpdated) MarketID() string {
 	return m.m.Id
 }
 
-func (m MarketCreated) Market() types.Market {
+func (m MarketUpdated) Market() types.Market {
 	return m.m
 }
 
-func (m MarketCreated) Proto() types.Market {
+func (m MarketUpdated) Proto() types.Market {
 	return m.m
 }
 
-func (m MarketCreated) MarketProto() types.MarketEvent {
+func (m MarketUpdated) MarketProto() types.MarketEvent {
 	return types.MarketEvent{
 		MarketID: m.m.Id,
 		Payload:  m.MarketEvent(),
 	}
 }
 
-func (m MarketCreated) StreamMessage() *types.BusEvent {
+func (m MarketUpdated) StreamMessage() *types.BusEvent {
 	p := m.MarketProto()
 	return &types.BusEvent{
 		ID:    m.eventID(),
@@ -55,6 +55,6 @@ func (m MarketCreated) StreamMessage() *types.BusEvent {
 	}
 }
 
-func (m MarketCreated) StreamMarketMessage() *types.BusEvent {
+func (m MarketUpdated) StreamMarketMessage() *types.BusEvent {
 	return m.StreamMessage()
 }

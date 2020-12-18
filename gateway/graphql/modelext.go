@@ -1140,6 +1140,8 @@ func eventFromProto(e *types.BusEvent) Event {
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
 		return e.GetMarketCreated()
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
+		return e.GetMarketUpdated()
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
 		a, _ := AssetFromProto(e.GetAsset())
 		return a
@@ -1211,6 +1213,8 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED)
 		case BusEventTypeMarketCreated:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED)
+		case BusEventTypeMarketUpdated:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED)
 		case BusEventTypeAsset:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ASSET)
 		case BusEventTypeMarketTick:
@@ -1266,6 +1270,8 @@ func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 		return BusEventTypeSettleDistressed, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
 		return BusEventTypeMarketCreated, nil
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
+		return BusEventTypeMarketUpdated, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
 		return BusEventTypeAsset, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
