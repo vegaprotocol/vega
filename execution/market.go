@@ -2392,6 +2392,7 @@ func (m *Market) validateOrderAmendment(
 	order *types.Order,
 	amendment *types.OrderAmendment,
 ) error {
+
 	// check TIF and expiracy
 	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
@@ -2402,27 +2403,37 @@ func (m *Market) validateOrderAmendment(
 		if amendment.ExpiresAt.Value <= order.CreatedAt {
 			return types.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT
 		}
-	} else if amendment.TimeInForce == types.Order_TIF_GTC {
+	}
+
+	if amendment.TimeInForce == types.Order_TIF_GTC {
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != nil {
 			return types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
 		}
-	} else if amendment.TimeInForce == types.Order_TIF_FOK ||
+	}
+
+	if amendment.TimeInForce == types.Order_TIF_FOK ||
 		amendment.TimeInForce == types.Order_TIF_IOC {
 		// IOC and FOK are not acceptable for amend order
 		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
-	} else if (amendment.TimeInForce == types.Order_TIF_GFN ||
+	}
+
+	if (amendment.TimeInForce == types.Order_TIF_GFN ||
 		amendment.TimeInForce == types.Order_TIF_GFA) &&
 		amendment.TimeInForce != order.TimeInForce {
 		// We cannot amend to a GFA/GFN orders
 		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN
-	} else if (order.TimeInForce == types.Order_TIF_GFN ||
+	}
+
+	if (order.TimeInForce == types.Order_TIF_GFN ||
 		order.TimeInForce == types.Order_TIF_GFA) &&
 		(amendment.TimeInForce != order.TimeInForce &&
 			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED) {
 		// We cannot amend from a GFA/GFN orders
 		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
-	} else if order.PeggedOrder == nil {
+	}
+
+	if order.PeggedOrder == nil {
 		// We cannot change a pegged orders details on a non pegged order
 		if amendment.PeggedOffset != nil ||
 			amendment.PeggedReference != types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {

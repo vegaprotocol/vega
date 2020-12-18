@@ -2136,3 +2136,31 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 	assert.Equal(t, amendConf.Order.Status, types.Order_STATUS_PARKED)
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
+
+func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// set the mid price first to 6.5k
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 6000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	// then amend
+	// Amend the pegged order so that is has an expiry
+	amendment := &types.OrderAmendment{
+		OrderID:     o1.Id,
+		PartyID:     "trader-A",
+		TimeInForce: types.Order_TIF_GTC,
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.Nil(t, amendConf)
+	assert.EqualError(t, err, "OrderError: Cannot amend TIF from GFA or GFN")
+}
