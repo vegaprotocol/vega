@@ -190,7 +190,8 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	// we send a market data event for this market when it's created so graphql does not fail
 	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
-	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
+	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
 
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before

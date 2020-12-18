@@ -2844,7 +2844,7 @@ func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.Sca
 
 	// update our market definition, and dispatch update through the event bus
 	m.mkt.TradableInstrument.MarginCalculator.ScalingFactors = sf
-	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
 }
@@ -2854,7 +2854,7 @@ func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) erro
 		return err
 	}
 	m.mkt.Fees.Factors.MakerFee = fmt.Sprintf("%f", f)
-	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
 }
@@ -2864,7 +2864,7 @@ func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f floa
 		return err
 	}
 	m.mkt.Fees.Factors.InfrastructureFee = fmt.Sprintf("%f", f)
-	m.broker.Send(events.NewMarketEvent(ctx, *m.mkt))
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
 }

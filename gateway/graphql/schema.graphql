@@ -2337,6 +2337,8 @@ enum BusEventType {
   SettleDistressed
   "A new market has been created"
   MarketCreated
+  "A market has been updated"
+  MarketUpdated
   "An asset has been created or update"
   Asset
   "A market has progressed by one tick"
