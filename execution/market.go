@@ -168,7 +168,8 @@ type Market struct {
 	// Store the previous price values so we can see what has changed
 	lastBestBidPrice uint64
 	lastBestAskPrice uint64
-	lastMidPrice     uint64
+	lastMidBuyPrice  uint64
+	lastMidSellPrice uint64
 
 	marketValueWindowLength time.Duration
 	feeSplitter             *FeeSplitter
@@ -609,7 +610,7 @@ func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uin
 
 	switch order.PeggedOrder.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
-		price, err = m.getStaticMidPrice()
+		price, err = m.getStaticMidPrice(order.Side)
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
 		price, err = m.getBestStaticBidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
@@ -2655,7 +2656,7 @@ func (m *Market) getBestStaticBidPriceAndVolume() (uint64, uint64, error) {
 	return m.matching.GetBestStaticBidPriceAndVolume()
 }
 
-func (m *Market) getStaticMidPrice() (uint64, error) {
+func (m *Market) getStaticMidPrice(side types.Side) (uint64, error) {
 	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
 		return 0, err
@@ -2664,7 +2665,14 @@ func (m *Market) getStaticMidPrice() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return (bid + ask) / 2, nil
+	var mid uint64
+	if side == types.Side_SIDE_BUY {
+		mid = (bid + ask + 1) / 2
+	} else {
+		mid = (bid + ask) / 2
+	}
+
+	return mid, nil
 }
 
 // checkForReferenceMoves looks to see if the reference prices have moved since the
@@ -2678,11 +2686,13 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		// Get the current reference values and compare them to the last saved set
 		newBestBid, _ := m.getBestStaticBidPrice()
 		newBestAsk, _ := m.getBestStaticAskPrice()
-		newMid, _ := m.getStaticMidPrice()
+		newMidBuy, _ := m.getStaticMidPrice(types.Side_SIDE_BUY)
+		newMidSell, _ := m.getStaticMidPrice(types.Side_SIDE_SELL)
 
 		// Look for a move
 		var changes uint8
-		if newMid != m.lastMidPrice {
+		if newMidBuy != m.lastMidBuyPrice ||
+			newMidSell != m.lastMidSellPrice {
 			changes |= PriceMoveMid
 		}
 		if newBestBid != m.lastBestBidPrice {
@@ -2700,7 +2710,8 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		}
 
 		// Update the last price values
-		m.lastMidPrice = newMid
+		m.lastMidBuyPrice = newMidBuy
+		m.lastMidSellPrice = newMidSell
 		m.lastBestBidPrice = newBestBid
 		m.lastBestAskPrice = newBestAsk
 
