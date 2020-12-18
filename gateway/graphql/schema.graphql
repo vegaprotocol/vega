@@ -1233,7 +1233,7 @@ type Order {
   side: Side!
 
   "The market the order is trading on (probably stored internally as a hash of the market details)"
-  market: Market!
+  market: Market
 
   "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String!
