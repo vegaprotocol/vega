@@ -2088,3 +2088,51 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_FILLED, o2.Status)
 }
+
+func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	addAccountWithAmount(tm, "trader-B", 100000000)
+	addAccountWithAmount(tm, "trader-C", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// set the mid price first to 6.5k
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 6000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-B", 5, 7000)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	// then place pegged order
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_BUY, "trader-C", 100, 0)
+	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -15}
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	assert.Equal(t, o3conf.Order.Status, types.Order_STATUS_ACTIVE)
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+
+	// then amend
+	// Amend the pegged order so that is has an expiry
+	amendment := &types.OrderAmendment{
+		OrderID:      o3.Id,
+		PartyID:      "trader-C",
+		PeggedOffset: &wrapperspb.Int64Value{Value: -6500},
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	require.NotNil(t, amendConf)
+	require.NoError(t, err)
+
+	assert.Equal(t, amendConf.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+}
