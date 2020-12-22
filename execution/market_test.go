@@ -935,7 +935,6 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Price:       &types.Price{Value: auctionTriggeringPrice},
 		SizeDelta:   0,
 		TimeInForce: types.Order_TIF_GTC,
-		//ExpiresAt:   &types.Timestamp{Value: orderBuy2.ExpiresAt},
 	}
 
 	conf, err := tm.market.AmendOrder(context.Background(), amendedOrder)
