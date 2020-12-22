@@ -607,7 +607,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -723,7 +723,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
 	assert.False(t, closed)
@@ -765,7 +765,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
-	require.Equal(t, 0, len(confirmationBuy.Trades))
+	require.Empty(t, confirmationBuy.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -924,7 +924,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationBuy.Trades))
+	require.Empty(t, confirmationBuy.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
@@ -985,7 +985,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
-	require.Equal(t, 0, len(confirmationBuy.Trades))
+	require.Empty(t, confirmationBuy.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -1082,7 +1082,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
@@ -1106,7 +1106,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
@@ -1127,7 +1127,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -1270,14 +1270,14 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	md = tm.market.GetMarketData()
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
-	require.Equal(t, 0, len(md.PriceMonitoringBounds))
+	require.Empty(t, md.PriceMonitoringBounds)
 
 	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
 	assert.False(t, closed)
@@ -1287,7 +1287,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
-	require.Equal(t, 0, len(md.PriceMonitoringBounds))
+	require.Empty(t, md.PriceMonitoringBounds)
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime.Add(time.Nanosecond))
 	assert.False(t, closed)
@@ -1649,7 +1649,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd := tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, openingAuctionEndTime.UnixNano(), auctionEnd) // In opening auction
@@ -1696,7 +1696,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, pMonitorAuctionEndTime.UnixNano(), auctionEnd) // In auction
