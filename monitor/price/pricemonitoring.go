@@ -3,7 +3,6 @@ package price
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"sort"
 	"time"
@@ -323,11 +322,9 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 		if len(e.pricesNow) > 0 {
 			var sumProduct uint64 = 0
 			var volumeSum uint64 = 0
-			fmt.Printf("\n Average prices \n")
 			for _, x := range e.pricesNow {
 				sumProduct += x.Price * x.Volume
 				volumeSum += x.Volume
-				fmt.Printf("price: %v, volume: %v \n", x.Price, x.Volume)
 			}
 			e.pricesPast = append(e.pricesPast,
 				pastPrice{
@@ -354,7 +351,6 @@ func (e *Engine) checkBounds(ctx context.Context, p uint64, v uint64) []*types.P
 			continue
 		}
 		priceRange := priceRanges[b]
-		fmt.Printf("\n Check bounds: ref: %v, MinPrice %v, MaxPrice %v", p, priceRange.MinPrice, priceRange.MaxPrice)
 		if fp < priceRange.MinPrice || fp > priceRange.MaxPrice {
 			ret = append(ret, b.Trigger)
 			// Disactivate the bound that just got violated so it doesn't prevent auction from terminating
@@ -396,7 +392,6 @@ func (e *Engine) updateBounds() {
 		}
 		ref := e.getRefPrice(b.Trigger.Horizon)
 		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
-		fmt.Printf("\n UPDATE BOUNDS: ref price: %v, min: %v, max: %v", ref, minPrice, maxPrice)
 		b.DownFactor = minPrice / ref
 		b.UpFactor = maxPrice / ref
 	}
