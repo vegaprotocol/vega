@@ -17,8 +17,6 @@ var (
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
 	// ErrExpiresAtNotSet indicates price monitoring auction is endless somehow
 	ErrExpiresAtNotSet = errors.New("price monitoring auction with no end time")
-	// ErrNegativeVolume indicates a price with a negative volume was received
-	ErrNegativeVolume = errors.New("negative volume was received")
 )
 
 const (
@@ -188,10 +186,6 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 
 // CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
 func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v uint64, now time.Time) error {
-	if v < 0 {
-		return ErrNegativeVolume
-	}
-
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
