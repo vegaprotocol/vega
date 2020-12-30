@@ -267,6 +267,13 @@ func (this *BusEvent) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_MarketUpdated); ok {
+		if oneOfNester.MarketUpdated != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.MarketUpdated); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("MarketUpdated", err)
+			}
+		}
+	}
 	if oneOfNester, ok := this.GetEvent().(*BusEvent_Market); ok {
 		if oneOfNester.Market != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Market); err != nil {

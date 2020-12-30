@@ -73,7 +73,7 @@ func theFollowingTraders(arg1 *gherkin.DataTable) error {
 			if err != nil {
 				return err
 			}
-			err = execsetup.collateral.Deposit(context.Background(), partyID, asset, amount)
+			_, err = execsetup.collateral.Deposit(context.Background(), partyID, asset, amount)
 			if err != nil {
 				return err
 			}
@@ -171,9 +171,10 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
 
-	return execsetup.collateral.Deposit(
+	_, err := execsetup.collateral.Deposit(
 		context.Background(), trader, asset, amount,
 	)
+	return err
 }
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
@@ -197,15 +198,16 @@ func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
 		return err
 	}
 
-	if err := execsetup.collateral.LockFundsForWithdraw(
+	if _, err := execsetup.collateral.LockFundsForWithdraw(
 		context.Background(), trader, asset, amount,
 	); err != nil {
 		return err
 	}
 
-	return execsetup.collateral.Withdraw(
+	_, err = execsetup.collateral.Withdraw(
 		context.Background(), trader, asset, amount,
 	)
+	return err
 }
 
 func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
@@ -533,11 +535,12 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 
 func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
-		if val(row, 0) == "from" {
+		from := val(row, 0)
+		if from == "from" {
 			continue
 		}
 
-		fromAccountID := accountID(val(row, 4), val(row, 0), val(row, 6), types.AccountType_value[val(row, 2)])
+		fromAccountID := accountID(val(row, 4), from, val(row, 6), types.AccountType_value[val(row, 2)])
 		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), types.AccountType_value[val(row, 3)])
 
 		var ledgerEntry *types.LedgerEntry
@@ -920,11 +923,12 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 
 func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 	for _, row := range refs.Rows {
-		if val(row, 0) == "trader" {
+		trader := val(row, 0)
+		if trader == "trader" {
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.getByReference(trader, val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -942,6 +946,7 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 }
 
 func dumpTransfers() error {
+	fmt.Println("DUMPING TRANSFERS")
 	transferEvents := execsetup.broker.GetTransferResponses()
 	for _, e := range transferEvents {
 		for _, t := range e.TransferResponses() {
@@ -1031,9 +1036,9 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 		DecimalPlaces: 2,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				LiquidityFee:      val(row, 17),
+				LiquidityFee:      val(row, 19),
 				InfrastructureFee: val(row, 18),
-				MakerFee:          val(row, 19),
+				MakerFee:          val(row, 17),
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
@@ -1066,10 +1071,11 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			RiskModel: &types.TradableInstrument_SimpleRiskModel{
 				SimpleRiskModel: &types.SimpleRiskModel{
 					Params: &types.SimpleModelParams{
-						FactorLong:  f64val(row, 6),
-						FactorShort: f64val(row, 7),
-						MaxMoveUp:   f64val(row, 8),
-						MinMoveDown: f64val(row, 9),
+						FactorLong:           f64val(row, 6),
+						FactorShort:          f64val(row, 7),
+						MaxMoveUp:            f64val(row, 8),
+						MinMoveDown:          f64val(row, 9),
+						ProbabilityOfTrading: f64val(row, 24),
 					},
 				},
 			},
@@ -1137,10 +1143,20 @@ func executedTrades(trades *gherkin.DataTable) error {
 }
 
 func dumpOrders() error {
+	fmt.Println("DUMPING ORDERS")
 	data := execsetup.broker.GetOrderEvents()
 	for _, v := range data {
 		o := *v.Order()
 		fmt.Printf("order %s: %v\n", o.Id, o)
+	}
+	return nil
+}
+
+func dumpTrades() error {
+	fmt.Println("DUMPING TRADES")
+	data := execsetup.broker.getTrades()
+	for _, t := range data {
+		fmt.Printf("trade %s, %#v\n", t.Id, t)
 	}
 	return nil
 }
@@ -1244,6 +1260,115 @@ func clearOrdersByRef(in *gherkin.DataTable) error {
 		}
 		ref := val(row, 1)
 		if err := execsetup.broker.clearOrderByReference(trader, ref); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// liquidity provisioning
+func submitLP(in *gherkin.DataTable) error {
+	lps := map[string]*types.LiquidityProvisionSubmission{}
+	parties := map[string]string{}
+	// build the LPs to submit
+	for _, row := range in.Rows {
+		id := val(row, 0)
+		if id == "id" {
+			continue
+		}
+		lp, ok := lps[id]
+		if !ok {
+			lp = &types.LiquidityProvisionSubmission{
+				MarketID:         val(row, 2),
+				CommitmentAmount: u64val(row, 3),
+				Fee:              val(row, 4),
+				Sells:            []*types.LiquidityOrder{},
+				Buys:             []*types.LiquidityOrder{},
+			}
+			parties[id] = val(row, 1)
+			lps[id] = lp
+		}
+		lo := &types.LiquidityOrder{
+			Reference:  peggedRef(row, 6),
+			Proportion: uint32(u64val(row, 7)),
+			Offset:     i64val(row, 8),
+		}
+		if side := val(row, 5); side == "buy" {
+			lp.Buys = append(lp.Buys, lo)
+		} else {
+			lp.Sells = append(lp.Sells, lo)
+		}
+	}
+	for id, sub := range lps {
+		party, ok := parties[id]
+		if !ok {
+			return errors.New("party for LP not found")
+		}
+		if err := execsetup.engine.SubmitLiquidityProvision(context.Background(), sub, party, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func seeLPEvents(in *gherkin.DataTable) error {
+	evts := execsetup.broker.GetLPEvents()
+	evtByID := func(id string) *types.LiquidityProvision {
+		for _, e := range evts {
+			if lp := e.LiquidityProvision(); lp.Id == id {
+				return lp
+			}
+		}
+		return nil
+	}
+	for _, row := range in.Rows {
+		id := val(row, 0)
+		if id == "id" {
+			continue
+		}
+		// find event
+		e := evtByID(id)
+		if e == nil {
+			return errors.New("no LP for id found")
+		}
+		party, market, commitment := val(row, 1), val(row, 2), u64val(row, 3)
+		if e.PartyID != party || e.MarketID != market || e.CommitmentAmount != commitment {
+			return errors.New("party,  market ID, or commitment amount mismatch")
+		}
+	}
+	return nil
+}
+
+func theOpeningAuctionPeriodEnds(mktName string) error {
+	var mkt *types.Market
+	for _, m := range execsetup.mkts {
+		if m.Id == mktName {
+			mkt = &m
+			break
+		}
+	}
+	if mkt == nil {
+		return fmt.Errorf("market %s not found", mktName)
+	}
+	// double the time, so it's definitely past opening auction time
+	now := execsetup.timesvc.now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
+	execsetup.timesvc.now = now
+	// notify markets
+	execsetup.timesvc.notify(context.Background(), now)
+	return nil
+}
+
+func tradersWithdrawBalance(in *gherkin.DataTable) error {
+	for _, row := range in.Rows {
+		trader := val(row, 0)
+		if trader == "trader" {
+			continue
+		}
+		asset, amount := val(row, 1), u64val(row, 2)
+		if _, err := execsetup.collateral.LockFundsForWithdraw(context.Background(), trader, asset, amount); err != nil {
+			return err
+		}
+		if _, err := execsetup.collateral.Withdraw(context.Background(), trader, asset, amount); err != nil {
 			return err
 		}
 	}

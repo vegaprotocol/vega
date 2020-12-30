@@ -89,7 +89,7 @@ func testDepositSuccess(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }
@@ -118,7 +118,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 
@@ -132,7 +132,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }

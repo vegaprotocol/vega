@@ -14,6 +14,7 @@ const (
 	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stakeToCcySiskas"
 	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                = "market.stake.target.scalingFactor"
+	MarketValueWindowLength                       = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters        = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency          = "market.monitor.price.updateFrequency"
 
@@ -59,3 +60,53 @@ const (
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
 )
+
+var AllKeys = map[string]struct{}{
+	MarketMarginScalingFactors:                            {},
+	MarketFeeFactorsMakerFee:                              {},
+	MarketFeeFactorsInfrastructureFee:                     {},
+	MarketFeeFactorsLiquidityFee:                          {},
+	MarketAuctionMinimumDuration:                          {},
+	MarketAuctionMaximumDuration:                          {},
+	MarketInitialMarkPrice:                                {},
+	MarketLiquidityBondPenaltyParameter:                   {},
+	MarketLiquidityMaximumLiquidityFeeFactorLevel:         {},
+	MarketLiquidityStakeToCCYSiskas:                       {},
+	MarketTargetStakeTimeWindow:                           {},
+	MarketTargetStakeScalingFactor:                        {},
+	MarketPriceMonitoringDefaultParameters:                {},
+	MarketPriceMonitoringUpdateFrequency:                  {},
+	GovernanceVoteAsset:                                   {},
+	GovernanceProposalMarketMinClose:                      {},
+	GovernanceProposalMarketMaxClose:                      {},
+	GovernanceProposalMarketMinEnact:                      {},
+	GovernanceProposalMarketMaxEnact:                      {},
+	GovernanceProposalMarketRequiredParticipation:         {},
+	GovernanceProposalMarketRequiredMajority:              {},
+	GovernanceProposalMarketMinProposerBalance:            {},
+	GovernanceProposalMarketMinVoterBalance:               {},
+	GovernanceProposalAssetMinClose:                       {},
+	GovernanceProposalAssetMaxClose:                       {},
+	GovernanceProposalAssetMinEnact:                       {},
+	GovernanceProposalAssetMaxEnact:                       {},
+	GovernanceProposalAssetRequiredParticipation:          {},
+	GovernanceProposalAssetRequiredMajority:               {},
+	GovernanceProposalAssetMinProposerBalance:             {},
+	GovernanceProposalAssetMinVoterBalance:                {},
+	GovernanceProposalUpdateMarketMinClose:                {},
+	GovernanceProposalUpdateMarketMaxClose:                {},
+	GovernanceProposalUpdateMarketMinEnact:                {},
+	GovernanceProposalUpdateMarketMaxEnact:                {},
+	GovernanceProposalUpdateMarketRequiredParticipation:   {},
+	GovernanceProposalUpdateMarketRequiredMajority:        {},
+	GovernanceProposalUpdateMarketMinProposerBalance:      {},
+	GovernanceProposalUpdateMarketMinVoterBalance:         {},
+	GovernanceProposalUpdateNetParamMinClose:              {},
+	GovernanceProposalUpdateNetParamMaxClose:              {},
+	GovernanceProposalUpdateNetParamMinEnact:              {},
+	GovernanceProposalUpdateNetParamMaxEnact:              {},
+	GovernanceProposalUpdateNetParamRequiredParticipation: {},
+	GovernanceProposalUpdateNetParamRequiredMajority:      {},
+	GovernanceProposalUpdateNetParamMinProposerBalance:    {},
+	GovernanceProposalUpdateNetParamMinVoterBalance:       {},
+}

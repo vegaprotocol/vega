@@ -211,6 +211,7 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		err = ErrPositionNotFound
 		return
 	}
+
 	if originalOrder.Side == types.Side_SIDE_BUY {
 		vwap := pos.vwBuyPrice*uint64(pos.buy) - originalOrder.Price*originalOrder.Remaining
 		pos.buy -= int64(originalOrder.Remaining)

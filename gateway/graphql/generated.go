@@ -495,9 +495,10 @@ type ComplexityRoot struct {
 	}
 
 	PriceMonitoringBounds struct {
-		MaxValidPrice func(childComplexity int) int
-		MinValidPrice func(childComplexity int) int
-		Trigger       func(childComplexity int) int
+		MaxValidPrice  func(childComplexity int) int
+		MinValidPrice  func(childComplexity int) int
+		ReferencePrice func(childComplexity int) int
+		Trigger        func(childComplexity int) int
 	}
 
 	PriceMonitoringParameters struct {
@@ -2908,6 +2909,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PriceMonitoringBounds.MinValidPrice(childComplexity), true
 
+	case "PriceMonitoringBounds.referencePrice":
+		if e.complexity.PriceMonitoringBounds.ReferencePrice == nil {
+			break
+		}
+
+		return e.complexity.PriceMonitoringBounds.ReferencePrice(childComplexity), true
+
 	case "PriceMonitoringBounds.trigger":
 		if e.complexity.PriceMonitoringBounds.Trigger == nil {
 			break
@@ -5123,6 +5131,8 @@ type PriceMonitoringBounds {
   maxValidPrice: String!
   "Price monitoring trigger associated with the bounds"
   trigger: PriceMonitoringTrigger!
+  "Reference price used to calculate the valid price range"
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"
@@ -5427,7 +5437,7 @@ type Order {
   side: Side!
 
   "The market the order is trading on (probably stored internally as a hash of the market details)"
-  market: Market!
+  market: Market
 
   "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String!
@@ -5715,7 +5725,7 @@ enum OrderStatus {
   "This order is fully filled with remaining equals zero."
   Filled
 
-  "This order was rejected while beeing processed in the core."
+  "This order was rejected while being processed in the core."
   Rejected
 
   "This order was partially filled."
@@ -5725,7 +5735,7 @@ enum OrderStatus {
   Parked
 }
 
-"Reason for the proposal beeing rejected by the core node"
+"Reason for the proposal being rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
   CloseTimeTooSoon
@@ -5735,7 +5745,7 @@ enum ProposalRejectionReason {
   EnactTimeTooSoon
   "The specified enactment time is too late based on network parameters"
   EnactTimeTooLate
-  "The proposer for this proposal as insufficient token"
+  "The proposer for this proposal has insufficient token"
   InsufficientTokens
   "The instrument quote name and base name were the same"
   InvalidInstrumentSecurity
@@ -5765,13 +5775,13 @@ enum ProposalRejectionReason {
   NoRiskParameters
   "Invalid key in update network parameter proposal"
   NetworkParameterInvalidKey
-  "Invalid valid in update network parameter proposal"
+  "Invalid value in update network parameter proposal"
   NetworkParameterInvalidValue
   "Validation failed for network parameter proposal"
   NetworkParameterValidationFailed
 }
 
-"Reason for the order beeing rejected by the core node"
+"Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
 
   "Market id is invalid"
@@ -5908,6 +5918,9 @@ enum OrderRejectionReason {
 
   "Unable to reprice a pegged order"
   UnableToRepricePeggedOrder
+
+  "Unable to amend pegged order price"
+  UnableToAmendPeggedOrderPrice
 }
 
 enum OrderType {
@@ -6276,7 +6289,7 @@ input BuiltinAssetInput {
 }
 
 """
-Varoius states a proposal can transition through:
+Various states a proposal can transition through:
   Open ->
       - Passed -> Enacted.
       - Rejected.
@@ -6528,6 +6541,8 @@ enum BusEventType {
   SettleDistressed
   "A new market has been created"
   MarketCreated
+  "A market has been updated"
+  MarketUpdated
   "An asset has been created or update"
   Asset
   "A market has progressed by one tick"
@@ -14630,14 +14645,11 @@ func (ec *executionContext) _Order_market(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*proto.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -16536,6 +16548,40 @@ func (ec *executionContext) _PriceMonitoringBounds_trigger(ctx context.Context, 
 	res := resTmp.(*PriceMonitoringTrigger)
 	fc.Result = res
 	return ec.marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PriceMonitoringBounds_referencePrice(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringBounds) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PriceMonitoringBounds",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReferencePrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceMonitoringParameters_triggers(ctx context.Context, field graphql.CollectedField, obj *PriceMonitoringParameters) (ret graphql.Marshaler) {
@@ -26598,9 +26644,6 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Order_market(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "size":
@@ -27446,6 +27489,11 @@ func (ec *executionContext) _PriceMonitoringBounds(ctx context.Context, sel ast.
 			}
 		case "trigger":
 			out.Values[i] = ec._PriceMonitoringBounds_trigger(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "referencePrice":
+			out.Values[i] = ec._PriceMonitoringBounds_referencePrice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

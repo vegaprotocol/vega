@@ -590,6 +590,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketTargetStakeScalingFactor,
 			Watcher: l.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketValueWindowLength,
+			Watcher: l.executionEngine.OnMarketValueWindowLengthUpdate,
+		},
 	)
 }
 

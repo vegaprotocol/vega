@@ -7,6 +7,10 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 )
 
+const (
+	week = "168h0m0s"
+)
+
 func defaultNetParams() map[string]value {
 	return map[string]value{
 		// markets
@@ -15,13 +19,14 @@ func defaultNetParams() map[string]value {
 		MarketFeeFactorsInfrastructureFee:             NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.0005"),
 		MarketFeeFactorsLiquidityFee:                  NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.001"),
 		MarketAuctionMinimumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
-		MarketAuctionMaximumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("168h0m0s"),
+		MarketAuctionMaximumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
 		MarketInitialMarkPrice:                        NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
 		MarketLiquidityBondPenaltyParameter:           NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1"),
 		MarketLiquidityMaximumLiquidityFeeFactorLevel: NewFloat(FloatGT(0), FloatLTE(1)).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYSiskas:               NewFloat(FloatGT(0)).Mutable(true).MustUpdate("1"),
 		MarketTargetStakeTimeWindow:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
 		MarketTargetStakeScalingFactor:                NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("10"),
+		MarketValueWindowLength:                       NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
 		MarketPriceMonitoringDefaultParameters:        NewJSON(&proto.PriceMonitoringParameters{}, JSONProtoValidator()).Mutable(true).MustUpdate(`{"triggers": []}`),
 		MarketPriceMonitoringUpdateFrequency:          NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m0s"),
 

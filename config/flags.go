@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"code.vegaprotocol.io/vega/fsutil"
@@ -34,25 +33,7 @@ func (p Passphrase) Get(prompt string) (string, error) {
 		return p.getFromUser(prompt)
 	}
 
-	// return p.getFromFile(string(p))
-
-	// TODO: remove code below:
-	// To avoid conflict with the current users
-	// If the suplied file does not exist, we will use the path as the value
-	v, err := p.getFromFile(string(p))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, `
- =====================================
- WARNING:
- Using the passphrase argument as a value.
- This behaviour is deprecated and will be remove in future releases.
- Make sure you pass the path of the file containing the password.
- =====================================
- `)
-		return string(p), nil
-	}
-
-	return v, nil
+	return p.getFromFile(string(p))
 }
 
 func (p Passphrase) getFromUser(prompt string) (string, error) {

@@ -41,6 +41,7 @@ var (
 	ErrInsufficientAssetBalance                    = OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 	ErrCannotAmendPeggedDetailsOnNonPeggedOrder    = OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
 	ErrUnableToRepricePeggedOrder                  = OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER
+	ErrUnableToAmendPeggedOrderPrice               = OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -122,6 +123,18 @@ func (err OrderError) Error() string {
 		return "OrderError: cannot amend pegged details on a non pegged order"
 	case OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE:
 		return "OrderError: invalid time in force"
+	case OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE:
+		return "OrderError: buy cannot reference best ask price"
+	case OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO:
+		return "OrderError: offset must be <= 0"
+	case OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO:
+		return "OrderError: offset must be < 0"
+	case OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO:
+		return "OrderError: offset must be >= 0"
+	case OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE:
+		return "OrderError: sell cannot reference best bid price"
+	case OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO:
+		return "OrderError: offset must be greater than zero"
 	default:
 		return "invalid OrderError"
 	}

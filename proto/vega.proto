@@ -380,6 +380,8 @@ enum OrderError {
   ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER = 44;
   // We are unable to reprice a pegged order because a market price is unavailable
   ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 45;
+  // Users cannot amend the price of a pegged order
+  ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER = 46;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -849,6 +851,9 @@ enum AccountType {
   // This account is created to maintain liquidity providers funds commitments
   ACCOUNT_TYPE_BOND = 9;
 
+  // External account represents an external source (deposit/withdrawal)
+  ACCOUNT_TYPE_EXTERNAL = 10;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -912,6 +917,12 @@ enum TransferType {
   TRANSFER_TYPE_BOND_LOW = 13;
   // Bond too high.
   TRANSFER_TYPE_BOND_HIGH = 14;
+  // Lock amount for withdraw.
+  TRANSFER_TYPE_WITHDRAW_LOCK = 15;
+  // Actual withdraw from system.
+  TRANSFER_TYPE_WITHDRAW = 16;
+  // Deposit funds.
+  TRANSFER_TYPE_DEPOSIT = 17;
 }
 
 // Represents a financial transfer within Vega.
@@ -1059,6 +1070,8 @@ message PriceMonitoringBounds {
   uint64 maxValidPrice = 2;
   // Price monitoring trigger associated with the bounds
   PriceMonitoringTrigger trigger = 3;
+  // Reference price used to calculate the valid price range
+  double referencePrice = 4;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.

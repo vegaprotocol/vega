@@ -2617,6 +2617,7 @@ An asset deposit for an ERC20 token.
 | vegaAssetID | [string](#string) |  | The vega network internal identifier of the asset. |
 | sourceEthereumAddress | [string](#string) |  | The Ethereum wallet that initiated the deposit. |
 | targetPartyID | [string](#string) |  | The Vega party identifier (pub-key) which is the target of the deposit. |
+| amount | [string](#string) |  | The amount to be deposited |
 
 
 
@@ -2794,6 +2795,7 @@ A bus event is a container for event bus events emitted by Vega
 | riskFactor | [RiskFactor](#vega.RiskFactor) |  | Risk factor events |
 | networkParameter | [NetworkParameter](#vega.NetworkParameter) |  | Network parameter events |
 | liquidityProvision | [LiquidityProvision](#vega.LiquidityProvision) |  | LiquidityProvision events |
+| marketUpdated | [Market](#vega.Market) |  | Market created events |
 | market | [MarketEvent](#vega.MarketEvent) |  | Market tick events, see [MarketEvent](#vega.MarketEvent) |
 | txErrEvent | [TxErrorEvent](#vega.TxErrorEvent) |  | Transaction error events - separate category, not included in ALL events |
 
@@ -3013,6 +3015,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 | BUS_EVENT_TYPE_RISK_FACTOR | 23 | Event indicating a risk factor has been updated |
 | BUS_EVENT_TYPE_NETWORK_PARAMETER | 24 | Event indicating a network parameter has been added or updated |
 | BUS_EVENT_TYPE_LIQUIDITY_PROVISION | 25 | Event indicating a liquidity provision has been created or updated |
+| BUS_EVENT_TYPE_MARKET_UPDATED | 26 | Event indicating a new market was created |
 | BUS_EVENT_TYPE_MARKET | 101 | Event indicating a market related event, for example when a market opens |
 | BUS_EVENT_TYPE_TX_ERROR | 201 | Event used to report failed transactions back to a user - excluded from the ALL type |
 
@@ -4754,6 +4757,7 @@ Represents a list of valid (at the current time) price ranges per associated tri
 | minValidPrice | [uint64](#uint64) |  | Minimum price that isn&#39;t currently breaching the specified price monitoring trigger |
 | maxValidPrice | [uint64](#uint64) |  | Maximum price that isn&#39;t currently breaching the specified price monitoring trigger |
 | trigger | [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger) |  | Price monitoring trigger associated with the bounds |
+| referencePrice | [double](#double) |  | Reference price used to calculate the valid price range |
 
 
 
@@ -5137,6 +5141,7 @@ General accounts are where funds are initially deposited or withdrawn from. It i
 | ACCOUNT_TYPE_FEES_MAKER | 7 | This account is created to hold fees earned by placing orders that sit on the book and are then matched with an incoming order to create a trade. These fees reward traders who provide the best priced liquidity that actually allows trading to take place. |
 | ACCOUNT_TYPE_LOCK_WITHDRAW | 8 | This account is created to lock funds to be withdrawn by parties |
 | ACCOUNT_TYPE_BOND | 9 | This account is created to maintain liquidity providers funds commitments |
+| ACCOUNT_TYPE_EXTERNAL | 10 | External account represents an external source (deposit/withdrawal) |
 
 
 
@@ -5349,6 +5354,7 @@ If there is an issue with an order during it&#39;s life-cycle, it will be marked
 | ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE | 43 | The party have an insufficient balance, or don&#39;t have a general account to submit the order (no deposits made for the required asset). |
 | ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER | 44 | Cannot amend a non pegged orders details |
 | ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER | 45 | We are unable to reprice a pegged order because a market price is unavailable |
+| ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER | 46 | Users cannot amend the price of a pegged order |
 
 
 
@@ -5415,6 +5421,9 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 | TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
 | TRANSFER_TYPE_BOND_LOW | 13 | Bond too low. |
 | TRANSFER_TYPE_BOND_HIGH | 14 | Bond too high. |
+| TRANSFER_TYPE_WITHDRAW_LOCK | 15 | Lock amount for withdraw. |
+| TRANSFER_TYPE_WITHDRAW | 16 | Actual withdraw from system. |
+| TRANSFER_TYPE_DEPOSIT | 17 | Deposit funds. |
 
 
 

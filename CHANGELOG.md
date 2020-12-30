@@ -1,10 +1,43 @@
 # Changelog
 
+## 0.29.0
+
+*2020-12-07*
+
+Note that you'll see a lot of changes related to **Pegged Orders** and **Liquidity Commitments**. These are still in testing, so these two types cannot currently be used in _Testnet_.
+
+### New
+- [#2534](https://github.com/vegaprotocol/vega/pull/2534) Implements amends for pegged orders
+- [#2493](https://github.com/vegaprotocol/vega/pull/2493) Calculate market target stake
+- [#2649](https://github.com/vegaprotocol/vega/pull/2649) Add REST governance endpoints
+- [#2429](https://github.com/vegaprotocol/vega/pull/2429) Replace inappropriate wording in the codebase
+- [#2617](https://github.com/vegaprotocol/vega/pull/2617) Implements proposal to update network parameters
+- [#2622](https://github.com/vegaprotocol/vega/pull/2622) Integrate the liquidity engine into the market
+- [#2683](https://github.com/vegaprotocol/vega/pull/2683) Use the Ethereum block log index to de-duplicate Ethereum transactions
+- [#2674](https://github.com/vegaprotocol/vega/pull/2674) Update ERC20 token and bridges ABIs / codegen
+- [#2690](https://github.com/vegaprotocol/vega/pull/2690) Add instruction to debug integration tests with DLV
+- [#2680](https://github.com/vegaprotocol/vega/pull/2680) Add price monitoring bounds to the market data API
+
+### Improvements
+- [#2589](https://github.com/vegaprotocol/vega/pull/2589) Fix cancellation of pegged orders
+- [#2659](https://github.com/vegaprotocol/vega/pull/2659) Fix panic in execution engine when GFN order are submit at auction start
+- [#2661](https://github.com/vegaprotocol/vega/pull/2661) Handle missing error conversion in GraphQL API
+- [#2621](https://github.com/vegaprotocol/vega/pull/2621) Fix pegged order creating duplicated order events
+- [#2666](https://github.com/vegaprotocol/vega/pull/2666) Prevent the node to DDOS the Ethereum node when lots of deposits happen
+- [#2653](https://github.com/vegaprotocol/vega/pull/2653) Fix indicative price and volume calculation
+- [#2649](https://github.com/vegaprotocol/vega/pull/2649) Fix a typo in market price monitoring parameters API
+- [#2650](https://github.com/vegaprotocol/vega/pull/2650) Change governance minimum proposer balance to be a minimum amount of token instead of a factor of the total supply
+- [#2675](https://github.com/vegaprotocol/vega/pull/2675) Fix an GraphQL enum conversion
+- [#2691](https://github.com/vegaprotocol/vega/pull/2691) Fix spelling in a network parameter
+- [#2696](https://github.com/vegaprotocol/vega/pull/2696) Fix panic when uncrossing auction
+- [#2984](https://github.com/vegaprotocol/vega/pull/2698) Fix price monitoring by feeding it the uncrossing price at end of opening auction
+- [#2705](https://github.com/vegaprotocol/vega/pull/2705) Fix a bug related to order being sorted by creating time in the matching engine price levels
+
 ## 0.28.0
 
 *2020-11-25*
 
-Vega release logs contain a 🔥 emoji to denote breaking API changes. 🔥🔥 is a new combination denoting something that may significantly change your experience - from this release forward, transactions from keys that have no collateral on the network will *always* be rejected. As there are no transactions that don't either require collateral themselves, or an action to have been taken that already required collateral, we are now rejecting these as soon as possible. 
+Vega release logs contain a 🔥 emoji to denote breaking API changes. 🔥🔥 is a new combination denoting something that may significantly change your experience - from this release forward, transactions from keys that have no collateral on the network will *always* be rejected. As there are no transactions that don't either require collateral themselves, or an action to have been taken that already required collateral, we are now rejecting these as soon as possible.
 
 We've also added support for synchronously submitting transactions. This can make error states easier to catch. Along with this you can now subscribe to error events in the event bus.
 
@@ -31,7 +64,7 @@ Also: Note that you'll see a lot of changes related to **Pegged Orders** and **L
 - [#2626](https://github.com/vegaprotocol/vega/pull/2626) Add a transaction submit type to GraphQL
 - [#2624](https://github.com/vegaprotocol/vega/pull/2624) Add mutexes to assets maps
 - [#2623](https://github.com/vegaprotocol/vega/pull/2623) Fix concurrent map access in assets
-- [#2608](https://github.com/vegaprotocol/vega/pull/2608) Add sync/async equivalents for `submitTX` 
+- [#2608](https://github.com/vegaprotocol/vega/pull/2608) Add sync/async equivalents for `submitTX`
 - [#2618](https://github.com/vegaprotocol/vega/pull/2618) Disable storing API-related data on validator nodes
 - [#2615](https://github.com/vegaprotocol/vega/pull/2618) Expand static checks
 - [#2613](https://github.com/vegaprotocol/vega/pull/2613) Remove unused internal `cancelOrderById` function
@@ -40,8 +73,8 @@ Also: Note that you'll see a lot of changes related to **Pegged Orders** and **L
 - [#2554](https://github.com/vegaprotocol/vega/pull/2554) Fix mid-price to 0 when best bid and average are unavailable and pegged order price is 0
 - [#2565](https://github.com/vegaprotocol/vega/pull/2565) Cancelled pegged orders now have the correct status
 - [#2568](https://github.com/vegaprotocol/vega/pull/2568) Prevent pegged orders from being repriced
-- [#2570](https://github.com/vegaprotocol/vega/pull/2570) Expose probability of trading 
-- [#2576](https://github.com/vegaprotocol/vega/pull/2576) Use static best bid/ask price for pegged order repricing 
+- [#2570](https://github.com/vegaprotocol/vega/pull/2570) Expose probability of trading
+- [#2576](https://github.com/vegaprotocol/vega/pull/2576) Use static best bid/ask price for pegged order repricing
 - [#2581](https://github.com/vegaprotocol/vega/pull/2581) Fix order of messages when cancelling a pegged order
 - [#2586](https://github.com/vegaprotocol/vega/pull/2586) Fix blank `txHash` in deposit API types
 - [#2591](https://github.com/vegaprotocol/vega/pull/2591) Pegged orders are now cancelled when all orders are cancelled

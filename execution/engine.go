@@ -188,7 +188,10 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	e.markets[marketConfig.Id] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
-	e.broker.Send(events.NewMarketEvent(ctx, *mkt.mkt))
+	// we send a market data event for this market when it's created so graphql does not fail
+	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
+	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
 
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before
@@ -469,6 +472,13 @@ func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, 
 func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, v float64) error {
 	for _, mkt := range e.marketsCpy {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(v)
+	}
+	return nil
+}
+
+func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Duration) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketValueWindowLengthUpdate(d)
 	}
 	return nil
 }

@@ -1544,7 +1544,7 @@ func testPeggedOrderExpiring(t *testing.T) {
 	for _, test := range expirations {
 		addAccount(tm, test.party)
 
-		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, test.party, 10, 150)
+		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, 0, types.Side_SIDE_BUY, test.party, 10, 150)
 		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
 		order.ExpiresAt = test.expiration.UnixNano()
 		_, err := tm.market.SubmitOrder(context.Background(), &order)
@@ -1568,6 +1568,7 @@ func TestPeggedOrdersAmends(t *testing.T) {
 	t.Run("pegged orders amend multiple fields at once", testPeggedOrderAmendMultiple)
 	t.Run("pegged orders amend multiple fields at once in an auction", testPeggedOrderAmendMultipleInAuction)
 	t.Run("pegged orders delete an order that has lost time priority", testPeggedOrderCanDeleteAfterLostPriority)
+	t.Run("pegged orders validate mid price values", testPeggedOrderMidPriceCalc)
 }
 
 // We had a case where things crashed when the orders on the same price level were not sorted
@@ -1903,4 +1904,42 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
 	assert.Equal(t, types.Order_TIF_GTT, amended.Order.TimeInForce)
+}
+
+func testPeggedOrderMidPriceCalc(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+
+	addAccount(tm, "party1")
+
+	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
+	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
+	require.NotNil(t, buyOrder)
+	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	require.NotNil(t, sellOrder)
+
+	// Place the pegged orders
+	order1 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
+	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -20}
+	confirmation1, err := tm.market.SubmitOrder(context.Background(), &order1)
+	require.NotNil(t, confirmation1)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(80), confirmation1.Order.Price)
+
+	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 10)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: +20}
+	confirmation2, err := tm.market.SubmitOrder(context.Background(), &order2)
+	require.NotNil(t, confirmation2)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(120), confirmation2.Order.Price)
+
+	// Make the mid price wonky (needs rounding)
+	buyOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 91)
+	require.NotNil(t, buyOrder2)
+
+	// Check the pegged orders have reprices properly
+	assert.Equal(t, uint64(81), confirmation1.Order.Price)  // Buy price gets rounded up
+	assert.Equal(t, uint64(120), confirmation2.Order.Price) // Sell price gets rounded down
 }

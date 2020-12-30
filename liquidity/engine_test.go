@@ -34,6 +34,7 @@ func eq(t *testing.T, x interface{}) eqMatcher { return eqMatcher{t, x} }
 
 type testEngine struct {
 	ctrl         *gomock.Controller
+	marketID     string
 	broker       *mocks.MockBroker
 	idGen        *mocks.MockIDGen
 	riskModel    *mocks.MockRiskModel
@@ -49,16 +50,23 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	idGen := mocks.NewMockIDGen(ctrl)
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
+	market := "market-id"
 
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewEngine(
-		log, broker, idGen, risk, monitor,
+		log, broker, idGen, risk, monitor, market,
 	)
 	engine.OnChainTimeUpdate(context.Background(), now)
 
 	return &testEngine{
-		ctrl, broker, idGen, risk, monitor, engine,
+		ctrl:         ctrl,
+		marketID:     market,
+		broker:       broker,
+		idGen:        idGen,
+		riskModel:    risk,
+		priceMonitor: monitor,
+		engine:       engine,
 	}
 }
 
@@ -95,23 +103,23 @@ func testSubmissionCRUD(t *testing.T) {
 	}
 
 	lps1 := &types.LiquidityProvisionSubmission{
-		MarketID: "test", CommitmentAmount: 100, Fee: "0.5",
+		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
 	lps2 := &types.LiquidityProvisionSubmission{
-		MarketID: "test", CommitmentAmount: 200, Fee: "0.5",
+		MarketID: tng.marketID, CommitmentAmount: 200, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
 	lps3 := &types.LiquidityProvisionSubmission{
-		MarketID: "test", CommitmentAmount: 000, Fee: "0.5",
+		MarketID: tng.marketID, CommitmentAmount: 000, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
 	expected := &types.LiquidityProvision{
 		Id:               "some-id-1",
-		MarketID:         "test",
+		MarketID:         tng.marketID,
 		PartyID:          party,
 		CommitmentAmount: lps1.CommitmentAmount,
 		CreatedAt:        now.UnixNano(),
@@ -179,6 +187,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	defer tng.ctrl.Finish()
 
 	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         tng.marketID,
 		CommitmentAmount: 0,
 		Buys: []*types.LiquidityOrder{
 			{
@@ -190,6 +199,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	}
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:        "some-id",
+		MarketID:  tng.marketID,
 		PartyID:   party,
 		CreatedAt: now.UnixNano(),
 		Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
@@ -234,7 +244,7 @@ func TestUpdate(t *testing.T) {
 
 	// Send a submission to create the shape
 	lps := &types.LiquidityProvisionSubmission{
-		MarketID: "test", CommitmentAmount: 100, Fee: "0.5",
+		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -2},

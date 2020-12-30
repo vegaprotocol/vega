@@ -607,7 +607,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	// If we have changed the ExpiresAt or TIF then update Expiry table
-	if expiryChanged {
+	if expiryChanged && amendedOrder.PeggedOrder == nil {
 		b.removePendingGttOrder(ordcpy)
 		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
 			b.insertExpiringOrder(*amendedOrder)
@@ -738,7 +738,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
-	// if we did hit a wash trade, set the status to rejected
+	// if we did hit a wash trade, set the status to STOPPED
 	if err == ErrWashTrade {
 		if order.Size > order.Remaining {
 			order.Status = types.Order_STATUS_PARTIALLY_FILLED
@@ -885,12 +885,14 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 
 func (b *OrderBook) insertExpiringOrder(ord types.Order) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
-	b.expiringOrders.Insert(ord)
+	if ord.PeggedOrder == nil {
+		b.expiringOrders.Insert(ord)
+	}
 	timer.EngineTimeCounterAdd()
 }
 
 func (b OrderBook) removePendingGttOrder(order types.Order) bool {
-	return b.expiringOrders.RemoveOrder(order)
+	return b.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {

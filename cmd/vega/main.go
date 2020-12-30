@@ -50,6 +50,7 @@ func Main(ctx context.Context) error {
 		Init,
 		Node,
 		NodeWallet,
+		Verify,
 		Version,
 		Wallet,
 		Watch,

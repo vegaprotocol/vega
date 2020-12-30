@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/config"
@@ -13,7 +11,6 @@ import (
 
 type NodeCmd struct {
 	config.Passphrase `long:"nodewallet-passphrase"`
-	OldPath           string `short:"C" description:"[deprecated (use -r)] Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
 	config.RootPathFlag
 
 	config.Config
@@ -39,14 +36,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 		return err
 	}
 
-	var rootPath = cmd.RootPath
-	if cmd.OldPath != "" {
-		rootPath = cmd.OldPath
-		fmt.Fprintf(os.Stderr, `
-WARNING: Using -C is deprecated, please use -r
-`)
-	}
-	cfgwatchr, err := config.NewFromFile(context.Background(), log, rootPath, rootPath, config.Use(parseFlagOpt))
+	cfgwatchr, err := config.NewFromFile(context.Background(), log, cmd.RootPath, cmd.RootPath, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}

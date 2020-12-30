@@ -6882,6 +6882,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td><p>The Vega party identifier (pub-key) which is the target of the deposit. </p></td>
                 </tr>
 
+                <tr>
+                  <td>amount</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The amount to be deposited </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -7373,6 +7380,13 @@ these data are being used to bundle the call to the smart contract on the ethere
                   <td><a href="#vega.LiquidityProvision">LiquidityProvision</a></td>
                   <td></td>
                   <td><p>LiquidityProvision  events </p></td>
+                </tr>
+
+                <tr>
+                  <td>marketUpdated</td>
+                  <td><a href="#vega.Market">Market</a></td>
+                  <td></td>
+                  <td><p>Market created events </p></td>
                 </tr>
 
                 <tr>
@@ -7945,6 +7959,12 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                 <td>BUS_EVENT_TYPE_LIQUIDITY_PROVISION</td>
                 <td>25</td>
                 <td><p>Event indicating a liquidity provision has been created or updated</p></td>
+              </tr>
+
+              <tr>
+                <td>BUS_EVENT_TYPE_MARKET_UPDATED</td>
+                <td>26</td>
+                <td><p>Event indicating a new market was created</p></td>
               </tr>
 
               <tr>
@@ -13052,6 +13072,13 @@ formatted price of <tt>1.23456</tt> assuming market configured to 5 decimal plac
                   <td><p>Price monitoring trigger associated with the bounds </p></td>
                 </tr>
 
+                <tr>
+                  <td>referencePrice</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Reference price used to calculate the valid price range </p></td>
+                </tr>
+
             </tbody>
           </table>
 
@@ -14152,6 +14179,12 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td><p>This account is created to maintain liquidity providers funds commitments</p></td>
               </tr>
 
+              <tr>
+                <td>ACCOUNT_TYPE_EXTERNAL</td>
+                <td>10</td>
+                <td><p>External account represents an external source (deposit/withdrawal)</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -14870,6 +14903,12 @@ for the required asset).</p></td>
                 <td><p>We are unable to reprice a pegged order because a market price is unavailable</p></td>
               </tr>
 
+              <tr>
+                <td>ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER</td>
+                <td>46</td>
+                <td><p>Users cannot amend the price of a pegged order</p></td>
+              </tr>
+
           </tbody>
         </table>
 
@@ -15070,6 +15109,24 @@ with a distressed party in order to zero-out the position of the party.</p></td>
                 <td>TRANSFER_TYPE_BOND_HIGH</td>
                 <td>14</td>
                 <td><p>Bond too high.</p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_WITHDRAW_LOCK</td>
+                <td>15</td>
+                <td><p>Lock amount for withdraw.</p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_WITHDRAW</td>
+                <td>16</td>
+                <td><p>Actual withdraw from system.</p></td>
+              </tr>
+
+              <tr>
+                <td>TRANSFER_TYPE_DEPOSIT</td>
+                <td>17</td>
+                <td><p>Deposit funds.</p></td>
               </tr>
 
           </tbody>
