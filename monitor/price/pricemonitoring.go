@@ -365,7 +365,7 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 				continue
 			}
 			ref := e.getRefPrice(b.Trigger.Horizon)
-			e.priceRangesCache[b] = priceRange{MinPrice: ref * b.DownFactor, MaxPrice: ref * b.UpFactor}
+			e.priceRangesCache[b] = priceRange{MinPrice: ref * b.DownFactor, MaxPrice: ref * b.UpFactor, ReferencePrice: ref}
 		}
 		e.priceRangeCacheTime = e.now
 	}
