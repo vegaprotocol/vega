@@ -2179,3 +2179,31 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 	assert.Nil(t, amendConf)
 	assert.EqualError(t, err, "OrderError: Cannot amend TIF from GFA or GFN")
 }
+
+func TestOrderBook_CancelAll2771(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.Equal(t, o1conf.Order.Status, types.Order_STATUS_PARKED)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.Equal(t, o2conf.Order.Status, types.Order_STATUS_PARKED)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	confs, err := tm.market.CancelAllOrders(ctx, "trader-A")
+	assert.NoError(t, err)
+	assert.Len(t, confs, 2)
+}
