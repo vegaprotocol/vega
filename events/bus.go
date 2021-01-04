@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/pkg/errors"
 )

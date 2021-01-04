@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 var (

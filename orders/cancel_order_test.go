@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/stretchr/testify/assert"
 )

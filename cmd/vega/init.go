@@ -16,7 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/storage"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jessevdk/go-flags"

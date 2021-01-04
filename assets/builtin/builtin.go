@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/assets/common"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 type Builtin struct {

@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/stretchr/testify/assert"

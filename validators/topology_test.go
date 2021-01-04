@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
 

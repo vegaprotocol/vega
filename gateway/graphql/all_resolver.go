@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
+	protoapi "code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 

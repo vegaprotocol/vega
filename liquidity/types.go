@@ -3,7 +3,7 @@ package liquidity
 import (
 	"sort"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // LiquidityProvisions provides convenience functions to a slice of *veaga/proto.LiquidityProvision.

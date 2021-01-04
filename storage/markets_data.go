@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 	"github.com/pkg/errors"
 )
 

@@ -1,7 +1,7 @@
 package matching
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/google/btree"
 )

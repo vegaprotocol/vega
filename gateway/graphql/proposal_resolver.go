@@ -3,7 +3,7 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 type proposalResolver VegaResolverRoot

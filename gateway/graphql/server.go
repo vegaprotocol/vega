@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	protoapi "code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"

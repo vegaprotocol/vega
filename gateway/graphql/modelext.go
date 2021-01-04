@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
+	protoapi "code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/pkg/errors"
 )

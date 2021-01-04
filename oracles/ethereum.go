@@ -1,7 +1,7 @@
 package oracles
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // EthereumEvent represent an ethereum event from the network

@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/subscribers Broker

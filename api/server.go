@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	protoapi "code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"

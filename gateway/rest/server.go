@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	protoapi "code.vegaprotocol.io/vega/proto/gen/golang/api"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"

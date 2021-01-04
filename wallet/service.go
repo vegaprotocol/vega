@@ -11,8 +11,8 @@ import (
 
 	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
+	"code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"google.golang.org/grpc/status"
 
 	"github.com/golang/protobuf/proto"

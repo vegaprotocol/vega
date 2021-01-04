@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // Time event indicating a change in block time (ie time update)

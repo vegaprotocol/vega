@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // Simple represents a dummy risk model with fixed risk params.

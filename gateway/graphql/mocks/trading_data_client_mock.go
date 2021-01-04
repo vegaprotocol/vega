@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
-	api "code.vegaprotocol.io/vega/proto/api"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
+	api "code.vegaprotocol.io/vega/proto/gen/golang/api"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"

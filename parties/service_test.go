@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/parties/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

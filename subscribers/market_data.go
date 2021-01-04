@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 type Storage interface {

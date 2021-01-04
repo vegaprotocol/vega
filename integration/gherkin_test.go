@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/cucumber/godog/gherkin"
 )

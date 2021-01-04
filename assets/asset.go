@@ -4,7 +4,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 type isAsset interface {

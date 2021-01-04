@@ -3,7 +3,7 @@ package execution
 import (
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // IDgenerator no mutex required, markets work deterministically, and sequentially

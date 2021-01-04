@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	api "code.vegaprotocol.io/vega/proto/api"
+	api "code.vegaprotocol.io/vega/proto/gen/golang/api"
 	wallet "code.vegaprotocol.io/vega/wallet"
 	context "context"
 	gomock "github.com/golang/mock/gomock"

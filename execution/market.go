@@ -23,7 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 

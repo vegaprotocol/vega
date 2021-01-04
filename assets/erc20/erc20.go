@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/nodewallet"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

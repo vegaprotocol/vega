@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/storage"
 )
 

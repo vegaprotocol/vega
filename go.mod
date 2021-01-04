@@ -26,7 +26,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.9.1
-	github.com/protocolbuffers/protobuf v3.14.0+incompatible // indirect
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/afero v1.1.2

@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/monitor/price/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"

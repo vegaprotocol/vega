@@ -2,7 +2,7 @@ package governance
 
 import (
 	"code.vegaprotocol.io/vega/netparams"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/pkg/errors"
 )

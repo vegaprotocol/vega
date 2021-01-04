@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 type MarketUpdated struct {

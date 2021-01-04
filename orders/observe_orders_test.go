@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/gen/golang"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

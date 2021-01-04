@@ -7,7 +7,7 @@
 package api
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	golang "code.vegaprotocol.io/vega/proto/gen/golang"
 	context "context"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	_ "github.com/mwitkow/go-proto-validators"
@@ -91,7 +91,7 @@ type PropagateChainEventRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Chain event.
-	Evt *proto.ChainEvent `protobuf:"bytes,1,opt,name=evt,proto3" json:"evt,omitempty"`
+	Evt *golang.ChainEvent `protobuf:"bytes,1,opt,name=evt,proto3" json:"evt,omitempty"`
 	// Public key.
 	PubKey string `protobuf:"bytes,2,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
 	// Signature.
@@ -130,7 +130,7 @@ func (*PropagateChainEventRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PropagateChainEventRequest) GetEvt() *proto.ChainEvent {
+func (x *PropagateChainEventRequest) GetEvt() *golang.ChainEvent {
 	if x != nil {
 		return x.Evt
 	}
@@ -208,7 +208,7 @@ type SubmitTransactionRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain.
-	Tx   *proto.SignedBundle           `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
+	Tx   *golang.SignedBundle          `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
 	Type SubmitTransactionRequest_Type `protobuf:"varint,2,opt,name=type,proto3,enum=api.SubmitTransactionRequest_Type" json:"type,omitempty"`
 }
 
@@ -244,7 +244,7 @@ func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SubmitTransactionRequest) GetTx() *proto.SignedBundle {
+func (x *SubmitTransactionRequest) GetTx() *golang.SignedBundle {
 	if x != nil {
 		return x.Tx
 	}
@@ -315,7 +315,7 @@ type PrepareWithdrawRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// An asset withdrawal.
-	Withdraw *proto.WithdrawSubmission `protobuf:"bytes,1,opt,name=withdraw,proto3" json:"withdraw,omitempty"`
+	Withdraw *golang.WithdrawSubmission `protobuf:"bytes,1,opt,name=withdraw,proto3" json:"withdraw,omitempty"`
 }
 
 func (x *PrepareWithdrawRequest) Reset() {
@@ -350,7 +350,7 @@ func (*PrepareWithdrawRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *PrepareWithdrawRequest) GetWithdraw() *proto.WithdrawSubmission {
+func (x *PrepareWithdrawRequest) GetWithdraw() *golang.WithdrawSubmission {
 	if x != nil {
 		return x.Withdraw
 	}
@@ -569,7 +569,7 @@ type SubmitOrderRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// An order submission.
-	Submission *proto.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
+	Submission *golang.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
 }
 
 func (x *SubmitOrderRequest) Reset() {
@@ -604,7 +604,7 @@ func (*SubmitOrderRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *SubmitOrderRequest) GetSubmission() *proto.OrderSubmission {
+func (x *SubmitOrderRequest) GetSubmission() *golang.OrderSubmission {
 	if x != nil {
 		return x.Submission
 	}
@@ -618,7 +618,7 @@ type CancelOrderRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// An order cancellation.
-	Cancellation *proto.OrderCancellation `protobuf:"bytes,1,opt,name=cancellation,proto3" json:"cancellation,omitempty"`
+	Cancellation *golang.OrderCancellation `protobuf:"bytes,1,opt,name=cancellation,proto3" json:"cancellation,omitempty"`
 }
 
 func (x *CancelOrderRequest) Reset() {
@@ -653,7 +653,7 @@ func (*CancelOrderRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *CancelOrderRequest) GetCancellation() *proto.OrderCancellation {
+func (x *CancelOrderRequest) GetCancellation() *golang.OrderCancellation {
 	if x != nil {
 		return x.Cancellation
 	}
@@ -667,7 +667,7 @@ type AmendOrderRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// An order amendment.
-	Amendment *proto.OrderAmendment `protobuf:"bytes,1,opt,name=amendment,proto3" json:"amendment,omitempty"`
+	Amendment *golang.OrderAmendment `protobuf:"bytes,1,opt,name=amendment,proto3" json:"amendment,omitempty"`
 }
 
 func (x *AmendOrderRequest) Reset() {
@@ -702,7 +702,7 @@ func (*AmendOrderRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *AmendOrderRequest) GetAmendment() *proto.OrderAmendment {
+func (x *AmendOrderRequest) GetAmendment() *golang.OrderAmendment {
 	if x != nil {
 		return x.Amendment
 	}
@@ -755,7 +755,7 @@ type AssetsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more assets.
-	Assets []*proto.Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
+	Assets []*golang.Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
 }
 
 func (x *AssetsResponse) Reset() {
@@ -790,7 +790,7 @@ func (*AssetsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *AssetsResponse) GetAssets() []*proto.Asset {
+func (x *AssetsResponse) GetAssets() []*golang.Asset {
 	if x != nil {
 		return x.Assets
 	}
@@ -853,7 +853,7 @@ type AssetByIDResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// An asset record, if found.
-	Asset *proto.Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
+	Asset *golang.Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 }
 
 func (x *AssetByIDResponse) Reset() {
@@ -888,7 +888,7 @@ func (*AssetByIDResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *AssetByIDResponse) GetAsset() *proto.Asset {
+func (x *AssetByIDResponse) GetAsset() *golang.Asset {
 	if x != nil {
 		return x.Asset
 	}
@@ -951,7 +951,7 @@ type GetNodeSignaturesAggregateResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more signatures.
-	Signatures []*proto.NodeSignature `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
+	Signatures []*golang.NodeSignature `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
 }
 
 func (x *GetNodeSignaturesAggregateResponse) Reset() {
@@ -986,7 +986,7 @@ func (*GetNodeSignaturesAggregateResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *GetNodeSignaturesAggregateResponse) GetSignatures() []*proto.NodeSignature {
+func (x *GetNodeSignaturesAggregateResponse) GetSignatures() []*golang.NodeSignature {
 	if x != nil {
 		return x.Signatures
 	}
@@ -1000,7 +1000,7 @@ type OptionalProposalState struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Proposal state value.
-	Value proto.Proposal_State `protobuf:"varint,1,opt,name=value,proto3,enum=vega.Proposal_State" json:"value,omitempty"`
+	Value golang.Proposal_State `protobuf:"varint,1,opt,name=value,proto3,enum=vega.Proposal_State" json:"value,omitempty"`
 }
 
 func (x *OptionalProposalState) Reset() {
@@ -1035,11 +1035,11 @@ func (*OptionalProposalState) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *OptionalProposalState) GetValue() proto.Proposal_State {
+func (x *OptionalProposalState) GetValue() golang.Proposal_State {
 	if x != nil {
 		return x.Value
 	}
-	return proto.Proposal_STATE_UNSPECIFIED
+	return golang.Proposal_STATE_UNSPECIFIED
 }
 
 // Request for a list of proposals.
@@ -1098,7 +1098,7 @@ type GetProposalsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more governance data.
-	Data []*proto.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*golang.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetProposalsResponse) Reset() {
@@ -1133,7 +1133,7 @@ func (*GetProposalsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *GetProposalsResponse) GetData() []*proto.GovernanceData {
+func (x *GetProposalsResponse) GetData() []*golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -1205,7 +1205,7 @@ type GetProposalsByPartyResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more governance data.
-	Data []*proto.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*golang.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetProposalsByPartyResponse) Reset() {
@@ -1240,7 +1240,7 @@ func (*GetProposalsByPartyResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *GetProposalsByPartyResponse) GetData() []*proto.GovernanceData {
+func (x *GetProposalsByPartyResponse) GetData() []*golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -1303,7 +1303,7 @@ type GetVotesByPartyResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more votes.
-	Votes []*proto.Vote `protobuf:"bytes,1,rep,name=votes,proto3" json:"votes,omitempty"`
+	Votes []*golang.Vote `protobuf:"bytes,1,rep,name=votes,proto3" json:"votes,omitempty"`
 }
 
 func (x *GetVotesByPartyResponse) Reset() {
@@ -1338,7 +1338,7 @@ func (*GetVotesByPartyResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *GetVotesByPartyResponse) GetVotes() []*proto.Vote {
+func (x *GetVotesByPartyResponse) GetVotes() []*golang.Vote {
 	if x != nil {
 		return x.Votes
 	}
@@ -1401,7 +1401,7 @@ type GetNewMarketProposalsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more governance data.
-	Data []*proto.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*golang.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetNewMarketProposalsResponse) Reset() {
@@ -1436,7 +1436,7 @@ func (*GetNewMarketProposalsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *GetNewMarketProposalsResponse) GetData() []*proto.GovernanceData {
+func (x *GetNewMarketProposalsResponse) GetData() []*golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -1508,7 +1508,7 @@ type GetUpdateMarketProposalsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more governance data.
-	Data []*proto.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*golang.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetUpdateMarketProposalsResponse) Reset() {
@@ -1543,7 +1543,7 @@ func (*GetUpdateMarketProposalsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *GetUpdateMarketProposalsResponse) GetData() []*proto.GovernanceData {
+func (x *GetUpdateMarketProposalsResponse) GetData() []*golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -1606,7 +1606,7 @@ type GetNetworkParametersProposalsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more governance data.
-	Data []*proto.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*golang.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetNetworkParametersProposalsResponse) Reset() {
@@ -1641,7 +1641,7 @@ func (*GetNetworkParametersProposalsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *GetNetworkParametersProposalsResponse) GetData() []*proto.GovernanceData {
+func (x *GetNetworkParametersProposalsResponse) GetData() []*golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -1704,7 +1704,7 @@ type GetNewAssetProposalsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more governance data.
-	Data []*proto.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	Data []*golang.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetNewAssetProposalsResponse) Reset() {
@@ -1739,7 +1739,7 @@ func (*GetNewAssetProposalsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *GetNewAssetProposalsResponse) GetData() []*proto.GovernanceData {
+func (x *GetNewAssetProposalsResponse) GetData() []*golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -1802,7 +1802,7 @@ type GetProposalByIDResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Governance data, if found.
-	Data *proto.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Data *golang.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetProposalByIDResponse) Reset() {
@@ -1837,7 +1837,7 @@ func (*GetProposalByIDResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{34}
 }
 
-func (x *GetProposalByIDResponse) GetData() *proto.GovernanceData {
+func (x *GetProposalByIDResponse) GetData() *golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -1900,7 +1900,7 @@ type GetProposalByReferenceResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Governance data, if found.
-	Data *proto.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Data *golang.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetProposalByReferenceResponse) Reset() {
@@ -1935,7 +1935,7 @@ func (*GetProposalByReferenceResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{36}
 }
 
-func (x *GetProposalByReferenceResponse) GetData() *proto.GovernanceData {
+func (x *GetProposalByReferenceResponse) GetData() *golang.GovernanceData {
 	if x != nil {
 		return x.Data
 	}
@@ -2213,7 +2213,7 @@ type MarginLevelsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more margin levels.
-	MarginLevels []*proto.MarginLevels `protobuf:"bytes,1,rep,name=marginLevels,proto3" json:"marginLevels,omitempty"`
+	MarginLevels []*golang.MarginLevels `protobuf:"bytes,1,rep,name=marginLevels,proto3" json:"marginLevels,omitempty"`
 }
 
 func (x *MarginLevelsResponse) Reset() {
@@ -2248,7 +2248,7 @@ func (*MarginLevelsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{42}
 }
 
-func (x *MarginLevelsResponse) GetMarginLevels() []*proto.MarginLevels {
+func (x *MarginLevelsResponse) GetMarginLevels() []*golang.MarginLevels {
 	if x != nil {
 		return x.MarginLevels
 	}
@@ -2361,7 +2361,7 @@ type MarketDataByIDResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Market data, if found.
-	MarketData *proto.MarketData `protobuf:"bytes,1,opt,name=marketData,proto3" json:"marketData,omitempty"`
+	MarketData *golang.MarketData `protobuf:"bytes,1,opt,name=marketData,proto3" json:"marketData,omitempty"`
 }
 
 func (x *MarketDataByIDResponse) Reset() {
@@ -2396,7 +2396,7 @@ func (*MarketDataByIDResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{45}
 }
 
-func (x *MarketDataByIDResponse) GetMarketData() *proto.MarketData {
+func (x *MarketDataByIDResponse) GetMarketData() *golang.MarketData {
 	if x != nil {
 		return x.MarketData
 	}
@@ -2410,7 +2410,7 @@ type MarketsDataResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more market data.
-	MarketsData []*proto.MarketData `protobuf:"bytes,1,rep,name=marketsData,proto3" json:"marketsData,omitempty"`
+	MarketsData []*golang.MarketData `protobuf:"bytes,1,rep,name=marketsData,proto3" json:"marketsData,omitempty"`
 }
 
 func (x *MarketsDataResponse) Reset() {
@@ -2445,7 +2445,7 @@ func (*MarketsDataResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{46}
 }
 
-func (x *MarketsDataResponse) GetMarketsData() []*proto.MarketData {
+func (x *MarketsDataResponse) GetMarketsData() []*golang.MarketData {
 	if x != nil {
 		return x.MarketsData
 	}
@@ -2508,7 +2508,7 @@ type LastTradeResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A trade, if found.
-	Trade *proto.Trade `protobuf:"bytes,1,opt,name=trade,proto3" json:"trade,omitempty"`
+	Trade *golang.Trade `protobuf:"bytes,1,opt,name=trade,proto3" json:"trade,omitempty"`
 }
 
 func (x *LastTradeResponse) Reset() {
@@ -2543,7 +2543,7 @@ func (*LastTradeResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{48}
 }
 
-func (x *LastTradeResponse) GetTrade() *proto.Trade {
+func (x *LastTradeResponse) GetTrade() *golang.Trade {
 	if x != nil {
 		return x.Trade
 	}
@@ -2606,7 +2606,7 @@ type MarketByIDResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A market, if found.
-	Market *proto.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
+	Market *golang.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 }
 
 func (x *MarketByIDResponse) Reset() {
@@ -2641,7 +2641,7 @@ func (*MarketByIDResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{50}
 }
 
-func (x *MarketByIDResponse) GetMarket() *proto.Market {
+func (x *MarketByIDResponse) GetMarket() *golang.Market {
 	if x != nil {
 		return x.Market
 	}
@@ -2704,7 +2704,7 @@ type PartyByIDResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A party, if found.
-	Party *proto.Party `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
+	Party *golang.Party `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
 }
 
 func (x *PartyByIDResponse) Reset() {
@@ -2739,7 +2739,7 @@ func (*PartyByIDResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{52}
 }
 
-func (x *PartyByIDResponse) GetParty() *proto.Party {
+func (x *PartyByIDResponse) GetParty() *golang.Party {
 	if x != nil {
 		return x.Party
 	}
@@ -2753,7 +2753,7 @@ type PartiesResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more parties.
-	Parties []*proto.Party `protobuf:"bytes,1,rep,name=parties,proto3" json:"parties,omitempty"`
+	Parties []*golang.Party `protobuf:"bytes,1,rep,name=parties,proto3" json:"parties,omitempty"`
 }
 
 func (x *PartiesResponse) Reset() {
@@ -2788,7 +2788,7 @@ func (*PartiesResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{53}
 }
 
-func (x *PartiesResponse) GetParties() []*proto.Party {
+func (x *PartiesResponse) GetParties() []*golang.Party {
 	if x != nil {
 		return x.Parties
 	}
@@ -2870,7 +2870,7 @@ type TradesByPartyResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more trades.
-	Trades []*proto.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
+	Trades []*golang.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 }
 
 func (x *TradesByPartyResponse) Reset() {
@@ -2905,7 +2905,7 @@ func (*TradesByPartyResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{55}
 }
 
-func (x *TradesByPartyResponse) GetTrades() []*proto.Trade {
+func (x *TradesByPartyResponse) GetTrades() []*golang.Trade {
 	if x != nil {
 		return x.Trades
 	}
@@ -2968,7 +2968,7 @@ type TradesByOrderResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more trades.
-	Trades []*proto.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
+	Trades []*golang.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 }
 
 func (x *TradesByOrderResponse) Reset() {
@@ -3003,7 +3003,7 @@ func (*TradesByOrderResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{57}
 }
 
-func (x *TradesByOrderResponse) GetTrades() []*proto.Trade {
+func (x *TradesByOrderResponse) GetTrades() []*golang.Trade {
 	if x != nil {
 		return x.Trades
 	}
@@ -3023,7 +3023,7 @@ type AccountsSubscribeRequest struct {
 	// Asset identifier.
 	Asset string `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Account type to subscribe to. Required field.
-	Type proto.AccountType `protobuf:"varint,4,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
+	Type golang.AccountType `protobuf:"varint,4,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 }
 
 func (x *AccountsSubscribeRequest) Reset() {
@@ -3079,11 +3079,11 @@ func (x *AccountsSubscribeRequest) GetAsset() string {
 	return ""
 }
 
-func (x *AccountsSubscribeRequest) GetType() proto.AccountType {
+func (x *AccountsSubscribeRequest) GetType() golang.AccountType {
 	if x != nil {
 		return x.Type
 	}
-	return proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
+	return golang.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
 // Request to subscribe to a stream of (Orders)[#vega.Order].
@@ -3211,7 +3211,7 @@ type CandlesSubscribeRequest struct {
 	// Market identifier. Required field.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	// Time interval for the candles. Required field.
-	Interval proto.Interval `protobuf:"varint,2,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
+	Interval golang.Interval `protobuf:"varint,2,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 }
 
 func (x *CandlesSubscribeRequest) Reset() {
@@ -3253,11 +3253,11 @@ func (x *CandlesSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
-func (x *CandlesSubscribeRequest) GetInterval() proto.Interval {
+func (x *CandlesSubscribeRequest) GetInterval() golang.Interval {
 	if x != nil {
 		return x.Interval
 	}
-	return proto.Interval_INTERVAL_UNSPECIFIED
+	return golang.Interval_INTERVAL_UNSPECIFIED
 }
 
 // Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
@@ -3481,7 +3481,7 @@ type OrdersByMarketResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more orders.
-	Orders []*proto.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Orders []*golang.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 }
 
 func (x *OrdersByMarketResponse) Reset() {
@@ -3516,7 +3516,7 @@ func (*OrdersByMarketResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{66}
 }
 
-func (x *OrdersByMarketResponse) GetOrders() []*proto.Order {
+func (x *OrdersByMarketResponse) GetOrders() []*golang.Order {
 	if x != nil {
 		return x.Orders
 	}
@@ -3588,7 +3588,7 @@ type OrdersByPartyResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more orders.
-	Orders []*proto.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Orders []*golang.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 }
 
 func (x *OrdersByPartyResponse) Reset() {
@@ -3623,7 +3623,7 @@ func (*OrdersByPartyResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{68}
 }
 
-func (x *OrdersByPartyResponse) GetOrders() []*proto.Order {
+func (x *OrdersByPartyResponse) GetOrders() []*golang.Order {
 	if x != nil {
 		return x.Orders
 	}
@@ -3695,7 +3695,7 @@ type OrderByMarketAndIdResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// An order, if found.
-	Order *proto.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	Order *golang.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 }
 
 func (x *OrderByMarketAndIdResponse) Reset() {
@@ -3730,7 +3730,7 @@ func (*OrderByMarketAndIdResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{70}
 }
 
-func (x *OrderByMarketAndIdResponse) GetOrder() *proto.Order {
+func (x *OrderByMarketAndIdResponse) GetOrder() *golang.Order {
 	if x != nil {
 		return x.Order
 	}
@@ -3793,7 +3793,7 @@ type OrderByReferenceResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// An order, if found.
-	Order *proto.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	Order *golang.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 }
 
 func (x *OrderByReferenceResponse) Reset() {
@@ -3828,7 +3828,7 @@ func (*OrderByReferenceResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{72}
 }
 
-func (x *OrderByReferenceResponse) GetOrder() *proto.Order {
+func (x *OrderByReferenceResponse) GetOrder() *golang.Order {
 	if x != nil {
 		return x.Order
 	}
@@ -3842,7 +3842,7 @@ type MarketsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more markets.
-	Markets []*proto.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
+	Markets []*golang.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
 }
 
 func (x *MarketsResponse) Reset() {
@@ -3877,7 +3877,7 @@ func (*MarketsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{73}
 }
 
-func (x *MarketsResponse) GetMarkets() []*proto.Market {
+func (x *MarketsResponse) GetMarkets() []*golang.Market {
 	if x != nil {
 		return x.Markets
 	}
@@ -3896,7 +3896,7 @@ type CandlesRequest struct {
 	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field.
 	SinceTimestamp int64 `protobuf:"varint,2,opt,name=sinceTimestamp,proto3" json:"sinceTimestamp,omitempty"`
 	// Time interval for the candles. Required field.
-	Interval proto.Interval `protobuf:"varint,3,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
+	Interval golang.Interval `protobuf:"varint,3,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 }
 
 func (x *CandlesRequest) Reset() {
@@ -3945,11 +3945,11 @@ func (x *CandlesRequest) GetSinceTimestamp() int64 {
 	return 0
 }
 
-func (x *CandlesRequest) GetInterval() proto.Interval {
+func (x *CandlesRequest) GetInterval() golang.Interval {
 	if x != nil {
 		return x.Interval
 	}
-	return proto.Interval_INTERVAL_UNSPECIFIED
+	return golang.Interval_INTERVAL_UNSPECIFIED
 }
 
 // Response for a list of candles for a market at an interval.
@@ -3959,7 +3959,7 @@ type CandlesResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more candles.
-	Candles []*proto.Candle `protobuf:"bytes,1,rep,name=candles,proto3" json:"candles,omitempty"`
+	Candles []*golang.Candle `protobuf:"bytes,1,rep,name=candles,proto3" json:"candles,omitempty"`
 }
 
 func (x *CandlesResponse) Reset() {
@@ -3994,7 +3994,7 @@ func (*CandlesResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{75}
 }
 
-func (x *CandlesResponse) GetCandles() []*proto.Candle {
+func (x *CandlesResponse) GetCandles() []*golang.Candle {
 	if x != nil {
 		return x.Candles
 	}
@@ -4069,11 +4069,11 @@ type MarketDepthResponse struct {
 	// Market identifier.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	// Zero or more price levels for the buy side of the market depth data.
-	Buy []*proto.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
+	Buy []*golang.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
 	// Zero or more price levels for the sell side of the market depth data.
-	Sell []*proto.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
+	Sell []*golang.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
 	// Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
-	LastTrade *proto.Trade `protobuf:"bytes,4,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
+	LastTrade *golang.Trade `protobuf:"bytes,4,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
 	// Sequence number incremented after each update
 	SequenceNumber uint64 `protobuf:"varint,5,opt,name=sequenceNumber,proto3" json:"sequenceNumber,omitempty"`
 }
@@ -4117,21 +4117,21 @@ func (x *MarketDepthResponse) GetMarketID() string {
 	return ""
 }
 
-func (x *MarketDepthResponse) GetBuy() []*proto.PriceLevel {
+func (x *MarketDepthResponse) GetBuy() []*golang.PriceLevel {
 	if x != nil {
 		return x.Buy
 	}
 	return nil
 }
 
-func (x *MarketDepthResponse) GetSell() []*proto.PriceLevel {
+func (x *MarketDepthResponse) GetSell() []*golang.PriceLevel {
 	if x != nil {
 		return x.Sell
 	}
 	return nil
 }
 
-func (x *MarketDepthResponse) GetLastTrade() *proto.Trade {
+func (x *MarketDepthResponse) GetLastTrade() *golang.Trade {
 	if x != nil {
 		return x.LastTrade
 	}
@@ -4210,7 +4210,7 @@ type TradesByMarketResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more trades.
-	Trades []*proto.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
+	Trades []*golang.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 }
 
 func (x *TradesByMarketResponse) Reset() {
@@ -4245,7 +4245,7 @@ func (*TradesByMarketResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{79}
 }
 
-func (x *TradesByMarketResponse) GetTrades() []*proto.Trade {
+func (x *TradesByMarketResponse) GetTrades() []*golang.Trade {
 	if x != nil {
 		return x.Trades
 	}
@@ -4318,7 +4318,7 @@ type PositionsByPartyResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more positions.
-	Positions []*proto.Position `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
+	Positions []*golang.Position `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
 }
 
 func (x *PositionsByPartyResponse) Reset() {
@@ -4353,7 +4353,7 @@ func (*PositionsByPartyResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{81}
 }
 
-func (x *PositionsByPartyResponse) GetPositions() []*proto.Position {
+func (x *PositionsByPartyResponse) GetPositions() []*golang.Position {
 	if x != nil {
 		return x.Positions
 	}
@@ -4485,7 +4485,7 @@ type OrdersStream struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more orders.
-	Orders []*proto.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Orders []*golang.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 }
 
 func (x *OrdersStream) Reset() {
@@ -4520,7 +4520,7 @@ func (*OrdersStream) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{84}
 }
 
-func (x *OrdersStream) GetOrders() []*proto.Order {
+func (x *OrdersStream) GetOrders() []*golang.Order {
 	if x != nil {
 		return x.Orders
 	}
@@ -4534,7 +4534,7 @@ type TradesStream struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more trades.
-	Trades []*proto.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
+	Trades []*golang.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 }
 
 func (x *TradesStream) Reset() {
@@ -4569,7 +4569,7 @@ func (*TradesStream) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{85}
 }
 
-func (x *TradesStream) GetTrades() []*proto.Trade {
+func (x *TradesStream) GetTrades() []*golang.Trade {
 	if x != nil {
 		return x.Trades
 	}
@@ -4587,7 +4587,7 @@ type PartyAccountsRequest struct {
 	// Market identifier.
 	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	// Account type. Required field.
-	Type proto.AccountType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
+	Type golang.AccountType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 	// Asset identifier.
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
 }
@@ -4638,11 +4638,11 @@ func (x *PartyAccountsRequest) GetMarketID() string {
 	return ""
 }
 
-func (x *PartyAccountsRequest) GetType() proto.AccountType {
+func (x *PartyAccountsRequest) GetType() golang.AccountType {
 	if x != nil {
 		return x.Type
 	}
-	return proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
+	return golang.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
 func (x *PartyAccountsRequest) GetAsset() string {
@@ -4659,7 +4659,7 @@ type PartyAccountsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more accounts.
-	Accounts []*proto.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
+	Accounts []*golang.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 }
 
 func (x *PartyAccountsResponse) Reset() {
@@ -4694,7 +4694,7 @@ func (*PartyAccountsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{87}
 }
 
-func (x *PartyAccountsResponse) GetAccounts() []*proto.Account {
+func (x *PartyAccountsResponse) GetAccounts() []*golang.Account {
 	if x != nil {
 		return x.Accounts
 	}
@@ -4766,7 +4766,7 @@ type MarketAccountsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more accounts.
-	Accounts []*proto.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
+	Accounts []*golang.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 }
 
 func (x *MarketAccountsResponse) Reset() {
@@ -4801,7 +4801,7 @@ func (*MarketAccountsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{89}
 }
 
-func (x *MarketAccountsResponse) GetAccounts() []*proto.Account {
+func (x *MarketAccountsResponse) GetAccounts() []*golang.Account {
 	if x != nil {
 		return x.Accounts
 	}
@@ -4866,7 +4866,7 @@ type FeeInfrastructureAccountsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more infrastructure fee accounts.
-	Accounts []*proto.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
+	Accounts []*golang.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 }
 
 func (x *FeeInfrastructureAccountsResponse) Reset() {
@@ -4901,7 +4901,7 @@ func (*FeeInfrastructureAccountsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{91}
 }
 
-func (x *FeeInfrastructureAccountsResponse) GetAccounts() []*proto.Account {
+func (x *FeeInfrastructureAccountsResponse) GetAccounts() []*golang.Account {
 	if x != nil {
 		return x.Accounts
 	}
@@ -4919,7 +4919,7 @@ type PrepareProposalRequest struct {
 	// Unique reference.
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Proposal terms. Required field.
-	Proposal *proto.ProposalTerms `protobuf:"bytes,3,opt,name=proposal,proto3" json:"proposal,omitempty"`
+	Proposal *golang.ProposalTerms `protobuf:"bytes,3,opt,name=proposal,proto3" json:"proposal,omitempty"`
 }
 
 func (x *PrepareProposalRequest) Reset() {
@@ -4968,7 +4968,7 @@ func (x *PrepareProposalRequest) GetReference() string {
 	return ""
 }
 
-func (x *PrepareProposalRequest) GetProposal() *proto.ProposalTerms {
+func (x *PrepareProposalRequest) GetProposal() *golang.ProposalTerms {
 	if x != nil {
 		return x.Proposal
 	}
@@ -4984,7 +4984,7 @@ type PrepareProposalResponse struct {
 	// blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction.
 	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	// A copy of the prepared proposal.
-	PendingProposal *proto.Proposal `protobuf:"bytes,2,opt,name=pendingProposal,proto3" json:"pendingProposal,omitempty"`
+	PendingProposal *golang.Proposal `protobuf:"bytes,2,opt,name=pendingProposal,proto3" json:"pendingProposal,omitempty"`
 }
 
 func (x *PrepareProposalResponse) Reset() {
@@ -5026,7 +5026,7 @@ func (x *PrepareProposalResponse) GetBlob() []byte {
 	return nil
 }
 
-func (x *PrepareProposalResponse) GetPendingProposal() *proto.Proposal {
+func (x *PrepareProposalResponse) GetPendingProposal() *golang.Proposal {
 	if x != nil {
 		return x.PendingProposal
 	}
@@ -5040,7 +5040,7 @@ type PrepareVoteRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Vote. Required field.
-	Vote *proto.Vote `protobuf:"bytes,1,opt,name=vote,proto3" json:"vote,omitempty"`
+	Vote *golang.Vote `protobuf:"bytes,1,opt,name=vote,proto3" json:"vote,omitempty"`
 }
 
 func (x *PrepareVoteRequest) Reset() {
@@ -5075,7 +5075,7 @@ func (*PrepareVoteRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{94}
 }
 
-func (x *PrepareVoteRequest) GetVote() *proto.Vote {
+func (x *PrepareVoteRequest) GetVote() *golang.Vote {
 	if x != nil {
 		return x.Vote
 	}
@@ -5091,7 +5091,7 @@ type PrepareVoteResponse struct {
 	// blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction.
 	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	// A copy of the prepared vote.
-	Vote *proto.Vote `protobuf:"bytes,2,opt,name=vote,proto3" json:"vote,omitempty"`
+	Vote *golang.Vote `protobuf:"bytes,2,opt,name=vote,proto3" json:"vote,omitempty"`
 }
 
 func (x *PrepareVoteResponse) Reset() {
@@ -5133,7 +5133,7 @@ func (x *PrepareVoteResponse) GetBlob() []byte {
 	return nil
 }
 
-func (x *PrepareVoteResponse) GetVote() *proto.Vote {
+func (x *PrepareVoteResponse) GetVote() *golang.Vote {
 	if x != nil {
 		return x.Vote
 	}
@@ -5145,7 +5145,7 @@ type PrepareLiquidityProvisionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Submission *proto.LiquidityProvisionSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
+	Submission *golang.LiquidityProvisionSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
 }
 
 func (x *PrepareLiquidityProvisionRequest) Reset() {
@@ -5180,7 +5180,7 @@ func (*PrepareLiquidityProvisionRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{96}
 }
 
-func (x *PrepareLiquidityProvisionRequest) GetSubmission() *proto.LiquidityProvisionSubmission {
+func (x *PrepareLiquidityProvisionRequest) GetSubmission() *golang.LiquidityProvisionSubmission {
 	if x != nil {
 		return x.Submission
 	}
@@ -5361,7 +5361,7 @@ type OrderVersionsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended).
-	Orders []*proto.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Orders []*golang.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 }
 
 func (x *OrderVersionsResponse) Reset() {
@@ -5396,7 +5396,7 @@ func (*OrderVersionsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{100}
 }
 
-func (x *OrderVersionsResponse) GetOrders() []*proto.Order {
+func (x *OrderVersionsResponse) GetOrders() []*golang.Order {
 	if x != nil {
 		return x.Orders
 	}
@@ -5414,7 +5414,7 @@ type EstimateFeeRequest struct {
 	// MarketID (used to specify the fee factors)
 	// Price (the price at which the order could trade)
 	// Size (the size at which the order could eventually trade)
-	Order *proto.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	Order *golang.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 }
 
 func (x *EstimateFeeRequest) Reset() {
@@ -5449,7 +5449,7 @@ func (*EstimateFeeRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{101}
 }
 
-func (x *EstimateFeeRequest) GetOrder() *proto.Order {
+func (x *EstimateFeeRequest) GetOrder() *golang.Order {
 	if x != nil {
 		return x.Order
 	}
@@ -5463,7 +5463,7 @@ type EstimateFeeResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Summary of the estimated fees for this order if it were to trade now
-	Fee *proto.Fee `protobuf:"bytes,2,opt,name=fee,proto3" json:"fee,omitempty"`
+	Fee *golang.Fee `protobuf:"bytes,2,opt,name=fee,proto3" json:"fee,omitempty"`
 }
 
 func (x *EstimateFeeResponse) Reset() {
@@ -5498,7 +5498,7 @@ func (*EstimateFeeResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{102}
 }
 
-func (x *EstimateFeeResponse) GetFee() *proto.Fee {
+func (x *EstimateFeeResponse) GetFee() *golang.Fee {
 	if x != nil {
 		return x.Fee
 	}
@@ -5512,7 +5512,7 @@ type EstimateMarginRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Order to estimate fees for
-	Order *proto.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	Order *golang.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 }
 
 func (x *EstimateMarginRequest) Reset() {
@@ -5547,7 +5547,7 @@ func (*EstimateMarginRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{103}
 }
 
-func (x *EstimateMarginRequest) GetOrder() *proto.Order {
+func (x *EstimateMarginRequest) GetOrder() *golang.Order {
 	if x != nil {
 		return x.Order
 	}
@@ -5561,7 +5561,7 @@ type EstimateMarginResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Summary of the estimated margins for this order if it were to trade now
-	MarginLevels *proto.MarginLevels `protobuf:"bytes,2,opt,name=marginLevels,proto3" json:"marginLevels,omitempty"`
+	MarginLevels *golang.MarginLevels `protobuf:"bytes,2,opt,name=marginLevels,proto3" json:"marginLevels,omitempty"`
 }
 
 func (x *EstimateMarginResponse) Reset() {
@@ -5596,7 +5596,7 @@ func (*EstimateMarginResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{104}
 }
 
-func (x *EstimateMarginResponse) GetMarginLevels() *proto.MarginLevels {
+func (x *EstimateMarginResponse) GetMarginLevels() *golang.MarginLevels {
 	if x != nil {
 		return x.MarginLevels
 	}
@@ -5610,7 +5610,7 @@ type ObserveEventsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// One or more types of event. Required field.
-	Type []proto.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
+	Type []golang.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
 	// Market identifier. Optional field.
 	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	// Party identifier. Optional field.
@@ -5657,7 +5657,7 @@ func (*ObserveEventsRequest) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{105}
 }
 
-func (x *ObserveEventsRequest) GetType() []proto.BusEventType {
+func (x *ObserveEventsRequest) GetType() []golang.BusEventType {
 	if x != nil {
 		return x.Type
 	}
@@ -5692,7 +5692,7 @@ type ObserveEventsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// One or more events
-	Events []*proto.BusEvent `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
+	Events []*golang.BusEvent `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
 }
 
 func (x *ObserveEventsResponse) Reset() {
@@ -5727,7 +5727,7 @@ func (*ObserveEventsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{106}
 }
 
-func (x *ObserveEventsResponse) GetEvents() []*proto.BusEvent {
+func (x *ObserveEventsResponse) GetEvents() []*golang.BusEvent {
 	if x != nil {
 		return x.Events
 	}
@@ -5790,7 +5790,7 @@ type WithdrawalsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The list of withdrawals for the specified party
-	Withdrawals []*proto.Withdrawal `protobuf:"bytes,1,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
+	Withdrawals []*golang.Withdrawal `protobuf:"bytes,1,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
 }
 
 func (x *WithdrawalsResponse) Reset() {
@@ -5825,7 +5825,7 @@ func (*WithdrawalsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{108}
 }
 
-func (x *WithdrawalsResponse) GetWithdrawals() []*proto.Withdrawal {
+func (x *WithdrawalsResponse) GetWithdrawals() []*golang.Withdrawal {
 	if x != nil {
 		return x.Withdrawals
 	}
@@ -5888,7 +5888,7 @@ type WithdrawalResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The withdrawal matching the ID from the request
-	Withdrawal *proto.Withdrawal `protobuf:"bytes,1,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
+	Withdrawal *golang.Withdrawal `protobuf:"bytes,1,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
 }
 
 func (x *WithdrawalResponse) Reset() {
@@ -5923,7 +5923,7 @@ func (*WithdrawalResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{110}
 }
 
-func (x *WithdrawalResponse) GetWithdrawal() *proto.Withdrawal {
+func (x *WithdrawalResponse) GetWithdrawal() *golang.Withdrawal {
 	if x != nil {
 		return x.Withdrawal
 	}
@@ -6124,7 +6124,7 @@ type DepositsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The list of deposits for the specified party
-	Deposits []*proto.Deposit `protobuf:"bytes,1,rep,name=deposits,proto3" json:"deposits,omitempty"`
+	Deposits []*golang.Deposit `protobuf:"bytes,1,rep,name=deposits,proto3" json:"deposits,omitempty"`
 }
 
 func (x *DepositsResponse) Reset() {
@@ -6159,7 +6159,7 @@ func (*DepositsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{114}
 }
 
-func (x *DepositsResponse) GetDeposits() []*proto.Deposit {
+func (x *DepositsResponse) GetDeposits() []*golang.Deposit {
 	if x != nil {
 		return x.Deposits
 	}
@@ -6222,7 +6222,7 @@ type DepositResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The deposit matching the ID from the request
-	Deposit *proto.Deposit `protobuf:"bytes,1,opt,name=deposit,proto3" json:"deposit,omitempty"`
+	Deposit *golang.Deposit `protobuf:"bytes,1,opt,name=deposit,proto3" json:"deposit,omitempty"`
 }
 
 func (x *DepositResponse) Reset() {
@@ -6257,7 +6257,7 @@ func (*DepositResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{116}
 }
 
-func (x *DepositResponse) GetDeposit() *proto.Deposit {
+func (x *DepositResponse) GetDeposit() *golang.Deposit {
 	if x != nil {
 		return x.Deposit
 	}
@@ -6311,7 +6311,7 @@ type NetworkParametersResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NetworkParameters []*proto.NetworkParameter `protobuf:"bytes,1,rep,name=networkParameters,proto3" json:"networkParameters,omitempty"`
+	NetworkParameters []*golang.NetworkParameter `protobuf:"bytes,1,rep,name=networkParameters,proto3" json:"networkParameters,omitempty"`
 }
 
 func (x *NetworkParametersResponse) Reset() {
@@ -6346,7 +6346,7 @@ func (*NetworkParametersResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{118}
 }
 
-func (x *NetworkParametersResponse) GetNetworkParameters() []*proto.NetworkParameter {
+func (x *NetworkParametersResponse) GetNetworkParameters() []*golang.NetworkParameter {
 	if x != nil {
 		return x.NetworkParameters
 	}
@@ -6420,7 +6420,7 @@ type LiquidityProvisionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	LiquidityProvisions []*proto.LiquidityProvision `protobuf:"bytes,1,rep,name=liquidityProvisions,proto3" json:"liquidityProvisions,omitempty"`
+	LiquidityProvisions []*golang.LiquidityProvision `protobuf:"bytes,1,rep,name=liquidityProvisions,proto3" json:"liquidityProvisions,omitempty"`
 }
 
 func (x *LiquidityProvisionsResponse) Reset() {
@@ -6455,7 +6455,7 @@ func (*LiquidityProvisionsResponse) Descriptor() ([]byte, []int) {
 	return file_api_trading_proto_rawDescGZIP(), []int{120}
 }
 
-func (x *LiquidityProvisionsResponse) GetLiquidityProvisions() []*proto.LiquidityProvision {
+func (x *LiquidityProvisionsResponse) GetLiquidityProvisions() []*golang.LiquidityProvision {
 	if x != nil {
 		return x.LiquidityProvisions
 	}
@@ -7406,9 +7406,10 @@ var file_api_trading_proto_rawDesc = []byte{
 	0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e,
 	0x61, 0x70, 0x69, 0x2e, 0x4c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x69, 0x74, 0x79, 0x50, 0x72, 0x6f,
 	0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x25, 0x5a, 0x23, 0x63, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74,
+	0x30, 0x5a, 0x2e, 0x63, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x67, 0x6f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x61, 0x70,
+	0x69, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -7548,44 +7549,44 @@ var file_api_trading_proto_goTypes = []interface{}{
 	(*NetworkParametersResponse)(nil),             // 119: api.NetworkParametersResponse
 	(*LiquidityProvisionsRequest)(nil),            // 120: api.LiquidityProvisionsRequest
 	(*LiquidityProvisionsResponse)(nil),           // 121: api.LiquidityProvisionsResponse
-	(*proto.ChainEvent)(nil),                      // 122: vega.ChainEvent
-	(*proto.SignedBundle)(nil),                    // 123: vega.SignedBundle
-	(*proto.WithdrawSubmission)(nil),              // 124: vega.WithdrawSubmission
-	(*proto.OrderSubmission)(nil),                 // 125: vega.OrderSubmission
-	(*proto.OrderCancellation)(nil),               // 126: vega.OrderCancellation
-	(*proto.OrderAmendment)(nil),                  // 127: vega.OrderAmendment
-	(*proto.Asset)(nil),                           // 128: vega.Asset
-	(*proto.NodeSignature)(nil),                   // 129: vega.NodeSignature
-	(proto.Proposal_State)(0),                     // 130: vega.Proposal.State
-	(*proto.GovernanceData)(nil),                  // 131: vega.GovernanceData
-	(*proto.Vote)(nil),                            // 132: vega.Vote
-	(*proto.MarginLevels)(nil),                    // 133: vega.MarginLevels
-	(*proto.MarketData)(nil),                      // 134: vega.MarketData
-	(*proto.Trade)(nil),                           // 135: vega.Trade
-	(*proto.Market)(nil),                          // 136: vega.Market
-	(*proto.Party)(nil),                           // 137: vega.Party
-	(proto.AccountType)(0),                        // 138: vega.AccountType
-	(proto.Interval)(0),                           // 139: vega.Interval
-	(*proto.Order)(nil),                           // 140: vega.Order
-	(*proto.Candle)(nil),                          // 141: vega.Candle
-	(*proto.PriceLevel)(nil),                      // 142: vega.PriceLevel
-	(*proto.Position)(nil),                        // 143: vega.Position
-	(*proto.Account)(nil),                         // 144: vega.Account
-	(*proto.ProposalTerms)(nil),                   // 145: vega.ProposalTerms
-	(*proto.Proposal)(nil),                        // 146: vega.Proposal
-	(*proto.LiquidityProvisionSubmission)(nil),    // 147: vega.LiquidityProvisionSubmission
-	(*proto.Fee)(nil),                             // 148: vega.Fee
-	(proto.BusEventType)(0),                       // 149: vega.BusEventType
-	(*proto.BusEvent)(nil),                        // 150: vega.BusEvent
-	(*proto.Withdrawal)(nil),                      // 151: vega.Withdrawal
-	(*proto.Deposit)(nil),                         // 152: vega.Deposit
-	(*proto.NetworkParameter)(nil),                // 153: vega.NetworkParameter
-	(*proto.LiquidityProvision)(nil),              // 154: vega.LiquidityProvision
+	(*golang.ChainEvent)(nil),                     // 122: vega.ChainEvent
+	(*golang.SignedBundle)(nil),                   // 123: vega.SignedBundle
+	(*golang.WithdrawSubmission)(nil),             // 124: vega.WithdrawSubmission
+	(*golang.OrderSubmission)(nil),                // 125: vega.OrderSubmission
+	(*golang.OrderCancellation)(nil),              // 126: vega.OrderCancellation
+	(*golang.OrderAmendment)(nil),                 // 127: vega.OrderAmendment
+	(*golang.Asset)(nil),                          // 128: vega.Asset
+	(*golang.NodeSignature)(nil),                  // 129: vega.NodeSignature
+	(golang.Proposal_State)(0),                    // 130: vega.Proposal.State
+	(*golang.GovernanceData)(nil),                 // 131: vega.GovernanceData
+	(*golang.Vote)(nil),                           // 132: vega.Vote
+	(*golang.MarginLevels)(nil),                   // 133: vega.MarginLevels
+	(*golang.MarketData)(nil),                     // 134: vega.MarketData
+	(*golang.Trade)(nil),                          // 135: vega.Trade
+	(*golang.Market)(nil),                         // 136: vega.Market
+	(*golang.Party)(nil),                          // 137: vega.Party
+	(golang.AccountType)(0),                       // 138: vega.AccountType
+	(golang.Interval)(0),                          // 139: vega.Interval
+	(*golang.Order)(nil),                          // 140: vega.Order
+	(*golang.Candle)(nil),                         // 141: vega.Candle
+	(*golang.PriceLevel)(nil),                     // 142: vega.PriceLevel
+	(*golang.Position)(nil),                       // 143: vega.Position
+	(*golang.Account)(nil),                        // 144: vega.Account
+	(*golang.ProposalTerms)(nil),                  // 145: vega.ProposalTerms
+	(*golang.Proposal)(nil),                       // 146: vega.Proposal
+	(*golang.LiquidityProvisionSubmission)(nil),   // 147: vega.LiquidityProvisionSubmission
+	(*golang.Fee)(nil),                            // 148: vega.Fee
+	(golang.BusEventType)(0),                      // 149: vega.BusEventType
+	(*golang.BusEvent)(nil),                       // 150: vega.BusEvent
+	(*golang.Withdrawal)(nil),                     // 151: vega.Withdrawal
+	(*golang.Deposit)(nil),                        // 152: vega.Deposit
+	(*golang.NetworkParameter)(nil),               // 153: vega.NetworkParameter
+	(*golang.LiquidityProvision)(nil),             // 154: vega.LiquidityProvision
 	(*empty.Empty)(nil),                           // 155: google.protobuf.Empty
-	(*proto.Statistics)(nil),                      // 156: vega.Statistics
-	(*proto.MarketDepth)(nil),                     // 157: vega.MarketDepth
-	(*proto.MarketDepthUpdate)(nil),               // 158: vega.MarketDepthUpdate
-	(*proto.TransferResponse)(nil),                // 159: vega.TransferResponse
+	(*golang.Statistics)(nil),                     // 156: vega.Statistics
+	(*golang.MarketDepth)(nil),                    // 157: vega.MarketDepth
+	(*golang.MarketDepthUpdate)(nil),              // 158: vega.MarketDepthUpdate
+	(*golang.TransferResponse)(nil),               // 159: vega.TransferResponse
 }
 var file_api_trading_proto_depIdxs = []int32{
 	122, // 0: api.PropagateChainEventRequest.evt:type_name -> vega.ChainEvent
@@ -9708,7 +9709,7 @@ type TradingDataClient interface {
 	// Get a list of Orders by Party
 	OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error)
 	// Get a specific order by orderID
-	OrderByID(ctx context.Context, in *OrderByIDRequest, opts ...grpc.CallOption) (*proto.Order, error)
+	OrderByID(ctx context.Context, in *OrderByIDRequest, opts ...grpc.CallOption) (*golang.Order, error)
 	// Get all versions of the order by its orderID
 	OrderVersionsByID(ctx context.Context, in *OrderVersionsByIDRequest, opts ...grpc.CallOption) (*OrderVersionsResponse, error)
 	// Get Margin Levels by PartyID
@@ -9756,7 +9757,7 @@ type TradingDataClient interface {
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingData_ObserveEventBusClient, error)
 	// Get Statistics
-	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto.Statistics, error)
+	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*golang.Statistics, error)
 	// Get Time
 	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*VegaTimeResponse, error)
 	// Subscribe to a stream of Accounts
@@ -9931,8 +9932,8 @@ func (c *tradingDataClient) OrdersByParty(ctx context.Context, in *OrdersByParty
 	return out, nil
 }
 
-func (c *tradingDataClient) OrderByID(ctx context.Context, in *OrderByIDRequest, opts ...grpc.CallOption) (*proto.Order, error) {
-	out := new(proto.Order)
+func (c *tradingDataClient) OrderByID(ctx context.Context, in *OrderByIDRequest, opts ...grpc.CallOption) (*golang.Order, error) {
+	out := new(golang.Order)
 	err := c.cc.Invoke(ctx, "/api.trading_data/OrderByID", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -10118,7 +10119,7 @@ func (c *tradingDataClient) ObserveGovernance(ctx context.Context, in *empty.Emp
 }
 
 type TradingData_ObserveGovernanceClient interface {
-	Recv() (*proto.GovernanceData, error)
+	Recv() (*golang.GovernanceData, error)
 	grpc.ClientStream
 }
 
@@ -10126,8 +10127,8 @@ type tradingDataObserveGovernanceClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataObserveGovernanceClient) Recv() (*proto.GovernanceData, error) {
-	m := new(proto.GovernanceData)
+func (x *tradingDataObserveGovernanceClient) Recv() (*golang.GovernanceData, error) {
+	m := new(golang.GovernanceData)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10150,7 +10151,7 @@ func (c *tradingDataClient) ObservePartyProposals(ctx context.Context, in *Obser
 }
 
 type TradingData_ObservePartyProposalsClient interface {
-	Recv() (*proto.GovernanceData, error)
+	Recv() (*golang.GovernanceData, error)
 	grpc.ClientStream
 }
 
@@ -10158,8 +10159,8 @@ type tradingDataObservePartyProposalsClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataObservePartyProposalsClient) Recv() (*proto.GovernanceData, error) {
-	m := new(proto.GovernanceData)
+func (x *tradingDataObservePartyProposalsClient) Recv() (*golang.GovernanceData, error) {
+	m := new(golang.GovernanceData)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10182,7 +10183,7 @@ func (c *tradingDataClient) ObservePartyVotes(ctx context.Context, in *ObservePa
 }
 
 type TradingData_ObservePartyVotesClient interface {
-	Recv() (*proto.Vote, error)
+	Recv() (*golang.Vote, error)
 	grpc.ClientStream
 }
 
@@ -10190,8 +10191,8 @@ type tradingDataObservePartyVotesClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataObservePartyVotesClient) Recv() (*proto.Vote, error) {
-	m := new(proto.Vote)
+func (x *tradingDataObservePartyVotesClient) Recv() (*golang.Vote, error) {
+	m := new(golang.Vote)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10214,7 +10215,7 @@ func (c *tradingDataClient) ObserveProposalVotes(ctx context.Context, in *Observ
 }
 
 type TradingData_ObserveProposalVotesClient interface {
-	Recv() (*proto.Vote, error)
+	Recv() (*golang.Vote, error)
 	grpc.ClientStream
 }
 
@@ -10222,8 +10223,8 @@ type tradingDataObserveProposalVotesClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataObserveProposalVotesClient) Recv() (*proto.Vote, error) {
-	m := new(proto.Vote)
+func (x *tradingDataObserveProposalVotesClient) Recv() (*golang.Vote, error) {
+	m := new(golang.Vote)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10261,8 +10262,8 @@ func (x *tradingDataObserveEventBusClient) Recv() (*ObserveEventsResponse, error
 	return m, nil
 }
 
-func (c *tradingDataClient) Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto.Statistics, error) {
-	out := new(proto.Statistics)
+func (c *tradingDataClient) Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*golang.Statistics, error) {
+	out := new(golang.Statistics)
 	err := c.cc.Invoke(ctx, "/api.trading_data/Statistics", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -10295,7 +10296,7 @@ func (c *tradingDataClient) AccountsSubscribe(ctx context.Context, in *AccountsS
 }
 
 type TradingData_AccountsSubscribeClient interface {
-	Recv() (*proto.Account, error)
+	Recv() (*golang.Account, error)
 	grpc.ClientStream
 }
 
@@ -10303,8 +10304,8 @@ type tradingDataAccountsSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataAccountsSubscribeClient) Recv() (*proto.Account, error) {
-	m := new(proto.Account)
+func (x *tradingDataAccountsSubscribeClient) Recv() (*golang.Account, error) {
+	m := new(golang.Account)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10327,7 +10328,7 @@ func (c *tradingDataClient) CandlesSubscribe(ctx context.Context, in *CandlesSub
 }
 
 type TradingData_CandlesSubscribeClient interface {
-	Recv() (*proto.Candle, error)
+	Recv() (*golang.Candle, error)
 	grpc.ClientStream
 }
 
@@ -10335,8 +10336,8 @@ type tradingDataCandlesSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataCandlesSubscribeClient) Recv() (*proto.Candle, error) {
-	m := new(proto.Candle)
+func (x *tradingDataCandlesSubscribeClient) Recv() (*golang.Candle, error) {
+	m := new(golang.Candle)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10359,7 +10360,7 @@ func (c *tradingDataClient) MarginLevelsSubscribe(ctx context.Context, in *Margi
 }
 
 type TradingData_MarginLevelsSubscribeClient interface {
-	Recv() (*proto.MarginLevels, error)
+	Recv() (*golang.MarginLevels, error)
 	grpc.ClientStream
 }
 
@@ -10367,8 +10368,8 @@ type tradingDataMarginLevelsSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataMarginLevelsSubscribeClient) Recv() (*proto.MarginLevels, error) {
-	m := new(proto.MarginLevels)
+func (x *tradingDataMarginLevelsSubscribeClient) Recv() (*golang.MarginLevels, error) {
+	m := new(golang.MarginLevels)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10391,7 +10392,7 @@ func (c *tradingDataClient) MarketDepthSubscribe(ctx context.Context, in *Market
 }
 
 type TradingData_MarketDepthSubscribeClient interface {
-	Recv() (*proto.MarketDepth, error)
+	Recv() (*golang.MarketDepth, error)
 	grpc.ClientStream
 }
 
@@ -10399,8 +10400,8 @@ type tradingDataMarketDepthSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataMarketDepthSubscribeClient) Recv() (*proto.MarketDepth, error) {
-	m := new(proto.MarketDepth)
+func (x *tradingDataMarketDepthSubscribeClient) Recv() (*golang.MarketDepth, error) {
+	m := new(golang.MarketDepth)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10423,7 +10424,7 @@ func (c *tradingDataClient) MarketDepthUpdatesSubscribe(ctx context.Context, in 
 }
 
 type TradingData_MarketDepthUpdatesSubscribeClient interface {
-	Recv() (*proto.MarketDepthUpdate, error)
+	Recv() (*golang.MarketDepthUpdate, error)
 	grpc.ClientStream
 }
 
@@ -10431,8 +10432,8 @@ type tradingDataMarketDepthUpdatesSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataMarketDepthUpdatesSubscribeClient) Recv() (*proto.MarketDepthUpdate, error) {
-	m := new(proto.MarketDepthUpdate)
+func (x *tradingDataMarketDepthUpdatesSubscribeClient) Recv() (*golang.MarketDepthUpdate, error) {
+	m := new(golang.MarketDepthUpdate)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10455,7 +10456,7 @@ func (c *tradingDataClient) MarketsDataSubscribe(ctx context.Context, in *Market
 }
 
 type TradingData_MarketsDataSubscribeClient interface {
-	Recv() (*proto.MarketData, error)
+	Recv() (*golang.MarketData, error)
 	grpc.ClientStream
 }
 
@@ -10463,8 +10464,8 @@ type tradingDataMarketsDataSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataMarketsDataSubscribeClient) Recv() (*proto.MarketData, error) {
-	m := new(proto.MarketData)
+func (x *tradingDataMarketsDataSubscribeClient) Recv() (*golang.MarketData, error) {
+	m := new(golang.MarketData)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10519,7 +10520,7 @@ func (c *tradingDataClient) PositionsSubscribe(ctx context.Context, in *Position
 }
 
 type TradingData_PositionsSubscribeClient interface {
-	Recv() (*proto.Position, error)
+	Recv() (*golang.Position, error)
 	grpc.ClientStream
 }
 
@@ -10527,8 +10528,8 @@ type tradingDataPositionsSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataPositionsSubscribeClient) Recv() (*proto.Position, error) {
-	m := new(proto.Position)
+func (x *tradingDataPositionsSubscribeClient) Recv() (*golang.Position, error) {
+	m := new(golang.Position)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10583,7 +10584,7 @@ func (c *tradingDataClient) TransferResponsesSubscribe(ctx context.Context, in *
 }
 
 type TradingData_TransferResponsesSubscribeClient interface {
-	Recv() (*proto.TransferResponse, error)
+	Recv() (*golang.TransferResponse, error)
 	grpc.ClientStream
 }
 
@@ -10591,8 +10592,8 @@ type tradingDataTransferResponsesSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *tradingDataTransferResponsesSubscribeClient) Recv() (*proto.TransferResponse, error) {
-	m := new(proto.TransferResponse)
+func (x *tradingDataTransferResponsesSubscribeClient) Recv() (*golang.TransferResponse, error) {
+	m := new(golang.TransferResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -10736,7 +10737,7 @@ type TradingDataServer interface {
 	// Get a list of Orders by Party
 	OrdersByParty(context.Context, *OrdersByPartyRequest) (*OrdersByPartyResponse, error)
 	// Get a specific order by orderID
-	OrderByID(context.Context, *OrderByIDRequest) (*proto.Order, error)
+	OrderByID(context.Context, *OrderByIDRequest) (*golang.Order, error)
 	// Get all versions of the order by its orderID
 	OrderVersionsByID(context.Context, *OrderVersionsByIDRequest) (*OrderVersionsResponse, error)
 	// Get Margin Levels by PartyID
@@ -10784,7 +10785,7 @@ type TradingDataServer interface {
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(TradingData_ObserveEventBusServer) error
 	// Get Statistics
-	Statistics(context.Context, *empty.Empty) (*proto.Statistics, error)
+	Statistics(context.Context, *empty.Empty) (*golang.Statistics, error)
 	// Get Time
 	GetVegaTime(context.Context, *empty.Empty) (*VegaTimeResponse, error)
 	// Subscribe to a stream of Accounts
@@ -10877,7 +10878,7 @@ func (*UnimplementedTradingDataServer) OrdersByMarket(context.Context, *OrdersBy
 func (*UnimplementedTradingDataServer) OrdersByParty(context.Context, *OrdersByPartyRequest) (*OrdersByPartyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OrdersByParty not implemented")
 }
-func (*UnimplementedTradingDataServer) OrderByID(context.Context, *OrderByIDRequest) (*proto.Order, error) {
+func (*UnimplementedTradingDataServer) OrderByID(context.Context, *OrderByIDRequest) (*golang.Order, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OrderByID not implemented")
 }
 func (*UnimplementedTradingDataServer) OrderVersionsByID(context.Context, *OrderVersionsByIDRequest) (*OrderVersionsResponse, error) {
@@ -10949,7 +10950,7 @@ func (*UnimplementedTradingDataServer) ObserveProposalVotes(*ObserveProposalVote
 func (*UnimplementedTradingDataServer) ObserveEventBus(TradingData_ObserveEventBusServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveEventBus not implemented")
 }
-func (*UnimplementedTradingDataServer) Statistics(context.Context, *empty.Empty) (*proto.Statistics, error) {
+func (*UnimplementedTradingDataServer) Statistics(context.Context, *empty.Empty) (*golang.Statistics, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Statistics not implemented")
 }
 func (*UnimplementedTradingDataServer) GetVegaTime(context.Context, *empty.Empty) (*VegaTimeResponse, error) {
@@ -11611,7 +11612,7 @@ func _TradingData_ObserveGovernance_Handler(srv interface{}, stream grpc.ServerS
 }
 
 type TradingData_ObserveGovernanceServer interface {
-	Send(*proto.GovernanceData) error
+	Send(*golang.GovernanceData) error
 	grpc.ServerStream
 }
 
@@ -11619,7 +11620,7 @@ type tradingDataObserveGovernanceServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataObserveGovernanceServer) Send(m *proto.GovernanceData) error {
+func (x *tradingDataObserveGovernanceServer) Send(m *golang.GovernanceData) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11632,7 +11633,7 @@ func _TradingData_ObservePartyProposals_Handler(srv interface{}, stream grpc.Ser
 }
 
 type TradingData_ObservePartyProposalsServer interface {
-	Send(*proto.GovernanceData) error
+	Send(*golang.GovernanceData) error
 	grpc.ServerStream
 }
 
@@ -11640,7 +11641,7 @@ type tradingDataObservePartyProposalsServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataObservePartyProposalsServer) Send(m *proto.GovernanceData) error {
+func (x *tradingDataObservePartyProposalsServer) Send(m *golang.GovernanceData) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11653,7 +11654,7 @@ func _TradingData_ObservePartyVotes_Handler(srv interface{}, stream grpc.ServerS
 }
 
 type TradingData_ObservePartyVotesServer interface {
-	Send(*proto.Vote) error
+	Send(*golang.Vote) error
 	grpc.ServerStream
 }
 
@@ -11661,7 +11662,7 @@ type tradingDataObservePartyVotesServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataObservePartyVotesServer) Send(m *proto.Vote) error {
+func (x *tradingDataObservePartyVotesServer) Send(m *golang.Vote) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11674,7 +11675,7 @@ func _TradingData_ObserveProposalVotes_Handler(srv interface{}, stream grpc.Serv
 }
 
 type TradingData_ObserveProposalVotesServer interface {
-	Send(*proto.Vote) error
+	Send(*golang.Vote) error
 	grpc.ServerStream
 }
 
@@ -11682,7 +11683,7 @@ type tradingDataObserveProposalVotesServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataObserveProposalVotesServer) Send(m *proto.Vote) error {
+func (x *tradingDataObserveProposalVotesServer) Send(m *golang.Vote) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11757,7 +11758,7 @@ func _TradingData_AccountsSubscribe_Handler(srv interface{}, stream grpc.ServerS
 }
 
 type TradingData_AccountsSubscribeServer interface {
-	Send(*proto.Account) error
+	Send(*golang.Account) error
 	grpc.ServerStream
 }
 
@@ -11765,7 +11766,7 @@ type tradingDataAccountsSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataAccountsSubscribeServer) Send(m *proto.Account) error {
+func (x *tradingDataAccountsSubscribeServer) Send(m *golang.Account) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11778,7 +11779,7 @@ func _TradingData_CandlesSubscribe_Handler(srv interface{}, stream grpc.ServerSt
 }
 
 type TradingData_CandlesSubscribeServer interface {
-	Send(*proto.Candle) error
+	Send(*golang.Candle) error
 	grpc.ServerStream
 }
 
@@ -11786,7 +11787,7 @@ type tradingDataCandlesSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataCandlesSubscribeServer) Send(m *proto.Candle) error {
+func (x *tradingDataCandlesSubscribeServer) Send(m *golang.Candle) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11799,7 +11800,7 @@ func _TradingData_MarginLevelsSubscribe_Handler(srv interface{}, stream grpc.Ser
 }
 
 type TradingData_MarginLevelsSubscribeServer interface {
-	Send(*proto.MarginLevels) error
+	Send(*golang.MarginLevels) error
 	grpc.ServerStream
 }
 
@@ -11807,7 +11808,7 @@ type tradingDataMarginLevelsSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataMarginLevelsSubscribeServer) Send(m *proto.MarginLevels) error {
+func (x *tradingDataMarginLevelsSubscribeServer) Send(m *golang.MarginLevels) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11820,7 +11821,7 @@ func _TradingData_MarketDepthSubscribe_Handler(srv interface{}, stream grpc.Serv
 }
 
 type TradingData_MarketDepthSubscribeServer interface {
-	Send(*proto.MarketDepth) error
+	Send(*golang.MarketDepth) error
 	grpc.ServerStream
 }
 
@@ -11828,7 +11829,7 @@ type tradingDataMarketDepthSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataMarketDepthSubscribeServer) Send(m *proto.MarketDepth) error {
+func (x *tradingDataMarketDepthSubscribeServer) Send(m *golang.MarketDepth) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11841,7 +11842,7 @@ func _TradingData_MarketDepthUpdatesSubscribe_Handler(srv interface{}, stream gr
 }
 
 type TradingData_MarketDepthUpdatesSubscribeServer interface {
-	Send(*proto.MarketDepthUpdate) error
+	Send(*golang.MarketDepthUpdate) error
 	grpc.ServerStream
 }
 
@@ -11849,7 +11850,7 @@ type tradingDataMarketDepthUpdatesSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataMarketDepthUpdatesSubscribeServer) Send(m *proto.MarketDepthUpdate) error {
+func (x *tradingDataMarketDepthUpdatesSubscribeServer) Send(m *golang.MarketDepthUpdate) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11862,7 +11863,7 @@ func _TradingData_MarketsDataSubscribe_Handler(srv interface{}, stream grpc.Serv
 }
 
 type TradingData_MarketsDataSubscribeServer interface {
-	Send(*proto.MarketData) error
+	Send(*golang.MarketData) error
 	grpc.ServerStream
 }
 
@@ -11870,7 +11871,7 @@ type tradingDataMarketsDataSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataMarketsDataSubscribeServer) Send(m *proto.MarketData) error {
+func (x *tradingDataMarketsDataSubscribeServer) Send(m *golang.MarketData) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11904,7 +11905,7 @@ func _TradingData_PositionsSubscribe_Handler(srv interface{}, stream grpc.Server
 }
 
 type TradingData_PositionsSubscribeServer interface {
-	Send(*proto.Position) error
+	Send(*golang.Position) error
 	grpc.ServerStream
 }
 
@@ -11912,7 +11913,7 @@ type tradingDataPositionsSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataPositionsSubscribeServer) Send(m *proto.Position) error {
+func (x *tradingDataPositionsSubscribeServer) Send(m *golang.Position) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -11946,7 +11947,7 @@ func _TradingData_TransferResponsesSubscribe_Handler(srv interface{}, stream grp
 }
 
 type TradingData_TransferResponsesSubscribeServer interface {
-	Send(*proto.TransferResponse) error
+	Send(*golang.TransferResponse) error
 	grpc.ServerStream
 }
 
@@ -11954,7 +11955,7 @@ type tradingDataTransferResponsesSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *tradingDataTransferResponsesSubscribeServer) Send(m *proto.TransferResponse) error {
+func (x *tradingDataTransferResponsesSubscribeServer) Send(m *golang.TransferResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 

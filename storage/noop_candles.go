@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // NoopCandle is a package internal data struct that implements the CandleStore interface.

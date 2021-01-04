@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // One of the possible asset sources

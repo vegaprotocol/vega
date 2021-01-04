@@ -9,8 +9,8 @@ import (
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
+	protoapi "code.vegaprotocol.io/vega/proto/gen/golang/api"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

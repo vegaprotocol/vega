@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/stretchr/testify/assert"
 )

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/netparams/checks"
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 const (

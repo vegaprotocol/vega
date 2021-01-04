@@ -9,8 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
+	protoapi "code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 

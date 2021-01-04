@@ -1,7 +1,7 @@
 package products
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/pkg/errors"
 )

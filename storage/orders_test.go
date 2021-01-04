@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/stretchr/testify/assert"

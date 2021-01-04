@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/liquidity/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"github.com/golang/mock/gomock"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
+	"code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"

@@ -35,7 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 type PE interface {

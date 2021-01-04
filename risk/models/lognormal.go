@@ -6,7 +6,7 @@ import (
 	"code.vegaprotocol.io/quant/interfaces"
 	pd "code.vegaprotocol.io/quant/pricedistribution"
 	"code.vegaprotocol.io/quant/riskmodelbs"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // LogNormal represent a future risk model

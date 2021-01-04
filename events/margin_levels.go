@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // MarginLevels - the margin levels event

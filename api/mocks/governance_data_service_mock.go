@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"

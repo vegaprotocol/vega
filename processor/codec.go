@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"

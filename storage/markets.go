@@ -3,7 +3,7 @@ package storage
 import (
 	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"

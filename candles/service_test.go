@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/candles/mocks"

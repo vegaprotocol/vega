@@ -11,8 +11,8 @@ import (
 	"sync"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/vega/proto/gen/golang"
+	"code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"
 )

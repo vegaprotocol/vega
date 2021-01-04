@@ -9,7 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

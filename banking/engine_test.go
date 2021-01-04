@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/banking/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

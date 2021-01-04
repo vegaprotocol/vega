@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/stretchr/testify/assert"

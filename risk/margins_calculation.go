@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 func newMarginLevels(maintenance float64, scalingFactors *types.ScalingFactors) *types.MarginLevels {

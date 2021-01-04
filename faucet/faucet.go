@@ -14,8 +14,8 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
+	"code.vegaprotocol.io/vega/proto/gen/golang/api"
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 

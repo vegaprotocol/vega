@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/txn"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"

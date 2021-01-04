@@ -1,17 +1,17 @@
 version: v1beta1
 plugins:
   - name: go
-    out: proto/gen/go
+    out: proto/gen/golang
     opt: plugins=grpc,paths=source_relative
   - name: govalidators
-    out: proto/gen/go
+    out: proto/gen/golang
     opt: paths=source_relative
   - name: doc
     out: proto/gen/doc
     opt: html,index.html
   - name: grpc-gateway
-    out: proto/gen/go
+    out: proto/gen/golang
     opt: logtostderr=true,grpc_api_configuration=./gateway/rest/grpc-rest-bindings.yml,paths=source_relative
   - name: swagger
-    out: proto/gen/go
+    out: proto/gen/golang
     opt: logtostderr=true,grpc_api_configuration=./gateway/rest/grpc-rest-bindings.yml

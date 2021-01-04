@@ -1,4 +1,4 @@
-package proto
+package golang
 
 var (
 	ErrInvalidMarketID                             = OrderError_ORDER_ERROR_INVALID_MARKET_ID

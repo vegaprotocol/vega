@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/proto";
+option go_package = "code.vegaprotocol.io/vega/proto/gen/golang";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "google/protobuf/wrappers.proto";

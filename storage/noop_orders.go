@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // NoopOrder is a package internal data struct that implements the OrderStore interface.

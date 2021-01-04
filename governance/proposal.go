@@ -3,7 +3,7 @@ package governance
 import (
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // ProposalParameters stores proposal specific parameters

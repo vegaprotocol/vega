@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/plugins"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 
 	"github.com/golang/mock/gomock"
 )

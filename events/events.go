@@ -1,7 +1,7 @@
 package events
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto/gen/golang"
 )
 
 // MarketPosition is an event with a change to a position.
