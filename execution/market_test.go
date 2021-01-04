@@ -2207,3 +2207,55 @@ func TestOrderBook_CancelAll2771(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, confs, 2)
 }
+
+func TestOrderBook_Crash2772(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := now.Add(120 * time.Second)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 30})
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 1000000)
+	addAccountWithAmount(tm, "trader-B", 1000000)
+	addAccountWithAmount(tm, "trader-C", 1000000)
+	addAccountWithAmount(tm, "trader-D", 1000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 1, 0)
+	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -15}
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +10}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_SELL, "trader-B", 4, 2000)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	gen, err := tm.collateraEngine.CreatePartyGeneralAccount(ctx, "trader-A", "ETH")
+	assert.NoError(t, err)
+
+	// clear the general account
+	err = tm.collateraEngine.UpdateBalance(ctx, gen, 0)
+	assert.NoError(t, err)
+
+	// now move time to after auction
+	now = now.Add(31 * time.Second)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order04", types.Side_SIDE_BUY, "trader-C", 100, 6500)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order05", types.Side_SIDE_SELL, "trader-D", 20, 7000)
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+}
