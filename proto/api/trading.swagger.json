@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "proto/api/trading.proto",
+    "title": "api/trading.proto",
     "version": "version not set"
   },
   "schemes": [
@@ -3061,7 +3061,7 @@
     "vegaContinuousTrading": {
       "type": "object",
       "properties": {
-        "tickSize": {
+        "tick_size": {
           "type": "string",
           "description": "Tick size."
         }
@@ -3123,12 +3123,12 @@
     "vegaDiscreteTrading": {
       "type": "object",
       "properties": {
-        "durationNs": {
+        "duration_ns": {
           "type": "string",
           "format": "int64",
           "title": "Duration in nanoseconds, maximum 1 month (2592000000000000 ns)"
         },
-        "tickSize": {
+        "tick_size": {
           "type": "string",
           "description": "Tick size."
         }

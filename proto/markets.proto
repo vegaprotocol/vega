@@ -24,16 +24,16 @@ message AuctionDuration {
 message ContinuousTrading {
 
   // Tick size.
-  string tickSize = 1;
+  string tick_size = 1;
 }
 
 // Discrete trading.
 message DiscreteTrading {
 
   // Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
-  int64 durationNs = 1 [(validator.field) = {int_gt: 0, int_lt: 2592000000000000}];
+  int64 duration_ns = 1 [(validator.field) = {int_gt: 0, int_lt: 2592000000000000}];
   // Tick size.
-  string tickSize = 2;
+  string tick_size = 2;
 }
 
 // Future product definition.
