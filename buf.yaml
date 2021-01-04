@@ -2,7 +2,7 @@ version: v1beta1
 
 build:
   roots:
-    - newproto
+    - proto
     - vendor
   excludes:
     - vendor/github.com/ethereum
@@ -21,6 +21,9 @@ lint:
     - PACKAGE_SAME_DIRECTORY
     - FIELD_LOWER_SNAKE_CASE
     - ONEOF_LOWER_SNAKE_CASE
+  ignore:
+    - google/
+    - github.com/
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: false
   rpc_allow_google_protobuf_empty_requests: false
