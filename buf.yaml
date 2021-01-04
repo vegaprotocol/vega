@@ -8,6 +8,7 @@ build:
     - vendor/github.com/ethereum
     - vendor/github.com/tendermint
     - vendor/github.com/gogo
+    - vendor/github.com/dgraph-io/badger
 lint:
   use:
     - DEFAULT

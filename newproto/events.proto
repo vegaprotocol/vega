@@ -1,12 +1,12 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/proto";
+option go_package = "code.vegaprotocol.io/vega/newproto";
 
-import "vega/markets.proto";
-import "vega/assets.proto";
-import "vega/governance.proto";
-import "vega/vega.proto";
+import "markets.proto";
+import "assets.proto";
+import "governance.proto";
+import "vega.proto";
 
 // MarketEvent - the common denominator for all market events
 // interface has a method to return a string for logging

@@ -1,11 +1,11 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/proto";
+option go_package = "code.vegaprotocol.io/vega/newproto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "google/protobuf/wrappers.proto";
-import "vega/markets.proto";
+import "markets.proto";
 
 
 // A side relates to the direction of an order, to Buy, or Sell.

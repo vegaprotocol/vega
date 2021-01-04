@@ -1,13 +1,13 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/proto";
+option go_package = "code.vegaprotocol.io/vega/newproto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-import "vega/markets.proto";
-import "vega/vega.proto";
-import "vega/assets.proto";
+import "markets.proto";
+import "vega.proto";
+import "assets.proto";
 
 // Future product configuration.
 message FutureProduct {
