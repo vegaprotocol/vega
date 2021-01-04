@@ -129,7 +129,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		now                           = e.currentTime.UnixNano()
 	)
 
-	if len(lps.Buys) == 0 && len(lps.Sells) == 0 {
+	if len(lps.Buys) == 0 || len(lps.Sells) == 0 {
 		return ErrEmptyShape
 	}
 
@@ -273,14 +273,9 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 	}
 
 	// Create a slice shaped copy of the orders
-	buyOrders := make([]*types.Order, 0, len(e.orders[party])/2)
-	sellOrders := make([]*types.Order, 0, len(e.orders[party])/2)
+	orders := make([]*types.Order, 0, len(e.orders[party]))
 	for _, order := range e.orders[party] {
-		if order.Side == types.Side_SIDE_BUY {
-			buyOrders = append(buyOrders, order)
-		} else {
-			sellOrders = append(sellOrders, order)
-		}
+		orders = append(orders, order)
 	}
 
 	obligation := float64(lp.CommitmentAmount) * e.stakeToObligationFactor
@@ -324,7 +319,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
 		float64(markPrice),
 		obligation,
-		buyOrders, sellOrders,
+		orders,
 		buysShape, sellsShape,
 	); err != nil {
 		return nil, nil, err
