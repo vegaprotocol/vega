@@ -2,11 +2,12 @@ version: v1beta1
 
 build:
   roots:
-    - .
+    - newproto
+    - vendor
   excludes:
     - vendor/github.com/ethereum
     - vendor/github.com/tendermint
-    - proto
+    - vendor/github.com/gogo
 lint:
   use:
     - DEFAULT
