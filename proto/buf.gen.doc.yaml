@@ -1,0 +1,6 @@
+version: v1beta1
+plugins:
+  - name: doc
+    out: proto/doc
+    opt: html,index.html
+    strategy: all
