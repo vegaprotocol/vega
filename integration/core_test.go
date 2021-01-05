@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/proto/gen/golang"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 

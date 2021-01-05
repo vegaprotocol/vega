@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto/gen/golang"
+	proto "code.vegaprotocol.io/vega/proto/gen/golang"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
 
