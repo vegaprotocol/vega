@@ -266,8 +266,8 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 	return newOrders, amendments, nil
 }
 
-// CalculateSuppliedLiquidity return the total liquidity supplied by all liquidity providers (via standard and liquidity provision orders) given the mark price provided
-func (e *Engine) CalculateSuppliedLiquidity(markPrice uint64) float64 {
+// CalculateSuppliedStake return the total stake supplied by all liquidity providers (via standard and liquidity provision orders) given the mark price provided
+func (e *Engine) CalculateSuppliedStake(markPrice uint64) float64 {
 	orders := make([]*types.Order, 0, len(e.liquidityOrders)+len(e.orders))
 	for party, ordersMap := range e.orders {
 		for _, o := range e.liquidityOrders[party] {

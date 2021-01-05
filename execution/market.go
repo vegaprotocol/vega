@@ -2847,7 +2847,7 @@ func (m *Market) getTargetStake() float64 {
 }
 
 func (m *Market) getSuppliedStake() float64 {
-	return m.liquidity.CalculateSuppliedLiquidity(m.markPrice)
+	return m.liquidity.CalculateSuppliedStake(m.markPrice)
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {

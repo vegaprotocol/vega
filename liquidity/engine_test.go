@@ -302,3 +302,117 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 0)
 }
+func TestCalculateSuppliedStake(t *testing.T) {
+	var (
+		party1 = "party-1"
+		party2 = "party-2"
+		party3 = "party-3"
+		ctx    = context.Background()
+		now    = time.Now()
+		tng    = newTestEngine(t, now)
+	)
+	defer tng.ctrl.Finish()
+
+	// We don't care about the following calls
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	var (
+		markPrice = uint64(10)
+	)
+
+	fn := func(order *types.PeggedOrder) (uint64, error) {
+		return markPrice + uint64(order.Offset), nil
+	}
+
+	// Expectations
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(0.0, 100.0).AnyTimes()
+	any := gomock.Any()
+	tng.riskModel.EXPECT().ProbabilityOfTrading(
+		any, any, any, any, any, any, any,
+	).AnyTimes().Return(0.5)
+	tng.idGen.EXPECT().SetID(gomock.Any()).Do(func(order *types.Order) {
+		order.Id = uuid.NewV4().String()
+	}).AnyTimes()
+
+	// Send a submission to create the shape
+	lp1 := &types.LiquidityProvisionSubmission{
+		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -2},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
+		},
+	}
+
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id"),
+	)
+
+	createslp1, _, err := tng.engine.CreateInitialOrders(markPrice, party1, fn)
+	require.NoError(t, err)
+	require.Len(t, createslp1, len(lp1.Buys)+len(lp1.Sells))
+
+	suppliedLiquidity1 := tng.engine.CalculateSuppliedStake(markPrice)
+	require.Greater(t, suppliedLiquidity1, 0.0)
+
+	lp2 := &types.LiquidityProvisionSubmission{
+		MarketID: tng.marketID, CommitmentAmount: 500, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -3},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 3},
+		},
+	}
+
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id"),
+	)
+
+	createsLp2, _, err := tng.engine.CreateInitialOrders(markPrice, party2, fn)
+	require.NoError(t, err)
+	require.Len(t, createsLp2, len(lp2.Buys)+len(lp2.Sells))
+
+	suppliedLiquidityLp2 := tng.engine.CalculateSuppliedStake(markPrice)
+	require.Greater(t, suppliedLiquidityLp2, 0.0)
+	require.Greater(t, suppliedLiquidityLp2, suppliedLiquidity1)
+
+	lp3 := &types.LiquidityProvisionSubmission{
+		MarketID: tng.marketID, CommitmentAmount: 962, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 10},
+		},
+	}
+
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id"),
+	)
+
+	createsLp3, _, err := tng.engine.CreateInitialOrders(markPrice, party3, fn)
+	require.NoError(t, err)
+	require.Len(t, createsLp3, len(lp3.Buys)+len(lp3.Sells))
+
+	suppliedLiquidity3 := tng.engine.CalculateSuppliedStake(markPrice)
+	require.Greater(t, suppliedLiquidity3, 0.0)
+	require.Greater(t, suppliedLiquidity3, suppliedLiquidityLp2)
+
+	// Manual orders
+	orders := []*types.Order{
+		{Id: "1", PartyID: party2, Price: markPrice - 2, Size: 20, Remaining: 20, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
+		{Id: "2", PartyID: party2, Price: markPrice + 2, Size: 20, Remaining: 20, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
+	}
+	newOrders, amendments, err := tng.engine.Update(markPrice, fn, orders)
+	require.NoError(t, err)
+	require.Len(t, newOrders, 0)
+	require.Len(t, amendments, len(lp2.Buys)+len(lp2.Sells))
+
+	// Amendments haven't been applied so supplied liquidity should increase.
+	suppliedLiquidityLp2afterUpdate := tng.engine.CalculateSuppliedStake(markPrice)
+	require.Greater(t, suppliedLiquidityLp2afterUpdate, suppliedLiquidity3)
+}
