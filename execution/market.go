@@ -1859,23 +1859,30 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		return nil, err
 	}
 
-	// Create a slive ready to store the generated events in
-	evts := make([]events.Event, 0, len(m.parkedOrders)+len(cancellations))
+	var (
+		// Create a slice ready to store the generated events in
+		evts = make([]events.Event, 0, len(m.parkedOrders)+len(cancellations))
+		// Check the parked order list of any orders from that same party
+		parkedCancels []*types.OrderCancellationConfirmation
+		// orders from park list to be removed
+		toRemove []*types.Order
+	)
 
-	// Check the parked order list of any orders from that same party
-	var parkedCancels []*types.OrderCancellationConfirmation
 	for _, order := range m.parkedOrders {
 		if order.PartyID == partyID {
-			order.Status = types.Order_STATUS_CANCELLED
-			m.removePeggedOrder(order)
-			order.UpdatedAt = m.currentTime.UnixNano()
-			evts = append(evts, events.NewOrderEvent(ctx, order))
-
-			parkedCancel := &types.OrderCancellationConfirmation{
-				Order: order,
-			}
-			parkedCancels = append(parkedCancels, parkedCancel)
+			toRemove = append(toRemove, order)
 		}
+	}
+	for _, order := range toRemove {
+		order.Status = types.Order_STATUS_CANCELLED
+		m.removePeggedOrder(order)
+		order.UpdatedAt = m.currentTime.UnixNano()
+		evts = append(evts, events.NewOrderEvent(ctx, order))
+
+		parkedCancel := &types.OrderCancellationConfirmation{
+			Order: order,
+		}
+		parkedCancels = append(parkedCancels, parkedCancel)
 	}
 
 	for _, cancellation := range cancellations {
