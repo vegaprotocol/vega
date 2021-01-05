@@ -5437,7 +5437,7 @@ type Order {
   side: Side!
 
   "The market the order is trading on (probably stored internally as a hash of the market details)"
-  market: Market!
+  market: Market
 
   "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String!
@@ -6541,6 +6541,8 @@ enum BusEventType {
   SettleDistressed
   "A new market has been created"
   MarketCreated
+  "A market has been updated"
+  MarketUpdated
   "An asset has been created or update"
   Asset
   "A market has progressed by one tick"
@@ -14643,14 +14645,11 @@ func (ec *executionContext) _Order_market(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*proto.Market)
 	fc.Result = res
-	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarket(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_size(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -26645,9 +26644,6 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Order_market(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "size":

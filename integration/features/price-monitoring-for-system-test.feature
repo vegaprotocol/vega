@@ -14,7 +14,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader1 | 100000000000  |
       | trader2 | 100000000000  |
 
-  # WG: Ideally, this should come from the opening auction
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell |      1 |   100000  |                0 | TYPE_LIMIT | TIF_GTC |
@@ -137,7 +136,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
 
-    # 100448 is the new reference price, we get the following valid price ranges for the 2 triggers: [100292, 100604] & [100158, 100739]
+    # 100213 is the new reference price, we get the following valid price ranges for the 2 triggers: [100057, 100369] & [99923, 100503]
 
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
@@ -156,8 +155,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
      # 1st trigger breached with persistent order -> auction with initial duration of 6s starts
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100213  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100213  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC20 | sell |      1 |   100370  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100370  |                0 | TYPE_LIMIT | TIF_GTC |
 
 
     And the mark price for the market "ETH/DEC20" is "100292"
@@ -175,6 +174,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # T + 1s
     Then the time is updated to "2020-10-16T00:00:52Z"
 
-    And the mark price for the market "ETH/DEC20" is "100213"
+    And the mark price for the market "ETH/DEC20" is "100370"
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"

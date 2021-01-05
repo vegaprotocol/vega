@@ -608,7 +608,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -724,7 +724,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
 	assert.False(t, closed)
@@ -766,7 +766,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
-	require.Equal(t, 0, len(confirmationBuy.Trades))
+	require.Empty(t, confirmationBuy.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -909,14 +909,14 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIF_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       auctionTriggeringPrice - 1,
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-2",
@@ -925,7 +925,22 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationBuy.Trades)
+
+	auctionEnd = tm.market.GetMarketData().AuctionEnd
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
+
+	amendedOrder := &types.OrderAmendment{
+		OrderID:     orderBuy2.Id,
+		PartyID:     party1,
+		Price:       &types.Price{Value: auctionTriggeringPrice},
+		SizeDelta:   0,
+		TimeInForce: types.Order_TIF_GTC,
+	}
+
+	conf, err := tm.market.AmendOrder(context.Background(), amendedOrder)
+	require.NoError(t, err)
+	require.NotNil(t, conf)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -970,7 +985,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy3)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
-	require.Equal(t, 0, len(confirmationBuy.Trades))
+	require.Empty(t, confirmationBuy.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -1067,7 +1082,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
@@ -1091,7 +1106,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
@@ -1112,7 +1127,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -1257,14 +1272,14 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	md = tm.market.GetMarketData()
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
-	require.Equal(t, 0, len(md.PriceMonitoringBounds))
+	require.Empty(t, md.PriceMonitoringBounds)
 
 	closed := tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime)
 	assert.False(t, closed)
@@ -1274,7 +1289,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
-	require.Equal(t, 0, len(md.PriceMonitoringBounds))
+	require.Empty(t, md.PriceMonitoringBounds)
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime.Add(time.Nanosecond))
 	assert.False(t, closed)
@@ -1636,7 +1651,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd := tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, openingAuctionEndTime.UnixNano(), auctionEnd) // In opening auction
@@ -1683,7 +1698,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	require.Equal(t, 0, len(confirmationSell.Trades))
+	require.Empty(t, confirmationSell.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, pMonitorAuctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -2087,6 +2102,110 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_FILLED, o2.Status)
+}
+
+func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	addAccountWithAmount(tm, "trader-B", 100000000)
+	addAccountWithAmount(tm, "trader-C", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// set the mid price first to 6.5k
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 6000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-B", 5, 7000)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	// then place pegged order
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_BUY, "trader-C", 100, 0)
+	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -15}
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	assert.Equal(t, o3conf.Order.Status, types.Order_STATUS_ACTIVE)
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+
+	// then amend
+	// Amend the pegged order so that is has an expiry
+	amendment := &types.OrderAmendment{
+		OrderID:      o3.Id,
+		PartyID:      "trader-C",
+		PeggedOffset: &wrapperspb.Int64Value{Value: -6500},
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	require.NotNil(t, amendConf)
+	require.NoError(t, err)
+
+	assert.Equal(t, amendConf.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+}
+
+func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// set the mid price first to 6.5k
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 6000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	// then amend
+	// Amend the pegged order so that is has an expiry
+	amendment := &types.OrderAmendment{
+		OrderID:     o1.Id,
+		PartyID:     "trader-A",
+		TimeInForce: types.Order_TIF_GTC,
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.Nil(t, amendConf)
+	assert.EqualError(t, err, "OrderError: Cannot amend TIF from GFA or GFN")
+}
+
+func TestOrderBook_CancelAll2771(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.Equal(t, o1conf.Order.Status, types.Order_STATUS_PARKED)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.Equal(t, o2conf.Order.Status, types.Order_STATUS_PARKED)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	confs, err := tm.market.CancelAllOrders(ctx, "trader-A")
+	assert.NoError(t, err)
+	assert.Len(t, confs, 2)
 }
 
 func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {

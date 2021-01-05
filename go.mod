@@ -12,6 +12,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/ethereum/go-ethereum v1.9.20
+	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.4.0

@@ -1233,7 +1233,7 @@ type Order {
   side: Side!
 
   "The market the order is trading on (probably stored internally as a hash of the market details)"
-  market: Market!
+  market: Market
 
   "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String!
@@ -2337,6 +2337,8 @@ enum BusEventType {
   SettleDistressed
   "A new market has been created"
   MarketCreated
+  "A market has been updated"
+  MarketUpdated
   "An asset has been created or update"
   Asset
   "A market has progressed by one tick"

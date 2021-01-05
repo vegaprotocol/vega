@@ -78,6 +78,7 @@ const (
 	SettlePositionEvent
 	SettleDistressedEvent
 	MarketCreatedEvent
+	MarketUpdatedEvent
 	AssetEvent
 	MarketTickEvent
 	AuctionEvent
@@ -92,6 +93,7 @@ var (
 	marketEvents = []Type{
 		PositionResolution,
 		MarketCreatedEvent,
+		MarketUpdatedEvent,
 		MarketTickEvent,
 		AuctionEvent,
 	}
@@ -115,6 +117,7 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:     SettlePositionEvent,
 		types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:   SettleDistressedEvent,
 		types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:      MarketCreatedEvent,
+		types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:      MarketUpdatedEvent,
 		types.BusEventType_BUS_EVENT_TYPE_ASSET:               AssetEvent,
 		types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
 		types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:          WithdrawalEvent,
@@ -144,6 +147,7 @@ var (
 		SettlePositionEvent:     types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION,
 		SettleDistressedEvent:   types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED,
 		MarketCreatedEvent:      types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED,
+		MarketUpdatedEvent:      types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED,
 		AssetEvent:              types.BusEventType_BUS_EVENT_TYPE_ASSET,
 		MarketTickEvent:         types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK,
 		WithdrawalEvent:         types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL,
@@ -174,6 +178,7 @@ var (
 		SettlePositionEvent:     "SettlePositionEvent",
 		SettleDistressedEvent:   "SettleDistressedEvent",
 		MarketCreatedEvent:      "MarketCreatedEvent",
+		MarketUpdatedEvent:      "MarketUpdatedEvent",
 		AssetEvent:              "AssetEvent",
 		MarketTickEvent:         "MarketTickEvent",
 		AuctionEvent:            "AuctionEvent",
