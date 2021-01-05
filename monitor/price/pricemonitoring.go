@@ -421,12 +421,10 @@ func (e *Engine) getRefPrice(horizon int64) float64 {
 
 func (e *Engine) calculateRefPrice(horizon int64) float64 {
 	t := e.now.Add(time.Duration(-horizon) * time.Second)
-	var ref float64
 	if len(e.pricesPast) < 1 {
-		ref = float64(e.pricesNow[0].Price)
-	} else {
-		ref = e.pricesPast[0].VolumeWeightedPrice
+		return float64(e.pricesNow[0].Price)
 	}
+	ref := e.pricesPast[0].VolumeWeightedPrice
 	for _, p := range e.pricesPast {
 		if p.Time.After(t) {
 			break
