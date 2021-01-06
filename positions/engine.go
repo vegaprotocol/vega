@@ -212,6 +212,10 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		return
 	}
 
+	if originalOrder.Status == types.Order_STATUS_REJECTED && newOrder.Status == types.Order_STATUS_REJECTED {
+		return
+	}
+
 	if originalOrder.Side == types.Side_SIDE_BUY {
 		vwap := pos.vwBuyPrice*uint64(pos.buy) - originalOrder.Price*originalOrder.Remaining
 		pos.buy -= int64(originalOrder.Remaining)

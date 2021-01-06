@@ -3001,6 +3001,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 
 func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
 	submittedIDs := []string{}
+	rejects := map[string]struct{}{}
 	// submitted order rollback
 	defer func() {
 		if err == nil || len(newOrders) <= 0 {
@@ -3008,6 +3009,9 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		}
 		party := newOrders[0].PartyID
 		for _, v := range submittedIDs {
+			if _, ok := rejects[v]; ok {
+				continue
+			}
 			_, newerr := m.CancelOrder(ctx, party, v)
 			if newerr != nil {
 				m.log.Error("unable to rollback order via cancel",
@@ -3020,8 +3024,16 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range newOrders {
+		if order.Status == types.Order_STATUS_REJECTED {
+			rejects[order.Id] = struct{}{}
+			continue
+		}
 		if _, err := m.submitOrder(ctx, order); err != nil {
 			return err
+		}
+		if order.Status == types.Order_STATUS_REJECTED {
+			rejects[order.Id] = struct{}{}
+			continue // exclude from submitted list
 		}
 		submittedIDs = append(submittedIDs, order.Id)
 	}
@@ -3034,6 +3046,9 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 			return
 		}
 		for _, v := range amendmentsRollBack {
+			if _, ok := rejects[v.OrderID]; ok {
+				continue
+			}
 			_, newerr := m.amendOrder(ctx, v)
 			if newerr != nil {
 				m.log.Error("unable to rollback order via cancel",
@@ -3046,6 +3061,9 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range amendments {
+		if _, ok := rejects[order.OrderID]; ok {
+			continue
+		}
 		if _, err := m.amendOrder(ctx, order); err != nil {
 			return err
 		}

@@ -505,6 +505,12 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
+	if order.Status == types.Order_STATUS_REJECTED {
+		result := &types.OrderCancellationConfirmation{
+			Order: order,
+		}
+		return result, nil
+	}
 	if order.MarketID != b.marketID {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Market ID mismatch",
