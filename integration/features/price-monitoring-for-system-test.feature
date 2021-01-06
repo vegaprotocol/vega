@@ -152,11 +152,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # T + 12s
     Then the time is updated to "2020-10-16T00:00:55Z"
 
-     # 1st trigger breached with persistent order -> auction with initial duration of 6s starts
+     # Both triggers breached with persistent order -> auction with duration of 10s starts
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100450  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100450  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC20 | sell |      1 |   100650  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   100650  |                0 | TYPE_LIMIT | TIF_GTC |
 
 
     And the mark price for the market "ETH/DEC20" is "100292"
@@ -170,10 +170,16 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
 
-
     # T + 1s
     Then the time is updated to "2020-10-16T00:01:02Z"
 
-    And the mark price for the market "ETH/DEC20" is "100450"
+    And the mark price for the market "ETH/DEC20" is "100292"
+
+    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
+
+    # T + 8s
+    Then the time is updated to "2020-10-16T00:01:10Z"
+
+    And the mark price for the market "ETH/DEC20" is "100650"
 
     And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
