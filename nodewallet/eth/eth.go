@@ -88,7 +88,7 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 	}, nil
 }
 
-func (w *Wallet) SetConfig(pcfg *types.EthereumConfig) error {
+func (w *Wallet) SetEthereumConfig(pcfg *types.EthereumConfig) error {
 	chid, err := w.clt.ChainID(context.Background())
 	if err != nil {
 		return err
