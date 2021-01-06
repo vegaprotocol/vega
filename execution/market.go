@@ -2395,8 +2395,7 @@ func (m *Market) validateOrderAmendment(
 	order *types.Order,
 	amendment *types.OrderAmendment,
 ) error {
-
-	// check TIF and expiracy
+	// check TIF and expiry
 	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
 			return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
