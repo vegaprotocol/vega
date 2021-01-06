@@ -268,18 +268,13 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 	return newOrders, amendments, nil
 }
 
-// CalculateSuppliedStake return the total stake supplied by all liquidity providers (via standard and liquidity provision orders) given the mark price provided
-func (e *Engine) CalculateSuppliedStake(markPrice uint64) float64 {
-	orders := make([]*types.Order, 0, len(e.liquidityOrders)+len(e.orders))
-	for party, ordersMap := range e.orders {
-		for _, o := range e.liquidityOrders[party] {
-			orders = append(orders, o)
-		}
-		for _, o := range ordersMap {
-			orders = append(orders, o)
-		}
+// CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers
+func (e *Engine) CalculateSuppliedStake() uint64 {
+	var ss uint64 = 0
+	for _, v := range e.provisions {
+		ss += v.CommitmentAmount
 	}
-	return e.suppliedEngine.CalculateSuppliedLiquidity(float64(markPrice), orders)
+	return ss
 }
 
 func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {

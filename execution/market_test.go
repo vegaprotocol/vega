@@ -1378,6 +1378,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	addAccount(tm, party2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
+	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIF_GTT,
@@ -1450,12 +1451,9 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
-	expectedSuppliedStake := math.Min(
-		float64(mktData.BestBidPrice*mktData.BestBidVolume)*rmParams.ProbabilityOfTrading,
-		float64(mktData.BestOfferPrice*mktData.BestOfferVolume)*rmParams.ProbabilityOfTrading)
+	expectedSuppliedStake := lp1.CommitmentAmount + lp2.CommitmentAmount
 
-	require.Equal(t, strconv.FormatFloat(expectedSuppliedStake, 'f', -1, 64), mktData.SuppliedStake)
+	require.Equal(t, strconv.FormatUint(expectedSuppliedStake, 10), mktData.SuppliedStake)
 }
 
 func getMarketOrder(tm *testMarket,

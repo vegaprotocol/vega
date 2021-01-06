@@ -379,7 +379,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketState:           m.as.Mode(),
 		Trigger:               m.as.Trigger(),
 		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
-		SuppliedStake:         strconv.FormatFloat(m.getSuppliedStake(), 'f', -1, 64),
+		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}
 }
@@ -2847,8 +2847,8 @@ func (m *Market) getTargetStake() float64 {
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
 }
 
-func (m *Market) getSuppliedStake() float64 {
-	return m.liquidity.CalculateSuppliedStake(m.markPrice)
+func (m *Market) getSuppliedStake() uint64 {
+	return m.liquidity.CalculateSuppliedStake()
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
