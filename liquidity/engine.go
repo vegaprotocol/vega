@@ -237,9 +237,7 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 
 // CreateInitialOrders returns two slices of orders, one are the one to be
 // created and the other the one to be updates.
-func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*types.Order, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
-	// update our internal orders
-	e.updatePartyOrders(party, orders)
+func (e *Engine) CreateInitialOrders(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
 	creates, amendments, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
 	return creates, amendments, err
 }

@@ -280,7 +280,7 @@ func TestUpdate(t *testing.T) {
 		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, orders, fn)
+	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
