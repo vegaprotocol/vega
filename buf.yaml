@@ -9,6 +9,7 @@ build:
     - vendor/github.com/tendermint
     - vendor/github.com/gogo
     - vendor/github.com/dgraph-io/badger
+    - vendor/github.com/google
 lint:
   use:
     - DEFAULT
