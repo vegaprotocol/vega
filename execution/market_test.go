@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
@@ -184,10 +185,11 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 			RiskModel: &types.TradableInstrument_SimpleRiskModel{
 				SimpleRiskModel: &types.SimpleRiskModel{
 					Params: &types.SimpleModelParams{
-						FactorLong:  0.15,
-						FactorShort: 0.25,
-						MaxMoveUp:   MAXMOVEUP,
-						MinMoveDown: MINMOVEDOWN,
+						FactorLong:           0.15,
+						FactorShort:          0.25,
+						MaxMoveUp:            MAXMOVEUP,
+						MinMoveDown:          MINMOVEDOWN,
+						ProbabilityOfTrading: 0.1,
 					},
 				},
 			},
@@ -1361,8 +1363,99 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-
 	require.Equal(t, fmt.Sprintf("%.f", expectedTargetStake), mktData.TargetStake)
+}
+
+func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	var matchingPrice uint64 = 111
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice + 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice - 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	require.Equal(t, 0, len(confirmationBuy.Trades))
+
+	lp1 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 200,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	err = tm.market.SubmitLiquidityProvision(context.Background(), lp1, party1, "id-lp1")
+	require.NoError(t, err)
+
+	lp2 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 100,
+		Fee:              "0.06",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	err = tm.market.SubmitLiquidityProvision(context.Background(), lp2, party2, "id-lp2")
+	require.NoError(t, err)
+
+	mktData := tm.market.GetMarketData()
+	require.NotNil(t, mktData)
+	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
+	expectedSuppliedStake := math.Min(
+		float64(mktData.BestBidPrice*mktData.BestBidVolume)*rmParams.ProbabilityOfTrading,
+		float64(mktData.BestOfferPrice*mktData.BestOfferVolume)*rmParams.ProbabilityOfTrading)
+
+	require.Equal(t, strconv.FormatFloat(expectedSuppliedStake, 'f', -1, 64), mktData.SuppliedStake)
 }
 
 func getMarketOrder(tm *testMarket,
