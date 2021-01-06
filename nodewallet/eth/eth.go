@@ -96,6 +96,7 @@ func (w *Wallet) SetConfig(pcfg *types.EthereumConfig) error {
 	if chid.String() != pcfg.NetworkId {
 		return fmt.Errorf("ethereum network id does not match, expected %v got %v", pcfg.NetworkId, chid)
 	}
+	w.pcfg = pcfg
 	return nil
 }
 
