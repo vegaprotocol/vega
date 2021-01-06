@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -378,7 +379,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketState:           m.as.Mode(),
 		Trigger:               m.as.Trigger(),
 		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
-		SuppliedStake:         fmt.Sprintf("%.f", m.getSuppliedStake()),
+		SuppliedStake:         strconv.FormatFloat(m.getSuppliedStake(), 'f', -1, 64),
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}
 }
@@ -2972,7 +2973,8 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}()
 
-	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, m.repriceFuncW)
+	existingOrders := m.matching.GetOrdersPerParty(party)
+	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, existingOrders, m.repriceFuncW)
 	if err != nil {
 		return err
 	}

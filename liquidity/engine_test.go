@@ -280,7 +280,7 @@ func TestUpdate(t *testing.T) {
 		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, fn)
+	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, orders, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
@@ -350,7 +350,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id"),
 	)
 
-	createslp1, _, err := tng.engine.CreateInitialOrders(markPrice, party1, fn)
+	createslp1, _, err := tng.engine.CreateInitialOrders(markPrice, party1, nil, fn)
 	require.NoError(t, err)
 	require.Len(t, createslp1, len(lp1.Buys)+len(lp1.Sells))
 
@@ -371,7 +371,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id"),
 	)
 
-	createsLp2, _, err := tng.engine.CreateInitialOrders(markPrice, party2, fn)
+	createsLp2, _, err := tng.engine.CreateInitialOrders(markPrice, party2, nil, fn)
 	require.NoError(t, err)
 	require.Len(t, createsLp2, len(lp2.Buys)+len(lp2.Sells))
 
@@ -394,7 +394,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id"),
 	)
 
-	createsLp3, _, err := tng.engine.CreateInitialOrders(markPrice, party3, fn)
+	createsLp3, _, err := tng.engine.CreateInitialOrders(markPrice, party3, nil, fn)
 	require.NoError(t, err)
 	require.Len(t, createsLp3, len(lp3.Buys)+len(lp3.Sells))
 
