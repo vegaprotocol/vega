@@ -73,7 +73,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 func TestSubmissions(t *testing.T) {
 	t.Run("CreateUpdateDelete", testSubmissionCRUD)
 	t.Run("CancelNonExisting", testCancelNonExistingSubmission)
-	t.Run("FailWhenNoShape", testSubmissionFailWhenNoShape)
+	t.Run("FailWhenNoShape", testSubmissionFailWithOneShapeOnly)
 	t.Run("FailWhenShapeForOneSideOnly", testSubmissionFailWhenOneShapeSepcified)
 }
 
@@ -261,7 +261,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testSubmissionFailWhenNoShape(t *testing.T) {
+func testSubmissionFailWithOneShapeOnly(t *testing.T) {
 	var (
 		party = "party-1"
 		ctx   = context.Background()
@@ -273,6 +273,13 @@ func testSubmissionFailWhenNoShape(t *testing.T) {
 	// Expectations
 	lps := &types.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
+		Buys: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Offset:     -1,
+				Proportion: 1,
+			},
+		},
 	}
 
 	require.Error(t,
