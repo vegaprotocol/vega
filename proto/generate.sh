@@ -6,7 +6,7 @@ TARGET="proto"
 function check() {
 	if [[ ! -d "$TARGET" ]]; then
 		echo "Target directory \`$TARGET\` not found, run this script from Vega's repository root path"
-		exit -1
+		exit 1
 	fi
 }
 
