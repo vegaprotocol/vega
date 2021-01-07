@@ -1735,7 +1735,7 @@ const (
 	ProposalStatePassed ProposalState = "Passed"
 	// Proposal didn't get enough votes
 	ProposalStateDeclined ProposalState = "Declined"
-	// Proposal has could not gain enough support to be executed
+	// Proposal could not gain enough support to be executed
 	ProposalStateRejected ProposalState = "Rejected"
 	// Proposal has been executed and the changes under this proposal have now been applied
 	ProposalStateEnacted ProposalState = "Enacted"
