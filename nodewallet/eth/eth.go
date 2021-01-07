@@ -8,6 +8,8 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -34,6 +36,12 @@ type Wallet struct {
 	passphrase string
 
 	pcfg *types.EthereumConfig
+
+	// this is all just to prevent spamming the infura just
+	// to get the last height of the blockchain
+	mu                  sync.Mutex
+	curHeightLastUpdate time.Time
+	curHeight           uint64
 }
 
 func DevInit(path, passphrase string) (string, error) {
@@ -134,12 +142,24 @@ func (w *Wallet) BridgeAddress() string {
 }
 
 func (w *Wallet) CurrentHeight(ctx context.Context) (uint64, error) {
-	// getthe last block header
-	h, err := w.clt.HeaderByNumber(context.Background(), nil)
-	if err != nil {
-		return 0, err
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	// if last update of the heigh was more that 15 seconds
+	// ago, we try to update, we assume an eth block takes
+	// ~15 seconds
+	now := time.Now()
+	if w.curHeightLastUpdate.Add(15).Before(now) {
+		// getthe last block header
+		h, err := w.clt.HeaderByNumber(context.Background(), nil)
+		if err != nil {
+			return w.curHeight, err
+		}
+		w.curHeightLastUpdate = now
+		w.curHeight = h.Number.Uint64()
 	}
-	return h.Number.Uint64(), nil
+
+	return w.curHeight, nil
 }
 
 func (w *Wallet) ConfirmationsRequired() uint32 {
