@@ -319,7 +319,7 @@ type ComplexityRoot struct {
 		IndicativeVolume      func(childComplexity int) int
 		MarkPrice             func(childComplexity int) int
 		Market                func(childComplexity int) int
-		MarketState           func(childComplexity int) int
+		MarketMode            func(childComplexity int) int
 		MidPrice              func(childComplexity int) int
 		OpenInterest          func(childComplexity int) int
 		PriceMonitoringBounds func(childComplexity int) int
@@ -842,7 +842,7 @@ type MarketDataResolver interface {
 	AuctionStart(ctx context.Context, obj *proto.MarketData) (*string, error)
 	IndicativePrice(ctx context.Context, obj *proto.MarketData) (string, error)
 	IndicativeVolume(ctx context.Context, obj *proto.MarketData) (string, error)
-	MarketState(ctx context.Context, obj *proto.MarketData) (MarketState, error)
+	MarketMode(ctx context.Context, obj *proto.MarketData) (MarketMode, error)
 	Trigger(ctx context.Context, obj *proto.MarketData) (AuctionTrigger, error)
 
 	Commitments(ctx context.Context, obj *proto.MarketData) (*MarketDataCommitments, error)
@@ -2119,12 +2119,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.Market(childComplexity), true
 
-	case "MarketData.marketState":
-		if e.complexity.MarketData.MarketState == nil {
+	case "MarketData.marketMode":
+		if e.complexity.MarketData.MarketMode == nil {
 			break
 		}
 
-		return e.complexity.MarketData.MarketState(childComplexity), true
+		return e.complexity.MarketData.MarketMode(childComplexity), true
 
 	case "MarketData.midPrice":
 		if e.complexity.MarketData.MidPrice == nil {
@@ -4558,7 +4558,7 @@ type MarketData {
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
   "what state the market is in (auction, continuous etc)"
-  marketState: MarketState!
+  marketMode: MarketMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "the amount of stake targeted for this market"
@@ -5938,8 +5938,8 @@ enum OrderType {
   NETWORK
 }
 
-"What market state are we in"
-enum MarketState {
+"What market mode are we in"
+enum MarketMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
   CONTINUOUS
 
@@ -13110,7 +13110,7 @@ func (ec *executionContext) _MarketData_indicativeVolume(ctx context.Context, fi
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketData_marketState(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketData_marketMode(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -13127,7 +13127,7 @@ func (ec *executionContext) _MarketData_marketState(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MarketData().MarketState(rctx, obj)
+		return ec.resolvers.MarketData().MarketMode(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13139,9 +13139,9 @@ func (ec *executionContext) _MarketData_marketState(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(MarketState)
+	res := resTmp.(MarketMode)
 	fc.Result = res
-	return ec.marshalNMarketState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketState(ctx, field.Selections, res)
+	return ec.marshalNMarketMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_trigger(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
@@ -26030,7 +26030,7 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
-		case "marketState":
+		case "marketMode":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -26038,7 +26038,7 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._MarketData_marketState(ctx, field, obj)
+				res = ec._MarketData_marketMode(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -30257,12 +30257,12 @@ func (ec *executionContext) marshalNMarketDepthUpdate2ᚖcodeᚗvegaprotocolᚗi
 	return ec._MarketDepthUpdate(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMarketState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketState(ctx context.Context, v interface{}) (MarketState, error) {
-	var res MarketState
+func (ec *executionContext) unmarshalNMarketMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketMode(ctx context.Context, v interface{}) (MarketMode, error) {
+	var res MarketMode
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNMarketState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketState(ctx context.Context, sel ast.SelectionSet, v MarketState) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketMode(ctx context.Context, sel ast.SelectionSet, v MarketMode) graphql.Marshaler {
 	return v
 }
 

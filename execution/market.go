@@ -118,7 +118,7 @@ type AuctionState interface {
 	AuctionStarted(ctx context.Context) *events.Auction
 	AuctionEnded(ctx context.Context, now time.Time) *events.Auction
 	// get some data
-	Mode() types.MarketState
+	Mode() types.Market_Mode
 	Trigger() types.AuctionTrigger
 }
 
@@ -376,7 +376,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		IndicativeVolume:      indicativeVolume,
 		AuctionStart:          auctionStart,
 		AuctionEnd:            auctionEnd,
-		MarketState:           m.as.Mode(),
+		MarketMode:            m.as.Mode(),
 		Trigger:               m.as.Trigger(),
 		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
 		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),

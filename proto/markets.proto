@@ -220,6 +220,23 @@ message TargetStakeParameters {
 
 // Market definition.
 message Market {
+  // What mode is the market currently running, also known as market state.
+  enum Mode {
+    // Default value, this is invalid
+    MODE_UNSPECIFIED = 0;
+    // Normal trading
+    MODE_CONTINUOUS = 1;
+    // Auction trading (FBA)
+    MODE_BATCH_AUCTION = 2;
+    // Opening auction
+    MODE_OPENING_AUCTION = 3;
+    // Auction triggered by monitoring
+    MODE_MONITORING_AUCTION = 4;
+
+    // Note: If adding an enum value, add a matching entry in:
+    //       - gateway/graphql/helpers_enum.go
+    //       - gateway/graphql/schema.graphql (enum MarketMode)
+  }
 
   // Unique identifier.
   string id = 1;

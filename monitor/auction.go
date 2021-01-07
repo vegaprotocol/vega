@@ -10,8 +10,8 @@ import (
 )
 
 type AuctionState struct {
-	mode        types.MarketState      // current trading mode
-	defMode     types.MarketState      // default trading mode for market
+	mode        types.Market_Mode      // current trading mode
+	defMode     types.Market_Mode      // default trading mode for market
 	trigger     types.AuctionTrigger   // Set to the value indicating what started the auction
 	begin       *time.Time             // optional setting auction start time (will be set if start flag is true)
 	end         *types.AuctionDuration // will be set when in auction, defines parameters that end an auction period
@@ -21,8 +21,8 @@ type AuctionState struct {
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	s := AuctionState{
-		mode:    types.MarketState_MARKET_STATE_OPENING_AUCTION,
-		defMode: types.MarketState_MARKET_STATE_CONTINUOUS,
+		mode:    types.Market_MODE_OPENING_AUCTION,
+		defMode: types.Market_MODE_CONTINUOUS,
 		trigger: types.AuctionTrigger_AUCTION_TRIGGER_OPENING,
 		begin:   &now,
 		end:     mkt.OpeningAuction,
@@ -30,12 +30,12 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 		m:       mkt,
 	}
 	if mkt.GetContinuous() == nil {
-		s.defMode = types.MarketState_MARKET_STATE_BATCH_AUCTION
+		s.defMode = types.Market_MODE_BATCH_AUCTION
 	}
 	// no opening auction
 	if mkt.OpeningAuction == nil {
 		s.mode = s.defMode
-		if s.mode == types.MarketState_MARKET_STATE_BATCH_AUCTION {
+		if s.mode == types.Market_MODE_BATCH_AUCTION {
 			// @TODO set end params here (FBA is not yet implemented)
 			return &s
 		}
@@ -50,7 +50,7 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 // StartLiquidityAuction - set the state to start a liquidity triggered auction
 // @TODO these functions will be removed once the types are in proto
 func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration) {
-	a.mode = types.MarketState_MARKET_STATE_MONITORING_AUCTION
+	a.mode = types.Market_MODE_MONITORING_AUCTION
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 	a.start = true
 	a.stop = false
@@ -61,7 +61,7 @@ func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDurati
 // StartPriceAuction - set the state to start a price triggered auction
 // @TODO these functions will be removed once the types are in proto
 func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) {
-	a.mode = types.MarketState_MARKET_STATE_MONITORING_AUCTION
+	a.mode = types.Market_MODE_MONITORING_AUCTION
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_PRICE
 	a.start = true
 	a.stop = false
@@ -72,7 +72,7 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 // StartOpeningAuction - set the state to start an opening auction (used for testing)
 // @TODO these functions will be removed once the types are in proto
 func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration) {
-	a.mode = types.MarketState_MARKET_STATE_OPENING_AUCTION
+	a.mode = types.Market_MODE_OPENING_AUCTION
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_OPENING
 	a.start = true
 	a.stop = false
@@ -123,7 +123,7 @@ func (a AuctionState) ExpiresAt() *time.Time {
 }
 
 // Mode returns current trading mode
-func (a AuctionState) Mode() types.MarketState {
+func (a AuctionState) Mode() types.Market_Mode {
 	return a.mode
 }
 
@@ -194,7 +194,7 @@ func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 	a.mode = a.defMode
 	// default mode is auction, this is an FBA market
-	if a.mode == types.MarketState_MARKET_STATE_BATCH_AUCTION {
+	if a.mode == types.Market_MODE_BATCH_AUCTION {
 		a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_BATCH
 	}
 	return evt

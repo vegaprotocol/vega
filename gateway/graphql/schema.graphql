@@ -353,7 +353,7 @@ type MarketData {
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
   "what state the market is in (auction, continuous etc)"
-  marketState: MarketState!
+  marketMode: MarketMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "the amount of stake targeted for this market"
@@ -1733,8 +1733,8 @@ enum OrderType {
   NETWORK
 }
 
-"What market state are we in"
-enum MarketState {
+"What market mode are we in"
+enum MarketMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
   CONTINUOUS
 

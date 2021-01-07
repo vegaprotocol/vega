@@ -1134,53 +1134,53 @@ func (e LiquidityProvisionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// What market state are we in
-type MarketState string
+// What market mode are we in
+type MarketMode string
 
 const (
 	// Continuous trading where orders are processed and potentially matched on arrival
-	MarketStateContinuous MarketState = "CONTINUOUS"
+	MarketModeContinuous MarketMode = "CONTINUOUS"
 	// Auction trading where orders are uncrossed at the end of the opening auction period
-	MarketStateOpeningAuction MarketState = "OPENING_AUCTION"
+	MarketModeOpeningAuction MarketMode = "OPENING_AUCTION"
 	// Auction as normal trading mode for the market, where orders are uncrossed periodically
-	MarketStateBatchAuction MarketState = "BATCH_AUCTION"
+	MarketModeBatchAuction MarketMode = "BATCH_AUCTION"
 	// Auction triggered by price/liquidity monitoring
-	MarketStateMonitoringAuction MarketState = "MONITORING_AUCTION"
+	MarketModeMonitoringAuction MarketMode = "MONITORING_AUCTION"
 )
 
-var AllMarketState = []MarketState{
-	MarketStateContinuous,
-	MarketStateOpeningAuction,
-	MarketStateBatchAuction,
-	MarketStateMonitoringAuction,
+var AllMarketMode = []MarketMode{
+	MarketModeContinuous,
+	MarketModeOpeningAuction,
+	MarketModeBatchAuction,
+	MarketModeMonitoringAuction,
 }
 
-func (e MarketState) IsValid() bool {
+func (e MarketMode) IsValid() bool {
 	switch e {
-	case MarketStateContinuous, MarketStateOpeningAuction, MarketStateBatchAuction, MarketStateMonitoringAuction:
+	case MarketModeContinuous, MarketModeOpeningAuction, MarketModeBatchAuction, MarketModeMonitoringAuction:
 		return true
 	}
 	return false
 }
 
-func (e MarketState) String() string {
+func (e MarketMode) String() string {
 	return string(e)
 }
 
-func (e *MarketState) UnmarshalGQL(v interface{}) error {
+func (e *MarketMode) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MarketState(str)
+	*e = MarketMode(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MarketState", str)
+		return fmt.Errorf("%s is not a valid MarketMode", str)
 	}
 	return nil
 }
 
-func (e MarketState) MarshalGQL(w io.Writer) {
+func (e MarketMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

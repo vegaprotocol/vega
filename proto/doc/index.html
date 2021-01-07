@@ -290,6 +290,10 @@
                 </li>
               
               
+                <li>
+                  <a href="#vega.Market.Mode"><span class="badge">E</span>Market.Mode</a>
+                </li>
+              
               
               
             </ul>
@@ -535,10 +539,6 @@
               
                 <li>
                   <a href="#vega.LiquidityProvision.Status"><span class="badge">E</span>LiquidityProvision.Status</a>
-                </li>
-              
-                <li>
-                  <a href="#vega.MarketState"><span class="badge">E</span>MarketState</a>
                 </li>
               
                 <li>
@@ -2643,6 +2643,47 @@ probability level. </p></td>
       
 
       
+        <h3 id="vega.Market.Mode">Market.Mode</h3>
+        <p>What mode is the market currently running, also known as market state.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>MODE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, this is invalid</p></td>
+              </tr>
+            
+              <tr>
+                <td>MODE_CONTINUOUS</td>
+                <td>1</td>
+                <td><p>Normal trading</p></td>
+              </tr>
+            
+              <tr>
+                <td>MODE_BATCH_AUCTION</td>
+                <td>2</td>
+                <td><p>Auction trading (FBA)</p></td>
+              </tr>
+            
+              <tr>
+                <td>MODE_OPENING_AUCTION</td>
+                <td>3</td>
+                <td><p>Opening auction</p></td>
+              </tr>
+            
+              <tr>
+                <td>MODE_MONITORING_AUCTION</td>
+                <td>4</td>
+                <td><p>Auction triggered by monitoring</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
 
       
 
@@ -3638,8 +3679,8 @@ See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketState</td>
-                  <td><a href="#vega.MarketState">MarketState</a></td>
+                  <td>marketMode</td>
+                  <td><a href="#vega.Market.Mode">Market.Mode</a></td>
                   <td></td>
                   <td><p>the current state of the market </p></td>
                 </tr>
@@ -6164,47 +6205,6 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td>LIQUIDITY_PROVISION_STATUS_REJECTED</td>
                 <td>4</td>
                 <td><p>The liquidity provision was invalid and got rejected.</p></td>
-              </tr>
-            
-          </tbody>
-        </table>
-      
-        <h3 id="vega.MarketState">MarketState</h3>
-        <p>What mode is the market currently running, also known as market state.</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            
-              <tr>
-                <td>MARKET_STATE_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>Default value, this is invalid</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_CONTINUOUS</td>
-                <td>1</td>
-                <td><p>Normal trading</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_BATCH_AUCTION</td>
-                <td>2</td>
-                <td><p>Auction trading (FBA)</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_OPENING_AUCTION</td>
-                <td>3</td>
-                <td><p>Opening auction</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_MONITORING_AUCTION</td>
-                <td>4</td>
-                <td><p>Auction triggered by monitoring</p></td>
               </tr>
             
           </tbody>

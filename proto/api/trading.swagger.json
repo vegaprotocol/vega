@@ -1551,6 +1551,18 @@
     }
   },
   "definitions": {
+    "MarketMode": {
+      "type": "string",
+      "enum": [
+        "MODE_UNSPECIFIED",
+        "MODE_CONTINUOUS",
+        "MODE_BATCH_AUCTION",
+        "MODE_OPENING_AUCTION",
+        "MODE_MONITORING_AUCTION"
+      ],
+      "default": "MODE_UNSPECIFIED",
+      "description": "What mode is the market currently running, also known as market state.\n\n - MODE_UNSPECIFIED: Default value, this is invalid\n - MODE_CONTINUOUS: Normal trading\n - MODE_BATCH_AUCTION: Auction trading (FBA)\n - MODE_OPENING_AUCTION: Opening auction\n - MODE_MONITORING_AUCTION: Auction triggered by monitoring"
+    },
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
@@ -3907,8 +3919,8 @@
           "format": "uint64",
           "title": "indicative volume (zero if not in auction)"
         },
-        "marketState": {
-          "$ref": "#/definitions/vegaMarketState",
+        "marketMode": {
+          "$ref": "#/definitions/MarketMode",
           "title": "the current state of the market"
         },
         "trigger": {
@@ -4004,18 +4016,6 @@
         }
       },
       "title": "MarketEvent - the common denominator for all market events\ninterface has a method to return a string for logging"
-    },
-    "vegaMarketState": {
-      "type": "string",
-      "enum": [
-        "MARKET_STATE_UNSPECIFIED",
-        "MARKET_STATE_CONTINUOUS",
-        "MARKET_STATE_BATCH_AUCTION",
-        "MARKET_STATE_OPENING_AUCTION",
-        "MARKET_STATE_MONITORING_AUCTION"
-      ],
-      "default": "MARKET_STATE_UNSPECIFIED",
-      "description": "What mode is the market currently running, also known as market state.\n\n - MARKET_STATE_UNSPECIFIED: Default value, this is invalid\n - MARKET_STATE_CONTINUOUS: Normal trading\n - MARKET_STATE_BATCH_AUCTION: Auction trading (FBA)\n - MARKET_STATE_OPENING_AUCTION: Opening auction\n - MARKET_STATE_MONITORING_AUCTION: Auction triggered by monitoring"
     },
     "vegaMarketTick": {
       "type": "object",

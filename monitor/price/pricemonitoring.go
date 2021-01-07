@@ -26,7 +26,7 @@ const (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price AuctionState
 type AuctionState interface {
 	// What is the current trading mode of the market, is it in auction
-	Mode() types.MarketState
+	Mode() types.Market_Mode
 	InAuction() bool
 	// What type of auction are we dealing with
 	IsOpeningAuction() bool
