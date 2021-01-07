@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -378,9 +379,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketState:           m.as.Mode(),
 		Trigger:               m.as.Trigger(),
 		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
-		// FIXME(WITOLD): uncomment set real values here
-		// TargetStake: getTargetStake(),
-		// SuppliedStake: getSuppliedStake(),
+		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}
 }
@@ -2848,6 +2847,10 @@ func (m *Market) getTargetStake() float64 {
 		return 0
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
+}
+
+func (m *Market) getSuppliedStake() uint64 {
+	return m.liquidity.CalculateSuppliedStake()
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
