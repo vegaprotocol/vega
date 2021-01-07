@@ -1032,6 +1032,8 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 	}
 
 	mkt := types.Market{
+		TradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
+		State:         types.Market_STATE_ACTIVE,
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
 		Fees: &types.Fees{
