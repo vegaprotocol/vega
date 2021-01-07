@@ -5,3 +5,7 @@ plugins:
     out: proto/doc
     opt: html,index.html
     strategy: all
+  - name: doc
+    out: proto/doc
+    opt: markdown,index.md
+    strategy: all
