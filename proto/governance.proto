@@ -5,9 +5,9 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-import "proto/markets.proto";
-import "proto/vega.proto";
-import "proto/assets.proto";
+import "markets.proto";
+import "vega.proto";
+import "assets.proto";
 
 // Future product configuration.
 message FutureProduct {

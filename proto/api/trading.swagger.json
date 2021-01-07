@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "proto/api/trading.proto",
+    "title": "api/trading.proto",
     "version": "version not set"
   },
   "schemes": [
