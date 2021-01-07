@@ -1316,7 +1316,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
-	expectedTargetStake := float64(oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.TargetStakeParameters.ScalingFactor
+	expectedTargetStake := float64(matchingPrice*oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.TargetStakeParameters.ScalingFactor
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)

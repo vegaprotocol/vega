@@ -95,7 +95,7 @@ type PriceMonitor interface {
 // TargetStakeCalculator interface
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
-	GetTargetStake(rf types.RiskFactor, now time.Time) float64
+	GetTargetStake(rf types.RiskFactor, now time.Time, markPruce uint64) float64
 }
 
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
@@ -2846,7 +2846,7 @@ func (m *Market) getTargetStake() float64 {
 		m.log.Debug("unable to get risk factors, can't calculate target")
 		return 0
 	}
-	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
+	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice)
 }
 
 func (m *Market) getSuppliedStake() uint64 {

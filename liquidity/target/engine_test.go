@@ -43,7 +43,7 @@ func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 		Short: 0.1,
 	}
 
-	targetStake := engine.GetTargetStake(rf, now)
+	targetStake := engine.GetTargetStake(rf, now, 123)
 
 	require.Equal(t, 0.0, targetStake)
 }
@@ -55,7 +55,8 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	rfLong := 0.3
 	rfShort := 0.1
 	var oi uint64 = 23
-	expectedTargetStake := float64(oi) * math.Max(rfLong, rfShort) * scalingFactor
+	var markPrice uint64 = 123
+	expectedTargetStake := float64(markPrice*oi) * math.Max(rfLong, rfShort) * scalingFactor
 
 	engine := target.NewEngine(params)
 	rf := types.RiskFactor{
@@ -65,10 +66,10 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	err := engine.RecordOpenInterest(oi, now)
 	require.NoError(t, err)
 
-	targetStakeNow := engine.GetTargetStake(rf, now)
-	targetStakeLaterInWindow := engine.GetTargetStake(rf, now.Add(time.Minute))
-	targetStakeAtEndOfWindow := engine.GetTargetStake(rf, now.Add(tWindow))
-	targetStakeAfterWindow := engine.GetTargetStake(rf, now.Add(tWindow).Add(time.Nanosecond))
+	targetStakeNow := engine.GetTargetStake(rf, now, markPrice)
+	targetStakeLaterInWindow := engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
+	targetStakeAtEndOfWindow := engine.GetTargetStake(rf, now.Add(tWindow), markPrice)
+	targetStakeAfterWindow := engine.GetTargetStake(rf, now.Add(tWindow).Add(time.Nanosecond), markPrice)
 
 	require.Equal(t, expectedTargetStake, targetStakeNow)
 	require.Equal(t, expectedTargetStake, targetStakeLaterInWindow)
@@ -82,8 +83,9 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := 0.3
 	rfShort := 0.1
+	var markPrice uint64 = 123
 	expectedTargetStake := func(oi uint64) float64 {
-		return float64(oi) * math.Max(rfLong, rfShort) * scalingFactor
+		return float64(markPrice*oi) * math.Max(rfLong, rfShort) * scalingFactor
 	}
 
 	engine := target.NewEngine(params)
@@ -96,26 +98,28 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	var maxOI uint64 = 23
 	err := engine.RecordOpenInterest(maxOI, now)
 	require.NoError(t, err)
-	actualTargetStake1 := engine.GetTargetStake(rf, now)
-	actualTargetStake2 := engine.GetTargetStake(rf, now.Add(time.Minute))
+	actualTargetStake1 := engine.GetTargetStake(rf, now, markPrice)
+	actualTargetStake2 := engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake2)
 	// Max in past
 	now = now.Add(time.Nanosecond)
+	markPrice = 456
 	err = engine.RecordOpenInterest(maxOI-1, now)
 	require.NoError(t, err)
-	actualTargetStake1 = engine.GetTargetStake(rf, now)
-	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute))
+	actualTargetStake1 = engine.GetTargetStake(rf, now, markPrice)
+	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake2)
 
 	// Max in current time
 	now = now.Add(time.Second)
 	maxOI = 10 * maxOI
+	markPrice = 23
 	err = engine.RecordOpenInterest(maxOI, now)
 	require.NoError(t, err)
-	actualTargetStake1 = engine.GetTargetStake(rf, now)
-	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute))
+	actualTargetStake1 = engine.GetTargetStake(rf, now, markPrice)
+	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake2)
 
@@ -125,8 +129,9 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	err = engine.RecordOpenInterest(lastRecordedValue, now)
 	require.NoError(t, err)
 	now = now.Add(3 * tWindow)
-	actualTargetStake1 = engine.GetTargetStake(rf, now)
-	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute))
+	markPrice = 7777777
+	actualTargetStake1 = engine.GetTargetStake(rf, now, markPrice)
+	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
 	require.Equal(t, expectedTargetStake(lastRecordedValue), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(lastRecordedValue), actualTargetStake2)
 
