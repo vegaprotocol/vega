@@ -129,10 +129,6 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		now                           = e.currentTime.UnixNano()
 	)
 
-	if len(lps.Buys) == 0 || len(lps.Sells) == 0 {
-		return ErrEmptyShape
-	}
-
 	// regardless of the final operaion (create,update or delete) we finish
 	// sending an event.
 	defer func() {
@@ -140,17 +136,25 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		e.broker.Send(evt)
 	}()
 
+	newLp := lp == nil
+	if newLp {
+		lp = &types.LiquidityProvision{
+			Id:        id,
+			MarketID:  lps.MarketID,
+			PartyID:   party,
+			CreatedAt: now,
+			Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		}
+	}
+
+	if len(lps.Buys) == 0 || len(lps.Sells) == 0 {
+		return ErrEmptyShape
+	}
+
 	// We are trying to delete the provision
 	if lps.CommitmentAmount == 0 {
 		// Reject a delete attempt for a non existing LP.
-		if lp == nil {
-			lp = &types.LiquidityProvision{
-				Id:        id,
-				MarketID:  lps.MarketID,
-				PartyID:   party,
-				CreatedAt: now,
-				Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
-			}
+		if newLp {
 			return ErrLiquidityProvisionDoesNotExist
 		}
 		// Cancel the request
@@ -160,14 +164,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		return nil
 	}
 
-	if lp == nil {
-		lp = &types.LiquidityProvision{
-			Id:        id,
-			MarketID:  lps.MarketID,
-			PartyID:   party,
-			CreatedAt: now,
-		}
-
+	if newLp {
 		e.provisions[party] = lp
 		e.orders[party] = map[string]*types.Order{}
 		e.liquidityOrders[party] = map[string]*types.Order{}

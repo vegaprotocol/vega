@@ -73,65 +73,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 func TestSubmissions(t *testing.T) {
 	t.Run("CreateUpdateDelete", testSubmissionCRUD)
 	t.Run("CancelNonExisting", testCancelNonExistingSubmission)
-	t.Run("FailWhenNoShape", testSubmissionFailWithOneShapeOnly)
-	t.Run("FailWhenShapeForOneSideOnly", testSubmissionFailWhenOneShapeSepcified)
-}
-
-func testSubmissionFailWhenOneShapeSepcified(t *testing.T) {
-	var (
-		party = "party-1"
-		ctx   = context.Background()
-		now   = time.Now()
-		tng   = newTestEngine(t, now)
-	)
-	defer tng.ctrl.Finish()
-
-	require.Nil(t, tng.engine.LiquidityProvisionByPartyID("some-party"))
-
-	buyShape := []*types.LiquidityOrder{
-		{
-			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
-			Offset:     -1,
-			Proportion: 1,
-		},
-	}
-	sellShape := []*types.LiquidityOrder{
-		{
-			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
-			Offset:     1,
-			Proportion: 1,
-		},
-	}
-
-	lps1 := &types.LiquidityProvisionSubmission{
-		MarketID: "test", CommitmentAmount: 100, Fee: "0.5",
-		Buys: nil, Sells: sellShape,
-	}
-
-	lps2 := &types.LiquidityProvisionSubmission{
-		MarketID: "test", CommitmentAmount: 100, Fee: "0.5",
-		Buys: buyShape, Sells: nil,
-	}
-
-	lps3 := &types.LiquidityProvisionSubmission{
-		MarketID: "test", CommitmentAmount: 100, Fee: "0.5",
-		Buys: buyShape, Sells: sellShape,
-	}
-
-	// Create a submission should fire an event
-	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
-
-	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps1, party, "some-id-1"),
-	)
-
-	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps2, party, "some-id-2"),
-	)
-
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps3, party, "some-id-3"),
-	)
+	t.Run("FailWhenWithoutBothShapes", testSubmissionFailWithoutBothShapes)
 }
 
 func testSubmissionCRUD(t *testing.T) {
@@ -254,16 +196,32 @@ func testCancelNonExistingSubmission(t *testing.T) {
 				Proportion: 1,
 			},
 		},
+		Sells: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Offset:     1,
+				Proportion: 1,
+			},
+		},
 	}
+	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
+		Id:        "some-id",
+		MarketID:  tng.marketID,
+		PartyID:   party,
+		CreatedAt: now.UnixNano(),
+		Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+	})
 
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 	err := tng.engine.SubmitLiquidityProvision(ctx,
 		lps, party, "some-id")
 	require.Error(t, err)
 }
 
-func testSubmissionFailWithOneShapeOnly(t *testing.T) {
+func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	var (
 		party = "party-1"
+		id    = "some-id"
 		ctx   = context.Background()
 		now   = time.Now()
 		tng   = newTestEngine(t, now)
@@ -273,6 +231,7 @@ func testSubmissionFailWithOneShapeOnly(t *testing.T) {
 	// Expectations
 	lps := &types.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
+		MarketID:         tng.marketID,
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
@@ -282,9 +241,45 @@ func testSubmissionFailWithOneShapeOnly(t *testing.T) {
 		},
 	}
 
+	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
+		Id:        id,
+		MarketID:  tng.marketID,
+		PartyID:   party,
+		CreatedAt: now.UnixNano(),
+		Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+	})
+
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(3)
+
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
+
+	lps = &types.LiquidityProvisionSubmission{
+		CommitmentAmount: 10,
+		MarketID:         tng.marketID,
+		Sells: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Offset:     -1,
+				Proportion: 1,
+			},
+		},
+	}
+
+	require.Error(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+	)
+
+	lps = &types.LiquidityProvisionSubmission{
+		CommitmentAmount: 10,
+		MarketID:         tng.marketID,
+	}
+
+	require.Error(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+	)
+
 }
 
 func TestUpdate(t *testing.T) {
