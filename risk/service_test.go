@@ -67,7 +67,7 @@ func testMarginEstimateSuccess(t *testing.T) {
 				Instrument: &types.Instrument{
 					Product: &types.Instrument_Future{
 						Future: &types.Future{
-							Asset: "assetid",
+							SettlementAsset: "assetid",
 						},
 					},
 				},

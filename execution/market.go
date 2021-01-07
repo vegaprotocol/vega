@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -87,7 +88,7 @@ var (
 // PriceMonitor interface to handle price monitoring/auction triggers
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
-	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, now time.Time) error
+	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, v uint64, now time.Time) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 }
 
@@ -378,9 +379,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketState:           m.as.Mode(),
 		Trigger:               m.as.Trigger(),
 		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
-		// FIXME(WITOLD): uncomment set real values here
-		// TargetStake: getTargetStake(),
-		// SuppliedStake: getSuppliedStake(),
+		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}
 }
@@ -425,26 +424,20 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	// check price auction end
 	if m.as.InAuction() {
-		p := m.matching.GetIndicativePrice()
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if m.as.IsOpeningAuction() {
 			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
 				// mark opening auction as ending
-				if p != 0 {
-					// Prime price monitoring engine with the uncrossing price of the opening auction
-					if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
-						m.log.Error("Price monitoring error", logging.Error(err))
-					}
+				// Prime price monitoring engine with the uncrossing price of the opening auction
+				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
+					m.log.Error("Price monitoring error", logging.Error(err))
 				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
 				m.feeSplitter.TimeWindowStart(t)
 			}
 		} else if m.as.IsPriceAuction() {
-			// ending auction now would result in no trades so feed the last mark price into pMonitor
-			if p == 0 {
-				p = m.markPrice
-			}
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p, t); err != nil {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
 				m.log.Error("Price monitoring error", logging.Error(err))
 				// @TODO handle or panic? (panic is last resort)
 			}
@@ -1155,10 +1148,12 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil && len(trades) > 0 {
-		if err := m.pMonitor.CheckPrice(ctx, m.as, trades[len(trades)-1].Price, m.currentTime); err != nil {
-			m.log.Error("Price monitoring error", logging.Error(err))
-			// @TODO handle or panic? (panic is last resort)
+	if err == nil {
+		for _, t := range trades {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); err != nil {
+				m.log.Error("Price monitoring error", logging.Error(err))
+				// @TODO handle or panic? (panic is last resort)
+			}
 		}
 		if m.as.AuctionStart() {
 			m.EnterAuction(ctx)
@@ -1859,23 +1854,30 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		return nil, err
 	}
 
-	// Create a slive ready to store the generated events in
-	evts := make([]events.Event, 0, len(m.parkedOrders)+len(cancellations))
+	var (
+		// Create a slice ready to store the generated events in
+		evts = make([]events.Event, 0, len(m.parkedOrders)+len(cancellations))
+		// Check the parked order list of any orders from that same party
+		parkedCancels []*types.OrderCancellationConfirmation
+		// orders from park list to be removed
+		toRemove []*types.Order
+	)
 
-	// Check the parked order list of any orders from that same party
-	var parkedCancels []*types.OrderCancellationConfirmation
 	for _, order := range m.parkedOrders {
 		if order.PartyID == partyID {
-			order.Status = types.Order_STATUS_CANCELLED
-			m.removePeggedOrder(order)
-			order.UpdatedAt = m.currentTime.UnixNano()
-			evts = append(evts, events.NewOrderEvent(ctx, order))
-
-			parkedCancel := &types.OrderCancellationConfirmation{
-				Order: order,
-			}
-			parkedCancels = append(parkedCancels, parkedCancel)
+			toRemove = append(toRemove, order)
 		}
+	}
+	for _, order := range toRemove {
+		order.Status = types.Order_STATUS_CANCELLED
+		m.removePeggedOrder(order)
+		order.UpdatedAt = m.currentTime.UnixNano()
+		evts = append(evts, events.NewOrderEvent(ctx, order))
+
+		parkedCancel := &types.OrderCancellationConfirmation{
+			Order: order,
+		}
+		parkedCancels = append(parkedCancels, parkedCancel)
 	}
 
 	for _, cancellation := range cancellations {
@@ -2392,8 +2394,7 @@ func (m *Market) validateOrderAmendment(
 	order *types.Order,
 	amendment *types.OrderAmendment,
 ) error {
-
-	// check TIF and expiracy
+	// check TIF and expiry
 	if amendment.TimeInForce == types.Order_TIF_GTT {
 		if amendment.ExpiresAt == nil {
 			return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
@@ -2846,6 +2847,10 @@ func (m *Market) getTargetStake() float64 {
 		return 0
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime)
+}
+
+func (m *Market) getSuppliedStake() uint64 {
+	return m.liquidity.CalculateSuppliedStake()
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {

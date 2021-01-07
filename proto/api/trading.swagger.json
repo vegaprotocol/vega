@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "proto/api/trading.proto",
+    "title": "api/trading.proto",
     "version": "version not set"
   },
   "schemes": [
@@ -3332,9 +3332,13 @@
           "type": "string",
           "description": "The maturity for the future."
         },
-        "asset": {
+        "settlementAsset": {
           "type": "string",
           "description": "The asset for the future."
+        },
+        "quoteName": {
+          "type": "string",
+          "description": "Quote name of the instrument."
         },
         "ethereumEvent": {
           "$ref": "#/definitions/vegaEthereumEvent",
@@ -3350,9 +3354,13 @@
           "type": "string",
           "description": "Future product maturity (ISO8601/RFC3339 timestamp)."
         },
-        "asset": {
+        "settlementAsset": {
           "type": "string",
-          "description": "Product asset name."
+          "description": "Product settlementAsset ID."
+        },
+        "quoteName": {
+          "type": "string",
+          "title": "Product quoteName"
         }
       },
       "description": "Future product configuration."
@@ -3424,10 +3432,6 @@
           "type": "string",
           "description": "Name of the instrument."
         },
-        "quoteName": {
-          "type": "string",
-          "description": "Quote name of the instrument."
-        },
         "metadata": {
           "$ref": "#/definitions/vegaInstrumentMetadata",
           "description": "A collection of instrument meta-data."
@@ -3454,10 +3458,6 @@
         "code": {
           "type": "string",
           "description": "Instrument code."
-        },
-        "quoteName": {
-          "type": "string",
-          "description": "Quote (secondary) security."
         },
         "future": {
           "$ref": "#/definitions/vegaFutureProduct",

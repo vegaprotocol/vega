@@ -244,7 +244,9 @@ type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
-	Asset string `json:"asset"`
+	SettlementAsset string `json:"settlementAsset"`
+	// String representing the quote (e.g. BTCUSD -> USD is quote)
+	QuoteName string `json:"quoteName"`
 }
 
 type InstrumentConfigurationInput struct {
@@ -252,8 +254,6 @@ type InstrumentConfigurationInput struct {
 	Name string `json:"name"`
 	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
 	Code string `json:"code"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
 	// Future product specification
 	FutureProduct *FutureProductInput `json:"futureProduct"`
 }
@@ -1735,7 +1735,7 @@ const (
 	ProposalStatePassed ProposalState = "Passed"
 	// Proposal didn't get enough votes
 	ProposalStateDeclined ProposalState = "Declined"
-	// Proposal has could not gain enough support to be executed
+	// Proposal could not gain enough support to be executed
 	ProposalStateRejected ProposalState = "Rejected"
 	// Proposal has been executed and the changes under this proposal have now been applied
 	ProposalStateEnacted ProposalState = "Enacted"

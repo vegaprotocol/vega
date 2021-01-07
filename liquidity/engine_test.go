@@ -354,3 +354,75 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 0)
 }
+func TestCalculateSuppliedStake(t *testing.T) {
+	var (
+		party1 = "party-1"
+		party2 = "party-2"
+		party3 = "party-3"
+		ctx    = context.Background()
+		now    = time.Now()
+		tng    = newTestEngine(t, now)
+	)
+	defer tng.ctrl.Finish()
+
+	// We don't care about the following calls
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Send a submission to create the shape
+	lp1 := &types.LiquidityProvisionSubmission{
+		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -2},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
+		},
+	}
+
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1"),
+	)
+	suppliedStake := tng.engine.CalculateSuppliedStake()
+	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
+
+	lp2 := &types.LiquidityProvisionSubmission{
+		MarketID: tng.marketID, CommitmentAmount: 500, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -3},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 3},
+		},
+	}
+
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id2"),
+	)
+	suppliedStake = tng.engine.CalculateSuppliedStake()
+	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount, suppliedStake)
+
+	lp3 := &types.LiquidityProvisionSubmission{
+		MarketID: tng.marketID, CommitmentAmount: 962, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 10},
+		},
+	}
+
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id3"),
+	)
+	suppliedStake = tng.engine.CalculateSuppliedStake()
+	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
+
+	lp1.CommitmentAmount -= 100
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1"),
+	)
+	suppliedStake = tng.engine.CalculateSuppliedStake()
+	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
+}

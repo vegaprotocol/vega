@@ -795,7 +795,10 @@ type Future {
   maturity: String!
 
   "The name of the asset (string)"
-  asset: Asset!
+  settlementAsset: Asset!
+
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
 
   "The oracle used for this product (Oracle union)"
   oracle: Oracle!
@@ -814,9 +817,6 @@ type Instrument {
 
   "Full and fairly descriptive name for the instrument"
   name: String!
-
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
 
   "Metadata for this instrument"
   metadata: InstrumentMetadata!
@@ -1835,14 +1835,19 @@ input FutureProductInput {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
-  asset: String!
+  settlementAsset: String!
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
 }
 
 type FutureProduct {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
-  "Product asset name"
-  asset: Asset!
+  "Product asset ID"
+  settlementAsset: Asset!
+ "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+
 }
 
 input InstrumentConfigurationInput {
@@ -1850,8 +1855,6 @@ input InstrumentConfigurationInput {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
   "Future product specification"
   futureProduct: FutureProductInput
 }
@@ -1861,8 +1864,6 @@ type InstrumentConfiguration {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
   "Future product specification"
   futureProduct: FutureProduct
 }
@@ -2100,7 +2101,7 @@ enum ProposalState {
   Passed
   "Proposal didn't get enough votes"
   Declined
-  "Proposal has could not gain enough support to be executed"
+  "Proposal could not gain enough support to be executed"
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
@@ -2109,7 +2110,7 @@ enum ProposalState {
 }
 
 type Proposal {
-  "Proposal id that is filled by VEGA once proposal reaches the network"
+  "Proposal ID that is filled by VEGA once proposal reaches the network"
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!

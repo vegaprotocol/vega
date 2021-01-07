@@ -48,8 +48,9 @@ func assignProduct(
 	case *types.InstrumentConfiguration_Future:
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Asset:    product.Future.Asset,
-				Maturity: product.Future.Maturity,
+				SettlementAsset: product.Future.SettlementAsset,
+				QuoteName:       product.Future.QuoteName,
+				Maturity:        product.Future.Maturity,
 				Oracle: &types.Future_EthereumEvent{
 					// FIXME(): this should probably disapear / be removed
 					// or take another forms.
@@ -91,9 +92,8 @@ func createInstrument(
 ) (*types.Instrument, error) {
 	intialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
 	result := &types.Instrument{
-		Name:      input.Name,
-		Code:      input.Code,
-		QuoteName: input.QuoteName,
+		Name: input.Name,
+		Code: input.Code,
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
 		},
@@ -237,7 +237,7 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 	if deepCheck && maturity.UnixNano() < currentTime.UnixNano() {
 		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
-	return validateAsset(future.Asset, assets, deepCheck)
+	return validateAsset(future.SettlementAsset, assets, deepCheck)
 }
 
 func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {

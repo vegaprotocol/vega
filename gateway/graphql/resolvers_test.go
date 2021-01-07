@@ -88,7 +88,7 @@ func getTestMarket() *types.Market {
 								Event:      "price_changed",
 							},
 						},
-						Asset: "Ethereum/Ether",
+						SettlementAsset: "Ethereum/Ether",
 					},
 				},
 			},

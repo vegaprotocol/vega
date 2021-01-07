@@ -62,13 +62,10 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set
-func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []*types.Order) (float64, error) {
+func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []*types.Order) float64 {
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
-	bLiq, sLiq, err := e.calculateBuySellLiquidityWithMinMax(markPrice, orders, minPrice, maxPrice)
-	if err != nil {
-		return 0, err
-	}
-	return math.Min(bLiq, sLiq), nil
+	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(markPrice, orders, minPrice, maxPrice)
+	return math.Min(bLiq, sLiq)
 }
 
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
@@ -77,10 +74,7 @@ func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []*types.O
 func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation float64, orders []*types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
 
-	buySupplied, sellSupplied, err := e.calculateBuySellLiquidityWithMinMax(markPrice, orders, minPrice, maxPrice)
-	if err != nil {
-		return err
-	}
+	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(markPrice, orders, minPrice, maxPrice)
 
 	buyRemaining := liquidityObligation - buySupplied
 	if err := e.updateSizes(buyRemaining, markPrice, buyShapes, true, minPrice, maxPrice); err != nil {
@@ -96,7 +90,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e *Engine) calculateBuySellLiquidityWithMinMax(currentPrice float64, orders []*types.Order, minPrice, maxPrice float64) (float64, float64, error) {
+func (e *Engine) calculateBuySellLiquidityWithMinMax(currentPrice float64, orders []*types.Order, minPrice, maxPrice float64) (float64, float64) {
 	bLiq := 0.0
 	sLiq := 0.0
 	for _, o := range orders {
@@ -107,7 +101,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(currentPrice float64, order
 			sLiq += float64(o.Price) * float64(o.Remaining) * e.getProbabilityOfTrading(currentPrice, o.Price, false, minPrice, maxPrice)
 		}
 	}
-	return bLiq, sLiq, nil
+	return bLiq, sLiq
 }
 
 func (e *Engine) updateSizes(liquidityObligation, currentPrice float64, orders []*LiquidityOrder, isBid bool, minPrice, maxPrice float64) error {

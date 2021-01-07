@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
@@ -150,10 +151,9 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
-				Id:        "Crypto/ETHUSD/Futures/Dec19",
-				Code:      "CRYPTO:ETHUSD/DEC19",
-				Name:      "December 2019 ETH vs USD future",
-				QuoteName: "USD",
+				Id:   "Crypto/ETHUSD/Futures/Dec19",
+				Code: "CRYPTO:ETHUSD/DEC19",
+				Name: "December 2019 ETH vs USD future",
 				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
@@ -170,7 +170,8 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 								Event:      "price_changed",
 							},
 						},
-						Asset: "ETH",
+						SettlementAsset: "ETH",
+						QuoteName:       "USD",
 					},
 				},
 			},
@@ -184,10 +185,11 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 			RiskModel: &types.TradableInstrument_SimpleRiskModel{
 				SimpleRiskModel: &types.SimpleRiskModel{
 					Params: &types.SimpleModelParams{
-						FactorLong:  0.15,
-						FactorShort: 0.25,
-						MaxMoveUp:   MAXMOVEUP,
-						MinMoveDown: MINMOVEDOWN,
+						FactorLong:           0.15,
+						FactorShort:          0.25,
+						MaxMoveUp:            MAXMOVEUP,
+						MinMoveDown:          MINMOVEDOWN,
+						ProbabilityOfTrading: 0.1,
 					},
 				},
 			},
@@ -468,7 +470,7 @@ func TestSetMarketID(t *testing.T) {
 									Event:      "price_changed",
 								},
 							},
-							Asset: "Ethereum/Ether",
+							SettlementAsset: "Ethereum/Ether",
 						},
 					},
 				},
@@ -1361,8 +1363,97 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-
 	require.Equal(t, fmt.Sprintf("%.f", expectedTargetStake), mktData.TargetStake)
+}
+
+func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	var matchingPrice uint64 = 111
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice + 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice - 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	require.Equal(t, 0, len(confirmationBuy.Trades))
+
+	lp1 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 200,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	err = tm.market.SubmitLiquidityProvision(context.Background(), lp1, party1, "id-lp1")
+	require.NoError(t, err)
+
+	lp2 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 100,
+		Fee:              "0.06",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	err = tm.market.SubmitLiquidityProvision(context.Background(), lp2, party2, "id-lp2")
+	require.NoError(t, err)
+
+	mktData := tm.market.GetMarketData()
+	require.NotNil(t, mktData)
+	expectedSuppliedStake := lp1.CommitmentAmount + lp2.CommitmentAmount
+
+	require.Equal(t, strconv.FormatUint(expectedSuppliedStake, 10), mktData.SuppliedStake)
 }
 
 func getMarketOrder(tm *testMarket,
@@ -2178,4 +2269,62 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 	amendConf, err := tm.market.AmendOrder(ctx, amendment)
 	assert.Nil(t, amendConf)
 	assert.EqualError(t, err, "OrderError: Cannot amend TIF from GFA or GFN")
+}
+
+func TestOrderBook_CancelAll2771(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.Equal(t, o1conf.Order.Status, types.Order_STATUS_PARKED)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.Equal(t, o2conf.Order.Status, types.Order_STATUS_PARKED)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	confs, err := tm.market.CancelAllOrders(ctx, "trader-A")
+	assert.NoError(t, err)
+	assert.Len(t, confs, 2)
+}
+
+func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 5000)
+	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.NotNil(t, o1conf)
+	assert.NoError(t, err)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID:   o1.Id,
+		PartyID:   "trader-A",
+		Price:     &types.Price{Value: 4000},
+		SizeDelta: +10,
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.Nil(t, amendConf)
+	assert.Error(t, types.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER, err)
+	assert.Equal(t, types.Order_STATUS_PARKED, o1.Status)
+	assert.Equal(t, uint64(1), o1.Version)
 }

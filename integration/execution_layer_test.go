@@ -1043,10 +1043,9 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
-				Id:        fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
-				Code:      fmt.Sprintf("CRYPTO/%v", val(row, 0)),
-				Name:      fmt.Sprintf("%s future", val(row, 0)),
-				QuoteName: val(row, 2),
+				Id:   fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
+				Code: fmt.Sprintf("CRYPTO/%v", val(row, 0)),
+				Name: fmt.Sprintf("%s future", val(row, 0)),
 				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
@@ -1064,7 +1063,8 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 								Value:      u64val(row, 14),
 							},
 						},
-						Asset: val(row, 3),
+						SettlementAsset: val(row, 3),
+						QuoteName:       val(row, 2),
 					},
 				},
 			},
@@ -1097,8 +1097,6 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			ScalingFactor: 10,
 		},
 	}
-	fmt.Printf("\nOpening duration: %v\n", i64val(row, 15))
-
 	if val(row, 5) == "forward" {
 		mkt.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
 			LogNormalRiskModel: &types.LogNormalRiskModel{
