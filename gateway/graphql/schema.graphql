@@ -2100,7 +2100,7 @@ enum ProposalState {
   Passed
   "Proposal didn't get enough votes"
   Declined
-  "Proposal has could not gain enough support to be executed"
+  "Proposal could not gain enough support to be executed"
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
@@ -2109,7 +2109,7 @@ enum ProposalState {
 }
 
 type Proposal {
-  "Proposal id that is filled by VEGA once proposal reaches the network"
+  "Proposal ID that is filled by VEGA once proposal reaches the network"
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!
