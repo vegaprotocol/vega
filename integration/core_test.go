@@ -51,7 +51,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	//openAuctionDuration, _ := strconv.ParseInt(row.Cells[11].Value, 10, 64)
 	if row.Cells[12].Value != "continuous" {
 		batchDuration, _ := strconv.ParseInt(row.Cells[12].Value, 10, 64)
-		mkt.TradingMode = &proto.Market_Discrete{
+		mkt.TradingModeConfig = &proto.Market_Discrete{
 			Discrete: &proto.DiscreteTrading{
 				DurationNs: batchDuration,
 			},
@@ -130,7 +130,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		},
 		// For now we won't have an opening auction
 		// OpeningAuction: &proto.AuctionDuration{},
-		TradingMode: &proto.Market_Continuous{
+		TradingModeConfig: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: &proto.PriceMonitoringSettings{

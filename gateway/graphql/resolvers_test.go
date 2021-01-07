@@ -111,7 +111,7 @@ func getTestMarket() *types.Market {
 				},
 			},
 		},
-		TradingMode: &types.Market_Continuous{
+		TradingModeConfig: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 	}

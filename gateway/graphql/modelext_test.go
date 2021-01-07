@@ -33,14 +33,14 @@ func TestModelConverters(t *testing.T) {
 
 	t.Run("TradingModeFromProto unimplemented", func(t *testing.T) {
 		ptm := int(0)
-		tm, err := gql.TradingModeFromProto(ptm)
+		tm, err := gql.TradingModeConfigFromProto(ptm)
 		assert.Nil(t, tm)
 		assert.NotNil(t, err)
 		assert.Equal(t, gql.ErrUnimplementedTradingMode, err)
 	})
 
 	t.Run("TradingModeFromProto nil", func(t *testing.T) {
-		tm, err := gql.TradingModeFromProto(nil)
+		tm, err := gql.TradingModeConfigFromProto(nil)
 		assert.Nil(t, tm)
 		assert.NotNil(t, err)
 		assert.Equal(t, gql.ErrNilTradingMode, err)
@@ -52,7 +52,7 @@ func TestModelConverters(t *testing.T) {
 				TickSize: "0.1",
 			},
 		}
-		tm, err := gql.TradingModeFromProto(ptm)
+		tm, err := gql.TradingModeConfigFromProto(ptm)
 		assert.NotNil(t, tm)
 		assert.Nil(t, err)
 		_, ok := tm.(*gql.ContinuousTrading)
@@ -65,7 +65,7 @@ func TestModelConverters(t *testing.T) {
 				DurationNs: 42,
 			},
 		}
-		tm, err := gql.TradingModeFromProto(ptm)
+		tm, err := gql.TradingModeConfigFromProto(ptm)
 		assert.NotNil(t, tm)
 		assert.Nil(t, err)
 		_, ok := tm.(*gql.DiscreteTrading)

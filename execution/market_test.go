@@ -195,7 +195,7 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 			},
 		},
 		OpeningAuction: openingAuctionDuration,
-		TradingMode: &types.Market_Continuous{
+		TradingModeConfig: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
@@ -486,7 +486,7 @@ func TestSetMarketID(t *testing.T) {
 					},
 				},
 			},
-			TradingMode: &types.Market_Continuous{
+			TradingModeConfig: &types.Market_Continuous{
 				Continuous: &types.ContinuousTrading{},
 			},
 		}
