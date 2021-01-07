@@ -378,7 +378,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:            auctionEnd,
 		MarketState:           m.as.Mode(),
 		Trigger:               m.as.Trigger(),
-		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
+		TargetStake:           strconv.FormatFloat(m.getTargetStake(), 'f', -1, 64),
 		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 	}

@@ -1363,7 +1363,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-	require.Equal(t, fmt.Sprintf("%.f", expectedTargetStake), mktData.TargetStake)
+	require.Equal(t, strconv.FormatFloat(expectedTargetStake, 'f', -1, 64), mktData.TargetStake)
 }
 
 func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
