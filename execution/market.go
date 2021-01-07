@@ -651,8 +651,7 @@ func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 		} else {
 			_, err := m.submitValidatedOrder(ctx, order)
 			if err != nil {
-				// Failed to place the order on the book
-				failedToUnpark = append(failedToUnpark, order)
+				m.removePeggedOrder(order)
 			}
 		}
 	}
