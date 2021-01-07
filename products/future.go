@@ -11,9 +11,10 @@ import (
 
 // Future represent a Future as describe by the market framework
 type Future struct {
-	Asset    string
-	Maturity time.Time
-	Oracle   oracles.Oracle
+	SettlementAsset string
+	QuoteName       string
+	Maturity        time.Time
+	Oracle          oracles.Oracle
 }
 
 // Settle a position against the future
@@ -23,7 +24,7 @@ func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialA
 		return nil, err
 	}
 	return &types.FinancialAmount{
-		Asset:  f.Asset,
+		Asset:  f.SettlementAsset,
 		Amount: int64((settlementPrice - entryPrice)) * netPosition,
 	}, nil
 }
@@ -35,7 +36,7 @@ func (f *Future) Value(markPrice uint64) (uint64, error) {
 
 // GetAsset return the asset used by the future
 func (f *Future) GetAsset() string {
-	return f.Asset
+	return f.SettlementAsset
 }
 
 func newFuture(f *types.Future) (*Future, error) {
@@ -50,8 +51,9 @@ func newFuture(f *types.Future) (*Future, error) {
 	}
 
 	return &Future{
-		Asset:    f.Asset,
-		Maturity: maturity,
-		Oracle:   oracle,
+		SettlementAsset: f.SettlementAsset,
+		QuoteName:       f.QuoteName,
+		Maturity:        maturity,
+		Oracle:          oracle,
 	}, nil
 }

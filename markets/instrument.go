@@ -71,7 +71,6 @@ func NewInstrument(pi *types.Instrument) (*Instrument, error) {
 		Name:             pi.Name,
 		Metadata:         pi.Metadata,
 		Product:          product,
-		Quote:            pi.QuoteName,
 		InitialMarkPrice: pi.InitialMarkPrice,
 	}, err
 }

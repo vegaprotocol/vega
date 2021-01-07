@@ -35,7 +35,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
 	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
 	prod := mkt.TradableInstrument.Instrument.GetFuture()
-	prod.Asset = parts[0]
+	prod.SettlementAsset = parts[0]
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: prod,
 	} // set asset, reassign the product

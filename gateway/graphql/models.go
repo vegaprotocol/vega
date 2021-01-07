@@ -244,7 +244,9 @@ type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `json:"maturity"`
 	// Product asset name
-	Asset string `json:"asset"`
+	SettlementAsset string `json:"settlementAsset"`
+	// String representing the quote (e.g. BTCUSD -> USD is quote)
+	QuoteName string `json:"quoteName"`
 }
 
 type InstrumentConfigurationInput struct {
@@ -252,8 +254,6 @@ type InstrumentConfigurationInput struct {
 	Name string `json:"name"`
 	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
 	Code string `json:"code"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
 	// Future product specification
 	FutureProduct *FutureProductInput `json:"futureProduct"`
 }

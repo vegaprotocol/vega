@@ -14,8 +14,10 @@ message FutureProduct {
 
   // Future product maturity (ISO8601/RFC3339 timestamp).
   string maturity = 1 [(validator.field) = {string_not_empty : true}];
-  // Product asset name.
-  string asset = 2  [(validator.field) = {string_not_empty : true}];
+  // Product settlementAsset ID.
+  string settlementAsset = 2  [(validator.field) = {string_not_empty : true}];
+  // Product quoteName
+  string quoteName = 3 [(validator.field) = {string_not_empty : true}];
 }
 
 // Instrument configuration.
@@ -25,8 +27,6 @@ message InstrumentConfiguration {
   string name = 1 [(validator.field) = {string_not_empty : true}];
   // Instrument code.
   string code = 2 [(validator.field) = {string_not_empty : true}];
-  // Quote (secondary) security.
-  string quoteName = 3 [(validator.field) = {string_not_empty : true}];
   // Product specification.
   oneof product {
     // Futures.
