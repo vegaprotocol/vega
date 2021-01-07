@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
@@ -1042,12 +1041,12 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 				MakerFee:          val(row, 17),
 			},
 		},
-		TradableInstrument: &proto.TradableInstrument{
-			Instrument: &proto.Instrument{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
 				Id:   fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
 				Code: fmt.Sprintf("CRYPTO/%v", val(row, 0)),
 				Name: fmt.Sprintf("%s future", val(row, 0)),
-				Metadata: &proto.InstrumentMetadata{
+				Metadata: &types.InstrumentMetadata{
 					Tags: []string{
 						"asset_class:fx/crypto",
 						"product:futures",
