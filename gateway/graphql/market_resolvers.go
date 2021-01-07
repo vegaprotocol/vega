@@ -204,8 +204,8 @@ func (r *myMarketResolver) PriceMonitoringSettings(ctx context.Context, obj *typ
 	return PriceMonitoringSettingsFromProto(obj.PriceMonitoringSettings)
 }
 
-func (r *myMarketResolver) TradingMode(ctx context.Context, obj *types.Market) (TradingMode, error) {
-	return TradingModeFromProto(obj.TradingMode)
+func (r *myMarketResolver) TradingModeConfig(ctx context.Context, obj *types.Market) (TradingMode, error) {
+	return TradingModeConfigFromProto(obj.TradingModeConfig)
 }
 
 func (r *myMarketResolver) TargetStakeParameters(ctx context.Context, obj *types.Market) (*TargetStakeParameters, error) {
@@ -214,4 +214,12 @@ func (r *myMarketResolver) TargetStakeParameters(ctx context.Context, obj *types
 		ScalingFactor: obj.TargetStakeParameters.ScalingFactor,
 	}, nil
 
+}
+
+func (r *myMarketResolver) TradingMode(ctx context.Context, obj *types.Market) (MarketTradingMode, error) {
+	return convertMarketTradingModeFromProto(obj.TradingMode)
+}
+
+func (r *myMarketResolver) State(ctx context.Context, obj *types.Market) (MarketState, error) {
+	return convertMarketStateFromProto(obj.State)
 }

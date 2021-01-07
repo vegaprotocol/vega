@@ -154,12 +154,19 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	// set a fake tick size to the continuous trading if it's continuous
-	switch tmod := marketConfig.TradingMode.(type) {
+	switch tmod := marketConfig.TradingModeConfig.(type) {
 	case *types.Market_Continuous:
 		tmod.Continuous.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	case *types.Market_Discrete:
 		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	}
+
+	// TODO: to remove sometime when it's better handled elsewhere?
+	// we do it here, so it's sent as part of the event the very first time
+	// at least, this might be done in the governance engine later
+	// on when the proper lifecycle is implemented with the proposal.
+	marketConfig.State = types.Market_STATE_ACTIVE
+	marketConfig.TradingMode = types.Market_TRADING_MODE_CONTINUOUS
 
 	// create market auction state
 	mas := monitor.NewAuctionState(marketConfig, now)

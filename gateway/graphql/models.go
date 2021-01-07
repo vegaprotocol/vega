@@ -1134,53 +1134,120 @@ func (e LiquidityProvisionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// What market mode are we in
-type MarketMode string
+// The current state of a market
+type MarketState string
 
 const (
-	// Continuous trading where orders are processed and potentially matched on arrival
-	MarketModeContinuous MarketMode = "CONTINUOUS"
-	// Auction trading where orders are uncrossed at the end of the opening auction period
-	MarketModeOpeningAuction MarketMode = "OPENING_AUCTION"
-	// Auction as normal trading mode for the market, where orders are uncrossed periodically
-	MarketModeBatchAuction MarketMode = "BATCH_AUCTION"
-	// Auction triggered by price/liquidity monitoring
-	MarketModeMonitoringAuction MarketMode = "MONITORING_AUCTION"
+	// The Governance proposal valid and accepted
+	MarketStateProposed MarketState = "PROPOSED"
+	// Outcome of governance votes is to reject the market
+	MarketStateRejected MarketState = "REJECTED"
+	// Governance vote passes/wins
+	MarketStatePending MarketState = "PENDING"
+	// Market triggers cancellation condition or governance
+	// votes to close before market becomes Active
+	MarketStateCancelled MarketState = "CANCELLED"
+	// Enactment date reached and usual auction exit checks pass
+	MarketStateActive MarketState = "ACTIVE"
+	// Price monitoring or liquidity monitoring trigger
+	MarketStateSuspended MarketState = "SUSPENDED"
+	// Governance vote (to close)
+	MarketStateClosed MarketState = "CLOSED"
+	// Defined by the product (i.e. from a product parameter,
+	// specified in market definition, giving close date/time)
+	MarketStateTradingTerminated MarketState = "TRADING_TERMINATED"
+	// Settlement triggered and completed as defined by product
+	MarketStateSettled MarketState = "SETTLED"
 )
 
-var AllMarketMode = []MarketMode{
-	MarketModeContinuous,
-	MarketModeOpeningAuction,
-	MarketModeBatchAuction,
-	MarketModeMonitoringAuction,
+var AllMarketState = []MarketState{
+	MarketStateProposed,
+	MarketStateRejected,
+	MarketStatePending,
+	MarketStateCancelled,
+	MarketStateActive,
+	MarketStateSuspended,
+	MarketStateClosed,
+	MarketStateTradingTerminated,
+	MarketStateSettled,
 }
 
-func (e MarketMode) IsValid() bool {
+func (e MarketState) IsValid() bool {
 	switch e {
-	case MarketModeContinuous, MarketModeOpeningAuction, MarketModeBatchAuction, MarketModeMonitoringAuction:
+	case MarketStateProposed, MarketStateRejected, MarketStatePending, MarketStateCancelled, MarketStateActive, MarketStateSuspended, MarketStateClosed, MarketStateTradingTerminated, MarketStateSettled:
 		return true
 	}
 	return false
 }
 
-func (e MarketMode) String() string {
+func (e MarketState) String() string {
 	return string(e)
 }
 
-func (e *MarketMode) UnmarshalGQL(v interface{}) error {
+func (e *MarketState) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MarketMode(str)
+	*e = MarketState(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MarketMode", str)
+		return fmt.Errorf("%s is not a valid MarketState", str)
 	}
 	return nil
 }
 
-func (e MarketMode) MarshalGQL(w io.Writer) {
+func (e MarketState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// What market trading mode are we in
+type MarketTradingMode string
+
+const (
+	// Continuous trading where orders are processed and potentially matched on arrival
+	MarketTradingModeContinuous MarketTradingMode = "CONTINUOUS"
+	// Auction trading where orders are uncrossed at the end of the opening auction period
+	MarketTradingModeOpeningAuction MarketTradingMode = "OPENING_AUCTION"
+	// Auction as normal trading mode for the market, where orders are uncrossed periodically
+	MarketTradingModeBatchAuction MarketTradingMode = "BATCH_AUCTION"
+	// Auction triggered by price/liquidity monitoring
+	MarketTradingModeMonitoringAuction MarketTradingMode = "MONITORING_AUCTION"
+)
+
+var AllMarketTradingMode = []MarketTradingMode{
+	MarketTradingModeContinuous,
+	MarketTradingModeOpeningAuction,
+	MarketTradingModeBatchAuction,
+	MarketTradingModeMonitoringAuction,
+}
+
+func (e MarketTradingMode) IsValid() bool {
+	switch e {
+	case MarketTradingModeContinuous, MarketTradingModeOpeningAuction, MarketTradingModeBatchAuction, MarketTradingModeMonitoringAuction:
+		return true
+	}
+	return false
+}
+
+func (e MarketTradingMode) String() string {
+	return string(e)
+}
+
+func (e *MarketTradingMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketTradingMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketTradingMode", str)
+	}
+	return nil
+}
+
+func (e MarketTradingMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

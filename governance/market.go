@@ -72,11 +72,11 @@ func assignProduct(
 func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
 	switch mode := definition.TradingMode.(type) {
 	case *types.NewMarketConfiguration_Continuous:
-		target.TradingMode = &types.Market_Continuous{
+		target.TradingModeConfig = &types.Market_Continuous{
 			Continuous: mode.Continuous,
 		}
 	case *types.NewMarketConfiguration_Discrete:
-		target.TradingMode = &types.Market_Discrete{
+		target.TradingModeConfig = &types.Market_Discrete{
 			Discrete: mode.Discrete,
 		}
 	default:

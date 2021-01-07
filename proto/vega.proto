@@ -1034,7 +1034,7 @@ message MarketData {
   // indicative volume (zero if not in auction)
   uint64 indicativeVolume = 18;
   // the current state of the market
-  Market.Mode marketMode = 19;
+  Market.TradingMode marketTradingMode = 19;
   // if the market is in auction state, this field indicates what triggered the auction
   AuctionTrigger trigger = 20;
   // the targeted stake for the given market

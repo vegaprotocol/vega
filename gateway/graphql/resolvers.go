@@ -1117,8 +1117,8 @@ func (r *myMarketDataResolver) AuctionEnd(_ context.Context, m *types.MarketData
 	return &s, nil
 }
 
-func (r *myMarketDataResolver) MarketMode(_ context.Context, m *types.MarketData) (MarketMode, error) {
-	return convertMarketModeFromProto(m.MarketMode)
+func (r *myMarketDataResolver) MarketTradingMode(_ context.Context, m *types.MarketData) (MarketTradingMode, error) {
+	return convertMarketTradingModeFromProto(m.MarketTradingMode)
 }
 
 func (r *myMarketDataResolver) IndicativePrice(_ context.Context, m *types.MarketData) (string, error) {
