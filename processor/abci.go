@@ -110,6 +110,7 @@ func NewApp(
 		time:       time,
 		top:        top,
 		vegaWallet: vegaWallet,
+		netp:       netp,
 	}
 
 	// setup handlers
