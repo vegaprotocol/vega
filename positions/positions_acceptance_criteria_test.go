@@ -558,8 +558,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	for _, c := range cases {
-		pos, err := engine.RegisterOrder(&c.order)
-		assert.NoError(t, err)
+		pos := engine.RegisterOrder(&c.order)
 		assert.Equal(t, c.expectedBuy, pos.Buy())
 		assert.Equal(t, c.expectedSell, pos.Sell())
 		assert.Equal(t, c.expectedSize, pos.Size())
@@ -614,8 +613,7 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	for i, c := range cases.orders {
-		_, err := engine.RegisterOrder(&c)
-		assert.NoError(t, err)
+		engine.RegisterOrder(&c)
 		// ensure we have 1 position with 1 potential buy of size 10 for traderA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
@@ -708,8 +706,7 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	for i, c := range cases.orders {
-		_, err := engine.RegisterOrder(&c)
-		assert.NoError(t, err)
+		engine.RegisterOrder(&c)
 		// ensure we have 1 position with 1 potential buy of size 10 for traderA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
@@ -803,8 +800,7 @@ func testOrderCancelled(t *testing.T) {
 
 	// first add the orders
 	for i, c := range cases.orders {
-		_, err := engine.RegisterOrder(&c)
-		assert.NoError(t, err)
+		engine.RegisterOrder(&c)
 		// ensure we have 1 position with 1 potential buy of size 10 for traderA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)

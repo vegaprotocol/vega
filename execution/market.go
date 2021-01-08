@@ -1064,7 +1064,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	if !m.as.InAuction() {
 
 		// first we call the order book to evaluate auction triggers and get the list of trades
-		trades, err := m.checkPriceAndGetTrades(ctx, order)
+		var err error
+		trades, err = m.checkPriceAndGetTrades(ctx, order)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, order, err)
 		}
