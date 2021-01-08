@@ -1,6 +1,7 @@
 package nodewallet
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -9,6 +10,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"code.vegaprotocol.io/vega/nodewallet/vega"
+	types "code.vegaprotocol.io/vega/proto"
+	"github.com/pkg/errors"
 )
 
 type Blockchain string
@@ -32,6 +35,9 @@ type ETHWallet interface {
 	Wallet
 	Client() eth.ETHClient
 	BridgeAddress() string
+	CurrentHeight(context.Context) (uint64, error)
+	ConfirmationsRequired() uint32
+	SetEthereumConfig(*types.EthereumConfig) error
 }
 
 type Service struct {
@@ -65,6 +71,15 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethclt eth.ETHClien
 		wallets: wallets,
 		ethclt:  ethclt,
 	}, nil
+}
+
+func (s *Service) OnEthereumConfigUpdate(ctx context.Context, v interface{}) error {
+	ecfg, ok := v.(*types.EthereumConfig)
+	if !ok {
+		return errors.New("invalid types for Ethereum config")
+	}
+	w, _ := s.Get(Ethereum)
+	return w.(ETHWallet).SetEthereumConfig(ecfg)
 }
 
 func (s *Service) Cleanup() error {

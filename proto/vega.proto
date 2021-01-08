@@ -1218,3 +1218,12 @@ message LiquidityProvision {
   // the status of this liquidity provision
   Status status = 11;
 }
+
+message EthereumConfig {
+  // The network ID of this ethereum network
+  string networkId = 1;
+  // The bridge address for this ethereum network
+  string bridgeAddress = 2;
+  // The number of confirmations
+  uint32 confirmations = 3;
+}

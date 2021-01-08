@@ -97,6 +97,20 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 		}
 	}
 
+	// now we are going to iterate over ALL the netparams,
+	// and run validation, so we will now if any was forgotten,
+	// and left to a default which required explicit UponGenesis
+	// through the genesis block
+	for k := range AllKeys {
+		v, err := s.Get(k)
+		if err != nil {
+			return fmt.Errorf("%v: %v", k, err)
+		}
+		if err := s.Validate(k, v); err != nil {
+			return fmt.Errorf("%v: %v", k, err)
+		}
+	}
+
 	// now we can iterate again over ALL the net params,
 	// and dispatch the value of them all so any watchers can get updated
 	// with genesis values

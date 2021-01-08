@@ -12,7 +12,7 @@ function check() {
 
 function gen_code() {
 	# generate code, grpc and validators code
-	buf generate 
+	buf generate
 
 	# Since ./proto/github/{grpc-ecosystem,mwitkow} are dependencies,
 	# buf will generate code for them to

@@ -405,3 +405,6 @@ func (this *LiquidityProvision) Validate() error {
 	}
 	return nil
 }
+func (this *EthereumConfig) Validate() error {
+	return nil
+}

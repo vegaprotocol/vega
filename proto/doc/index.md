@@ -40,6 +40,7 @@
     - [Deposit](#vega.Deposit)
     - [Erc20WithdrawExt](#vega.Erc20WithdrawExt)
     - [ErrorDetail](#vega.ErrorDetail)
+    - [EthereumConfig](#vega.EthereumConfig)
     - [Fee](#vega.Fee)
     - [FinancialAmount](#vega.FinancialAmount)
     - [LedgerEntry](#vega.LedgerEntry)
@@ -892,6 +893,23 @@ Represents Vega domain specific error information over gRPC/Protobuf.
 | code | [int32](#int32) |  | A Vega API domain specific unique error code, useful for client side mappings. e.g. 10004 |
 | message | [string](#string) |  | A message that describes the error in more detail, should describe the problem encountered. |
 | inner | [string](#string) |  | Any inner error information that could add more context, or be helpful for error reporting. |
+
+
+
+
+
+
+<a name="vega.EthereumConfig"></a>
+
+### EthereumConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| networkId | [string](#string) |  | The network ID of this ethereum network |
+| bridgeAddress | [string](#string) |  | The bridge address for this ethereum network |
+| confirmations | [uint32](#uint32) |  | The number of confirmations |
 
 
 
