@@ -147,7 +147,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 // It returns the updated position.
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
-func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
+func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
 	pos, found := e.positions[order.PartyID]
 	if !found {
@@ -166,7 +166,7 @@ func (e *Engine) RegisterOrder(order *types.Order) (*MarketPosition, error) {
 		pos.sell += int64(order.Remaining)
 	}
 	timer.EngineTimeCounterAdd()
-	return pos, nil
+	return pos
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
