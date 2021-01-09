@@ -77,6 +77,6 @@ func defaultNetParams() map[string]value {
 		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
-			MustUpdate("{\"networkId\": \"XXX\", \"bridgeAddress\": \"0xXXX\", \"confirmations\": 3}"),
+			MustUpdate("{\"networkId\": \"XXX\", \"chainId\": \"XXX\", \"bridgeAddress\": \"0xXXX\", \"confirmations\": 3}"),
 	}
 }
