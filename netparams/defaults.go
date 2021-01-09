@@ -76,6 +76,7 @@ func defaultNetParams() map[string]value {
 		// e.g: assets and collateral when setting up a new ID.
 		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 
-		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true),
+		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
+			MustUpdate("{\"networkId\": \"XXX\", \"bridgeAddress\": \"0xXXX\", \"confirmations\": 3}"),
 	}
 }

@@ -449,7 +449,7 @@ func (b *ERC20) checkConfirmations(txBlock uint64) error {
 	}
 
 	if curBlock < txBlock ||
-		(txBlock-curBlock) < uint64(b.wallet.ConfirmationsRequired()) {
+		(curBlock-txBlock) < uint64(b.wallet.ConfirmationsRequired()) {
 		return ErrMissingConfirmations
 	}
 
