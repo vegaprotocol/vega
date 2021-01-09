@@ -25,6 +25,7 @@ import (
 type ETHClient interface {
 	bind.ContractBackend
 	ChainID(context.Context) (*big.Int, error)
+	NetworkID(context.Context) (*big.Int, error)
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
@@ -97,12 +98,19 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 }
 
 func (w *Wallet) SetEthereumConfig(pcfg *types.EthereumConfig) error {
+	nid, err := w.clt.NetworkID(context.Background())
+	if err != nil {
+		return err
+	}
 	chid, err := w.clt.ChainID(context.Background())
 	if err != nil {
 		return err
 	}
-	if chid.String() != pcfg.NetworkId {
-		return fmt.Errorf("ethereum network id does not match, expected %v got %v", pcfg.NetworkId, chid)
+	if nid.String() != pcfg.NetworkId {
+		return fmt.Errorf("ethereum network id does not match, expected %v got %v", pcfg.NetworkId, nid)
+	}
+	if chid.String() != pcfg.ChainId {
+		return fmt.Errorf("ethereum chain id does not match, expected %v got %v", pcfg.ChainId, chid)
 	}
 	w.pcfg = pcfg
 	return nil

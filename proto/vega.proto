@@ -1222,8 +1222,10 @@ message LiquidityProvision {
 message EthereumConfig {
   // The network ID of this ethereum network
   string networkId = 1;
+  // The chain ID of this ethereum network
+  string chainId = 2;
   // The bridge address for this ethereum network
-  string bridgeAddress = 2;
+  string bridgeAddress = 3;
   // The number of confirmations
-  uint32 confirmations = 3;
+  uint32 confirmations = 4;
 }

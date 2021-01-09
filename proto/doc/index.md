@@ -908,6 +908,7 @@ Represents Vega domain specific error information over gRPC/Protobuf.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | networkId | [string](#string) |  | The network ID of this ethereum network |
+| chainId | [string](#string) |  | The chain ID of this ethereum network |
 | bridgeAddress | [string](#string) |  | The bridge address for this ethereum network |
 | confirmations | [uint32](#uint32) |  | The number of confirmations |
 

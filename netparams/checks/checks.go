@@ -56,6 +56,9 @@ func EthereumConfig() func(interface{}) error {
 		if len(ecfg.NetworkId) <= 0 {
 			return errors.New("missing ethereum config network id")
 		}
+		if len(ecfg.ChainId) <= 0 {
+			return errors.New("missing ethereum config chain id")
+		}
 		if len(ecfg.BridgeAddress) <= 0 {
 			return errors.New("missing ethereum config bridge address")
 		}
