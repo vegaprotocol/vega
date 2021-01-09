@@ -245,6 +245,7 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 	e.now = t
 	topLen := e.top.Len()
+	isValidator := e.top.IsValidator()
 
 	// check if any resources passed checks
 	for k, v := range e.resources {
@@ -253,7 +254,12 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 
 		// if the time is expired,
 		if v.checkUntil.Before(t) ||
-			(votesLen == topLen && state == voteSent) {
+			// we are a validator, and we want our vote to
+			// be sent + all vote to be arrived
+			(votesLen == topLen && state == voteSent) ||
+			// we are not a validator, and do not care about our
+			// own vote, just to have the validator voting OK
+			(votesLen == topLen && !isValidator) {
 			// cancel the context so it stops the routine right now
 			v.cfunc()
 
@@ -270,12 +276,13 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 			// callback to the resource holder
 			v.cb(v.res, checkPass)
 			delete(e.resources, k)
+			continue
 		}
 
 		// then send votes if needed
 		if state == validated {
 			// if not a validator no need to send the vote
-			if e.top.IsValidator() {
+			if isValidator {
 				nv := &types.NodeVote{
 					PubKey:    e.top.SelfVegaPubKey(),
 					Reference: v.res.GetID(),
