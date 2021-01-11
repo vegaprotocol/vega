@@ -647,6 +647,7 @@ func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) err
 func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 	// Create slice to put any orders that we can't unpack
 	failedToUnpark := make([]*types.Order, 0)
+	needToRemove := make([]*types.Order, 0)
 	for _, order := range m.peggedOrders {
 		// Reprice the order and submit it
 		err := m.repricePeggedOrder(ctx, order)
@@ -656,11 +657,16 @@ func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 		} else {
 			_, err := m.submitValidatedOrder(ctx, order)
 			if err != nil {
-				// Failed to place the order on the book
-				failedToUnpark = append(failedToUnpark, order)
+				needToRemove = append(needToRemove, order)
 			}
 		}
 	}
+
+	// Remove any that failed to submit
+	for _, order := range needToRemove {
+		m.removePeggedOrder(order)
+	}
+
 	m.parkedOrders = failedToUnpark
 }
 
@@ -1040,20 +1046,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 
 	// Register order as potential positions
-	pos, err := m.position.RegisterOrder(order)
-	if err != nil {
-		// adding order to the buffer first
-		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
-		m.broker.Send(events.NewOrderEvent(ctx, order))
-
-		if m.log.GetLevel() <= logging.DebugLevel {
-			m.log.Debug("Unable to register potential trader position",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
-		return nil, ErrMarginCheckFailed
-	}
+	pos := m.position.RegisterOrder(order)
 
 	// Perform check and allocate margin
 	if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
@@ -1086,6 +1079,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	if !m.as.InAuction() {
 
 		// first we call the order book to evaluate auction triggers and get the list of trades
+		var err error
 		trades, err = m.checkPriceAndGetTrades(ctx, order)
 		if err != nil {
 			return nil, m.unregisterAndReject(ctx, order, err)
@@ -1736,7 +1730,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		return nil, err
 	}
 
-	// @TODO replace markPrice with intidicative uncross price in auction mode if available
+	// @TODO replace markPrice with indicative uncross price in auction mode if available
 	price := m.markPrice
 	if m.as.InAuction() {
 		if ip := m.matching.GetIndicativePrice(); ip != 0 {

@@ -1943,3 +1943,53 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	assert.Equal(t, uint64(81), confirmation1.Order.Price)  // Buy price gets rounded up
 	assert.Equal(t, uint64(120), confirmation2.Order.Price) // Sell price gets rounded down
 }
+
+func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
+	now := time.Unix(10, 0)
+	closeSec := int64(10000000000)
+	closingAt := time.Unix(closeSec, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "party1")
+	addAccount(tm, "party2")
+	addAccount(tm, "party3")
+	addAccount(tm, "party4")
+
+	// Move into auction
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 100})
+	tm.market.EnterAuction(ctx)
+
+	buyPeggedOrder := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 1000000000000, 0)
+	buyPeggedOrder.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	confirmation1, err := tm.market.SubmitOrder(ctx, &buyPeggedOrder)
+	assert.NotNil(t, confirmation1)
+	assert.Equal(t, confirmation1.Order.Status, types.Order_STATUS_PARKED)
+	assert.NoError(t, err)
+
+	sellPeggedOrder := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party1", 1000000000000, 0)
+	sellPeggedOrder.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +10}
+	confirmation2, err := tm.market.SubmitOrder(ctx, &sellPeggedOrder)
+	assert.NotNil(t, confirmation2)
+	assert.Equal(t, confirmation2.Order.Status, types.Order_STATUS_PARKED)
+	assert.NoError(t, err)
+
+	sellOrder1 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party2", 4, 2000)
+	confirmation3, err := tm.market.SubmitOrder(ctx, &sellOrder1)
+	assert.NotNil(t, confirmation3)
+	assert.NoError(t, err)
+
+	tm.market.LeaveAuction(ctx, closingAt)
+
+	buyOrder1 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party3", 100, 6500)
+	confirmation4, err := tm.market.SubmitOrder(ctx, &buyOrder1)
+	assert.NotNil(t, confirmation4)
+	assert.NoError(t, err)
+
+	sellOrder2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_SELL, "party4", 20, 7000)
+	confirmation5, err := tm.market.SubmitOrder(ctx, &sellOrder2)
+	assert.NotNil(t, confirmation5)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+}
