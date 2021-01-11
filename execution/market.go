@@ -81,6 +81,10 @@ var (
 	ErrUnableToReprice = errors.New("unable to reprice")
 	// ErrOrderNotFound we cannot find the order in the market
 	ErrOrderNotFound = errors.New("unable to find the order in the market")
+	// ErrTradingNotAllowed no trading related functionnalities are allowed in the current state
+	ErrTradingNotAllowed = errors.New("trading not allowed")
+	// ErrCommitmentSubmissionNotAllowed no commitment submission are permitted in the current state
+	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
 
 	networkPartyID = "network"
 )
@@ -118,7 +122,7 @@ type AuctionState interface {
 	AuctionStarted(ctx context.Context) *events.Auction
 	AuctionEnded(ctx context.Context, now time.Time) *events.Auction
 	// get some data
-	Mode() types.MarketState
+	Mode() types.Market_TradingMode
 	Trigger() types.AuctionTrigger
 }
 
@@ -312,6 +316,7 @@ func appendBytes(bz ...[]byte) []byte {
 }
 
 func (m *Market) Hash() []byte {
+
 	mID := logging.String("market-id", m.GetID())
 	matchingHash := m.matching.Hash()
 	m.log.Debug("orderbook state hash", logging.Hash(matchingHash), mID)
@@ -376,7 +381,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		IndicativeVolume:      indicativeVolume,
 		AuctionStart:          auctionStart,
 		AuctionEnd:            auctionEnd,
-		MarketState:           m.as.Mode(),
+		MarketTradingMode:     m.as.Mode(),
 		Trigger:               m.as.Trigger(),
 		TargetStake:           fmt.Sprintf("%.f", m.getTargetStake()),
 		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
@@ -688,7 +693,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Cancel all the orders that were invalid
 	for _, order := range ordersToCancel {
-		m.CancelOrder(ctx, order.PartyID, order.Id)
+		m.cancelOrder(ctx, order.PartyID, order.Id)
 	}
 
 	// Send out events for all orders we park
@@ -736,7 +741,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
-		_, err := m.CancelOrder(ctx, order.PartyID, order.Id)
+		_, err := m.cancelOrder(ctx, order.PartyID, order.Id)
 		if err != nil {
 			m.log.Error("Failed to cancel order", logging.String("OrderID", order.Id))
 		}
@@ -955,6 +960,9 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+	if !m.canTrade() {
+		return nil, ErrTradingNotAllowed
+	}
 	conf, err := m.submitOrder(ctx, order)
 	if err != nil {
 		return nil, err
@@ -1843,6 +1851,10 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 }
 
 func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.OrderCancellationConfirmation, error) {
+	if !m.canTrade() {
+		return nil, ErrTradingNotAllowed
+	}
+
 	cancellations, err := m.matching.CancelAllOrders(partyID)
 	if cancellations == nil || err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -1906,8 +1918,17 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	return cancellations, nil
 }
 
-// CancelOrder cancels the given order
 func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+	if !m.canTrade() {
+		return nil, ErrTradingNotAllowed
+	}
+
+	return m.cancelOrder(ctx, partyID, orderID)
+}
+
+// CancelOrder cancels the given order
+func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2013,6 +2034,10 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 // AmendOrder amend an existing order from the order book
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+	if !m.canTrade() {
+		return nil, ErrTradingNotAllowed
+	}
+
 	// explicitly/directly ordering an LP commitment order is not allowed
 	if m.liquidity.IsLiquidityOrder(orderAmendment.PartyID, orderAmendment.OrderID) {
 		return nil, types.ErrEditNotAllowed
@@ -2083,7 +2108,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// if remaining is reduces <= 0, then order is cancelled
 	if amendedOrder.Remaining <= 0 {
-		confirm, err := m.CancelOrder(
+		confirm, err := m.cancelOrder(
 			ctx, existingOrder.PartyID, existingOrder.Id)
 		if err != nil {
 			return nil, err
@@ -2906,6 +2931,9 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
+	if !m.canSubmitCommitment() {
+		return ErrCommitmentSubmissionNotAllowed
+	}
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
 		return err
 	}
@@ -3006,7 +3034,7 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		}
 		party := newOrders[0].PartyID
 		for _, v := range submittedIDs {
-			_, newerr := m.CancelOrder(ctx, party, v)
+			_, newerr := m.cancelOrder(ctx, party, v)
 			if newerr != nil {
 				m.log.Error("unable to rollback order via cancel",
 					logging.Error(newerr),
@@ -3054,4 +3082,14 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}
 
 	return nil
+}
+
+func (m *Market) canTrade() bool {
+	return m.mkt.State == types.Market_STATE_ACTIVE ||
+		m.mkt.State == types.Market_STATE_PENDING ||
+		m.mkt.State == types.Market_STATE_SUSPENDED
+}
+
+func (m *Market) canSubmitCommitment() bool {
+	return m.canTrade() || m.mkt.State == types.Market_STATE_PROPOSED
 }

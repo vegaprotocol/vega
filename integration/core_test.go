@@ -31,6 +31,8 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
 
 	// general stuff like name, ID, code, asset, and initial mark price
+	mkt.TradingMode = proto.Market_TRADING_MODE_CONTINUOUS
+	mkt.State = proto.Market_STATE_ACTIVE
 	parts := strings.Split(row.Cells[0].Value, "/")
 	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
 	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
@@ -51,7 +53,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	//openAuctionDuration, _ := strconv.ParseInt(row.Cells[11].Value, 10, 64)
 	if row.Cells[12].Value != "continuous" {
 		batchDuration, _ := strconv.ParseInt(row.Cells[12].Value, 10, 64)
-		mkt.TradingMode = &proto.Market_Discrete{
+		mkt.TradingModeConfig = &proto.Market_Discrete{
 			Discrete: &proto.DiscreteTrading{
 				DurationNs: batchDuration,
 			},
@@ -130,7 +132,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		},
 		// For now we won't have an opening auction
 		// OpeningAuction: &proto.AuctionDuration{},
-		TradingMode: &proto.Market_Continuous{
+		TradingModeConfig: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: &proto.PriceMonitoringSettings{

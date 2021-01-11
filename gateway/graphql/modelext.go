@@ -238,8 +238,8 @@ func DiscreteTradingFromProto(pdt *types.DiscreteTrading) (*DiscreteTrading, err
 	}, nil
 }
 
-// TradingModeFromProto ...
-func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
+// TradingModeConfigFromProto ...
+func TradingModeConfigFromProto(ptm interface{}) (TradingMode, error) {
 	if ptm == nil {
 		return nil, ErrNilTradingMode
 	}

@@ -6,7 +6,7 @@ Feature: Price monitoring test for issue 2681
       | name      | baseName | quoteName | asset |   markprice  | risk model |         lamda  |              tau/short  | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq.   |    p. m. horizons | p. m. probs  | p. m. durations | Prob of trading |
       | ETH/DEC20 | BTC      | ETH       | ETH   |      5000000  | forward   |       0.000001 |  0.00011407711613050422 |              0 | 0.016           |   0.8 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 1                    |             43200 |    0.9999999 |             300 |                 |
 
-    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached
     Given the following traders:
@@ -21,10 +21,10 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "5670000"
 
-    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # T0 + 1min - this causes the price for comparison of the bounds to be 567
-    Then the time is updated to "2020-10-16T00:01:00Z" 
+    Then the time is updated to "2020-10-16T00:01:00Z"
 
     Then traders place following orders:
       | trader  | id        | type | volume |   price    | resulting trades | type       | tif     |
@@ -33,10 +33,10 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "4850000"
 
-    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # T0 + 2min
-    Then the time is updated to "2020-10-16T00:02:00Z" 
+    Then the time is updated to "2020-10-16T00:02:00Z"
 
     Then traders place following orders:
       | trader  | id        | type | volume |   price    | resulting trades | type       | tif     |
@@ -45,11 +45,11 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "6490000"
 
-    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
-    # T0 + 3min 
+    # T0 + 3min
     # The reference price is still 5670000
-    Then the time is updated to "2020-10-16T00:03:00Z" 
+    Then the time is updated to "2020-10-16T00:03:00Z"
 
     Then traders place following orders:
       | trader  | id        | type | volume |   price    | resulting trades | type       | tif     |
@@ -58,7 +58,7 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "6635392"
 
-    And the market state for the market "ETH/DEC20" is "MARKET_STATE_CONTINUOUS"
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | id        | type | volume |   price    | resulting trades | type       | tif     |
@@ -67,7 +67,4 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "6635392"
 
-    And the market state for the market "ETH/DEC20" is "MARKET_STATE_MONITORING_AUCTION"
-
-    
-    
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"

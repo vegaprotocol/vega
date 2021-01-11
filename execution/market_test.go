@@ -142,6 +142,8 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 
 func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) []types.Market {
 	mkt := types.Market{
+		TradingMode: types.Market_TRADING_MODE_CONTINUOUS,
+		State:       types.Market_STATE_ACTIVE,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				LiquidityFee:      "0.001",
@@ -195,7 +197,7 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 			},
 		},
 		OpeningAuction: openingAuctionDuration,
-		TradingMode: &types.Market_Continuous{
+		TradingModeConfig: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
@@ -486,7 +488,7 @@ func TestSetMarketID(t *testing.T) {
 					},
 				},
 			},
-			TradingMode: &types.Market_Continuous{
+			TradingModeConfig: &types.Market_Continuous{
 				Continuous: &types.ContinuousTrading{},
 			},
 		}

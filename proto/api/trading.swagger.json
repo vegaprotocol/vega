@@ -1551,6 +1551,18 @@
     }
   },
   "definitions": {
+    "MarketTradingMode": {
+      "type": "string",
+      "enum": [
+        "TRADING_MODE_UNSPECIFIED",
+        "TRADING_MODE_CONTINUOUS",
+        "TRADING_MODE_BATCH_AUCTION",
+        "TRADING_MODE_OPENING_AUCTION",
+        "TRADING_MODE_MONITORING_AUCTION"
+      ],
+      "default": "TRADING_MODE_UNSPECIFIED",
+      "description": "What mode is the market currently running, also known as market state.\n\n - TRADING_MODE_UNSPECIFIED: Default value, this is invalid\n - TRADING_MODE_CONTINUOUS: Normal trading\n - TRADING_MODE_BATCH_AUCTION: Auction trading (FBA)\n - TRADING_MODE_OPENING_AUCTION: Opening auction\n - TRADING_MODE_MONITORING_AUCTION: Auction triggered by monitoring"
+    },
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
@@ -1564,21 +1576,6 @@
       ],
       "default": "TIF_UNSPECIFIED",
       "description": "Time in Force for an order.\nSee [What order types are available to trade on Vega?](https://docs.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.\n\n - TIF_UNSPECIFIED: Default value for TimeInForce, can be valid for an amend.\n - TIF_GTC: Good until cancelled.\n - TIF_GTT: Good until specified time.\n - TIF_IOC: Immediate or cancel.\n - TIF_FOK: Fill or kill.\n - TIF_GFA: good for auction\n - TIF_GFN: good for normal"
-    },
-    "ProposalState": {
-      "type": "string",
-      "enum": [
-        "STATE_UNSPECIFIED",
-        "STATE_FAILED",
-        "STATE_OPEN",
-        "STATE_PASSED",
-        "STATE_REJECTED",
-        "STATE_DECLINED",
-        "STATE_ENACTED",
-        "STATE_WAITING_FOR_NODE_VOTE"
-      ],
-      "default": "STATE_UNSPECIFIED",
-      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execution could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal enacted.\n - STATE_WAITING_FOR_NODE_VOTE: Waiting for node validation of the proposal"
     },
     "VoteValue": {
       "type": "string",
@@ -2029,7 +2026,7 @@
       "type": "object",
       "properties": {
         "value": {
-          "$ref": "#/definitions/ProposalState",
+          "$ref": "#/definitions/vegaProposalState",
           "description": "Proposal state value."
         }
       },
@@ -3811,6 +3808,14 @@
         "targetStakeParameters": {
           "$ref": "#/definitions/vegaTargetStakeParameters",
           "title": "TargetStakeParameters for the market"
+        },
+        "tradingMode": {
+          "$ref": "#/definitions/MarketTradingMode",
+          "title": "Current mode of execution of the market"
+        },
+        "state": {
+          "$ref": "#/definitions/vegaMarketState",
+          "title": "Current state of the market"
         }
       },
       "description": "Market definition."
@@ -3907,8 +3912,8 @@
           "format": "uint64",
           "title": "indicative volume (zero if not in auction)"
         },
-        "marketState": {
-          "$ref": "#/definitions/vegaMarketState",
+        "marketTradingMode": {
+          "$ref": "#/definitions/MarketTradingMode",
           "title": "the current state of the market"
         },
         "trigger": {
@@ -4008,14 +4013,20 @@
     "vegaMarketState": {
       "type": "string",
       "enum": [
-        "MARKET_STATE_UNSPECIFIED",
-        "MARKET_STATE_CONTINUOUS",
-        "MARKET_STATE_BATCH_AUCTION",
-        "MARKET_STATE_OPENING_AUCTION",
-        "MARKET_STATE_MONITORING_AUCTION"
+        "STATE_UNSPECIFIED",
+        "STATE_PROPOSED",
+        "STATE_REJECTED",
+        "STATE_PENDING",
+        "STATE_CANCELLED",
+        "STATE_ACTIVE",
+        "STATE_SUSPENDED",
+        "STATE_CLOSED",
+        "STATE_TRADING_TERMINATED",
+        "STATE_SETTLED"
       ],
-      "default": "MARKET_STATE_UNSPECIFIED",
-      "description": "What mode is the market currently running, also known as market state.\n\n - MARKET_STATE_UNSPECIFIED: Default value, this is invalid\n - MARKET_STATE_CONTINUOUS: Normal trading\n - MARKET_STATE_BATCH_AUCTION: Auction trading (FBA)\n - MARKET_STATE_OPENING_AUCTION: Opening auction\n - MARKET_STATE_MONITORING_AUCTION: Auction triggered by monitoring"
+      "default": "STATE_UNSPECIFIED",
+      "description": "- STATE_UNSPECIFIED: Default value, invalid\n - STATE_PROPOSED: The Governance proposal valid and accepted\n - STATE_REJECTED: Outcome of governance votes is to reject the market\n - STATE_PENDING: Governance vote passes/wins\n - STATE_CANCELLED: Market triggers cancellation condition or governance\nvotes to close before market becomes Active\n - STATE_ACTIVE: Enactment date reached and usual auction exit checks pass\n - STATE_SUSPENDED: Price monitoring or liquidity monitoring trigger\n - STATE_CLOSED: Governance vote (to close)\n - STATE_TRADING_TERMINATED: Defined by the product (i.e. from a product parameter,\nspecified in market definition, giving close date/time)\n - STATE_SETTLED: Settlement triggered and completed as defined by product",
+      "title": "The current state of the Market"
     },
     "vegaMarketTick": {
       "type": "object",
@@ -4640,7 +4651,7 @@
           "description": "Party identifier of the author (the party submitting the proposal)."
         },
         "state": {
-          "$ref": "#/definitions/ProposalState",
+          "$ref": "#/definitions/vegaProposalState",
           "description": "Proposal state (see (Proposal.State)[#vega.Proposal.State] definition)."
         },
         "timestamp": {
@@ -4689,6 +4700,21 @@
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
       "description": "A list of possible errors that can cause a proposal to be in state rejected or failed.\n\n - PROPOSAL_ERROR_UNSPECIFIED: Default value.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters.\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters.\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters.\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens.\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same.\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product.\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported.\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339).\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past.\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode.\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode.\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation.\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source.\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source.\n - PROPOSAL_ERROR_INVALID_ASSET: The asset id refer to no assets in vega.\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment).\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameteres were specified\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY: Invalid key in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE: Invalid valid in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED: Validation failed for network parameter proposal\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL: Opening auction duration is less than the network minimum opening auction time\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE: Opening auction duration is more than the network minimum opening auction time"
+    },
+    "vegaProposalState": {
+      "type": "string",
+      "enum": [
+        "STATE_UNSPECIFIED",
+        "STATE_FAILED",
+        "STATE_OPEN",
+        "STATE_PASSED",
+        "STATE_REJECTED",
+        "STATE_DECLINED",
+        "STATE_ENACTED",
+        "STATE_WAITING_FOR_NODE_VOTE"
+      ],
+      "default": "STATE_UNSPECIFIED",
+      "description": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state.\n\n - STATE_UNSPECIFIED: Default value, always invalid.\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execution could not be performed.\n - STATE_OPEN: Proposal is open for voting.\n - STATE_PASSED: Proposal has gained enough support to be executed.\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level).\n - STATE_ENACTED: Proposal enacted.\n - STATE_WAITING_FOR_NODE_VOTE: Waiting for node validation of the proposal"
     },
     "vegaProposalTerms": {
       "type": "object",

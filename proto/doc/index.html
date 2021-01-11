@@ -290,6 +290,14 @@
                 </li>
               
               
+                <li>
+                  <a href="#vega.Market.State"><span class="badge">E</span>Market.State</a>
+                </li>
+              
+                <li>
+                  <a href="#vega.Market.TradingMode"><span class="badge">E</span>Market.TradingMode</a>
+                </li>
+              
               
               
             </ul>
@@ -535,10 +543,6 @@
               
                 <li>
                   <a href="#vega.LiquidityProvision.Status"><span class="badge">E</span>LiquidityProvision.Status</a>
-                </li>
-              
-                <li>
-                  <a href="#vega.MarketState"><span class="badge">E</span>MarketState</a>
                 </li>
               
                 <li>
@@ -2209,6 +2213,20 @@ duration and optionally a minimum traded volume). </p></td>
                   <td><p>TargetStakeParameters for the market </p></td>
                 </tr>
               
+                <tr>
+                  <td>tradingMode</td>
+                  <td><a href="#vega.Market.TradingMode">Market.TradingMode</a></td>
+                  <td></td>
+                  <td><p>Current mode of execution of the market </p></td>
+                </tr>
+              
+                <tr>
+                  <td>state</td>
+                  <td><a href="#vega.Market.State">Market.State</a></td>
+                  <td></td>
+                  <td><p>Current state of the market </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -2642,6 +2660,120 @@ probability level. </p></td>
         
       
 
+      
+        <h3 id="vega.Market.State">Market.State</h3>
+        <p>The current state of the Market</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>STATE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, invalid</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_PROPOSED</td>
+                <td>1</td>
+                <td><p>The Governance proposal valid and accepted</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_REJECTED</td>
+                <td>2</td>
+                <td><p>Outcome of governance votes is to reject the market</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_PENDING</td>
+                <td>3</td>
+                <td><p>Governance vote passes/wins</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_CANCELLED</td>
+                <td>4</td>
+                <td><p>Market triggers cancellation condition or governance
+votes to close before market becomes Active</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_ACTIVE</td>
+                <td>5</td>
+                <td><p>Enactment date reached and usual auction exit checks pass</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_SUSPENDED</td>
+                <td>6</td>
+                <td><p>Price monitoring or liquidity monitoring trigger</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_CLOSED</td>
+                <td>7</td>
+                <td><p>Governance vote (to close)</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_TRADING_TERMINATED</td>
+                <td>8</td>
+                <td><p>Defined by the product (i.e. from a product parameter,
+specified in market definition, giving close date/time)</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_SETTLED</td>
+                <td>9</td>
+                <td><p>Settlement triggered and completed as defined by product</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="vega.Market.TradingMode">Market.TradingMode</h3>
+        <p>What mode is the market currently running, also known as market state.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>TRADING_MODE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, this is invalid</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_CONTINUOUS</td>
+                <td>1</td>
+                <td><p>Normal trading</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_BATCH_AUCTION</td>
+                <td>2</td>
+                <td><p>Auction trading (FBA)</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_OPENING_AUCTION</td>
+                <td>3</td>
+                <td><p>Opening auction</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_MONITORING_AUCTION</td>
+                <td>4</td>
+                <td><p>Auction triggered by monitoring</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
       
 
       
@@ -3638,8 +3770,8 @@ See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketState</td>
-                  <td><a href="#vega.MarketState">MarketState</a></td>
+                  <td>marketTradingMode</td>
+                  <td><a href="#vega.Market.TradingMode">Market.TradingMode</a></td>
                   <td></td>
                   <td><p>the current state of the market </p></td>
                 </tr>
@@ -6164,47 +6296,6 @@ These fees reward traders who provide the best priced liquidity that actually al
                 <td>LIQUIDITY_PROVISION_STATUS_REJECTED</td>
                 <td>4</td>
                 <td><p>The liquidity provision was invalid and got rejected.</p></td>
-              </tr>
-            
-          </tbody>
-        </table>
-      
-        <h3 id="vega.MarketState">MarketState</h3>
-        <p>What mode is the market currently running, also known as market state.</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            
-              <tr>
-                <td>MARKET_STATE_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>Default value, this is invalid</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_CONTINUOUS</td>
-                <td>1</td>
-                <td><p>Normal trading</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_BATCH_AUCTION</td>
-                <td>2</td>
-                <td><p>Auction trading (FBA)</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_OPENING_AUCTION</td>
-                <td>3</td>
-                <td><p>Opening auction</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_MONITORING_AUCTION</td>
-                <td>4</td>
-                <td><p>Auction triggered by monitoring</p></td>
               </tr>
             
           </tbody>

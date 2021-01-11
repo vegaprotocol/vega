@@ -353,7 +353,7 @@ type MarketData {
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
   "what state the market is in (auction, continuous etc)"
-  marketState: MarketState!
+  marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "the amount of stake targeted for this market"
@@ -956,7 +956,7 @@ type Market {
   tradableInstrument: TradableInstrument!
 
   "Definitions and required configuration for the trading mode"
-  tradingMode: TradingMode!
+  tradingModeConfig: TradingMode!
 
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
@@ -987,6 +987,12 @@ type Market {
 
   "Taget stake parameter"
   targetStakeParameters: TargetStakeParameters!
+
+  "Current mode of execution of the market"
+  tradingMode: MarketTradingMode!
+
+  "Current state of the market"
+  state: MarketState!
 
   "Orders on a market"
   orders (
@@ -1733,8 +1739,36 @@ enum OrderType {
   NETWORK
 }
 
-"What market state are we in"
+"The current state of a market"
 enum MarketState {
+  "The Governance proposal valid and accepted"
+  PROPOSED
+  "Outcome of governance votes is to reject the market"
+  REJECTED
+  "Governance vote passes/wins"
+  PENDING
+  """
+  Market triggers cancellation condition or governance
+  votes to close before market becomes Active
+  """
+  CANCELLED
+  "Enactment date reached and usual auction exit checks pass"
+  ACTIVE
+  "Price monitoring or liquidity monitoring trigger"
+  SUSPENDED
+  "Governance vote (to close)"
+  CLOSED
+  """
+  Defined by the product (i.e. from a product parameter,
+  specified in market definition, giving close date/time)
+  """
+  TRADING_TERMINATED
+  "Settlement triggered and completed as defined by product"
+  SETTLED
+}
+
+"What market trading mode are we in"
+enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
   CONTINUOUS
 
