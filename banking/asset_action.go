@@ -30,10 +30,6 @@ type assetAction struct {
 	state uint32
 	asset *assets.Asset
 
-	// hash of transaction used to ensure a transaction has not been
-	// processed twice
-	ref txRef
-
 	// erc20 specifics
 	blockNumber uint64
 	txIndex     uint64
