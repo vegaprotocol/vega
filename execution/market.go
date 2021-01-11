@@ -178,9 +178,6 @@ type Market struct {
 
 	marketValueWindowLength time.Duration
 	feeSplitter             *FeeSplitter
-
-	tradingMode types.Market_TradingMode
-	state       types.Market_State
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -302,8 +299,6 @@ func NewMarket(
 		tsCalc:               tsCalc,
 		expiringPeggedOrders: matching.NewExpiringOrders(),
 		feeSplitter:          &FeeSplitter{},
-		tradingMode:          mkt.TradingMode,
-		state:                mkt.State,
 	}
 
 	if market.as.AuctionStart() {
@@ -3090,11 +3085,11 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 }
 
 func (m *Market) canTrade() bool {
-	return m.state == types.Market_STATE_ACTIVE ||
-		m.state == types.Market_STATE_PENDING ||
-		m.state == types.Market_STATE_SUSPENDED
+	return m.mkt.State == types.Market_STATE_ACTIVE ||
+		m.mkt.State == types.Market_STATE_PENDING ||
+		m.mkt.State == types.Market_STATE_SUSPENDED
 }
 
 func (m *Market) canSubmitCommitment() bool {
-	return m.canTrade() || m.state == types.Market_STATE_PROPOSED
+	return m.canTrade() || m.mkt.State == types.Market_STATE_PROPOSED
 }
