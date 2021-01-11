@@ -642,6 +642,7 @@ func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) err
 func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 	// Create slice to put any orders that we can't unpack
 	failedToUnpark := make([]*types.Order, 0)
+	needToRemove := make([]*types.Order, 0)
 	for _, order := range m.peggedOrders {
 		// Reprice the order and submit it
 		err := m.repricePeggedOrder(ctx, order)
@@ -651,10 +652,16 @@ func (m *Market) unparkAllPeggedOrders(ctx context.Context) {
 		} else {
 			_, err := m.submitValidatedOrder(ctx, order)
 			if err != nil {
-				m.removePeggedOrder(order)
+				needToRemove = append(needToRemove, order)
 			}
 		}
 	}
+
+	// Remove any that failed to submit
+	for _, order := range needToRemove {
+		m.removePeggedOrder(order)
+	}
+
 	m.parkedOrders = failedToUnpark
 }
 
