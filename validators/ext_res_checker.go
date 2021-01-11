@@ -192,10 +192,16 @@ func (e *ExtResChecker) StartCheck(
 
 	e.resources[id] = rs
 
-	// validtor or not, we start the routine to validatate the
-	// internall data as th resource may require retrieve data from the
-	// foreign chains
-	go e.start(ctx, rs)
+	// if we are a validator, we just start the routine.
+	// so we can ensure the resources exists
+	if e.top.IsValidator() {
+		go e.start(ctx, rs)
+	} else {
+		// if not a validator, we just jump to the state voteSent
+		// and will wait for all validator to approve basically.
+		// check succeeded
+		atomic.StoreUint32(&rs.state, voteSent)
+	}
 	return nil
 }
 
@@ -254,12 +260,13 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 
 		// if the time is expired,
 		if v.checkUntil.Before(t) ||
-			// we are a validator, and we want our vote to
+			// if we are a validator, and we want our vote to
 			// be sent + all vote to be arrived
-			(votesLen == topLen && state == voteSent) ||
-			// we are not a validator, and do not care about our
+			(isValidator && votesLen == topLen && state == voteSent) ||
+			// if we are not a validator, and do not care about our
 			// own vote, just to have the validator voting OK
-			(votesLen == topLen && !isValidator) {
+			(!isValidator && votesLen == topLen) {
+
 			// cancel the context so it stops the routine right now
 			v.cfunc()
 
@@ -275,23 +282,22 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 
 			// callback to the resource holder
 			v.cb(v.res, checkPass)
+			// we delete the resource from our map.
 			delete(e.resources, k)
 			continue
 		}
 
-		// then send votes if needed
-		if state == validated {
-			// if not a validator no need to send the vote
-			if isValidator {
-				nv := &types.NodeVote{
-					PubKey:    e.top.SelfVegaPubKey(),
-					Reference: v.res.GetID(),
-				}
-				err := e.cmd.Command(ctx, txn.NodeVoteCommand, nv)
-				if err != nil {
-					e.log.Error("unable to send command", logging.Error(err))
-					continue
-				}
+		// if we are a validator, and the resource was validated
+		// then we try to send our vote.
+		if isValidator && state == validated {
+			nv := &types.NodeVote{
+				PubKey:    e.top.SelfVegaPubKey(),
+				Reference: v.res.GetID(),
+			}
+			err := e.cmd.Command(ctx, txn.NodeVoteCommand, nv)
+			if err != nil {
+				e.log.Error("unable to send command", logging.Error(err))
+				continue
 			}
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
