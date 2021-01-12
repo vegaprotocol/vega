@@ -35,15 +35,13 @@ func (o *Order) AmendSize(newSize int64) *OrderAmendment {
 		OrderID:  o.Id,
 		MarketID: o.MarketID,
 		PartyID:  o.PartyID,
-		ExpiresAt: &Timestamp{
-			Value: o.ExpiresAt,
-		},
+
 		SizeDelta:   newSize - int64(o.Size),
 		TimeInForce: o.TimeInForce,
 	}
-	if p := o.Price; p > 0 {
-		a.Price = &Price{
-			Value: p,
+	if e := o.ExpiresAt; e > 0 {
+		a.ExpiresAt = &Timestamp{
+			Value: e,
 		}
 	}
 
@@ -51,6 +49,12 @@ func (o *Order) AmendSize(newSize int64) *OrderAmendment {
 		a.PeggedReference = p.Reference
 		a.PeggedOffset = &wrapperspb.Int64Value{
 			Value: p.Offset,
+		}
+	} else {
+		if p := o.Price; p > 0 {
+			a.Price = &Price{
+				Value: p,
+			}
 		}
 	}
 

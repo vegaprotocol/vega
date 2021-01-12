@@ -960,7 +960,9 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+	modifiedOrders := conf.PassiveOrdersAffected
+	modifiedOrders = append(modifiedOrders, conf.Order)
+	if err := m.liquidityUpdate(ctx, modifiedOrders); err != nil {
 		return nil, err
 	}
 
@@ -2022,7 +2024,9 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+	modifiedOrders := conf.PassiveOrdersAffected
+	modifiedOrders = append(modifiedOrders, conf.Order)
+	if err := m.liquidityUpdate(ctx, modifiedOrders); err != nil {
 		return nil, err
 	}
 
