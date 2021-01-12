@@ -95,7 +95,7 @@ type PriceMonitor interface {
 // TargetStakeCalculator interface
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
-	GetTargetStake(rf types.RiskFactor, now time.Time, markPruce uint64) float64
+	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64
 }
 
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
