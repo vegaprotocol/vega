@@ -85,6 +85,8 @@ var (
 	ErrTradingNotAllowed = errors.New("trading not allowed")
 	// ErrCommitmentSubmissionNotAllowed no commitment submission are permitted in the current state
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
+	// ErrNotEnoughStake is returned when a LP update results in not enough commitment
+	ErrNotEnoughStake = errors.New("commitment submission rejected, not enouth stake")
 
 	networkPartyID = "network"
 )
@@ -2928,6 +2930,21 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
+
+	// Increasing the commitment should always be allowed, but decreasing is
+	// only valid if the resulting amount still allows the market as a whole
+	// to reach it's commitment level. Otherwise the commitment reduction is
+	// rejected.
+	if lp := m.liquidity.LiquidityProvisionByPartyID(party); lp != nil {
+		if sub.CommitmentAmount < lp.CommitmentAmount {
+			extra := uint64(m.getTargetStake()) - m.getSuppliedStake()
+			diff := lp.CommitmentAmount - sub.CommitmentAmount
+			if diff > extra {
+				return ErrNotEnoughStake
+			}
+		}
+	}
+
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
 		return err
 	}
