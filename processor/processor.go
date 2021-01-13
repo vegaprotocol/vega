@@ -55,15 +55,17 @@ type ExecutionEngine interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
+	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid string) error
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
 	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
-	SubmitProposal(context.Context, types.Proposal, string) error
+	SubmitProposal(context.Context, types.Proposal, string) (*governance.ToSubmit, error)
 	AddVote(context.Context, types.Vote) error
 	OnChainTimeUpdate(context.Context, time.Time) []*governance.ToEnact
+	RejectProposal(context.Context, *types.Proposal, types.ProposalError)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats

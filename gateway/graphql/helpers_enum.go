@@ -386,6 +386,14 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonNetworkParameterInvalidValue, nil
 	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED:
 		return ProposalRejectionReasonNetworkParameterValidationFailed, nil
+	case types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL:
+		return ProposalRejectionReasonOpeningAuctionDurationTooSmall, nil
+	case types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE:
+		return ProposalRejectionReasonOpeningAuctionDurationTooLarge, nil
+	case types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT:
+		return ProposalRejectionReasonMarketMissingLiquidityCommitment, nil
+	case types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET:
+		return ProposalRejectionReasonCouldNotInstanciateMarket, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err

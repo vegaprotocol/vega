@@ -123,6 +123,7 @@
     - [InstrumentConfiguration](#vega.InstrumentConfiguration)
     - [NewAsset](#vega.NewAsset)
     - [NewMarket](#vega.NewMarket)
+    - [NewMarketCommitment](#vega.NewMarketCommitment)
     - [NewMarketConfiguration](#vega.NewMarketConfiguration)
     - [Proposal](#vega.Proposal)
     - [ProposalTerms](#vega.ProposalTerms)
@@ -2380,6 +2381,29 @@ New market on Vega.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | changes | [NewMarketConfiguration](#vega.NewMarketConfiguration) |  | Configuration. |
+| liquidityCommitment | [NewMarketCommitment](#vega.NewMarketCommitment) |  | The commitment from the party creating the NewMarket proposal |
+
+
+
+
+
+
+<a name="vega.NewMarketCommitment"></a>
+
+### NewMarketCommitment
+A commitment of liquidity to be made by the party
+which propose the market.
+We create a new type here as we do not require the marketID from the submission
+the governance engine will create a LiquidityProvisionSubmission from
+this message internally.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market. |
+| fee | [string](#string) |  | nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. |
+| Sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. |
+| Buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. |
 
 
 
@@ -2397,7 +2421,6 @@ Configuration for a new market on Vega.
 | instrument | [InstrumentConfiguration](#vega.InstrumentConfiguration) |  | New market instrument configuration. |
 | decimalPlaces | [uint64](#uint64) |  | Decimal places used for the new market. |
 | metadata | [string](#string) | repeated | Optional new market meta data, tags. |
-| openingAuctionDuration | [int64](#int64) |  | Time duration for the opening auction to last. |
 | priceMonitoringParameters | [PriceMonitoringParameters](#vega.PriceMonitoringParameters) |  | price monitoring configuration |
 | simple | [SimpleModelParams](#vega.SimpleModelParams) |  | Simple risk model parameters, valid only if MODEL_SIMPLE is selected |
 | logNormal | [LogNormalRiskModel](#vega.LogNormalRiskModel) |  | Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected |
@@ -2551,6 +2574,8 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED | 21 | Validation failed for network parameter proposal |
 | PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL | 22 | Opening auction duration is less than the network minimum opening auction time |
 | PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE | 23 | Opening auction duration is more than the network minimum opening auction time |
+| PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT | 24 | Market proposal is missing a liquidity commitment |
+| PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET | 25 | Market proposal market could not be instanciate in execution |
 
 
 

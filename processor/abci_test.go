@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
@@ -113,7 +114,7 @@ func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.Ap
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
 	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 
 	for cmd, msg := range data {
 		tx := txEncode(t, cmd, msg)

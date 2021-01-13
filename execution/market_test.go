@@ -120,6 +120,9 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 		feeConfig, collateralEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
 	assert.NoError(t, err)
 
+	mktEngine.StartOpeningAuction(context.Background())
+	// mktEngine.OnChainTimeUpdate(context.Background(), now.Add(1*time.Second))
+
 	asset, err := mkts[0].GetAsset()
 	assert.NoError(t, err)
 
@@ -142,8 +145,6 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 
 func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) []types.Market {
 	mkt := types.Market{
-		TradingMode: types.Market_TRADING_MODE_CONTINUOUS,
-		State:       types.Market_STATE_ACTIVE,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				LiquidityFee:      "0.001",

@@ -437,7 +437,28 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		logging.String("proposal-party", prop.PartyID),
 		logging.String("proposal-terms", prop.Terms.String()))
 
-	return app.gov.SubmitProposal(ctx, *prop, id)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id)
+	if err != nil {
+		return err
+	}
+
+	if toSubmit.IsNewMarket() {
+		nm := toSubmit.NewMarket()
+
+		// TODO(): for now we are using a hash of the market ID to create
+		// the lp provision ID (well it's still deterministic...)
+		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().Id)))
+		err := app.exec.SubmitMarketWithLiquidityProvision(
+			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyID, lpid)
+		if err != nil {
+			// an error happened when submitting the market + liquidity
+			// we should cancel this proposal now
+			app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {

@@ -655,6 +655,10 @@
                 </li>
               
                 <li>
+                  <a href="#vega.NewMarketCommitment"><span class="badge">M</span>NewMarketCommitment</a>
+                </li>
+              
+                <li>
                   <a href="#vega.NewMarketConfiguration"><span class="badge">M</span>NewMarketConfiguration</a>
                 </li>
               
@@ -7600,6 +7604,13 @@ value (Vote) is the vote cast by the given party </p></td>
                   <td><p>Configuration. </p></td>
                 </tr>
               
+                <tr>
+                  <td>liquidityCommitment</td>
+                  <td><a href="#vega.NewMarketCommitment">NewMarketCommitment</a></td>
+                  <td></td>
+                  <td><p>The commitment from the party creating the NewMarket proposal </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -7634,6 +7645,51 @@ value (Vote) is the vote cast by the given party </p></td>
 
         
       
+        <h3 id="vega.NewMarketCommitment">NewMarketCommitment</h3>
+        <p>A commitment of liquidity to be made by the party</p><p>which propose the market.</p><p>We create a new type here as we do not require the marketID from the submission</p><p>the governance engine will create a LiquidityProvisionSubmission from</p><p>this message internally.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>commitmentAmount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Specified as a unitless number that represents the amount of settlement asset of the market. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>fee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>Sells</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>Buys</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="vega.NewMarketConfiguration">NewMarketConfiguration</h3>
         <p>Configuration for a new market on Vega.</p>
 
@@ -7663,13 +7719,6 @@ value (Vote) is the vote cast by the given party </p></td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p>Optional new market meta data, tags. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>openingAuctionDuration</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Time duration for the opening auction to last. </p></td>
                 </tr>
               
                 <tr>
@@ -8336,6 +8385,18 @@ Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. <
                 <td>PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE</td>
                 <td>23</td>
                 <td><p>Opening auction duration is more than the network minimum opening auction time</p></td>
+              </tr>
+            
+              <tr>
+                <td>PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT</td>
+                <td>24</td>
+                <td><p>Market proposal is missing a liquidity commitment</p></td>
+              </tr>
+            
+              <tr>
+                <td>PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET</td>
+                <td>25</td>
+                <td><p>Market proposal market could not be instanciate in execution</p></td>
               </tr>
             
           </tbody>
