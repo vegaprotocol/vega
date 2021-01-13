@@ -2953,14 +2953,13 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		if err == nil {
 			return
 		}
-		if newerr := m.liquidity.CancelLiquidityProvision(ctx, party); err != nil {
+		if newerr := m.liquidity.CancelLiquidityProvision(ctx, party); newerr != nil {
 			m.log.Debug("unable to submit cancel liquidity provision submission",
 				logging.String("party", party),
 				logging.String("id", id),
 				logging.Error(newerr))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
-
 	}()
 
 	// WE WANT TO APPLY THECOMMITMENT IN BOND ACCOUNT
