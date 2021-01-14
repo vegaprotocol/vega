@@ -312,9 +312,6 @@ func NewMarket(
 		feeSplitter:          &FeeSplitter{},
 	}
 
-	// if market.as.AuctionStart() {
-	// 	market.EnterAuction(ctx)
-	// }
 	return market, nil
 }
 
