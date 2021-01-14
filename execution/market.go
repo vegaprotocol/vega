@@ -424,7 +424,8 @@ func (m *Market) Reject(ctx context.Context) error {
 
 	// we close all parties accounts
 	m.cleanupOnReject(ctx)
-
+	m.mkt.State = types.Market_STATE_REJECTED
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil
 }
 
@@ -444,6 +445,7 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 		m.mkt.State = types.Market_STATE_ACTIVE
 	}
 
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil
 }
 
@@ -493,6 +495,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 				// the market is now in a ACTIVE state
 				m.mkt.State = types.Market_STATE_ACTIVE
+				m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
 				// start the market fee window
 				m.feeSplitter.TimeWindowStart(t)
 			}

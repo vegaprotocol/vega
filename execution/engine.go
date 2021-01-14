@@ -148,7 +148,6 @@ func (e *Engine) RejectMarket(ctx context.Context, marketid string) error {
 	}
 
 	e.removeMarket(marketid)
-	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
 	return nil
 }
 
@@ -160,7 +159,6 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketid string) error
 		return ErrMarketDoesNotExist
 	}
 
-	defer e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
 	return mkt.StartOpeningAuction(ctx)
 }
 

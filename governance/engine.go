@@ -41,6 +41,7 @@ var (
 	ErrProposalOpeningAuctionDurationTooLong   = errors.New("proposal opening auction duration is too long")
 	ErrMissingCommandIDFromContext             = errors.New("could not find command id from the context")
 	ErrMarketMissingLiquidityCommitment        = errors.New("market proposal is missing a liquidity commitment")
+	ErrProposalDoesNotExists                   = errors.New("proposal does not exists")
 )
 
 // Broker - event bus
@@ -178,6 +179,23 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	return
 }
 
+func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
+	vc := &VoteClosed{
+		p: p,
+	}
+	switch p.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		startAuction := true
+		if p.State != types.Proposal_STATE_PASSED {
+			startAuction = false
+		}
+		vc.m = &NewMarketVoteClosed{
+			startAuction: startAuction,
+		}
+	}
+	return vc
+}
+
 func (e *Engine) removeProposal(id string) {
 	for i, p := range e.activeProposals {
 		if p.ID == id {
@@ -190,10 +208,11 @@ func (e *Engine) removeProposal(id string) {
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact {
+func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	e.currentTime = t
 	var (
 		toBeEnacted []*ToEnact
+		voteClosed  []*VoteClosed
 		toBeRemoved []string // ids
 	)
 
@@ -206,6 +225,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 		for _, proposal := range e.activeProposals {
 			if proposal.Terms.ClosingTimestamp < now {
 				e.closeProposal(ctx, proposal, counter, totalStake)
+				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal.Proposal))
 			}
 
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
@@ -248,7 +268,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 	}
 
 	// flush here for now
-	return toBeEnacted
+	return toBeEnacted, voteClosed
 }
 
 func (e *Engine) getProposal(id string) (*proposalData, bool) {
@@ -297,11 +317,16 @@ func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string
 
 func (e *Engine) RejectProposal(
 	ctx context.Context, p *types.Proposal, r types.ProposalError,
-) {
+) error {
+	if _, ok := e.getProposal(p.ID); !ok {
+		return ErrProposalDoesNotExists
+	}
+
 	e.removeProposal(p.ID)
 	p.Reason = r
 	p.State = types.Proposal_STATE_REJECTED
 	e.broker.Send(events.NewProposalEvent(ctx, *p))
+	return nil
 }
 
 // toSubmit build the return response for the SubmitProposal

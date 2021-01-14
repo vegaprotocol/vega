@@ -83,6 +83,18 @@ type ToSubmit struct {
 	m *ToSubmitNewMarket
 }
 
+func (t *ToSubmit) Proposal() *types.Proposal {
+	return t.p
+}
+
+func (t ToSubmit) IsNewMarket() bool {
+	return (t.m != nil)
+}
+
+func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
+	return t.m
+}
+
 type ToSubmitNewMarket struct {
 	m *types.Market
 	l *types.LiquidityProvisionSubmission
@@ -96,21 +108,21 @@ func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *types.LiquidityProvi
 	return t.l
 }
 
-func (t *ToSubmit) Proposal() *types.Proposal {
-	return t.p
-}
-
-func (t ToSubmit) IsNewMarket() bool {
-	return (t.m != nil)
-}
-
-func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
-	return t.m
-}
-
 type VoteClosed struct {
 	p *types.Proposal
 	m *NewMarketVoteClosed
+}
+
+func (t *VoteClosed) Proposal() *types.Proposal {
+	return t.p
+}
+
+func (t *VoteClosed) IsNewMarket() bool {
+	return (t.m != nil)
+}
+
+func (t *VoteClosed) NewMarket() *NewMarketVoteClosed {
+	return t.m
 }
 
 type NewMarketVoteClosed struct {
@@ -126,12 +138,4 @@ func (t *NewMarketVoteClosed) Rejected() bool {
 
 func (t *NewMarketVoteClosed) StartAuction() bool {
 	return t.startAuction
-}
-
-func (t *VoteClosed) IsNewMarket() bool {
-	return (t.m != nil)
-}
-
-func (t *VoteClosed) NewMarket() *NewMarketVoteClosed {
-	return t.m
 }

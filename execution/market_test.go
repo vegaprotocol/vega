@@ -45,6 +45,10 @@ type testMarket struct {
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) *testMarket {
+	return getTestMarket2(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true)
+}
+
+func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, startOpeninAuction bool) *testMarket {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	riskConfig := risk.NewDefaultConfig()
@@ -120,8 +124,9 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 		feeConfig, collateralEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
 	assert.NoError(t, err)
 
-	mktEngine.StartOpeningAuction(context.Background())
-	// mktEngine.OnChainTimeUpdate(context.Background(), now.Add(1*time.Second))
+	if startOpeninAuction {
+		mktEngine.StartOpeningAuction(context.Background())
+	}
 
 	asset, err := mkts[0].GetAsset()
 	assert.NoError(t, err)

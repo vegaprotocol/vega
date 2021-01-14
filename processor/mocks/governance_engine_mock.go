@@ -51,11 +51,12 @@ func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1 interface{}) *gom
 }
 
 // OnChainTimeUpdate mocks base method
-func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) []*governance.ToEnact {
+func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) ([]*governance.ToEnact, []*governance.VoteClosed) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnChainTimeUpdate", arg0, arg1)
 	ret0, _ := ret[0].([]*governance.ToEnact)
-	return ret0
+	ret1, _ := ret[1].([]*governance.VoteClosed)
+	return ret0, ret1
 }
 
 // OnChainTimeUpdate indicates an expected call of OnChainTimeUpdate
@@ -65,9 +66,11 @@ func (mr *MockGovernanceEngineMockRecorder) OnChainTimeUpdate(arg0, arg1 interfa
 }
 
 // RejectProposal mocks base method
-func (m *MockGovernanceEngine) RejectProposal(arg0 context.Context, arg1 *proto.Proposal, arg2 proto.ProposalError) {
+func (m *MockGovernanceEngine) RejectProposal(arg0 context.Context, arg1 *proto.Proposal, arg2 proto.ProposalError) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RejectProposal", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RejectProposal", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // RejectProposal indicates an expected call of RejectProposal

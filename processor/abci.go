@@ -453,7 +453,12 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		if err != nil {
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
-			app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET)
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET); err != nil {
+				// this should never happen
+				app.log.Panic("tried to reject an non-existing proposal",
+					logging.String("proposal-id", toSubmit.Proposal().ID),
+					logging.Error(err))
+			}
 			return err
 		}
 	}
@@ -514,8 +519,32 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {
-	acceptedProposals := app.gov.OnChainTimeUpdate(ctx, t)
-	for _, toEnact := range acceptedProposals {
+	toEnactProposals, voteClosedProposals := app.gov.OnChainTimeUpdate(ctx, t)
+	for _, voteClosed := range voteClosedProposals {
+		prop := voteClosed.Proposal()
+		switch {
+		case voteClosed.IsNewMarket():
+			// Here we panic in both case as we should never reach a point
+			// where we try to Reject or start the opening auction of a
+			// non-existing market or any other error would be quite critical
+			// anyway...
+			nm := voteClosed.NewMarket()
+			if nm.Rejected() {
+				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+					app.log.Panic("unable to reject market",
+						logging.String("market-id", prop.ID),
+						logging.Error(err))
+				}
+			}
+			if err := app.exec.StartOpeningAuction(ctx, prop.ID); err != nil {
+				app.log.Panic("unable to start market opening auction",
+					logging.String("market-id", prop.ID),
+					logging.Error(err))
+			}
+		}
+	}
+
+	for _, toEnact := range toEnactProposals {
 		prop := toEnact.Proposal()
 		switch {
 		case toEnact.IsNewMarket():
@@ -604,12 +633,6 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 
 func (app *App) enactMarket(ctx context.Context, prop *types.Proposal, mkt *types.Market) {
 	prop.State = types.Proposal_STATE_ENACTED
-	if err := app.exec.SubmitMarket(ctx, mkt); err != nil {
-		prop.State = types.Proposal_STATE_FAILED
-		app.log.Error("failed to submit new market",
-			logging.String("market-id", mkt.Id),
-			logging.Error(err))
-	}
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {

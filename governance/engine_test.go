@@ -44,6 +44,73 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Validate enactment time", testEnactmentTime)
 	t.Run("Validate timestamps", testValidateTimestamps)
 	t.Run("Validate proposer stake", testProposerStake)
+	t.Run("Submit valid market proposal return a market to submit", testNewValidMarketProposalReturnsAMarketToSubmit)
+	t.Run("Can reject proposal", testCanRejectProposal)
+}
+
+func testCanRejectProposal(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	var balance uint64 = 123456789
+	party := eng.makeValidParty("a-valid-party", balance)
+
+	// to check min required level
+	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(2).Return(true)
+	// once proposal is validated, it is added to the buffer
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
+		pe, ok := e.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
+		assert.Equal(t, party.Id, p.PartyID)
+	})
+	toSubmit, err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()), "proposal-id")
+	assert.NoError(t, err)
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	// now we try to reject to reject
+	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET)
+	assert.NoError(t, err)
+
+	// just one more to make sure it was rejected...
+	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET)
+	assert.EqualError(t, err, governance.ErrProposalDoesNotExists.Error())
+}
+
+func testNewValidMarketProposalReturnsAMarketToSubmit(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	var balance uint64 = 123456789
+	party := eng.makeValidParty("a-valid-party", balance)
+
+	// to check min required level
+	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(2).Return(true)
+	// once proposal is validated, it is added to the buffer
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
+		pe, ok := e.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
+		assert.Equal(t, party.Id, p.PartyID)
+	})
+
+	prop := eng.newOpenProposal(party.Id, time.Now())
+	prop.GetTerms().GetNewMarket().LiquidityCommitment = &types.NewMarketCommitment{
+		CommitmentAmount: 100,
+		Fee:              "0.5",
+	}
+
+	toSubmit, err := eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.NoError(t, err)
+	assert.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	assert.NotNil(t, toSubmit.NewMarket().Market())
+	assert.NotNil(t, toSubmit.NewMarket().LiquidityProvisionSubmission())
 }
 
 func testSubmitValidProposal(t *testing.T) {
@@ -532,7 +599,7 @@ func testVotingDeclinedProposal(t *testing.T) {
 		assert.Equal(t, "proposal-id1", p.ID)
 	})
 	afterClose := time.Unix(declined.Terms.ClosingTimestamp, 0).Add(time.Hour)
-	accepted := eng.OnChainTimeUpdate(context.Background(), afterClose)
+	accepted, _ := eng.OnChainTimeUpdate(context.Background(), afterClose)
 	assert.Empty(t, accepted) // nothing was accepted
 
 	voter := eng.makeValidPartyTimes("voter", 1, 0)
@@ -605,7 +672,7 @@ func testVotingPassedProposal(t *testing.T) {
 
 	afterEnactment := time.Unix(passed.Terms.EnactmentTimestamp, 0).Add(time.Second)
 	// no calculations, no state change, simply removed from governance engine
-	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, 1)
 	assert.Equal(t, "proposal-id1", tobeEnacted[0].Proposal().ID)
 
@@ -672,10 +739,14 @@ func testProposalDeclined(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	assert.Len(t, voteClosed, 1)
+	vc := voteClosed[0]
+	assert.NotNil(t, vc.NewMarket())
+	assert.True(t, vc.NewMarket().Rejected())
 
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Empty(t, tobeEnacted)
 }
 
@@ -724,7 +795,11 @@ func testProposalPassed(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
 		assert.Equal(t, proposal.ID, p.ID)
 	})
-	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+	assert.Len(t, voteClosed, 1)
+	vc := voteClosed[0]
+	assert.NotNil(t, vc.NewMarket())
+	assert.True(t, vc.NewMarket().StartAuction())
 
 	modified := proposal
 	modified.State = types.Proposal_STATE_DECLINED
@@ -734,7 +809,7 @@ func testProposalPassed(t *testing.T) {
 
 	eng.makeValidPartyTimes(proposerVoter.Id, 0, 0) // effectively draining proposerVoter
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, 1)
 	assert.Equal(t, proposal.ID, tobeEnacted[0].Proposal().ID)
 }
@@ -861,7 +936,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	assert.Equal(t, howMany, howManyPassed)
 	assert.Equal(t, howMany, howManyDeclined)
 
-	tobeEnacted := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
 	assert.Len(t, tobeEnacted, howMany)
 	for i := 0; i < howMany; i++ {
 		_, found := passed[tobeEnacted[i].Proposal().ID]
