@@ -68,13 +68,13 @@ message NewMarketConfiguration {
 // this message internally.
 message NewMarketCommitment {
   // Specified as a unitless number that represents the amount of settlement asset of the market.
-  uint64 commitmentAmount = 2;
+  uint64 commitmentAmount = 1;
   // nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers.
-  string fee = 3;
+  string fee = 2;
   // a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
-  repeated LiquidityOrder Sells = 4;
+  repeated LiquidityOrder Sells = 3;
   // a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec.
-  repeated LiquidityOrder Buys  = 5;
+  repeated LiquidityOrder Buys  = 4;
 }
 
 // New market on Vega.
