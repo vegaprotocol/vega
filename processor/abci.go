@@ -453,7 +453,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		if err != nil {
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
-			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET); err != nil {
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET); err != nil {
 				// this should never happen
 				app.log.Panic("tried to reject an non-existing proposal",
 					logging.String("proposal-id", toSubmit.Proposal().ID),

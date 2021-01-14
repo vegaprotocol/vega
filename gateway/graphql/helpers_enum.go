@@ -392,8 +392,8 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonOpeningAuctionDurationTooLarge, nil
 	case types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT:
 		return ProposalRejectionReasonMarketMissingLiquidityCommitment, nil
-	case types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET:
-		return ProposalRejectionReasonCouldNotInstanciateMarket, nil
+	case types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET:
+		return ProposalRejectionReasonCouldNotInstantiateMarket, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err

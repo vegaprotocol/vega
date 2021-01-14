@@ -2575,7 +2575,7 @@ A list of possible errors that can cause a proposal to be in state rejected or f
 | PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL | 22 | Opening auction duration is less than the network minimum opening auction time |
 | PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE | 23 | Opening auction duration is more than the network minimum opening auction time |
 | PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT | 24 | Market proposal is missing a liquidity commitment |
-| PROPOSAL_ERROR_COULD_NOT_INSTANCIATE_MARKET | 25 | Market proposal market could not be instanciate in execution |
+| PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET | 25 | Market proposal market could not be instantiate in execution |
 
 
 

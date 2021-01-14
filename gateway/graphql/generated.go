@@ -5810,8 +5810,8 @@ enum ProposalRejectionReason {
   OpeningAuctionDurationTooLarge
   "Market proposal is missing a liquidity commitment"
   MarketMissingLiquidityCommitment
-  "Market proposal market could not be instanciate in execution"
-  CouldNotInstanciateMarket
+  "Market proposal market could not be instantiate in execution"
+  CouldNotInstantiateMarket
 }
 
 "Reason for the order being rejected by the core node"
