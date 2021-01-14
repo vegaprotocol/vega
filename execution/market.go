@@ -182,6 +182,11 @@ type Market struct {
 	feeSplitter             *FeeSplitter
 }
 
+// TSCalc returns the local tsCalc instance
+func (m *Market) TSCalc() TargetStakeCalculator {
+	return m.tsCalc
+}
+
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	marketcfg.Id = ""
@@ -2937,9 +2942,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	// rejected.
 	if lp := m.liquidity.LiquidityProvisionByPartyID(party); lp != nil {
 		if sub.CommitmentAmount < lp.CommitmentAmount {
-			extra := uint64(m.getTargetStake()) - m.getSuppliedStake()
+			// this is the amount of stake surplus
+			surplus := uint64(m.getTargetStake()) - m.getSuppliedStake()
 			diff := lp.CommitmentAmount - sub.CommitmentAmount
-			if diff > extra {
+			if diff > surplus {
 				return ErrNotEnoughStake
 			}
 		}
