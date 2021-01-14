@@ -140,10 +140,6 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 			Type: typAddr,
 		},
 		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
 			Name: "nonce",
 			Type: typU256,
 		},
@@ -158,7 +154,7 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 	addr := ethcmn.HexToAddress(b.address)
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), nonce, listAssetContractName}...)
+	buf, err := args.Pack([]interface{}{addr, nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -209,7 +205,6 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 			Start: blockNumber - 1,
 		},
 		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
-		[]*big.Int{},
 		[][32]byte{},
 	)
 
@@ -276,10 +271,6 @@ func (b *ERC20) SignWithdrawal(
 			Type: typU256,
 		},
 		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
 			Name: "address",
 			Type: typAddr,
 		},
@@ -299,7 +290,7 @@ func (b *ERC20) SignWithdrawal(
 	// we use the withdrawRef as a nonce
 	// they are unique as generated as an increment from the banking
 	// layer
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), big.NewInt(int64(amount)), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
+	buf, err := args.Pack([]interface{}{addr, big.NewInt(int64(amount)), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -352,8 +343,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		// user_address
 		[]ethcmn.Address{ethcmn.HexToAddress(w.TargetEthereumAddress)},
 		// asset_source
-		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
-		[]*big.Int{})
+		[]ethcmn.Address{ethcmn.HexToAddress(b.address)})
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
@@ -407,8 +397,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		// user_address
 		[]ethcmn.Address{ethcmn.HexToAddress(d.SourceEthereumAddress)},
 		// asset_source
-		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
-		[]*big.Int{})
+		[]ethcmn.Address{ethcmn.HexToAddress(b.address)})
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
