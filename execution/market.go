@@ -1020,9 +1020,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	// insert an expiring order if it's either in the book
 	// or in the parked list
-	if order.TimeInForce == types.Order_TIF_GTT &&
-		order.Status == types.Order_STATUS_ACTIVE ||
-		order.Status == types.Order_STATUS_PARKED {
+	if order.IsExpireable() && !order.IsFinished() {
 		m.expiringOrders.Insert(*order)
 	}
 
@@ -1256,7 +1254,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 			// remove the order from the expiring list
 			// if it was a GTT order
-			if order.TimeInForce == types.Order_TIF_GTT {
+			if order.IsExpireable() {
 				m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
 			}
 		}
@@ -1381,7 +1379,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// and remove the orders from the positions engine
 	evts := []events.Event{}
 	for _, o := range rmorders {
-		if o.TimeInForce == types.Order_TIF_GTT {
+		if o.IsExpireable() {
 			m.expiringOrders.RemoveOrder(o.ExpiresAt, o.Id)
 		}
 		if o.PeggedOrder != nil {
@@ -1904,7 +1902,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	}
 
 	for _, cancellation := range cancellations {
-		if cancellation.Order.TimeInForce == types.Order_TIF_GTT {
+		if cancellation.Order.IsExpireable() {
 			m.expiringOrders.RemoveOrder(cancellation.Order.ExpiresAt, cancellation.Order.Id)
 		}
 		// if the order was a pegged order, remove from pegged list
@@ -1993,7 +1991,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		}
 	}
 
-	if order.TimeInForce == types.Order_TIF_GTT {
+	if order.IsExpireable() {
 		m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
 	}
 
@@ -2143,16 +2141,16 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}()
 
 	// if we are amending from GTT to GTC, flag ready to remove from expiry list
-	if existingOrder.TimeInForce == types.Order_TIF_GTT &&
-		amendedOrder.TimeInForce == types.Order_TIF_GTC {
+	if existingOrder.IsExpireable() &&
+		!amendedOrder.IsExpireable() {
 		// We no longer need to handle the expiry
 		needToRemoveExpiry = true
 		expiresAt = existingOrder.ExpiresAt
 	}
 
-	// if we are amending from GTT to GTC, flag ready to remove from expiry list
-	if existingOrder.TimeInForce == types.Order_TIF_GTC &&
-		amendedOrder.TimeInForce == types.Order_TIF_GTT {
+	// if we are amending from GTC to GTT, flag ready to add to expiry list
+	if !existingOrder.IsExpireable() &&
+		amendedOrder.IsExpireable() {
 		// We need to handle the expiry
 		needToAddExpiry = true
 	}
