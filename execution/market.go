@@ -2407,68 +2407,6 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	return nil, types.ErrEditNotAllowed
 }
 
-// amendPeggedOrder amend an existing pegged order from the order book
-// This does not need to perform all the checks of the full AmendOrder call
-// as we know the order is valid already
-func (m *Market) amendPeggedOrder(ctx context.Context, existingOrder *types.Order, price uint64) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "amendPeggedOrder")
-	defer timer.EngineTimeCounterAdd()
-
-	amendedOrder := *existingOrder
-	amendedOrder.Price = price
-
-	// Update potential new position after the amend
-	pos, err := m.position.AmendOrder(existingOrder, &amendedOrder)
-	if err != nil {
-		// adding order to the buffer first
-		amendedOrder.Status = types.Order_STATUS_REJECTED
-		amendedOrder.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
-		m.broker.Send(events.NewOrderEvent(ctx, &amendedOrder))
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Unable to amend potential trader position",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
-		return nil, ErrMarginCheckFailed
-	}
-
-	// Perform check and allocate margin
-	// ignore rollback return here, as if we amend it means the order
-	// is already on the book, not rollback will be needed, the margin
-	// will be updated later on for sure.
-	if _, err = m.checkMarginForOrder(ctx, pos, &amendedOrder); err != nil {
-		// Undo the position registering
-		_, err1 := m.position.AmendOrder(&amendedOrder, existingOrder)
-		if err1 != nil {
-			m.log.Error("Unable to unregister potential amended trader position",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err1))
-		}
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Unable to check/add margin for trader",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
-		return nil, ErrMarginCheckFailed
-	}
-
-	var confirmation *types.OrderConfirmation
-	if existingOrder.Status != types.Order_STATUS_PARKED {
-		confirmation, err = m.orderCancelReplace(ctx, existingOrder, &amendedOrder)
-		if err == nil {
-			m.handleConfirmation(ctx, confirmation)
-		}
-	} else {
-		confirmation = &types.OrderConfirmation{Order: existingOrder}
-
-	}
-	m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))
-	*existingOrder = *confirmation.Order
-	return confirmation, err
-}
-
 func (m *Market) validateOrderAmendment(
 	order *types.Order,
 	amendment *types.OrderAmendment,
