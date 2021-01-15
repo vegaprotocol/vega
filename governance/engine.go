@@ -340,7 +340,10 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 	case *types.ProposalTerms_NewMarket:
 		// use to calcualte the auction duration
 		// which is basically enactime - closetime
-		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
+		// FIXME(): normaly we should use the closetime
+		// but this would not play well with the MarketAcutionState stuff
+		// for now we start the auction as of now.
+		closeTime := e.currentTime
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 
 		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
