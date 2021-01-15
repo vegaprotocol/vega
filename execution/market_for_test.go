@@ -14,7 +14,7 @@ func (m *Market) GetParkedOrderCount() int {
 
 // GetPeggedExpiryOrderCount returns the number of pegged order that can expire
 func (m *Market) GetPeggedExpiryOrderCount() int {
-	return m.expiringPeggedOrders.GetExpiryingOrderCount()
+	return m.expiringOrders.GetExpiryingOrderCount()
 }
 
 // TSCalc returns the local tsCalc instance

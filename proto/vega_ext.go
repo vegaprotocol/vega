@@ -56,3 +56,18 @@ func (o *Order) AmendSize(newSize int64) *OrderAmendment {
 
 	return a
 }
+
+func (o *Order) IsExpireable() bool {
+	return (o.TimeInForce == Order_TIF_GFN ||
+		o.TimeInForce == Order_TIF_GTT ||
+		o.TimeInForce == Order_TIF_GFA) &&
+		o.ExpiresAt > 0
+}
+
+// IsFinished returns true if an order
+// is in any state different to ACTIVE and PARKED
+// Basically any order which is never gonna
+// trade anymore
+func (o *Order) IsFinished() bool {
+	return o.Status != Order_STATUS_ACTIVE && o.Status != Order_STATUS_PARKED
+}

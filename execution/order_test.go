@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1992,4 +1993,163 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+}
+
+// test for issue 787,
+// segv when an GTT order is cancelled, then expires
+func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
+	now := time.Unix(5, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+	defer tm.ctrl.Finish()
+
+	addAccount(tm, "aaa")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order01", types.Side_SIDE_BUY, "aaa", 10, 100)
+	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NoError(t, err)
+	require.NotNil(t, o1conf)
+
+	cncl, err := tm.market.CancelOrder(ctx, o1.PartyID, o1.Id)
+	require.NoError(t, err)
+	require.NotNil(t, cncl)
+	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
+
+	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	require.NoError(t, err)
+	require.Len(t, orders, 0)
+	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
+}
+
+func TestGTTExpiredNotFilled(t *testing.T) {
+	now := time.Unix(5, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+	defer tm.ctrl.Finish()
+
+	addAccount(tm, "aaa")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order01", types.Side_SIDE_SELL, "aaa", 10, 100)
+	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NoError(t, err)
+	require.NotNil(t, o1conf)
+
+	// then remove expired, set 1 sec after order exp time.
+	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	assert.NoError(t, err)
+	assert.Len(t, orders, 1)
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
+}
+
+func TestGTTExpiredPartiallyFilled(t *testing.T) {
+	now := time.Unix(5, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+	defer tm.ctrl.Finish()
+
+	addAccount(tm, "aaa")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	addAccount(tm, "bbb")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order01", types.Side_SIDE_SELL, "aaa", 10, 100)
+	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NoError(t, err)
+	require.NotNil(t, o1conf)
+
+	// add matching order
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order02", types.Side_SIDE_BUY, "bbb", 1, 100)
+	o2.ExpiresAt = now.Add(5 * time.Second).UnixNano()
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NoError(t, err)
+	require.NotNil(t, o2conf)
+
+	// then remove expired, set 1 sec after order exp time.
+	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	assert.NoError(t, err)
+	assert.Len(t, orders, 1)
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
+	assert.Equal(t, o1.Id, orders[0].Id)
+}
+
+func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
+	now := time.Unix(5, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+	defer tm.ctrl.Finish()
+
+	addAccount(tm, "aaa")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	someTimeLater := now.Add(100 * time.Second)
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order01", types.Side_SIDE_SELL, "aaa", 1, 1)
+	o1.ExpiresAt = someTimeLater.UnixNano()
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NoError(t, err)
+	require.NotNil(t, o1conf)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order02", types.Side_SIDE_SELL, "aaa", 99, 3298)
+	o2.ExpiresAt = someTimeLater.UnixNano() + 1
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NoError(t, err)
+	require.NotNil(t, o2conf)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order03", types.Side_SIDE_SELL, "aaa", 19, 771)
+	o3.ExpiresAt = someTimeLater.UnixNano()
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NoError(t, err)
+	require.NotNil(t, o3conf)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order04", types.Side_SIDE_SELL, "aaa", 7, 1000)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NoError(t, err)
+	require.NotNil(t, o4conf)
+
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order05", types.Side_SIDE_SELL, "aaa", 99999, 199)
+	o5.ExpiresAt = someTimeLater.UnixNano()
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NoError(t, err)
+	require.NotNil(t, o5conf)
+
+	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order06", types.Side_SIDE_SELL, "aaa", 100, 100)
+	o6conf, err := tm.market.SubmitOrder(ctx, o6)
+	require.NoError(t, err)
+	require.NotNil(t, o6conf)
+
+	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order07", types.Side_SIDE_SELL, "aaa", 9999, 41)
+	o7.ExpiresAt = someTimeLater.UnixNano() + 9999
+	o7conf, err := tm.market.SubmitOrder(ctx, o7)
+	require.NoError(t, err)
+	require.NotNil(t, o7conf)
+
+	o8 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order08", types.Side_SIDE_SELL, "aaa", 1, 1)
+	o8.ExpiresAt = someTimeLater.UnixNano() - 9999
+	o8conf, err := tm.market.SubmitOrder(ctx, o8)
+	require.NoError(t, err)
+	require.NotNil(t, o8conf)
+
+	o9 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order09", types.Side_SIDE_SELL, "aaa", 12, 65)
+	o9conf, err := tm.market.SubmitOrder(ctx, o9)
+	require.NoError(t, err)
+	require.NotNil(t, o9conf)
+
+	o10 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order10", types.Side_SIDE_SELL, "aaa", 1, 1)
+	o10.ExpiresAt = someTimeLater.UnixNano() - 1
+	o10conf, err := tm.market.SubmitOrder(ctx, o10)
+	require.NoError(t, err)
+	require.NotNil(t, o10conf)
+
+	expired, err := tm.market.RemoveExpiredOrders(someTimeLater.UnixNano())
+	assert.NoError(t, err)
+	assert.Len(t, expired, 5)
 }
