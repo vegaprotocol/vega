@@ -548,7 +548,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		prop := toEnact.Proposal()
 		switch {
 		case toEnact.IsNewMarket():
-			app.enactMarket(ctx, prop, toEnact.NewMarket())
+			app.enactMarket(ctx, prop)
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateMarket():
@@ -631,8 +631,10 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 }
 
-func (app *App) enactMarket(ctx context.Context, prop *types.Proposal, mkt *types.Market) {
+func (app *App) enactMarket(ctx context.Context, prop *types.Proposal) {
 	prop.State = types.Proposal_STATE_ENACTED
+
+	// TODO: add checks for end of auction in here
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {

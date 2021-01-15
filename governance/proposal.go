@@ -22,12 +22,18 @@ type ProposalParameters struct {
 // to quickly work out what change we're dealing with, and get the data
 type ToEnact struct {
 	p  *types.Proposal
-	m  *types.Market
+	m  *ToEnactMarket
 	a  *types.Asset
 	n  *types.NetworkParameter
 	as *types.AssetSource
 	u  *types.UpdateMarket
 }
+
+// just a empty struct, to signal
+// an enacted market. nothing to be done with it
+// for now (later maybe add information to check
+// end of opening auction or so)
+type ToEnactMarket struct{}
 
 func (t ToEnact) IsNewMarket() bool {
 	return (t.m != nil)
@@ -50,7 +56,7 @@ func (t ToEnact) IsNewAssetSource() bool {
 	return t.IsNewAsset()
 }
 
-func (t *ToEnact) NewMarket() *types.Market {
+func (t *ToEnact) NewMarket() *ToEnactMarket {
 	return t.m
 }
 

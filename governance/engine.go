@@ -166,7 +166,7 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	}()
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		// nothing to do here anymore.
+		te.m = &ToEnactMarket{}
 	case *types.ProposalTerms_UpdateNetworkParameter:
 		te.n = change.UpdateNetworkParameter.Changes
 	case *types.ProposalTerms_NewAsset:
