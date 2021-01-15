@@ -165,7 +165,7 @@ type Market struct {
 
 	// A collection of time sorted pegged orders
 	peggedOrders   []*types.Order
-	expiringOrders *matching.ExpiringOrders
+	expiringOrders *ExpiringOrders
 
 	// A collection of pegged orders that have been parked
 	parkedOrders []*types.Order
@@ -297,7 +297,7 @@ func NewMarket(
 		as:                 as,
 		pMonitor:           pMonitor,
 		tsCalc:             tsCalc,
-		expiringOrders:     matching.NewExpiringOrders(),
+		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
 	}
 
