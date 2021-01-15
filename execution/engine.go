@@ -169,11 +169,15 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 		return err
 	}
 
-	// now we try to submit the liquidity
-	mkt := e.markets[marketConfig.Id]
-	if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpid); err != nil {
-		e.removeMarket(marketConfig.Id)
-		return err
+	// TODO(): remove check once LiquidityProvision is required
+	// for now it is optional
+	if lp != nil {
+		// now we try to submit the liquidity
+		mkt := e.markets[marketConfig.Id]
+		if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpid); err != nil {
+			e.removeMarket(marketConfig.Id)
+			return err
+		}
 	}
 
 	e.publishMarketInfos(ctx, marketConfig.Id)
