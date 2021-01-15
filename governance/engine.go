@@ -223,7 +223,9 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		counter := newStakeCounter(e.log, e.accs)
 
 		for _, proposal := range e.activeProposals {
-			if proposal.Terms.ClosingTimestamp < now {
+			// only enter this if the proposal state is OPEN
+			// or we would return many times the voteClosed eventually
+			if proposal.State == types.Proposal_STATE_OPEN && proposal.Terms.ClosingTimestamp < now {
 				e.closeProposal(ctx, proposal, counter, totalStake)
 				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal.Proposal))
 			}
