@@ -397,8 +397,6 @@ type NewMarketInput struct {
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []string `json:"metadata"`
-	// The proposed duration for the opening auction for this market in seconds
-	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
 	// Price monitoring configuration
 	PriceMonitoringParameters *PriceMonitoringParametersInput `json:"priceMonitoringParameters"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
@@ -1731,6 +1729,14 @@ const (
 	ProposalRejectionReasonNetworkParameterInvalidValue ProposalRejectionReason = "NetworkParameterInvalidValue"
 	// Validation failed for network parameter proposal
 	ProposalRejectionReasonNetworkParameterValidationFailed ProposalRejectionReason = "NetworkParameterValidationFailed"
+	// Opening auction duration is less than the network minimum opening auction time
+	ProposalRejectionReasonOpeningAuctionDurationTooSmall ProposalRejectionReason = "OpeningAuctionDurationTooSmall"
+	// Opening auction duration is more than the network minimum opening auction time
+	ProposalRejectionReasonOpeningAuctionDurationTooLarge ProposalRejectionReason = "OpeningAuctionDurationTooLarge"
+	// Market proposal is missing a liquidity commitment
+	ProposalRejectionReasonMarketMissingLiquidityCommitment ProposalRejectionReason = "MarketMissingLiquidityCommitment"
+	// Market proposal market could not be instantiate in execution
+	ProposalRejectionReasonCouldNotInstantiateMarket ProposalRejectionReason = "CouldNotInstantiateMarket"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1755,11 +1761,15 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonNetworkParameterInvalidKey,
 	ProposalRejectionReasonNetworkParameterInvalidValue,
 	ProposalRejectionReasonNetworkParameterValidationFailed,
+	ProposalRejectionReasonOpeningAuctionDurationTooSmall,
+	ProposalRejectionReasonOpeningAuctionDurationTooLarge,
+	ProposalRejectionReasonMarketMissingLiquidityCommitment,
+	ProposalRejectionReasonCouldNotInstantiateMarket,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket:
 		return true
 	}
 	return false

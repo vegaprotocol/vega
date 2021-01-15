@@ -1,5 +1,7 @@
 package execution
 
+import types "code.vegaprotocol.io/vega/proto"
+
 // GetPeggedOrderCount returns the number of pegged orders in the market
 func (m *Market) GetPeggedOrderCount() int {
 	return len(m.peggedOrders)
@@ -18,4 +20,8 @@ func (m *Market) GetPeggedExpiryOrderCount() int {
 // TSCalc returns the local tsCalc instance
 func (m *Market) TSCalc() TargetStakeCalculator {
 	return m.tsCalc
+}
+
+func (m *Market) State() types.Market_State {
+	return m.mkt.State
 }

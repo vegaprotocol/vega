@@ -5804,6 +5804,14 @@ enum ProposalRejectionReason {
   NetworkParameterInvalidValue
   "Validation failed for network parameter proposal"
   NetworkParameterValidationFailed
+  "Opening auction duration is less than the network minimum opening auction time"
+  OpeningAuctionDurationTooSmall
+  "Opening auction duration is more than the network minimum opening auction time"
+  OpeningAuctionDurationTooLarge
+  "Market proposal is missing a liquidity commitment"
+  MarketMissingLiquidityCommitment
+  "Market proposal market could not be instantiate in execution"
+  CouldNotInstantiateMarket
 }
 
 "Reason for the order being rejected by the core node"
@@ -6183,8 +6191,6 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The proposed duration for the opening auction for this market in seconds"
-  openingAuctionDurationSecs: Int
   "Price monitoring configuration"
   priceMonitoringParameters: PriceMonitoringParametersInput
 
@@ -23470,12 +23476,6 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 		case "metadata":
 			var err error
 			it.Metadata, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "openingAuctionDurationSecs":
-			var err error
-			it.OpeningAuctionDurationSecs, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}

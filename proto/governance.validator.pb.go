@@ -92,6 +92,23 @@ func (this *NewMarketConfiguration) Validate() error {
 	}
 	return nil
 }
+func (this *NewMarketCommitment) Validate() error {
+	for _, item := range this.Sells {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Sells", err)
+			}
+		}
+	}
+	for _, item := range this.Buys {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("Buys", err)
+			}
+		}
+	}
+	return nil
+}
 func (this *NewMarket) Validate() error {
 	if nil == this.Changes {
 		return github_com_mwitkow_go_proto_validators.FieldError("Changes", fmt.Errorf("message must exist"))
@@ -99,6 +116,11 @@ func (this *NewMarket) Validate() error {
 	if this.Changes != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Changes); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Changes", err)
+		}
+	}
+	if this.LiquidityCommitment != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.LiquidityCommitment); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("LiquidityCommitment", err)
 		}
 	}
 	return nil

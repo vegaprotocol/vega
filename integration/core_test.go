@@ -31,8 +31,8 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
 
 	// general stuff like name, ID, code, asset, and initial mark price
-	mkt.TradingMode = proto.Market_TRADING_MODE_CONTINUOUS
-	mkt.State = proto.Market_STATE_ACTIVE
+	// mkt.TradingMode = proto.Market_TRADING_MODE_CONTINUOUS
+	// mkt.State = proto.Market_STATE_ACTIVE
 	parts := strings.Split(row.Cells[0].Value, "/")
 	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
 	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
@@ -176,6 +176,8 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	if err != nil {
 		return err
 	}
+
+	m.StartOpeningAuction(context.Background())
 	mktsetup.core = m
 	core = m
 	return nil

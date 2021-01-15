@@ -88,6 +88,11 @@ var (
 	// ErrNotEnoughStake is returned when a LP update results in not enough commitment
 	ErrNotEnoughStake = errors.New("commitment submission rejected, not enouth stake")
 
+	// ErrCannotRejectMarketNotInProposedState
+	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
+	// ErrCannotStateOpeningAuctionForMarketNotInProposedState
+	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
+
 	networkPartyID = "network"
 )
 
@@ -279,6 +284,10 @@ func NewMarket(
 	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
+	// The market is initially create in a proposed state
+	mkt.State = types.Market_STATE_PROPOSED
+	mkt.TradingMode = types.Market_TRADING_MODE_CONTINUOUS
+
 	market := &Market{
 		log:                  log,
 		idgen:                idgen,
@@ -303,9 +312,6 @@ func NewMarket(
 		feeSplitter:          &FeeSplitter{},
 	}
 
-	if market.as.AuctionStart() {
-		market.EnterAuction(ctx)
-	}
 	return market, nil
 }
 
@@ -408,6 +414,38 @@ func (m *Market) ReloadConf(
 	m.fee.ReloadConf(feeConfig)
 }
 
+func (m *Market) Reject(ctx context.Context) error {
+	if m.mkt.State != types.Market_STATE_PROPOSED {
+		return ErrCannotRejectMarketNotInProposedState
+	}
+
+	// we close all parties accounts
+	m.cleanupOnReject(ctx)
+	m.mkt.State = types.Market_STATE_REJECTED
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	return nil
+}
+
+func (m *Market) StartOpeningAuction(ctx context.Context) error {
+	if m.mkt.State != types.Market_STATE_PROPOSED {
+		return ErrCannotStartOpeningAuctionForMarketNotInProposedState
+	}
+
+	// now we start the opening auction
+	if m.as.AuctionStart() {
+		// we are now in a pending state
+		m.mkt.State = types.Market_STATE_PENDING
+		m.EnterAuction(ctx)
+	} else {
+		// TODO(): to be removed once we don't have market starting
+		// without an opening auction
+		m.mkt.State = types.Market_STATE_ACTIVE
+	}
+
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	return nil
+}
+
 // GetID returns the id of the given market
 func (m *Market) GetID() string {
 	return m.mkt.Id
@@ -420,6 +458,16 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	// TODO(): This also assume that the market is not
+	// being closed before the market is leaving
+	// the opening auction, but settlement at expiry is
+	// not even specd or implemented as of now...
+	// if the state of the market is just PROPOSED,
+	// we will just skip everything there as nothing apply.
+	if m.mkt.State == types.Market_STATE_PROPOSED {
+		return false
+	}
 
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
@@ -441,6 +489,12 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
+
+				// the market is now in a ACTIVE state
+				m.mkt.State = types.Market_STATE_ACTIVE
+				m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+				// start the market fee window
 				m.feeSplitter.TimeWindowStart(t)
 			}
 		} else if m.as.IsPriceAuction() {
@@ -3103,4 +3157,31 @@ func (m *Market) canTrade() bool {
 
 func (m *Market) canSubmitCommitment() bool {
 	return m.canTrade() || m.mkt.State == types.Market_STATE_PROPOSED
+}
+
+// cleanupOnReject remove all resources created while the
+// market was on PREPARED state.
+// we'll need to remove all accounts related to the market
+// all margin accounts for this market
+// all bond accounts for this market too.
+// at this point no fees would have been collected or anything
+// like this.
+func (m *Market) cleanupOnReject(ctx context.Context) {
+	// get the list of all parties in this market
+	parties := make([]string, 0, len(m.parties))
+	for k := range m.parties {
+		parties = append(parties, k)
+	}
+
+	asset, _ := m.mkt.GetAsset()
+	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
+	if err != nil {
+		m.log.Panic("unable to cleanup a rejected market",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+		return
+	}
+
+	// then send the responses
+	m.broker.Send(events.NewTransferResponse(ctx, tresps))
 }
