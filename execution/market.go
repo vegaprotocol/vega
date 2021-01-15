@@ -2781,11 +2781,6 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 
 func (m *Market) addPeggedOrder(order *types.Order) {
 	m.peggedOrders = append(m.peggedOrders, order)
-
-	// expiring orders will be removed by RemoveExpiredOrders
-	if order.IsPersistent() && order.ExpiresAt > 0 {
-		m.expiringOrders.Insert(*order)
-	}
 }
 
 func (m *Market) getAllParkedOrdersForParty(party string) (orders []*types.Order) {

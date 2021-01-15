@@ -1915,10 +1915,14 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
-	require.Equal(t, 1, len(orders))
 	require.NoError(t, err)
 
-	assert.Equal(t, types.Order_STATUS_EXPIRED, o1.Status)
+	// we have one order
+	require.Len(t, orders, 1)
+	// id == o1.Id
+	assert.Equal(t, o1.Id, orders[0].Id)
+	// status is expired
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
 }
 
@@ -2156,11 +2160,14 @@ func TestOrderBook_AmendTIFForPeggedOrder2(t *testing.T) {
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
-	require.Equal(t, 1, len(orders))
 	require.NoError(t, err)
 
+	// 1 expired order
+	require.Len(t, orders, 1)
+	//
+	assert.Equal(t, orders[0].Id, o2.Id)
 	// The pegged order should be expired
-	assert.Equal(t, types.Order_STATUS_EXPIRED.String(), o2.Status.String())
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 }
 
