@@ -2042,6 +2042,7 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 
 	// then remove expired, set 1 sec after order exp time.
 	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
 	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 }
@@ -2073,6 +2074,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 
 	// then remove expired, set 1 sec after order exp time.
 	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
 	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 	assert.Equal(t, o1.Id, orders[0].Id)
