@@ -1254,7 +1254,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 			// remove the order from the expiring list
 			// if it was a GTT order
-			if order.IsExpireable() {
+			if order.IsExpireable() && order.IsFinished() {
 				m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
 			}
 		}
@@ -1521,6 +1521,11 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		for _, order := range confirmation.PassiveOrdersAffected {
 			order.UpdatedAt = m.currentTime.UnixNano()
 			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			// remove expiring order
+			if order.IsExpireable() && order.IsFinished() {
+				m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
+			}
 		}
 	}
 
@@ -2154,6 +2159,17 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		amendedOrder.IsExpireable() {
 		// We need to handle the expiry
 		needToAddExpiry = true
+	}
+
+	// if both where expireable but we changed the duration
+	// then we need to remove, then reinsert...
+	if existingOrder.IsExpireable() &&
+		amendedOrder.IsExpireable() &&
+		existingOrder.ExpiresAt != amendedOrder.ExpiresAt {
+		// We no longer need to handle the expiry
+		needToRemoveExpiry = true
+		needToAddExpiry = true
+		expiresAt = existingOrder.ExpiresAt
 	}
 
 	// if remaining is reduces <= 0, then order is cancelled
