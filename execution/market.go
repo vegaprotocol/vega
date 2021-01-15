@@ -2133,6 +2133,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		if returnedErr == nil {
 			if needToRemoveExpiry {
 				m.expiringOrders.RemoveOrder(expiresAt, existingOrder.Id)
+
 			}
 			if needToAddExpiry {
 				m.expiringOrders.Insert(*existingOrder)
