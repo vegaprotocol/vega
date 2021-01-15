@@ -169,18 +169,18 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 		return err
 	}
 
+	mkt := e.markets[marketConfig.Id]
 	// TODO(): remove check once LiquidityProvision is required
 	// for now it is optional
 	if lp != nil {
 		// now we try to submit the liquidity
-		mkt := e.markets[marketConfig.Id]
 		if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpid); err != nil {
 			e.removeMarket(marketConfig.Id)
 			return err
 		}
 	}
 
-	e.publishMarketInfos(ctx, marketConfig.Id)
+	e.publishMarketInfos(ctx, mkt)
 	return nil
 }
 
@@ -194,13 +194,11 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	mkt := e.markets[marketConfig.Id]
 	mkt.StartOpeningAuction(ctx)
 
-	e.publishMarketInfos(ctx, marketConfig.Id)
+	e.publishMarketInfos(ctx, mkt)
 	return nil
 }
 
-func (e *Engine) publishMarketInfos(ctx context.Context, marketid string) {
-	mkt := e.markets[marketid]
-
+func (e *Engine) publishMarketInfos(ctx context.Context, mkt *Market) {
 	// we send a market data event for this market when it's created so graphql does not fail
 	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))

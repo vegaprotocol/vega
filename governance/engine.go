@@ -292,6 +292,11 @@ func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string
 		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}
 	if p.State == types.Proposal_STATE_OPEN {
+
+		defer func() {
+			e.broker.Send(events.NewProposalEvent(ctx, p))
+		}()
+
 		perr, err := e.validateOpenProposal(p)
 		if err != nil {
 			p.State = types.Proposal_STATE_REJECTED
@@ -299,16 +304,16 @@ func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string
 			if e.log.GetLevel() == logging.DebugLevel {
 				e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID))
 			}
-		} else {
-			// now if it's a 2 steps proposal, start the node votes
-			if e.isTwoStepsProposal(&p) {
-				p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
-				err = e.startTwoStepsProposal(&p)
-			} else {
-				e.startProposal(&p)
-			}
+			return nil, err
 		}
-		e.broker.Send(events.NewProposalEvent(ctx, p))
+
+		// now if it's a 2 steps proposal, start the node votes
+		if e.isTwoStepsProposal(&p) {
+			p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
+			err = e.startTwoStepsProposal(&p)
+		} else {
+			e.startProposal(&p)
+		}
 		if err != nil {
 			return nil, err
 		}
