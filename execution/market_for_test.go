@@ -14,3 +14,8 @@ func (m *Market) GetParkedOrderCount() int {
 func (m *Market) GetPeggedExpiryOrderCount() int {
 	return m.expiringPeggedOrders.GetExpiryingOrderCount()
 }
+
+// TSCalc returns the local tsCalc instance
+func (m *Market) TSCalc() TargetStakeCalculator {
+	return m.tsCalc
+}

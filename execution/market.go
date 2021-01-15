@@ -85,6 +85,8 @@ var (
 	ErrTradingNotAllowed = errors.New("trading not allowed")
 	// ErrCommitmentSubmissionNotAllowed no commitment submission are permitted in the current state
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
+	// ErrNotEnoughStake is returned when a LP update results in not enough commitment
+	ErrNotEnoughStake = errors.New("commitment submission rejected, not enouth stake")
 
 	networkPartyID = "network"
 )
@@ -2928,6 +2930,22 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
+
+	// Increasing the commitment should always be allowed, but decreasing is
+	// only valid if the resulting amount still allows the market as a whole
+	// to reach it's commitment level. Otherwise the commitment reduction is
+	// rejected.
+	if lp := m.liquidity.LiquidityProvisionByPartyID(party); lp != nil {
+		if sub.CommitmentAmount < lp.CommitmentAmount {
+			// this is the amount of stake surplus
+			surplus := uint64(m.getTargetStake()) - m.getSuppliedStake()
+			diff := lp.CommitmentAmount - sub.CommitmentAmount
+			if diff > surplus {
+				return ErrNotEnoughStake
+			}
+		}
+	}
+
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
 		return err
 	}
@@ -2936,14 +2954,13 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		if err == nil {
 			return
 		}
-		if newerr := m.liquidity.CancelLiquidityProvision(ctx, party); err != nil {
+		if newerr := m.liquidity.CancelLiquidityProvision(ctx, party); newerr != nil {
 			m.log.Debug("unable to submit cancel liquidity provision submission",
 				logging.String("party", party),
 				logging.String("id", id),
 				logging.Error(newerr))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
-
 	}()
 
 	// WE WANT TO APPLY THECOMMITMENT IN BOND ACCOUNT

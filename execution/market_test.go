@@ -1368,6 +1368,89 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	require.Equal(t, strconv.FormatFloat(expectedTargetStake, 'f', -1, 64), mktData.TargetStake)
 }
 
+func TestHandleLPCommitmentChange(t *testing.T) {
+	ctx := context.Background()
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	var matchingPrice uint64 = 111
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice + 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice - 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	_, err = tm.market.SubmitOrder(ctx, orderBuy1)
+	require.NoError(t, err)
+
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 2000,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+	)
+
+	// this will make current target stake returns 2475
+	tm.market.TSCalc().RecordOpenInterest(10, now)
+
+	// by set a very low commitment we should fail
+	lp.CommitmentAmount = 1
+	require.Equal(t, execution.ErrNotEnoughStake,
+		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+	)
+
+	// 2000 - 475 should be enough
+	lp.CommitmentAmount = 2000 - 475
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+	)
+}
+
 func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
