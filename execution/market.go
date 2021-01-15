@@ -182,11 +182,6 @@ type Market struct {
 	feeSplitter             *FeeSplitter
 }
 
-// TSCalc returns the local tsCalc instance
-func (m *Market) TSCalc() TargetStakeCalculator {
-	return m.tsCalc
-}
-
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	marketcfg.Id = ""
