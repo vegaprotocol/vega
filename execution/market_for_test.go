@@ -9,7 +9,13 @@ func (m *Market) GetPeggedOrderCount() int {
 
 // GetParkedOrderCount returns hte number of parked orders in the market
 func (m *Market) GetParkedOrderCount() int {
-	return len(m.parkedOrders)
+	var count int
+	for _, order := range m.peggedOrders {
+		if order.Status == types.Order_STATUS_PARKED {
+			count++
+		}
+	}
+	return count
 }
 
 // GetPeggedExpiryOrderCount returns the number of pegged order that can expire

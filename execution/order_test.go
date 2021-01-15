@@ -802,7 +802,7 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARKED)
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	// During an auction all pegged orders are parked so we don't add them to the list
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
 	// Update the time to force the auction to end
 	tm.market.OnChainTimeUpdate(ctx, auctionClose)
@@ -837,7 +837,7 @@ func testPeggedOrdersEnteringAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
 
 func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
@@ -1615,6 +1615,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
 
 	addAccount(tm, "party1")
 
@@ -1627,14 +1628,14 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	// Place the pegged order which will be parked
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20}
-	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we can reprice
 	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
 	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -5}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(ctx, amend)
 	require.NotNil(t, amended)
 	assert.Equal(t, int64(-5), amended.Order.PeggedOrder.Offset)
 	assert.NoError(t, err)
@@ -1650,6 +1651,7 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
 
 	addAccount(tm, "party1")
 
@@ -1662,14 +1664,14 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	// Place the pegged order which will be parked
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20}
-	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we can reprice
 	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
 	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(ctx, amend)
 	require.NotNil(t, amended)
 	assert.Equal(t, int64(-15), amended.Order.PeggedOrder.Offset)
 	assert.NoError(t, err)
@@ -1685,6 +1687,7 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
 
 	addAccount(tm, "party1")
 
@@ -1697,14 +1700,14 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 	// Place the pegged order
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
-	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
 	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIF_UNSPECIFIED, 0)
 	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(ctx, amend)
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -1749,7 +1752,7 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
@@ -1822,7 +1825,7 @@ func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
 }
@@ -1850,7 +1853,7 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	// Place the pegged order which will park it
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
-	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
+	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
@@ -1859,12 +1862,12 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
 	amend.TimeInForce = types.Order_TIF_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: 20000000000}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(ctx, amend)
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
 	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
 	assert.Equal(t, types.Order_TIF_GTT, amended.Order.TimeInForce)
