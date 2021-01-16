@@ -643,7 +643,9 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 			if price, err := m.getNewPeggedPrice(ctx, order); err != nil {
 				// Failed to reprice, if we are parked we do nothing, if not parked we need to park
 				if order.Status != types.Order_STATUS_PARKED {
+					order.UpdatedAt = m.currentTime.UnixNano()
 					order.Status = types.Order_STATUS_PARKED
+					order.Price = 0
 					m.broker.Send(events.NewOrderEvent(ctx, order))
 				}
 			} else {
