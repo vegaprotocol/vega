@@ -1273,7 +1273,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			order.UpdatedAt = m.currentTime.UnixNano()
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 
-			// If the order is a pegged order and it complete we must remove it from the pegged lists
+			// If the order is a pegged order and is complete we must remove it from the pegged list
 			if order.PeggedOrder != nil {
 				if order.Remaining == 0 || order.Status != types.Order_STATUS_ACTIVE {
 					m.removePeggedOrder(order)
@@ -1549,6 +1549,13 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		for _, order := range confirmation.PassiveOrdersAffected {
 			order.UpdatedAt = m.currentTime.UnixNano()
 			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			// If the order is a pegged order and is complete we must remove it from the pegged list
+			if order.PeggedOrder != nil {
+				if order.Remaining == 0 || order.Status != types.Order_STATUS_ACTIVE {
+					m.removePeggedOrder(order)
+				}
+			}
 
 			// remove expiring order
 			if order.IsExpireable() && order.IsFinished() {
