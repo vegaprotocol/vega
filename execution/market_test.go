@@ -2426,3 +2426,72 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 	assert.Equal(t, types.Order_STATUS_PARKED, o1.Status)
 	assert.Equal(t, uint64(1), o1.Version)
 }
+
+func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 1, 5000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.NotNil(t, o1conf)
+	assert.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.NotNil(t, o2conf)
+	assert.NoError(t, err)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID:   o1.Id,
+		PartyID:   "trader-A",
+		SizeDelta: -1,
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.NotNil(t, amendConf)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
+}
+
+func TestOrderBook_AmendExpPeristParkPeggedOrder(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 10, 4550)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.NotNil(t, o1conf)
+	assert.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 105, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 100}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.NotNil(t, o2conf)
+	assert.NoError(t, err)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID:   o1.Id,
+		PartyID:   "trader-A",
+		SizeDelta: -10,
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.NotNil(t, amendConf)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
+	assert.Equal(t, int(o2.Price), 0)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
+}
