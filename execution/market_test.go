@@ -2456,6 +2456,7 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment)
 	assert.NotNil(t, amendConf)
+	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
 }
