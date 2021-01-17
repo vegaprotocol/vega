@@ -776,6 +776,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
 	genID := e.accountID("", pos.Party(), asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
+	bondID := e.accountID(marketID, pos.Party(), asset, types.AccountType_ACCOUNT_TYPE_BOND)
 	genAcc, err := e.GetAccountByID(genID)
 	if err != nil {
 		e.log.Error(
@@ -791,12 +792,16 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 			logging.String("market-id", marketID))
 		return nil, ErrTraderAccountsMissing
 	}
+	// do not check error,
+	// not all parties have a bond account
+	bondAcc, _ := e.GetAccountByID(bondID)
 
 	return marginUpdate{
 		pos,
 		marAcc,
 		genAcc,
 		nil,
+		bondAcc,
 		asset,
 		marketID,
 	}, nil
@@ -1116,6 +1121,14 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 			Reference: p.Type.String(),
 		}
 	)
+	if p.Type == types.TransferType_TRANSFER_TYPE_MTM_LOSS ||
+		p.Type == types.TransferType_TRANSFER_TYPE_WIN ||
+		p.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW {
+		// we do not care about errors here as the bon account is not mandatory for the transfers
+		// a partry would have a bond account only if it was also a market maker
+		mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_BOND))
+	}
+
 	if settle != nil {
 		// the accounts for the trader we need
 		mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
@@ -1150,10 +1163,19 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 	case types.TransferType_TRANSFER_TYPE_LOSS, types.TransferType_TRANSFER_TYPE_MTM_LOSS:
 		// losses are collected first from the margin account, then the general account, and finally
 		// taken out of the insurance pool
-		req.FromAccount = []*types.Account{
-			mEvt.margin,
-			mEvt.general,
-			insurance,
+		if mEvt.bond != nil {
+			req.FromAccount = []*types.Account{
+				mEvt.margin,
+				mEvt.bond,
+				mEvt.general,
+				insurance,
+			}
+		} else {
+			req.FromAccount = []*types.Account{
+				mEvt.margin,
+				mEvt.general,
+				insurance,
+			}
 		}
 		req.ToAccount = []*types.Account{
 			settle,
@@ -1173,8 +1195,15 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		req.Amount = uint64(p.Amount.Amount)
 		req.MinAmount = 0 // default value, but keep it here explicitly
 	case types.TransferType_TRANSFER_TYPE_MARGIN_LOW:
-		req.FromAccount = []*types.Account{
-			mEvt.general,
+		if mEvt.bond != nil {
+			req.FromAccount = []*types.Account{
+				mEvt.bond,
+				mEvt.general,
+			}
+		} else {
+			req.FromAccount = []*types.Account{
+				mEvt.general,
+			}
 		}
 		req.ToAccount = []*types.Account{
 			mEvt.margin,
