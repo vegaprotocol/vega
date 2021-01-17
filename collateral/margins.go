@@ -8,12 +8,13 @@ import (
 
 type marginUpdate struct {
 	events.MarketPosition
-	margin   *types.Account
-	general  *types.Account
-	lock     *types.Account
-	bond     *types.Account
-	asset    string
-	marketID string
+	margin          *types.Account
+	general         *types.Account
+	lock            *types.Account
+	bond            *types.Account
+	asset           string
+	marketID        string
+	marginShortFall uint64
 }
 
 func (n marginUpdate) Transfer() *types.Transfer {
@@ -50,4 +51,8 @@ func (n marginUpdate) GeneralBalance() uint64 {
 		bond = n.bond.Balance
 	}
 	return bond + gen
+}
+
+func (n marginUpdate) MarginShortFall() uint64 {
+	return n.marginShortFall
 }

@@ -1338,8 +1338,8 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
 	if len(margins) > 0 {
-
-		transfers, closed, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+		// TODO(): handle market makers penalties
+		transfers, closed, _, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 		if err == nil && len(transfers) > 0 {
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
@@ -1819,7 +1819,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{transfer})
 		m.broker.Send(evt)
 
-		if closePos != nil {
+		if closePos != nil && closePos.MarginShortFall() == 0 {
 			// if closePose is not nil then we return an error as well, it means the trader did not have enough
 			// monies to reach the InitialMargin
 
@@ -1830,6 +1830,9 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 			}
 
 			return nil, ErrMarginCheckInsufficient
+		} else if closePos != nil && closePos.MarginShortFall() > 0 {
+			// TODO(): we nee to cover cases where we have a margin short fall
+			_ = closePos // just to avoid the warning for empty branch for now
 		}
 
 		if len(transfer.Transfers) > 0 {

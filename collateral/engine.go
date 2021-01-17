@@ -804,17 +804,21 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		bondAcc,
 		asset,
 		marketID,
+		0,
 	}, nil
 }
 
 // MarginUpdate will run the margin updates over a set of risk events (margin updates)
-func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, error) {
+func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error) {
 	response := make([]*types.TransferResponse, 0, len(updates))
-	closed := make([]events.Margin, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
+	var (
+		closed     = make([]events.Margin, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
+		toPenalise = []events.Margin{}
+		settle     = &types.Account{
+			MarketID: marketID,
+		}
+	)
 	// create "fake" settle account for market ID
-	settle := &types.Account{
-		MarketID: marketID,
-	}
 	for _, update := range updates {
 		transfer := update.Transfer()
 		// although this is mainly a duplicate event, we need to pass it to getTransferRequest
@@ -826,11 +830,17 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 
 		req, err := e.getTransferRequest(ctx, transfer, settle, nil, mevt)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
+
+		// calculate the marginShortFall in case of a liquidityProvider
+		if mevt.bond != nil && uint64(transfer.Amount.Amount) > mevt.general.Balance {
+			mevt.marginShortFall = uint64(transfer.Amount.Amount) - mevt.general.Balance
+		}
+
 		res, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		// we didn't manage to top up to even the minimum required system margin, close out trader
 		// we need to be careful with this, only apply this to transfer for low margin
@@ -844,6 +854,11 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		if transfer.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW &&
 			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.MinAmount) {
 			closed = append(closed, mevt)
+		} else if mevt.marginShortFall > 0 {
+			// party not closed out, but could also not fullfill it's margin requirement
+			// from it's general account we need to return this information so penalty can be
+			// calculated an taken out from him.
+			toPenalise = append(toPenalise, mevt)
 		}
 		response = append(response, res)
 		for _, v := range res.GetTransfers() {
@@ -859,7 +874,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		}
 	}
 
-	return response, closed, nil
+	return response, closed, toPenalise, nil
 }
 
 // RollbackMarginUpdateOnOrder moves funds from the margin to the general account.
@@ -953,13 +968,13 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	}
 	transfer := update.Transfer()
 	// although this is mainly a duplicate event, we need to pass it to getTransferRequest
-	mevt := &marginUpdate{
+	mevt := marginUpdate{
 		MarketPosition: update,
 		asset:          update.Asset(),
 		marketID:       update.MarketID(),
 	}
 
-	req, err := e.getTransferRequest(ctx, transfer, settle, nil, mevt)
+	req, err := e.getTransferRequest(ctx, transfer, settle, nil, &mevt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -968,6 +983,12 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	// we return an error.
 	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.MinAmount) {
 		return nil, mevt, ErrMinAmountNotReached
+	}
+
+	if mevt.bond != nil && uint64(transfer.Amount.Amount) > mevt.general.Balance {
+		// this is a liquiddity provider but it did not have enough funds to
+		// pay from the general account, we'll have to penalize later on
+		mevt.marginShortFall = uint64(transfer.Amount.Amount) - mevt.general.Balance
 	}
 
 	// from here we know there's enough money,
@@ -989,6 +1010,9 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		}
 	}
 
+	if mevt.marginShortFall != 0 {
+		return res, mevt, nil
+	}
 	return res, nil, nil
 }
 
@@ -1166,8 +1190,8 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		if mEvt.bond != nil {
 			req.FromAccount = []*types.Account{
 				mEvt.margin,
-				mEvt.bond,
 				mEvt.general,
+				mEvt.bond,
 				insurance,
 			}
 		} else {
@@ -1197,8 +1221,8 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 	case types.TransferType_TRANSFER_TYPE_MARGIN_LOW:
 		if mEvt.bond != nil {
 			req.FromAccount = []*types.Account{
-				mEvt.bond,
 				mEvt.general,
+				mEvt.bond,
 			}
 		} else {
 			req.FromAccount = []*types.Account{
