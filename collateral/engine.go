@@ -1106,15 +1106,22 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
 func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
-	asset := p.Amount.Asset
+	var (
+		asset = p.Amount.Asset
+		err   error
+		eacc  *types.Account
 
-	var err error
-	// the accounts for the trader we need
+		req = types.TransferRequest{
+			Asset:     asset, // TBC
+			Reference: p.Type.String(),
+		}
+	)
 	if settle != nil {
+		// the accounts for the trader we need
 		mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			e.log.Error(
-				"Failed to get the margin trader account",
+				"Failed to get the party margin account",
 				logging.String("owner-id", p.Owner),
 				logging.String("market-id", settle.MarketID),
 				logging.Error(err),
@@ -1126,132 +1133,97 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 	mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 	if err != nil {
 		e.log.Error(
-			"Failed to get the general trader account",
+			"Failed to get the party general account",
 			logging.String("owner-id", p.Owner),
 			logging.String("market-id", settle.MarketID),
 			logging.Error(err),
 		)
 		return nil, err
 	}
-	// final settle, or MTM settle, makes no difference, it's win/loss still
-	if p.Type == types.TransferType_TRANSFER_TYPE_LOSS || p.Type == types.TransferType_TRANSFER_TYPE_MTM_LOSS {
-		// losses are collected first from the margin account, then the general account, and finally
-		// taken out of the insurance pool
-		req := types.TransferRequest{
-			FromAccount: []*types.Account{
-				mEvt.margin,
-				mEvt.general,
-				insurance,
-			},
-			ToAccount: []*types.Account{
-				settle,
-			},
-			Amount:    uint64(-p.Amount.Amount),
-			MinAmount: 0,     // default value, but keep it here explicitly
-			Asset:     asset, // TBC
-			Reference: p.Type.String(),
-		}
-		return &req, nil
-	}
-	if p.Type == types.TransferType_TRANSFER_TYPE_WIN || p.Type == types.TransferType_TRANSFER_TYPE_MTM_WIN {
-		// the insurance pool in the FromAccount is not used ATM (losses should fully cover wins
-		// or the insurance pool has already been drained).
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				settle,
-				insurance,
-			},
-			ToAccount: []*types.Account{
-				mEvt.margin,
-			},
-			Amount:    uint64(p.Amount.Amount),
-			MinAmount: 0,     // default value, but keep it here explicitly
-			Asset:     asset, // TBC
-			Reference: p.Type.String(),
-		}, nil
-	}
-	// just in case...
-	if p.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW {
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				mEvt.general,
-			},
-			ToAccount: []*types.Account{
-				mEvt.margin,
-			},
-			Amount:    uint64(p.Amount.Amount),
-			MinAmount: uint64(p.MinAmount),
-			Asset:     asset,
-			Reference: p.Type.String(),
-		}, nil
-	}
-	if p.Type == types.TransferType_TRANSFER_TYPE_MARGIN_HIGH {
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				mEvt.margin,
-			},
-			ToAccount: []*types.Account{
-				mEvt.general,
-			},
-			Amount:    uint64(p.Amount.Amount),
-			MinAmount: uint64(p.MinAmount),
-			Asset:     asset,
-			Reference: p.Type.String(),
-		}, nil
-	}
-
-	var eacc *types.Account
 	if p.Type == types.TransferType_TRANSFER_TYPE_WITHDRAW || p.Type == types.TransferType_TRANSFER_TYPE_DEPOSIT {
 		// external account:
 		eacc, _ = e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_EXTERNAL))
 	}
-	if p.Type == types.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK {
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				mEvt.general,
-			},
-			ToAccount: []*types.Account{
-				mEvt.lock,
-			},
-			Amount:    uint64(p.Amount.Amount),
-			MinAmount: uint64(p.Amount.Amount),
-			Asset:     asset,
-			Reference: p.Type.String(),
-		}, nil
-	}
 
-	if p.Type == types.TransferType_TRANSFER_TYPE_DEPOSIT {
-		// ensure we have the funds to deposit
+	switch p.Type {
+	// final settle, or MTM settle, makes no difference, it's win/loss still
+	case types.TransferType_TRANSFER_TYPE_LOSS, types.TransferType_TRANSFER_TYPE_MTM_LOSS:
+		// losses are collected first from the margin account, then the general account, and finally
+		// taken out of the insurance pool
+		req.FromAccount = []*types.Account{
+			mEvt.margin,
+			mEvt.general,
+			insurance,
+		}
+		req.ToAccount = []*types.Account{
+			settle,
+		}
+		req.Amount = uint64(-p.Amount.Amount)
+		req.MinAmount = 0 // default value, but keep it here explicitly
+	case types.TransferType_TRANSFER_TYPE_WIN, types.TransferType_TRANSFER_TYPE_MTM_WIN:
+		// the insurance pool in the Req.FromAccountAccount is not used ATM (losses should fully cover wins
+		// or the insurance pool has already been drained).
+		req.FromAccount = []*types.Account{
+			settle,
+			insurance,
+		}
+		req.ToAccount = []*types.Account{
+			mEvt.margin,
+		}
+		req.Amount = uint64(p.Amount.Amount)
+		req.MinAmount = 0 // default value, but keep it here explicitly
+	case types.TransferType_TRANSFER_TYPE_MARGIN_LOW:
+		req.FromAccount = []*types.Account{
+			mEvt.general,
+		}
+		req.ToAccount = []*types.Account{
+			mEvt.margin,
+		}
+		req.Amount = uint64(p.Amount.Amount)
+		req.MinAmount = uint64(p.MinAmount)
+	case types.TransferType_TRANSFER_TYPE_MARGIN_HIGH:
+		req.FromAccount = []*types.Account{
+			mEvt.margin,
+		}
+		req.ToAccount = []*types.Account{
+			mEvt.general,
+		}
+		req.Amount = uint64(p.Amount.Amount)
+		req.MinAmount = uint64(p.MinAmount)
+	case types.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK:
+		req.FromAccount = []*types.Account{
+			mEvt.general,
+		}
+		req.ToAccount = []*types.Account{
+			mEvt.lock,
+		}
+		req.Amount = uint64(p.Amount.Amount)
+		req.MinAmount = uint64(p.Amount.Amount)
+	case types.TransferType_TRANSFER_TYPE_DEPOSIT:
+		// ensure we have the funds req.ToAccount deposit
 		eacc.Balance += uint64(p.Amount.Amount)
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				eacc,
-			},
-			ToAccount: []*types.Account{
-				mEvt.general,
-			},
-			Amount:    uint64(p.Amount.Amount),
-			MinAmount: uint64(p.Amount.Amount),
-			Asset:     asset,
-			Reference: p.Type.String(),
-		}, nil
-	}
-	if p.Type == types.TransferType_TRANSFER_TYPE_WITHDRAW {
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				mEvt.lock,
-			},
-			ToAccount: []*types.Account{
-				eacc,
-			},
-			Amount:    uint64(p.Amount.Amount),
-			MinAmount: uint64(p.Amount.Amount),
-			Asset:     asset,
-			Reference: p.Type.String(),
-		}, nil
+		req.FromAccount = []*types.Account{
+			eacc,
+		}
+		req.ToAccount = []*types.Account{
+			mEvt.general,
+		}
+		req.Amount = uint64(p.Amount.Amount)
+		req.MinAmount = uint64(p.Amount.Amount)
+	case types.TransferType_TRANSFER_TYPE_WITHDRAW:
+		req.FromAccount = []*types.Account{
+			mEvt.lock,
+		}
+		req.ToAccount = []*types.Account{
+			eacc,
+		}
+		req.Amount = uint64(p.Amount.Amount)
+		req.MinAmount = uint64(p.Amount.Amount)
+	default:
+		return nil, errors.New("unexpected transfer type")
 	}
 
-	return nil, errors.New("unexpected transfer type")
+	return &req, nil
 }
 
 // this builds a TransferResponse for a specific request, we collect all of them and aggregate
