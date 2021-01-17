@@ -255,7 +255,7 @@ func getTestGRPCServer(
 
 	aplugin := plugins.NewAsset(context.Background())
 	assetService := assets.NewService(logger, conf.Assets, aplugin)
-	feeService := fee.NewService(logger, conf.Execution.Fee, marketStore)
+	feeService := fee.NewService(logger, conf.Execution.Fee, marketStore, marketDataStore)
 	eventService := subscribers.NewService(broker)
 
 	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
