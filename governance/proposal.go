@@ -15,7 +15,7 @@ type ProposalParameters struct {
 	RequiredParticipation float64
 	RequiredMajority      float64
 	MinProposerBalance    uint64
-	MinVoterBalance       float64
+	MinVoterBalance       uint64
 }
 
 // ToEnact wraps the proposal in a type that has a convenient interface

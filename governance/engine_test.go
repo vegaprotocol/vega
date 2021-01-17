@@ -432,8 +432,6 @@ func testVoteProposalID(t *testing.T) {
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
 
-	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(2)) // 2 proposals + 1 valid vote
-
 	// default is 0
 	// let'sset it up to more so it can fail
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -511,7 +509,7 @@ func testVoterStake(t *testing.T) {
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(2))
+	// eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(2))
 
 	proposer := eng.makeValidParty("proposer", 1)
 	openProposal := eng.newOpenProposal(proposer.Id, time.Now())
@@ -617,7 +615,7 @@ func testVotingPassedProposal(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.accs.EXPECT().GetTotalTokens().Times(3).Return(uint64(9))
+	eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(9))
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
@@ -694,7 +692,7 @@ func testProposalDeclined(t *testing.T) {
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.accs.EXPECT().GetTotalTokens().Times(3).Return(uint64(200))
+	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(200))
 	proposer := eng.makeValidParty("proposer", 100)
 	voter := eng.makeValidPartyTimes("voter", 100, 3)
 
@@ -758,7 +756,7 @@ func testProposalPassed(t *testing.T) {
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.accs.EXPECT().GetTotalTokens().Times(3).Return(uint64(100))
+	eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(100))
 	proposerVoter := eng.makeValidPartyTimes("proposer-and-voter", 100, 3)
 
 	proposal := eng.newOpenProposal(proposerVoter.Id, now)
@@ -953,7 +951,9 @@ func getTestEngine(t *testing.T) *tstEngine {
 	erc := mocks.NewMockExtResChecker(ctrl)
 
 	log := logging.NewTestLogger()
+	broker.EXPECT().Send(gomock.Any()).Times(1)
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
+	netp.Update(context.Background(), netparams.GovernanceProposalMarketMinVoterBalance, "1")
 	now := time.Now()
 	now = now.Truncate(time.Second)
 	eng, err := governance.NewEngine(log, cfg, accs, broker, assets, erc, netp, now) // started as a validator
