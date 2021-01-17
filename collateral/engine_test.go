@@ -1683,10 +1683,10 @@ func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
 
 	// create traders
 	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
-	genaccId, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
-	eng.Engine.IncrementBalance(context.Background(), genaccId, 500)
-	bondAccId, _ := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
-	eng.Engine.IncrementBalance(context.Background(), bondAccId, 500)
+	genaccID, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), genaccID, 500)
+	bondAccID, _ := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), bondAccID, 500)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
@@ -1718,10 +1718,10 @@ func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
 	assert.Nil(t, closed)
 	assert.NotNil(t, resp)
 
-	gacc, err := eng.Engine.GetAccountByID(genaccId)
+	gacc, err := eng.Engine.GetAccountByID(genaccID)
 	assert.NoError(t, err)
 	assert.Equal(t, 500, int(gacc.Balance))
-	bondAcc, err := eng.Engine.GetAccountByID(bondAccId)
+	bondAcc, err := eng.Engine.GetAccountByID(bondAccID)
 	assert.NoError(t, err)
 	assert.Equal(t, 400, int(bondAcc.Balance))
 }
@@ -1733,11 +1733,11 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 
 	// create traders
 	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
-	genaccId, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
-	eng.Engine.IncrementBalance(context.Background(), genaccId, 500)
-	bondAccId, _ := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
-	eng.Engine.IncrementBalance(context.Background(), bondAccId, 70)
-	marginAccId, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	genaccID, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), genaccID, 500)
+	bondAccID, _ := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), bondAccID, 70)
+	marginAccID, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
 	evt := riskFake{
@@ -1774,13 +1774,13 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 	// we toped up only 70 in the bond account
 	// but requied 100 so we should pick 30 in the general account as well.
 
-	gacc, err := eng.Engine.GetAccountByID(genaccId)
+	gacc, err := eng.Engine.GetAccountByID(genaccID)
 	assert.NoError(t, err)
 	assert.Equal(t, 470, int(gacc.Balance))
-	bondAcc, err := eng.Engine.GetAccountByID(bondAccId)
+	bondAcc, err := eng.Engine.GetAccountByID(bondAccID)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, int(bondAcc.Balance))
-	marginAcc, err := eng.Engine.GetAccountByID(marginAccId)
+	marginAcc, err := eng.Engine.GetAccountByID(marginAccID)
 	assert.NoError(t, err)
 	assert.Equal(t, 100, int(marginAcc.Balance))
 }
