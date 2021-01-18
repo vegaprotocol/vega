@@ -509,7 +509,6 @@ func testVoterStake(t *testing.T) {
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	// eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(2))
 
 	proposer := eng.makeValidParty("proposer", 1)
 	openProposal := eng.newOpenProposal(proposer.Id, time.Now())
