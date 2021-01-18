@@ -27,7 +27,7 @@ var (
 )
 
 // BridgeABI is the input ABI used to generate the binding from.
-const BridgeABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_asset_pool\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"multisig_control\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"new_minimum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Deposit_Minimum_Set\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user_address\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Asset_Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_id\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Listed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Removed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user_address\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Withdrawn\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"vega_id\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"list_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"remove_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"minimum_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"set_deposit_minimum\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiry\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"withdraw_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"deposit_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"is_asset_listed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_deposit_minimum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"get_multisig_control_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_vega_id\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"vega_id\",\"type\":\"bytes32\"}],\"name\":\"get_asset_source\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const BridgeABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20_asset_pool\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"multisig_control\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"new_maximum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Deposit_Maximum_Set\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"new_minimum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Deposit_Minimum_Set\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user_address\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Asset_Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_asset_id\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Listed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Removed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user_address\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"Asset_Withdrawn\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"vega_asset_id\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"list_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"remove_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"minimum_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"set_deposit_minimum\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"maximum_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"set_deposit_maximum\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiry\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signatures\",\"type\":\"bytes\"}],\"name\":\"withdraw_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"deposit_asset\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"is_asset_listed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_deposit_minimum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_deposit_maximum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"get_multisig_control_address\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset_source\",\"type\":\"address\"}],\"name\":\"get_vega_asset_id\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"vega_asset_id\",\"type\":\"bytes32\"}],\"name\":\"get_asset_source\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // Bridge is an auto generated Go binding around an Ethereum contract.
 type Bridge struct {
@@ -173,28 +173,54 @@ func (_Bridge *BridgeTransactorRaw) Transact(opts *bind.TransactOpts, method str
 
 // GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
 //
-// Solidity: function get_asset_source(bytes32 vega_id) view returns(address)
-func (_Bridge *BridgeCaller) GetAssetSource(opts *bind.CallOpts, vega_id [32]byte) (common.Address, error) {
+// Solidity: function get_asset_source(bytes32 vega_asset_id) view returns(address)
+func (_Bridge *BridgeCaller) GetAssetSource(opts *bind.CallOpts, vega_asset_id [32]byte) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
 	)
 	out := ret0
-	err := _Bridge.contract.Call(opts, out, "get_asset_source", vega_id)
+	err := _Bridge.contract.Call(opts, out, "get_asset_source", vega_asset_id)
 	return *ret0, err
 }
 
 // GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
 //
-// Solidity: function get_asset_source(bytes32 vega_id) view returns(address)
-func (_Bridge *BridgeSession) GetAssetSource(vega_id [32]byte) (common.Address, error) {
-	return _Bridge.Contract.GetAssetSource(&_Bridge.CallOpts, vega_id)
+// Solidity: function get_asset_source(bytes32 vega_asset_id) view returns(address)
+func (_Bridge *BridgeSession) GetAssetSource(vega_asset_id [32]byte) (common.Address, error) {
+	return _Bridge.Contract.GetAssetSource(&_Bridge.CallOpts, vega_asset_id)
 }
 
 // GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
 //
-// Solidity: function get_asset_source(bytes32 vega_id) view returns(address)
-func (_Bridge *BridgeCallerSession) GetAssetSource(vega_id [32]byte) (common.Address, error) {
-	return _Bridge.Contract.GetAssetSource(&_Bridge.CallOpts, vega_id)
+// Solidity: function get_asset_source(bytes32 vega_asset_id) view returns(address)
+func (_Bridge *BridgeCallerSession) GetAssetSource(vega_asset_id [32]byte) (common.Address, error) {
+	return _Bridge.Contract.GetAssetSource(&_Bridge.CallOpts, vega_asset_id)
+}
+
+// GetDepositMaximum is a free data retrieval call binding the contract method 0x1d501b5d.
+//
+// Solidity: function get_deposit_maximum(address asset_source) view returns(uint256)
+func (_Bridge *BridgeCaller) GetDepositMaximum(opts *bind.CallOpts, asset_source common.Address) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _Bridge.contract.Call(opts, out, "get_deposit_maximum", asset_source)
+	return *ret0, err
+}
+
+// GetDepositMaximum is a free data retrieval call binding the contract method 0x1d501b5d.
+//
+// Solidity: function get_deposit_maximum(address asset_source) view returns(uint256)
+func (_Bridge *BridgeSession) GetDepositMaximum(asset_source common.Address) (*big.Int, error) {
+	return _Bridge.Contract.GetDepositMaximum(&_Bridge.CallOpts, asset_source)
+}
+
+// GetDepositMaximum is a free data retrieval call binding the contract method 0x1d501b5d.
+//
+// Solidity: function get_deposit_maximum(address asset_source) view returns(uint256)
+func (_Bridge *BridgeCallerSession) GetDepositMaximum(asset_source common.Address) (*big.Int, error) {
+	return _Bridge.Contract.GetDepositMaximum(&_Bridge.CallOpts, asset_source)
 }
 
 // GetDepositMinimum is a free data retrieval call binding the contract method 0x4322b1f2.
@@ -249,30 +275,30 @@ func (_Bridge *BridgeCallerSession) GetMultisigControlAddress() (common.Address,
 	return _Bridge.Contract.GetMultisigControlAddress(&_Bridge.CallOpts)
 }
 
-// GetVegaId is a free data retrieval call binding the contract method 0x28ee726e.
+// GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
 //
-// Solidity: function get_vega_id(address asset_source) view returns(bytes32)
-func (_Bridge *BridgeCaller) GetVegaId(opts *bind.CallOpts, asset_source common.Address) ([32]byte, error) {
+// Solidity: function get_vega_asset_id(address asset_source) view returns(bytes32)
+func (_Bridge *BridgeCaller) GetVegaAssetId(opts *bind.CallOpts, asset_source common.Address) ([32]byte, error) {
 	var (
 		ret0 = new([32]byte)
 	)
 	out := ret0
-	err := _Bridge.contract.Call(opts, out, "get_vega_id", asset_source)
+	err := _Bridge.contract.Call(opts, out, "get_vega_asset_id", asset_source)
 	return *ret0, err
 }
 
-// GetVegaId is a free data retrieval call binding the contract method 0x28ee726e.
+// GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
 //
-// Solidity: function get_vega_id(address asset_source) view returns(bytes32)
-func (_Bridge *BridgeSession) GetVegaId(asset_source common.Address) ([32]byte, error) {
-	return _Bridge.Contract.GetVegaId(&_Bridge.CallOpts, asset_source)
+// Solidity: function get_vega_asset_id(address asset_source) view returns(bytes32)
+func (_Bridge *BridgeSession) GetVegaAssetId(asset_source common.Address) ([32]byte, error) {
+	return _Bridge.Contract.GetVegaAssetId(&_Bridge.CallOpts, asset_source)
 }
 
-// GetVegaId is a free data retrieval call binding the contract method 0x28ee726e.
+// GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
 //
-// Solidity: function get_vega_id(address asset_source) view returns(bytes32)
-func (_Bridge *BridgeCallerSession) GetVegaId(asset_source common.Address) ([32]byte, error) {
-	return _Bridge.Contract.GetVegaId(&_Bridge.CallOpts, asset_source)
+// Solidity: function get_vega_asset_id(address asset_source) view returns(bytes32)
+func (_Bridge *BridgeCallerSession) GetVegaAssetId(asset_source common.Address) ([32]byte, error) {
+	return _Bridge.Contract.GetVegaAssetId(&_Bridge.CallOpts, asset_source)
 }
 
 // IsAssetListed is a free data retrieval call binding the contract method 0x7fd27b7f.
@@ -324,23 +350,23 @@ func (_Bridge *BridgeTransactorSession) DepositAsset(asset_source common.Address
 
 // ListAsset is a paid mutator transaction binding the contract method 0xa8780cda.
 //
-// Solidity: function list_asset(address asset_source, bytes32 vega_id, uint256 nonce, bytes signatures) returns()
-func (_Bridge *BridgeTransactor) ListAsset(opts *bind.TransactOpts, asset_source common.Address, vega_id [32]byte, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Bridge.contract.Transact(opts, "list_asset", asset_source, vega_id, nonce, signatures)
+// Solidity: function list_asset(address asset_source, bytes32 vega_asset_id, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeTransactor) ListAsset(opts *bind.TransactOpts, asset_source common.Address, vega_asset_id [32]byte, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.contract.Transact(opts, "list_asset", asset_source, vega_asset_id, nonce, signatures)
 }
 
 // ListAsset is a paid mutator transaction binding the contract method 0xa8780cda.
 //
-// Solidity: function list_asset(address asset_source, bytes32 vega_id, uint256 nonce, bytes signatures) returns()
-func (_Bridge *BridgeSession) ListAsset(asset_source common.Address, vega_id [32]byte, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Bridge.Contract.ListAsset(&_Bridge.TransactOpts, asset_source, vega_id, nonce, signatures)
+// Solidity: function list_asset(address asset_source, bytes32 vega_asset_id, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeSession) ListAsset(asset_source common.Address, vega_asset_id [32]byte, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.Contract.ListAsset(&_Bridge.TransactOpts, asset_source, vega_asset_id, nonce, signatures)
 }
 
 // ListAsset is a paid mutator transaction binding the contract method 0xa8780cda.
 //
-// Solidity: function list_asset(address asset_source, bytes32 vega_id, uint256 nonce, bytes signatures) returns()
-func (_Bridge *BridgeTransactorSession) ListAsset(asset_source common.Address, vega_id [32]byte, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Bridge.Contract.ListAsset(&_Bridge.TransactOpts, asset_source, vega_id, nonce, signatures)
+// Solidity: function list_asset(address asset_source, bytes32 vega_asset_id, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeTransactorSession) ListAsset(asset_source common.Address, vega_asset_id [32]byte, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.Contract.ListAsset(&_Bridge.TransactOpts, asset_source, vega_asset_id, nonce, signatures)
 }
 
 // RemoveAsset is a paid mutator transaction binding the contract method 0xc76de358.
@@ -364,6 +390,27 @@ func (_Bridge *BridgeTransactorSession) RemoveAsset(asset_source common.Address,
 	return _Bridge.Contract.RemoveAsset(&_Bridge.TransactOpts, asset_source, nonce, signatures)
 }
 
+// SetDepositMaximum is a paid mutator transaction binding the contract method 0x292463b1.
+//
+// Solidity: function set_deposit_maximum(address asset_source, uint256 maximum_amount, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeTransactor) SetDepositMaximum(opts *bind.TransactOpts, asset_source common.Address, maximum_amount *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.contract.Transact(opts, "set_deposit_maximum", asset_source, maximum_amount, nonce, signatures)
+}
+
+// SetDepositMaximum is a paid mutator transaction binding the contract method 0x292463b1.
+//
+// Solidity: function set_deposit_maximum(address asset_source, uint256 maximum_amount, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeSession) SetDepositMaximum(asset_source common.Address, maximum_amount *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.Contract.SetDepositMaximum(&_Bridge.TransactOpts, asset_source, maximum_amount, nonce, signatures)
+}
+
+// SetDepositMaximum is a paid mutator transaction binding the contract method 0x292463b1.
+//
+// Solidity: function set_deposit_maximum(address asset_source, uint256 maximum_amount, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeTransactorSession) SetDepositMaximum(asset_source common.Address, maximum_amount *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.Contract.SetDepositMaximum(&_Bridge.TransactOpts, asset_source, maximum_amount, nonce, signatures)
+}
+
 // SetDepositMinimum is a paid mutator transaction binding the contract method 0x3882b3da.
 //
 // Solidity: function set_deposit_minimum(address asset_source, uint256 minimum_amount, uint256 nonce, bytes signatures) returns()
@@ -385,25 +432,170 @@ func (_Bridge *BridgeTransactorSession) SetDepositMinimum(asset_source common.Ad
 	return _Bridge.Contract.SetDepositMinimum(&_Bridge.TransactOpts, asset_source, minimum_amount, nonce, signatures)
 }
 
-// WithdrawAsset is a paid mutator transaction binding the contract method 0x7776a2a5.
+// WithdrawAsset is a paid mutator transaction binding the contract method 0xaf9bd2b2.
 //
-// Solidity: function withdraw_asset(address asset_source, uint256 amount, uint256 expiry, uint256 nonce, bytes signatures) returns()
-func (_Bridge *BridgeTransactor) WithdrawAsset(opts *bind.TransactOpts, asset_source common.Address, amount *big.Int, expiry *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Bridge.contract.Transact(opts, "withdraw_asset", asset_source, amount, expiry, nonce, signatures)
+// Solidity: function withdraw_asset(address asset_source, uint256 amount, uint256 expiry, address target, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeTransactor) WithdrawAsset(opts *bind.TransactOpts, asset_source common.Address, amount *big.Int, expiry *big.Int, target common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.contract.Transact(opts, "withdraw_asset", asset_source, amount, expiry, target, nonce, signatures)
 }
 
-// WithdrawAsset is a paid mutator transaction binding the contract method 0x7776a2a5.
+// WithdrawAsset is a paid mutator transaction binding the contract method 0xaf9bd2b2.
 //
-// Solidity: function withdraw_asset(address asset_source, uint256 amount, uint256 expiry, uint256 nonce, bytes signatures) returns()
-func (_Bridge *BridgeSession) WithdrawAsset(asset_source common.Address, amount *big.Int, expiry *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Bridge.Contract.WithdrawAsset(&_Bridge.TransactOpts, asset_source, amount, expiry, nonce, signatures)
+// Solidity: function withdraw_asset(address asset_source, uint256 amount, uint256 expiry, address target, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeSession) WithdrawAsset(asset_source common.Address, amount *big.Int, expiry *big.Int, target common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.Contract.WithdrawAsset(&_Bridge.TransactOpts, asset_source, amount, expiry, target, nonce, signatures)
 }
 
-// WithdrawAsset is a paid mutator transaction binding the contract method 0x7776a2a5.
+// WithdrawAsset is a paid mutator transaction binding the contract method 0xaf9bd2b2.
 //
-// Solidity: function withdraw_asset(address asset_source, uint256 amount, uint256 expiry, uint256 nonce, bytes signatures) returns()
-func (_Bridge *BridgeTransactorSession) WithdrawAsset(asset_source common.Address, amount *big.Int, expiry *big.Int, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
-	return _Bridge.Contract.WithdrawAsset(&_Bridge.TransactOpts, asset_source, amount, expiry, nonce, signatures)
+// Solidity: function withdraw_asset(address asset_source, uint256 amount, uint256 expiry, address target, uint256 nonce, bytes signatures) returns()
+func (_Bridge *BridgeTransactorSession) WithdrawAsset(asset_source common.Address, amount *big.Int, expiry *big.Int, target common.Address, nonce *big.Int, signatures []byte) (*types.Transaction, error) {
+	return _Bridge.Contract.WithdrawAsset(&_Bridge.TransactOpts, asset_source, amount, expiry, target, nonce, signatures)
+}
+
+// BridgeAssetDepositMaximumSetIterator is returned from FilterAssetDepositMaximumSet and is used to iterate over the raw logs and unpacked data for AssetDepositMaximumSet events raised by the Bridge contract.
+type BridgeAssetDepositMaximumSetIterator struct {
+	Event *BridgeAssetDepositMaximumSet // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BridgeAssetDepositMaximumSetIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BridgeAssetDepositMaximumSet)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BridgeAssetDepositMaximumSet)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BridgeAssetDepositMaximumSetIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BridgeAssetDepositMaximumSetIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BridgeAssetDepositMaximumSet represents a AssetDepositMaximumSet event raised by the Bridge contract.
+type BridgeAssetDepositMaximumSet struct {
+	AssetSource common.Address
+	NewMaximum  *big.Int
+	Nonce       *big.Int
+	Raw         types.Log // Blockchain specific contextual infos
+}
+
+// FilterAssetDepositMaximumSet is a free log retrieval operation binding the contract event 0x8861dbda4052c4bf7ba24aad82097ef1e6ade8e6f1b42341640db8a12abfa993.
+//
+// Solidity: event Asset_Deposit_Maximum_Set(address indexed asset_source, uint256 new_maximum, uint256 nonce)
+func (_Bridge *BridgeFilterer) FilterAssetDepositMaximumSet(opts *bind.FilterOpts, asset_source []common.Address) (*BridgeAssetDepositMaximumSetIterator, error) {
+
+	var asset_sourceRule []interface{}
+	for _, asset_sourceItem := range asset_source {
+		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	}
+
+	logs, sub, err := _Bridge.contract.FilterLogs(opts, "Asset_Deposit_Maximum_Set", asset_sourceRule)
+	if err != nil {
+		return nil, err
+	}
+	return &BridgeAssetDepositMaximumSetIterator{contract: _Bridge.contract, event: "Asset_Deposit_Maximum_Set", logs: logs, sub: sub}, nil
+}
+
+// WatchAssetDepositMaximumSet is a free log subscription operation binding the contract event 0x8861dbda4052c4bf7ba24aad82097ef1e6ade8e6f1b42341640db8a12abfa993.
+//
+// Solidity: event Asset_Deposit_Maximum_Set(address indexed asset_source, uint256 new_maximum, uint256 nonce)
+func (_Bridge *BridgeFilterer) WatchAssetDepositMaximumSet(opts *bind.WatchOpts, sink chan<- *BridgeAssetDepositMaximumSet, asset_source []common.Address) (event.Subscription, error) {
+
+	var asset_sourceRule []interface{}
+	for _, asset_sourceItem := range asset_source {
+		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
+	}
+
+	logs, sub, err := _Bridge.contract.WatchLogs(opts, "Asset_Deposit_Maximum_Set", asset_sourceRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BridgeAssetDepositMaximumSet)
+				if err := _Bridge.contract.UnpackLog(event, "Asset_Deposit_Maximum_Set", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseAssetDepositMaximumSet is a log parse operation binding the contract event 0x8861dbda4052c4bf7ba24aad82097ef1e6ade8e6f1b42341640db8a12abfa993.
+//
+// Solidity: event Asset_Deposit_Maximum_Set(address indexed asset_source, uint256 new_maximum, uint256 nonce)
+func (_Bridge *BridgeFilterer) ParseAssetDepositMaximumSet(log types.Log) (*BridgeAssetDepositMaximumSet, error) {
+	event := new(BridgeAssetDepositMaximumSet)
+	if err := _Bridge.contract.UnpackLog(event, "Asset_Deposit_Maximum_Set", log); err != nil {
+		return nil, err
+	}
+	return event, nil
 }
 
 // BridgeAssetDepositMinimumSetIterator is returned from FilterAssetDepositMinimumSet and is used to iterate over the raw logs and unpacked data for AssetDepositMinimumSet events raised by the Bridge contract.
@@ -775,26 +967,26 @@ func (it *BridgeAssetListedIterator) Close() error {
 // BridgeAssetListed represents a AssetListed event raised by the Bridge contract.
 type BridgeAssetListed struct {
 	AssetSource common.Address
-	VegaId      [32]byte
+	VegaAssetId [32]byte
 	Nonce       *big.Int
 	Raw         types.Log // Blockchain specific contextual infos
 }
 
 // FilterAssetListed is a free log retrieval operation binding the contract event 0x4180d77d05ff0d31650c548c23f2de07a3da3ad42e3dd6edd817b438a150452e.
 //
-// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_id, uint256 nonce)
-func (_Bridge *BridgeFilterer) FilterAssetListed(opts *bind.FilterOpts, asset_source []common.Address, vega_id [][32]byte) (*BridgeAssetListedIterator, error) {
+// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
+func (_Bridge *BridgeFilterer) FilterAssetListed(opts *bind.FilterOpts, asset_source []common.Address, vega_asset_id [][32]byte) (*BridgeAssetListedIterator, error) {
 
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
 	}
-	var vega_idRule []interface{}
-	for _, vega_idItem := range vega_id {
-		vega_idRule = append(vega_idRule, vega_idItem)
+	var vega_asset_idRule []interface{}
+	for _, vega_asset_idItem := range vega_asset_id {
+		vega_asset_idRule = append(vega_asset_idRule, vega_asset_idItem)
 	}
 
-	logs, sub, err := _Bridge.contract.FilterLogs(opts, "Asset_Listed", asset_sourceRule, vega_idRule)
+	logs, sub, err := _Bridge.contract.FilterLogs(opts, "Asset_Listed", asset_sourceRule, vega_asset_idRule)
 	if err != nil {
 		return nil, err
 	}
@@ -803,19 +995,19 @@ func (_Bridge *BridgeFilterer) FilterAssetListed(opts *bind.FilterOpts, asset_so
 
 // WatchAssetListed is a free log subscription operation binding the contract event 0x4180d77d05ff0d31650c548c23f2de07a3da3ad42e3dd6edd817b438a150452e.
 //
-// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_id, uint256 nonce)
-func (_Bridge *BridgeFilterer) WatchAssetListed(opts *bind.WatchOpts, sink chan<- *BridgeAssetListed, asset_source []common.Address, vega_id [][32]byte) (event.Subscription, error) {
+// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
+func (_Bridge *BridgeFilterer) WatchAssetListed(opts *bind.WatchOpts, sink chan<- *BridgeAssetListed, asset_source []common.Address, vega_asset_id [][32]byte) (event.Subscription, error) {
 
 	var asset_sourceRule []interface{}
 	for _, asset_sourceItem := range asset_source {
 		asset_sourceRule = append(asset_sourceRule, asset_sourceItem)
 	}
-	var vega_idRule []interface{}
-	for _, vega_idItem := range vega_id {
-		vega_idRule = append(vega_idRule, vega_idItem)
+	var vega_asset_idRule []interface{}
+	for _, vega_asset_idItem := range vega_asset_id {
+		vega_asset_idRule = append(vega_asset_idRule, vega_asset_idItem)
 	}
 
-	logs, sub, err := _Bridge.contract.WatchLogs(opts, "Asset_Listed", asset_sourceRule, vega_idRule)
+	logs, sub, err := _Bridge.contract.WatchLogs(opts, "Asset_Listed", asset_sourceRule, vega_asset_idRule)
 	if err != nil {
 		return nil, err
 	}
@@ -849,7 +1041,7 @@ func (_Bridge *BridgeFilterer) WatchAssetListed(opts *bind.WatchOpts, sink chan<
 
 // ParseAssetListed is a log parse operation binding the contract event 0x4180d77d05ff0d31650c548c23f2de07a3da3ad42e3dd6edd817b438a150452e.
 //
-// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_id, uint256 nonce)
+// Solidity: event Asset_Listed(address indexed asset_source, bytes32 indexed vega_asset_id, uint256 nonce)
 func (_Bridge *BridgeFilterer) ParseAssetListed(log types.Log) (*BridgeAssetListed, error) {
 	event := new(BridgeAssetListed)
 	if err := _Bridge.contract.UnpackLog(event, "Asset_Listed", log); err != nil {

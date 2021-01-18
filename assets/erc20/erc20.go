@@ -140,6 +140,10 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 			Type: typAddr,
 		},
 		{
+			Name: "vega_asset_id",
+			Type: typAddr,
+		},
+		{
 			Name: "nonce",
 			Type: typU256,
 		},
@@ -154,7 +158,8 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 	addr := ethcmn.HexToAddress(b.address)
-	buf, err := args.Pack([]interface{}{addr, nonce, listAssetContractName}...)
+	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.ID)
+	buf, err := args.Pack([]interface{}{addr, vegaAssetIDBytes, nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -216,7 +221,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	defer iter.Close()
 	var event *bridge.BridgeAssetListed
 	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaId[:]) == w.VegaAssetId {
+		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == w.VegaAssetId {
 			event = iter.Event
 			break
 		}
