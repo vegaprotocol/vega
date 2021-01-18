@@ -804,20 +804,20 @@ func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
 	return nil
 }
 
-func theMarketStateIs(market, marketStateStr string) error {
-	ms, ok := types.MarketState_value[marketStateStr]
+func theMarketTradingModeIs(market, marketTradingModeStr string) error {
+	ms, ok := types.Market_TradingMode_value[marketTradingModeStr]
 	if !ok {
-		return fmt.Errorf("invalid market state: %v", marketStateStr)
+		return fmt.Errorf("invalid market state: %v", marketTradingModeStr)
 	}
-	marketState := types.MarketState(ms)
+	marketTradingMode := types.Market_TradingMode(ms)
 
 	mktdata, err := execsetup.engine.GetMarketData(market)
 	if err != nil {
 		return fmt.Errorf("unable to get marked data for market(%v), err(%v)", market, err)
 	}
 
-	if mktdata.MarketState != marketState {
-		return fmt.Errorf("market state is wrong for market(%v), expected(%v) got(%v)", market, marketState, mktdata.MarketState)
+	if mktdata.MarketTradingMode != marketTradingMode {
+		return fmt.Errorf("market trading mode is wrong for market(%v), expected(%v) got(%v)", market, marketTradingMode, mktdata.MarketTradingMode)
 	}
 	return nil
 }
@@ -1032,6 +1032,8 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 	}
 
 	mkt := types.Market{
+		TradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
+		State:         types.Market_STATE_ACTIVE,
 		Id:            val(row, 0),
 		DecimalPlaces: 2,
 		Fees: &types.Fees{
@@ -1088,7 +1090,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 			},
 		},
 		OpeningAuction: openingAuction,
-		TradingMode: &types.Market_Continuous{
+		TradingModeConfig: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,

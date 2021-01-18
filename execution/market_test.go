@@ -45,6 +45,10 @@ type testMarket struct {
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) *testMarket {
+	return getTestMarket2(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true)
+}
+
+func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, startOpeninAuction bool) *testMarket {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	riskConfig := risk.NewDefaultConfig()
@@ -119,6 +123,10 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, collateralEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
 	assert.NoError(t, err)
+
+	if startOpeninAuction {
+		mktEngine.StartOpeningAuction(context.Background())
+	}
 
 	asset, err := mkts[0].GetAsset()
 	assert.NoError(t, err)
@@ -195,7 +203,7 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 			},
 		},
 		OpeningAuction: openingAuctionDuration,
-		TradingMode: &types.Market_Continuous{
+		TradingModeConfig: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
@@ -486,7 +494,7 @@ func TestSetMarketID(t *testing.T) {
 					},
 				},
 			},
-			TradingMode: &types.Market_Continuous{
+			TradingModeConfig: &types.Market_Continuous{
 				Continuous: &types.ContinuousTrading{},
 			},
 		}
@@ -1316,7 +1324,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
-	expectedTargetStake := float64(oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.TargetStakeParameters.ScalingFactor
+	expectedTargetStake := float64(matchingPrice*oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.TargetStakeParameters.ScalingFactor
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -1363,7 +1371,90 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-	require.Equal(t, fmt.Sprintf("%.f", expectedTargetStake), mktData.TargetStake)
+	require.Equal(t, strconv.FormatFloat(expectedTargetStake, 'f', -1, 64), mktData.TargetStake)
+}
+
+func TestHandleLPCommitmentChange(t *testing.T) {
+	ctx := context.Background()
+	party1 := "party1"
+	party2 := "party2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	var matchingPrice uint64 = 111
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyID:     party2,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice + 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIF_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyID:     party1,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice - 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	_, err = tm.market.SubmitOrder(ctx, orderBuy1)
+	require.NoError(t, err)
+
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 2000,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+	)
+
+	// this will make current target stake returns 2475
+	tm.market.TSCalc().RecordOpenInterest(10, now)
+
+	// by set a very low commitment we should fail
+	lp.CommitmentAmount = 1
+	require.Equal(t, execution.ErrNotEnoughStake,
+		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+	)
+
+	// 2000 - 475 should be enough
+	lp.CommitmentAmount = 2000 - 475
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+	)
 }
 
 func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
@@ -2103,10 +2194,14 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
-	require.Equal(t, 1, len(orders))
 	require.NoError(t, err)
 
-	assert.Equal(t, types.Order_STATUS_EXPIRED, o1.Status)
+	// we have one order
+	require.Len(t, orders, 1)
+	// id == o1.Id
+	assert.Equal(t, o1.Id, orders[0].Id)
+	// status is expired
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
 }
 
@@ -2344,11 +2439,14 @@ func TestOrderBook_AmendTIFForPeggedOrder2(t *testing.T) {
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
-	require.Equal(t, 1, len(orders))
 	require.NoError(t, err)
 
+	// 1 expired order
+	require.Len(t, orders, 1)
+	//
+	assert.Equal(t, orders[0].Id, o2.Id)
 	// The pegged order should be expired
-	assert.Equal(t, types.Order_STATUS_EXPIRED.String(), o2.Status.String())
+	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 }
 
@@ -2517,4 +2615,73 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 	assert.Error(t, types.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER, err)
 	assert.Equal(t, types.Order_STATUS_PARKED, o1.Status)
 	assert.Equal(t, uint64(1), o1.Version)
+}
+
+func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 1, 5000)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.NotNil(t, o1conf)
+	assert.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.NotNil(t, o2conf)
+	assert.NoError(t, err)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID:   o1.Id,
+		PartyID:   "trader-A",
+		SizeDelta: -1,
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.NotNil(t, amendConf)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
+}
+
+func TestOrderBook_AmendExpPeristParkPeggedOrder(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 10, 4550)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	assert.NotNil(t, o1conf)
+	assert.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 105, 0)
+	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 100}
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	assert.NotNil(t, o2conf)
+	assert.NoError(t, err)
+
+	// Try to amend the price
+	amendment := &types.OrderAmendment{
+		OrderID:   o1.Id,
+		PartyID:   "trader-A",
+		SizeDelta: -10,
+	}
+
+	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	assert.NotNil(t, amendConf)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
+	assert.Equal(t, int(o2.Price), 0)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
 }

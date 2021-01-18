@@ -85,23 +85,6 @@ message RiskResult {
   map<string, RiskFactor> predictedNextRiskFactors = 4;
 }
 
-// What mode is the market currently running, also known as market state.
-enum MarketState {
-  // Default value, this is invalid
-  MARKET_STATE_UNSPECIFIED = 0;
-  // Normal trading
-  MARKET_STATE_CONTINUOUS = 1;
-  // Auction trading (FBA)
-  MARKET_STATE_BATCH_AUCTION = 2;
-  // Opening auction
-  MARKET_STATE_OPENING_AUCTION = 3;
-  // Auction triggered by monitoring
-  MARKET_STATE_MONITORING_AUCTION = 4;
-
-  // Note: If adding an enum value, add a matching entry in:
-  //       - gateway/graphql/helpers_enum.go
-  //       - gateway/graphql/schema.graphql (enum MarketState)
-}
 
 // What triggered an auction (if any)
 enum AuctionTrigger {
@@ -1051,7 +1034,7 @@ message MarketData {
   // indicative volume (zero if not in auction)
   uint64 indicativeVolume = 18;
   // the current state of the market
-  MarketState marketState = 19;
+  Market.TradingMode marketTradingMode = 19;
   // if the market is in auction state, this field indicates what triggered the auction
   AuctionTrigger trigger = 20;
   // the targeted stake for the given market
@@ -1217,4 +1200,15 @@ message LiquidityProvision {
   string version = 10;
   // the status of this liquidity provision
   Status status = 11;
+}
+
+message EthereumConfig {
+  // The network ID of this ethereum network
+  string networkId = 1;
+  // The chain ID of this ethereum network
+  string chainId = 2;
+  // The bridge address for this ethereum network
+  string bridgeAddress = 3;
+  // The number of confirmations
+  uint32 confirmations = 4;
 }

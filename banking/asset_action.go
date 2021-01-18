@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
 	types "code.vegaprotocol.io/vega/proto"
-
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -20,10 +19,10 @@ type withdrawal struct {
 }
 
 type txRef struct {
-	asset    common.AssetClass
-	hash     string
-	index    uint64
-	logIndex uint
+	asset       common.AssetClass
+	blockNumber uint64
+	hash        string
+	logIndex    uint64
 }
 
 type assetAction struct {
@@ -31,13 +30,10 @@ type assetAction struct {
 	state uint32
 	asset *assets.Asset
 
-	// hash of transaction used to ensure a transaction has not been
-	// processed twice
-	ref txRef
-
 	// erc20 specifics
 	blockNumber uint64
 	txIndex     uint64
+	hash        string
 
 	// all deposit related types
 	builtinD *types.BuiltinAssetDeposit
@@ -118,42 +114,44 @@ func (t *assetAction) Check() error {
 }
 
 func (t *assetAction) checkBuiltinAssetDeposit() error {
-	asset, _ := t.asset.BuiltinAsset()
-	// builtin deposits do not have hash, and we don't need one
-	// so let's just add some random id
-	t.ref = txRef{asset.GetAssetClass(), uuid.NewV4().String(), 0, 0}
 	return nil
 }
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	_, _, hash, _, logIndex, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
-	if err != nil {
-		return err
-	}
-	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
-	return nil
+	_, _, _, _, _, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
+	return err
 }
 
 func (t *assetAction) checkERC20Withdrawal() error {
 	asset, _ := t.asset.ERC20()
-	nonce, hash, logIndex, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
+	nonce, _, _, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
 	if err != nil {
 		return err
 	}
 	t.withdrawal = &withdrawal{
 		nonce: nonce,
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
 	return nil
 }
 
 func (t *assetAction) checkERC20AssetList() error {
 	asset, _ := t.asset.ERC20()
-	hash, logIndex, err := asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
-	if err != nil {
-		return err
+	_, _, err := asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
+	return err
+}
+
+func (t *assetAction) getRef() txRef {
+	switch {
+	case t.IsBuiltinAssetDeposit():
+		return txRef{common.Builtin, 0, uuid.NewV4().String(), 0}
+	case t.IsERC20Deposit():
+		return txRef{common.ERC20, t.blockNumber, t.hash, t.txIndex}
+	case t.IsERC20AssetList():
+		return txRef{common.ERC20, t.blockNumber, t.hash, t.txIndex}
+	case t.IsERC20Withdrawal():
+		return txRef{common.ERC20, t.blockNumber, t.hash, t.txIndex}
+	default:
+		return txRef{} // this is basically unreachable
 	}
-	t.ref = txRef{asset.GetAssetClass(), hash, t.txIndex, logIndex}
-	return nil
 }

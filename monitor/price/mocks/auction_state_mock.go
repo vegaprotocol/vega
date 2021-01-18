@@ -185,10 +185,10 @@ func (mr *MockAuctionStateMockRecorder) IsPriceAuction() *gomock.Call {
 }
 
 // Mode mocks base method
-func (m *MockAuctionState) Mode() proto.MarketState {
+func (m *MockAuctionState) Mode() proto.Market_TradingMode {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Mode")
-	ret0, _ := ret[0].(proto.MarketState)
+	ret0, _ := ret[0].(proto.Market_TradingMode)
 	return ret0
 }
 

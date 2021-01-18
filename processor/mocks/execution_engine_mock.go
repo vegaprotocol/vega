@@ -78,6 +78,34 @@ func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockExecutionEngine)(nil).Hash))
 }
 
+// RejectMarket mocks base method
+func (m *MockExecutionEngine) RejectMarket(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RejectMarket", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RejectMarket indicates an expected call of RejectMarket
+func (mr *MockExecutionEngineMockRecorder) RejectMarket(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RejectMarket", reflect.TypeOf((*MockExecutionEngine)(nil).RejectMarket), arg0, arg1)
+}
+
+// StartOpeningAuction mocks base method
+func (m *MockExecutionEngine) StartOpeningAuction(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartOpeningAuction", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StartOpeningAuction indicates an expected call of StartOpeningAuction
+func (mr *MockExecutionEngineMockRecorder) StartOpeningAuction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartOpeningAuction", reflect.TypeOf((*MockExecutionEngine)(nil).StartOpeningAuction), arg0, arg1)
+}
+
 // SubmitLiquidityProvision mocks base method
 func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *proto.LiquidityProvisionSubmission, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
@@ -104,6 +132,20 @@ func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Mar
 func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1)
+}
+
+// SubmitMarketWithLiquidityProvision mocks base method
+func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *proto.Market, arg2 *proto.LiquidityProvisionSubmission, arg3, arg4 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitMarketWithLiquidityProvision indicates an expected call of SubmitMarketWithLiquidityProvision
+func (mr *MockExecutionEngineMockRecorder) SubmitMarketWithLiquidityProvision(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarketWithLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarketWithLiquidityProvision), arg0, arg1, arg2, arg3, arg4)
 }
 
 // SubmitOrder mocks base method

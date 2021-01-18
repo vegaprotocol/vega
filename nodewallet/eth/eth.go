@@ -2,15 +2,21 @@ package eth
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 )
 
@@ -19,6 +25,8 @@ import (
 type ETHClient interface {
 	bind.ContractBackend
 	ChainID(context.Context) (*big.Int, error)
+	NetworkID(context.Context) (*big.Int, error)
+	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
 type Wallet struct {
@@ -27,6 +35,14 @@ type Wallet struct {
 	ks         *keystore.KeyStore
 	clt        ETHClient
 	passphrase string
+
+	pcfg *types.EthereumConfig
+
+	// this is all just to prevent spamming the infura just
+	// to get the last height of the blockchain
+	mu                  sync.Mutex
+	curHeightLastUpdate time.Time
+	curHeight           uint64
 }
 
 func DevInit(path, passphrase string) (string, error) {
@@ -79,7 +95,25 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 		clt:        ethclt,
 		passphrase: passphrase,
 	}, nil
+}
 
+func (w *Wallet) SetEthereumConfig(pcfg *types.EthereumConfig) error {
+	nid, err := w.clt.NetworkID(context.Background())
+	if err != nil {
+		return err
+	}
+	chid, err := w.clt.ChainID(context.Background())
+	if err != nil {
+		return err
+	}
+	if nid.String() != pcfg.NetworkId {
+		return fmt.Errorf("ethereum network id does not match, expected %v got %v", pcfg.NetworkId, nid)
+	}
+	if chid.String() != pcfg.ChainId {
+		return fmt.Errorf("ethereum chain id does not match, expected %v got %v", pcfg.ChainId, chid)
+	}
+	w.pcfg = pcfg
+	return nil
 }
 
 func (w *Wallet) Cleanup() error {
@@ -112,5 +146,30 @@ func (w *Wallet) Client() ETHClient {
 }
 
 func (w *Wallet) BridgeAddress() string {
-	return w.cfg.BridgeAddress
+	return w.pcfg.BridgeAddress
+}
+
+func (w *Wallet) CurrentHeight(ctx context.Context) (uint64, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	// if last update of the heigh was more that 15 seconds
+	// ago, we try to update, we assume an eth block takes
+	// ~15 seconds
+	now := time.Now()
+	if w.curHeightLastUpdate.Add(15).Before(now) {
+		// getthe last block header
+		h, err := w.clt.HeaderByNumber(context.Background(), nil)
+		if err != nil {
+			return w.curHeight, err
+		}
+		w.curHeightLastUpdate = now
+		w.curHeight = h.Number.Uint64()
+	}
+
+	return w.curHeight, nil
+}
+
+func (w *Wallet) ConfirmationsRequired() uint32 {
+	return w.pcfg.Confirmations
 }

@@ -290,6 +290,14 @@
                 </li>
               
               
+                <li>
+                  <a href="#vega.Market.State"><span class="badge">E</span>Market.State</a>
+                </li>
+              
+                <li>
+                  <a href="#vega.Market.TradingMode"><span class="badge">E</span>Market.TradingMode</a>
+                </li>
+              
               
               
             </ul>
@@ -322,6 +330,10 @@
               
                 <li>
                   <a href="#vega.ErrorDetail"><span class="badge">M</span>ErrorDetail</a>
+                </li>
+              
+                <li>
+                  <a href="#vega.EthereumConfig"><span class="badge">M</span>EthereumConfig</a>
                 </li>
               
                 <li>
@@ -534,10 +546,6 @@
                 </li>
               
                 <li>
-                  <a href="#vega.MarketState"><span class="badge">E</span>MarketState</a>
-                </li>
-              
-                <li>
                   <a href="#vega.NodeSignatureKind"><span class="badge">E</span>NodeSignatureKind</a>
                 </li>
               
@@ -644,6 +652,10 @@
               
                 <li>
                   <a href="#vega.NewMarket"><span class="badge">M</span>NewMarket</a>
+                </li>
+              
+                <li>
+                  <a href="#vega.NewMarketCommitment"><span class="badge">M</span>NewMarketCommitment</a>
                 </li>
               
                 <li>
@@ -2205,6 +2217,20 @@ duration and optionally a minimum traded volume). </p></td>
                   <td><p>TargetStakeParameters for the market </p></td>
                 </tr>
               
+                <tr>
+                  <td>tradingMode</td>
+                  <td><a href="#vega.Market.TradingMode">Market.TradingMode</a></td>
+                  <td></td>
+                  <td><p>Current mode of execution of the market </p></td>
+                </tr>
+              
+                <tr>
+                  <td>state</td>
+                  <td><a href="#vega.Market.State">Market.State</a></td>
+                  <td></td>
+                  <td><p>Current state of the market </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -2639,6 +2665,120 @@ probability level. </p></td>
       
 
       
+        <h3 id="vega.Market.State">Market.State</h3>
+        <p>The current state of the Market</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>STATE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, invalid</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_PROPOSED</td>
+                <td>1</td>
+                <td><p>The Governance proposal valid and accepted</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_REJECTED</td>
+                <td>2</td>
+                <td><p>Outcome of governance votes is to reject the market</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_PENDING</td>
+                <td>3</td>
+                <td><p>Governance vote passes/wins</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_CANCELLED</td>
+                <td>4</td>
+                <td><p>Market triggers cancellation condition or governance
+votes to close before market becomes Active</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_ACTIVE</td>
+                <td>5</td>
+                <td><p>Enactment date reached and usual auction exit checks pass</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_SUSPENDED</td>
+                <td>6</td>
+                <td><p>Price monitoring or liquidity monitoring trigger</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_CLOSED</td>
+                <td>7</td>
+                <td><p>Governance vote (to close)</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_TRADING_TERMINATED</td>
+                <td>8</td>
+                <td><p>Defined by the product (i.e. from a product parameter,
+specified in market definition, giving close date/time)</p></td>
+              </tr>
+            
+              <tr>
+                <td>STATE_SETTLED</td>
+                <td>9</td>
+                <td><p>Settlement triggered and completed as defined by product</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="vega.Market.TradingMode">Market.TradingMode</h3>
+        <p>What mode is the market currently running, also known as market state.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>TRADING_MODE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default value, this is invalid</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_CONTINUOUS</td>
+                <td>1</td>
+                <td><p>Normal trading</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_BATCH_AUCTION</td>
+                <td>2</td>
+                <td><p>Auction trading (FBA)</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_OPENING_AUCTION</td>
+                <td>3</td>
+                <td><p>Opening auction</p></td>
+              </tr>
+            
+              <tr>
+                <td>TRADING_MODE_MONITORING_AUCTION</td>
+                <td>4</td>
+                <td><p>Auction triggered by monitoring</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
 
       
 
@@ -2964,6 +3104,51 @@ See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Any inner error information that could add more context, or be helpful for error reporting. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="vega.EthereumConfig">EthereumConfig</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>networkId</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The network ID of this ethereum network </p></td>
+                </tr>
+              
+                <tr>
+                  <td>chainId</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The chain ID of this ethereum network </p></td>
+                </tr>
+              
+                <tr>
+                  <td>bridgeAddress</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The bridge address for this ethereum network </p></td>
+                </tr>
+              
+                <tr>
+                  <td>confirmations</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p>The number of confirmations </p></td>
                 </tr>
               
             </tbody>
@@ -3589,8 +3774,8 @@ See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketState</td>
-                  <td><a href="#vega.MarketState">MarketState</a></td>
+                  <td>marketTradingMode</td>
+                  <td><a href="#vega.Market.TradingMode">Market.TradingMode</a></td>
                   <td></td>
                   <td><p>the current state of the market </p></td>
                 </tr>
@@ -6120,47 +6305,6 @@ These fees reward traders who provide the best priced liquidity that actually al
           </tbody>
         </table>
       
-        <h3 id="vega.MarketState">MarketState</h3>
-        <p>What mode is the market currently running, also known as market state.</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            
-              <tr>
-                <td>MARKET_STATE_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>Default value, this is invalid</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_CONTINUOUS</td>
-                <td>1</td>
-                <td><p>Normal trading</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_BATCH_AUCTION</td>
-                <td>2</td>
-                <td><p>Auction trading (FBA)</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_OPENING_AUCTION</td>
-                <td>3</td>
-                <td><p>Opening auction</p></td>
-              </tr>
-            
-              <tr>
-                <td>MARKET_STATE_MONITORING_AUCTION</td>
-                <td>4</td>
-                <td><p>Auction triggered by monitoring</p></td>
-              </tr>
-            
-          </tbody>
-        </table>
-      
         <h3 id="vega.NodeSignatureKind">NodeSignatureKind</h3>
         <p>The kind of the signature created by a node, for example, allowlisting a new asset, withdrawal etc.</p>
         <table class="enum-table">
@@ -7460,6 +7604,13 @@ value (Vote) is the vote cast by the given party </p></td>
                   <td><p>Configuration. </p></td>
                 </tr>
               
+                <tr>
+                  <td>liquidityCommitment</td>
+                  <td><a href="#vega.NewMarketCommitment">NewMarketCommitment</a></td>
+                  <td></td>
+                  <td><p>The commitment from the party creating the NewMarket proposal </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -7494,6 +7645,51 @@ value (Vote) is the vote cast by the given party </p></td>
 
         
       
+        <h3 id="vega.NewMarketCommitment">NewMarketCommitment</h3>
+        <p>A commitment of liquidity to be made by the party</p><p>which propose the market.</p><p>We create a new type here as we do not require the marketID from the submission</p><p>the governance engine will create a LiquidityProvisionSubmission from</p><p>this message internally.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>commitmentAmount</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
+                  <td><p>Specified as a unitless number that represents the amount of settlement asset of the market. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>fee</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>Sells</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>Buys</td>
+                  <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
+                  <td>repeated</td>
+                  <td><p>a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="vega.NewMarketConfiguration">NewMarketConfiguration</h3>
         <p>Configuration for a new market on Vega.</p>
 
@@ -7523,13 +7719,6 @@ value (Vote) is the vote cast by the given party </p></td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p>Optional new market meta data, tags. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>openingAuctionDuration</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>Time duration for the opening auction to last. </p></td>
                 </tr>
               
                 <tr>
@@ -8196,6 +8385,18 @@ Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters. <
                 <td>PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE</td>
                 <td>23</td>
                 <td><p>Opening auction duration is more than the network minimum opening auction time</p></td>
+              </tr>
+            
+              <tr>
+                <td>PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT</td>
+                <td>24</td>
+                <td><p>Market proposal is missing a liquidity commitment</p></td>
+              </tr>
+            
+              <tr>
+                <td>PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET</td>
+                <td>25</td>
+                <td><p>Market proposal market could not be instantiate in execution</p></td>
               </tr>
             
           </tbody>

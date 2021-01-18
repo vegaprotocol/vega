@@ -235,19 +235,46 @@ func convertOrderTypeFromProto(x types.Order_Type) (OrderType, error) {
 }
 
 // convertMarketStateFromProto converts a Proto enum to a GraphQL enum
-func convertMarketStateFromProto(ms types.MarketState) (MarketState, error) {
+func convertMarketTradingModeFromProto(ms types.Market_TradingMode) (MarketTradingMode, error) {
 	switch ms {
-	case types.MarketState_MARKET_STATE_OPENING_AUCTION:
-		return MarketStateOpeningAuction, nil
-	case types.MarketState_MARKET_STATE_BATCH_AUCTION:
-		return MarketStateBatchAuction, nil
-	case types.MarketState_MARKET_STATE_MONITORING_AUCTION:
-		return MarketStateMonitoringAuction, nil
-	case types.MarketState_MARKET_STATE_CONTINUOUS:
-		return MarketStateContinuous, nil
+	case types.Market_TRADING_MODE_OPENING_AUCTION:
+		return MarketTradingModeOpeningAuction, nil
+	case types.Market_TRADING_MODE_BATCH_AUCTION:
+		return MarketTradingModeBatchAuction, nil
+	case types.Market_TRADING_MODE_MONITORING_AUCTION:
+		return MarketTradingModeMonitoringAuction, nil
+	case types.Market_TRADING_MODE_CONTINUOUS:
+		return MarketTradingModeContinuous, nil
 	default:
-		err := fmt.Errorf("failed to convert MarketState from Proto to GraphQL: %v", ms)
-		return MarketStateContinuous, err
+		err := fmt.Errorf("failed to convert MarketTradingMode from Proto to GraphQL: %v", ms)
+		return MarketTradingModeContinuous, err
+	}
+}
+
+// convertMarketStateFromProto converts a Proto enum to a GraphQL enum
+func convertMarketStateFromProto(ms types.Market_State) (MarketState, error) {
+	switch ms {
+	case types.Market_STATE_PROPOSED:
+		return MarketStateProposed, nil
+	case types.Market_STATE_REJECTED:
+		return MarketStateRejected, nil
+	case types.Market_STATE_PENDING:
+		return MarketStatePending, nil
+	case types.Market_STATE_CANCELLED:
+		return MarketStateCancelled, nil
+	case types.Market_STATE_ACTIVE:
+		return MarketStateActive, nil
+	case types.Market_STATE_SUSPENDED:
+		return MarketStateSuspended, nil
+	case types.Market_STATE_CLOSED:
+		return MarketStateClosed, nil
+	case types.Market_STATE_TRADING_TERMINATED:
+		return MarketStateTradingTerminated, nil
+	case types.Market_STATE_SETTLED:
+		return MarketStateSettled, nil
+	default:
+		err := fmt.Errorf("failed to convert MarketMode from Proto to GraphQL: %v", ms)
+		return MarketStateActive, err
 	}
 }
 
@@ -359,6 +386,14 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonNetworkParameterInvalidValue, nil
 	case types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED:
 		return ProposalRejectionReasonNetworkParameterValidationFailed, nil
+	case types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL:
+		return ProposalRejectionReasonOpeningAuctionDurationTooSmall, nil
+	case types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE:
+		return ProposalRejectionReasonOpeningAuctionDurationTooLarge, nil
+	case types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT:
+		return ProposalRejectionReasonMarketMissingLiquidityCommitment, nil
+	case types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET:
+		return ProposalRejectionReasonCouldNotInstantiateMarket, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return ProposalRejectionReason(""), err

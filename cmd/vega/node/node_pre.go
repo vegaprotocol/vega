@@ -594,6 +594,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: l.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.BlockchainsEthereumConfig,
+			Watcher: l.nodeWallet.OnEthereumConfigUpdate,
+		},
 	)
 }
 

@@ -238,8 +238,8 @@ func DiscreteTradingFromProto(pdt *types.DiscreteTrading) (*DiscreteTrading, err
 	}, nil
 }
 
-// TradingModeFromProto ...
-func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
+// TradingModeConfigFromProto ...
+func TradingModeConfigFromProto(ptm interface{}) (TradingMode, error) {
 	if ptm == nil {
 		return nil, ErrNilTradingMode
 	}
@@ -728,9 +728,6 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 		return nil, err
 	}
 	result.Metadata = append(result.Metadata, n.Metadata...)
-	if n.OpeningAuctionDurationSecs != nil {
-		result.OpeningAuctionDuration = int64(*n.OpeningAuctionDurationSecs)
-	}
 	if n.PriceMonitoringParameters != nil {
 		params, err := n.PriceMonitoringParameters.IntoProto()
 		if err != nil {

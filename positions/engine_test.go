@@ -176,8 +176,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
 	}
-	pos, err := e.RegisterOrder(&orderBuy)
-	assert.NoError(t, err)
+	pos := e.RegisterOrder(&orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
 	assert.Zero(t, pos.Sell())
 	assert.Zero(t, pos.Price())
@@ -192,8 +191,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
 	}
-	pos, err = e.RegisterOrder(&orderSell)
-	assert.NoError(t, err)
+	pos = e.RegisterOrder(&orderSell)
 	assert.Equal(t, buysize, pos.Buy())
 	assert.Equal(t, sellsize, pos.Sell())
 	assert.Zero(t, pos.Price())
@@ -216,11 +214,10 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
 	}
-	pos, err := e.RegisterOrder(&orderBuy)
-	assert.NoError(t, err)
+	pos := e.RegisterOrder(&orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
 
-	pos, err = e.UnregisterOrder(&orderBuy)
+	pos, err := e.UnregisterOrder(&orderBuy)
 	assert.NoError(t, err)
 	assert.Zero(t, pos.Buy())
 
@@ -230,8 +227,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
 	}
-	pos, err = e.RegisterOrder(&orderSell)
-	assert.NoError(t, err)
+	pos = e.RegisterOrder(&orderSell)
 	assert.Zero(t, pos.Buy())
 	assert.Equal(t, sellsize, pos.Sell())
 
@@ -326,8 +322,7 @@ func TestHash(t *testing.T) {
 	}
 
 	for _, order := range orders {
-		_, err := e.RegisterOrder(&order)
-		require.NoError(t, err)
+		e.RegisterOrder(&order)
 	}
 
 	trade := proto.Trade{

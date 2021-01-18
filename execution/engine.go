@@ -20,6 +20,9 @@ var (
 	// ErrMarketAlreadyExist signals that a market already exist
 	ErrMarketAlreadyExist = errors.New("market already exist")
 
+	// ErrMarketAlreadyExist signals that a market already exist
+	ErrMarketDoesNotExist = errors.New("market does not exist")
+
 	// ErrUnknownProposalChange is returned if passed proposal cannot be enacted
 	// because proposed changes cannot be processed by the system
 	ErrUnknownProposalChange = errors.New("unknown proposal change")
@@ -131,8 +134,79 @@ func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
 	return tickSize
 }
 
+// RejectMarket will stop the execution of the market
+// and refund into the general account any funds in margins accounts from any parties
+// This works only if the market is in a PROPOSED STATE
+func (e *Engine) RejectMarket(ctx context.Context, marketid string) error {
+	mkt, ok := e.markets[marketid]
+	if !ok {
+		return ErrMarketDoesNotExist
+	}
+
+	if err := mkt.Reject(ctx); err != nil {
+		return err
+	}
+
+	e.removeMarket(marketid)
+	return nil
+}
+
+// StartOpeningAuction will start the opening auction of the given market.
+// This will work only if the market is currently in a PROPOSED state
+func (e *Engine) StartOpeningAuction(ctx context.Context, marketid string) error {
+	mkt, ok := e.markets[marketid]
+	if !ok {
+		return ErrMarketDoesNotExist
+	}
+
+	return mkt.StartOpeningAuction(ctx)
+}
+
+// SubmitMarketWithLiquidityProvision is submitting a market through
+// the usual governance process
+func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid string) error {
+	if err := e.submitMarket(ctx, marketConfig); err != nil {
+		return err
+	}
+
+	mkt := e.markets[marketConfig.Id]
+	// TODO(): remove check once LiquidityProvision is required
+	// for now it is optional
+	if lp != nil {
+		// now we try to submit the liquidity
+		if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpid); err != nil {
+			e.removeMarket(marketConfig.Id)
+			return err
+		}
+	}
+
+	e.publishMarketInfos(ctx, mkt)
+	return nil
+}
+
 // SubmitMarket will submit a new market configuration to the network
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
+	if err := e.submitMarket(ctx, marketConfig); err != nil {
+		return err
+	}
+
+	// here straight away we start the OPENING_AUCTION
+	mkt := e.markets[marketConfig.Id]
+	mkt.StartOpeningAuction(ctx)
+
+	e.publishMarketInfos(ctx, mkt)
+	return nil
+}
+
+func (e *Engine) publishMarketInfos(ctx context.Context, mkt *Market) {
+	// we send a market data event for this market when it's created so graphql does not fail
+	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
+	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
+}
+
+// SubmitMarket will submit a new market configuration to the network
+func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) error {
 	if len(marketConfig.Id) == 0 {
 		return ErrNoMarketID
 	}
@@ -154,7 +228,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	// set a fake tick size to the continuous trading if it's continuous
-	switch tmod := marketConfig.TradingMode.(type) {
+	switch tmod := marketConfig.TradingModeConfig.(type) {
 	case *types.Market_Continuous:
 		tmod.Continuous.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	case *types.Market_Discrete:
@@ -188,15 +262,23 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	e.markets[marketConfig.Id] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
-	// we send a market data event for this market when it's created so graphql does not fail
-	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
-	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))
-	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
-
 	// we ignore the reponse, this cannot fail as the asset
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 	return nil
+}
+
+func (e *Engine) removeMarket(mktid string) {
+	delete(e.markets, mktid)
+	for i, mkt := range e.marketsCpy {
+		if mkt.GetID() == mktid {
+			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
+			e.marketsCpy[len(e.marketsCpy)-1] = nil
+			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
+			return
+		}
+	}
+
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.

@@ -112,6 +112,36 @@ func (mr *MockETHClientMockRecorder) FilterLogs(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterLogs", reflect.TypeOf((*MockETHClient)(nil).FilterLogs), arg0, arg1)
 }
 
+// HeaderByNumber mocks base method
+func (m *MockETHClient) HeaderByNumber(arg0 context.Context, arg1 *big.Int) (*types.Header, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HeaderByNumber", arg0, arg1)
+	ret0, _ := ret[0].(*types.Header)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HeaderByNumber indicates an expected call of HeaderByNumber
+func (mr *MockETHClientMockRecorder) HeaderByNumber(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeaderByNumber", reflect.TypeOf((*MockETHClient)(nil).HeaderByNumber), arg0, arg1)
+}
+
+// NetworkID mocks base method
+func (m *MockETHClient) NetworkID(arg0 context.Context) (*big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetworkID", arg0)
+	ret0, _ := ret[0].(*big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NetworkID indicates an expected call of NetworkID
+func (mr *MockETHClientMockRecorder) NetworkID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkID", reflect.TypeOf((*MockETHClient)(nil).NetworkID), arg0)
+}
+
 // PendingCodeAt mocks base method
 func (m *MockETHClient) PendingCodeAt(arg0 context.Context, arg1 common.Address) ([]byte, error) {
 	m.ctrl.T.Helper()

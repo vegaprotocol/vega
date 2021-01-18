@@ -110,6 +110,7 @@ func NewApp(
 		time:       time,
 		top:        top,
 		vegaWallet: vegaWallet,
+		netp:       netp,
 	}
 
 	// setup handlers
@@ -436,7 +437,33 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		logging.String("proposal-party", prop.PartyID),
 		logging.String("proposal-terms", prop.Terms.String()))
 
-	return app.gov.SubmitProposal(ctx, *prop, id)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id)
+	if err != nil {
+		return err
+	}
+
+	if toSubmit.IsNewMarket() {
+		nm := toSubmit.NewMarket()
+
+		// TODO(): for now we are using a hash of the market ID to create
+		// the lp provision ID (well it's still deterministic...)
+		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().Id)))
+		err := app.exec.SubmitMarketWithLiquidityProvision(
+			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyID, lpid)
+		if err != nil {
+			// an error happened when submitting the market + liquidity
+			// we should cancel this proposal now
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET); err != nil {
+				// this should never happen
+				app.log.Panic("tried to reject an non-existing proposal",
+					logging.String("proposal-id", toSubmit.Proposal().ID),
+					logging.Error(err))
+			}
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
@@ -492,12 +519,37 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {
-	acceptedProposals := app.gov.OnChainTimeUpdate(ctx, t)
-	for _, toEnact := range acceptedProposals {
+	toEnactProposals, voteClosedProposals := app.gov.OnChainTimeUpdate(ctx, t)
+	for _, voteClosed := range voteClosedProposals {
+		prop := voteClosed.Proposal()
+		switch {
+		case voteClosed.IsNewMarket():
+			// Here we panic in both case as we should never reach a point
+			// where we try to Reject or start the opening auction of a
+			// non-existing market or any other error would be quite critical
+			// anyway...
+			nm := voteClosed.NewMarket()
+			if nm.Rejected() {
+				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+					app.log.Panic("unable to reject market",
+						logging.String("market-id", prop.ID),
+						logging.Error(err))
+				}
+			} else if nm.StartAuction() {
+				if err := app.exec.StartOpeningAuction(ctx, prop.ID); err != nil {
+					app.log.Panic("unable to start market opening auction",
+						logging.String("market-id", prop.ID),
+						logging.Error(err))
+				}
+			}
+		}
+	}
+
+	for _, toEnact := range toEnactProposals {
 		prop := toEnact.Proposal()
 		switch {
 		case toEnact.IsNewMarket():
-			app.enactMarket(ctx, prop, toEnact.NewMarket())
+			app.enactMarket(ctx, prop)
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateMarket():
@@ -580,14 +632,10 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 }
 
-func (app *App) enactMarket(ctx context.Context, prop *types.Proposal, mkt *types.Market) {
+func (app *App) enactMarket(ctx context.Context, prop *types.Proposal) {
 	prop.State = types.Proposal_STATE_ENACTED
-	if err := app.exec.SubmitMarket(ctx, mkt); err != nil {
-		prop.State = types.Proposal_STATE_FAILED
-		app.log.Error("failed to submit new market",
-			logging.String("market-id", mkt.Id),
-			logging.Error(err))
-	}
+
+	// TODO: add checks for end of auction in here
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {

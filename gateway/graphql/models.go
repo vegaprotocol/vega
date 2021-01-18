@@ -397,8 +397,6 @@ type NewMarketInput struct {
 	RiskParameters *RiskParametersInput `json:"riskParameters"`
 	// Metadata for this instrument, tags
 	Metadata []string `json:"metadata"`
-	// The proposed duration for the opening auction for this market in seconds
-	OpeningAuctionDurationSecs *int `json:"openingAuctionDurationSecs"`
 	// Price monitoring configuration
 	PriceMonitoringParameters *PriceMonitoringParametersInput `json:"priceMonitoringParameters"`
 	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
@@ -1134,30 +1132,47 @@ func (e LiquidityProvisionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// What market state are we in
+// The current state of a market
 type MarketState string
 
 const (
-	// Continuous trading where orders are processed and potentially matched on arrival
-	MarketStateContinuous MarketState = "CONTINUOUS"
-	// Auction trading where orders are uncrossed at the end of the opening auction period
-	MarketStateOpeningAuction MarketState = "OPENING_AUCTION"
-	// Auction as normal trading mode for the market, where orders are uncrossed periodically
-	MarketStateBatchAuction MarketState = "BATCH_AUCTION"
-	// Auction triggered by price/liquidity monitoring
-	MarketStateMonitoringAuction MarketState = "MONITORING_AUCTION"
+	// The Governance proposal valid and accepted
+	MarketStateProposed MarketState = "PROPOSED"
+	// Outcome of governance votes is to reject the market
+	MarketStateRejected MarketState = "REJECTED"
+	// Governance vote passes/wins
+	MarketStatePending MarketState = "PENDING"
+	// Market triggers cancellation condition or governance
+	// votes to close before market becomes Active
+	MarketStateCancelled MarketState = "CANCELLED"
+	// Enactment date reached and usual auction exit checks pass
+	MarketStateActive MarketState = "ACTIVE"
+	// Price monitoring or liquidity monitoring trigger
+	MarketStateSuspended MarketState = "SUSPENDED"
+	// Governance vote (to close)
+	MarketStateClosed MarketState = "CLOSED"
+	// Defined by the product (i.e. from a product parameter,
+	// specified in market definition, giving close date/time)
+	MarketStateTradingTerminated MarketState = "TRADING_TERMINATED"
+	// Settlement triggered and completed as defined by product
+	MarketStateSettled MarketState = "SETTLED"
 )
 
 var AllMarketState = []MarketState{
-	MarketStateContinuous,
-	MarketStateOpeningAuction,
-	MarketStateBatchAuction,
-	MarketStateMonitoringAuction,
+	MarketStateProposed,
+	MarketStateRejected,
+	MarketStatePending,
+	MarketStateCancelled,
+	MarketStateActive,
+	MarketStateSuspended,
+	MarketStateClosed,
+	MarketStateTradingTerminated,
+	MarketStateSettled,
 }
 
 func (e MarketState) IsValid() bool {
 	switch e {
-	case MarketStateContinuous, MarketStateOpeningAuction, MarketStateBatchAuction, MarketStateMonitoringAuction:
+	case MarketStateProposed, MarketStateRejected, MarketStatePending, MarketStateCancelled, MarketStateActive, MarketStateSuspended, MarketStateClosed, MarketStateTradingTerminated, MarketStateSettled:
 		return true
 	}
 	return false
@@ -1181,6 +1196,56 @@ func (e *MarketState) UnmarshalGQL(v interface{}) error {
 }
 
 func (e MarketState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// What market trading mode are we in
+type MarketTradingMode string
+
+const (
+	// Continuous trading where orders are processed and potentially matched on arrival
+	MarketTradingModeContinuous MarketTradingMode = "CONTINUOUS"
+	// Auction trading where orders are uncrossed at the end of the opening auction period
+	MarketTradingModeOpeningAuction MarketTradingMode = "OPENING_AUCTION"
+	// Auction as normal trading mode for the market, where orders are uncrossed periodically
+	MarketTradingModeBatchAuction MarketTradingMode = "BATCH_AUCTION"
+	// Auction triggered by price/liquidity monitoring
+	MarketTradingModeMonitoringAuction MarketTradingMode = "MONITORING_AUCTION"
+)
+
+var AllMarketTradingMode = []MarketTradingMode{
+	MarketTradingModeContinuous,
+	MarketTradingModeOpeningAuction,
+	MarketTradingModeBatchAuction,
+	MarketTradingModeMonitoringAuction,
+}
+
+func (e MarketTradingMode) IsValid() bool {
+	switch e {
+	case MarketTradingModeContinuous, MarketTradingModeOpeningAuction, MarketTradingModeBatchAuction, MarketTradingModeMonitoringAuction:
+		return true
+	}
+	return false
+}
+
+func (e MarketTradingMode) String() string {
+	return string(e)
+}
+
+func (e *MarketTradingMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketTradingMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketTradingMode", str)
+	}
+	return nil
+}
+
+func (e MarketTradingMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1664,6 +1729,14 @@ const (
 	ProposalRejectionReasonNetworkParameterInvalidValue ProposalRejectionReason = "NetworkParameterInvalidValue"
 	// Validation failed for network parameter proposal
 	ProposalRejectionReasonNetworkParameterValidationFailed ProposalRejectionReason = "NetworkParameterValidationFailed"
+	// Opening auction duration is less than the network minimum opening auction time
+	ProposalRejectionReasonOpeningAuctionDurationTooSmall ProposalRejectionReason = "OpeningAuctionDurationTooSmall"
+	// Opening auction duration is more than the network minimum opening auction time
+	ProposalRejectionReasonOpeningAuctionDurationTooLarge ProposalRejectionReason = "OpeningAuctionDurationTooLarge"
+	// Market proposal is missing a liquidity commitment
+	ProposalRejectionReasonMarketMissingLiquidityCommitment ProposalRejectionReason = "MarketMissingLiquidityCommitment"
+	// Market proposal market could not be instantiate in execution
+	ProposalRejectionReasonCouldNotInstantiateMarket ProposalRejectionReason = "CouldNotInstantiateMarket"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1688,11 +1761,15 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonNetworkParameterInvalidKey,
 	ProposalRejectionReasonNetworkParameterInvalidValue,
 	ProposalRejectionReasonNetworkParameterValidationFailed,
+	ProposalRejectionReasonOpeningAuctionDurationTooSmall,
+	ProposalRejectionReasonOpeningAuctionDurationTooLarge,
+	ProposalRejectionReasonMarketMissingLiquidityCommitment,
+	ProposalRejectionReasonCouldNotInstantiateMarket,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket:
 		return true
 	}
 	return false

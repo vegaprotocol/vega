@@ -1,6 +1,7 @@
 package erc20
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -32,6 +33,7 @@ var (
 	ErrUnableToFindDeposit            = errors.New("unable to find erc20 deposit event")
 	ErrUnableToFindWithdrawal         = errors.New("unable to find erc20 withdrawal event")
 	ErrUnableToFindERC20AssetList     = errors.New("unable to find erc20 asset list event")
+	ErrMissingConfirmations           = errors.New("missing confirmation from ethereum")
 )
 
 type ERC20 struct {
@@ -229,6 +231,11 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		return "", 0, ErrUnableToFindERC20AssetList
 	}
 
+	// now ensure we have enough confirmations
+	if err := b.checkConfirmations(event.Raw.BlockNumber); err != nil {
+		return "", 0, err
+	}
+
 	return event.Raw.TxHash.Hex(), event.Raw.Index, nil
 }
 
@@ -373,6 +380,11 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		return nil, "", 0, ErrUnableToFindWithdrawal
 	}
 
+	// now ensure we have enough confirmations
+	if err := b.checkConfirmations(event.Raw.BlockNumber); err != nil {
+		return nil, "", 0, err
+	}
+
 	return nonce, event.Raw.TxHash.Hex(), event.Raw.Index, nil
 }
 
@@ -422,7 +434,26 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return "", "", "", 0, 0, ErrUnableToFindDeposit
 	}
 
+	// now ensure we have enough confirmations
+	if err := b.checkConfirmations(event.Raw.BlockNumber); err != nil {
+		return "", "", "", 0, 0, err
+	}
+
 	return d.TargetPartyID, d.VegaAssetID, event.Raw.TxHash.Hex(), iter.Event.Amount.Uint64(), event.Raw.Index, nil
+}
+
+func (b *ERC20) checkConfirmations(txBlock uint64) error {
+	curBlock, err := b.wallet.CurrentHeight(context.Background())
+	if err != nil {
+		return err
+	}
+
+	if curBlock < txBlock ||
+		(curBlock-txBlock) < uint64(b.wallet.ConfirmationsRequired()) {
+		return ErrMissingConfirmations
+	}
+
+	return nil
 }
 
 func (b *ERC20) String() string {

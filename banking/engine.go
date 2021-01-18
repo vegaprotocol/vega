@@ -204,7 +204,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 func (e *Engine) DepositBuiltinAsset(
 	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount)
+	dep, err := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func (e *Engine) DepositBuiltinAsset(
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64) error {
+func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
 	asset, _ := e.assets.Get(al.VegaAssetID)
 	aa := &assetAction{
@@ -245,19 +245,20 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 		asset:       asset,
 		blockNumber: blockNumber,
 		txIndex:     txIndex,
+		hash:        txHash,
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id string, blockNumber, txIndex uint64) error {
+func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id string, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
 	// validate amount
 	a, err := strconv.ParseUint(d.Amount, 10, 64)
 	if err != nil {
 		return err
 	}
-	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, a)
+	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, a, txHash)
 	if err != nil {
 		return err
 	}
@@ -283,13 +284,14 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 		asset:       asset,
 		blockNumber: blockNumber,
 		txIndex:     txIndex,
+		hash:        txHash,
 	}
 	e.assetActs[aa.id] = aa
 	e.deposits[dep.Id] = dep
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) error {
+func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
 	asset, err := e.assets.Get(w.VegaAssetID)
 	if err != nil {
@@ -309,6 +311,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 	if withd.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
 		return ErrInvalidWithdrawalState
 	}
+	withd.TxHash = txHash
 	if _, ok := e.notary.IsSigned(withd.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
 		return ErrWithdrawalNotReady
 	}
@@ -320,6 +323,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 		asset:       asset,
 		blockNumber: blockNumber,
 		txIndex:     txIndex,
+		hash:        txHash,
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
@@ -423,18 +427,22 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			continue
 		}
 
+		// get the action reference to ensure it's not
+		// a duplicate
+		ref := v.getRef()
+
 		switch state {
 		case okState:
 			// check if this transaction have been seen before then
-			if _, ok := e.seen[v.ref]; ok {
+			if _, ok := e.seen[ref]; ok {
 				// do nothing of this transaction, just display an error
 				e.log.Error("chain event reference a transaction already processed",
-					logging.String("asset-class", string(v.ref.asset)),
-					logging.String("tx-hash", v.ref.hash),
+					logging.String("asset-class", string(ref.asset)),
+					logging.String("tx-hash", ref.hash),
 					logging.String("action", v.String()))
 			} else {
 				// first time we seen this transaction, let's add iter
-				e.seen[v.ref] = struct{}{}
+				e.seen[ref] = struct{}{}
 				if err := e.finalizeAction(ctx, v); err != nil {
 					e.log.Error("unable to finalize action",
 						logging.String("action", v.String()),
@@ -464,11 +472,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		dep := e.deposits[aa.id]
 		return e.finalizeDeposit(ctx, dep, aa.id)
 	case aa.IsERC20Deposit():
-		// here the event queue send us a 0x... pubkey
-		// we do the slice operation to remove it ([2:]
 		dep := e.deposits[aa.id]
-		dep.TxHash = aa.ref.hash
-		e.deposits[aa.id] = dep
 		return e.finalizeDeposit(ctx, dep, aa.id)
 	case aa.IsERC20AssetList():
 		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
@@ -486,7 +490,6 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		// update with finalize time + tx hash
 		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
 		w.WithdrawnTimestamp = now.UnixNano()
-		w.TxHash = aa.ref.hash
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, aa.withdrawal.nonce}
 		return e.finalizeWithdrawal(ctx, w.PartyID, w.Asset, w.Amount)
@@ -570,7 +573,7 @@ func (e *Engine) newWithdrawal(
 }
 
 func (e *Engine) newDeposit(
-	id, partyID, asset string, amount uint64,
+	id, partyID, asset string, amount uint64, txHash string,
 ) (*types.Deposit, error) {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
@@ -581,6 +584,7 @@ func (e *Engine) newDeposit(
 		Asset:            asset,
 		Amount:           fmt.Sprintf("%v", amount),
 		CreatedTimestamp: e.currentTime.UnixNano(),
+		TxHash:           txHash,
 	}, nil
 }
 
