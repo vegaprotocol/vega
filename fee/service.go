@@ -3,6 +3,7 @@ package fee
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -81,7 +82,7 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 		} else {
 			offset := uint64(-o.PeggedOrder.Offset)
 			if price <= offset {
-				return nil, errors.New("can't calculate fees, pegged order price would be negative")
+				return nil, fmt.Errorf("can't calculate fees, pegged order price would be negative, price(%v), offset(-%v)", price, offset)
 			}
 			price -= offset
 		}
