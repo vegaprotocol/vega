@@ -3023,6 +3023,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	}
 
 	m.updateLiquidityFee(ctx)
+	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 	return nil
 }
 
