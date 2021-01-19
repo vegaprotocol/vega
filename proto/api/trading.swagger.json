@@ -3565,10 +3565,10 @@
         },
         "averageEntryValuation": {
           "type": "string",
-          "title": "the average entry valuation of the liquidity provider for the market"
+          "title": "The average entry valuation of the liquidity provider for the market"
         }
       },
-      "title": "he equity like share of liquidity fee for each liquidity provider"
+      "title": "The equity like share of liquidity fee for each liquidity provider"
     },
     "vegaLiquidityProvision": {
       "type": "object",

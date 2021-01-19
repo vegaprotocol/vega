@@ -4321,13 +4321,13 @@ func (m *MarketData) GetLiquidityProviderFeeShare() []*LiquidityProviderFeeShare
 	return nil
 }
 
-// he equity like share of liquidity fee for each liquidity provider
+// The equity like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
 	// The liquidity provider party id
 	Party string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
 	// The share own by this liquidity provider (float)
 	EquityLikeShare string `protobuf:"bytes,2,opt,name=EquityLikeShare,proto3" json:"EquityLikeShare,omitempty"`
-	// the average entry valuation of the liquidity provider for the market
+	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string   `protobuf:"bytes,3,opt,name=averageEntryValuation,proto3" json:"averageEntryValuation,omitempty"`
 	XXX_NoUnkeyedLiteral  struct{} `json:"-"`
 	XXX_unrecognized      []byte   `json:"-"`

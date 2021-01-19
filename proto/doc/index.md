@@ -1047,14 +1047,14 @@ A pair of a liquidity order and the id of the generated order by the core
 <a name="vega.LiquidityProviderFeeShare"></a>
 
 ### LiquidityProviderFeeShare
-he equity like share of liquidity fee for each liquidity provider
+The equity like share of liquidity fee for each liquidity provider
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | party | [string](#string) |  | The liquidity provider party id |
 | EquityLikeShare | [string](#string) |  | The share own by this liquidity provider (float) |
-| averageEntryValuation | [string](#string) |  | the average entry valuation of the liquidity provider for the market |
+| averageEntryValuation | [string](#string) |  | The average entry valuation of the liquidity provider for the market |
 
 
 

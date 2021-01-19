@@ -1055,13 +1055,13 @@ message MarketData {
   repeated LiquidityProviderFeeShare liquidityProviderFeeShare = 25;
 }
 
-// he equity like share of liquidity fee for each liquidity provider
+// The equity like share of liquidity fee for each liquidity provider
 message LiquidityProviderFeeShare {
   // The liquidity provider party id
   string party = 1;
   // The share own by this liquidity provider (float)
   string EquityLikeShare = 2;
-  // the average entry valuation of the liquidity provider for the market
+  // The average entry valuation of the liquidity provider for the market
   string averageEntryValuation = 3;
 
 }
