@@ -8,7 +8,9 @@ This release enables (or more accurately, re-enables previously disabled) pegged
 
 The Ethereum bridge also received some work - in particular the number of confirmations we wait for on Ethereum is now controlled by a governance parameter. Being a governance parameter, that means that the value can be changed by a governance vote. Slightly related: You can now fetch active governance proposals via REST.
 
-We also switch to [Buf](https://buf.build/) for our protobuf workflow. This was one of the pre-requisites for opening up our api clients build process, and making the protobuf files open source. More on that soon!
+:one: We also switch to [Buf](https://buf.build/) for our protobuf workflow. This was one of the pre-requisites for opening up our api clients build process, and making the protobuf files open source. More on that soon!
+
+:two: This fixes an issue on testnet where votes were not registered when voting on open governance proposals. The required number of Ropsten `VOTE` tokens was being calculated incorrectly on testnet, leading to all votes quietly being ignored. In 0.30.0, voting works as expected again.
 
 ### New
 
@@ -16,7 +18,7 @@ We also switch to [Buf](https://buf.build/) for our protobuf workflow. This was 
 - [#2735](https://github.com/vegaprotocol/vega/pull/2735) Add `FeeSplitter` to correctly split fee portion of an aggressive order
 - [#2745](https://github.com/vegaprotocol/vega/pull/2745) Add transfer bus events for withdrawals and deposits
 - [#2754](https://github.com/vegaprotocol/vega/pull/2754) Add New Market bus event
-- [#2778](https://github.com/vegaprotocol/vega/pull/2778) Switch to [Buf](https://buf.build/)
+- [#2778](https://github.com/vegaprotocol/vega/pull/2778) Switch to [Buf](https://buf.build/) :one:
 - [#2785](https://github.com/vegaprotocol/vega/pull/2785) Add configurable required confirmations for bridge transactions
 - [#2791](https://github.com/vegaprotocol/vega/pull/2791) Add Supplied State to market data
 - [#2793](https://github.com/vegaprotocol/vega/pull/2793) 🔥Rename `marketState` to `marketTradingMode`, add new `marketState` enum (`ACTIVE`, `SUSPENDED` or `PENDING`)
@@ -24,7 +26,7 @@ We also switch to [Buf](https://buf.build/) for our protobuf workflow. This was 
 - [#2838](https://github.com/vegaprotocol/vega/pull/2838) Add bond and fee transfers
 
 ### Improvements
-- [#2835](https://github.com/vegaprotocol/vega/pull/2835) Fix voting for proposals :round_pushpin:
+- [#2835](https://github.com/vegaprotocol/vega/pull/2835) Fix voting for proposals :two:
 - [#2830](https://github.com/vegaprotocol/vega/pull/2830) Refactor pegged order repricing
 - [#2827](https://github.com/vegaprotocol/vega/pull/2827) Refactor expiring orders lists
 - [#2821](https://github.com/vegaprotocol/vega/pull/2821) Handle liquidity commitments on market proposals
