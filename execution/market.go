@@ -1000,7 +1000,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
-	conf, err := m.submitOrder(ctx, order)
+	conf, err := m.submitOrder(ctx, order, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1014,7 +1014,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return conf, nil
 }
 
-func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1023,7 +1023,9 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}()
 
 	// set those at the begining as even rejected order get through the buffers
-	m.idgen.SetID(order)
+	if setID || order.Id == "" {
+		m.idgen.SetID(order)
+	}
 	order.Version = InitialOrderVersion
 	order.Status = types.Order_STATUS_ACTIVE
 
@@ -3050,7 +3052,7 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range newOrders {
-		if _, err := m.submitOrder(ctx, order); err != nil {
+		if _, err := m.submitOrder(ctx, order, false); err != nil {
 			return err
 		}
 		submittedIDs = append(submittedIDs, order.Id)
