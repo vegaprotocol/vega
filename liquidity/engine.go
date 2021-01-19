@@ -237,8 +237,9 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*types.Order, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
+	kills := e.killExistingLiquidityOrders(party)
 	creates, amendments, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
-	return creates, amendments, err
+	return creates, append(kills, amendments...), err
 }
 
 // Update gets the order changes.
@@ -272,6 +273,18 @@ func (e *Engine) CalculateSuppliedStake() uint64 {
 		ss += v.CommitmentAmount
 	}
 	return ss
+}
+
+func (e *Engine) killExistingLiquidityOrders(party string) []*types.OrderAmendment {
+	lm, ok := e.liquidityOrders[party]
+	amendments := make([]*types.OrderAmendment, 0, len(lm))
+	if ok {
+		for _, o := range lm {
+			amendments = append(amendments, o.AmendSize(0))
+		}
+		e.liquidityOrders[party] = make(map[string]*types.Order)
+	}
+	return amendments
 }
 
 func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
