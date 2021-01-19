@@ -357,6 +357,10 @@
                 </li>
               
                 <li>
+                  <a href="#vega.LiquidityProviderFeeShare"><span class="badge">M</span>LiquidityProviderFeeShare</a>
+                </li>
+              
+                <li>
                   <a href="#vega.LiquidityProvision"><span class="badge">M</span>LiquidityProvision</a>
                 </li>
               
@@ -3356,6 +3360,44 @@ See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. </p></td>
 
         
       
+        <h3 id="vega.LiquidityProviderFeeShare">LiquidityProviderFeeShare</h3>
+        <p>he equity like share of liquidity fee for each liquidity provider</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>party</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The liquidity provider party id </p></td>
+                </tr>
+              
+                <tr>
+                  <td>EquityLikeShare</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>The share own by this liquidity provider (float) </p></td>
+                </tr>
+              
+                <tr>
+                  <td>averageEntryValuation</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the average entry valuation of the liquidity provider for the market </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="vega.LiquidityProvision">LiquidityProvision</h3>
         <p>An Liquidity provider commitment</p>
 
@@ -3806,6 +3848,20 @@ See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. </p></td>
                   <td><a href="#vega.PriceMonitoringBounds">PriceMonitoringBounds</a></td>
                   <td>repeated</td>
                   <td><p>a list of price monitoring bounds per current time </p></td>
+                </tr>
+              
+                <tr>
+                  <td>marketValueProxy</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>the market value proxy </p></td>
+                </tr>
+              
+                <tr>
+                  <td>liquidityProviderFeeShare</td>
+                  <td><a href="#vega.LiquidityProviderFeeShare">LiquidityProviderFeeShare</a></td>
+                  <td>repeated</td>
+                  <td><p>the equity like share of liquidity fee for each liquidity provider </p></td>
                 </tr>
               
             </tbody>

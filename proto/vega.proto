@@ -1049,6 +1049,21 @@ message MarketData {
   string suppliedStake = 22;
   // a list of price monitoring bounds per current time
   repeated PriceMonitoringBounds priceMonitoringBounds = 23;
+  // the market value proxy
+  string marketValueProxy = 24;
+  // the equity like share of liquidity fee for each liquidity provider
+  repeated LiquidityProviderFeeShare liquidityProviderFeeShare = 25;
+}
+
+// he equity like share of liquidity fee for each liquidity provider
+message LiquidityProviderFeeShare {
+  // The liquidity provider party id
+  string party = 1;
+  // The share own by this liquidity provider (float)
+  string EquityLikeShare = 2;
+  // the average entry valuation of the liquidity provider for the market
+  string averageEntryValuation = 3;
+
 }
 
 // Represents a list of valid (at the current time) price ranges per associated trigger

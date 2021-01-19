@@ -183,6 +183,7 @@ type Market struct {
 	lastMidBuyPrice  uint64
 	lastMidSellPrice uint64
 
+	lastMarketValueProxy    float64
 	marketValueWindowLength time.Duration
 	feeSplitter             *FeeSplitter
 }
@@ -394,6 +395,10 @@ func (m *Market) GetMarketData() types.MarketData {
 		TargetStake:           strconv.FormatFloat(m.getTargetStake(), 'f', -1, 64),
 		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
+		MarketValueProxy:      strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
+		// TODO(): set this with actually value when core will implement their
+		// caclulation in a future PR.
+		LiquidityProviderFeeShare: []*types.LiquidityProviderFeeShare{},
 	}
 }
 
@@ -562,8 +567,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
 		ts := m.liquidity.ProvisionsPerParty().TotalStake()
-		valueProxy := m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
-		_ = valueProxy
+		m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
 
 		m.feeSplitter.TimeWindowStart(t)
 	}

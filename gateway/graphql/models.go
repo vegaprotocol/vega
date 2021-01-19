@@ -289,6 +289,16 @@ type LiquidityOrderInput struct {
 	Offset int `json:"offset"`
 }
 
+// he equity like share of liquidity fee for each liquidity provider
+type LiquidityProviderFeeShare struct {
+	// The liquidity provider party id
+	Party *proto.Party `json:"party"`
+	// The share own by this liquidity provider (float)
+	EquityLikeShare string `json:"equityLikeShare"`
+	// the average entry valuation of the liqidity provider for the market
+	AverageEntryValuation string `json:"averageEntryValuation"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter

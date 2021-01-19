@@ -321,6 +321,16 @@ func (this *MarketData) Validate() error {
 			}
 		}
 	}
+	for _, item := range this.LiquidityProviderFeeShare {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LiquidityProviderFeeShare", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *LiquidityProviderFeeShare) Validate() error {
 	return nil
 }
 func (this *PriceMonitoringBounds) Validate() error {
