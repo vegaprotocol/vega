@@ -396,8 +396,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:      strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
-		// TODO(): set this with actually value when core will implement their
-		// caclulation in a future PR.
+		// TODO(): set this with actual value when implemented.
 		LiquidityProviderFeeShare: []*types.LiquidityProviderFeeShare{},
 	}
 }
