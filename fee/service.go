@@ -2,6 +2,8 @@ package fee
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -15,17 +17,25 @@ type MarketStore interface {
 	GetByID(name string) (*types.Market, error)
 }
 
-type Svc struct {
-	cfg      Config
-	log      *logging.Logger
-	mktStore MarketStore
+// MarketDataStore ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/vega/fee MarketDataStore
+type MarketDataStore interface {
+	GetByID(marketID string) (types.MarketData, error)
 }
 
-func NewService(log *logging.Logger, cfg Config, mktStore MarketStore) *Svc {
+type Svc struct {
+	cfg          Config
+	log          *logging.Logger
+	mktStore     MarketStore
+	mktDataStore MarketDataStore
+}
+
+func NewService(log *logging.Logger, cfg Config, mktStore MarketStore, mktDataStore MarketDataStore) *Svc {
 	return &Svc{
-		cfg:      cfg,
-		log:      log,
-		mktStore: mktStore,
+		cfg:          cfg,
+		log:          log,
+		mktStore:     mktStore,
+		mktDataStore: mktDataStore,
 	}
 }
 
@@ -49,7 +59,36 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 	if err != nil {
 		return nil, err
 	}
-	base := float64(o.Price * o.Size)
+	price := o.Price
+	if o.PeggedOrder != nil {
+		mktdata, err := s.mktDataStore.GetByID(o.MarketID)
+		if err != nil {
+			return nil, err
+		}
+
+		switch o.PeggedOrder.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			price = mktdata.StaticMidPrice
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			price = mktdata.BestStaticBidPrice
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			price = mktdata.BestStaticOfferPrice
+		default:
+			return nil, errors.New("can't calculate fees for pegged order without a reference")
+		}
+
+		if o.PeggedOrder.Offset >= 0 {
+			price += uint64(o.PeggedOrder.Offset)
+		} else {
+			offset := uint64(-o.PeggedOrder.Offset)
+			if price <= offset {
+				return nil, fmt.Errorf("can't calculate fees, pegged order price would be negative, price(%v), offset(-%v)", price, offset)
+			}
+			price -= offset
+		}
+	}
+
+	base := float64(price * o.Size)
 	maker, infra, liqui, err := s.feeFactors(mkt)
 	if err != nil {
 		return nil, err
