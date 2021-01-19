@@ -551,8 +551,7 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 	if err != nil {
 		return nil, err
 	}
-	totalTokens := e.accs.GetTotalTokens()
-	if float64(voterTokens) < float64(totalTokens)*params.MinVoterBalance {
+	if voterTokens < params.MinVoterBalance {
 		return nil, ErrVoterInsufficientTokens
 	}
 

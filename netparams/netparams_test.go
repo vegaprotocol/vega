@@ -177,7 +177,7 @@ func testGetFloat(t *testing.T) {
 	netp := getTestNetParams(t)
 	defer netp.ctrl.Finish()
 
-	_, err := netp.GetFloat(netparams.GovernanceProposalAssetMinVoterBalance)
+	_, err := netp.GetFloat(netparams.GovernanceProposalUpdateNetParamRequiredMajority)
 	assert.NoError(t, err)
 	_, err = netp.GetFloat(netparams.GovernanceProposalAssetMaxClose)
 	assert.EqualError(t, err, "not a float value")
