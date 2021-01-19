@@ -370,7 +370,7 @@ type MarketData {
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
 }
 
-"he equity like share of liquidity fee for each liquidity provider"
+"The equity like share of liquidity fee for each liquidity provider"
 type LiquidityProviderFeeShare {
   "The liquidity provider party id"
   party: Party!

@@ -289,7 +289,7 @@ type LiquidityOrderInput struct {
 	Offset int `json:"offset"`
 }
 
-// he equity like share of liquidity fee for each liquidity provider
+// The equity like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
 	// The liquidity provider party id
 	Party *proto.Party `json:"party"`
