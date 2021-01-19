@@ -894,18 +894,24 @@ enum TransferType {
   TRANSFER_TYPE_MAKER_FEE_RECEIVE = 10;
   // Pay infrastructure fee.
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
+  // Receive infrastructure fee.
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE = 12;
   // Pay liquidity fee.
-  TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
+  TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 13;
+  // Receive liquidity fee.
+  TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE = 14;
   // Bond too low.
-  TRANSFER_TYPE_BOND_LOW = 13;
+  TRANSFER_TYPE_BOND_LOW = 15;
   // Bond too high.
-  TRANSFER_TYPE_BOND_HIGH = 14;
+  TRANSFER_TYPE_BOND_HIGH = 16;
   // Lock amount for withdraw.
-  TRANSFER_TYPE_WITHDRAW_LOCK = 15;
+  TRANSFER_TYPE_WITHDRAW_LOCK = 17;
   // Actual withdraw from system.
-  TRANSFER_TYPE_WITHDRAW = 16;
+  TRANSFER_TYPE_WITHDRAW = 18;
   // Deposit funds.
-  TRANSFER_TYPE_DEPOSIT = 17;
+  TRANSFER_TYPE_DEPOSIT = 19;
+  // Bond slashing.
+  TRANSFER_TYPE_BOND_SLASHING = 20;
 }
 
 // Represents a financial transfer within Vega.

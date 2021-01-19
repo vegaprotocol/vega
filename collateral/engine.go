@@ -913,7 +913,9 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 	return res, nil
 }
 
-func (e *Engine) BondUpdateOnOrder(ctx context.Context, market, party string, transfer *types.Transfer) (*types.TransferResponse, error) {
+// BondUpdate is to be used for any bond account transfers.
+// Update on new orders, updates on commitment changes, or on slashing
+func (e *Engine) BondUpdate(ctx context.Context, market, party string, transfer *types.Transfer) (*types.TransferResponse, error) {
 	req, err := e.getBondTransferRequest(transfer, market)
 	if err != nil {
 		return nil, err
@@ -1031,9 +1033,17 @@ func (e *Engine) getFeeTransferRequest(
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{infraFee}
 		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE:
+		treq.FromAccount = []*types.Account{infraFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY:
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{liquiFee}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE:
+		treq.FromAccount = []*types.Account{liquiFee}
+		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY:
 		treq.FromAccount = []*types.Account{general, margin}
@@ -1072,33 +1082,38 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		return nil, err
 	}
 
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	insurancePool, err := e.GetAccountByID(e.accountID(market, systemOwner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_INSURANCE))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	treq := &types.TransferRequest{
+		Amount:    uint64(t.Amount.Amount),
+		MinAmount: uint64(t.Amount.Amount),
+		Asset:     t.Amount.Asset,
+		Reference: t.Type.String(),
+	}
+
 	switch t.Type {
 	case types.TransferType_TRANSFER_TYPE_BOND_LOW:
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				general,
-			},
-			ToAccount: []*types.Account{
-				bond,
-			},
-			Amount:    uint64(t.Amount.Amount),
-			MinAmount: uint64(t.Amount.Amount),
-			Asset:     t.Amount.Asset,
-			Reference: t.Type.String(),
-		}, nil
+		treq.FromAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{bond}
+		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_BOND_HIGH:
-		return &types.TransferRequest{
-			FromAccount: []*types.Account{
-				bond,
-			},
-			ToAccount: []*types.Account{
-				general,
-			},
-			Amount:    uint64(t.Amount.Amount),
-			MinAmount: uint64(t.Amount.Amount),
-			Asset:     t.Amount.Asset,
-			Reference: t.Type.String(),
-		}, nil
+		treq.FromAccount = []*types.Account{bond}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferType_TRANSFER_TYPE_BOND_SLASHING:
+		treq.FromAccount = []*types.Account{bond}
+		treq.ToAccount = []*types.Account{insurancePool}
+		return treq, nil
 	default:
 		return nil, errors.New("unsupported transfer type for bond account")
 	}

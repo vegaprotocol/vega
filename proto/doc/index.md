@@ -2134,12 +2134,15 @@ Transfers can occur between parties on Vega, these are the types that indicate w
 | TRANSFER_TYPE_MAKER_FEE_PAY | 9 | Pay maker fee. |
 | TRANSFER_TYPE_MAKER_FEE_RECEIVE | 10 | Receive maker fee. |
 | TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY | 11 | Pay infrastructure fee. |
-| TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 12 | Pay liquidity fee. |
-| TRANSFER_TYPE_BOND_LOW | 13 | Bond too low. |
-| TRANSFER_TYPE_BOND_HIGH | 14 | Bond too high. |
-| TRANSFER_TYPE_WITHDRAW_LOCK | 15 | Lock amount for withdraw. |
-| TRANSFER_TYPE_WITHDRAW | 16 | Actual withdraw from system. |
-| TRANSFER_TYPE_DEPOSIT | 17 | Deposit funds. |
+| TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE | 12 | Receive infrastructure fee. |
+| TRANSFER_TYPE_LIQUIDITY_FEE_PAY | 13 | Pay liquidity fee. |
+| TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE | 14 | Receive liquidity fee. |
+| TRANSFER_TYPE_BOND_LOW | 15 | Bond too low. |
+| TRANSFER_TYPE_BOND_HIGH | 16 | Bond too high. |
+| TRANSFER_TYPE_WITHDRAW_LOCK | 17 | Lock amount for withdraw. |
+| TRANSFER_TYPE_WITHDRAW | 18 | Actual withdraw from system. |
+| TRANSFER_TYPE_DEPOSIT | 19 | Deposit funds. |
+| TRANSFER_TYPE_BOND_SLASHING | 20 | Bond slashing. |
 
 
 
