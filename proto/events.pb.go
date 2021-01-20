@@ -83,7 +83,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED BusEventType = 26
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
-	// Event used to report failed transactions back to a user - excluded from the ALL type
+	// Event used to report failed transactions back to a user, this excluded from the ALL type
 	BusEventType_BUS_EVENT_TYPE_TX_ERROR BusEventType = 201
 )
 
@@ -164,7 +164,7 @@ func (BusEventType) EnumDescriptor() ([]byte, []int) {
 type MarketEvent struct {
 	// Market identifier for the event
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Payload is a unique information string.
+	// Payload is a unique information string
 	Payload              string   `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -211,11 +211,11 @@ func (m *MarketEvent) GetPayload() string {
 }
 
 type TxErrorEvent struct {
-	// the party who had a tx fail
+	// Unique party identifier for the related party
 	PartyID string `protobuf:"bytes,1,opt,name=PartyID,proto3" json:"PartyID,omitempty"`
-	// error message describing what went wrong
+	// An error message describing what went wrong
 	ErrMsg string `protobuf:"bytes,2,opt,name=errMsg,proto3" json:"errMsg,omitempty"`
-	// the transaction that failed
+	// The transaction that failed
 	//
 	// Types that are valid to be assigned to Transaction:
 	//	*TxErrorEvent_OrderSubmission
@@ -398,7 +398,7 @@ func (m *TimeUpdate) GetTimestamp() int64 {
 
 // A transfer responses event contains a collection of transfer information
 type TransferResponses struct {
-	// 1 or more entries containing internal transfer information
+	// One or more entries containing internal transfer information
 	Responses            []*TransferResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`

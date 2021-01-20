@@ -92,7 +92,7 @@ message SubmitTransactionRequest {
   Type type = 2;
 }
 
-// Response for submitting a transaction on Vega.
+// Response for submitting a transaction on Vega
 message SubmitTransactionResponse {
   // Success will be true if the transaction was accepted by the node,
   // **Important** - success does not mean that the event is confirmed by consensus
@@ -525,8 +525,8 @@ message ObservePartyVotesRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
-// Request to subscribe to a stream of MarginLevels data matching the given party identifier, 
-// optionally, the list can be additionally filtered by market
+// Request to subscribe to a stream of MarginLevels data matching the given party identifier 
+// Optionally, the list can be additionally filtered by market
 message MarginLevelsSubscribeRequest {
   // Party identifier, required field
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
@@ -548,8 +548,8 @@ message MarginLevelsResponse {
   repeated vega.MarginLevels marginLevels = 1;
 }
 
-// Request to subscribe to a stream of MarketsData, 
-// optionally, the list can be additionally filtered by market
+// Request to subscribe to a stream of MarketsData  
+// Optionally, the list can be additionally filtered by market
 message MarketsDataSubscribeRequest {
   // Market identifier
   string marketID = 1;
@@ -615,8 +615,8 @@ message PartiesResponse {
   repeated vega.Party parties = 1;
 }
 
-// Request for a list of trades relating to the given party, 
-// optionally, the list can be additionally filtered for trades by market
+// Request for a list of trades relating to the given party  
+// Optionally, the list can be additionally filtered for trades by market
 message TradesByPartyRequest {
   // Party identifier. Required field
   string partyID = 1;
@@ -789,8 +789,8 @@ message CandlesResponse {
   repeated vega.Candle candles = 1;
 }
 
-// Request for the market depth/order book price levels on a market, 
-// optionally, a maximum depth can be set to limit the number of levels returned
+// Request for the market depth/order book price levels on a market  
+// Optionally, a maximum depth can be set to limit the number of levels returned
 message MarketDepthRequest {
   // Market identifier, required field
   string marketID = 1 [(validator.field) = {string_not_empty: true}];
@@ -826,8 +826,8 @@ message TradesByMarketResponse {
   repeated vega.Trade trades = 1;
 }
 
-// Request for a list of positions for a party, 
-// optionally, if a market identifier is set, the results will be filtered for that market only
+// Request for a list of positions for a party 
+// Optionally, if a market identifier is set, the results will be filtered for that market only
 message PositionsByPartyRequest {
   // Party identifier, required field
   string partyID = 1 [(validator.field) = {string_not_empty: true}];
@@ -961,8 +961,8 @@ message PrepareLiquidityProvisionResponse {
  bytes blob = 1;
 }
 
-// Request for an order with the specified order identifier, 
-// optionally, return a specific version of the order with the `version` field
+// Request for an order with the specified order identifier 
+// Optionally, return a specific version of the order with the `version` field
 message OrderByIDRequest {
   // Order identifier, required field
   string orderID = 1 [(validator.field) = {msg_exists: true}];
@@ -1063,15 +1063,13 @@ message WithdrawalResponse {
   vega.Withdrawal withdrawal = 1 ;
 }
 
-// The request to get all information required to bundle the call
-// to finalise the withdrawal on the erc20 bridge
+// The request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 message ERC20WithdrawalApprovalRequest {
   // The identifier of the withdrawal
   string withdrawalID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
-// The response with all information required to bundle the call
-// to finalise the withdrawal on the erc20 bridge
+// The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 // function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
 message ERC20WithdrawalApprovalResponse {
   // The address of asset on ethereum
@@ -1111,19 +1109,16 @@ message DepositResponse {
   vega.Deposit deposit = 1 ;
 }
 
-// A message requesting for the list
-// of all network parameters
+// A message requesting for the list of all network parameters
 message NetworkParametersRequest { }
 
-// A response containing all of the
-// vega network parameters
+// A response containing all of the vega network parameters
 message NetworkParametersResponse {
   repeated vega.NetworkParameter networkParameters = 1;
 }
 
-// A message requesting for the list
-// of liquidity provisions orders for markets
-// one of the two filters is required or both
+// A message requesting for the list of liquidity provisions orders for markets
+// One of the two filters is required (or both)
 message LiquidityProvisionsRequest {
   // The market we want to get liquidity provision orders from
   string market = 1;

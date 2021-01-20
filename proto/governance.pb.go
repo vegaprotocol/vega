@@ -21,47 +21,47 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// A list of possible errors that can cause a proposal to be in state rejected or failed.
+// A list of possible errors that can cause a proposal to be in state rejected or failed
 type ProposalError int32
 
 const (
-	// Default value.
+	// Default value
 	ProposalError_PROPOSAL_ERROR_UNSPECIFIED ProposalError = 0
-	// The specified close time is too early base on network parameters.
+	// The specified close time is too early base on network parameters
 	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON ProposalError = 1
-	// The specified close time is too late based on network parameters.
+	// The specified close time is too late based on network parameters
 	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE ProposalError = 2
-	// The specified enact time is too early based on network parameters.
+	// The specified enact time is too early based on network parameters
 	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON ProposalError = 3
-	// The specified enact time is too late based on network parameters.
+	// The specified enact time is too late based on network parameters
 	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE ProposalError = 4
-	// The proposer for this proposal as insufficient tokens.
+	// The proposer for this proposal as insufficient tokens
 	ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS ProposalError = 5
-	// The instrument quote name and base name were the same.
+	// The instrument quote name and base name were the same
 	ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY ProposalError = 6
-	// The proposal has no product.
+	// The proposal has no product
 	ProposalError_PROPOSAL_ERROR_NO_PRODUCT ProposalError = 7
-	// The specified product is not supported.
+	// The specified product is not supported
 	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT ProposalError = 8
-	// Invalid future maturity timestamp (expect RFC3339).
+	// Invalid future maturity timestamp (expect RFC3339)
 	ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP ProposalError = 9
-	// The product maturity is past.
+	// The product maturity is past
 	ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED ProposalError = 10
-	// The proposal has no trading mode.
+	// The proposal has no trading mode
 	ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE ProposalError = 11
-	// The proposal has an unsupported trading mode.
+	// The proposal has an unsupported trading mode
 	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE ProposalError = 12
-	// The proposal failed node validation.
+	// The proposal failed node validation
 	ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED ProposalError = 13
-	// A field is missing in a builtin asset source.
+	// A field is missing in a builtin asset source
 	ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD ProposalError = 14
-	// The contract address is missing in the ERC20 asset source.
+	// The contract address is missing in the ERC20 asset source
 	ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS ProposalError = 15
-	// The asset id refer to no assets in vega.
+	// The asset identifier is invalid or does not exist on the Vega network
 	ProposalError_PROPOSAL_ERROR_INVALID_ASSET ProposalError = 16
-	// Proposal terms timestamps are not compatible (Validation < Closing < Enactment).
+	// Proposal terms timestamps are not compatible (Validation < Closing < Enactment)
 	ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS ProposalError = 17
-	// No risk parameteres were specified
+	// No risk parameters were specified
 	ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS ProposalError = 18
 	// Invalid key in update network parameter proposal
 	ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY ProposalError = 19
@@ -151,23 +151,23 @@ func (ProposalError) EnumDescriptor() ([]byte, []int) {
 //   - Passed -> Failed.
 //   - Declined
 // Rejected
-// Proposal can enter Failed state from any other state.
+// Proposal can enter Failed state from any other state
 type Proposal_State int32
 
 const (
-	// Default value, always invalid.
+	// Default value, always invalid
 	Proposal_STATE_UNSPECIFIED Proposal_State = 0
-	// Proposal enactment has failed - even though proposal has passed, its execution could not be performed.
+	// Proposal enactment has failed - even though proposal has passed, its execution could not be performed
 	Proposal_STATE_FAILED Proposal_State = 1
-	// Proposal is open for voting.
+	// Proposal is open for voting
 	Proposal_STATE_OPEN Proposal_State = 2
-	// Proposal has gained enough support to be executed.
+	// Proposal has gained enough support to be executed
 	Proposal_STATE_PASSED Proposal_State = 3
-	// Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).
+	// Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements)
 	Proposal_STATE_REJECTED Proposal_State = 4
-	// Proposal didn't get enough votes (either failing to gain required participation or majority level).
+	// Proposal didn't get enough votes (either failing to gain required participation or majority level)
 	Proposal_STATE_DECLINED Proposal_State = 5
-	// Proposal enacted.
+	// Proposal enacted
 	Proposal_STATE_ENACTED Proposal_State = 6
 	// Waiting for node validation of the proposal
 	Proposal_STATE_WAITING_FOR_NODE_VOTE Proposal_State = 7
@@ -203,15 +203,15 @@ func (Proposal_State) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e18a03da5266c714, []int{10, 0}
 }
 
-// Vote value.
+// Vote value
 type Vote_Value int32
 
 const (
-	// Default value, always invalid.
+	// Default value, always invalid
 	Vote_VALUE_UNSPECIFIED Vote_Value = 0
-	// A vote against the proposal.
+	// A vote against the proposal
 	Vote_VALUE_NO Vote_Value = 1
-	// A vote in favour of the proposal.
+	// A vote in favour of the proposal
 	Vote_VALUE_YES Vote_Value = 2
 )
 
@@ -235,13 +235,13 @@ func (Vote_Value) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e18a03da5266c714, []int{11, 0}
 }
 
-// Future product configuration.
+// Future product configuration
 type FutureProduct struct {
-	// Future product maturity (ISO8601/RFC3339 timestamp).
+	// Future product maturity (ISO8601/RFC3339 timestamp)
 	Maturity string `protobuf:"bytes,1,opt,name=maturity,proto3" json:"maturity,omitempty"`
-	// Product settlementAsset ID.
+	// Product settlement asset identifier
 	SettlementAsset string `protobuf:"bytes,2,opt,name=settlementAsset,proto3" json:"settlementAsset,omitempty"`
-	// Product quoteName
+	// Product quote name
 	QuoteName            string   `protobuf:"bytes,3,opt,name=quoteName,proto3" json:"quoteName,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -294,13 +294,13 @@ func (m *FutureProduct) GetQuoteName() string {
 	return ""
 }
 
-// Instrument configuration.
+// Instrument configuration
 type InstrumentConfiguration struct {
-	// Instrument name.
+	// Instrument name
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Instrument code.
+	// Instrument code
 	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-	// Product specification.
+	// Product specification
 	//
 	// Types that are valid to be assigned to Product:
 	//	*InstrumentConfiguration_Future
@@ -380,15 +380,15 @@ func (*InstrumentConfiguration) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// Configuration for a new market on Vega.
+// Configuration for a new market on Vega
 type NewMarketConfiguration struct {
-	// New market instrument configuration.
+	// New market instrument configuration
 	Instrument *InstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
-	// Decimal places used for the new market.
+	// Decimal places used for the new market
 	DecimalPlaces uint64 `protobuf:"varint,2,opt,name=decimalPlaces,proto3" json:"decimalPlaces,omitempty"`
-	// Optional new market meta data, tags.
+	// Optional new market meta data, tags
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
-	// price monitoring configuration
+	// Price monitoring parameters
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,4,opt,name=priceMonitoringParameters,proto3" json:"priceMonitoringParameters,omitempty"`
 	// New market risk model parameters
 	//
@@ -396,7 +396,7 @@ type NewMarketConfiguration struct {
 	//	*NewMarketConfiguration_Simple
 	//	*NewMarketConfiguration_LogNormal
 	RiskParameters isNewMarketConfiguration_RiskParameters `protobuf_oneof:"riskParameters"`
-	// Trading mode for the new market.
+	// Trading mode for the new market
 	//
 	// Types that are valid to be assigned to TradingMode:
 	//	*NewMarketConfiguration_Continuous
@@ -544,19 +544,15 @@ func (*NewMarketConfiguration) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// A commitment of liquidity to be made by the party
-// which propose the market.
-// We create a new type here as we do not require the marketID from the submission
-// the governance engine will create a LiquidityProvisionSubmission from
-// this message internally.
+// A commitment of liquidity to be made by the party which proposes a market
 type NewMarketCommitment struct {
-	// Specified as a unitless number that represents the amount of settlement asset of the market.
+	// Specified as a unitless number that represents the amount of settlement asset of the market
 	CommitmentAmount uint64 `protobuf:"varint,1,opt,name=commitmentAmount,proto3" json:"commitmentAmount,omitempty"`
-	// nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers.
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
 	Fee string `protobuf:"bytes,2,opt,name=fee,proto3" json:"fee,omitempty"`
-	// a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
+	// A set of liquidity sell orders to meet the liquidity provision obligation
 	Sells []*LiquidityOrder `protobuf:"bytes,3,rep,name=Sells,proto3" json:"Sells,omitempty"`
-	// a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec.
+	// A set of liquidity buy orders to meet the liquidity provision obligation
 	Buys                 []*LiquidityOrder `protobuf:"bytes,4,rep,name=Buys,proto3" json:"Buys,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -616,9 +612,9 @@ func (m *NewMarketCommitment) GetBuys() []*LiquidityOrder {
 	return nil
 }
 
-// New market on Vega.
+// New market on Vega
 type NewMarket struct {
-	// Configuration.
+	// The configuration of the new market
 	Changes *NewMarketConfiguration `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 	// The commitment from the party creating the NewMarket proposal
 	LiquidityCommitment  *NewMarketCommitment `protobuf:"bytes,2,opt,name=liquidityCommitment,proto3" json:"liquidityCommitment,omitempty"`
@@ -666,7 +662,7 @@ func (m *NewMarket) GetLiquidityCommitment() *NewMarketCommitment {
 	return nil
 }
 
-// Update an existing market on Vega.
+// Update an existing market on Vega
 type UpdateMarket struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -698,7 +694,7 @@ func (m *UpdateMarket) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_UpdateMarket proto.InternalMessageInfo
 
-// Update network configuration on Vega.
+// Update network configuration on Vega
 type UpdateNetworkParameter struct {
 	// The network parameter to update
 	Changes              *NetworkParameter `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
@@ -739,9 +735,9 @@ func (m *UpdateNetworkParameter) GetChanges() *NetworkParameter {
 	return nil
 }
 
-// New asset on Vega.
+// New asset on Vega
 type NewAsset struct {
-	// Asset configuration.
+	// The configuration of the new asset
 	Changes              *AssetSource `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
@@ -780,17 +776,17 @@ func (m *NewAsset) GetChanges() *AssetSource {
 	return nil
 }
 
-// Terms for a governance proposal on Vega.
+// Terms for a governance proposal on Vega
 type ProposalTerms struct {
-	// Timestamp (Unix time in seconds) when voting closes for this proposal.
-	// Constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters.
+	// Timestamp (Unix time in seconds) when voting closes for this proposal,
+	// constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters
 	ClosingTimestamp int64 `protobuf:"varint,1,opt,name=closingTimestamp,proto3" json:"closingTimestamp,omitempty"`
-	// Timestamp (Unix time in seconds) when proposal gets enacted (if passed).
-	// Constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters.
+	// Timestamp (Unix time in seconds) when proposal gets enacted (if passed),
+	// constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters
 	EnactmentTimestamp int64 `protobuf:"varint,2,opt,name=enactmentTimestamp,proto3" json:"enactmentTimestamp,omitempty"`
-	// Validation timestamp (Unix time in seconds).
+	// Validation timestamp (Unix time in seconds)
 	ValidationTimestamp int64 `protobuf:"varint,3,opt,name=validationTimestamp,proto3" json:"validationTimestamp,omitempty"`
-	// Changes being proposed.
+	// Changes being proposed
 	//
 	// Types that are valid to be assigned to Change:
 	//	*ProposalTerms_UpdateMarket
@@ -922,20 +918,20 @@ func (*ProposalTerms) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// Governance data.
+// Governance data
 type GovernanceData struct {
-	// Proposal.
+	// The governance proposal
 	Proposal *Proposal `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
-	// All "yes" votes in favour of the proposal above.
+	// All "yes" votes in favour of the proposal above
 	Yes []*Vote `protobuf:"bytes,2,rep,name=yes,proto3" json:"yes,omitempty"`
-	// All "no" votes against the proposal above.
+	// All "no" votes against the proposal above
 	No []*Vote `protobuf:"bytes,3,rep,name=no,proto3" json:"no,omitempty"`
-	// All latest YES votes by party (guaranteed to be unique).
-	// key (string) is the party ID (public key)
+	// All latest YES votes by party (guaranteed to be unique),
+	// where key (string) is the party ID (public key) and
 	// value (Vote) is the vote cast by the given party
 	YesParty map[string]*Vote `protobuf:"bytes,4,rep,name=yesParty,proto3" json:"yesParty,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// All latest NO votes by party (guaranteed to be unique).
-	// key (string) is the party ID (public key)
+	// All latest NO votes by party (guaranteed to be unique),
+	// where key (string) is the party ID (public key) and
 	// value (Vote) is the vote cast by the given party
 	NoParty              map[string]*Vote `protobuf:"bytes,5,rep,name=noParty,proto3" json:"noParty,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
@@ -1003,21 +999,21 @@ func (m *GovernanceData) GetNoParty() map[string]*Vote {
 	return nil
 }
 
-// Governance proposal.
+// Governance proposal
 type Proposal struct {
-	// Unique proposal identifier.
+	// Unique proposal identifier
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	// Proposal reference.
+	// Proposal reference
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Party identifier of the author (the party submitting the proposal).
+	// Party identifier of the author (the party submitting the proposal)
 	PartyID string `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Proposal state (see (Proposal.State)[#vega.Proposal.State] definition).
+	// Proposal state - See (Proposal.State)[#vega.Proposal.State] definition
 	State Proposal_State `protobuf:"varint,4,opt,name=state,proto3,enum=vega.Proposal_State" json:"state,omitempty"`
-	// Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network.
+	// Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network
 	Timestamp int64 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
+	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
 	Terms *ProposalTerms `protobuf:"bytes,6,opt,name=terms,proto3" json:"terms,omitempty"`
-	// A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
+	// A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses
 	Reason               ProposalError `protobuf:"varint,7,opt,name=reason,proto3,enum=vega.ProposalError" json:"reason,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -1098,15 +1094,15 @@ func (m *Proposal) GetReason() ProposalError {
 	return ProposalError_PROPOSAL_ERROR_UNSPECIFIED
 }
 
-// Governance vote.
+// Governance vote
 type Vote struct {
-	// Voter's party identifier.
+	// Voter's party identifier
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Actual vote.
+	// Actual vote
 	Value Vote_Value `protobuf:"varint,2,opt,name=value,proto3,enum=vega.Vote_Value" json:"value,omitempty"`
-	// Identifier of the proposal being voted on.
+	// Identifier of the proposal being voted on
 	ProposalID string `protobuf:"bytes,3,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
-	// Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network.
+	// Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network
 	Timestamp            int64    `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

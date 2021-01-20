@@ -50,7 +50,7 @@ message Price {
   uint64 value = 1;
 }
 
-// A timestamp in nanoseconds since epoch.
+// A timestamp in nanoseconds since epoch
 // See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 message Timestamp {
   // Timestamp value
@@ -113,7 +113,7 @@ enum PeggedReference {
 }
 
 // Pegged orders are limit orders where the price is specified in the form REFERENCE +/- OFFSET 
-// and can be used for any limit order that is valid during continuous trading
+// They can be used for any limit order that is valid during continuous trading
 message PeggedOrder {
   // Which price point are we linked to
   PeggedReference reference = 1;
@@ -125,7 +125,7 @@ message PeggedOrder {
 message Order {
 
   // Time In Force for an order
-  // - See [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail
+  // See [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail
   enum TimeInForce {
     // Default value for TimeInForce, can be valid for an amend
     TIF_UNSPECIFIED = 0;
@@ -164,7 +164,7 @@ message Order {
   }
 
   // Status values for an order
-  // - See resulting status in [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
+  // See resulting status in [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
   enum Status {
     // Default value, always invalid
     STATUS_INVALID = 0;
@@ -700,6 +700,7 @@ message WithdrawSubmission {
   message WithdrawExt {
   // Foreign chain specifics
   oneof ext {
+    // ERC20 withdrawal details
     Erc20WithdrawExt erc20 = 1;
   }
 }
