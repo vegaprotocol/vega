@@ -414,7 +414,11 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref.OrderID = ""
 		}
 
-		if newSize := o.LiquidityImpliedVolume; newSize != order.Size {
+		if o.LiquidityImpliedVolume != order.Remaining {
+			newSize := order.Size + (o.LiquidityImpliedVolume - order.Remaining)
+			if newSize < 0 {
+				newSize = 0
+			}
 			amendments = append(amendments, order.AmendSize(int64(newSize)))
 		}
 	}
