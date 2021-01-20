@@ -538,7 +538,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParams)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
-	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore)
+	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore, l.marketDataStore)
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)

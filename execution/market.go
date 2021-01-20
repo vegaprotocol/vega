@@ -2980,7 +2980,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		MinAmount: amount,
 	}
 
-	tresp, err := m.collateral.BondUpdateOnOrder(ctx, m.GetID(), party, transfer)
+	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
 	if err != nil {
 		return err
 	}
@@ -2997,7 +2997,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		transfer.Amount.Amount = -transfer.Amount.Amount
 		transfer.MinAmount = -transfer.MinAmount
 
-		tresp, newerr := m.collateral.BondUpdateOnOrder(ctx, m.GetID(), party, transfer)
+		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
 		if newerr != nil {
 			m.log.Debug("unable to rollback bon account topup",
 				logging.String("party", party),
