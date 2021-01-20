@@ -386,6 +386,12 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref = lp.Sells[i]
 		}
 
+		// If order.Remaining == 0 then that order would've already been removed from the book, hence we need to account for that in this engine.
+		if order != nil && order.Remaining == 0 {
+			delete(lm, ref.OrderID)
+			order = nil
+		}
+
 		if order == nil {
 			if o.LiquidityImpliedVolume == 0 {
 				continue
