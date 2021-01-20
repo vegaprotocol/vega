@@ -1158,10 +1158,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, confirmation.PassiveOrdersAffected); err != nil {
-		return nil, err
-	}
-
 	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
