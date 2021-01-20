@@ -619,15 +619,18 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	for _, order := range m.peggedOrders {
 		if HasReferenceMoved(order, changes) {
 			if order.Status != types.Order_STATUS_PARKED {
-				// Remove order
-				cancellation, err := m.matching.CancelOrder(order)
-				if cancellation == nil || err != nil {
-					m.log.Panic("Failure after cancel order from matching engine",
-						logging.Order(*order),
-						logging.Error(err))
+				// Remove order if any volume remains, otherwise it's already been popped by the matching engine.
+				if order.Remaining > 0 {
+					cancellation, err := m.matching.CancelOrder(order)
+					if cancellation == nil || err != nil {
+						m.log.Panic("Failure after cancel order from matching engine",
+							logging.Order(*order),
+							logging.Error(err))
+					}
 				}
+
 				// Remove it from the trader position
-				_, err = m.position.UnregisterOrder(order)
+				_, err := m.position.UnregisterOrder(order)
 				if err != nil {
 					m.log.Panic("Failure unregistering order in positions engine (cancel)",
 						logging.Order(*order),
