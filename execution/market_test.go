@@ -1548,10 +1548,12 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 }
 
 func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
+	ctx := context.Background()
 	party1 := "party1"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
+	var midPrice uint64 = 100
 
 	addAccount(tm, party1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -1568,8 +1570,30 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 		},
 	}
 
-	err := tm.market.SubmitLiquidityProvision(context.Background(), lp1, party1, "id-lp1")
+	err := tm.market.SubmitLiquidityProvision(ctx, lp1, party1, "id-lp1")
 	require.NoError(t, err)
+
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, party1, 1, midPrice+2)
+
+	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, party1, 1, midPrice-2)
+
+	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	// Check that liquidity orders appear on the book once reference prices exist
+	mktData := tm.market.GetMarketData()
+	lpOrderVolumeBid := mktData.BestBidVolume - mktData.BestStaticBidVolume
+	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
+
+	var zero uint64 = 0
+	require.Greater(t, lpOrderVolumeBid, zero)
+	require.Greater(t, lpOrderVolumeOffer, zero)
+
 }
 
 func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {

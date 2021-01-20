@@ -305,6 +305,8 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		sellsShape = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 	)
 
+	oneOrMoreValidOrdersBuy := false
+	oneOrMoreValidOrdersSell := false
 	for _, buy := range lp.Buys {
 		pegged := &types.PeggedOrder{
 			Reference: buy.LiquidityOrder.Reference,
@@ -313,6 +315,8 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		price, err := repriceFn(pegged)
 		if err != nil {
 			continue
+		} else {
+			oneOrMoreValidOrdersBuy = true
 		}
 		buysShape = append(buysShape, &supplied.LiquidityOrder{
 			OrderID:    buy.OrderID,
@@ -329,12 +333,18 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		price, err := repriceFn(pegged)
 		if err != nil {
 			continue
+		} else {
+			oneOrMoreValidOrdersSell = true
 		}
 		sellsShape = append(sellsShape, &supplied.LiquidityOrder{
 			OrderID:    sell.OrderID,
 			Price:      price,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		})
+	}
+
+	if !(oneOrMoreValidOrdersBuy && oneOrMoreValidOrdersSell) {
+		return nil, nil, nil
 	}
 
 	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
