@@ -24,7 +24,7 @@ func (m *Market) GetAsset() (string, error) {
 
 	switch pimpl := m.TradableInstrument.Instrument.Product.(type) {
 	case *Instrument_Future:
-		return pimpl.Future.Asset, nil
+		return pimpl.Future.SettlementAsset, nil
 	default:
 		return "", ErrUnknownAsset
 	}

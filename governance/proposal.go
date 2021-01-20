@@ -15,19 +15,25 @@ type ProposalParameters struct {
 	RequiredParticipation float64
 	RequiredMajority      float64
 	MinProposerBalance    uint64
-	MinVoterBalance       float64
+	MinVoterBalance       uint64
 }
 
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data
 type ToEnact struct {
 	p  *types.Proposal
-	m  *types.Market
+	m  *ToEnactMarket
 	a  *types.Asset
 	n  *types.NetworkParameter
 	as *types.AssetSource
 	u  *types.UpdateMarket
 }
+
+// just a empty struct, to signal
+// an enacted market. nothing to be done with it
+// for now (later maybe add information to check
+// end of opening auction or so)
+type ToEnactMarket struct{}
 
 func (t ToEnact) IsNewMarket() bool {
 	return (t.m != nil)
@@ -50,7 +56,7 @@ func (t ToEnact) IsNewAssetSource() bool {
 	return t.IsNewAsset()
 }
 
-func (t *ToEnact) NewMarket() *types.Market {
+func (t *ToEnact) NewMarket() *ToEnactMarket {
 	return t.m
 }
 
@@ -72,4 +78,70 @@ func (t *ToEnact) UpdateMarket() *types.UpdateMarket {
 
 func (t *ToEnact) Proposal() *types.Proposal {
 	return t.p
+}
+
+// ToSubmit wraps the proposal in a type that has a convenient interface
+// to quickly work out what change we're dealing with, and get the data
+// This cover every kind of proposal which requires action after a
+// a proposal is submited
+type ToSubmit struct {
+	p *types.Proposal
+	m *ToSubmitNewMarket
+}
+
+func (t *ToSubmit) Proposal() *types.Proposal {
+	return t.p
+}
+
+func (t ToSubmit) IsNewMarket() bool {
+	return (t.m != nil)
+}
+
+func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
+	return t.m
+}
+
+type ToSubmitNewMarket struct {
+	m *types.Market
+	l *types.LiquidityProvisionSubmission
+}
+
+func (t *ToSubmitNewMarket) Market() *types.Market {
+	return t.m
+}
+
+func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *types.LiquidityProvisionSubmission {
+	return t.l
+}
+
+type VoteClosed struct {
+	p *types.Proposal
+	m *NewMarketVoteClosed
+}
+
+func (t *VoteClosed) Proposal() *types.Proposal {
+	return t.p
+}
+
+func (t *VoteClosed) IsNewMarket() bool {
+	return (t.m != nil)
+}
+
+func (t *VoteClosed) NewMarket() *NewMarketVoteClosed {
+	return t.m
+}
+
+type NewMarketVoteClosed struct {
+	// true if the auction is to be started
+	// false if the vote did get a majority of true
+	// and the market is to be rejected.
+	startAuction bool
+}
+
+func (t *NewMarketVoteClosed) Rejected() bool {
+	return !t.startAuction
+}
+
+func (t *NewMarketVoteClosed) StartAuction() bool {
+	return t.startAuction
 }

@@ -3,13 +3,11 @@ package assets
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/erc20"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	types "code.vegaprotocol.io/vega/proto"
@@ -39,20 +37,14 @@ type Service struct {
 
 	// id to asset
 	// these assets exists and have been save
-	assets map[string]*Asset
 	amu    sync.RWMutex
+	assets map[string]*Asset
 
 	// this is a list of pending asset which are currently going through
 	// proposal, they can later on be promoted to the asset lists once
 	// the proposal is accepted by both the nodes and the users
-	pendingAssets map[string]*Asset
 	pamu          sync.RWMutex
-
-	// map of reference to proposal id
-	// use to find back an asset when the governance process
-	// is still ongoing
-	refs map[string]string
-	rmu  sync.RWMutex
+	pendingAssets map[string]*Asset
 
 	nw NodeWallet
 }
@@ -66,7 +58,6 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 		cfg:           cfg,
 		assets:        map[string]*Asset{},
 		pendingAssets: map[string]*Asset{},
-		refs:          map[string]string{},
 		nw:            nw,
 	}
 	ts.NotifyOnTick(s.onTick)
@@ -120,10 +111,11 @@ func (s *Service) IsEnabled(assetID string) bool {
 func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
-	src := assetSrc.Source
-	switch assetSrcImpl := src.(type) {
+	switch assetSrcImpl := assetSrc.Source.(type) {
 	case *types.AssetSource_BuiltinAsset:
-		s.pendingAssets[assetID] = &Asset{builtin.New(assetID, assetSrcImpl.BuiltinAsset)}
+		s.pendingAssets[assetID] = &Asset{
+			builtin.New(assetID, assetSrcImpl.BuiltinAsset),
+		}
 	case *types.AssetSource_Erc20:
 		wal, ok := s.nw.Get(nodewallet.Ethereum)
 		if !ok {
@@ -138,35 +130,7 @@ func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string,
 		return "", ErrUnknowAssetSource
 	}
 
-	s.rmu.Lock()
-	defer s.rmu.Unlock()
-	// setup the ref lookup table
-	s.refs[assetID] = assetID
-
 	return assetID, nil
-}
-
-// RemovePending remove and asset from the list of pending assets
-func (s *Service) RemovePending(assetID string) error {
-	s.pamu.Lock()
-	defer s.pamu.Unlock()
-	_, ok := s.pendingAssets[assetID]
-	if !ok {
-		return ErrAssetDoesNotExist
-	}
-	delete(s.pendingAssets, assetID)
-	return nil
-}
-
-func (s *Service) assetHash(asset *Asset) []byte {
-	data := asset.ProtoAsset()
-	buf := fmt.Sprintf("%v%v%v%v%v",
-		data.ID,
-		data.Name,
-		data.Symbol,
-		data.TotalSupply,
-		data.Decimals)
-	return crypto.Hash([]byte(buf))
 }
 
 func (s *Service) Get(assetID string) (*Asset, error) {
@@ -183,25 +147,4 @@ func (s *Service) Get(assetID string) (*Asset, error) {
 		return asset, nil
 	}
 	return nil, ErrAssetDoesNotExist
-}
-
-func (s *Service) GetByRef(ref string) (*Asset, error) {
-	s.rmu.RLock()
-	defer s.rmu.RUnlock()
-	id, ok := s.refs[ref]
-	if !ok {
-		return nil, ErrNoAssetForRef
-	}
-
-	return s.Get(id)
-}
-
-// AssetHash return an hash of the given asset to be used
-// signed to validate the asset on the vega chain
-func (s *Service) AssetHash(assetID string) ([]byte, error) {
-	asset, err := s.Get(assetID)
-	if err != nil {
-		return nil, ErrAssetDoesNotExist
-	}
-	return s.assetHash(asset), nil
 }

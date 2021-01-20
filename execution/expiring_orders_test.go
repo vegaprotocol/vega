@@ -1,9 +1,9 @@
-package matching_test
+package execution_test
 
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/matching"
+	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ func TestExpiringOrders(t *testing.T) {
 }
 
 func testExpireOrders(t *testing.T) {
-	eo := matching.NewExpiringOrders()
+	eo := execution.NewExpiringOrders()
 	eo.Insert(types.Order{ExpiresAt: 100, Id: "1"})
 	eo.Insert(types.Order{ExpiresAt: 110, Id: "2"})
 	eo.Insert(types.Order{ExpiresAt: 140, Id: "3"})

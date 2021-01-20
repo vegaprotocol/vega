@@ -1,8 +1,4 @@
 # markdown-spellcheck spelling configuration file
-# Format - lines beginning # are comments
-# global dictionary is at the start, file overrides afterwards
-# one word per line, to define a file override use ' - filename'
-# where filename is relative to this configuration file
 ABI
 ABIs
 allowlist
@@ -11,10 +7,12 @@ api
 async
 barnabee
 base64
-codegen
 blockchain
+Buf
+codegen
 datestamps
 datetime
+denylist
 Ed25519
 enum
 enums
@@ -29,29 +27,30 @@ gRPC
 Ilya
 init
 MacOSX
+MarkToMarket
 multisig
 mutex
 mutexes
 nodewallet
-non-allowlisted
 notarising
 proto
 protobuf
 protobufs
+Ropsten
+round_pushpin
+specs
 struct
 Suzdalnitski
 syslog
+tada
 tamlyn10
-Tendermint
 tendermint
+Tendermint
 testnet
 tradable
 traderbot
 unexported
+unparked
 vega
 whitepaper
 xor
-MarkToMarket
-specs
-denylist
-allowlist

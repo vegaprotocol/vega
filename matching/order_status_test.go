@@ -25,11 +25,9 @@ func TestOrderStatuses(t *testing.T) {
 	t.Run("GTC - filled", testGTCFilled)
 
 	t.Run("GTT - active", testGTTActive)
-	t.Run("GTT - expired not filled", testGTTExpiredNotFilled)
 	t.Run("GTT - cancelled not filled", testGTTCancelledNotFilled)
 	t.Run("GTT - stopped not filled", testGTTStoppedNotFilled)
 	t.Run("GTT - active partially filled", testGTTActivePartiallyFilled)
-	t.Run("GTT - expired partially filled", testGTTExpiredPartiallyFilled)
 	t.Run("GTT - cancelled partially filled", testGTTCancelledPartiallyFilled)
 	t.Run("GTT - stopped partially filled", testGTTStoppedPartiallyFilled)
 	t.Run("GTT - filled", testGTTFilled)
@@ -740,85 +738,6 @@ func testGTTFilled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
-}
-
-func testGTTExpiredNotFilled(t *testing.T) {
-	market := "testMarket"
-	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
-
-	book := getTestOrderBook(t, market)
-	defer book.Finish()
-
-	// place a first order to sit in the book, and expired
-	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
-		Side:        types.Side_SIDE_SELL,
-		Price:       100,
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_TYPE_LIMIT,
-		ExpiresAt:   10,
-	}
-	_, err := book.SubmitOrder(&order1)
-	assert.NoError(t, err)
-
-	// then remove expired, set 1 sec after order exp time.
-	orders := book.RemoveExpiredOrders(11)
-	assert.Len(t, orders, 1)
-	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
-}
-
-func testGTTExpiredPartiallyFilled(t *testing.T) {
-	market := "testMarket"
-	partyID1 := "p1"
-	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
-
-	book := getTestOrderBook(t, market)
-	defer book.Finish()
-
-	// place a first order to sit in the book, be partially filled, and expired
-	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
-		Side:        types.Side_SIDE_SELL,
-		Price:       100,
-		Size:        10,
-		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_TYPE_LIMIT,
-		ExpiresAt:   10,
-	}
-	_, err := book.SubmitOrder(&order1)
-	assert.NoError(t, err)
-
-	// now place our order which will consume some of the first order
-	order := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
-		Side:        types.Side_SIDE_BUY,
-		Price:       100,
-		Size:        1,
-		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTT,
-		Type:        types.Order_TYPE_LIMIT,
-		ExpiresAt:   10,
-	}
-	_, err = book.SubmitOrder(&order)
-	assert.NoError(t, err)
-
-	// then remove expired, set 1 sec after order exp time.
-	orders := book.RemoveExpiredOrders(11)
-	assert.Len(t, orders, 1)
-	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
 }
 
 type marketPositionFake struct {

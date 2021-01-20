@@ -33,7 +33,6 @@ type OrderBook struct {
 	sell            *OrderBookSide
 	lastTradedPrice uint64
 	latestTimestamp int64
-	expiringOrders  *ExpiringOrders
 	ordersByID      map[string]*types.Order
 	ordersPerParty  map[string]map[string]struct{}
 	auction         bool
@@ -73,7 +72,6 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
 		Config:          config,
 		lastTradedPrice: initialMarkPrice,
-		expiringOrders:  NewExpiringOrders(),
 		ordersByID:      map[string]*types.Order{},
 		auction:         auction,
 		batchID:         0,
@@ -524,9 +522,6 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 		return nil, err
 	}
 
-	// we remove the order from the expiring list as well.
-	b.removePendingGttOrder(*order)
-
 	order, err := b.DeleteOrder(order)
 	if err != nil {
 		return nil, err
@@ -565,15 +560,6 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		return types.ErrOrderOutOfSequence
 	}
 
-	var (
-		expiryChanged = originalOrder.ExpiresAt != amendedOrder.ExpiresAt ||
-			originalOrder.TimeInForce != amendedOrder.TimeInForce
-		ordcpy types.Order
-	)
-	if expiryChanged {
-		ordcpy = *originalOrder
-	}
-
 	if err := b.validateOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Order validation failure",
@@ -606,13 +592,6 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		}
 	}
 
-	// If we have changed the ExpiresAt or TIF then update Expiry table
-	if expiryChanged {
-		b.removePendingGttOrder(ordcpy)
-		if amendedOrder.TimeInForce == types.Order_TIF_GTT {
-			b.insertExpiringOrder(*amendedOrder)
-		}
-	}
 	return nil
 }
 
@@ -684,10 +663,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// if order is persistent type add to order book to the correct side
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
-		if order.ExpiresAt > 0 && order.PeggedOrder == nil {
-			b.insertExpiringOrder(*order)
-		}
-
 		b.getSide(order.Side).addOrder(order)
 
 		if b.LogPriceLevelsDebug {
@@ -726,19 +701,13 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		if impactedOrders[idx].Remaining == 0 {
 			impactedOrders[idx].Status = types.Order_STATUS_FILLED
 
-			// Ensure any fully filled impacted GTT orders are removed
-			// from internal matching engine pending orders list
-			if impactedOrders[idx].TimeInForce == types.Order_TIF_GTT {
-				b.removePendingGttOrder(*impactedOrders[idx])
-			}
-
 			// delete from lookup table
 			delete(b.ordersByID, impactedOrders[idx].Id)
 			delete(b.ordersPerParty[impactedOrders[idx].PartyID], impactedOrders[idx].Id)
 		}
 	}
 
-	// if we did hit a wash trade, set the status to rejected
+	// if we did hit a wash trade, set the status to STOPPED
 	if err == ErrWashTrade {
 		if order.Size > order.Remaining {
 			order.Status = types.Order_STATUS_PARTIALLY_FILLED
@@ -780,40 +749,6 @@ func (b *OrderBook) DeleteOrder(
 	delete(b.ordersByID, order.Id)
 	delete(b.ordersPerParty[order.PartyID], order.Id)
 	return dorder, err
-}
-
-// RemoveExpiredOrders removes any GTT orders that will expire on or before the expiration timestamp (epoch+nano).
-// expirationTimestamp must be of the format unix epoch seconds with nanoseconds e.g. 1544010789803472469.
-// RemoveExpiredOrders returns a slice of Orders that were removed, internally it will remove the orders from the
-// matching engine price levels. The returned orders will have an Order_Expired status, ready to update in stores.
-func (b *OrderBook) RemoveExpiredOrders(expirationTimestamp int64) []types.Order {
-	expiredOrders := b.expiringOrders.Expire(expirationTimestamp)
-	if len(expiredOrders) <= 0 {
-		return nil
-	}
-	out := make([]types.Order, 0, len(expiredOrders))
-
-	// delete the orders now
-	for at := range expiredOrders {
-		order, err := b.DeleteOrder(&expiredOrders[at])
-		if err == nil {
-			// this may be not nil because the expiring order was cancelled before.
-			// so it was already deleted, we do not remove them from the expiringOrders
-			// when they get cancelled as this would required unnecessary computation that
-			// can be delayed for later.
-			order.Status = types.Order_STATUS_EXPIRED
-			order.UpdatedAt = expirationTimestamp
-			out = append(out, *order)
-		}
-	}
-
-	if b.LogRemovedOrdersDebug {
-		b.log.Debug("Removed expired orders from order book",
-			logging.String("order-book", b.marketID),
-			logging.Int("expired-orders", len(expiredOrders)))
-	}
-
-	return out
 }
 
 // GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
@@ -881,16 +816,6 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 		return b.sell
 	}
 	return b.buy
-}
-
-func (b *OrderBook) insertExpiringOrder(ord types.Order) {
-	timer := metrics.NewTimeCounter(b.marketID, "matching", "insertExpiringOrder")
-	b.expiringOrders.Insert(ord)
-	timer.EngineTimeCounterAdd()
-}
-
-func (b OrderBook) removePendingGttOrder(order types.Order) bool {
-	return b.expiringOrders.RemoveOrder(order)
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {

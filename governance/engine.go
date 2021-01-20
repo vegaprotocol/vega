@@ -40,6 +40,8 @@ var (
 	ErrProposalOpeningAuctionDurationTooShort  = errors.New("proposal opening auction duration is too short")
 	ErrProposalOpeningAuctionDurationTooLong   = errors.New("proposal opening auction duration is too long")
 	ErrMissingCommandIDFromContext             = errors.New("could not find command id from the context")
+	ErrMarketMissingLiquidityCommitment        = errors.New("market proposal is missing a liquidity commitment")
+	ErrProposalDoesNotExists                   = errors.New("proposal does not exists")
 )
 
 // Broker - event bus
@@ -164,11 +166,7 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	}()
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, e.netp, e.currentTime, e.assets)
-		if err != nil {
-			return nil, perr, err
-		}
-		te.m = mkt
+		te.m = &ToEnactMarket{}
 	case *types.ProposalTerms_UpdateNetworkParameter:
 		te.n = change.UpdateNetworkParameter.Changes
 	case *types.ProposalTerms_NewAsset:
@@ -179,6 +177,23 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 		te.a = asset.ProtoAsset()
 	}
 	return
+}
+
+func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
+	vc := &VoteClosed{
+		p: p,
+	}
+	switch p.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		startAuction := true
+		if p.State != types.Proposal_STATE_PASSED {
+			startAuction = false
+		}
+		vc.m = &NewMarketVoteClosed{
+			startAuction: startAuction,
+		}
+	}
+	return vc
 }
 
 func (e *Engine) removeProposal(id string) {
@@ -193,10 +208,11 @@ func (e *Engine) removeProposal(id string) {
 }
 
 // OnChainTimeUpdate triggers time bound state changes.
-func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact {
+func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	e.currentTime = t
 	var (
 		toBeEnacted []*ToEnact
+		voteClosed  []*VoteClosed
 		toBeRemoved []string // ids
 	)
 
@@ -207,8 +223,11 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 		counter := newStakeCounter(e.log, e.accs)
 
 		for _, proposal := range e.activeProposals {
-			if proposal.Terms.ClosingTimestamp < now {
+			// only enter this if the proposal state is OPEN
+			// or we would return many times the voteClosed eventually
+			if proposal.State == types.Proposal_STATE_OPEN && proposal.Terms.ClosingTimestamp < now {
 				e.closeProposal(ctx, proposal, counter, totalStake)
+				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal.Proposal))
 			}
 
 			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
@@ -251,7 +270,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) []*ToEnact 
 	}
 
 	// flush here for now
-	return toBeEnacted
+	return toBeEnacted, voteClosed
 }
 
 func (e *Engine) getProposal(id string) (*proposalData, bool) {
@@ -265,14 +284,19 @@ func (e *Engine) getProposal(id string) (*proposalData, bool) {
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
 // Only open can be submitted and validated at this point. No further validation happens.
-func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string) error {
+func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string) (*ToSubmit, error) {
 	p.ID = id
 	p.Timestamp = e.currentTime.UnixNano()
 
 	if _, ok := e.getProposal(p.ID); ok {
-		return ErrProposalIsDuplicate // state is not allowed to change externally
+		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}
 	if p.State == types.Proposal_STATE_OPEN {
+
+		defer func() {
+			e.broker.Send(events.NewProposalEvent(ctx, p))
+		}()
+
 		perr, err := e.validateOpenProposal(p)
 		if err != nil {
 			p.State = types.Proposal_STATE_REJECTED
@@ -280,19 +304,66 @@ func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string
 			if e.log.GetLevel() == logging.DebugLevel {
 				e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID))
 			}
-		} else {
-			// now if it's a 2 steps proposal, start the node votes
-			if e.isTwoStepsProposal(&p) {
-				p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
-				err = e.startTwoStepsProposal(&p)
-			} else {
-				e.startProposal(&p)
-			}
+			return nil, err
 		}
-		e.broker.Send(events.NewProposalEvent(ctx, p))
-		return err
+
+		// now if it's a 2 steps proposal, start the node votes
+		if e.isTwoStepsProposal(&p) {
+			p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
+			err = e.startTwoStepsProposal(&p)
+		} else {
+			e.startProposal(&p)
+		}
+		if err != nil {
+			return nil, err
+		}
+		return e.intoToSubmit(&p)
 	}
-	return ErrProposalInvalidState
+	return nil, ErrProposalInvalidState
+}
+
+func (e *Engine) RejectProposal(
+	ctx context.Context, p *types.Proposal, r types.ProposalError,
+) error {
+	if _, ok := e.getProposal(p.ID); !ok {
+		return ErrProposalDoesNotExists
+	}
+
+	e.removeProposal(p.ID)
+	p.Reason = r
+	p.State = types.Proposal_STATE_REJECTED
+	e.broker.Send(events.NewProposalEvent(ctx, *p))
+	return nil
+}
+
+// toSubmit build the return response for the SubmitProposal
+// method
+func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
+	tsb := &ToSubmit{p: p}
+
+	switch change := p.Terms.Change.(type) {
+	case *types.ProposalTerms_NewMarket:
+		// use to calcualte the auction duration
+		// which is basically enactime - closetime
+		// FIXME(): normaly we should use the closetime
+		// but this would not play well with the MarketAcutionState stuff
+		// for now we start the auction as of now.
+		closeTime := e.currentTime
+		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
+
+		mkt, perr, err := createMarket(p.ID, change.NewMarket.Changes, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
+		if err != nil {
+			return nil, fmt.Errorf("%w, %v", err, perr)
+		}
+		tsb.m = &ToSubmitNewMarket{
+			m: mkt,
+		}
+		if change.NewMarket.LiquidityCommitment != nil {
+			tsb.m.l = change.NewMarket.LiquidityCommitment.IntoSubmission(p.ID)
+		}
+	}
+
+	return tsb, nil
 }
 
 func (e *Engine) startProposal(p *types.Proposal) {
@@ -420,7 +491,20 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch change := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		return validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true, e.netp)
+		closeTime := time.Unix(terms.ClosingTimestamp, 0)
+		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
+
+		perr, err := validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true, e.netp, enactTime.Sub(closeTime))
+		if err != nil {
+			return perr, err
+		}
+		// TODO: uncomment this once the client support submitting Commitment
+		// if change.NewMarket.LiquidityCommitment == nil {
+		// 	return types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT, ErrMarketMissingLiquidityCommitment
+		// }
+		// we do not validate the content of the commitment here,
+		// the market will do later on
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
 	case *types.ProposalTerms_UpdateNetworkParameter:
@@ -467,8 +551,7 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 	if err != nil {
 		return nil, err
 	}
-	totalTokens := e.accs.GetTotalTokens()
-	if float64(voterTokens) < float64(totalTokens)*params.MinVoterBalance {
+	if voterTokens < params.MinVoterBalance {
 		return nil, ErrVoterInsufficientTokens
 	}
 

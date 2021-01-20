@@ -48,8 +48,9 @@ func assignProduct(
 	case *types.InstrumentConfiguration_Future:
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Asset:    product.Future.Asset,
-				Maturity: product.Future.Maturity,
+				SettlementAsset: product.Future.SettlementAsset,
+				QuoteName:       product.Future.QuoteName,
+				Maturity:        product.Future.Maturity,
 				Oracle: &types.Future_EthereumEvent{
 					// FIXME(): this should probably disapear / be removed
 					// or take another forms.
@@ -71,11 +72,11 @@ func assignProduct(
 func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
 	switch mode := definition.TradingMode.(type) {
 	case *types.NewMarketConfiguration_Continuous:
-		target.TradingMode = &types.Market_Continuous{
+		target.TradingModeConfig = &types.Market_Continuous{
 			Continuous: mode.Continuous,
 		}
 	case *types.NewMarketConfiguration_Discrete:
-		target.TradingMode = &types.Market_Discrete{
+		target.TradingModeConfig = &types.Market_Discrete{
 			Discrete: mode.Discrete,
 		}
 	default:
@@ -91,9 +92,8 @@ func createInstrument(
 ) (*types.Instrument, error) {
 	intialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
 	result := &types.Instrument{
-		Name:      input.Name,
-		Code:      input.Code,
-		QuoteName: input.QuoteName,
+		Name: input.Name,
+		Code: input.Code,
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
 		},
@@ -130,8 +130,9 @@ func createMarket(
 	netp NetParams,
 	currentTime time.Time,
 	assets Assets,
+	openingAuctionDuration time.Duration,
 ) (*types.Market, types.ProposalError, error) {
-	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp); err != nil {
+	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp, openingAuctionDuration); err != nil {
 		return nil, perr, err
 	}
 	instrument, err := createInstrument(netp, definition.Instrument, definition.Metadata)
@@ -158,13 +159,6 @@ func createMarket(
 	tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
 	tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
 
-	// if the openingAuctionDuration == 0 we need to default
-	// to the network parameter
-	if definition.OpeningAuctionDuration == 0 {
-		minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
-		definition.OpeningAuctionDuration = int64(minAuctionDuration.Seconds())
-	}
-
 	market := &types.Market{
 		Id:            marketID,
 		DecimalPlaces: definition.DecimalPlaces,
@@ -176,7 +170,7 @@ func createMarket(
 			},
 		},
 		OpeningAuction: &types.AuctionDuration{
-			Duration: definition.OpeningAuctionDuration,
+			Duration: int64(openingAuctionDuration.Seconds()),
 		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: instrument,
@@ -237,7 +231,7 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 	if deepCheck && maturity.UnixNano() < currentTime.UnixNano() {
 		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
-	return validateAsset(future.Asset, assets, deepCheck)
+	return validateAsset(future.SettlementAsset, assets, deepCheck)
 }
 
 func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {
@@ -291,7 +285,14 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 }
 
 // ValidateNewMarket checks new market proposal terms
-func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguration, assets Assets, deepCheck bool, netp NetParams) (types.ProposalError, error) {
+func validateNewMarket(
+	currentTime time.Time,
+	terms *types.NewMarketConfiguration,
+	assets Assets,
+	deepCheck bool,
+	netp NetParams,
+	openingAuctionDuration time.Duration,
+) (types.ProposalError, error) {
 	if perr, err := validateInstrument(currentTime, terms.Instrument, assets, deepCheck); err != nil {
 		return perr, err
 	}
@@ -301,7 +302,7 @@ func validateNewMarket(currentTime time.Time, terms *types.NewMarketConfiguratio
 	if perr, err := validateRiskParameters(terms.RiskParameters); err != nil {
 		return perr, err
 	}
-	if perr, err := validateAuctionDuration(time.Duration(terms.OpeningAuctionDuration)*time.Second, netp); err != nil {
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
 		return perr, err
 	}
 

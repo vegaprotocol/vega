@@ -30,16 +30,17 @@ const (
 )
 
 var commandName = map[Command]string{
-	SubmitOrderCommand:   "Submit Order",
-	CancelOrderCommand:   "Cancel Order",
-	AmendOrderCommand:    "Amend Order",
-	WithdrawCommand:      "Withdraw",
-	ProposeCommand:       "Proposal",
-	VoteCommand:          "Vote on Proposal",
-	RegisterNodeCommand:  "Register new Node",
-	NodeVoteCommand:      "Node Vote",
-	NodeSignatureCommand: "Node Signature",
-	ChainEventCommand:    "Chain Event",
+	SubmitOrderCommand:        "Submit Order",
+	CancelOrderCommand:        "Cancel Order",
+	AmendOrderCommand:         "Amend Order",
+	WithdrawCommand:           "Withdraw",
+	ProposeCommand:            "Proposal",
+	VoteCommand:               "Vote on Proposal",
+	RegisterNodeCommand:       "Register new Node",
+	NodeVoteCommand:           "Node Vote",
+	NodeSignatureCommand:      "Node Signature",
+	LiquidityProvisionCommand: "Liquidity Provision Order",
+	ChainEventCommand:         "Chain Event",
 }
 
 // String return the

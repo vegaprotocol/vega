@@ -31,11 +31,13 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	// | name      | markprice | risk model | lamd | tau         | mu | r | sigma     | release factor | initial factor | search factor |
 
 	// general stuff like name, ID, code, asset, and initial mark price
+	// mkt.TradingMode = proto.Market_TRADING_MODE_CONTINUOUS
+	// mkt.State = proto.Market_STATE_ACTIVE
 	parts := strings.Split(row.Cells[0].Value, "/")
 	mkt.Id = fmt.Sprintf("Crypto/%s/Futures/%s", parts[0], parts[1])
 	mkt.TradableInstrument.Instrument.Code = fmt.Sprintf("FX:%s%s", parts[0], parts[1])
 	prod := mkt.TradableInstrument.Instrument.GetFuture()
-	prod.Asset = parts[0]
+	prod.SettlementAsset = parts[0]
 	mkt.TradableInstrument.Instrument.Product = &proto.Instrument_Future{
 		Future: prod,
 	} // set asset, reassign the product
@@ -51,7 +53,7 @@ func initialiseMarket(row *gherkin.TableRow, mkt *proto.Market) {
 	//openAuctionDuration, _ := strconv.ParseInt(row.Cells[11].Value, 10, 64)
 	if row.Cells[12].Value != "continuous" {
 		batchDuration, _ := strconv.ParseInt(row.Cells[12].Value, 10, 64)
-		mkt.TradingMode = &proto.Market_Discrete{
+		mkt.TradingModeConfig = &proto.Market_Discrete{
 			Discrete: &proto.DiscreteTrading{
 				DurationNs: batchDuration,
 			},
@@ -130,7 +132,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		},
 		// For now we won't have an opening auction
 		// OpeningAuction: &proto.AuctionDuration{},
-		TradingMode: &proto.Market_Continuous{
+		TradingModeConfig: &proto.Market_Continuous{
 			Continuous: &proto.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
@@ -174,6 +176,8 @@ func theMarket(mSetup *gherkin.DataTable) error {
 	if err != nil {
 		return err
 	}
+
+	m.StartOpeningAuction(context.Background())
 	mktsetup.core = m
 	core = m
 	return nil
@@ -230,12 +234,12 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		_ = mktsetup.colE.IncrementBalance(context.Background(), margin, marginBal)
 		// add trader accounts to map - this is the state they should have now
 		mktsetup.traderAccs[row.Cells[0].Value] = map[proto.AccountType]*proto.Account{
-			proto.AccountType_ACCOUNT_TYPE_MARGIN: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_MARGIN: {
 				Id:      margin,
 				Type:    proto.AccountType_ACCOUNT_TYPE_MARGIN,
 				Balance: marginBal,
 			},
-			proto.AccountType_ACCOUNT_TYPE_GENERAL: &proto.Account{
+			proto.AccountType_ACCOUNT_TYPE_GENERAL: {
 				Id:      general,
 				Type:    proto.AccountType_ACCOUNT_TYPE_GENERAL,
 				Balance: generalBal,
@@ -243,7 +247,7 @@ func tradersHaveTheFollowingState(traders *gherkin.DataTable) error {
 		}
 		trader := row.Cells[0].Value
 		// we should be able to safely ignore the error, if this fails, the tests will
-		_ = mktsetup.colE.Deposit(context.Background(), trader, asset, generalBal)
+		_, _ = mktsetup.colE.Deposit(context.Background(), trader, asset, generalBal)
 	}
 	return nil
 }

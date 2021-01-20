@@ -241,10 +241,9 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			},
 			TradableInstrument: &proto.TradableInstrument{
 				Instrument: &proto.Instrument{
-					Id:        fmt.Sprintf("Crypto/%s%s/Futures/%s", skel.baseName, skel.quoteName, monYear),
-					Code:      fmt.Sprintf("CRYPTO:%s%s/%s", skel.baseName, skel.quoteName, monYearUpper),
-					Name:      fmt.Sprintf("%s %s vs %s future", skel.maturity.Format("January 2006"), skel.baseName, skel.quoteName),
-					QuoteName: skel.quoteName,
+					Id:   fmt.Sprintf("Crypto/%s%s/Futures/%s", skel.baseName, skel.quoteName, monYear),
+					Code: fmt.Sprintf("CRYPTO:%s%s/%s", skel.baseName, skel.quoteName, monYearUpper),
+					Name: fmt.Sprintf("%s %s vs %s future", skel.maturity.Format("January 2006"), skel.baseName, skel.quoteName),
 					Metadata: &proto.InstrumentMetadata{
 						Tags: []string{
 							"asset_class:fx/crypto",
@@ -254,7 +253,8 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 					InitialMarkPrice: skel.initialMarkPrice,
 					Product: &proto.Instrument_Future{
 						Future: &proto.Future{
-							Maturity: skel.maturity.Format("2006-01-02T15:04:05Z"),
+							QuoteName: skel.quoteName,
+							Maturity:  skel.maturity.Format("2006-01-02T15:04:05Z"),
 							Oracle: &proto.Future_EthereumEvent{
 								EthereumEvent: &proto.EthereumEvent{
 									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
@@ -262,7 +262,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 									Value:      skel.settlementValue,
 								},
 							},
-							Asset: skel.settlementAsset,
+							SettlementAsset: skel.settlementAsset,
 						},
 					},
 				},
@@ -285,7 +285,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 					},
 				},
 			},
-			TradingMode: &proto.Market_Continuous{
+			TradingModeConfig: &proto.Market_Continuous{
 				Continuous: &proto.ContinuousTrading{},
 			},
 			OpeningAuction: &proto.AuctionDuration{

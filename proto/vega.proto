@@ -5,7 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "google/protobuf/wrappers.proto";
-import "proto/markets.proto";
+import "markets.proto";
 
 
 // A side relates to the direction of an order, to Buy, or Sell.
@@ -85,23 +85,6 @@ message RiskResult {
   map<string, RiskFactor> predictedNextRiskFactors = 4;
 }
 
-// What mode is the market currently running, also known as market state.
-enum MarketState {
-  // Default value, this is invalid
-  MARKET_STATE_UNSPECIFIED = 0;
-  // Normal trading
-  MARKET_STATE_CONTINUOUS = 1;
-  // Auction trading (FBA)
-  MARKET_STATE_BATCH_AUCTION = 2;
-  // Opening auction
-  MARKET_STATE_OPENING_AUCTION = 3;
-  // Auction triggered by monitoring
-  MARKET_STATE_MONITORING_AUCTION = 4;
-
-  // Note: If adding an enum value, add a matching entry in:
-  //       - gateway/graphql/helpers_enum.go
-  //       - gateway/graphql/schema.graphql (enum MarketState)
-}
 
 // What triggered an auction (if any)
 enum AuctionTrigger {
@@ -380,6 +363,8 @@ enum OrderError {
   ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER = 44;
   // We are unable to reprice a pegged order because a market price is unavailable
   ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 45;
+  // Users cannot amend the price of a pegged order
+  ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER = 46;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -849,6 +834,9 @@ enum AccountType {
   // This account is created to maintain liquidity providers funds commitments
   ACCOUNT_TYPE_BOND = 9;
 
+  // External account represents an external source (deposit/withdrawal)
+  ACCOUNT_TYPE_EXTERNAL = 10;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -906,12 +894,24 @@ enum TransferType {
   TRANSFER_TYPE_MAKER_FEE_RECEIVE = 10;
   // Pay infrastructure fee.
   TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY = 11;
+  // Receive infrastructure fee.
+  TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE = 12;
   // Pay liquidity fee.
-  TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 12;
+  TRANSFER_TYPE_LIQUIDITY_FEE_PAY = 13;
+  // Receive liquidity fee.
+  TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE = 14;
   // Bond too low.
-  TRANSFER_TYPE_BOND_LOW = 13;
+  TRANSFER_TYPE_BOND_LOW = 15;
   // Bond too high.
-  TRANSFER_TYPE_BOND_HIGH = 14;
+  TRANSFER_TYPE_BOND_HIGH = 16;
+  // Lock amount for withdraw.
+  TRANSFER_TYPE_WITHDRAW_LOCK = 17;
+  // Actual withdraw from system.
+  TRANSFER_TYPE_WITHDRAW = 18;
+  // Deposit funds.
+  TRANSFER_TYPE_DEPOSIT = 19;
+  // Bond slashing.
+  TRANSFER_TYPE_BOND_SLASHING = 20;
 }
 
 // Represents a financial transfer within Vega.
@@ -1040,7 +1040,7 @@ message MarketData {
   // indicative volume (zero if not in auction)
   uint64 indicativeVolume = 18;
   // the current state of the market
-  MarketState marketState = 19;
+  Market.TradingMode marketTradingMode = 19;
   // if the market is in auction state, this field indicates what triggered the auction
   AuctionTrigger trigger = 20;
   // the targeted stake for the given market
@@ -1059,6 +1059,8 @@ message PriceMonitoringBounds {
   uint64 maxValidPrice = 2;
   // Price monitoring trigger associated with the bounds
   PriceMonitoringTrigger trigger = 3;
+  // Reference price used to calculate the valid price range
+  double referencePrice = 4;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf.
@@ -1204,4 +1206,15 @@ message LiquidityProvision {
   string version = 10;
   // the status of this liquidity provision
   Status status = 11;
+}
+
+message EthereumConfig {
+  // The network ID of this ethereum network
+  string networkId = 1;
+  // The chain ID of this ethereum network
+  string chainId = 2;
+  // The bridge address for this ethereum network
+  string bridgeAddress = 3;
+  // The number of confirmations
+  uint32 confirmations = 4;
 }

@@ -86,7 +86,7 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 		if !ok {
 			return ErrChainEventAssetListERC20WithoutEnoughSignature
 		}
-		return app.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index)
+		return app.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index, ce.TxID)
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
@@ -95,13 +95,13 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index)
+		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, ce.TxID)
 	case *types.ERC20Event_Withdrawal:
 		act.Withdrawal.VegaAssetID = strings.TrimPrefix(act.Withdrawal.VegaAssetID, "0x")
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
 			return err
 		}
-		return app.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index)
+		return app.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index, ce.TxID)
 	default:
 		return ErrUnsupportedEventAction
 	}

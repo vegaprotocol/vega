@@ -353,7 +353,7 @@ type MarketData {
   "indicative volume if the auction ended now, 0 if not in auction mode"
   indicativeVolume: String!
   "what state the market is in (auction, continuous etc)"
-  marketState: MarketState!
+  marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
   "the amount of stake targeted for this market"
@@ -795,7 +795,10 @@ type Future {
   maturity: String!
 
   "The name of the asset (string)"
-  asset: Asset!
+  settlementAsset: Asset!
+
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
 
   "The oracle used for this product (Oracle union)"
   oracle: Oracle!
@@ -814,9 +817,6 @@ type Instrument {
 
   "Full and fairly descriptive name for the instrument"
   name: String!
-
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
 
   "Metadata for this instrument"
   metadata: InstrumentMetadata!
@@ -927,6 +927,8 @@ type PriceMonitoringBounds {
   maxValidPrice: String!
   "Price monitoring trigger associated with the bounds"
   trigger: PriceMonitoringTrigger!
+  "Reference price used to calculate the valid price range"
+  referencePrice: String!
 }
 
 "TargetStakeParameters contains parameters used in target stake calculation"
@@ -954,7 +956,7 @@ type Market {
   tradableInstrument: TradableInstrument!
 
   "Definitions and required configuration for the trading mode"
-  tradingMode: TradingMode!
+  tradingModeConfig: TradingMode!
 
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
@@ -985,6 +987,12 @@ type Market {
 
   "Taget stake parameter"
   targetStakeParameters: TargetStakeParameters!
+
+  "Current mode of execution of the market"
+  tradingMode: MarketTradingMode!
+
+  "Current state of the market"
+  state: MarketState!
 
   "Orders on a market"
   orders (
@@ -1231,7 +1239,7 @@ type Order {
   side: Side!
 
   "The market the order is trading on (probably stored internally as a hash of the market details)"
-  market: Market!
+  market: Market
 
   "Total number of contracts that may be bought or sold (immutable) (uint64)"
   size: String!
@@ -1519,7 +1527,7 @@ enum OrderStatus {
   "This order is fully filled with remaining equals zero."
   Filled
 
-  "This order was rejected while beeing processed in the core."
+  "This order was rejected while being processed in the core."
   Rejected
 
   "This order was partially filled."
@@ -1529,7 +1537,7 @@ enum OrderStatus {
   Parked
 }
 
-"Reason for the proposal beeing rejected by the core node"
+"Reason for the proposal being rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
   CloseTimeTooSoon
@@ -1539,7 +1547,7 @@ enum ProposalRejectionReason {
   EnactTimeTooSoon
   "The specified enactment time is too late based on network parameters"
   EnactTimeTooLate
-  "The proposer for this proposal as insufficient token"
+  "The proposer for this proposal has insufficient token"
   InsufficientTokens
   "The instrument quote name and base name were the same"
   InvalidInstrumentSecurity
@@ -1569,13 +1577,21 @@ enum ProposalRejectionReason {
   NoRiskParameters
   "Invalid key in update network parameter proposal"
   NetworkParameterInvalidKey
-  "Invalid valid in update network parameter proposal"
+  "Invalid value in update network parameter proposal"
   NetworkParameterInvalidValue
   "Validation failed for network parameter proposal"
   NetworkParameterValidationFailed
+  "Opening auction duration is less than the network minimum opening auction time"
+  OpeningAuctionDurationTooSmall
+  "Opening auction duration is more than the network minimum opening auction time"
+  OpeningAuctionDurationTooLarge
+  "Market proposal is missing a liquidity commitment"
+  MarketMissingLiquidityCommitment
+  "Market proposal market could not be instantiate in execution"
+  CouldNotInstantiateMarket
 }
 
-"Reason for the order beeing rejected by the core node"
+"Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
 
   "Market id is invalid"
@@ -1712,6 +1728,9 @@ enum OrderRejectionReason {
 
   "Unable to reprice a pegged order"
   UnableToRepricePeggedOrder
+
+  "Unable to amend pegged order price"
+  UnableToAmendPeggedOrderPrice
 }
 
 enum OrderType {
@@ -1728,8 +1747,36 @@ enum OrderType {
   NETWORK
 }
 
-"What market state are we in"
+"The current state of a market"
 enum MarketState {
+  "The Governance proposal valid and accepted"
+  PROPOSED
+  "Outcome of governance votes is to reject the market"
+  REJECTED
+  "Governance vote passes/wins"
+  PENDING
+  """
+  Market triggers cancellation condition or governance
+  votes to close before market becomes Active
+  """
+  CANCELLED
+  "Enactment date reached and usual auction exit checks pass"
+  ACTIVE
+  "Price monitoring or liquidity monitoring trigger"
+  SUSPENDED
+  "Governance vote (to close)"
+  CLOSED
+  """
+  Defined by the product (i.e. from a product parameter,
+  specified in market definition, giving close date/time)
+  """
+  TRADING_TERMINATED
+  "Settlement triggered and completed as defined by product"
+  SETTLED
+}
+
+"What market trading mode are we in"
+enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
   CONTINUOUS
 
@@ -1830,14 +1877,19 @@ input FutureProductInput {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
   "Product asset name"
-  asset: String!
+  settlementAsset: String!
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
 }
 
 type FutureProduct {
   "Future product maturity (ISO8601/RFC3339 timestamp)"
   maturity: String!
-  "Product asset name"
-  asset: Asset!
+  "Product asset ID"
+  settlementAsset: Asset!
+ "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  quoteName: String!
+
 }
 
 input InstrumentConfigurationInput {
@@ -1845,8 +1897,6 @@ input InstrumentConfigurationInput {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
   "Future product specification"
   futureProduct: FutureProductInput
 }
@@ -1856,8 +1906,6 @@ type InstrumentConfiguration {
   name: String!
   "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
   code: String!
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
   "Future product specification"
   futureProduct: FutureProduct
 }
@@ -1920,8 +1968,6 @@ input NewMarketInput {
   riskParameters: RiskParametersInput!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "The proposed duration for the opening auction for this market in seconds"
-  openingAuctionDurationSecs: Int
   "Price monitoring configuration"
   priceMonitoringParameters: PriceMonitoringParametersInput
 
@@ -2080,7 +2126,7 @@ input BuiltinAssetInput {
 }
 
 """
-Varoius states a proposal can transition through:
+Various states a proposal can transition through:
   Open ->
       - Passed -> Enacted.
       - Rejected.
@@ -2095,7 +2141,7 @@ enum ProposalState {
   Passed
   "Proposal didn't get enough votes"
   Declined
-  "Proposal has could not gain enough support to be executed"
+  "Proposal could not gain enough support to be executed"
   Rejected
   "Proposal has been executed and the changes under this proposal have now been applied"
   Enacted
@@ -2104,7 +2150,7 @@ enum ProposalState {
 }
 
 type Proposal {
-  "Proposal id that is filled by VEGA once proposal reaches the network"
+  "Proposal ID that is filled by VEGA once proposal reaches the network"
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!
@@ -2332,6 +2378,8 @@ enum BusEventType {
   SettleDistressed
   "A new market has been created"
   MarketCreated
+  "A market has been updated"
+  MarketUpdated
   "An asset has been created or update"
   Asset
   "A market has progressed by one tick"

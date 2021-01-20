@@ -356,13 +356,13 @@ func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
 		return fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
 	}
 
-	return s.validateProposalChanges(terms.Change)
+	return s.validateProposalChanges(terms)
 }
 
-func (s *Svc) validateProposalChanges(changes interface{}) error {
-	switch c := changes.(type) {
+func (s *Svc) validateProposalChanges(terms *types.ProposalTerms) error {
+	switch c := terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		return s.validateNewMarketChanges(c.NewMarket)
+		return s.validateNewMarketChanges(terms, c.NewMarket)
 	case *types.ProposalTerms_UpdateNetworkParameter:
 		return s.validateUpdateNetworkParameterChanges(c.UpdateNetworkParameter)
 	default:
@@ -375,8 +375,13 @@ func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParam
 	return
 }
 
-func (s *Svc) validateNewMarketChanges(nm *types.NewMarket) (err error) {
+func (s *Svc) validateNewMarketChanges(
+	terms *types.ProposalTerms, nm *types.NewMarket) (err error) {
+	closeTime := time.Unix(terms.ClosingTimestamp, 0)
+	enactTime := time.Unix(terms.EnactmentTimestamp, 0)
+
 	// just validate things which cannot be done straigh with
-	_, err = validateNewMarket(time.Time{}, nm.Changes, nil, false, s.netp)
+	_, err = validateNewMarket(
+		time.Time{}, nm.Changes, nil, false, s.netp, enactTime.Sub(closeTime))
 	return
 }

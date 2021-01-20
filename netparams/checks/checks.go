@@ -49,3 +49,22 @@ func GovernanceAssetUpdate(
 		return nil
 	}
 }
+
+func EthereumConfig() func(interface{}) error {
+	return func(v interface{}) error {
+		ecfg := v.(*types.EthereumConfig)
+		if len(ecfg.NetworkId) <= 0 {
+			return errors.New("missing ethereum config network id")
+		}
+		if len(ecfg.ChainId) <= 0 {
+			return errors.New("missing ethereum config chain id")
+		}
+		if len(ecfg.BridgeAddress) <= 0 {
+			return errors.New("missing ethereum config bridge address")
+		}
+		if ecfg.Confirmations == 0 {
+			return errors.New("ethereum config confirmation must be > 0")
+		}
+		return nil
+	}
+}

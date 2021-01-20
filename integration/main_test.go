@@ -14,6 +14,7 @@ var (
 	gdOpts = godog.Options{
 		Output: colors.Colored(os.Stdout),
 		Format: "progress",
+		// Format: "pretty", // default to pretty output so we can diagnose failed CI builds more easily
 	}
 )
 
@@ -92,7 +93,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
 	s.Step(`^dump transfers$`, dumpTransfers)
 	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, theMarkPriceForTheMarketIs)
-	s.Step(`^the market state for the market "([^"]*)" is "([^"]*)"$`, theMarketStateIs)
+	s.Step(`^the market trading mode for the market "([^"]*)" is "([^"]*)"$`, theMarketTradingModeIs)
 	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
 	s.Step(`^traders amends the following orders reference:$`, tradersAmendsTheFollowingOrdersReference)
 	s.Step(`^the following trades happened:$`, theFollowingTradesHappened)
@@ -105,4 +106,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^clear order events by reference:$`, clearOrdersByRef)
 	s.Step(`^traders cancel pegged orders:$`, tradersCancelPeggedOrders)
 	s.Step(`^traders cancel pegged orders and clear:$`, tradersCancelPeggedOrdersAndClear)
+	s.Step(`^the trader submits LP:$`, submitLP)
+	s.Step(`^I see the LP events:$`, seeLPEvents)
+	s.Step(`^the opening auction period for market "([^"]+)" ends$`, theOpeningAuctionPeriodEnds)
+	s.Step(`^traders withdraw balance:$`, tradersWithdrawBalance)
+	s.Step(`^dump trades$`, dumpTrades)
 }

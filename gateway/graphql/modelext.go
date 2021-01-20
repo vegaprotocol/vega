@@ -238,8 +238,8 @@ func DiscreteTradingFromProto(pdt *types.DiscreteTrading) (*DiscreteTrading, err
 	}, nil
 }
 
-// TradingModeFromProto ...
-func TradingModeFromProto(ptm interface{}) (TradingMode, error) {
+// TradingModeConfigFromProto ...
+func TradingModeConfigFromProto(ptm interface{}) (TradingMode, error) {
 	if ptm == nil {
 		return nil, ErrNilTradingMode
 	}
@@ -481,18 +481,17 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 	if len(i.Code) <= 0 {
 		return nil, errors.New("Instrument.Code: string cannot be empty")
 	}
-	if len(i.QuoteName) <= 0 {
-		return nil, errors.New("Instrument.QuoteName: string cannot be empty")
-	}
 
 	result := &types.InstrumentConfiguration{
-		Name:      i.Name,
-		Code:      i.Code,
-		QuoteName: i.QuoteName,
+		Name: i.Name,
+		Code: i.Code,
 	}
 
 	if i.FutureProduct != nil {
-		if len(i.FutureProduct.Asset) <= 0 {
+		if len(i.FutureProduct.QuoteName) <= 0 {
+			return nil, errors.New("FutureProduct.QuoteName: string cannot be empty")
+		}
+		if len(i.FutureProduct.SettlementAsset) <= 0 {
 			return nil, errors.New("FutureProduct.Asset: string cannot be empty")
 		}
 		if len(i.FutureProduct.Maturity) <= 0 {
@@ -501,8 +500,9 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 
 		result.Product = &types.InstrumentConfiguration_Future{
 			Future: &types.FutureProduct{
-				Asset:    i.FutureProduct.Asset,
-				Maturity: i.FutureProduct.Maturity,
+				SettlementAsset: i.FutureProduct.SettlementAsset,
+				Maturity:        i.FutureProduct.Maturity,
+				QuoteName:       i.FutureProduct.QuoteName,
 			},
 		}
 	} else {
@@ -728,9 +728,6 @@ func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 		return nil, err
 	}
 	result.Metadata = append(result.Metadata, n.Metadata...)
-	if n.OpeningAuctionDurationSecs != nil {
-		result.OpeningAuctionDuration = int64(*n.OpeningAuctionDurationSecs)
-	}
 	if n.PriceMonitoringParameters != nil {
 		params, err := n.PriceMonitoringParameters.IntoProto()
 		if err != nil {
@@ -1140,6 +1137,8 @@ func eventFromProto(e *types.BusEvent) Event {
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
 		return e.GetMarketCreated()
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
+		return e.GetMarketUpdated()
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
 		a, _ := AssetFromProto(e.GetAsset())
 		return a
@@ -1211,6 +1210,8 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED)
 		case BusEventTypeMarketCreated:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED)
+		case BusEventTypeMarketUpdated:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED)
 		case BusEventTypeAsset:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ASSET)
 		case BusEventTypeMarketTick:
@@ -1266,6 +1267,8 @@ func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 		return BusEventTypeSettleDistressed, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
 		return BusEventTypeMarketCreated, nil
+	case types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
+		return BusEventTypeMarketUpdated, nil
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
 		return BusEventTypeAsset, nil
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
