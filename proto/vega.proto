@@ -112,7 +112,7 @@ enum PeggedReference {
   PEGGED_REFERENCE_BEST_ASK = 3;
 }
 
-// Pegged orders are limit orders where the price is specified in the form REFERENCE +/- OFFSET 
+// Pegged orders are limit orders where the price is specified in the form REFERENCE +/- OFFSET
 // They can be used for any limit order that is valid during continuous trading
 message PeggedOrder {
   // Which price point are we linked to
@@ -267,7 +267,7 @@ message AuctionIndicativeState {
   int64 auctionEnd = 5;
 }
 
-// OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue 
+// OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue
 // with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 enum OrderError {
   // Default value, no error reported
@@ -765,7 +765,7 @@ message OrderSubmission {
   Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
   // Timestamp for when the order will expire, in nanoseconds since the epoch,
   // required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` 
+  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 expiresAt = 8;
   // Type for the order, required field - See [`Order.Type`](#vega.Order.Type)
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
@@ -831,7 +831,7 @@ enum AccountType {
   // Liquidity accounts contain fees earned by providing liquidity on Vega markets
   ACCOUNT_TYPE_FEES_LIQUIDITY = 6;
   // This account is created to hold fees earned by placing orders that sit on the book
-  // and are then matched with an incoming order to create a trade - These fees reward traders 
+  // and are then matched with an incoming order to create a trade - These fees reward traders
   // who provide the best priced liquidity that actually allows trading to take place
   ACCOUNT_TYPE_FEES_MAKER = 7;
   // This account is created to lock funds to be withdrawn by parties

@@ -525,7 +525,7 @@ message ObservePartyVotesRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
-// Request to subscribe to a stream of MarginLevels data matching the given party identifier 
+// Request to subscribe to a stream of MarginLevels data matching the given party identifier
 // Optionally, the list can be additionally filtered by market
 message MarginLevelsSubscribeRequest {
   // Party identifier, required field
@@ -548,7 +548,7 @@ message MarginLevelsResponse {
   repeated vega.MarginLevels marginLevels = 1;
 }
 
-// Request to subscribe to a stream of MarketsData  
+// Request to subscribe to a stream of MarketsData
 // Optionally, the list can be additionally filtered by market
 message MarketsDataSubscribeRequest {
   // Market identifier
@@ -615,7 +615,7 @@ message PartiesResponse {
   repeated vega.Party parties = 1;
 }
 
-// Request for a list of trades relating to the given party  
+// Request for a list of trades relating to the given party
 // Optionally, the list can be additionally filtered for trades by market
 message TradesByPartyRequest {
   // Party identifier. Required field
@@ -658,10 +658,10 @@ message AccountsSubscribeRequest {
 
 // Request to subscribe to a stream of (Orders)[#vega.Order]
 message OrdersSubscribeRequest {
-  // The fields for market identifier and party identifier are optional filters: 
-  // If omitted all orders, for all parties on all markets will be returned on the stream 
-  // If market identifier is given, orders from that market will be returned on the stream 
-  // If party identifier is given, orders from that party will be returned on the stream 
+  // The fields for market identifier and party identifier are optional filters:
+  // If omitted all orders, for all parties on all markets will be returned on the stream
+  // If market identifier is given, orders from that market will be returned on the stream
+  // If party identifier is given, orders from that party will be returned on the stream
   // Both filters can be combined
 
   // Market identifier
@@ -672,11 +672,11 @@ message OrdersSubscribeRequest {
 
 // Request to subscribe to a stream of (Trades)[#vega.Trade]
 message TradesSubscribeRequest {
-  // The fields for market identifier and party identifier are optional filters: 
-  // If omitted all trades, for all parties on all markets will be returned on the stream 
-  // If market identifier is given, trades from that market will be returned on the stream 
-  // If party identifier is given, trades from that party will be returned on the stream 
-  // Both filters can be combined 
+  // The fields for market identifier and party identifier are optional filters:
+  // If omitted all trades, for all parties on all markets will be returned on the stream
+  // If market identifier is given, trades from that market will be returned on the stream
+  // If party identifier is given, trades from that party will be returned on the stream
+  // Both filters can be combined
 
   // Market identifier
   string marketID = 1;
@@ -776,7 +776,7 @@ message MarketsResponse {
 message CandlesRequest {
   // Market identifier, required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
-  // Timestamp to retrieve candles since, in nanoseconds since the epoch, 
+  // Timestamp to retrieve candles since, in nanoseconds since the epoch,
   // required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 sinceTimestamp = 2 [(validator.field) = {int_gt: 0}];
   // Time interval for the candles, required field
@@ -789,7 +789,7 @@ message CandlesResponse {
   repeated vega.Candle candles = 1;
 }
 
-// Request for the market depth/order book price levels on a market  
+// Request for the market depth/order book price levels on a market
 // Optionally, a maximum depth can be set to limit the number of levels returned
 message MarketDepthRequest {
   // Market identifier, required field
@@ -826,7 +826,7 @@ message TradesByMarketResponse {
   repeated vega.Trade trades = 1;
 }
 
-// Request for a list of positions for a party 
+// Request for a list of positions for a party
 // Optionally, if a market identifier is set, the results will be filtered for that market only
 message PositionsByPartyRequest {
   // Party identifier, required field
@@ -843,7 +843,7 @@ message PositionsByPartyResponse {
 
 // Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
 message VegaTimeResponse {
-  // Timestamp representation of current VegaTime as represented in 
+  // Timestamp representation of current VegaTime as represented in
   // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
   int64 timestamp = 1;
 }
@@ -854,7 +854,7 @@ message Pagination {
   uint64 skip = 1;
   // Limit the number of returned records to the value specified, default is 50
   uint64 limit = 2;
-  // Descending reverses the order of the records returned, 
+  // Descending reverses the order of the records returned,
   // default is true, if false the results will be returned in ascending order
   bool descending = 3;
 }
@@ -906,8 +906,8 @@ message MarketAccountsResponse {
 // Request for a list of infrastructure fee accounts
 message FeeInfrastructureAccountsRequest {
   // Asset identifier, required field
-  // - Set to an empty string to return all accounts  
-  // - Set to an asset ID to return a single infrastructure fee account for a given asset  
+  // - Set to an empty string to return all accounts
+  // - Set to an asset ID to return a single infrastructure fee account for a given asset
   string asset = 1;
 }
 
@@ -961,15 +961,15 @@ message PrepareLiquidityProvisionResponse {
  bytes blob = 1;
 }
 
-// Request for an order with the specified order identifier 
+// Request for an order with the specified order identifier
 // Optionally, return a specific version of the order with the `version` field
 message OrderByIDRequest {
   // Order identifier, required field
   string orderID = 1 [(validator.field) = {msg_exists: true}];
-  // Version of the order:  
-  // - Set `version` to 0 for most recent version of the order  
-  // - Set `1` for original version of the order  
-  // - Set `2` for first amendment, `3` for second amendment, etc  
+  // Version of the order:
+  // - Set `version` to 0 for most recent version of the order
+  // - Set `1` for original version of the order
+  // - Set `2` for first amendment, `3` for second amendment, etc
   uint64 version = 2;
 }
 
@@ -1023,7 +1023,7 @@ message ObserveEventsRequest {
   string marketID = 2;
   // Party identifier, optional field
   string partyID = 3;
-  // Batch size, optional field -  
+  // Batch size, optional field -
   // If not specified, any events received will be sent immediately. If the client is not ready
   // for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
   // if specified, the first batch will be sent when ready. To receive the next set of events, the client

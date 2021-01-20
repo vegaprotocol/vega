@@ -4762,7 +4762,7 @@ set internally by the node to return a unique reference identifier for the order
         
       
         <h3 id="vega.PeggedOrder">PeggedOrder</h3>
-        <p>Pegged orders are limit orders where the price is specified in the form REFERENCE +/- OFFSET </p><p>They can be used for any limit order that is valid during continuous trading</p>
+        <p>Pegged orders are limit orders where the price is specified in the form REFERENCE +/- OFFSET</p><p>They can be used for any limit order that is valid during continuous trading</p>
 
         
           <table class="field-table">
@@ -6076,7 +6076,7 @@ it is also the account where funds are taken to fulfil fees and initial margin r
                 <td>ACCOUNT_TYPE_FEES_MAKER</td>
                 <td>7</td>
                 <td><p>This account is created to hold fees earned by placing orders that sit on the book
-and are then matched with an incoming order to create a trade - These fees reward traders 
+and are then matched with an incoming order to create a trade - These fees reward traders
 who provide the best priced liquidity that actually allows trading to take place</p></td>
               </tr>
             
@@ -6489,7 +6489,7 @@ who provide the best priced liquidity that actually allows trading to take place
         </table>
       
         <h3 id="vega.OrderError">OrderError</h3>
-        <p>OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue </p><p>with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`</p>
+        <p>OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue</p><p>with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`</p>
         <table class="enum-table">
           <thead>
             <tr><td>Name</td><td>Number</td><td>Description</td></tr>
@@ -10215,7 +10215,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                   <td>sinceTimestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Timestamp to retrieve candles since, in nanoseconds since the epoch, 
+                  <td><p>Timestamp to retrieve candles since, in nanoseconds since the epoch,
 required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p></td>
                 </tr>
               
@@ -10722,7 +10722,7 @@ Size (the size at which the order could eventually trade) </p></td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Asset identifier, required field
-- Set to an empty string to return all accounts  
+- Set to an empty string to return all accounts
 - Set to an asset ID to return a single infrastructure fee account for a given asset </p></td>
                 </tr>
               
@@ -11626,7 +11626,7 @@ Size (the size at which the order could eventually trade) </p></td>
         
       
         <h3 id="api.MarginLevelsSubscribeRequest">MarginLevelsSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of MarginLevels data matching the given party identifier </p><p>Optionally, the list can be additionally filtered by market</p>
+        <p>Request to subscribe to a stream of MarginLevels data matching the given party identifier</p><p>Optionally, the list can be additionally filtered by market</p>
 
         
           <table class="field-table">
@@ -11889,7 +11889,7 @@ Size (the size at which the order could eventually trade) </p></td>
         
       
         <h3 id="api.MarketDepthRequest">MarketDepthRequest</h3>
-        <p>Request for the market depth/order book price levels on a market  </p><p>Optionally, a maximum depth can be set to limit the number of levels returned</p>
+        <p>Request for the market depth/order book price levels on a market</p><p>Optionally, a maximum depth can be set to limit the number of levels returned</p>
 
         
           <table class="field-table">
@@ -12125,7 +12125,7 @@ Size (the size at which the order could eventually trade) </p></td>
         
       
         <h3 id="api.MarketsDataSubscribeRequest">MarketsDataSubscribeRequest</h3>
-        <p>Request to subscribe to a stream of MarketsData  </p><p>Optionally, the list can be additionally filtered by market</p>
+        <p>Request to subscribe to a stream of MarketsData</p><p>Optionally, the list can be additionally filtered by market</p>
 
         
           <table class="field-table">
@@ -12238,7 +12238,7 @@ Size (the size at which the order could eventually trade) </p></td>
                   <td>batchSize</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Batch size, optional field -  
+                  <td><p>Batch size, optional field -
 If not specified, any events received will be sent immediately. If the client is not ready
 for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
 if specified, the first batch will be sent when ready. To receive the next set of events, the client
@@ -12456,7 +12456,7 @@ Default: 0, send any and all events when they are available. </p></td>
         
       
         <h3 id="api.OrderByIDRequest">OrderByIDRequest</h3>
-        <p>Request for an order with the specified order identifier </p><p>Optionally, return a specific version of the order with the `version` field</p>
+        <p>Request for an order with the specified order identifier</p><p>Optionally, return a specific version of the order with the `version` field</p>
 
         
           <table class="field-table">
@@ -12476,9 +12476,9 @@ Default: 0, send any and all events when they are available. </p></td>
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Version of the order:  
-- Set `version` to 0 for most recent version of the order  
-- Set `1` for original version of the order  
+                  <td><p>Version of the order:
+- Set `version` to 0 for most recent version of the order
+- Set `1` for original version of the order
 - Set `2` for first amendment, `3` for second amendment, etc </p></td>
                 </tr>
               
@@ -13013,7 +13013,7 @@ Default: 0, send any and all events when they are available. </p></td>
                   <td>descending</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p>Descending reverses the order of the records returned, 
+                  <td><p>Descending reverses the order of the records returned,
 default is true, if false the results will be returned in ascending order </p></td>
                 </tr>
               
@@ -13193,7 +13193,7 @@ default is true, if false the results will be returned in ascending order </p></
         
       
         <h3 id="api.PositionsByPartyRequest">PositionsByPartyRequest</h3>
-        <p>Request for a list of positions for a party </p><p>Optionally, if a market identifier is set, the results will be filtered for that market only</p>
+        <p>Request for a list of positions for a party</p><p>Optionally, if a market identifier is set, the results will be filtered for that market only</p>
 
         
           <table class="field-table">
@@ -13970,7 +13970,7 @@ default is true, if false the results will be returned in ascending order </p></
         
       
         <h3 id="api.TradesByPartyRequest">TradesByPartyRequest</h3>
-        <p>Request for a list of trades relating to the given party  </p><p>Optionally, the list can be additionally filtered for trades by market</p>
+        <p>Request for a list of trades relating to the given party</p><p>Optionally, the list can be additionally filtered for trades by market</p>
 
         
           <table class="field-table">
@@ -14100,7 +14100,7 @@ default is true, if false the results will be returned in ascending order </p></
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Timestamp representation of current VegaTime as represented in 
+                  <td><p>Timestamp representation of current VegaTime as represented in
 Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z` </p></td>
                 </tr>
               

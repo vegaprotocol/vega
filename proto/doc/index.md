@@ -1395,7 +1395,7 @@ A party represents an entity who wishes to trade on or query a Vega network
 <a name="vega.PeggedOrder"></a>
 
 ### PeggedOrder
-Pegged orders are limit orders where the price is specified in the form REFERENCE &#43;/- OFFSET 
+Pegged orders are limit orders where the price is specified in the form REFERENCE &#43;/- OFFSET
 They can be used for any limit order that is valid during continuous trading
 
 
@@ -2020,7 +2020,7 @@ Type values for an order
 <a name="vega.OrderError"></a>
 
 ### OrderError
-OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue 
+OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue
 with an order during it&#39;s life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 
 | Name | Number | Description |
@@ -3951,7 +3951,7 @@ Response for margin levels for a party
 <a name="api.MarginLevelsSubscribeRequest"></a>
 
 ### MarginLevelsSubscribeRequest
-Request to subscribe to a stream of MarginLevels data matching the given party identifier 
+Request to subscribe to a stream of MarginLevels data matching the given party identifier
 Optionally, the list can be additionally filtered by market
 
 
@@ -4059,7 +4059,7 @@ Response for market data for a market
 <a name="api.MarketDepthRequest"></a>
 
 ### MarketDepthRequest
-Request for the market depth/order book price levels on a market  
+Request for the market depth/order book price levels on a market
 Optionally, a maximum depth can be set to limit the number of levels returned
 
 
@@ -4140,7 +4140,7 @@ Response for market data
 <a name="api.MarketsDataSubscribeRequest"></a>
 
 ### MarketsDataSubscribeRequest
-Request to subscribe to a stream of MarketsData  
+Request to subscribe to a stream of MarketsData
 Optionally, the list can be additionally filtered by market
 
 
@@ -4289,7 +4289,7 @@ Optional proposal state
 <a name="api.OrderByIDRequest"></a>
 
 ### OrderByIDRequest
-Request for an order with the specified order identifier 
+Request for an order with the specified order identifier
 Optionally, return a specific version of the order with the `version` field
 
 
@@ -4586,7 +4586,7 @@ Response for a party given a party identifier
 <a name="api.PositionsByPartyRequest"></a>
 
 ### PositionsByPartyRequest
-Request for a list of positions for a party 
+Request for a list of positions for a party
 Optionally, if a market identifier is set, the results will be filtered for that market only
 
 
@@ -4943,7 +4943,7 @@ Response for a list of trades related to an order
 <a name="api.TradesByPartyRequest"></a>
 
 ### TradesByPartyRequest
-Request for a list of trades relating to the given party  
+Request for a list of trades relating to the given party
 Optionally, the list can be additionally filtered for trades by market
 
 
