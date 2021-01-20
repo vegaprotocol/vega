@@ -1728,17 +1728,48 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 
 	require.Equal(t, lpOrderVolumeBid, lpOrderVolumeBidPrev-sizeDiff)
 
-	// Liquidity  order fills partially
+	// Liquidity  order fills entirely
 	// First add another limit not to loose the peg reference later on
 	orderBuy3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-3", types.Side_SIDE_BUY, mainParty, 1, matchingPrice)
 	confirmationBuy3, err := tm.market.SubmitOrder(ctx, orderBuy3)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(confirmationBuy3.Trades))
 
+	mktData = tm.market.GetMarketData()
+	lpOrderVolumeBidPrev = mktData.BestBidVolume - mktData.BestStaticBidVolume
+
+	orderBuy2SizeBeforeTrade := orderBuy2.Remaining
 	auxOrder3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "aux-order-3", types.Side_SIDE_SELL, auxParty, 5, matchingPrice+1)
 	confirmationAux, err = tm.market.SubmitOrder(ctx, auxOrder3)
 	assert.NoError(t, err)
 	require.Equal(t, 2, len(confirmationAux.Trades))
+
+	mktData = tm.market.GetMarketData()
+	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
+
+	require.Equal(t, lpOrderVolumeBidPrev+orderBuy2SizeBeforeTrade, lpOrderVolumeBid)
+
+	// Liquidity  order fills partially
+	// First add another limit not to loose the peg reference later on
+	orderBuy4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-4", types.Side_SIDE_BUY, mainParty, 1, matchingPrice-1)
+	confirmationBuy4, err := tm.market.SubmitOrder(ctx, orderBuy4)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(confirmationBuy4.Trades))
+
+	mktData = tm.market.GetMarketData()
+	lpOrderVolumeBidPrev = mktData.BestBidVolume - mktData.BestStaticBidVolume
+
+	orderBuy3SizeBeforeTrade := orderBuy3.Remaining
+	auxOrder4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "aux-order-4", types.Side_SIDE_SELL, auxParty, orderBuy3.Size+1, orderBuy3.Price)
+	confirmationAux, err = tm.market.SubmitOrder(ctx, auxOrder4)
+	assert.NoError(t, err)
+	require.Equal(t, 2, len(confirmationAux.Trades))
+
+	mktData = tm.market.GetMarketData()
+	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
+	lpOrderVolumeOffer = mktData.BestOfferVolume - mktData.BestStaticOfferVolume
+
+	require.Equal(t, lpOrderVolumeBidPrev+orderBuy3SizeBeforeTrade, lpOrderVolumeBid)
 
 }
 
