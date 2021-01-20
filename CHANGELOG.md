@@ -1,5 +1,66 @@
 # Changelog
 
+## 0.30.0
+
+*2021-01-19*
+
+This release enables (or more accurately, re-enables previously disabled) pegged orders, meaning they're finally here :tada:
+
+The Ethereum bridge also received some work - in particular the number of confirmations we wait for on Ethereum is now controlled by a governance parameter. Being a governance parameter, that means that the value can be changed by a governance vote. Slightly related: You can now fetch active governance proposals via REST.
+
+:one: We also switch to [Buf](https://buf.build/) for our protobuf workflow. This was one of the pre-requisites for opening up our api clients build process, and making the protobuf files open source. More on that soon!
+
+:two: This fixes an issue on testnet where votes were not registered when voting on open governance proposals. The required number of Ropsten `VOTE` tokens was being calculated incorrectly on testnet, leading to all votes quietly being ignored. In 0.30.0, voting works as expected again.
+
+### New
+
+- [#2732](https://github.com/vegaprotocol/vega/pull/2732) Add REST endpoint to fetch all proposals (`/governance/proposals`)
+- [#2735](https://github.com/vegaprotocol/vega/pull/2735) Add `FeeSplitter` to correctly split fee portion of an aggressive order
+- [#2745](https://github.com/vegaprotocol/vega/pull/2745) Add transfer bus events for withdrawals and deposits
+- [#2754](https://github.com/vegaprotocol/vega/pull/2754) Add New Market bus event
+- [#2778](https://github.com/vegaprotocol/vega/pull/2778) Switch to [Buf](https://buf.build/) :one:
+- [#2785](https://github.com/vegaprotocol/vega/pull/2785) Add configurable required confirmations for bridge transactions
+- [#2791](https://github.com/vegaprotocol/vega/pull/2791) Add Supplied State to market data
+- [#2793](https://github.com/vegaprotocol/vega/pull/2793) 🔥Rename `marketState` to `marketTradingMode`, add new `marketState` enum (`ACTIVE`, `SUSPENDED` or `PENDING`)
+- [#2833](https://github.com/vegaprotocol/vega/pull/2833) Add fees estimate for pegged orders
+- [#2838](https://github.com/vegaprotocol/vega/pull/2838) Add bond and fee transfers
+
+### Improvements
+- [#2835](https://github.com/vegaprotocol/vega/pull/2835) Fix voting for proposals :two:
+- [#2830](https://github.com/vegaprotocol/vega/pull/2830) Refactor pegged order repricing
+- [#2827](https://github.com/vegaprotocol/vega/pull/2827) Refactor expiring orders lists
+- [#2821](https://github.com/vegaprotocol/vega/pull/2821) Handle liquidity commitments on market proposals
+- [#2816](https://github.com/vegaprotocol/vega/pull/2816) Add changing liquidity commitment when not enough stake
+- [#2805](https://github.com/vegaprotocol/vega/pull/2805) Fix read nodes lagging if they receive votes but not a bridge event
+- [#2804](https://github.com/vegaprotocol/vega/pull/2804) Fix various minor bridge confirmation bugs
+- [#2800](https://github.com/vegaprotocol/vega/pull/2800) Fix removing pegged orders that are rejected when unparked
+- [#2799](https://github.com/vegaprotocol/vega/pull/2799) Fix crasher when proposing an update to network parameters
+- [#2797](https://github.com/vegaprotocol/vega/pull/2797) Update target stake to include mark price
+- [#2783](https://github.com/vegaprotocol/vega/pull/2783) Fix price monitoring integration tests
+- [#2780](https://github.com/vegaprotocol/vega/pull/2780) Add more unit tests for pegged order price amends
+- [#2774](https://github.com/vegaprotocol/vega/pull/2774) Fix cancelling all orders
+- [#2768](https://github.com/vegaprotocol/vega/pull/2768) Fix GraphQL: Allow `marketId` to be null when it is invalid
+- [#2767](https://github.com/vegaprotocol/vega/pull/2767) Fix parked pegged orders to have a price of 0 explicitly
+- [#2766](https://github.com/vegaprotocol/vega/pull/2766) Disallow GFN to GTC/GTT amends
+- [#2765](https://github.com/vegaprotocol/vega/pull/2765) Fix New Market bus event being sent more than once
+- [#2763](https://github.com/vegaprotocol/vega/pull/2763) Add rounding to pegged order mid prices that land on non integer values
+- [#2795](https://github.com/vegaprotocol/vega/pull/2795) Fix typos in GraphQL schema documentation
+- [#2762](https://github.com/vegaprotocol/vega/pull/2762) Fix more typos in GraphQL schema documentation
+- [#2758](https://github.com/vegaprotocol/vega/pull/2758) Fix error handling when amending some pegged order types
+- [#2757](https://github.com/vegaprotocol/vega/pull/2757) Remove order from pegged list when it becomes inactive
+- [#2756](https://github.com/vegaprotocol/vega/pull/2756) Add more panics to the core
+- [#2750](https://github.com/vegaprotocol/vega/pull/2750) Remove expiring orders when amending to non GTT
+- [#2671](https://github.com/vegaprotocol/vega/pull/2671) Add extra integration tests for uncrossing at auction end
+- [#2746](https://github.com/vegaprotocol/vega/pull/2746) Fix potential divide by 0 in position calculation
+- [#2743](https://github.com/vegaprotocol/vega/pull/2743) Add check for pegged orders impacted by order expiry
+- [#2737](https://github.com/vegaprotocol/vega/pull/2737) Remove the ability to amend a pegged order's price
+- [#2724](https://github.com/vegaprotocol/vega/pull/2724) Add price monitoring tests for order amendment
+- [#2723](https://github.com/vegaprotocol/vega/pull/2723) Fix fee monitoring values during auction
+- [#2721](https://github.com/vegaprotocol/vega/pull/2721) Fix incorrect reference when amending pegged orders
+- [#2717](https://github.com/vegaprotocol/vega/pull/2717) Fix incorrect error codes for IOC and FOK orders during auction
+- [#2715](https://github.com/vegaprotocol/vega/pull/2715) Update price monitoring to use reference price when syncing with risk model
+- [#2711](https://github.com/vegaprotocol/vega/pull/2711) Refactor governance event subscription
+
 ## 0.29.0
 
 *2020-12-07*
