@@ -1008,7 +1008,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, append(onf.PassiveOrdersAffected, conf.Order)); err != nil {
+	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
 		return nil, err
 	}
 
@@ -1024,7 +1024,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	}()
 
 	// set those at the begining as even rejected order get through the buffers
-	if setID || order.Id == "" {
+	if setID {
 		m.idgen.SetID(order)
 	}
 	order.Version = InitialOrderVersion
