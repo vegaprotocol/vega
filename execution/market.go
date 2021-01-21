@@ -186,6 +186,7 @@ type Market struct {
 	lastMarketValueProxy    float64
 	marketValueWindowLength time.Duration
 	feeSplitter             *FeeSplitter
+	equityShares            *EquityShares
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -311,6 +312,7 @@ func NewMarket(
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
+		equityShares:       NewEquityShares(0),
 	}
 
 	return market, nil
@@ -397,7 +399,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:      strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
 		// TODO(): set this with actual value when implemented.
-		LiquidityProviderFeeShare: []*types.LiquidityProviderFeeShare{},
+		LiquidityProviderFeeShare: m.equityShares.ToLiquidityProviderFeeShare(),
 	}
 }
 

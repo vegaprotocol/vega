@@ -1,10 +1,16 @@
 package execution
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
 
 // lp holds LiquidityProvider stake and avg values
 type lp struct {
 	stake float64
+	share float64
 	avg   float64
 }
 
@@ -96,5 +102,18 @@ func (es *EquityShares) Shares(party string) (float64, error) {
 		return 0, err
 	}
 
-	return eq / totalEquity, nil
+	es.lps[party].share = eq / totalEquity
+	return es.lps[party].share, nil
+}
+
+func (es *EquityShares) ToLiquidityProviderFeeShare() []*types.LiquidityProviderFeeShare {
+	out := make([]*types.LiquidityProviderFeeShare, 0, len(es.lps))
+	for k, v := range es.lps {
+		out = append(out, &types.LiquidityProviderFeeShare{
+			Party:                 k,
+			EquityLikeShare:       strconv.FormatFloat(v.share, 'f', -1, 64),
+			AverageEntryValuation: strconv.FormatFloat(v.avg, 'f', -1, 64),
+		})
+	}
+	return out
 }
