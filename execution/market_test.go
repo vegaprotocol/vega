@@ -1549,13 +1549,15 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 
 func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 	ctx := context.Background()
-	party1 := "party1"
+	mainParty := "mainParty"
+	auxParty := "auxParty"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	var midPrice uint64 = 100
 
-	addAccount(tm, party1)
+	addAccount(tm, mainParty)
+	addAccount(tm, auxParty)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	lp1 := &types.LiquidityProvisionSubmission{
@@ -1570,16 +1572,16 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 		},
 	}
 
-	err := tm.market.SubmitLiquidityProvision(ctx, lp1, party1, "id-lp1")
+	err := tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
 	require.NoError(t, err)
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, party1, 1, midPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "auxParty-sell-order-1", types.Side_SIDE_SELL, auxParty, 1, midPrice+2)
 
 	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, party1, 1, midPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "auxParty-buy-order-1", types.Side_SIDE_BUY, auxParty, 1, midPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -1590,6 +1592,62 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 	lpOrderVolumeBid := mktData.BestBidVolume - mktData.BestStaticBidVolume
 	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 
+	var zero uint64 = 0
+	require.Greater(t, lpOrderVolumeBid, zero)
+	require.Greater(t, lpOrderVolumeOffer, zero)
+}
+
+func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
+	ctx := context.Background()
+	mainParty := "mainParty"
+	auxParty := "auxParty"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	var auctionDuration int64 = 5
+	tm := getTestMarket2(t, now, closingAt, nil, &types.AuctionDuration{Duration: auctionDuration}, true)
+	var midPrice uint64 = 100
+
+	addAccount(tm, mainParty)
+	addAccount(tm, auxParty)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	lp1 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 200,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, tm.market.GetMarketData().MarketTradingMode)
+
+	err := tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
+	require.NoError(t, err)
+
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "auxParty-sell-order-1", types.Side_SIDE_SELL, auxParty, 1, midPrice+2)
+
+	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "auxParty-buy-order-1", types.Side_SIDE_BUY, auxParty, 1, midPrice-2)
+
+	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	tm.market.OnChainTimeUpdate(ctx, now.Add(time.Duration((auctionDuration+1)*time.Second.Nanoseconds())))
+
+	// Check that liquidity orders appear on the book once reference prices exist
+	mktData := tm.market.GetMarketData()
+	lpOrderVolumeBid := mktData.BestBidVolume - mktData.BestStaticBidVolume
+	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
+
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, mktData.MarketTradingMode)
 	var zero uint64 = 0
 	require.Greater(t, lpOrderVolumeBid, zero)
 	require.Greater(t, lpOrderVolumeOffer, zero)
