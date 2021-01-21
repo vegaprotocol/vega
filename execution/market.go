@@ -1008,9 +1008,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, err
 	}
 
-	modifiedOrders := conf.PassiveOrdersAffected
-	modifiedOrders = append(modifiedOrders, conf.Order)
-	if err := m.liquidityUpdate(ctx, modifiedOrders); err != nil {
+	if err := m.liquidityUpdate(ctx, append(onf.PassiveOrdersAffected, conf.Order)); err != nil {
 		return nil, err
 	}
 
