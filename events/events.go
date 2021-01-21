@@ -63,6 +63,7 @@ type Margin interface {
 	MarginBalance() uint64
 	GeneralBalance() uint64
 	MarketID() string
+	MarginShortFall() uint64
 }
 
 // Risk is an event that summarizes everything and an eventual update to margin account.
