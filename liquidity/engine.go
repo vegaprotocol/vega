@@ -241,8 +241,9 @@ func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*t
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
 	kills := e.killExistingLiquidityOrders(party)
-	creates, amendments, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
-	return creates, append(kills, amendments...), err
+	// ignoring amends as there won't be any since we kill all the orders first
+	creates, _, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
+	return creates, kills, err
 }
 
 // Update gets the order changes.
