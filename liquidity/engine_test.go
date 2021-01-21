@@ -2,6 +2,7 @@ package liquidity_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -124,7 +125,7 @@ func testSubmissionCRUD(t *testing.T) {
 		CommitmentAmount: lps1.CommitmentAmount,
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
-		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE,
+		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_UNDEPLOYED,
 		Buys: []*types.LiquidityOrderReference{
 			{LiquidityOrder: buyShape[0]},
 		},
@@ -175,6 +176,67 @@ func testSubmissionCRUD(t *testing.T) {
 	)
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID(party),
 		"Party '%s' should not be a LiquidityProvider after Committing 0 amount", party)
+}
+
+func TestInitialDeplyFailsWorksLater(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		now   = time.Now()
+		tng   = newTestEngine(t, now)
+	)
+	defer tng.ctrl.Finish()
+
+	// We don't care about the following calls
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Send a submission to create the shape
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -2},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
+		},
+	}
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+	)
+
+	var (
+		markPrice = uint64(10)
+	)
+
+	fn := func(order *types.PeggedOrder) (uint64, error) {
+		return 0, errors.New("some error")
+	}
+
+	// Expecting no creates as repreiceFn returns an error
+	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, []*types.Order{}, fn)
+	require.NoError(t, err)
+	require.Len(t, creates, 0)
+
+	// Now repreiceFn works as expected, so initial orders should get created now
+	fn = func(order *types.PeggedOrder) (uint64, error) {
+		return markPrice + uint64(order.Offset), nil
+	}
+
+	// Expectations
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(0.0, 100.0).AnyTimes()
+	any := gomock.Any()
+	tng.riskModel.EXPECT().ProbabilityOfTrading(
+		any, any, any, any, any, any, any,
+	).AnyTimes().Return(0.5)
+	tng.idGen.EXPECT().SetID(gomock.Any()).Do(func(order *types.Order) {
+		order.Id = uuid.NewV4().String()
+	}).AnyTimes()
+
+	newOrders, amendments, err := tng.engine.Update(markPrice, fn, []*types.Order{})
+	require.NoError(t, err)
+	require.Len(t, newOrders, 3)
+	require.Len(t, amendments, 0)
 }
 
 func testCancelNonExistingSubmission(t *testing.T) {

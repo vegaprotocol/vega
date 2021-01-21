@@ -65,6 +65,9 @@ type Engine struct {
 	// liquidityOrder stores the orders generated to satisfy the liquidity commitment of a given party.
 	// indexed as: map of PartyID -> OrdersID -> order
 	liquidityOrders map[string]map[string]*types.Order
+
+	// undeployedProvisions flags that there are provisions within the engine that are not deployed
+	undeployedProvisions bool
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -172,8 +175,8 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 
 	lp.UpdatedAt = now
 	lp.CommitmentAmount = lps.CommitmentAmount
-	lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE
-
+	lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_UNDEPLOYED
+	e.undeployedProvisions = true
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
 	for _, buy := range lps.Buys {
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
@@ -262,6 +265,22 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 		newOrders = append(newOrders, creates...)
 		amendments = append(amendments, updates...)
 	}
+	if e.undeployedProvisions {
+		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
+		stillUndeployed := false
+		for _, lp := range e.provisions {
+			if lp.Status == types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_UNDEPLOYED {
+				creates, updates, err := e.createOrUpdateForParty(markPrice, lp.PartyID, repriceFn)
+				if err != nil {
+					return nil, nil, err
+				}
+				newOrders = append(newOrders, creates...)
+				amendments = append(amendments, updates...)
+				stillUndeployed = stillUndeployed || lp.Status == types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_UNDEPLOYED
+			}
+		}
+		e.undeployedProvisions = stillUndeployed
+	}
 
 	return newOrders, amendments, nil
 }
@@ -344,6 +363,8 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 	}
 
 	if !(oneOrMoreValidOrdersBuy && oneOrMoreValidOrdersSell) {
+		lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_UNDEPLOYED
+		e.undeployedProvisions = true
 		return nil, nil, nil
 	}
 
@@ -358,6 +379,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 
 	needsCreateBuys, needsUpdateBuys := e.createOrdersFromShape(party, buysShape, types.Side_SIDE_BUY)
 	needsCreateSells, needsUpdateSells := e.createOrdersFromShape(party, sellsShape, types.Side_SIDE_SELL)
+	lp.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE
 
 	return append(needsCreateBuys, needsCreateSells...),
 		append(needsUpdateBuys, needsUpdateSells...),
