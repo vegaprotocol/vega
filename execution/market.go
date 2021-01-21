@@ -620,6 +620,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 		if HasReferenceMoved(order, changes) {
 			if order.Status != types.Order_STATUS_PARKED {
 				// Remove order if any volume remains, otherwise it's already been popped by the matching engine.
+				// TODO: Remove once #2854 is closed
 				if order.Remaining > 0 {
 					cancellation, err := m.matching.CancelOrder(order)
 					if cancellation == nil || err != nil {
