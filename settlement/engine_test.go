@@ -34,8 +34,8 @@ type posValue struct {
 
 type marginVal struct {
 	events.MarketPosition
-	asset, marketID string
-	margin, general uint64
+	asset, marketID                  string
+	margin, general, marginShortFall uint64
 }
 
 func TestMarketExpiry(t *testing.T) {
@@ -600,6 +600,10 @@ func (m marginVal) MarginBalance() uint64 {
 
 func (m marginVal) GeneralBalance() uint64 {
 	return m.general
+}
+
+func (m marginVal) MarginShortFall() uint64 {
+	return m.marginShortFall
 }
 
 //  vim: set ts=4 sw=4 tw=0 foldlevel=1 foldmethod=marker noet :

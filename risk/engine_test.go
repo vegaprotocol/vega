@@ -33,18 +33,19 @@ type testEngine struct {
 
 // implements the events.Margin interface
 type testMargin struct {
-	party    string
-	size     int64
-	buy      int64
-	sell     int64
-	price    uint64
-	transfer *types.Transfer
-	asset    string
-	margin   uint64
-	general  uint64
-	market   string
-	vwBuy    uint64
-	vwSell   uint64
+	party           string
+	size            int64
+	buy             int64
+	sell            int64
+	price           uint64
+	transfer        *types.Transfer
+	asset           string
+	margin          uint64
+	general         uint64
+	market          string
+	vwBuy           uint64
+	vwSell          uint64
+	marginShortFall uint64
 }
 
 var (
@@ -536,4 +537,8 @@ func (m testMargin) ClearPotentials() {}
 
 func (m testMargin) Transfer() *types.Transfer {
 	return m.transfer
+}
+
+func (m testMargin) MarginShortFall() uint64 {
+	return m.marginShortFall
 }

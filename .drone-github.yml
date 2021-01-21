@@ -306,9 +306,7 @@ steps:
       api_key:
         from_secret: GITHUB_API_TOKEN
       files:
-        - cmd/dummyriskmodel/dummyriskmodel-*
         - cmd/vega/vega-*
-        - cmd/vegaccount/vegaccount-*
         - cmd/vegastream/vegastream-*
     when:
       event: tag
