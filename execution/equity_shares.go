@@ -1,10 +1,13 @@
 package execution
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // lp holds LiquidityProvider stake and avg values
 type lp struct {
 	stake float64
+	share float64
 	avg   float64
 }
 
@@ -96,5 +99,6 @@ func (es *EquityShares) Shares(party string) (float64, error) {
 		return 0, err
 	}
 
-	return eq / totalEquity, nil
+	es.lps[party].share = eq / totalEquity
+	return es.lps[party].share, nil
 }
