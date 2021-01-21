@@ -1849,10 +1849,8 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 
 	mktData = tm.market.GetMarketData()
 	lpOrderVolumeBid = mktData.BestBidVolume - mktData.BestStaticBidVolume
-	lpOrderVolumeOffer = mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 
 	require.Equal(t, lpOrderVolumeBidPrev+orderBuy3SizeBeforeTrade, lpOrderVolumeBid)
-
 }
 
 func getMarketOrder(tm *testMarket,
