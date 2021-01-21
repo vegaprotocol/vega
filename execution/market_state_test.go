@@ -97,7 +97,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 
 	// we expect an error as this lp may be stupid
 	// but not equal to the trading not allowed one
-	assert.NotEqual(t, err.Error(), execution.ErrCommitmentSubmissionNotAllowed.Error())
+	assert.NoError(t, err)
 }
 
 func testCanMoveFromProposedToRejectedState(t *testing.T) {
