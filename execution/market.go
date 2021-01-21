@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -399,7 +400,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:      strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
 		// TODO(): set this with actual value when implemented.
-		LiquidityProviderFeeShare: m.equityShares.ToLiquidityProviderFeeShare(),
+		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
 }
 
@@ -3123,4 +3124,22 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+}
+
+func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProviderFeeShare {
+	out := make([]*types.LiquidityProviderFeeShare, 0, len(lps))
+	for k, v := range lps {
+		out = append(out, &types.LiquidityProviderFeeShare{
+			Party:                 k,
+			EquityLikeShare:       strconv.FormatFloat(v.share, 'f', -1, 64),
+			AverageEntryValuation: strconv.FormatFloat(v.avg, 'f', -1, 64),
+		})
+	}
+
+	// sort then so we produce the same output on all nodes
+	sort.SliceStable(out, func(i, j int) bool {
+		return out[i].Party < out[j].Party
+	})
+
+	return out
 }
