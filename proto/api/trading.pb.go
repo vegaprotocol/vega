@@ -25,17 +25,18 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// Blockchain transaction type
 type SubmitTransactionRequest_Type int32
 
 const (
 	SubmitTransactionRequest_TYPE_UNSPECIFIED SubmitTransactionRequest_Type = 0
-	// The transaction will be submitted without waiting for response.
+	// The transaction will be submitted without waiting for response
 	SubmitTransactionRequest_TYPE_ASYNC SubmitTransactionRequest_Type = 1
 	// The transaction will be submitted, and blocking until the
-	// tendermint mempool return a response.
+	// tendermint mempool return a response
 	SubmitTransactionRequest_TYPE_SYNC SubmitTransactionRequest_Type = 2
 	// The transaction will submitted, and blocking until the tendermint
-	// network will have committed it into a block.
+	// network will have committed it into a block
 	SubmitTransactionRequest_TYPE_COMMIT SubmitTransactionRequest_Type = 3
 )
 
@@ -61,13 +62,13 @@ func (SubmitTransactionRequest_Type) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_fa307558c2e5587d, []int{2, 0}
 }
 
-// Request for a new event sent by the blockchain queue to be propagated on Vega.
+// Request for a new event sent by the blockchain queue to be propagated on Vega
 type PropagateChainEventRequest struct {
-	// Chain event.
+	// Chain event
 	Evt *proto1.ChainEvent `protobuf:"bytes,1,opt,name=evt,proto3" json:"evt,omitempty"`
-	// Public key.
+	// Public key
 	PubKey string `protobuf:"bytes,2,opt,name=pubKey,proto3" json:"pubKey,omitempty"`
-	// Signature.
+	// Signature
 	Signature            []byte   `protobuf:"bytes,3,opt,name=signature,proto3" json:"signature,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -120,10 +121,10 @@ func (m *PropagateChainEventRequest) GetSignature() []byte {
 	return nil
 }
 
-// Response for a new event sent by the blockchain queue to be propagated on Vega.
+// Response for a new event sent by the blockchain queue to be propagated on Vega
 type PropagateChainEventResponse struct {
-	// Success will be true if the event was accepted by the node.
-	// Important - success does not mean that the event is confirmed by consensus.
+	// Success will be true if the event was accepted by the node,
+	// **Important** - success does not mean that the event is confirmed by consensus
 	Success              bool     `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -162,10 +163,11 @@ func (m *PropagateChainEventResponse) GetSuccess() bool {
 	return false
 }
 
-// Request for submitting a transaction on Vega.
+// Request for submitting a transaction on Vega
 type SubmitTransactionRequest struct {
-	// A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain.
-	Tx                   *proto1.SignedBundle          `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
+	// A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain
+	Tx *proto1.SignedBundle `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
+	// Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response
 	Type                 SubmitTransactionRequest_Type `protobuf:"varint,2,opt,name=type,proto3,enum=api.SubmitTransactionRequest_Type" json:"type,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
@@ -211,10 +213,10 @@ func (m *SubmitTransactionRequest) GetType() SubmitTransactionRequest_Type {
 	return SubmitTransactionRequest_TYPE_UNSPECIFIED
 }
 
-// Response for submitting a transaction on Vega.
+// Response for submitting a transaction on Vega
 type SubmitTransactionResponse struct {
-	// Success will be true if the transaction was accepted by the node.
-	// Important - success does not mean that the transaction is confirmed by consensus.
+	// Success will be true if the transaction was accepted by the node,
+	// **Important** - success does not mean that the event is confirmed by consensus
 	Success              bool     `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -253,9 +255,9 @@ func (m *SubmitTransactionResponse) GetSuccess() bool {
 	return false
 }
 
-// Request for preparing a withdrawal.
+// Request for preparing a withdrawal
 type PrepareWithdrawRequest struct {
-	// An asset withdrawal.
+	// An asset withdrawal
 	Withdraw             *proto1.WithdrawSubmission `protobuf:"bytes,1,opt,name=withdraw,proto3" json:"withdraw,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
@@ -294,9 +296,9 @@ func (m *PrepareWithdrawRequest) GetWithdraw() *proto1.WithdrawSubmission {
 	return nil
 }
 
-// Response for preparing a withdrawal.
+// Response for preparing a withdrawal
 type PrepareWithdrawResponse struct {
-	// blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction.
+	// Blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction
 	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -335,11 +337,11 @@ func (m *PrepareWithdrawResponse) GetBlob() []byte {
 	return nil
 }
 
-// Response for preparing an order submission.
+// Response for preparing an order submission
 type PrepareSubmitOrderResponse struct {
-	// blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction.
+	// Blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction
 	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
-	// Submission identifier (order reference).
+	// Submission identifier (order reference)
 	SubmitID             string   `protobuf:"bytes,2,opt,name=submitID,proto3" json:"submitID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -385,9 +387,9 @@ func (m *PrepareSubmitOrderResponse) GetSubmitID() string {
 	return ""
 }
 
-// Response for preparing an order cancellation.
+// Response for preparing an order cancellation
 type PrepareCancelOrderResponse struct {
-	// blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction.
+	// Blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction
 	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -426,9 +428,9 @@ func (m *PrepareCancelOrderResponse) GetBlob() []byte {
 	return nil
 }
 
-// Response for preparing an order amendment.
+// Response for preparing an order amendment
 type PrepareAmendOrderResponse struct {
-	// blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction.
+	// Blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction.
 	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -467,9 +469,9 @@ func (m *PrepareAmendOrderResponse) GetBlob() []byte {
 	return nil
 }
 
-// Request to submit a new order.
+// Request to submit a new order
 type SubmitOrderRequest struct {
-	// An order submission.
+	// An order submission
 	Submission           *proto1.OrderSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
@@ -508,9 +510,9 @@ func (m *SubmitOrderRequest) GetSubmission() *proto1.OrderSubmission {
 	return nil
 }
 
-// Request to cancel an existing order.
+// Request to cancel an existing order
 type CancelOrderRequest struct {
-	// An order cancellation.
+	// An order cancellation
 	Cancellation         *proto1.OrderCancellation `protobuf:"bytes,1,opt,name=cancellation,proto3" json:"cancellation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
 	XXX_unrecognized     []byte                    `json:"-"`
@@ -549,9 +551,9 @@ func (m *CancelOrderRequest) GetCancellation() *proto1.OrderCancellation {
 	return nil
 }
 
-// Request to amend an existing order.
+// Request to amend an existing order
 type AmendOrderRequest struct {
-	// An order amendment.
+	// An order amendment
 	Amendment            *proto1.OrderAmendment `protobuf:"bytes,1,opt,name=amendment,proto3" json:"amendment,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -590,7 +592,7 @@ func (m *AmendOrderRequest) GetAmendment() *proto1.OrderAmendment {
 	return nil
 }
 
-// Request for a list of all assets enabled on Vega.
+// Request for a list of all assets enabled on Vega
 type AssetsRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -622,9 +624,9 @@ func (m *AssetsRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AssetsRequest proto.InternalMessageInfo
 
-// Response for a list of all assets enabled on Vega.
+// Response for a list of all assets enabled on Vega
 type AssetsResponse struct {
-	// A list of 0 or more assets.
+	// A list of 0 or more assets
 	Assets               []*proto1.Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -663,9 +665,9 @@ func (m *AssetsResponse) GetAssets() []*proto1.Asset {
 	return nil
 }
 
-// Request for an asset given an asset identifier.
+// Request for an asset given an asset identifier
 type AssetByIDRequest struct {
-	// Asset identifier. Required field.
+	// Asset identifier, required field
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -704,9 +706,9 @@ func (m *AssetByIDRequest) GetID() string {
 	return ""
 }
 
-// Response for an asset given an asset identifier.
+// Response for an asset given an asset identifier
 type AssetByIDResponse struct {
-	// An asset record, if found.
+	// An asset record, if found
 	Asset                *proto1.Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -745,9 +747,9 @@ func (m *AssetByIDResponse) GetAsset() *proto1.Asset {
 	return nil
 }
 
-// Request to specify the identifier of the resource we want to retrieve aggregated signatures for.
+// Request to specify the identifier of the resource we want to retrieve aggregated signatures for
 type GetNodeSignaturesAggregateRequest struct {
-	// Resource identifier. Required field.
+	// Resource identifier, required field
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -786,9 +788,9 @@ func (m *GetNodeSignaturesAggregateRequest) GetID() string {
 	return ""
 }
 
-// Response to specify the identifier of the resource we want to retrieve aggregated signatures for.
+// Response to specify the identifier of the resource we want to retrieve aggregated signatures for
 type GetNodeSignaturesAggregateResponse struct {
-	// A list of 0 or more signatures.
+	// A list of 0 or more signatures
 	Signatures           []*proto1.NodeSignature `protobuf:"bytes,1,rep,name=signatures,proto3" json:"signatures,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
@@ -827,9 +829,9 @@ func (m *GetNodeSignaturesAggregateResponse) GetSignatures() []*proto1.NodeSigna
 	return nil
 }
 
-// Optional proposal state.
+// Optional proposal state
 type OptionalProposalState struct {
-	// Proposal state value.
+	// Proposal state value
 	Value                proto1.Proposal_State `protobuf:"varint,1,opt,name=value,proto3,enum=vega.Proposal_State" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
@@ -868,9 +870,9 @@ func (m *OptionalProposalState) GetValue() proto1.Proposal_State {
 	return proto1.Proposal_STATE_UNSPECIFIED
 }
 
-// Request for a list of proposals.
+// Request for a list of proposals
 type GetProposalsRequest struct {
-	// Optional proposal state.
+	// Optional proposal state
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -909,9 +911,9 @@ func (m *GetProposalsRequest) GetSelectInState() *OptionalProposalState {
 	return nil
 }
 
-// Response for a list of proposals.
+// Response for a list of proposals
 type GetProposalsResponse struct {
-	// A list of 0 or more governance data.
+	// A list of 0 or more governance data
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -950,11 +952,11 @@ func (m *GetProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
-// Request for a list of proposals for a party.
+// Request for a list of proposals for a party
 type GetProposalsByPartyRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Optional proposal state.
+	// Optional proposal state
 	SelectInState        *OptionalProposalState `protobuf:"bytes,2,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1000,9 +1002,9 @@ func (m *GetProposalsByPartyRequest) GetSelectInState() *OptionalProposalState {
 	return nil
 }
 
-// Response for a list of proposals for a party.
+// Response for a list of proposals for a party
 type GetProposalsByPartyResponse struct {
-	// A list of 0 or more governance data.
+	// A list of 0 or more governance data
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1041,9 +1043,9 @@ func (m *GetProposalsByPartyResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
-// Request for a list of votes for a party.
+// Request for a list of votes for a party
 type GetVotesByPartyRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1082,9 +1084,9 @@ func (m *GetVotesByPartyRequest) GetPartyID() string {
 	return ""
 }
 
-// Response for a list of votes for a party.
+// Response for a list of votes for a party
 type GetVotesByPartyResponse struct {
-	// A list of 0 or more votes.
+	// A list of 0 or more votes
 	Votes                []*proto1.Vote `protobuf:"bytes,1,rep,name=votes,proto3" json:"votes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
@@ -1123,9 +1125,9 @@ func (m *GetVotesByPartyResponse) GetVotes() []*proto1.Vote {
 	return nil
 }
 
-// Request for a list of new market proposals.
+// Request for a list of new market proposals
 type GetNewMarketProposalsRequest struct {
-	// Optional proposal state.
+	// Optional proposal state
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1164,9 +1166,9 @@ func (m *GetNewMarketProposalsRequest) GetSelectInState() *OptionalProposalState
 	return nil
 }
 
-// Response for a list of new market proposals.
+// Response for a list of new market proposals
 type GetNewMarketProposalsResponse struct {
-	// A list of 0 or more governance data.
+	// A list of 0 or more governance data
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1205,11 +1207,11 @@ func (m *GetNewMarketProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
-// Request for a list of update market proposals.
+// Request for a list of update market proposals
 type GetUpdateMarketProposalsRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Proposal state.
+	// Proposal state
 	SelectInState        *OptionalProposalState `protobuf:"bytes,2,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1255,9 +1257,9 @@ func (m *GetUpdateMarketProposalsRequest) GetSelectInState() *OptionalProposalSt
 	return nil
 }
 
-// Response for a list of update market proposals.
+// Response for a list of update market proposals
 type GetUpdateMarketProposalsResponse struct {
-	// A list of 0 or more governance data.
+	// A list of 0 or more governance data
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1296,9 +1298,9 @@ func (m *GetUpdateMarketProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
-// Request for a list of network parameter proposals.
+// Request for a list of network parameter proposals
 type GetNetworkParametersProposalsRequest struct {
-	// Optional proposal state.
+	// Optional proposal state
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1337,9 +1339,9 @@ func (m *GetNetworkParametersProposalsRequest) GetSelectInState() *OptionalPropo
 	return nil
 }
 
-// Response for a list of network parameter proposals.
+// Response for a list of network parameter proposals
 type GetNetworkParametersProposalsResponse struct {
-	// A list of 0 or more governance data.
+	// A list of 0 or more governance data
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1378,9 +1380,9 @@ func (m *GetNetworkParametersProposalsResponse) GetData() []*proto1.GovernanceDa
 	return nil
 }
 
-// Request for a list of new asset proposals.
+// Request for a list of new asset proposals
 type GetNewAssetProposalsRequest struct {
-	// Optional proposal state.
+	// Optional proposal state
 	SelectInState        *OptionalProposalState `protobuf:"bytes,1,opt,name=selectInState,proto3" json:"selectInState,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1419,9 +1421,9 @@ func (m *GetNewAssetProposalsRequest) GetSelectInState() *OptionalProposalState 
 	return nil
 }
 
-// Response for a list of new asset proposals.
+// Response for a list of new asset proposals
 type GetNewAssetProposalsResponse struct {
-	// A list of 0 or more governance data.
+	// A list of 0 or more governance data
 	Data                 []*proto1.GovernanceData `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
@@ -1460,9 +1462,9 @@ func (m *GetNewAssetProposalsResponse) GetData() []*proto1.GovernanceData {
 	return nil
 }
 
-// Request for a governance proposal given a proposal identifier.
+// Request for a governance proposal given a proposal identifier
 type GetProposalByIDRequest struct {
-	// Proposal identifier. Required field.
+	// Proposal identifier, required field
 	ProposalID           string   `protobuf:"bytes,1,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1501,9 +1503,9 @@ func (m *GetProposalByIDRequest) GetProposalID() string {
 	return ""
 }
 
-// Response for a governance proposal given a proposal identifier.
+// Response for a governance proposal given a proposal identifier
 type GetProposalByIDResponse struct {
-	// Governance data, if found.
+	// Governance data, if found
 	Data                 *proto1.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1542,9 +1544,9 @@ func (m *GetProposalByIDResponse) GetData() *proto1.GovernanceData {
 	return nil
 }
 
-// Request for a governance proposal given a proposal reference.
+// Request for a governance proposal given a proposal reference
 type GetProposalByReferenceRequest struct {
-	// Proposal reference. Required field.
+	// Proposal reference. Required field
 	Reference            string   `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1583,9 +1585,9 @@ func (m *GetProposalByReferenceRequest) GetReference() string {
 	return ""
 }
 
-// Response for a governance proposal given a proposal reference.
+// Response for a governance proposal given a proposal reference
 type GetProposalByReferenceResponse struct {
-	// Governance data, if found.
+	// Governance data, if found
 	Data                 *proto1.GovernanceData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1624,9 +1626,9 @@ func (m *GetProposalByReferenceResponse) GetData() *proto1.GovernanceData {
 	return nil
 }
 
-// Request to subscribe to a stream of governance proposals for a party.
+// Request to subscribe to a stream of governance proposals for a party
 type ObservePartyProposalsRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1665,9 +1667,9 @@ func (m *ObservePartyProposalsRequest) GetPartyID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of governance votes for a proposal.
+// Request to subscribe to a stream of governance votes for a proposal
 type ObserveProposalVotesRequest struct {
-	// Proposal identifier. Required field.
+	// Proposal identifier, required field
 	ProposalID           string   `protobuf:"bytes,1,opt,name=proposalID,proto3" json:"proposalID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1706,9 +1708,9 @@ func (m *ObserveProposalVotesRequest) GetProposalID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of governance votes for a party.
+// Request to subscribe to a stream of governance votes for a party
 type ObservePartyVotesRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1747,12 +1749,12 @@ func (m *ObservePartyVotesRequest) GetPartyID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of MarginLevels data matching the given party identifier.
-// Optionally, the list can be additionally filtered by market.
+// Request to subscribe to a stream of MarginLevels data matching the given party identifier
+// Optionally, the list can be additionally filtered by market
 type MarginLevelsSubscribeRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Market identifier.
+	// Market identifier
 	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1798,11 +1800,11 @@ func (m *MarginLevelsSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
-// Request for margin levels for a party.
+// Request for margin levels for a party
 type MarginLevelsRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Market identifier.
+	// Market identifier
 	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1848,9 +1850,9 @@ func (m *MarginLevelsRequest) GetMarketID() string {
 	return ""
 }
 
-// Response for margin levels for a party.
+// Response for margin levels for a party
 type MarginLevelsResponse struct {
-	// A list of 0 or more margin levels.
+	// A list of 0 or more margin levels
 	MarginLevels         []*proto1.MarginLevels `protobuf:"bytes,1,rep,name=marginLevels,proto3" json:"marginLevels,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
@@ -1889,10 +1891,10 @@ func (m *MarginLevelsResponse) GetMarginLevels() []*proto1.MarginLevels {
 	return nil
 }
 
-// Request to subscribe to a stream of MarketsData.
-// Optionally, the list can be additionally filtered by market.
+// Request to subscribe to a stream of MarketsData
+// Optionally, the list can be additionally filtered by market
 type MarketsDataSubscribeRequest struct {
-	// Market identifier.
+	// Market identifier
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1931,9 +1933,9 @@ func (m *MarketsDataSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
-// Request for market data for a market.
+// Request for market data for a market
 type MarketDataByIDRequest struct {
-	// Market identifier.
+	// Market identifier
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1972,9 +1974,9 @@ func (m *MarketDataByIDRequest) GetMarketID() string {
 	return ""
 }
 
-// Response for market data for a market.
+// Response for market data for a market
 type MarketDataByIDResponse struct {
-	// Market data, if found.
+	// Market data, if found
 	MarketData           *proto1.MarketData `protobuf:"bytes,1,opt,name=marketData,proto3" json:"marketData,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -2013,9 +2015,9 @@ func (m *MarketDataByIDResponse) GetMarketData() *proto1.MarketData {
 	return nil
 }
 
-// Response for market data.
+// Response for market data
 type MarketsDataResponse struct {
-	// A list of 0 or more market data.
+	// A list of 0 or more market data
 	MarketsData          []*proto1.MarketData `protobuf:"bytes,1,rep,name=marketsData,proto3" json:"marketsData,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
@@ -2054,9 +2056,9 @@ func (m *MarketsDataResponse) GetMarketsData() []*proto1.MarketData {
 	return nil
 }
 
-// Request for the latest trade that occurred on Vega for a given market.
+// Request for the latest trade that occurred on Vega for a given market
 type LastTradeRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2095,9 +2097,9 @@ func (m *LastTradeRequest) GetMarketID() string {
 	return ""
 }
 
-// Response for the latest trade that occurred on Vega for a given market.
+// Response for the latest trade that occurred on Vega for a given market
 type LastTradeResponse struct {
-	// A trade, if found.
+	// A trade, if found
 	Trade                *proto1.Trade `protobuf:"bytes,1,opt,name=trade,proto3" json:"trade,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -2136,9 +2138,9 @@ func (m *LastTradeResponse) GetTrade() *proto1.Trade {
 	return nil
 }
 
-// Request for a market given a market identifier.
+// Request for a market given a market identifier
 type MarketByIDRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2177,9 +2179,9 @@ func (m *MarketByIDRequest) GetMarketID() string {
 	return ""
 }
 
-// Response for a market given a market identifier.
+// Response for a market given a market identifier
 type MarketByIDResponse struct {
-	// A market, if found.
+	// A market, if found
 	Market               *proto1.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
@@ -2218,9 +2220,9 @@ func (m *MarketByIDResponse) GetMarket() *proto1.Market {
 	return nil
 }
 
-// Request for a party given a party identifier.
+// Request for a party given a party identifier
 type PartyByIDRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID              string   `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2259,9 +2261,9 @@ func (m *PartyByIDRequest) GetPartyID() string {
 	return ""
 }
 
-// Response for a party given a party identifier.
+// Response for a party given a party identifier
 type PartyByIDResponse struct {
-	// A party, if found.
+	// A party, if found
 	Party                *proto1.Party `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -2300,9 +2302,9 @@ func (m *PartyByIDResponse) GetParty() *proto1.Party {
 	return nil
 }
 
-// Response to a request for a list of parties.
+// Response to a request for a list of parties
 type PartiesResponse struct {
-	// A list of 0 or more parties.
+	// A list of 0 or more parties
 	Parties              []*proto1.Party `protobuf:"bytes,1,rep,name=parties,proto3" json:"parties,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2341,14 +2343,14 @@ func (m *PartiesResponse) GetParties() []*proto1.Party {
 	return nil
 }
 
-// Request for a list of trades relating to the given party.
-// Optionally, the list can be additionally filtered for trades by market.
+// Request for a list of trades relating to the given party
+// Optionally, the list can be additionally filtered for trades by market
 type TradesByPartyRequest struct {
-	// Party identifier. Required field.
+	// Party identifier. Required field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Market identifier.
+	// Market identifier
 	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Pagination controls.
+	// Pagination controls
 	Pagination           *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -2401,9 +2403,9 @@ func (m *TradesByPartyRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response for a list of trades relating to a party.
+// Response for a list of trades relating to a party
 type TradesByPartyResponse struct {
-	// A list of 0 or more trades.
+	// A list of 0 or more trades
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2442,9 +2444,9 @@ func (m *TradesByPartyResponse) GetTrades() []*proto1.Trade {
 	return nil
 }
 
-// Request for a list of trades related to an order.
+// Request for a list of trades related to an order
 type TradesByOrderRequest struct {
-	// Order identifier. Required field.
+	// Order identifier, required field
 	OrderID              string   `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2483,9 +2485,9 @@ func (m *TradesByOrderRequest) GetOrderID() string {
 	return ""
 }
 
-// Response for a list of trades related to an order.
+// Response for a list of trades related to an order
 type TradesByOrderResponse struct {
-	// A list of 0 or more trades.
+	// A list of 0 or more trades
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2524,15 +2526,15 @@ func (m *TradesByOrderResponse) GetTrades() []*proto1.Trade {
 	return nil
 }
 
-// Request to subscribe to a stream of (Accounts)[#vega.Account].
+// Request to subscribe to a stream of (Accounts)[#vega.Account]
 type AccountsSubscribeRequest struct {
-	// Market identifier.
+	// Market identifier
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Party identifier.
+	// Party identifier
 	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Asset identifier.
+	// Asset identifier
 	Asset string `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Account type to subscribe to. Required field.
+	// Account type to subscribe to, required field
 	Type                 proto1.AccountType `protobuf:"varint,4,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -2592,11 +2594,11 @@ func (m *AccountsSubscribeRequest) GetType() proto1.AccountType {
 	return proto1.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 }
 
-// Request to subscribe to a stream of (Orders)[#vega.Order].
+// Request to subscribe to a stream of (Orders)[#vega.Order]
 type OrdersSubscribeRequest struct {
-	// Market identifier.
+	// Market identifier
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Party identifier.
+	// Party identifier
 	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2642,11 +2644,11 @@ func (m *OrdersSubscribeRequest) GetPartyID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of (Trades)[#vega.Trade].
+// Request to subscribe to a stream of (Trades)[#vega.Trade]
 type TradesSubscribeRequest struct {
-	// Market identifier.
+	// Market identifier
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Party identifier.
+	// Party identifier
 	PartyID              string   `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2692,11 +2694,11 @@ func (m *TradesSubscribeRequest) GetPartyID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of (Candles)[#vega.Candle].
+// Request to subscribe to a stream of (Candles)[#vega.Candle]
 type CandlesSubscribeRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Time interval for the candles. Required field.
+	// Time interval for the candles, required field.
 	Interval             proto1.Interval `protobuf:"varint,2,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2742,9 +2744,9 @@ func (m *CandlesSubscribeRequest) GetInterval() proto1.Interval {
 	return proto1.Interval_INTERVAL_UNSPECIFIED
 }
 
-// Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data.
+// Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data
 type MarketDepthSubscribeRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field.
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2783,9 +2785,9 @@ func (m *MarketDepthSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data.
+// Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data
 type MarketDepthUpdatesSubscribeRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID             string   `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2824,11 +2826,11 @@ func (m *MarketDepthUpdatesSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
-// Request to subscribe to a stream of (Positions)[#vega.Position].
+// Request to subscribe to a stream of (Positions)[#vega.Position]
 type PositionsSubscribeRequest struct {
-	// Party identifier. Optional field.
+	// Party identifier, optional field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Market identifier. Optional field.
+	// Market identifier, optional field
 	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -2874,11 +2876,11 @@ func (m *PositionsSubscribeRequest) GetMarketID() string {
 	return ""
 }
 
-// Request for a list of orders for a market.
+// Request for a list of orders for a market
 type OrdersByMarketRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Optional pagination controls.
+	// Optional pagination controls
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -2924,9 +2926,9 @@ func (m *OrdersByMarketRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response for a list of orders for a market.
+// Response for a list of orders for a market
 type OrdersByMarketResponse struct {
-	// A list of 0 or more orders.
+	// A list of 0 or more orders
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -2965,11 +2967,11 @@ func (m *OrdersByMarketResponse) GetOrders() []*proto1.Order {
 	return nil
 }
 
-// Request for a list of orders for a party.
+// Request for a list of orders for a party
 type OrdersByPartyRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Pagination controls.
+	// Pagination controls
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -3015,9 +3017,9 @@ func (m *OrdersByPartyRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response for a list of orders for a party.
+// Response for a list of orders for a party
 type OrdersByPartyResponse struct {
-	// A list of 0 or more orders.
+	// A list of 0 or more orders
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3056,11 +3058,11 @@ func (m *OrdersByPartyResponse) GetOrders() []*proto1.Order {
 	return nil
 }
 
-// Request for an order on a market given an order identifier.
+// Request for an order on a market given an order identifier
 type OrderByMarketAndIdRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Order identifier. Required field.
+	// Order identifier, required field
 	OrderID              string   `protobuf:"bytes,2,opt,name=orderID,proto3" json:"orderID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3106,9 +3108,9 @@ func (m *OrderByMarketAndIdRequest) GetOrderID() string {
 	return ""
 }
 
-// Response for an order on a market given an order identifier.
+// Response for an order on a market given an order identifier
 type OrderByMarketAndIdResponse struct {
-	// An order, if found.
+	// An order, if found
 	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -3147,9 +3149,9 @@ func (m *OrderByMarketAndIdResponse) GetOrder() *proto1.Order {
 	return nil
 }
 
-// Request for an order given an order reference.
+// Request for an order given an order reference
 type OrderByReferenceRequest struct {
-	// Unique reference. Required field.
+	// Unique reference, required field
 	Reference            string   `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3188,9 +3190,9 @@ func (m *OrderByReferenceRequest) GetReference() string {
 	return ""
 }
 
-// Response for an order given an order reference.
+// Response for an order given an order reference
 type OrderByReferenceResponse struct {
-	// An order, if found.
+	// An order, if found
 	Order                *proto1.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
@@ -3229,9 +3231,9 @@ func (m *OrderByReferenceResponse) GetOrder() *proto1.Order {
 	return nil
 }
 
-// Response for a list of markets on Vega.
+// Response for a list of markets on Vega
 type MarketsResponse struct {
-	// A list of 0 or more markets.
+	// A list of 0 or more markets
 	Markets              []*proto1.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -3270,14 +3272,14 @@ func (m *MarketsResponse) GetMarkets() []*proto1.Market {
 	return nil
 }
 
-// Request for a list of candles for a market at an interval.
+// Request for a list of candles for a market at an interval
 type CandlesRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field.
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Timestamp to retrieve candles since, in nanoseconds since the epoch.
-	// See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`. Required field.
+	// Timestamp to retrieve candles since, in nanoseconds since the epoch,
+	// required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	SinceTimestamp int64 `protobuf:"varint,2,opt,name=sinceTimestamp,proto3" json:"sinceTimestamp,omitempty"`
-	// Time interval for the candles. Required field.
+	// Time interval for the candles, required field
 	Interval             proto1.Interval `protobuf:"varint,3,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3330,9 +3332,9 @@ func (m *CandlesRequest) GetInterval() proto1.Interval {
 	return proto1.Interval_INTERVAL_UNSPECIFIED
 }
 
-// Response for a list of candles for a market at an interval.
+// Response for a list of candles for a market at an interval
 type CandlesResponse struct {
-	// A list of 0 or more candles.
+	// A list of 0 or more candles
 	Candles              []*proto1.Candle `protobuf:"bytes,1,rep,name=candles,proto3" json:"candles,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -3371,12 +3373,12 @@ func (m *CandlesResponse) GetCandles() []*proto1.Candle {
 	return nil
 }
 
-// Request for the market depth/order book price levels on a market.
-// Optionally, a maximum depth can be set to limit the number of levels returned.
+// Request for the market depth/order book price levels on a market
+// Optionally, a maximum depth can be set to limit the number of levels returned
 type MarketDepthRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Max depth limits the number of levels returned. Default is 0, which returns all levels.
+	// Max depth limits the number of levels returned. Default is 0, which returns all levels
 	MaxDepth             uint64   `protobuf:"varint,2,opt,name=maxDepth,proto3" json:"maxDepth,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3422,15 +3424,15 @@ func (m *MarketDepthRequest) GetMaxDepth() uint64 {
 	return 0
 }
 
-// Response for the market depth/order book price levels on a market.
+// Response for the market depth/order book price levels on a market
 type MarketDepthResponse struct {
-	// Market identifier.
+	// Market identifier
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Zero or more price levels for the buy side of the market depth data.
+	// Zero or more price levels for the buy side of the market depth data
 	Buy []*proto1.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
-	// Zero or more price levels for the sell side of the market depth data.
+	// Zero or more price levels for the sell side of the market depth data
 	Sell []*proto1.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
-	// Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
+	// Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`
 	LastTrade *proto1.Trade `protobuf:"bytes,4,opt,name=lastTrade,proto3" json:"lastTrade,omitempty"`
 	// Sequence number incremented after each update
 	SequenceNumber       uint64   `protobuf:"varint,5,opt,name=sequenceNumber,proto3" json:"sequenceNumber,omitempty"`
@@ -3499,11 +3501,11 @@ func (m *MarketDepthResponse) GetSequenceNumber() uint64 {
 	return 0
 }
 
-// Request for a list of trades on a market.
+// Request for a list of trades on a market
 type TradesByMarketRequest struct {
-	// Market identifier. Required field.
+	// Market identifier, required field
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Pagination controls.
+	// Pagination controls
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -3549,9 +3551,9 @@ func (m *TradesByMarketRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response for a list of trades on a market.
+// Response for a list of trades on a market
 type TradesByMarketResponse struct {
-	// A list of 0 or more trades.
+	// A list of 0 or more trades
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3590,12 +3592,12 @@ func (m *TradesByMarketResponse) GetTrades() []*proto1.Trade {
 	return nil
 }
 
-// Request for a list of positions for a party.
-// Optionally, if a market identifier is set, the results will be filtered for that market only.
+// Request for a list of positions for a party
+// Optionally, if a market identifier is set, the results will be filtered for that market only
 type PositionsByPartyRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Market identifier.
+	// Market identifier
 	MarketID             string   `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3641,9 +3643,9 @@ func (m *PositionsByPartyRequest) GetMarketID() string {
 	return ""
 }
 
-// Response for a list of positions for a party.
+// Response for a list of positions for a party
 type PositionsByPartyResponse struct {
-	// A list of 0 or more positions.
+	// A list of 0 or more positions
 	Positions            []*proto1.Position `protobuf:"bytes,1,rep,name=positions,proto3" json:"positions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -3682,9 +3684,9 @@ func (m *PositionsByPartyResponse) GetPositions() []*proto1.Position {
 	return nil
 }
 
-// Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime".
+// Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
 type VegaTimeResponse struct {
-	// Timestamp representation of current VegaTime.
+	// Timestamp representation of current VegaTime as represented in
 	// Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
 	Timestamp            int64    `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -3724,14 +3726,14 @@ func (m *VegaTimeResponse) GetTimestamp() int64 {
 	return 0
 }
 
-// Pagination controls.
+// Pagination controls
 type Pagination struct {
-	// Skip the number of records specified. Default is 0.
+	// Skip the number of records specified, default is 0
 	Skip uint64 `protobuf:"varint,1,opt,name=skip,proto3" json:"skip,omitempty"`
-	// Limit the number of returned records to the value specified. Default is 50.
+	// Limit the number of returned records to the value specified, default is 50
 	Limit uint64 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	// Descending reverses the order of the records returned.
-	// Default is true, if false the results will be returned in ascending order.
+	// Descending reverses the order of the records returned,
+	// default is true, if false the results will be returned in ascending order
 	Descending           bool     `protobuf:"varint,3,opt,name=descending,proto3" json:"descending,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3784,9 +3786,9 @@ func (m *Pagination) GetDescending() bool {
 	return false
 }
 
-// A stream of orders.
+// A stream of orders
 type OrdersStream struct {
-	// A list of 0 or more orders.
+	// A list of 0 or more orders
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3825,9 +3827,9 @@ func (m *OrdersStream) GetOrders() []*proto1.Order {
 	return nil
 }
 
-// A stream of trades.
+// A stream of trades
 type TradesStream struct {
-	// A list of 0 or more trades.
+	// A list of 0 or more trades
 	Trades               []*proto1.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -3866,15 +3868,15 @@ func (m *TradesStream) GetTrades() []*proto1.Trade {
 	return nil
 }
 
-// Request for a list of accounts for a party.
+// Request for a list of accounts for a party
 type PartyAccountsRequest struct {
-	// Party identifier.
+	// Party identifier
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Market identifier.
+	// Market identifier
 	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Account type. Required field.
+	// Account type, required field
 	Type proto1.AccountType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
-	// Asset identifier.
+	// Asset identifier
 	Asset                string   `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -3934,9 +3936,9 @@ func (m *PartyAccountsRequest) GetAsset() string {
 	return ""
 }
 
-// Response for a list of accounts for a party.
+// Response for a list of accounts for a party
 type PartyAccountsResponse struct {
-	// A list of 0 or more accounts.
+	// A list of 0 or more accounts
 	Accounts             []*proto1.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -3975,11 +3977,11 @@ func (m *PartyAccountsResponse) GetAccounts() []*proto1.Account {
 	return nil
 }
 
-// Request for a list of accounts for a market.
+// Request for a list of accounts for a market
 type MarketAccountsRequest struct {
-	// Market identifier.
+	// Market identifier
 	MarketID string `protobuf:"bytes,1,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Asset identifier.
+	// Asset identifier
 	Asset                string   `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4025,9 +4027,9 @@ func (m *MarketAccountsRequest) GetAsset() string {
 	return ""
 }
 
-// Response for a list of accounts for a market.
+// Response for a list of accounts for a market
 type MarketAccountsResponse struct {
-	// A list of 0 or more accounts.
+	// A list of 0 or more accounts
 	Accounts             []*proto1.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -4066,11 +4068,11 @@ func (m *MarketAccountsResponse) GetAccounts() []*proto1.Account {
 	return nil
 }
 
-// Request for a list of infrastructure fee accounts.
+// Request for a list of infrastructure fee accounts
 type FeeInfrastructureAccountsRequest struct {
-	// Asset identifier. Required field.
-	// Set to an empty string to return all accounts.
-	// Set to an asset ID to return a single infrastructure fee account for a given asset.
+	// Asset identifier, required field
+	// - Set to an empty string to return all accounts
+	// - Set to an asset ID to return a single infrastructure fee account for a given asset
 	Asset                string   `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4109,9 +4111,9 @@ func (m *FeeInfrastructureAccountsRequest) GetAsset() string {
 	return ""
 }
 
-// Response for a list of infrastructure fee accounts.
+// Response for a list of infrastructure fee accounts
 type FeeInfrastructureAccountsResponse struct {
-	// A list of 0 or more infrastructure fee accounts.
+	// A list of 0 or more infrastructure fee accounts
 	Accounts             []*proto1.Account `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -4150,13 +4152,13 @@ func (m *FeeInfrastructureAccountsResponse) GetAccounts() []*proto1.Account {
 	return nil
 }
 
-// Request to prepare a governance proposal.
+// Request to prepare a governance proposal
 type PrepareProposalRequest struct {
-	// Party identifier. Required field.
+	// Party identifier, required field
 	PartyID string `protobuf:"bytes,1,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Unique reference.
+	// Unique reference
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Proposal terms. Required field.
+	// Proposal terms, required field
 	Proposal             *proto1.ProposalTerms `protobuf:"bytes,3,opt,name=proposal,proto3" json:"proposal,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
@@ -4209,11 +4211,11 @@ func (m *PrepareProposalRequest) GetProposal() *proto1.ProposalTerms {
 	return nil
 }
 
-// Response to prepare a governance proposal.
+// Response to prepare a governance proposal
 type PrepareProposalResponse struct {
-	// blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction.
+	// A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction
 	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
-	// A copy of the prepared proposal.
+	// A copy of the prepared proposal
 	PendingProposal      *proto1.Proposal `protobuf:"bytes,2,opt,name=pendingProposal,proto3" json:"pendingProposal,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -4259,9 +4261,9 @@ func (m *PrepareProposalResponse) GetPendingProposal() *proto1.Proposal {
 	return nil
 }
 
-// Request to prepare a governance vote.
+// Request to prepare a governance vote
 type PrepareVoteRequest struct {
-	// Vote. Required field.
+	// Vote, required field
 	Vote                 *proto1.Vote `protobuf:"bytes,1,opt,name=vote,proto3" json:"vote,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
@@ -4300,11 +4302,11 @@ func (m *PrepareVoteRequest) GetVote() *proto1.Vote {
 	return nil
 }
 
-// Response to prepare a governance vote.
+// Response to prepare a governance vote
 type PrepareVoteResponse struct {
-	// blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction.
+	// A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction
 	Blob []byte `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
-	// A copy of the prepared vote.
+	// A copy of the prepared vote
 	Vote                 *proto1.Vote `protobuf:"bytes,2,opt,name=vote,proto3" json:"vote,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
@@ -4350,7 +4352,9 @@ func (m *PrepareVoteResponse) GetVote() *proto1.Vote {
 	return nil
 }
 
+// Request to prepare liquiditity provision
 type PrepareLiquidityProvisionRequest struct {
+	// Submission, required field
 	Submission           *proto1.LiquidityProvisionSubmission `protobuf:"bytes,1,opt,name=submission,proto3" json:"submission,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
 	XXX_unrecognized     []byte                               `json:"-"`
@@ -4389,7 +4393,9 @@ func (m *PrepareLiquidityProvisionRequest) GetSubmission() *proto1.LiquidityProv
 	return nil
 }
 
+// Response to a liquidity provision request
 type PrepareLiquidityProvisionResponse struct {
+	// A blob is an encoded representation of the liquidity provision message ready to sign using the Vega Wallet and then submit as a transaction
 	Blob                 []byte   `protobuf:"bytes,1,opt,name=blob,proto3" json:"blob,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4428,15 +4434,15 @@ func (m *PrepareLiquidityProvisionResponse) GetBlob() []byte {
 	return nil
 }
 
-// Request for an order with the specified order identifier.
-// Optionally, return a specific version of the order with the `version` field.
+// Request for an order with the specified order identifier
+// Optionally, return a specific version of the order with the `version` field
 type OrderByIDRequest struct {
-	// Order identifier. Required field.
+	// Order identifier, required field
 	OrderID string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
-	// Version of the order.
-	// Set `version` to 0 for most recent version of the order.
-	// Set `1` for original version of the order.
-	// Set `2` for first amendment, `3` for second amendment, etc.
+	// Version of the order:
+	// - Set `version` to 0 for most recent version of the order
+	// - Set `1` for original version of the order
+	// - Set `2` for first amendment, `3` for second amendment, etc
 	Version              uint64   `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4482,11 +4488,11 @@ func (m *OrderByIDRequest) GetVersion() uint64 {
 	return 0
 }
 
-// Request for a list of all versions of an order given the specified order identifier.
+// Request for a list of all versions of an order given the specified order identifier
 type OrderVersionsByIDRequest struct {
-	// Order identifier. Required field.
+	// Order identifier, required field
 	OrderID string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
-	// Pagination controls.
+	// Pagination controls
 	Pagination           *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -4532,9 +4538,9 @@ func (m *OrderVersionsByIDRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response to a request for a list of all versions of an order.
+// Response to a request for a list of all versions of an order
 type OrderVersionsResponse struct {
-	// A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended).
+	// A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended)
 	Orders               []*proto1.Order `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -4743,13 +4749,13 @@ func (m *EstimateMarginResponse) GetMarginLevels() *proto1.MarginLevels {
 
 // Request to subscribe to a stream of one or more event types from the Vega event bus
 type ObserveEventsRequest struct {
-	// One or more types of event. Required field.
+	// One or more types of event, required field
 	Type []proto1.BusEventType `protobuf:"varint,1,rep,packed,name=type,proto3,enum=vega.BusEventType" json:"type,omitempty"`
-	// Market identifier. Optional field.
+	// Market identifier, optional field
 	MarketID string `protobuf:"bytes,2,opt,name=marketID,proto3" json:"marketID,omitempty"`
-	// Party identifier. Optional field.
+	// Party identifier, optional field
 	PartyID string `protobuf:"bytes,3,opt,name=partyID,proto3" json:"partyID,omitempty"`
-	// Batch size. Optional field.
+	// Batch size, optional field -
 	// If not specified, any events received will be sent immediately. If the client is not ready
 	// for the next data-set, data may be dropped a number of times, and eventually the stream is closed.
 	// if specified, the first batch will be sent when ready. To receive the next set of events, the client
@@ -4938,9 +4944,9 @@ func (m *WithdrawalsResponse) GetWithdrawals() []*proto1.Withdrawal {
 	return nil
 }
 
-// A request to get a specific withdrawal by ID
+// A request to get a specific withdrawal by identifier
 type WithdrawalRequest struct {
-	// The id of the withdrawal
+	// The identifier of the withdrawal
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4981,7 +4987,7 @@ func (m *WithdrawalRequest) GetID() string {
 
 // A response for a withdrawal
 type WithdrawalResponse struct {
-	// The withdrawal matching the ID from the request
+	// The withdrawal matching the identifier from the request
 	Withdrawal           *proto1.Withdrawal `protobuf:"bytes,1,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
@@ -5020,10 +5026,9 @@ func (m *WithdrawalResponse) GetWithdrawal() *proto1.Withdrawal {
 	return nil
 }
 
-// The request to get all information required to bundle the call
-// to finalize the withdrawal on the erc20 bridge
+// The request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 type ERC20WithdrawalApprovalRequest struct {
-	// The ID of the withdrawal
+	// The identifier of the withdrawal
 	WithdrawalID         string   `protobuf:"bytes,1,opt,name=withdrawalID,proto3" json:"withdrawalID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -5062,8 +5067,7 @@ func (m *ERC20WithdrawalApprovalRequest) GetWithdrawalID() string {
 	return ""
 }
 
-// The response with all information required to bundle the call
-// to finalize the withdrawal on the erc20 bridge
+// The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 // function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
 type ERC20WithdrawalApprovalResponse struct {
 	// The address of asset on ethereum
@@ -5224,9 +5228,9 @@ func (m *DepositsResponse) GetDeposits() []*proto1.Deposit {
 	return nil
 }
 
-// A request to get a specific deposit by ID
+// A request to get a specific deposit by identifier
 type DepositRequest struct {
-	// The id of the withdrawal
+	// The identifier of the deposit
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -5267,7 +5271,7 @@ func (m *DepositRequest) GetID() string {
 
 // A response for a deposit
 type DepositResponse struct {
-	// The deposit matching the ID from the request
+	// The deposit matching the identifier from the request
 	Deposit              *proto1.Deposit `protobuf:"bytes,1,opt,name=deposit,proto3" json:"deposit,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
@@ -5306,8 +5310,7 @@ func (m *DepositResponse) GetDeposit() *proto1.Deposit {
 	return nil
 }
 
-// A message requesting for the list
-// of all network parameters
+// A message requesting for the list of all network parameters
 type NetworkParametersRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -5339,8 +5342,7 @@ func (m *NetworkParametersRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NetworkParametersRequest proto.InternalMessageInfo
 
-// A response containing all of the
-// vega network parameters
+// A response containing all of the vega network parameters
 type NetworkParametersResponse struct {
 	NetworkParameters    []*proto1.NetworkParameter `protobuf:"bytes,1,rep,name=networkParameters,proto3" json:"networkParameters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
@@ -5380,13 +5382,12 @@ func (m *NetworkParametersResponse) GetNetworkParameters() []*proto1.NetworkPara
 	return nil
 }
 
-// A message requesting for the list
-// of liquidity provisions orders for markets
-// one of the 2 filters is required or both
+// A message requesting for the list of liquidity provision orders for markets
+// One of the two filters is required (or both)
 type LiquidityProvisionsRequest struct {
-	// the market we want to get liquidity provision orders from
+	// The target market for the liquidity provision orders
 	Market string `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
-	// the party which submitted the liquidity provision orders
+	// The party which submitted the liquidity provision orders
 	Party                string   `protobuf:"bytes,2,opt,name=party,proto3" json:"party,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -5432,8 +5433,7 @@ func (m *LiquidityProvisionsRequest) GetParty() string {
 	return ""
 }
 
-// A response containing all of the
-// vega liquidity provisions orders
+// A response containing all of the Vega liquidity provision orders
 type LiquidityProvisionsResponse struct {
 	LiquidityProvisions  []*proto1.LiquidityProvision `protobuf:"bytes,1,rep,name=liquidityProvisions,proto3" json:"liquidityProvisions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
@@ -5866,6 +5866,7 @@ type TradingClient interface {
 	PrepareVote(ctx context.Context, in *PrepareVoteRequest, opts ...grpc.CallOption) (*PrepareVoteResponse, error)
 	// Propagate a chain event
 	PropagateChainEvent(ctx context.Context, in *PropagateChainEventRequest, opts ...grpc.CallOption) (*PropagateChainEventResponse, error)
+	// Prepare a liquidity provision request
 	PrepareLiquidityProvision(ctx context.Context, in *PrepareLiquidityProvisionRequest, opts ...grpc.CallOption) (*PrepareLiquidityProvisionResponse, error)
 }
 
@@ -5976,6 +5977,7 @@ type TradingServer interface {
 	PrepareVote(context.Context, *PrepareVoteRequest) (*PrepareVoteResponse, error)
 	// Propagate a chain event
 	PropagateChainEvent(context.Context, *PropagateChainEventRequest) (*PropagateChainEventResponse, error)
+	// Prepare a liquidity provision request
 	PrepareLiquidityProvision(context.Context, *PrepareLiquidityProvisionRequest) (*PrepareLiquidityProvisionResponse, error)
 }
 
@@ -6198,11 +6200,11 @@ type TradingDataClient interface {
 	MarketAccounts(ctx context.Context, in *MarketAccountsRequest, opts ...grpc.CallOption) (*MarketAccountsResponse, error)
 	// Get a list of Accounts by Party
 	PartyAccounts(ctx context.Context, in *PartyAccountsRequest, opts ...grpc.CallOption) (*PartyAccountsResponse, error)
-	// Get the list of infrastructure fees accounts filter eventually by assets
+	// Get a list of infrastructure fees accounts filter eventually by assets
 	FeeInfrastructureAccounts(ctx context.Context, in *FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*FeeInfrastructureAccountsResponse, error)
 	// Get a list of Candles by Market
 	Candles(ctx context.Context, in *CandlesRequest, opts ...grpc.CallOption) (*CandlesResponse, error)
-	// Get Market Data by MarketID
+	// Get Market Data by Market ID
 	MarketDataByID(ctx context.Context, in *MarketDataByIDRequest, opts ...grpc.CallOption) (*MarketDataByIDResponse, error)
 	// Get a list of Market Data
 	MarketsData(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsDataResponse, error)
@@ -6212,7 +6214,7 @@ type TradingDataClient interface {
 	MarketDepth(ctx context.Context, in *MarketDepthRequest, opts ...grpc.CallOption) (*MarketDepthResponse, error)
 	// Get a list of Markets
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*MarketsResponse, error)
-	// Get an Order by Market and OrderID
+	// Get an Order by Market and Order ID
 	OrderByMarketAndID(ctx context.Context, in *OrderByMarketAndIdRequest, opts ...grpc.CallOption) (*OrderByMarketAndIdResponse, error)
 	// Get an Order by Pending Order reference (UUID)
 	OrderByReference(ctx context.Context, in *OrderByReferenceRequest, opts ...grpc.CallOption) (*OrderByReferenceResponse, error)
@@ -6220,11 +6222,11 @@ type TradingDataClient interface {
 	OrdersByMarket(ctx context.Context, in *OrdersByMarketRequest, opts ...grpc.CallOption) (*OrdersByMarketResponse, error)
 	// Get a list of Orders by Party
 	OrdersByParty(ctx context.Context, in *OrdersByPartyRequest, opts ...grpc.CallOption) (*OrdersByPartyResponse, error)
-	// Get a specific order by orderID
+	// Get a specific order by order ID
 	OrderByID(ctx context.Context, in *OrderByIDRequest, opts ...grpc.CallOption) (*proto1.Order, error)
 	// Get all versions of the order by its orderID
 	OrderVersionsByID(ctx context.Context, in *OrderVersionsByIDRequest, opts ...grpc.CallOption) (*OrderVersionsResponse, error)
-	// Get Margin Levels by PartyID
+	// Get Margin Levels by Party ID
 	MarginLevels(ctx context.Context, in *MarginLevelsRequest, opts ...grpc.CallOption) (*MarginLevelsResponse, error)
 	// Get a list of Parties
 	Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*PartiesResponse, error)
@@ -6268,7 +6270,7 @@ type TradingDataClient interface {
 	ObserveProposalVotes(ctx context.Context, in *ObserveProposalVotesRequest, opts ...grpc.CallOption) (TradingData_ObserveProposalVotesClient, error)
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingData_ObserveEventBusClient, error)
-	// Get Statistics
+	// Get Statistics on Vega
 	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*proto1.Statistics, error)
 	// Get Time
 	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*VegaTimeResponse, error)
@@ -6280,7 +6282,7 @@ type TradingDataClient interface {
 	MarginLevelsSubscribe(ctx context.Context, in *MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarginLevelsSubscribeClient, error)
 	// Subscribe to a stream of Market Depth
 	MarketDepthSubscribe(ctx context.Context, in *MarketDepthSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketDepthSubscribeClient, error)
-	// Subscribe to a stream of Market Depth PriceLevel Updates
+	// Subscribe to a stream of Market Depth Price Level Updates
 	MarketDepthUpdatesSubscribe(ctx context.Context, in *MarketDepthUpdatesSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketDepthUpdatesSubscribeClient, error)
 	// Subscribe to a stream of Markets Data
 	MarketsDataSubscribe(ctx context.Context, in *MarketsDataSubscribeRequest, opts ...grpc.CallOption) (TradingData_MarketsDataSubscribeClient, error)
@@ -6292,26 +6294,26 @@ type TradingDataClient interface {
 	TradesSubscribe(ctx context.Context, in *TradesSubscribeRequest, opts ...grpc.CallOption) (TradingData_TradesSubscribeClient, error)
 	// Subscribe to a stream of Transfer Responses
 	TransferResponsesSubscribe(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (TradingData_TransferResponsesSubscribeClient, error)
-	// Get an aggregate of signatures from all the nodes of the network.
+	// Get an aggregate of signatures from all the nodes of the network
 	GetNodeSignaturesAggregate(ctx context.Context, in *GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*GetNodeSignaturesAggregateResponse, error)
-	// Get an asset by its identifier.
+	// Get an asset by its identifier
 	AssetByID(ctx context.Context, in *AssetByIDRequest, opts ...grpc.CallOption) (*AssetByIDResponse, error)
-	// Get a list of all assets on Vega.
+	// Get a list of all assets on Vega
 	Assets(ctx context.Context, in *AssetsRequest, opts ...grpc.CallOption) (*AssetsResponse, error)
 	// Get an estimate for the fee to be paid for a given order
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
 	// Get an estimate for the margin required for a new order
 	EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error)
-	// Get the bundle approval for an ERC20 withdrawal
+	// Get the bundle approval for an ERC20 withdrawal,
 	// these data are being used to bundle the call to the smart contract on the ethereum bridge
 	ERC20WithdrawalApproval(ctx context.Context, in *ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*ERC20WithdrawalApprovalResponse, error)
-	// Get a withdrawal by its ID
+	// Get a withdrawal by its identifier
 	Withdrawal(ctx context.Context, in *WithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalResponse, error)
 	// Get withdrawals for a party
 	Withdrawals(ctx context.Context, in *WithdrawalsRequest, opts ...grpc.CallOption) (*WithdrawalsResponse, error)
-	// Get a deposit by its ID
+	// Get a deposit by its identifier
 	Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
-	// Get withdrawals for a party
+	// Get deposits for a party
 	Deposits(ctx context.Context, in *DepositsRequest, opts ...grpc.CallOption) (*DepositsResponse, error)
 	// Get the network parameters
 	NetworkParameters(ctx context.Context, in *NetworkParametersRequest, opts ...grpc.CallOption) (*NetworkParametersResponse, error)
@@ -7226,11 +7228,11 @@ type TradingDataServer interface {
 	MarketAccounts(context.Context, *MarketAccountsRequest) (*MarketAccountsResponse, error)
 	// Get a list of Accounts by Party
 	PartyAccounts(context.Context, *PartyAccountsRequest) (*PartyAccountsResponse, error)
-	// Get the list of infrastructure fees accounts filter eventually by assets
+	// Get a list of infrastructure fees accounts filter eventually by assets
 	FeeInfrastructureAccounts(context.Context, *FeeInfrastructureAccountsRequest) (*FeeInfrastructureAccountsResponse, error)
 	// Get a list of Candles by Market
 	Candles(context.Context, *CandlesRequest) (*CandlesResponse, error)
-	// Get Market Data by MarketID
+	// Get Market Data by Market ID
 	MarketDataByID(context.Context, *MarketDataByIDRequest) (*MarketDataByIDResponse, error)
 	// Get a list of Market Data
 	MarketsData(context.Context, *empty.Empty) (*MarketsDataResponse, error)
@@ -7240,7 +7242,7 @@ type TradingDataServer interface {
 	MarketDepth(context.Context, *MarketDepthRequest) (*MarketDepthResponse, error)
 	// Get a list of Markets
 	Markets(context.Context, *empty.Empty) (*MarketsResponse, error)
-	// Get an Order by Market and OrderID
+	// Get an Order by Market and Order ID
 	OrderByMarketAndID(context.Context, *OrderByMarketAndIdRequest) (*OrderByMarketAndIdResponse, error)
 	// Get an Order by Pending Order reference (UUID)
 	OrderByReference(context.Context, *OrderByReferenceRequest) (*OrderByReferenceResponse, error)
@@ -7248,11 +7250,11 @@ type TradingDataServer interface {
 	OrdersByMarket(context.Context, *OrdersByMarketRequest) (*OrdersByMarketResponse, error)
 	// Get a list of Orders by Party
 	OrdersByParty(context.Context, *OrdersByPartyRequest) (*OrdersByPartyResponse, error)
-	// Get a specific order by orderID
+	// Get a specific order by order ID
 	OrderByID(context.Context, *OrderByIDRequest) (*proto1.Order, error)
 	// Get all versions of the order by its orderID
 	OrderVersionsByID(context.Context, *OrderVersionsByIDRequest) (*OrderVersionsResponse, error)
-	// Get Margin Levels by PartyID
+	// Get Margin Levels by Party ID
 	MarginLevels(context.Context, *MarginLevelsRequest) (*MarginLevelsResponse, error)
 	// Get a list of Parties
 	Parties(context.Context, *empty.Empty) (*PartiesResponse, error)
@@ -7296,7 +7298,7 @@ type TradingDataServer interface {
 	ObserveProposalVotes(*ObserveProposalVotesRequest, TradingData_ObserveProposalVotesServer) error
 	// Subscribe to a stream of events from the core
 	ObserveEventBus(TradingData_ObserveEventBusServer) error
-	// Get Statistics
+	// Get Statistics on Vega
 	Statistics(context.Context, *empty.Empty) (*proto1.Statistics, error)
 	// Get Time
 	GetVegaTime(context.Context, *empty.Empty) (*VegaTimeResponse, error)
@@ -7308,7 +7310,7 @@ type TradingDataServer interface {
 	MarginLevelsSubscribe(*MarginLevelsSubscribeRequest, TradingData_MarginLevelsSubscribeServer) error
 	// Subscribe to a stream of Market Depth
 	MarketDepthSubscribe(*MarketDepthSubscribeRequest, TradingData_MarketDepthSubscribeServer) error
-	// Subscribe to a stream of Market Depth PriceLevel Updates
+	// Subscribe to a stream of Market Depth Price Level Updates
 	MarketDepthUpdatesSubscribe(*MarketDepthUpdatesSubscribeRequest, TradingData_MarketDepthUpdatesSubscribeServer) error
 	// Subscribe to a stream of Markets Data
 	MarketsDataSubscribe(*MarketsDataSubscribeRequest, TradingData_MarketsDataSubscribeServer) error
@@ -7320,26 +7322,26 @@ type TradingDataServer interface {
 	TradesSubscribe(*TradesSubscribeRequest, TradingData_TradesSubscribeServer) error
 	// Subscribe to a stream of Transfer Responses
 	TransferResponsesSubscribe(*empty.Empty, TradingData_TransferResponsesSubscribeServer) error
-	// Get an aggregate of signatures from all the nodes of the network.
+	// Get an aggregate of signatures from all the nodes of the network
 	GetNodeSignaturesAggregate(context.Context, *GetNodeSignaturesAggregateRequest) (*GetNodeSignaturesAggregateResponse, error)
-	// Get an asset by its identifier.
+	// Get an asset by its identifier
 	AssetByID(context.Context, *AssetByIDRequest) (*AssetByIDResponse, error)
-	// Get a list of all assets on Vega.
+	// Get a list of all assets on Vega
 	Assets(context.Context, *AssetsRequest) (*AssetsResponse, error)
 	// Get an estimate for the fee to be paid for a given order
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
 	// Get an estimate for the margin required for a new order
 	EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error)
-	// Get the bundle approval for an ERC20 withdrawal
+	// Get the bundle approval for an ERC20 withdrawal,
 	// these data are being used to bundle the call to the smart contract on the ethereum bridge
 	ERC20WithdrawalApproval(context.Context, *ERC20WithdrawalApprovalRequest) (*ERC20WithdrawalApprovalResponse, error)
-	// Get a withdrawal by its ID
+	// Get a withdrawal by its identifier
 	Withdrawal(context.Context, *WithdrawalRequest) (*WithdrawalResponse, error)
 	// Get withdrawals for a party
 	Withdrawals(context.Context, *WithdrawalsRequest) (*WithdrawalsResponse, error)
-	// Get a deposit by its ID
+	// Get a deposit by its identifier
 	Deposit(context.Context, *DepositRequest) (*DepositResponse, error)
-	// Get withdrawals for a party
+	// Get deposits for a party
 	Deposits(context.Context, *DepositsRequest) (*DepositsResponse, error)
 	// Get the network parameters
 	NetworkParameters(context.Context, *NetworkParametersRequest) (*NetworkParametersResponse, error)
