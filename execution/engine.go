@@ -564,3 +564,10 @@ func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Durat
 	}
 	return nil
 }
+
+func (e *Engine) OnMarketLiquidityProvidersFeeDistribitionTimeStep(_ context.Context, d time.Duration) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(d)
+	}
+	return nil
+}

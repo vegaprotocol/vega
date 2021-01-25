@@ -2083,3 +2083,8 @@ func (e *Engine) accountID(marketID, partyID, asset string, ty types.AccountType
 	e.idbuf[ln] = byte(ty + 48)
 	return string(e.idbuf[:ln+1])
 }
+
+func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error) {
+	liquidityAccID := e.accountID(market, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+	return e.GetAccountByID(liquidityAccID)
+}

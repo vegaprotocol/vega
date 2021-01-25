@@ -38,9 +38,6 @@ func testAverageEntryValuation(t *testing.T) {
 
 func testShares(t *testing.T) {
 	var (
-		lp1, lp2, lp3 float64
-		err           error
-
 		oneSixth  = 1.0 / 6
 		oneThird  = 1.0 / 3
 		twoThirds = 2.0 / 3
@@ -52,19 +49,15 @@ func testShares(t *testing.T) {
 	// Set LP1
 	es.SetPartyStake("LP1", 100)
 	t.Run("LP1", func(t *testing.T) {
-		lp1, err = es.Shares("LP1")
-		require.NoError(t, err)
-		assert.Equal(t, 1.0, lp1)
+		s := es.Shares()
+		assert.Equal(t, 1.0, s["LP1"])
 	})
 
 	// Set LP2
 	es.SetPartyStake("LP2", 200)
 	t.Run("LP2", func(t *testing.T) {
-		lp1, err = es.Shares("LP1")
-		require.NoError(t, err)
-
-		lp2, err = es.Shares("LP2")
-		require.NoError(t, err)
+		s := es.Shares()
+		lp1, lp2 := s["LP1"], s["LP2"]
 
 		assert.Equal(t, oneThird, lp1)
 		assert.Equal(t, twoThirds, lp2)
@@ -74,14 +67,9 @@ func testShares(t *testing.T) {
 	// Set LP3
 	es.SetPartyStake("LP3", 300)
 	t.Run("LP3", func(t *testing.T) {
-		lp1, err = es.Shares("LP1")
-		require.NoError(t, err)
+		s := es.Shares()
 
-		lp2, err = es.Shares("LP2")
-		require.NoError(t, err)
-
-		lp3, err = es.Shares("LP3")
-		require.NoError(t, err)
+		lp1, lp2, lp3 := s["LP1"], s["LP2"], s["LP3"]
 
 		assert.Equal(t, oneSixth, lp1)
 		assert.Equal(t, oneThird, lp2)

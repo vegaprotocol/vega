@@ -2,9 +2,6 @@ package execution
 
 import (
 	"fmt"
-	"strconv"
-
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 // lp holds LiquidityProvider stake and avg values
@@ -66,19 +63,19 @@ func (es *EquityShares) AvgEntryValuation(id string) float64 {
 }
 
 func (es *EquityShares) mustEquity(party string) float64 {
-	eq, err := es.Equity(party)
+	eq, err := es.equity(party)
 	if err != nil {
 		panic(err)
 	}
 	return eq
 }
 
-// Equity returns the following:
+// equity returns the following:
 // (LP i stake)(n) x market_value_proxy(n) / (LP i avg_entry_valuation)(n)
 // given a party id (i).
 //
 // Returns an error if the party has no stake.
-func (es *EquityShares) Equity(id string) (float64, error) {
+func (es *EquityShares) equity(id string) (float64, error) {
 	if v, ok := es.lps[id]; ok {
 		return (v.stake * es.mvp) / v.avg, nil
 	}
@@ -87,33 +84,26 @@ func (es *EquityShares) Equity(id string) (float64, error) {
 }
 
 // Shares returns the ratio of equity for a given party
-func (es *EquityShares) Shares(party string) (float64, error) {
+func (es *EquityShares) Shares() map[string]float64 {
+	// Calculate the equity for each party and the totalEquity (the sum of all
+	// the equities)
 	var totalEquity float64
+	shares := map[string]float64{}
 	for id := range es.lps {
-		eq, err := es.Equity(id)
+		eq, err := es.equity(id)
 		if err != nil {
-			return 0, err
+			// since equity(id) returns an error when the party does not exist
+			// getting an error here means we are doing something wrong cause
+			// it should never happen unless `.equity()` behavior changes.
+			panic(err)
 		}
+		shares[id] = eq
 		totalEquity += eq
 	}
 
-	eq, err := es.Equity(party)
-	if err != nil {
-		return 0, err
+	for id, eq := range shares {
+		shares[id] = eq / totalEquity
 	}
 
-	es.lps[party].share = eq / totalEquity
-	return es.lps[party].share, nil
-}
-
-func (es *EquityShares) ToLiquidityProviderFeeShare() []*types.LiquidityProviderFeeShare {
-	out := make([]*types.LiquidityProviderFeeShare, 0, len(es.lps))
-	for k, v := range es.lps {
-		out = append(out, &types.LiquidityProviderFeeShare{
-			Party:                 k,
-			EquityLikeShare:       strconv.FormatFloat(v.share, 'f', -1, 64),
-			AverageEntryValuation: strconv.FormatFloat(v.avg, 'f', -1, 64),
-		})
-	}
-	return out
+	return shares
 }

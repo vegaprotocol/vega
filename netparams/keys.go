@@ -2,21 +2,22 @@ package netparams
 
 const (
 	// market related parameters
-	MarketMarginScalingFactors                    = "market.margin.scalingFactors"
-	MarketFeeFactorsMakerFee                      = "market.fee.factors.makerFee"
-	MarketFeeFactorsInfrastructureFee             = "market.fee.factors.infrastructureFee"
-	MarketFeeFactorsLiquidityFee                  = "market.fee.factors.liquidityFee"
-	MarketAuctionMinimumDuration                  = "market.auction.minimumDuration"
-	MarketAuctionMaximumDuration                  = "market.auction.maximumDuration"
-	MarketInitialMarkPrice                        = "market.initialMarkPrice"
-	MarketLiquidityBondPenaltyParameter           = "market.liquidity.bondPenaltyParameter"
-	MarketLiquidityMaximumLiquidityFeeFactorLevel = "market.liquidity.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityStakeToCCYSiskas               = "market.liquidity.stakeToCcySiskas"
-	MarketTargetStakeTimeWindow                   = "market.stake.target.timeWindow"
-	MarketTargetStakeScalingFactor                = "market.stake.target.scalingFactor"
-	MarketValueWindowLength                       = "market.value.windowLength"
-	MarketPriceMonitoringDefaultParameters        = "market.monitor.price.defaultParameters"
-	MarketPriceMonitoringUpdateFrequency          = "market.monitor.price.updateFrequency"
+	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
+	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
+	MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
+	MarketFeeFactorsLiquidityFee                    = "market.fee.factors.liquidityFee"
+	MarketAuctionMinimumDuration                    = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
+	MarketInitialMarkPrice                          = "market.initialMarkPrice"
+	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
+	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
+	MarketLiquidityStakeToCCYSiskas                 = "market.liquidity.stakeToCcySiskas"
+	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
+	MarketTargetStakeTimeWindow                     = "market.stake.target.timeWindow"
+	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
+	MarketValueWindowLength                         = "market.value.windowLength"
+	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
+	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 
 	GovernanceVoteAsset = "governance.vote.asset"
 
@@ -75,6 +76,7 @@ var AllKeys = map[string]struct{}{
 	MarketLiquidityBondPenaltyParameter:                   {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:         {},
 	MarketLiquidityStakeToCCYSiskas:                       {},
+	MarketLiquidityProvidersFeeDistribitionTimeStep:       {},
 	MarketTargetStakeTimeWindow:                           {},
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},

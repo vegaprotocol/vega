@@ -28,6 +28,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -186,8 +187,12 @@ type Market struct {
 
 	lastMarketValueProxy    float64
 	marketValueWindowLength time.Duration
-	feeSplitter             *FeeSplitter
-	equityShares            *EquityShares
+
+	// Liquidity Fee
+	feeSplitter                *FeeSplitter
+	lpFeeDistributionTimeStep  time.Duration
+	lastEquityShareDistributed time.Time
+	equityShares               *EquityShares
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -317,6 +322,14 @@ func NewMarket(
 	}
 
 	return market, nil
+}
+
+func (m *Market) panicIfErr(msg string, err error, fields ...zapcore.Field) {
+	if err == nil {
+		return
+	}
+
+	m.log.Panic(msg, append(fields, logging.Error(err))...)
 }
 
 func appendBytes(bz ...[]byte) []byte {
@@ -474,6 +487,20 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	// we will just skip everything there as nothing apply.
 	if m.mkt.State == types.Market_STATE_PROPOSED {
 		return false
+	}
+
+	// distribute fees each `m.lpFeeDistributionTimeStep`
+	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
+		m.lastEquityShareDistributed = t
+
+		asset, err := m.mkt.GetAsset()
+		m.panicIfErr("GetAsset", err)
+
+		acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
+		m.panicIfErr("GetMarketLiquidityFeeAccount", err)
+
+		err = m.distributeShares(ctx, acc.Balance)
+		m.panicIfErr("distributeShares", err)
 	}
 
 	m.risk.OnTimeUpdate(t)
@@ -2912,6 +2939,10 @@ func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
 	m.marketValueWindowLength = d
 }
 
+func (m *Market) OnMarketLiquidityProvidersFeeDistribitionTimeStep(d time.Duration) {
+	m.lpFeeDistributionTimeStep = d
+}
+
 // repriceFuncW is an adapter for getNewPeggedPrice.
 // TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
 // 1. do not accept a context, since it's not being used
@@ -3148,4 +3179,19 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 	})
 
 	return out
+}
+
+func (m *Market) distributeShares(ctx context.Context, fee uint64) error {
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
+	shares := m.equityShares.Shares()
+	if len(shares) == 0 {
+		return nil
+	}
+
+	feeTransfer := m.fee.DistributeLiquidityFees(shares, fee, asset)
+	_, err = m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
+	return err
 }
