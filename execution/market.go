@@ -729,14 +729,14 @@ func (m *Market) EnterAuction(ctx context.Context) {
 		m.log.Error("Error entering auction: ", logging.Error(err))
 	}
 
-	// Cancel all the orders that were invalid
-	for _, order := range ordersToCancel {
-		m.cancelOrder(ctx, order.PartyID, order.Id)
-	}
-
 	// Send out events for all orders we park
 	for _, order := range ordersToPark {
 		m.parkOrder(ctx, order)
+	}
+
+	// Cancel all the orders that were invalid
+	for _, order := range ordersToCancel {
+		m.cancelOrder(ctx, order.PartyID, order.Id)
 	}
 
 	// Send an event bus update
