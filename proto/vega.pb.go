@@ -102,7 +102,7 @@ func (Interval) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_54b9c5664362f47a, []int{1}
 }
 
-// Auction triggers indicate a state on Vega which triggered an auction (if in auction mode)
+// Auction triggers indicate what condition triggered an auction (if market is in auction mode)
 type AuctionTrigger int32
 
 const (
@@ -142,7 +142,7 @@ func (AuctionTrigger) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_54b9c5664362f47a, []int{2}
 }
 
-// A pegged reference defines which price point a pegged order linked to - meaning
+// A pegged reference defines which price point a pegged order is linked to - meaning
 // the price for a pegged order is calculated from the value of the reference price point
 type PeggedReference int32
 
@@ -180,7 +180,7 @@ func (PeggedReference) EnumDescriptor() ([]byte, []int) {
 }
 
 // OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue
-// with an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
+// with an order during its life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 type OrderError int32
 
 const (
@@ -609,7 +609,7 @@ func (TransferType) EnumDescriptor() ([]byte, []int) {
 type NodeSignatureKind int32
 
 const (
-	// Represents a unspecified or missing value from the input
+	// Represents an unspecified or missing value from the input
 	NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED NodeSignatureKind = 0
 	// Represents a signature for a new asset allow-listing
 	NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW NodeSignatureKind = 1
@@ -2354,7 +2354,7 @@ type Statistics struct {
 	AverageOrdersPerBlock uint64 `protobuf:"varint,10,opt,name=averageOrdersPerBlock,proto3" json:"averageOrdersPerBlock,omitempty"`
 	// Trades emitted per second
 	TradesPerSecond uint64 `protobuf:"varint,11,opt,name=tradesPerSecond,proto3" json:"tradesPerSecond,omitempty"`
-	// Orders affected per second
+	// Orders processed per second
 	OrdersPerSecond uint64 `protobuf:"varint,12,opt,name=ordersPerSecond,proto3" json:"ordersPerSecond,omitempty"`
 	// Total markets on this Vega network
 	TotalMarkets uint64 `protobuf:"varint,13,opt,name=totalMarkets,proto3" json:"totalMarkets,omitempty"`
@@ -2364,7 +2364,7 @@ type Statistics struct {
 	TotalCancelOrder uint64 `protobuf:"varint,17,opt,name=totalCancelOrder,proto3" json:"totalCancelOrder,omitempty"`
 	// Total number of order submissions since genesis (on all markets)
 	TotalCreateOrder uint64 `protobuf:"varint,18,opt,name=totalCreateOrder,proto3" json:"totalCreateOrder,omitempty"`
-	// Total number of orders affected since genesis (on all markets)
+	// Total number of orders processed since genesis (on all markets)
 	TotalOrders uint64 `protobuf:"varint,19,opt,name=totalOrders,proto3" json:"totalOrders,omitempty"`
 	// Total number of trades emitted since genesis (on all markets)
 	TotalTrades uint64 `protobuf:"varint,20,opt,name=totalTrades,proto3" json:"totalTrades,omitempty"`
@@ -2666,7 +2666,7 @@ type Deposit struct {
 	TxHash string `protobuf:"bytes,6,opt,name=txHash,proto3" json:"txHash,omitempty"`
 	// Timestamp for when the Vega account was updated with the deposit
 	CreditedTimestamp int64 `protobuf:"varint,7,opt,name=creditedTimestamp,proto3" json:"creditedTimestamp,omitempty"`
-	// Timestamp for when the deposit was been created on the Vega network
+	// Timestamp for when the deposit was created on the Vega network
 	CreatedTimestamp     int64    `protobuf:"varint,8,opt,name=createdTimestamp,proto3" json:"createdTimestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -4114,7 +4114,7 @@ type MarketData struct {
 	Trigger AuctionTrigger `protobuf:"varint,20,opt,name=trigger,proto3,enum=vega.AuctionTrigger" json:"trigger,omitempty"`
 	// Targeted stake for the given market
 	TargetStake string `protobuf:"bytes,21,opt,name=targetStake,proto3" json:"targetStake,omitempty"`
-	// Available stake fo the given market
+	// Available stake for the given market
 	SuppliedStake string `protobuf:"bytes,22,opt,name=suppliedStake,proto3" json:"suppliedStake,omitempty"`
 	// One or more price monitoring bounds for the current timestamp
 	PriceMonitoringBounds []*PriceMonitoringBounds `protobuf:"bytes,23,rep,name=priceMonitoringBounds,proto3" json:"priceMonitoringBounds,omitempty"`
@@ -4440,9 +4440,9 @@ func (m *ErrorDetail) GetInner() string {
 type Transaction struct {
 	// One of the set of Vega commands (proto marshalled)
 	InputData []byte `protobuf:"bytes,1,opt,name=inputData,proto3" json:"inputData,omitempty"`
-	// A random number used to provided uniqueness and prevents against replay attack
+	// A random number used to provide uniqueness and prevent against replay attack
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The block height associated to the transaction, this should always be current height
+	// The block height associated to the transaction, this should always be current block height
 	// of the node at the time of sending the Tx and block height is used as a mechanism
 	// for replay protection
 	BlockHeight uint64 `protobuf:"varint,3,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
@@ -4905,7 +4905,7 @@ func (m *LiquidityProvisionSubmission) GetBuys() []*LiquidityOrder {
 
 // A pair of a liquidity order and the id of the generated order by the core
 type LiquidityOrderReference struct {
-	// Unique identifier of the pegged order generated by the core to fullfill this liquidity order
+	// Unique identifier of the pegged order generated by the core to fulfil this liquidity order
 	OrderID string `protobuf:"bytes,1,opt,name=orderID,proto3" json:"orderID,omitempty"`
 	// The liquidity order from the original submission
 	LiquidityOrder       *LiquidityOrder `protobuf:"bytes,2,opt,name=liquidityOrder,proto3" json:"liquidityOrder,omitempty"`
@@ -4957,7 +4957,7 @@ func (m *LiquidityOrderReference) GetLiquidityOrder() *LiquidityOrder {
 type LiquidityProvision struct {
 	// Unique identifier
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Unique party identifier for the creater of the provision
+	// Unique party identifier for the creator of the provision
 	PartyID string `protobuf:"bytes,2,opt,name=partyID,proto3" json:"partyID,omitempty"`
 	// Timestamp for when the order was created at, in nanoseconds since the epoch
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`

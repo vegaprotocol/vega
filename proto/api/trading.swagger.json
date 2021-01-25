@@ -86,7 +86,7 @@
     },
     "/deposits/party/{partyID}": {
       "get": {
-        "summary": "Get withdrawals for a party",
+        "summary": "Get deposits for a party",
         "operationId": "Deposits",
         "responses": {
           "200": {
@@ -125,7 +125,7 @@
         "parameters": [
           {
             "name": "ID",
-            "description": "The identifier of the withdrawal",
+            "description": "The identifier of the deposit",
             "in": "path",
             "required": true,
             "type": "string"
@@ -1501,7 +1501,7 @@
     },
     "/withdrawals/{ID}": {
       "get": {
-        "summary": "Get a withdrawal by its itentifier",
+        "summary": "Get a withdrawal by its identifier",
         "operationId": "Withdrawal",
         "responses": {
           "200": {
@@ -1895,7 +1895,7 @@
           }
         }
       },
-      "title": "A response containing all of the Vega liquidity provisions orders"
+      "title": "A response containing all of the Vega liquidity provision orders"
     },
     "apiMarginLevelsResponse": {
       "type": "object",
@@ -2663,7 +2663,7 @@
       ],
       "default": "AUCTION_TRIGGER_UNSPECIFIED",
       "description": "- AUCTION_TRIGGER_UNSPECIFIED: Default value for AuctionTrigger, no auction triggered\n - AUCTION_TRIGGER_BATCH: Batch auction\n - AUCTION_TRIGGER_OPENING: Opening auction\n - AUCTION_TRIGGER_PRICE: Price monitoring trigger\n - AUCTION_TRIGGER_LIQUIDITY: Liquidity monitoring trigger",
-      "title": "Auction triggers indicate a state on Vega which triggered an auction (if in auction mode)"
+      "title": "Auction triggers indicate what condition triggered an auction (if market is in auction mode)"
     },
     "vegaBTCDeposit": {
       "type": "object",
@@ -2978,7 +2978,7 @@
         "BUS_EVENT_TYPE_TX_ERROR"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
-      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET_UPDATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens\n - BUS_EVENT_TYPE_TX_ERROR: Event used to report failed transactions back to a user, this excluded from the ALL type",
+      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET_UPDATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens\n - BUS_EVENT_TYPE_TX_ERROR: Event used to report failed transactions back to a user, this is excluded from the ALL type",
       "title": "An (event) bus event type is used to specify a type of event\nIt has 2 styles of event:\nSingle values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item\nGroup values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items"
     },
     "vegaCandle": {
@@ -3113,7 +3113,7 @@
         "createdTimestamp": {
           "type": "string",
           "format": "int64",
-          "title": "Timestamp for when the deposit was been created on the Vega network"
+          "title": "Timestamp for when the deposit was created on the Vega network"
         }
       },
       "title": "A deposit on to the Vega network"
@@ -3561,7 +3561,7 @@
       "properties": {
         "orderID": {
           "type": "string",
-          "title": "Unique identifier of the pegged order generated by the core to fullfill this liquidity order"
+          "title": "Unique identifier of the pegged order generated by the core to fulfil this liquidity order"
         },
         "liquidityOrder": {
           "$ref": "#/definitions/vegaLiquidityOrder",
@@ -3579,7 +3579,7 @@
         },
         "partyID": {
           "type": "string",
-          "title": "Unique party identifier for the creater of the provision"
+          "title": "Unique party identifier for the creator of the provision"
         },
         "createdAt": {
           "type": "string",
@@ -3944,7 +3944,7 @@
         },
         "suppliedStake": {
           "type": "string",
-          "title": "Available stake fo the given market"
+          "title": "Available stake for the given market"
         },
         "priceMonitoringBounds": {
           "type": "array",
@@ -4197,7 +4197,7 @@
         "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
       ],
       "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
-      "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents a unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
+      "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents an unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
       "title": "The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc"
     },
     "vegaOrder": {
@@ -4401,7 +4401,7 @@
       ],
       "default": "ORDER_ERROR_NONE",
       "description": "- ORDER_ERROR_NONE: Default value, no error reported\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid identifier\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size)\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: An order with `TimeInForce.TIF_GTT` was submitted or amended\nwith an expiration that was badly formatted or otherwise invalid\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order identifier)\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order\n - ORDER_ERROR_NOT_FOUND: Order not found in an order book or store\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party identifier\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0)\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order submitted from the same party\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order\n - ORDER_ERROR_INCORRECT_MARKET_TYPE: Order was submitted with an incorrect or invalid market type\n - ORDER_ERROR_INVALID_TIME_IN_FORCE: Order was submitted with invalid time in force\n - ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION: A GFN order has got to the market when it is in auction mode\n - ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING: A GFA order has got to the market when it is in continuous trading mode\n - ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT: Attempt to amend order to GTT without ExpiryAt\n - ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT: Attempt to amend ExpiryAt to a value before CreatedAt\n - ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT: Attempt to amend to GTC without an ExpiryAt value\n - ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC: Amending to FOK or IOC is invalid\n - ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN: Amending to GFA or GFN is invalid\n - ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN: Amending from GFA or GFN is invalid\n - ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION: IOC orders are not allowed during auction\n - ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION: FOK orders are not allowed during auction\n - ORDER_ERROR_MUST_BE_LIMIT_ORDER: Pegged orders must be LIMIT orders\n - ORDER_ERROR_MUST_BE_GTT_OR_GTC: Pegged orders can only have TIF GTC or GTT\n - ORDER_ERROR_WITHOUT_REFERENCE_PRICE: Pegged order must have a reference price\n - ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE: Buy pegged order cannot reference best ask price\n - ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO: Pegged order offset must be \u003c= 0\n - ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO: Pegged order offset must be \u003c 0\n - ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO: Pegged order offset must be \u003e= 0\n - ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE: Sell pegged order cannot reference best bid price\n - ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO: Pegged order offset must be \u003e zero\n - ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE: The party has an insufficient balance, or does not have\na general account to submit the order (no deposits made\nfor the required asset)\n - ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER: Cannot amend a non pegged orders details\n - ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER: We are unable to re-price a pegged order because a market price is unavailable\n - ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER: It is not possible to amend the price of an existing pegged order",
-      "title": "OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue\nwith an order during it's life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`"
+      "title": "OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue\nwith an order during its life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`"
     },
     "vegaOrderStatus": {
       "type": "string",
@@ -4519,7 +4519,7 @@
       ],
       "default": "PEGGED_REFERENCE_UNSPECIFIED",
       "description": "- PEGGED_REFERENCE_UNSPECIFIED: Default value for PeggedReference, no reference given\n - PEGGED_REFERENCE_MID: Mid price reference\n - PEGGED_REFERENCE_BEST_BID: Best bid price reference\n - PEGGED_REFERENCE_BEST_ASK: Best ask price reference",
-      "title": "A pegged reference defines which price point a pegged order linked to - meaning\nthe price for a pegged order is calculated from the value of the reference price point"
+      "title": "A pegged reference defines which price point a pegged order is linked to - meaning\nthe price for a pegged order is calculated from the value of the reference price point"
     },
     "vegaPosition": {
       "type": "object",
@@ -5056,7 +5056,7 @@
         "ordersPerSecond": {
           "type": "string",
           "format": "uint64",
-          "title": "Orders affected per second"
+          "title": "Orders processed per second"
         },
         "totalMarkets": {
           "type": "string",
@@ -5081,7 +5081,7 @@
         "totalOrders": {
           "type": "string",
           "format": "uint64",
-          "title": "Total number of orders affected since genesis (on all markets)"
+          "title": "Total number of orders processed since genesis (on all markets)"
         },
         "totalTrades": {
           "type": "string",

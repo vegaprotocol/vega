@@ -47,7 +47,6 @@ message ERC20AssetDelist {
 
 // An asset deposit for an ERC20 token
 message ERC20Deposit {
-
   // The vega network internal identifier of the asset
   string vegaAssetID = 1;
   // The Ethereum wallet that initiated the deposit

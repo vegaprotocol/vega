@@ -83,7 +83,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED BusEventType = 26
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
-	// Event used to report failed transactions back to a user, this excluded from the ALL type
+	// Event used to report failed transactions back to a user, this is excluded from the ALL type
 	BusEventType_BUS_EVENT_TYPE_TX_ERROR BusEventType = 201
 )
 

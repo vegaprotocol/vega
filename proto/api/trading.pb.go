@@ -5228,9 +5228,9 @@ func (m *DepositsResponse) GetDeposits() []*proto1.Deposit {
 	return nil
 }
 
-// A request to get a specific deposit by identififer
+// A request to get a specific deposit by identifier
 type DepositRequest struct {
-	// The identifier of the withdrawal
+	// The identifier of the deposit
 	ID                   string   `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -5382,10 +5382,10 @@ func (m *NetworkParametersResponse) GetNetworkParameters() []*proto1.NetworkPara
 	return nil
 }
 
-// A message requesting for the list of liquidity provisions orders for markets
+// A message requesting for the list of liquidity provision orders for markets
 // One of the two filters is required (or both)
 type LiquidityProvisionsRequest struct {
-	// The market we want to get liquidity provision orders from
+	// The target market for the liquidity provision orders
 	Market string `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 	// The party which submitted the liquidity provision orders
 	Party                string   `protobuf:"bytes,2,opt,name=party,proto3" json:"party,omitempty"`
@@ -5433,7 +5433,7 @@ func (m *LiquidityProvisionsRequest) GetParty() string {
 	return ""
 }
 
-// A response containing all of the Vega liquidity provisions orders
+// A response containing all of the Vega liquidity provision orders
 type LiquidityProvisionsResponse struct {
 	LiquidityProvisions  []*proto1.LiquidityProvision `protobuf:"bytes,1,rep,name=liquidityProvisions,proto3" json:"liquidityProvisions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
@@ -6307,13 +6307,13 @@ type TradingDataClient interface {
 	// Get the bundle approval for an ERC20 withdrawal,
 	// these data are being used to bundle the call to the smart contract on the ethereum bridge
 	ERC20WithdrawalApproval(ctx context.Context, in *ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*ERC20WithdrawalApprovalResponse, error)
-	// Get a withdrawal by its itentifier
+	// Get a withdrawal by its identifier
 	Withdrawal(ctx context.Context, in *WithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalResponse, error)
 	// Get withdrawals for a party
 	Withdrawals(ctx context.Context, in *WithdrawalsRequest, opts ...grpc.CallOption) (*WithdrawalsResponse, error)
 	// Get a deposit by its identifier
 	Deposit(ctx context.Context, in *DepositRequest, opts ...grpc.CallOption) (*DepositResponse, error)
-	// Get withdrawals for a party
+	// Get deposits for a party
 	Deposits(ctx context.Context, in *DepositsRequest, opts ...grpc.CallOption) (*DepositsResponse, error)
 	// Get the network parameters
 	NetworkParameters(ctx context.Context, in *NetworkParametersRequest, opts ...grpc.CallOption) (*NetworkParametersResponse, error)
@@ -7335,13 +7335,13 @@ type TradingDataServer interface {
 	// Get the bundle approval for an ERC20 withdrawal,
 	// these data are being used to bundle the call to the smart contract on the ethereum bridge
 	ERC20WithdrawalApproval(context.Context, *ERC20WithdrawalApprovalRequest) (*ERC20WithdrawalApprovalResponse, error)
-	// Get a withdrawal by its itentifier
+	// Get a withdrawal by its identifier
 	Withdrawal(context.Context, *WithdrawalRequest) (*WithdrawalResponse, error)
 	// Get withdrawals for a party
 	Withdrawals(context.Context, *WithdrawalsRequest) (*WithdrawalsResponse, error)
 	// Get a deposit by its identifier
 	Deposit(context.Context, *DepositRequest) (*DepositResponse, error)
-	// Get withdrawals for a party
+	// Get deposits for a party
 	Deposits(context.Context, *DepositsRequest) (*DepositsResponse, error)
 	// Get the network parameters
 	NetworkParameters(context.Context, *NetworkParametersRequest) (*NetworkParametersResponse, error)

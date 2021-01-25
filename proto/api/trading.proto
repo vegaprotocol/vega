@@ -337,7 +337,7 @@ service trading_data {
   // these data are being used to bundle the call to the smart contract on the ethereum bridge
   rpc ERC20WithdrawalApproval(ERC20WithdrawalApprovalRequest) returns (ERC20WithdrawalApprovalResponse);
 
-  // Get a withdrawal by its itentifier
+  // Get a withdrawal by its identifier
   rpc Withdrawal(WithdrawalRequest) returns (WithdrawalResponse);
 
   // Get withdrawals for a party
@@ -346,7 +346,7 @@ service trading_data {
   // Get a deposit by its identifier
   rpc Deposit(DepositRequest) returns (DepositResponse);
 
-  // Get withdrawals for a party
+  // Get deposits for a party
   rpc Deposits(DepositsRequest) returns (DepositsResponse);
 
   // Get the network parameters
@@ -1097,9 +1097,9 @@ message DepositsResponse {
   repeated vega.Deposit deposits = 1;
 }
 
-// A request to get a specific deposit by identififer
+// A request to get a specific deposit by identifier
 message DepositRequest {
-  // The identifier of the withdrawal
+  // The identifier of the deposit
   string ID = 1 [(validator.field) = {string_not_empty : true }];
 }
 
@@ -1117,16 +1117,16 @@ message NetworkParametersResponse {
   repeated vega.NetworkParameter networkParameters = 1;
 }
 
-// A message requesting for the list of liquidity provisions orders for markets
+// A message requesting for the list of liquidity provision orders for markets
 // One of the two filters is required (or both)
 message LiquidityProvisionsRequest {
-  // The market we want to get liquidity provision orders from
+  // The target market for the liquidity provision orders
   string market = 1;
   // The party which submitted the liquidity provision orders
   string party = 2;
 }
 
-// A response containing all of the Vega liquidity provisions orders
+// A response containing all of the Vega liquidity provision orders
 message LiquidityProvisionsResponse {
   repeated vega.LiquidityProvision liquidityProvisions = 1;
 }
