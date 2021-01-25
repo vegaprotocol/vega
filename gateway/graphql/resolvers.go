@@ -1234,6 +1234,22 @@ func (r *myMarketDataResolver) Trigger(_ context.Context, m *types.MarketData) (
 	return convertAuctionTriggerFromProto(m.Trigger)
 }
 
+func (r *myMarketDataResolver) MarketValueProxy(_ context.Context, m *types.MarketData) (string, error) {
+	return m.MarketValueProxy, nil
+}
+
+func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *types.MarketData) ([]*LiquidityProviderFeeShare, error) {
+	out := make([]*LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare))
+	for _, v := range m.LiquidityProviderFeeShare {
+		out = append(out, &LiquidityProviderFeeShare{
+			Party:                 &types.Party{Id: v.Party},
+			EquityLikeShare:       v.EquityLikeShare,
+			AverageEntryValuation: v.AverageEntryValuation,
+		})
+	}
+	return out, nil
+}
+
 // END: MarketData resolver
 
 // BEGIN: Market Depth Resolver
