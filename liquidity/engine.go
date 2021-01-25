@@ -335,9 +335,8 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		price, err := repriceFn(pegged)
 		if err != nil {
 			continue
-		} else {
-			oneOrMoreValidOrdersBuy = true
 		}
+		oneOrMoreValidOrdersBuy = true
 		buysShape = append(buysShape, &supplied.LiquidityOrder{
 			OrderID:    buy.OrderID,
 			Price:      price,
@@ -353,9 +352,9 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		price, err := repriceFn(pegged)
 		if err != nil {
 			continue
-		} else {
-			oneOrMoreValidOrdersSell = true
 		}
+		oneOrMoreValidOrdersSell = true
+
 		sellsShape = append(sellsShape, &supplied.LiquidityOrder{
 			OrderID:    sell.OrderID,
 			Price:      price,
