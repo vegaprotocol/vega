@@ -638,7 +638,6 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 
 				// Remove it from the trader position
 				if _, err := m.position.UnregisterOrder(order); err != nil {
-				if err != nil {
 					m.log.Panic("Failure unregistering order in positions engine (cancel)",
 						logging.Order(*order),
 						logging.Error(err))
