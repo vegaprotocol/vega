@@ -28,7 +28,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -324,14 +323,6 @@ func NewMarket(
 	return market, nil
 }
 
-func (m *Market) panicIfErr(msg string, err error, fields ...zapcore.Field) {
-	if err == nil {
-		return
-	}
-
-	m.log.Panic(msg, append(fields, logging.Error(err))...)
-}
-
 func appendBytes(bz ...[]byte) []byte {
 	var out []byte
 	for _, b := range bz {
@@ -493,14 +484,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
 		m.lastEquityShareDistributed = t
 
-		asset, err := m.mkt.GetAsset()
-		m.panicIfErr("GetAsset", err)
-
-		acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
-		m.panicIfErr("GetMarketLiquidityFeeAccount", err)
-
-		err = m.distributeShares(ctx, acc.Balance)
-		m.panicIfErr("distributeShares", err)
+		if err := m.distributeShares(ctx); err != nil {
+			m.log.Panic("Distributing Shares", logging.Error(err))
+		}
 	}
 
 	m.risk.OnTimeUpdate(t)
@@ -3181,17 +3167,32 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 	return out
 }
 
-func (m *Market) distributeShares(ctx context.Context, fee uint64) error {
+func (m *Market) distributeShares(ctx context.Context) error {
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err
 	}
+
+	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
+	if err != nil {
+		return err
+	}
+
 	shares := m.equityShares.Shares()
 	if len(shares) == 0 {
 		return nil
 	}
 
-	feeTransfer := m.fee.DistributeLiquidityFees(shares, fee, asset)
-	_, err = m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
-	return err
+	feeTransfer := m.fee.DistributeLiquidityFees(shares, acc.Balance, asset)
+	if feeTransfer == nil {
+		return nil
+	}
+
+	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
+	if err != nil {
+		return err
+	}
+
+	m.broker.Send(events.NewTransferResponse(ctx, resp))
+	return nil
 }
