@@ -20,17 +20,17 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// The Vega representation of an external asset.
+// The Vega representation of an external asset
 type Asset struct {
-	// Internal identifier of the asset.
+	// Internal identifier of the asset
 	ID string `protobuf:"bytes,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	// Name of the asset (e.g: Great British Pound).
+	// Name of the asset (e.g: Great British Pound)
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Symbol of the asset (e.g: GBP).
+	// Symbol of the asset (e.g: GBP)
 	Symbol string `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	// Total circulating supply for the asset.
+	// Total circulating supply for the asset
 	TotalSupply string `protobuf:"bytes,4,opt,name=totalSupply,proto3" json:"totalSupply,omitempty"`
-	// Number of decimals / precision handled by this asset.
+	// Number of decimals / precision handled by this asset
 	Decimals uint64 `protobuf:"varint,5,opt,name=decimals,proto3" json:"decimals,omitempty"`
 	// The definition of the external source for this asset
 	Source               *AssetSource `protobuf:"bytes,7,opt,name=source,proto3" json:"source,omitempty"`
@@ -106,9 +106,9 @@ func (m *Asset) GetSource() *AssetSource {
 	return nil
 }
 
-// Asset source definition.
+// Asset source definition
 type AssetSource struct {
-	// The source.
+	// The source
 	//
 	// Types that are valid to be assigned to Source:
 	//	*AssetSource_BuiltinAsset
@@ -189,17 +189,17 @@ func (*AssetSource) XXX_OneofWrappers() []interface{} {
 	}
 }
 
-// A Vega internal asset.
+// A Vega internal asset
 type BuiltinAsset struct {
-	// Name of the asset (e.g: Great British Pound).
+	// Name of the asset (e.g: Great British Pound)
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Symbol of the asset (e.g: GBP).
+	// Symbol of the asset (e.g: GBP)
 	Symbol string `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	// Total circulating supply for the asset.
+	// Total circulating supply for the asset
 	TotalSupply string `protobuf:"bytes,3,opt,name=totalSupply,proto3" json:"totalSupply,omitempty"`
-	// Number of decimal / precision handled by this asset.
+	// Number of decimal / precision handled by this asset
 	Decimals uint64 `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	// Maximum amount that can be requested by a party through the built-in asset faucet at a time.
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
 	MaxFaucetAmountMint  string   `protobuf:"bytes,5,opt,name=maxFaucetAmountMint,proto3" json:"maxFaucetAmountMint,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -266,7 +266,7 @@ func (m *BuiltinAsset) GetMaxFaucetAmountMint() string {
 	return ""
 }
 
-// An ERC20 token based asset, living on the ethereum network.
+// An ERC20 token based asset, living on the ethereum network
 type ERC20 struct {
 	// The address of the contract for the token, on the ethereum network
 	ContractAddress      string   `protobuf:"bytes,1,opt,name=contractAddress,proto3" json:"contractAddress,omitempty"`
@@ -307,9 +307,9 @@ func (m *ERC20) GetContractAddress() string {
 	return ""
 }
 
-// Dev assets are for use in development networks only.
+// Dev assets are for use in development networks only
 type DevAssets struct {
-	// Asset sources for development networks.
+	// Asset sources for development networks
 	Sources              []*AssetSource `protobuf:"bytes,1,rep,name=sources,proto3" json:"sources,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
