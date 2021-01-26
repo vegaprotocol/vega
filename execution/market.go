@@ -730,9 +730,19 @@ func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) err
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	// Change market type to auction
-	ordersToCancel, ordersToPark, err := m.matching.EnterAuction()
+	ordersToCancel, err := m.matching.EnterAuction()
 	if err != nil {
 		m.log.Error("Error entering auction: ", logging.Error(err))
+	}
+
+	// Move into auction mode to prevent pegged order repricing
+	event := m.as.AuctionStarted(ctx)
+
+	// Park all pegged orders
+	for _, order := range m.peggedOrders {
+		if order.Status != types.Order_STATUS_PARKED {
+			m.parkOrder(ctx, order)
+		}
 	}
 
 	// Cancel all the orders that were invalid
@@ -740,16 +750,8 @@ func (m *Market) EnterAuction(ctx context.Context) {
 		m.cancelOrder(ctx, order.PartyID, order.Id)
 	}
 
-	// Send out events for all orders we park
-	for _, order := range ordersToPark {
-		m.parkOrder(ctx, order)
-	}
-
 	// Send an event bus update
-	m.broker.Send(m.as.AuctionStarted(ctx))
-
-	// At this point all pegged orders are parked but the pegged order list would be
-	// identical to the parked order list so we save time by not updating the parked list
+	m.broker.Send(event)
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading

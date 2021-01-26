@@ -161,16 +161,16 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 }
 
 // EnterAuction Moves the order book into an auction state
-func (b *OrderBook) EnterAuction() ([]*types.Order, []*types.Order, error) {
-	// Scan existing orders to see which ones can be kept, cancelled and parked
-	buyCancelledOrders, buyParkOrders, err := b.buy.getOrdersToCancelOrPark(true)
+func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
+	// Scan existing orders to see which ones can be kept or cancelled
+	buyCancelledOrders, err := b.buy.getOrdersToCancel(true)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	sellCancelledOrders, sellParkOrder, err := b.sell.getOrdersToCancelOrPark(true)
+	sellCancelledOrders, err := b.sell.getOrdersToCancel(true)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Set the market state
@@ -179,9 +179,7 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, []*types.Order, error) {
 	// Return all the orders that have been removed from the book and need to be cancelled
 	ordersToCancel := buyCancelledOrders
 	ordersToCancel = append(ordersToCancel, sellCancelledOrders...)
-	ordersToPark := buyParkOrders
-	ordersToPark = append(ordersToPark, sellParkOrder...)
-	return ordersToCancel, ordersToPark, nil
+	return ordersToCancel, nil
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
@@ -208,12 +206,12 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	// Remove any orders that will not be valid in continuous trading
-	buyOrdersToCancel, _, err := b.buy.getOrdersToCancelOrPark(false)
+	buyOrdersToCancel, err := b.buy.getOrdersToCancel(false)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	sellOrdersToCancel, _, err := b.sell.getOrdersToCancelOrPark(false)
+	sellOrdersToCancel, err := b.sell.getOrdersToCancel(false)
 	if err != nil {
 		return nil, nil, err
 	}
