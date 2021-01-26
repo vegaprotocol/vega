@@ -1967,8 +1967,8 @@ Status of a liquidity provision order
 | LIQUIDITY_PROVISION_STATUS_UNSPECIFIED | 0 | The default value |
 | LIQUIDITY_PROVISION_STATUS_ACTIVE | 1 | The liquidity provision is active |
 | LIQUIDITY_PROVISION_STATUS_STOPPED | 2 | The liquidity provision was stopped by the network |
-| LIQUIDITY_PROVISION_STATUS_CANCELLED | 3 | The liquidity provision was cancelled by the MM. |
-| LIQUIDITY_PROVISION_STATUS_REJECTED | 4 | The liquidity provision was invalid and got rejected. |
+| LIQUIDITY_PROVISION_STATUS_CANCELLED | 3 | The liquidity provision was cancelled by the liquidity provider |
+| LIQUIDITY_PROVISION_STATUS_REJECTED | 4 | The liquidity provision was invalid and got rejected |
 | LIQUIDITY_PROVISION_STATUS_UNDEPLOYED | 5 | The liquidity provision is valid and accepted by network, but oreders aren&#39;t deployed |
 
 
