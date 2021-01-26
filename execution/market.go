@@ -3183,7 +3183,7 @@ func (m *Market) distributeShares(ctx context.Context) error {
 		return nil
 	}
 
-	feeTransfer := m.fee.DistributeLiquidityFees(shares, acc.Balance, asset)
+	feeTransfer := m.fee.DistributeLiquidityFees(shares, acc)
 	if feeTransfer == nil {
 		return nil
 	}

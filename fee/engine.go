@@ -392,7 +392,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	}, partiesFees, nil
 }
 
-func (e *Engine) DistributeLiquidityFees(shares map[string]float64, fee uint64, asset string) events.FeesTransfer {
+func (e *Engine) DistributeLiquidityFees(shares map[string]float64, acc *types.Account) events.FeesTransfer {
 	if len(shares) == 0 {
 		return nil
 	}
@@ -413,7 +413,7 @@ func (e *Engine) DistributeLiquidityFees(shares map[string]float64, fee uint64, 
 	var floored float64
 	for _, key := range keys {
 		share := shares[key]
-		cs := math.Floor(share * float64(fee))
+		cs := math.Floor(share * float64(acc.Balance))
 		floored += cs
 
 		// populate the return value
@@ -422,7 +422,7 @@ func (e *Engine) DistributeLiquidityFees(shares map[string]float64, fee uint64, 
 			Owner: key,
 			Amount: &types.FinancialAmount{
 				Amount: int64(cs),
-				Asset:  asset,
+				Asset:  acc.Asset,
 			},
 			MinAmount: int64(cs),
 			Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE,
@@ -431,7 +431,7 @@ func (e *Engine) DistributeLiquidityFees(shares map[string]float64, fee uint64, 
 
 	// last is the party who will get the remaining from ceil
 	last := keys[len(keys)-1]
-	diff := fee - uint64(floored)
+	diff := acc.Balance - uint64(floored)
 	ft.totalFeesAmountsPerParty[last] += diff
 	ft.transfers[len(ft.transfers)-1].Amount.Amount += int64(diff)
 
