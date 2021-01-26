@@ -1,6 +1,10 @@
 package execution
 
-import types "code.vegaprotocol.io/vega/proto"
+import (
+	"time"
+
+	types "code.vegaprotocol.io/vega/proto"
+)
 
 // GetPeggedOrderCount returns the number of pegged orders in the market
 func (m *Market) GetPeggedOrderCount() int {
@@ -21,6 +25,20 @@ func (m *Market) GetParkedOrderCount() int {
 // GetPeggedExpiryOrderCount returns the number of pegged order that can expire
 func (m *Market) GetPeggedExpiryOrderCount() int {
 	return m.expiringOrders.GetExpiryingOrderCount()
+}
+
+// GetOrdersOnBookCount returns the number of orders on the live book
+func (m *Market) GetOrdersOnBookCount() int64 {
+	return m.matching.GetTotalNumberOfOrders()
+}
+
+// StartPriceAuction initialises the market to handle a price auction
+func (m *Market) StartPriceAuction(now time.Time) {
+	end := types.AuctionDuration{
+		Duration: 1000,
+	}
+	// setup auction
+	m.as.StartPriceAuction(now, &end)
 }
 
 // TSCalc returns the local tsCalc instance

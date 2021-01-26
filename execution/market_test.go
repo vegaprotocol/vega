@@ -2495,3 +2495,40 @@ func TestOrderBook_AmendExpPeristParkPeggedOrder(t *testing.T) {
 	assert.Equal(t, int(o2.Price), 0)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
 }
+
+// This test is to make sure when we move into a price monitoring auction that we
+// do not allow the parked orders to be repriced.
+func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order01", types.Side_SIDE_SELL, "trader-A", 10, 1010)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GFN, "Order02", types.Side_SIDE_BUY, "trader-A", 10, 990)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "PeggyWeggy", types.Side_SIDE_SELL, "trader-A", 10, 0)
+	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 100}
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
+
+	// Move into a price monitoring auction so that the pegged orders are parked and the other orders are cancelled
+	tm.market.StartPriceAuction(now)
+	tm.market.EnterAuction(ctx)
+
+	require.Equal(t, 1, tm.market.GetPeggedOrderCount())
+	require.Equal(t, 1, tm.market.GetParkedOrderCount())
+	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
+}
