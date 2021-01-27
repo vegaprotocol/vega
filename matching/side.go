@@ -41,9 +41,8 @@ func (s *OrderBookSide) Hash() []byte {
 }
 
 // When we leave an auction we need to remove any orders marked as GFA
-func (s *OrderBookSide) getOrdersToCancelOrPark(auction bool) ([]*types.Order, []*types.Order, error) {
+func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) {
 	ordersToCancel := make([]*types.Order, 0)
-	ordersToPark := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
 			// Find orders to cancel
@@ -52,13 +51,9 @@ func (s *OrderBookSide) getOrdersToCancelOrPark(auction bool) ([]*types.Order, [
 				// Save order to send back to client
 				ordersToCancel = append(ordersToCancel, order)
 			}
-
-			if auction && order.PeggedOrder != nil {
-				ordersToPark = append(ordersToPark, order)
-			}
 		}
 	}
-	return ordersToCancel, ordersToPark, nil
+	return ordersToCancel, nil
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order) {
