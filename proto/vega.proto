@@ -1206,6 +1206,8 @@ message LiquidityProvision {
     LIQUIDITY_PROVISION_STATUS_CANCELLED = 3;
     // The liquidity provision was invalid and got rejected
     LIQUIDITY_PROVISION_STATUS_REJECTED = 4;
+    // The liquidity provision is valid and accepted by network, but oreders aren't deployed
+    LIQUIDITY_PROVISION_STATUS_UNDEPLOYED = 5;
   }
 
   // Unique identifier

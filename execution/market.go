@@ -625,16 +625,17 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	for _, order := range m.peggedOrders {
 		if HasReferenceMoved(order, changes) {
 			if order.Status != types.Order_STATUS_PARKED {
-				// Remove order
+				// Remove order if any volume remains, otherwise it's already been popped by the matching engine.
+
 				cancellation, err := m.matching.CancelOrder(order)
 				if cancellation == nil || err != nil {
 					m.log.Panic("Failure after cancel order from matching engine",
 						logging.Order(*order),
 						logging.Error(err))
 				}
+
 				// Remove it from the trader position
-				_, err = m.position.UnregisterOrder(order)
-				if err != nil {
+				if _, err := m.position.UnregisterOrder(order); err != nil {
 					m.log.Panic("Failure unregistering order in positions engine (cancel)",
 						logging.Order(*order),
 						logging.Error(err))
@@ -1006,19 +1007,19 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
-	conf, err := m.submitOrder(ctx, order)
+	conf, err := m.submitOrder(ctx, order, true)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
 		return nil, err
 	}
 
 	return conf, nil
 }
 
-func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1027,7 +1028,9 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}()
 
 	// set those at the begining as even rejected order get through the buffers
-	m.idgen.SetID(order)
+	if setID {
+		m.idgen.SetID(order)
+	}
 	order.Version = InitialOrderVersion
 	order.Status = types.Order_STATUS_ACTIVE
 
@@ -1154,10 +1157,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				logging.Order(*order),
 				logging.Error(err))
 		}
-		return nil, err
-	}
-
-	if err := m.liquidityUpdate(ctx, confirmation.PassiveOrdersAffected); err != nil {
 		return nil, err
 	}
 
@@ -2113,7 +2112,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, conf.PassiveOrdersAffected); err != nil {
+	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
 		return nil, err
 	}
 
@@ -3011,7 +3010,8 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}()
 
-	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, m.repriceFuncW)
+	existingOrders := m.matching.GetOrdersPerParty(party)
+	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, existingOrders, m.repriceFuncW)
 	if err != nil {
 		return err
 	}
@@ -3054,7 +3054,7 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range newOrders {
-		if _, err := m.submitOrder(ctx, order); err != nil {
+		if _, err := m.submitOrder(ctx, order, false); err != nil {
 			return err
 		}
 		submittedIDs = append(submittedIDs, order.Id)
