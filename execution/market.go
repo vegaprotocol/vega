@@ -317,7 +317,7 @@ func NewMarket(
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
-		equityShares:       NewEquityShares(0),
+		equityShares:       NewEquityShares(1),
 	}
 
 	return market, nil
@@ -583,6 +583,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
 		ts := m.liquidity.ProvisionsPerParty().TotalStake()
 		m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
+		m.equityShares.WithMVP(m.lastMarketValueProxy)
 
 		m.feeSplitter.TimeWindowStart(t)
 	}
@@ -3176,6 +3177,11 @@ func (m *Market) distributeShares(ctx context.Context) error {
 	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
 	if err != nil {
 		return err
+	}
+
+	// We can't distribute any share when no balance.
+	if acc.Balance == 0 {
+		return nil
 	}
 
 	shares := m.equityShares.Shares()

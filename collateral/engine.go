@@ -1619,6 +1619,12 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
+// GetPartyGeneralAccount returns a general account given the partyID.
+func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
+	return e.GetAccountByID(generalID)
+}
+
 // CreatePartyGeneralAccount create the general account for a trader
 func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error) {
 	if !e.AssetExists(asset) {
