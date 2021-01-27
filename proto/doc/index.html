@@ -401,6 +401,10 @@
                 </li>
               
                 <li>
+                  <a href="#vega.OracleDataSubmission"><span class="badge">M</span>OracleDataSubmission</a>
+                </li>
+              
+                <li>
                   <a href="#vega.Order"><span class="badge">M</span>Order</a>
                 </li>
               
@@ -551,6 +555,10 @@
               
                 <li>
                   <a href="#vega.NodeSignatureKind"><span class="badge">E</span>NodeSignatureKind</a>
+                </li>
+              
+                <li>
+                  <a href="#vega.OracleDataSubmission.OracleSource"><span class="badge">E</span>OracleDataSubmission.OracleSource</a>
                 </li>
               
                 <li>
@@ -4169,6 +4177,37 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
 
         
       
+        <h3 id="vega.OracleDataSubmission">OracleDataSubmission</h3>
+        <p>Command to submit new Oracle data from third party providers</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>source</td>
+                  <td><a href="#vega.OracleDataSubmission.OracleSource">OracleDataSubmission.OracleSource</a></td>
+                  <td></td>
+                  <td><p>The source from which the data is coming from </p></td>
+                </tr>
+              
+                <tr>
+                  <td>payload</td>
+                  <td><a href="#bytes">bytes</a></td>
+                  <td></td>
+                  <td><p>The data provided by the third party provider </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="vega.Order">Order</h3>
         <p>An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties</p>
 
@@ -6392,6 +6431,29 @@ who provide the best priced liquidity that actually allows trading to take place
                 <td>NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL</td>
                 <td>2</td>
                 <td><p>Represents a signature for an asset withdrawal</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="vega.OracleDataSubmission.OracleSource">OracleDataSubmission.OracleSource</h3>
+        <p>The supported Oracle sources</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>ORACLE_SOURCE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>The default value</p></td>
+              </tr>
+            
+              <tr>
+                <td>ORACLE_SOURCE_OPEN_ORACLE</td>
+                <td>1</td>
+                <td><p>Support for Open Oracle standard</p></td>
               </tr>
             
           </tbody>

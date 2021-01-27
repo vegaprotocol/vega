@@ -123,7 +123,8 @@ func NewApp(
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData)
 
 	app.abci.
 		HandleDeliverTx(txn.SubmitOrderCommand, app.DeliverSubmitOrder).
@@ -138,7 +139,8 @@ func NewApp(
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
-			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent)))
+			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
+		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -516,6 +518,24 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 	}
 
 	return app.processChainEvent(ctx, ce, tx.PubKey(), id)
+}
+
+func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
+	data := &types.OracleDataSubmission{}
+	if err := tx.Unmarshal(data); err != nil {
+		return err
+	}
+
+	return errors.New("not implemented")
+}
+
+func (app *App) CheckSubmitOracleData(ctx context.Context, tx abci.Tx) error {
+	data := &types.OracleDataSubmission{}
+	if err := tx.Unmarshal(data); err != nil {
+		return err
+	}
+
+	return errors.New("not implemented")
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {

@@ -27,6 +27,8 @@ const (
 	LiquidityProvisionCommand Command = 0x4A
 	// ChainEventCommand..
 	ChainEventCommand Command = 0x50
+	// SubmitOracleDataCommand..
+	SubmitOracleDataCommand Command = 0x51
 )
 
 var commandName = map[Command]string{
@@ -41,6 +43,7 @@ var commandName = map[Command]string{
 	NodeSignatureCommand:      "Node Signature",
 	LiquidityProvisionCommand: "Liquidity Provision Order",
 	ChainEventCommand:         "Chain Event",
+	SubmitOracleDataCommand:   "Submit Oracle Data",
 }
 
 // String return the

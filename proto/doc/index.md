@@ -60,6 +60,7 @@
     - [NodeRegistration](#vega.NodeRegistration)
     - [NodeSignature](#vega.NodeSignature)
     - [NodeVote](#vega.NodeVote)
+    - [OracleDataSubmission](#vega.OracleDataSubmission)
     - [Order](#vega.Order)
     - [OrderAmendment](#vega.OrderAmendment)
     - [OrderCancellation](#vega.OrderCancellation)
@@ -99,6 +100,7 @@
     - [Interval](#vega.Interval)
     - [LiquidityProvision.Status](#vega.LiquidityProvision.Status)
     - [NodeSignatureKind](#vega.NodeSignatureKind)
+    - [OracleDataSubmission.OracleSource](#vega.OracleDataSubmission.OracleSource)
     - [Order.Status](#vega.Order.Status)
     - [Order.TimeInForce](#vega.Order.TimeInForce)
     - [Order.Type](#vega.Order.Type)
@@ -1268,6 +1270,22 @@ for example, an ERC20 deposit is valid and exists on ethereum
 
 
 
+<a name="vega.OracleDataSubmission"></a>
+
+### OracleDataSubmission
+Command to submit new Oracle data from third party providers
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| source | [OracleDataSubmission.OracleSource](#vega.OracleDataSubmission.OracleSource) |  | The source from which the data is coming from |
+| payload | [bytes](#bytes) |  | The data provided by the third party provider |
+
+
+
+
+
+
 <a name="vega.Order"></a>
 
 ### Order
@@ -1983,6 +2001,18 @@ The kind of the signature created by a node, for example, allow-listing a new as
 | NODE_SIGNATURE_KIND_UNSPECIFIED | 0 | Represents an unspecified or missing value from the input |
 | NODE_SIGNATURE_KIND_ASSET_NEW | 1 | Represents a signature for a new asset allow-listing |
 | NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL | 2 | Represents a signature for an asset withdrawal |
+
+
+
+<a name="vega.OracleDataSubmission.OracleSource"></a>
+
+### OracleDataSubmission.OracleSource
+The supported Oracle sources
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ORACLE_SOURCE_UNSPECIFIED | 0 | The default value |
+| ORACLE_SOURCE_OPEN_ORACLE | 1 | Support for Open Oracle standard |
 
 
 
