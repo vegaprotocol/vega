@@ -1092,11 +1092,23 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 	}
 
+	oldPos, ok := m.position.GetPositionByPartyID(order.PartyID)
+	acceptOrder := false
 	// Register order as potential positions
 	pos := m.position.RegisterOrder(order)
+	if ok {
+		// with this amendment order, we've reduced the liability of the trader
+		// even if the margin of said trader is insufficient to increase margin requirements
+		// we ought to accept this order, as it reduces the liability.
+		oldLong, oldShort := oldPos.Size()+oldPos.Buy(), oldPos.Size()+oldPos.Sell()
+		newLong, newShort := pos.Size()+pos.Buy(), pos.Size()+pos.Sell()
+		if oldLong > newLong || oldShort > newShort {
+			acceptOrder = true
+		}
+	}
 
 	// Perform check and allocate margin
-	if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
+	if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil && !acceptOrder {
 		if _, err := m.position.UnregisterOrder(order); err != nil {
 			m.log.Error("Unable to unregister potential trader positions",
 				logging.String("market-id", m.GetID()),
