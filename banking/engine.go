@@ -510,6 +510,7 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit, id string) error {
 	d.Status = types.Deposit_DEPOSIT_STATUS_FINALIZED
+	d.CreditedTimestamp = e.currentTime.UnixNano()
 	e.broker.Send(events.NewDepositEvent(ctx, *d))
 	// no error this have been done before when starting the deposit
 	amount, _ := strconv.ParseUint(d.Amount, 10, 64)

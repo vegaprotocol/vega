@@ -379,10 +379,10 @@ func (r *myDepositResolver) CreatedTimestamp(ctx context.Context, obj *types.Dep
 }
 
 func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.Deposit) (*string, error) {
-	if obj.CreatedTimestamp == 0 {
+	if obj.CreditedTimestamp == 0 {
 		return nil, nil
 	}
-	t := vegatime.Format(vegatime.UnixNano(obj.CreatedTimestamp))
+	t := vegatime.Format(vegatime.UnixNano(obj.CreditedTimestamp))
 	return &t, nil
 }
 
