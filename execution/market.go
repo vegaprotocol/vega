@@ -2385,8 +2385,8 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// ignore rollback return here, as if we amend it means the order
 	// is already on the book, not rollback will be needed, the margin
 	// will be updated later on for sure.
-
-	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+	// Ignore the margin error if the amendment of the order is a size decrease
+	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil && !sizeDecrease {
 		// Undo the position registering
 		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 		if err1 != nil {
