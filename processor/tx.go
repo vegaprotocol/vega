@@ -91,6 +91,8 @@ func (t *Tx) toProto() (interface{}, error) {
 		msg = &types.LiquidityProvisionSubmission{}
 	case txn.ChainEventCommand:
 		msg = &types.ChainEvent{}
+	case txn.SubmitOracleDataCommand:
+		msg = &types.OracleDataSubmission{}
 	default:
 		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", t.Command().String())
 	}

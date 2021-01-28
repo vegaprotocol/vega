@@ -418,3 +418,6 @@ func (this *LiquidityProvision) Validate() error {
 func (this *EthereumConfig) Validate() error {
 	return nil
 }
+func (this *OracleDataSubmission) Validate() error {
+	return nil
+}

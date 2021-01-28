@@ -66,7 +66,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 	)
 }
 
-func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.App, proc *procTest) {
+func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.App, proc *procTest) {
 	pub, priv, err := s.sig.GenKey()
 	require.NoError(t, err)
 
@@ -233,7 +233,7 @@ func TestAbci(t *testing.T) {
 		name string
 		fn   func(t *testing.T, app *processor.App, proc *procTest)
 	}{
-		{"Test all basic process commands - Success", s.testProcessCommandSucess},
+		{"Test all basic process commands - Success", s.testProcessCommandSuccess},
 
 		{"Call Begin and Commit - success", s.testBeginCommitSuccess},
 		{"Call Begin twice, only calls commander once", s.testBeginCallsCommanderOnce},
