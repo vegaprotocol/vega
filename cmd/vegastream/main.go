@@ -37,14 +37,14 @@ func run(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) err
 		return err
 	}
 
-	client := api.NewTradingDataClient(conn)
+	client := api.NewTradingDataServiceClient(conn)
 	stream, err := client.ObserveEventBus(ctx)
 	if err != nil {
 		conn.Close()
 		return err
 	}
 
-	req := &api.ObserveEventsRequest{
+	req := &api.ObserveEventBusRequest{
 		MarketID:  market,
 		PartyID:   party,
 		BatchSize: batchSize,
@@ -55,7 +55,7 @@ func run(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) err
 		return fmt.Errorf("error when sending initial message in stream: %w", err)
 	}
 
-	poll := &api.ObserveEventsRequest{
+	poll := &api.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}
 

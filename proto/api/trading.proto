@@ -14,7 +14,7 @@ package api.v1;
 import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-service Trading {
+service TradingService {
 
   // Prepare a submit order request
   rpc PrepareSubmitOrder(PrepareSubmitOrderRequest) returns (PrepareSubmitOrderResponse);
@@ -518,7 +518,7 @@ message ObservePartyProposalsRequest {
 }
 
 message ObservePartyProposalsResponse {
-  repeated vega.BusEvent events = 1;
+  vega.GovernanceData data = 1;
 }
 
 // Request to subscribe to a stream of governance votes for a proposal
@@ -538,7 +538,7 @@ message ObservePartyVotesRequest {
 }
 
 message ObservePartyVotesResponse {
-  vega.Vote vega= 1;
+  vega.Vote vote = 1;
 }
 
 // Request to subscribe to a stream of MarginLevels data matching the given party identifier

@@ -14,7 +14,7 @@ import (
 type nodeForward struct {
 	log     *logging.Logger
 	nodeCfg NodeConfig
-	clt     api.TradingClient
+	clt     api.TradingServiceClient
 	conn    *grpc.ClientConn
 }
 
@@ -25,7 +25,7 @@ func NewNodeForward(log *logging.Logger, nodeConfig NodeConfig) (*nodeForward, e
 		return nil, err
 	}
 
-	client := api.NewTradingClient(conn)
+	client := api.NewTradingServiceClient(conn)
 	return &nodeForward{
 		log:     log,
 		nodeCfg: nodeConfig,

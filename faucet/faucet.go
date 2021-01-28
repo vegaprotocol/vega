@@ -50,8 +50,8 @@ type Faucet struct {
 	stopCh chan struct{}
 
 	// node connections stuff
-	clt     api.TradingClient
-	cltdata api.TradingDataClient
+	clt     api.TradingServiceClient
+	cltdata api.TradingDataServiceClient
 	conn    *grpc.ClientConn
 }
 
@@ -78,8 +78,8 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		return nil, err
 	}
 
-	client := api.NewTradingClient(conn)
-	clientData := api.NewTradingDataClient(conn)
+	client := api.NewTradingServiceClient(conn)
+	clientData := api.NewTradingDataServiceClient(conn)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 

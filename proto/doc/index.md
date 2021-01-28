@@ -175,132 +175,146 @@
     - [BusEventType](#vega.BusEventType)
   
 - [api/trading.proto](#api/trading.proto)
-    - [AccountsSubscribeRequest](#api.AccountsSubscribeRequest)
-    - [AmendOrderRequest](#api.AmendOrderRequest)
-    - [AssetByIDRequest](#api.AssetByIDRequest)
-    - [AssetByIDResponse](#api.AssetByIDResponse)
-    - [AssetsRequest](#api.AssetsRequest)
-    - [AssetsResponse](#api.AssetsResponse)
-    - [CancelOrderRequest](#api.CancelOrderRequest)
-    - [CandlesRequest](#api.CandlesRequest)
-    - [CandlesResponse](#api.CandlesResponse)
-    - [CandlesSubscribeRequest](#api.CandlesSubscribeRequest)
-    - [DepositRequest](#api.DepositRequest)
-    - [DepositResponse](#api.DepositResponse)
-    - [DepositsRequest](#api.DepositsRequest)
-    - [DepositsResponse](#api.DepositsResponse)
-    - [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest)
-    - [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse)
-    - [EstimateFeeRequest](#api.EstimateFeeRequest)
-    - [EstimateFeeResponse](#api.EstimateFeeResponse)
-    - [EstimateMarginRequest](#api.EstimateMarginRequest)
-    - [EstimateMarginResponse](#api.EstimateMarginResponse)
-    - [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest)
-    - [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse)
-    - [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest)
-    - [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse)
-    - [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest)
-    - [GetNewAssetProposalsResponse](#api.GetNewAssetProposalsResponse)
-    - [GetNewMarketProposalsRequest](#api.GetNewMarketProposalsRequest)
-    - [GetNewMarketProposalsResponse](#api.GetNewMarketProposalsResponse)
-    - [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest)
-    - [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse)
-    - [GetProposalByIDRequest](#api.GetProposalByIDRequest)
-    - [GetProposalByIDResponse](#api.GetProposalByIDResponse)
-    - [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest)
-    - [GetProposalByReferenceResponse](#api.GetProposalByReferenceResponse)
-    - [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest)
-    - [GetProposalsByPartyResponse](#api.GetProposalsByPartyResponse)
-    - [GetProposalsRequest](#api.GetProposalsRequest)
-    - [GetProposalsResponse](#api.GetProposalsResponse)
-    - [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest)
-    - [GetUpdateMarketProposalsResponse](#api.GetUpdateMarketProposalsResponse)
-    - [GetVotesByPartyRequest](#api.GetVotesByPartyRequest)
-    - [GetVotesByPartyResponse](#api.GetVotesByPartyResponse)
-    - [LastTradeRequest](#api.LastTradeRequest)
-    - [LastTradeResponse](#api.LastTradeResponse)
-    - [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest)
-    - [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse)
-    - [MarginLevelsRequest](#api.MarginLevelsRequest)
-    - [MarginLevelsResponse](#api.MarginLevelsResponse)
-    - [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest)
-    - [MarketAccountsRequest](#api.MarketAccountsRequest)
-    - [MarketAccountsResponse](#api.MarketAccountsResponse)
-    - [MarketByIDRequest](#api.MarketByIDRequest)
-    - [MarketByIDResponse](#api.MarketByIDResponse)
-    - [MarketDataByIDRequest](#api.MarketDataByIDRequest)
-    - [MarketDataByIDResponse](#api.MarketDataByIDResponse)
-    - [MarketDepthRequest](#api.MarketDepthRequest)
-    - [MarketDepthResponse](#api.MarketDepthResponse)
-    - [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest)
-    - [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest)
-    - [MarketsDataResponse](#api.MarketsDataResponse)
-    - [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest)
-    - [MarketsResponse](#api.MarketsResponse)
-    - [NetworkParametersRequest](#api.NetworkParametersRequest)
-    - [NetworkParametersResponse](#api.NetworkParametersResponse)
-    - [ObserveEventsRequest](#api.ObserveEventsRequest)
-    - [ObserveEventsResponse](#api.ObserveEventsResponse)
-    - [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest)
-    - [ObservePartyVotesRequest](#api.ObservePartyVotesRequest)
-    - [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest)
-    - [OptionalProposalState](#api.OptionalProposalState)
-    - [OrderByIDRequest](#api.OrderByIDRequest)
-    - [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest)
-    - [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse)
-    - [OrderByReferenceRequest](#api.OrderByReferenceRequest)
-    - [OrderByReferenceResponse](#api.OrderByReferenceResponse)
-    - [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest)
-    - [OrderVersionsResponse](#api.OrderVersionsResponse)
-    - [OrdersByMarketRequest](#api.OrdersByMarketRequest)
-    - [OrdersByMarketResponse](#api.OrdersByMarketResponse)
-    - [OrdersByPartyRequest](#api.OrdersByPartyRequest)
-    - [OrdersByPartyResponse](#api.OrdersByPartyResponse)
-    - [OrdersStream](#api.OrdersStream)
-    - [OrdersSubscribeRequest](#api.OrdersSubscribeRequest)
-    - [Pagination](#api.Pagination)
-    - [PartiesResponse](#api.PartiesResponse)
-    - [PartyAccountsRequest](#api.PartyAccountsRequest)
-    - [PartyAccountsResponse](#api.PartyAccountsResponse)
-    - [PartyByIDRequest](#api.PartyByIDRequest)
-    - [PartyByIDResponse](#api.PartyByIDResponse)
-    - [PositionsByPartyRequest](#api.PositionsByPartyRequest)
-    - [PositionsByPartyResponse](#api.PositionsByPartyResponse)
-    - [PositionsSubscribeRequest](#api.PositionsSubscribeRequest)
-    - [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse)
-    - [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse)
-    - [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest)
-    - [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse)
-    - [PrepareProposalRequest](#api.PrepareProposalRequest)
-    - [PrepareProposalResponse](#api.PrepareProposalResponse)
-    - [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse)
-    - [PrepareVoteRequest](#api.PrepareVoteRequest)
-    - [PrepareVoteResponse](#api.PrepareVoteResponse)
-    - [PrepareWithdrawRequest](#api.PrepareWithdrawRequest)
-    - [PrepareWithdrawResponse](#api.PrepareWithdrawResponse)
-    - [PropagateChainEventRequest](#api.PropagateChainEventRequest)
-    - [PropagateChainEventResponse](#api.PropagateChainEventResponse)
-    - [SubmitOrderRequest](#api.SubmitOrderRequest)
-    - [SubmitTransactionRequest](#api.SubmitTransactionRequest)
-    - [SubmitTransactionResponse](#api.SubmitTransactionResponse)
-    - [TradesByMarketRequest](#api.TradesByMarketRequest)
-    - [TradesByMarketResponse](#api.TradesByMarketResponse)
-    - [TradesByOrderRequest](#api.TradesByOrderRequest)
-    - [TradesByOrderResponse](#api.TradesByOrderResponse)
-    - [TradesByPartyRequest](#api.TradesByPartyRequest)
-    - [TradesByPartyResponse](#api.TradesByPartyResponse)
-    - [TradesStream](#api.TradesStream)
-    - [TradesSubscribeRequest](#api.TradesSubscribeRequest)
-    - [VegaTimeResponse](#api.VegaTimeResponse)
-    - [WithdrawalRequest](#api.WithdrawalRequest)
-    - [WithdrawalResponse](#api.WithdrawalResponse)
-    - [WithdrawalsRequest](#api.WithdrawalsRequest)
-    - [WithdrawalsResponse](#api.WithdrawalsResponse)
+    - [AccountsSubscribeRequest](#api.v1.AccountsSubscribeRequest)
+    - [AccountsSubscribeResponse](#api.v1.AccountsSubscribeResponse)
+    - [AssetByIDRequest](#api.v1.AssetByIDRequest)
+    - [AssetByIDResponse](#api.v1.AssetByIDResponse)
+    - [AssetsRequest](#api.v1.AssetsRequest)
+    - [AssetsResponse](#api.v1.AssetsResponse)
+    - [CandlesRequest](#api.v1.CandlesRequest)
+    - [CandlesResponse](#api.v1.CandlesResponse)
+    - [CandlesSubscribeRequest](#api.v1.CandlesSubscribeRequest)
+    - [CandlesSubscribeResponse](#api.v1.CandlesSubscribeResponse)
+    - [DepositRequest](#api.v1.DepositRequest)
+    - [DepositResponse](#api.v1.DepositResponse)
+    - [DepositsRequest](#api.v1.DepositsRequest)
+    - [DepositsResponse](#api.v1.DepositsResponse)
+    - [ERC20WithdrawalApprovalRequest](#api.v1.ERC20WithdrawalApprovalRequest)
+    - [ERC20WithdrawalApprovalResponse](#api.v1.ERC20WithdrawalApprovalResponse)
+    - [EstimateFeeRequest](#api.v1.EstimateFeeRequest)
+    - [EstimateFeeResponse](#api.v1.EstimateFeeResponse)
+    - [EstimateMarginRequest](#api.v1.EstimateMarginRequest)
+    - [EstimateMarginResponse](#api.v1.EstimateMarginResponse)
+    - [FeeInfrastructureAccountsRequest](#api.v1.FeeInfrastructureAccountsRequest)
+    - [FeeInfrastructureAccountsResponse](#api.v1.FeeInfrastructureAccountsResponse)
+    - [GetNetworkParametersProposalsRequest](#api.v1.GetNetworkParametersProposalsRequest)
+    - [GetNetworkParametersProposalsResponse](#api.v1.GetNetworkParametersProposalsResponse)
+    - [GetNewAssetProposalsRequest](#api.v1.GetNewAssetProposalsRequest)
+    - [GetNewAssetProposalsResponse](#api.v1.GetNewAssetProposalsResponse)
+    - [GetNewMarketProposalsRequest](#api.v1.GetNewMarketProposalsRequest)
+    - [GetNewMarketProposalsResponse](#api.v1.GetNewMarketProposalsResponse)
+    - [GetNodeSignaturesAggregateRequest](#api.v1.GetNodeSignaturesAggregateRequest)
+    - [GetNodeSignaturesAggregateResponse](#api.v1.GetNodeSignaturesAggregateResponse)
+    - [GetProposalByIDRequest](#api.v1.GetProposalByIDRequest)
+    - [GetProposalByIDResponse](#api.v1.GetProposalByIDResponse)
+    - [GetProposalByReferenceRequest](#api.v1.GetProposalByReferenceRequest)
+    - [GetProposalByReferenceResponse](#api.v1.GetProposalByReferenceResponse)
+    - [GetProposalsByPartyRequest](#api.v1.GetProposalsByPartyRequest)
+    - [GetProposalsByPartyResponse](#api.v1.GetProposalsByPartyResponse)
+    - [GetProposalsRequest](#api.v1.GetProposalsRequest)
+    - [GetProposalsResponse](#api.v1.GetProposalsResponse)
+    - [GetUpdateMarketProposalsRequest](#api.v1.GetUpdateMarketProposalsRequest)
+    - [GetUpdateMarketProposalsResponse](#api.v1.GetUpdateMarketProposalsResponse)
+    - [GetVegaTimeResponse](#api.v1.GetVegaTimeResponse)
+    - [GetVotesByPartyRequest](#api.v1.GetVotesByPartyRequest)
+    - [GetVotesByPartyResponse](#api.v1.GetVotesByPartyResponse)
+    - [LastTradeRequest](#api.v1.LastTradeRequest)
+    - [LastTradeResponse](#api.v1.LastTradeResponse)
+    - [LiquidityProvisionsRequest](#api.v1.LiquidityProvisionsRequest)
+    - [LiquidityProvisionsResponse](#api.v1.LiquidityProvisionsResponse)
+    - [MarginLevelsRequest](#api.v1.MarginLevelsRequest)
+    - [MarginLevelsResponse](#api.v1.MarginLevelsResponse)
+    - [MarginLevelsSubscribeRequest](#api.v1.MarginLevelsSubscribeRequest)
+    - [MarginLevelsSubscribeResponse](#api.v1.MarginLevelsSubscribeResponse)
+    - [MarketAccountsRequest](#api.v1.MarketAccountsRequest)
+    - [MarketAccountsResponse](#api.v1.MarketAccountsResponse)
+    - [MarketByIDRequest](#api.v1.MarketByIDRequest)
+    - [MarketByIDResponse](#api.v1.MarketByIDResponse)
+    - [MarketDataByIDRequest](#api.v1.MarketDataByIDRequest)
+    - [MarketDataByIDResponse](#api.v1.MarketDataByIDResponse)
+    - [MarketDepthRequest](#api.v1.MarketDepthRequest)
+    - [MarketDepthResponse](#api.v1.MarketDepthResponse)
+    - [MarketDepthSubscribeRequest](#api.v1.MarketDepthSubscribeRequest)
+    - [MarketDepthSubscribeResponse](#api.v1.MarketDepthSubscribeResponse)
+    - [MarketDepthUpdatesSubscribeRequest](#api.v1.MarketDepthUpdatesSubscribeRequest)
+    - [MarketDepthUpdatesSubscribeResponse](#api.v1.MarketDepthUpdatesSubscribeResponse)
+    - [MarketsDataResponse](#api.v1.MarketsDataResponse)
+    - [MarketsDataSubscribeRequest](#api.v1.MarketsDataSubscribeRequest)
+    - [MarketsDataSubscribeResponse](#api.v1.MarketsDataSubscribeResponse)
+    - [MarketsResponse](#api.v1.MarketsResponse)
+    - [NetworkParametersRequest](#api.v1.NetworkParametersRequest)
+    - [NetworkParametersResponse](#api.v1.NetworkParametersResponse)
+    - [ObserveEventBusRequest](#api.v1.ObserveEventBusRequest)
+    - [ObserveEventBusResponse](#api.v1.ObserveEventBusResponse)
+    - [ObserveGovernanceResponse](#api.v1.ObserveGovernanceResponse)
+    - [ObservePartyProposalsRequest](#api.v1.ObservePartyProposalsRequest)
+    - [ObservePartyProposalsResponse](#api.v1.ObservePartyProposalsResponse)
+    - [ObservePartyVotesRequest](#api.v1.ObservePartyVotesRequest)
+    - [ObservePartyVotesResponse](#api.v1.ObservePartyVotesResponse)
+    - [ObserveProposalVotesRequest](#api.v1.ObserveProposalVotesRequest)
+    - [ObserveProposalVotesResponse](#api.v1.ObserveProposalVotesResponse)
+    - [OptionalProposalState](#api.v1.OptionalProposalState)
+    - [OrderByIDRequest](#api.v1.OrderByIDRequest)
+    - [OrderByIDResponse](#api.v1.OrderByIDResponse)
+    - [OrderByMarketAndIDRequest](#api.v1.OrderByMarketAndIDRequest)
+    - [OrderByMarketAndIDResponse](#api.v1.OrderByMarketAndIDResponse)
+    - [OrderByReferenceRequest](#api.v1.OrderByReferenceRequest)
+    - [OrderByReferenceResponse](#api.v1.OrderByReferenceResponse)
+    - [OrderVersionsByIDRequest](#api.v1.OrderVersionsByIDRequest)
+    - [OrderVersionsByIDResponse](#api.v1.OrderVersionsByIDResponse)
+    - [OrdersByMarketRequest](#api.v1.OrdersByMarketRequest)
+    - [OrdersByMarketResponse](#api.v1.OrdersByMarketResponse)
+    - [OrdersByPartyRequest](#api.v1.OrdersByPartyRequest)
+    - [OrdersByPartyResponse](#api.v1.OrdersByPartyResponse)
+    - [OrdersSubscribeRequest](#api.v1.OrdersSubscribeRequest)
+    - [OrdersSubscribeResponse](#api.v1.OrdersSubscribeResponse)
+    - [Pagination](#api.v1.Pagination)
+    - [PartiesResponse](#api.v1.PartiesResponse)
+    - [PartyAccountsRequest](#api.v1.PartyAccountsRequest)
+    - [PartyAccountsResponse](#api.v1.PartyAccountsResponse)
+    - [PartyByIDRequest](#api.v1.PartyByIDRequest)
+    - [PartyByIDResponse](#api.v1.PartyByIDResponse)
+    - [PositionsByPartyRequest](#api.v1.PositionsByPartyRequest)
+    - [PositionsByPartyResponse](#api.v1.PositionsByPartyResponse)
+    - [PositionsSubscribeRequest](#api.v1.PositionsSubscribeRequest)
+    - [PositionsSubscribeResponse](#api.v1.PositionsSubscribeResponse)
+    - [PrepareAmendOrderRequest](#api.v1.PrepareAmendOrderRequest)
+    - [PrepareAmendOrderResponse](#api.v1.PrepareAmendOrderResponse)
+    - [PrepareCancelOrderRequest](#api.v1.PrepareCancelOrderRequest)
+    - [PrepareCancelOrderResponse](#api.v1.PrepareCancelOrderResponse)
+    - [PrepareLiquidityProvisionRequest](#api.v1.PrepareLiquidityProvisionRequest)
+    - [PrepareLiquidityProvisionResponse](#api.v1.PrepareLiquidityProvisionResponse)
+    - [PrepareProposalRequest](#api.v1.PrepareProposalRequest)
+    - [PrepareProposalResponse](#api.v1.PrepareProposalResponse)
+    - [PrepareSubmitOrderRequest](#api.v1.PrepareSubmitOrderRequest)
+    - [PrepareSubmitOrderResponse](#api.v1.PrepareSubmitOrderResponse)
+    - [PrepareVoteRequest](#api.v1.PrepareVoteRequest)
+    - [PrepareVoteResponse](#api.v1.PrepareVoteResponse)
+    - [PrepareWithdrawRequest](#api.v1.PrepareWithdrawRequest)
+    - [PrepareWithdrawResponse](#api.v1.PrepareWithdrawResponse)
+    - [PropagateChainEventRequest](#api.v1.PropagateChainEventRequest)
+    - [PropagateChainEventResponse](#api.v1.PropagateChainEventResponse)
+    - [StatisticsResponse](#api.v1.StatisticsResponse)
+    - [SubmitTransactionRequest](#api.v1.SubmitTransactionRequest)
+    - [SubmitTransactionResponse](#api.v1.SubmitTransactionResponse)
+    - [TradesByMarketRequest](#api.v1.TradesByMarketRequest)
+    - [TradesByMarketResponse](#api.v1.TradesByMarketResponse)
+    - [TradesByOrderRequest](#api.v1.TradesByOrderRequest)
+    - [TradesByOrderResponse](#api.v1.TradesByOrderResponse)
+    - [TradesByPartyRequest](#api.v1.TradesByPartyRequest)
+    - [TradesByPartyResponse](#api.v1.TradesByPartyResponse)
+    - [TradesSubscribeRequest](#api.v1.TradesSubscribeRequest)
+    - [TradesSubscribeResponse](#api.v1.TradesSubscribeResponse)
+    - [TransferResponsesSubscribeResponse](#api.v1.TransferResponsesSubscribeResponse)
+    - [WithdrawalRequest](#api.v1.WithdrawalRequest)
+    - [WithdrawalResponse](#api.v1.WithdrawalResponse)
+    - [WithdrawalsRequest](#api.v1.WithdrawalsRequest)
+    - [WithdrawalsResponse](#api.v1.WithdrawalsResponse)
   
-    - [SubmitTransactionRequest.Type](#api.SubmitTransactionRequest.Type)
+    - [SubmitTransactionRequest.Type](#api.v1.SubmitTransactionRequest.Type)
   
-    - [trading](#api.trading)
-    - [trading_data](#api.trading_data)
+    - [TradingDataService](#api.v1.TradingDataService)
+    - [TradingService](#api.v1.TradingService)
   
 - [github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto](#github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto)
     - [StreamError](#grpc.gateway.runtime.StreamError)
@@ -3268,7 +3282,7 @@ Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data 
 
 
 
-<a name="api.AccountsSubscribeRequest"></a>
+<a name="api.v1.AccountsSubscribeRequest"></a>
 
 ### AccountsSubscribeRequest
 Request to subscribe to a stream of (Accounts)[#vega.Account]
@@ -3286,22 +3300,22 @@ Request to subscribe to a stream of (Accounts)[#vega.Account]
 
 
 
-<a name="api.AmendOrderRequest"></a>
+<a name="api.v1.AccountsSubscribeResponse"></a>
 
-### AmendOrderRequest
-Request to amend an existing order
+### AccountsSubscribeResponse
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  | An order amendment |
+| account | [vega.Account](#vega.Account) |  |  |
 
 
 
 
 
 
-<a name="api.AssetByIDRequest"></a>
+<a name="api.v1.AssetByIDRequest"></a>
 
 ### AssetByIDRequest
 Request for an asset given an asset identifier
@@ -3316,7 +3330,7 @@ Request for an asset given an asset identifier
 
 
 
-<a name="api.AssetByIDResponse"></a>
+<a name="api.v1.AssetByIDResponse"></a>
 
 ### AssetByIDResponse
 Response for an asset given an asset identifier
@@ -3331,7 +3345,7 @@ Response for an asset given an asset identifier
 
 
 
-<a name="api.AssetsRequest"></a>
+<a name="api.v1.AssetsRequest"></a>
 
 ### AssetsRequest
 Request for a list of all assets enabled on Vega
@@ -3341,7 +3355,7 @@ Request for a list of all assets enabled on Vega
 
 
 
-<a name="api.AssetsResponse"></a>
+<a name="api.v1.AssetsResponse"></a>
 
 ### AssetsResponse
 Response for a list of all assets enabled on Vega
@@ -3356,22 +3370,7 @@ Response for a list of all assets enabled on Vega
 
 
 
-<a name="api.CancelOrderRequest"></a>
-
-### CancelOrderRequest
-Request to cancel an existing order
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cancellation | [vega.OrderCancellation](#vega.OrderCancellation) |  | An order cancellation |
-
-
-
-
-
-
-<a name="api.CandlesRequest"></a>
+<a name="api.v1.CandlesRequest"></a>
 
 ### CandlesRequest
 Request for a list of candles for a market at an interval
@@ -3388,7 +3387,7 @@ Request for a list of candles for a market at an interval
 
 
 
-<a name="api.CandlesResponse"></a>
+<a name="api.v1.CandlesResponse"></a>
 
 ### CandlesResponse
 Response for a list of candles for a market at an interval
@@ -3403,7 +3402,7 @@ Response for a list of candles for a market at an interval
 
 
 
-<a name="api.CandlesSubscribeRequest"></a>
+<a name="api.v1.CandlesSubscribeRequest"></a>
 
 ### CandlesSubscribeRequest
 Request to subscribe to a stream of (Candles)[#vega.Candle]
@@ -3419,7 +3418,22 @@ Request to subscribe to a stream of (Candles)[#vega.Candle]
 
 
 
-<a name="api.DepositRequest"></a>
+<a name="api.v1.CandlesSubscribeResponse"></a>
+
+### CandlesSubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| candle | [vega.Candle](#vega.Candle) |  |  |
+
+
+
+
+
+
+<a name="api.v1.DepositRequest"></a>
 
 ### DepositRequest
 A request to get a specific deposit by identifier
@@ -3434,7 +3448,7 @@ A request to get a specific deposit by identifier
 
 
 
-<a name="api.DepositResponse"></a>
+<a name="api.v1.DepositResponse"></a>
 
 ### DepositResponse
 A response for a deposit
@@ -3449,7 +3463,7 @@ A response for a deposit
 
 
 
-<a name="api.DepositsRequest"></a>
+<a name="api.v1.DepositsRequest"></a>
 
 ### DepositsRequest
 A request to get a list of deposit from a given party
@@ -3464,7 +3478,7 @@ A request to get a list of deposit from a given party
 
 
 
-<a name="api.DepositsResponse"></a>
+<a name="api.v1.DepositsResponse"></a>
 
 ### DepositsResponse
 The response for a list of deposits
@@ -3479,7 +3493,7 @@ The response for a list of deposits
 
 
 
-<a name="api.ERC20WithdrawalApprovalRequest"></a>
+<a name="api.v1.ERC20WithdrawalApprovalRequest"></a>
 
 ### ERC20WithdrawalApprovalRequest
 The request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
@@ -3494,7 +3508,7 @@ The request to get all information required to bundle the call to finalise the w
 
 
 
-<a name="api.ERC20WithdrawalApprovalResponse"></a>
+<a name="api.v1.ERC20WithdrawalApprovalResponse"></a>
 
 ### ERC20WithdrawalApprovalResponse
 The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
@@ -3514,7 +3528,7 @@ function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, 
 
 
 
-<a name="api.EstimateFeeRequest"></a>
+<a name="api.v1.EstimateFeeRequest"></a>
 
 ### EstimateFeeRequest
 Request to fetch the estimated fee if an order were to trade immediately
@@ -3529,7 +3543,7 @@ Request to fetch the estimated fee if an order were to trade immediately
 
 
 
-<a name="api.EstimateFeeResponse"></a>
+<a name="api.v1.EstimateFeeResponse"></a>
 
 ### EstimateFeeResponse
 Response to a EstimateFeeRequest, containing the estimated fees for a given order
@@ -3544,7 +3558,7 @@ Response to a EstimateFeeRequest, containing the estimated fees for a given orde
 
 
 
-<a name="api.EstimateMarginRequest"></a>
+<a name="api.v1.EstimateMarginRequest"></a>
 
 ### EstimateMarginRequest
 Request to fetch the estimated MarginLevels if an order were to trade immediately
@@ -3559,7 +3573,7 @@ Request to fetch the estimated MarginLevels if an order were to trade immediatel
 
 
 
-<a name="api.EstimateMarginResponse"></a>
+<a name="api.v1.EstimateMarginResponse"></a>
 
 ### EstimateMarginResponse
 Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order
@@ -3574,7 +3588,7 @@ Response to a EstimateMarginRequest, containing the estimated marginLevels for a
 
 
 
-<a name="api.FeeInfrastructureAccountsRequest"></a>
+<a name="api.v1.FeeInfrastructureAccountsRequest"></a>
 
 ### FeeInfrastructureAccountsRequest
 Request for a list of infrastructure fee accounts
@@ -3589,7 +3603,7 @@ Request for a list of infrastructure fee accounts
 
 
 
-<a name="api.FeeInfrastructureAccountsResponse"></a>
+<a name="api.v1.FeeInfrastructureAccountsResponse"></a>
 
 ### FeeInfrastructureAccountsResponse
 Response for a list of infrastructure fee accounts
@@ -3604,7 +3618,7 @@ Response for a list of infrastructure fee accounts
 
 
 
-<a name="api.GetNetworkParametersProposalsRequest"></a>
+<a name="api.v1.GetNetworkParametersProposalsRequest"></a>
 
 ### GetNetworkParametersProposalsRequest
 Request for a list of network parameter proposals
@@ -3612,14 +3626,14 @@ Request for a list of network parameter proposals
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state |
+| selectInState | [OptionalProposalState](#api.v1.OptionalProposalState) |  | Optional proposal state |
 
 
 
 
 
 
-<a name="api.GetNetworkParametersProposalsResponse"></a>
+<a name="api.v1.GetNetworkParametersProposalsResponse"></a>
 
 ### GetNetworkParametersProposalsResponse
 Response for a list of network parameter proposals
@@ -3634,7 +3648,7 @@ Response for a list of network parameter proposals
 
 
 
-<a name="api.GetNewAssetProposalsRequest"></a>
+<a name="api.v1.GetNewAssetProposalsRequest"></a>
 
 ### GetNewAssetProposalsRequest
 Request for a list of new asset proposals
@@ -3642,14 +3656,14 @@ Request for a list of new asset proposals
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state |
+| selectInState | [OptionalProposalState](#api.v1.OptionalProposalState) |  | Optional proposal state |
 
 
 
 
 
 
-<a name="api.GetNewAssetProposalsResponse"></a>
+<a name="api.v1.GetNewAssetProposalsResponse"></a>
 
 ### GetNewAssetProposalsResponse
 Response for a list of new asset proposals
@@ -3664,7 +3678,7 @@ Response for a list of new asset proposals
 
 
 
-<a name="api.GetNewMarketProposalsRequest"></a>
+<a name="api.v1.GetNewMarketProposalsRequest"></a>
 
 ### GetNewMarketProposalsRequest
 Request for a list of new market proposals
@@ -3672,14 +3686,14 @@ Request for a list of new market proposals
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state |
+| selectInState | [OptionalProposalState](#api.v1.OptionalProposalState) |  | Optional proposal state |
 
 
 
 
 
 
-<a name="api.GetNewMarketProposalsResponse"></a>
+<a name="api.v1.GetNewMarketProposalsResponse"></a>
 
 ### GetNewMarketProposalsResponse
 Response for a list of new market proposals
@@ -3694,7 +3708,7 @@ Response for a list of new market proposals
 
 
 
-<a name="api.GetNodeSignaturesAggregateRequest"></a>
+<a name="api.v1.GetNodeSignaturesAggregateRequest"></a>
 
 ### GetNodeSignaturesAggregateRequest
 Request to specify the identifier of the resource we want to retrieve aggregated signatures for
@@ -3709,7 +3723,7 @@ Request to specify the identifier of the resource we want to retrieve aggregated
 
 
 
-<a name="api.GetNodeSignaturesAggregateResponse"></a>
+<a name="api.v1.GetNodeSignaturesAggregateResponse"></a>
 
 ### GetNodeSignaturesAggregateResponse
 Response to specify the identifier of the resource we want to retrieve aggregated signatures for
@@ -3724,7 +3738,7 @@ Response to specify the identifier of the resource we want to retrieve aggregate
 
 
 
-<a name="api.GetProposalByIDRequest"></a>
+<a name="api.v1.GetProposalByIDRequest"></a>
 
 ### GetProposalByIDRequest
 Request for a governance proposal given a proposal identifier
@@ -3739,7 +3753,7 @@ Request for a governance proposal given a proposal identifier
 
 
 
-<a name="api.GetProposalByIDResponse"></a>
+<a name="api.v1.GetProposalByIDResponse"></a>
 
 ### GetProposalByIDResponse
 Response for a governance proposal given a proposal identifier
@@ -3754,7 +3768,7 @@ Response for a governance proposal given a proposal identifier
 
 
 
-<a name="api.GetProposalByReferenceRequest"></a>
+<a name="api.v1.GetProposalByReferenceRequest"></a>
 
 ### GetProposalByReferenceRequest
 Request for a governance proposal given a proposal reference
@@ -3769,7 +3783,7 @@ Request for a governance proposal given a proposal reference
 
 
 
-<a name="api.GetProposalByReferenceResponse"></a>
+<a name="api.v1.GetProposalByReferenceResponse"></a>
 
 ### GetProposalByReferenceResponse
 Response for a governance proposal given a proposal reference
@@ -3784,7 +3798,7 @@ Response for a governance proposal given a proposal reference
 
 
 
-<a name="api.GetProposalsByPartyRequest"></a>
+<a name="api.v1.GetProposalsByPartyRequest"></a>
 
 ### GetProposalsByPartyRequest
 Request for a list of proposals for a party
@@ -3793,14 +3807,14 @@ Request for a list of proposals for a party
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  | Party identifier, required field |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state |
+| selectInState | [OptionalProposalState](#api.v1.OptionalProposalState) |  | Optional proposal state |
 
 
 
 
 
 
-<a name="api.GetProposalsByPartyResponse"></a>
+<a name="api.v1.GetProposalsByPartyResponse"></a>
 
 ### GetProposalsByPartyResponse
 Response for a list of proposals for a party
@@ -3815,7 +3829,7 @@ Response for a list of proposals for a party
 
 
 
-<a name="api.GetProposalsRequest"></a>
+<a name="api.v1.GetProposalsRequest"></a>
 
 ### GetProposalsRequest
 Request for a list of proposals
@@ -3823,14 +3837,14 @@ Request for a list of proposals
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Optional proposal state |
+| selectInState | [OptionalProposalState](#api.v1.OptionalProposalState) |  | Optional proposal state |
 
 
 
 
 
 
-<a name="api.GetProposalsResponse"></a>
+<a name="api.v1.GetProposalsResponse"></a>
 
 ### GetProposalsResponse
 Response for a list of proposals
@@ -3845,7 +3859,7 @@ Response for a list of proposals
 
 
 
-<a name="api.GetUpdateMarketProposalsRequest"></a>
+<a name="api.v1.GetUpdateMarketProposalsRequest"></a>
 
 ### GetUpdateMarketProposalsRequest
 Request for a list of update market proposals
@@ -3854,14 +3868,14 @@ Request for a list of update market proposals
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier, required field |
-| selectInState | [OptionalProposalState](#api.OptionalProposalState) |  | Proposal state |
+| selectInState | [OptionalProposalState](#api.v1.OptionalProposalState) |  | Proposal state |
 
 
 
 
 
 
-<a name="api.GetUpdateMarketProposalsResponse"></a>
+<a name="api.v1.GetUpdateMarketProposalsResponse"></a>
 
 ### GetUpdateMarketProposalsResponse
 Response for a list of update market proposals
@@ -3876,7 +3890,22 @@ Response for a list of update market proposals
 
 
 
-<a name="api.GetVotesByPartyRequest"></a>
+<a name="api.v1.GetVegaTimeResponse"></a>
+
+### GetVegaTimeResponse
+Response for the current consensus coordinated time on the Vega network, referred to as &#34;VegaTime&#34;
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| timestamp | [int64](#int64) |  | Timestamp representation of current VegaTime as represented in Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z` |
+
+
+
+
+
+
+<a name="api.v1.GetVotesByPartyRequest"></a>
 
 ### GetVotesByPartyRequest
 Request for a list of votes for a party
@@ -3891,7 +3920,7 @@ Request for a list of votes for a party
 
 
 
-<a name="api.GetVotesByPartyResponse"></a>
+<a name="api.v1.GetVotesByPartyResponse"></a>
 
 ### GetVotesByPartyResponse
 Response for a list of votes for a party
@@ -3906,7 +3935,7 @@ Response for a list of votes for a party
 
 
 
-<a name="api.LastTradeRequest"></a>
+<a name="api.v1.LastTradeRequest"></a>
 
 ### LastTradeRequest
 Request for the latest trade that occurred on Vega for a given market
@@ -3921,7 +3950,7 @@ Request for the latest trade that occurred on Vega for a given market
 
 
 
-<a name="api.LastTradeResponse"></a>
+<a name="api.v1.LastTradeResponse"></a>
 
 ### LastTradeResponse
 Response for the latest trade that occurred on Vega for a given market
@@ -3936,7 +3965,7 @@ Response for the latest trade that occurred on Vega for a given market
 
 
 
-<a name="api.LiquidityProvisionsRequest"></a>
+<a name="api.v1.LiquidityProvisionsRequest"></a>
 
 ### LiquidityProvisionsRequest
 A message requesting for the list of liquidity provision orders for markets
@@ -3953,7 +3982,7 @@ One of the two filters is required (or both)
 
 
 
-<a name="api.LiquidityProvisionsResponse"></a>
+<a name="api.v1.LiquidityProvisionsResponse"></a>
 
 ### LiquidityProvisionsResponse
 A response containing all of the Vega liquidity provision orders
@@ -3968,7 +3997,7 @@ A response containing all of the Vega liquidity provision orders
 
 
 
-<a name="api.MarginLevelsRequest"></a>
+<a name="api.v1.MarginLevelsRequest"></a>
 
 ### MarginLevelsRequest
 Request for margin levels for a party
@@ -3984,7 +4013,7 @@ Request for margin levels for a party
 
 
 
-<a name="api.MarginLevelsResponse"></a>
+<a name="api.v1.MarginLevelsResponse"></a>
 
 ### MarginLevelsResponse
 Response for margin levels for a party
@@ -3999,7 +4028,7 @@ Response for margin levels for a party
 
 
 
-<a name="api.MarginLevelsSubscribeRequest"></a>
+<a name="api.v1.MarginLevelsSubscribeRequest"></a>
 
 ### MarginLevelsSubscribeRequest
 Request to subscribe to a stream of MarginLevels data matching the given party identifier
@@ -4016,7 +4045,22 @@ Optionally, the list can be additionally filtered by market
 
 
 
-<a name="api.MarketAccountsRequest"></a>
+<a name="api.v1.MarginLevelsSubscribeResponse"></a>
+
+### MarginLevelsSubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marginLevels | [vega.MarginLevels](#vega.MarginLevels) |  |  |
+
+
+
+
+
+
+<a name="api.v1.MarketAccountsRequest"></a>
 
 ### MarketAccountsRequest
 Request for a list of accounts for a market
@@ -4032,7 +4076,7 @@ Request for a list of accounts for a market
 
 
 
-<a name="api.MarketAccountsResponse"></a>
+<a name="api.v1.MarketAccountsResponse"></a>
 
 ### MarketAccountsResponse
 Response for a list of accounts for a market
@@ -4047,7 +4091,7 @@ Response for a list of accounts for a market
 
 
 
-<a name="api.MarketByIDRequest"></a>
+<a name="api.v1.MarketByIDRequest"></a>
 
 ### MarketByIDRequest
 Request for a market given a market identifier
@@ -4062,7 +4106,7 @@ Request for a market given a market identifier
 
 
 
-<a name="api.MarketByIDResponse"></a>
+<a name="api.v1.MarketByIDResponse"></a>
 
 ### MarketByIDResponse
 Response for a market given a market identifier
@@ -4077,7 +4121,7 @@ Response for a market given a market identifier
 
 
 
-<a name="api.MarketDataByIDRequest"></a>
+<a name="api.v1.MarketDataByIDRequest"></a>
 
 ### MarketDataByIDRequest
 Request for market data for a market
@@ -4092,7 +4136,7 @@ Request for market data for a market
 
 
 
-<a name="api.MarketDataByIDResponse"></a>
+<a name="api.v1.MarketDataByIDResponse"></a>
 
 ### MarketDataByIDResponse
 Response for market data for a market
@@ -4107,7 +4151,7 @@ Response for market data for a market
 
 
 
-<a name="api.MarketDepthRequest"></a>
+<a name="api.v1.MarketDepthRequest"></a>
 
 ### MarketDepthRequest
 Request for the market depth/order book price levels on a market
@@ -4124,7 +4168,7 @@ Optionally, a maximum depth can be set to limit the number of levels returned
 
 
 
-<a name="api.MarketDepthResponse"></a>
+<a name="api.v1.MarketDepthResponse"></a>
 
 ### MarketDepthResponse
 Response for the market depth/order book price levels on a market
@@ -4143,7 +4187,7 @@ Response for the market depth/order book price levels on a market
 
 
 
-<a name="api.MarketDepthSubscribeRequest"></a>
+<a name="api.v1.MarketDepthSubscribeRequest"></a>
 
 ### MarketDepthSubscribeRequest
 Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data
@@ -4158,7 +4202,22 @@ Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data
 
 
 
-<a name="api.MarketDepthUpdatesSubscribeRequest"></a>
+<a name="api.v1.MarketDepthSubscribeResponse"></a>
+
+### MarketDepthSubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketDepth | [vega.MarketDepth](#vega.MarketDepth) |  |  |
+
+
+
+
+
+
+<a name="api.v1.MarketDepthUpdatesSubscribeRequest"></a>
 
 ### MarketDepthUpdatesSubscribeRequest
 Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data
@@ -4173,7 +4232,22 @@ Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate
 
 
 
-<a name="api.MarketsDataResponse"></a>
+<a name="api.v1.MarketDepthUpdatesSubscribeResponse"></a>
+
+### MarketDepthUpdatesSubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| update | [vega.MarketDepthUpdate](#vega.MarketDepthUpdate) |  |  |
+
+
+
+
+
+
+<a name="api.v1.MarketsDataResponse"></a>
 
 ### MarketsDataResponse
 Response for market data
@@ -4188,7 +4262,7 @@ Response for market data
 
 
 
-<a name="api.MarketsDataSubscribeRequest"></a>
+<a name="api.v1.MarketsDataSubscribeRequest"></a>
 
 ### MarketsDataSubscribeRequest
 Request to subscribe to a stream of MarketsData
@@ -4204,7 +4278,22 @@ Optionally, the list can be additionally filtered by market
 
 
 
-<a name="api.MarketsResponse"></a>
+<a name="api.v1.MarketsDataSubscribeResponse"></a>
+
+### MarketsDataSubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| marketData | [vega.MarketData](#vega.MarketData) |  |  |
+
+
+
+
+
+
+<a name="api.v1.MarketsResponse"></a>
 
 ### MarketsResponse
 Response for a list of markets on Vega
@@ -4219,7 +4308,7 @@ Response for a list of markets on Vega
 
 
 
-<a name="api.NetworkParametersRequest"></a>
+<a name="api.v1.NetworkParametersRequest"></a>
 
 ### NetworkParametersRequest
 A message requesting for the list of all network parameters
@@ -4229,7 +4318,7 @@ A message requesting for the list of all network parameters
 
 
 
-<a name="api.NetworkParametersResponse"></a>
+<a name="api.v1.NetworkParametersResponse"></a>
 
 ### NetworkParametersResponse
 A response containing all of the vega network parameters
@@ -4244,9 +4333,9 @@ A response containing all of the vega network parameters
 
 
 
-<a name="api.ObserveEventsRequest"></a>
+<a name="api.v1.ObserveEventBusRequest"></a>
 
-### ObserveEventsRequest
+### ObserveEventBusRequest
 Request to subscribe to a stream of one or more event types from the Vega event bus
 
 
@@ -4262,9 +4351,9 @@ Request to subscribe to a stream of one or more event types from the Vega event 
 
 
 
-<a name="api.ObserveEventsResponse"></a>
+<a name="api.v1.ObserveEventBusResponse"></a>
 
-### ObserveEventsResponse
+### ObserveEventBusResponse
 Response to a subscribed stream of events from the Vega event bus
 
 
@@ -4277,7 +4366,22 @@ Response to a subscribed stream of events from the Vega event bus
 
 
 
-<a name="api.ObservePartyProposalsRequest"></a>
+<a name="api.v1.ObserveGovernanceResponse"></a>
+
+### ObserveGovernanceResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) |  |  |
+
+
+
+
+
+
+<a name="api.v1.ObservePartyProposalsRequest"></a>
 
 ### ObservePartyProposalsRequest
 Request to subscribe to a stream of governance proposals for a party
@@ -4292,7 +4396,22 @@ Request to subscribe to a stream of governance proposals for a party
 
 
 
-<a name="api.ObservePartyVotesRequest"></a>
+<a name="api.v1.ObservePartyProposalsResponse"></a>
+
+### ObservePartyProposalsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| data | [vega.GovernanceData](#vega.GovernanceData) |  |  |
+
+
+
+
+
+
+<a name="api.v1.ObservePartyVotesRequest"></a>
 
 ### ObservePartyVotesRequest
 Request to subscribe to a stream of governance votes for a party
@@ -4307,7 +4426,22 @@ Request to subscribe to a stream of governance votes for a party
 
 
 
-<a name="api.ObserveProposalVotesRequest"></a>
+<a name="api.v1.ObservePartyVotesResponse"></a>
+
+### ObservePartyVotesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vote | [vega.Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="api.v1.ObserveProposalVotesRequest"></a>
 
 ### ObserveProposalVotesRequest
 Request to subscribe to a stream of governance votes for a proposal
@@ -4322,7 +4456,22 @@ Request to subscribe to a stream of governance votes for a proposal
 
 
 
-<a name="api.OptionalProposalState"></a>
+<a name="api.v1.ObserveProposalVotesResponse"></a>
+
+### ObserveProposalVotesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| vote | [vega.Vote](#vega.Vote) |  |  |
+
+
+
+
+
+
+<a name="api.v1.OptionalProposalState"></a>
 
 ### OptionalProposalState
 Optional proposal state
@@ -4337,7 +4486,7 @@ Optional proposal state
 
 
 
-<a name="api.OrderByIDRequest"></a>
+<a name="api.v1.OrderByIDRequest"></a>
 
 ### OrderByIDRequest
 Request for an order with the specified order identifier
@@ -4354,9 +4503,24 @@ Optionally, return a specific version of the order with the `version` field
 
 
 
-<a name="api.OrderByMarketAndIdRequest"></a>
+<a name="api.v1.OrderByIDResponse"></a>
 
-### OrderByMarketAndIdRequest
+### OrderByIDResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| order | [vega.Order](#vega.Order) |  |  |
+
+
+
+
+
+
+<a name="api.v1.OrderByMarketAndIDRequest"></a>
+
+### OrderByMarketAndIDRequest
 Request for an order on a market given an order identifier
 
 
@@ -4370,9 +4534,9 @@ Request for an order on a market given an order identifier
 
 
 
-<a name="api.OrderByMarketAndIdResponse"></a>
+<a name="api.v1.OrderByMarketAndIDResponse"></a>
 
-### OrderByMarketAndIdResponse
+### OrderByMarketAndIDResponse
 Response for an order on a market given an order identifier
 
 
@@ -4385,7 +4549,7 @@ Response for an order on a market given an order identifier
 
 
 
-<a name="api.OrderByReferenceRequest"></a>
+<a name="api.v1.OrderByReferenceRequest"></a>
 
 ### OrderByReferenceRequest
 Request for an order given an order reference
@@ -4400,7 +4564,7 @@ Request for an order given an order reference
 
 
 
-<a name="api.OrderByReferenceResponse"></a>
+<a name="api.v1.OrderByReferenceResponse"></a>
 
 ### OrderByReferenceResponse
 Response for an order given an order reference
@@ -4415,7 +4579,7 @@ Response for an order given an order reference
 
 
 
-<a name="api.OrderVersionsByIDRequest"></a>
+<a name="api.v1.OrderVersionsByIDRequest"></a>
 
 ### OrderVersionsByIDRequest
 Request for a list of all versions of an order given the specified order identifier
@@ -4424,16 +4588,16 @@ Request for a list of all versions of an order given the specified order identif
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | orderID | [string](#string) |  | Order identifier, required field |
-| pagination | [Pagination](#api.Pagination) |  | Pagination controls |
+| pagination | [Pagination](#api.v1.Pagination) |  | Pagination controls |
 
 
 
 
 
 
-<a name="api.OrderVersionsResponse"></a>
+<a name="api.v1.OrderVersionsByIDResponse"></a>
 
-### OrderVersionsResponse
+### OrderVersionsByIDResponse
 Response to a request for a list of all versions of an order
 
 
@@ -4446,7 +4610,7 @@ Response to a request for a list of all versions of an order
 
 
 
-<a name="api.OrdersByMarketRequest"></a>
+<a name="api.v1.OrdersByMarketRequest"></a>
 
 ### OrdersByMarketRequest
 Request for a list of orders for a market
@@ -4455,14 +4619,14 @@ Request for a list of orders for a market
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier, required field |
-| pagination | [Pagination](#api.Pagination) |  | Optional pagination controls |
+| pagination | [Pagination](#api.v1.Pagination) |  | Optional pagination controls |
 
 
 
 
 
 
-<a name="api.OrdersByMarketResponse"></a>
+<a name="api.v1.OrdersByMarketResponse"></a>
 
 ### OrdersByMarketResponse
 Response for a list of orders for a market
@@ -4477,7 +4641,7 @@ Response for a list of orders for a market
 
 
 
-<a name="api.OrdersByPartyRequest"></a>
+<a name="api.v1.OrdersByPartyRequest"></a>
 
 ### OrdersByPartyRequest
 Request for a list of orders for a party
@@ -4486,14 +4650,14 @@ Request for a list of orders for a party
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  | Party identifier, required field |
-| pagination | [Pagination](#api.Pagination) |  | Pagination controls |
+| pagination | [Pagination](#api.v1.Pagination) |  | Pagination controls |
 
 
 
 
 
 
-<a name="api.OrdersByPartyResponse"></a>
+<a name="api.v1.OrdersByPartyResponse"></a>
 
 ### OrdersByPartyResponse
 Response for a list of orders for a party
@@ -4508,22 +4672,7 @@ Response for a list of orders for a party
 
 
 
-<a name="api.OrdersStream"></a>
-
-### OrdersStream
-A stream of orders
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| orders | [vega.Order](#vega.Order) | repeated | A list of 0 or more orders |
-
-
-
-
-
-
-<a name="api.OrdersSubscribeRequest"></a>
+<a name="api.v1.OrdersSubscribeRequest"></a>
 
 ### OrdersSubscribeRequest
 Request to subscribe to a stream of (Orders)[#vega.Order]
@@ -4539,7 +4688,22 @@ Request to subscribe to a stream of (Orders)[#vega.Order]
 
 
 
-<a name="api.Pagination"></a>
+<a name="api.v1.OrdersSubscribeResponse"></a>
+
+### OrdersSubscribeResponse
+A stream of orders
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| orders | [vega.Order](#vega.Order) | repeated | A list of 0 or more orders |
+
+
+
+
+
+
+<a name="api.v1.Pagination"></a>
 
 ### Pagination
 Pagination controls
@@ -4556,7 +4720,7 @@ Pagination controls
 
 
 
-<a name="api.PartiesResponse"></a>
+<a name="api.v1.PartiesResponse"></a>
 
 ### PartiesResponse
 Response to a request for a list of parties
@@ -4571,7 +4735,7 @@ Response to a request for a list of parties
 
 
 
-<a name="api.PartyAccountsRequest"></a>
+<a name="api.v1.PartyAccountsRequest"></a>
 
 ### PartyAccountsRequest
 Request for a list of accounts for a party
@@ -4589,7 +4753,7 @@ Request for a list of accounts for a party
 
 
 
-<a name="api.PartyAccountsResponse"></a>
+<a name="api.v1.PartyAccountsResponse"></a>
 
 ### PartyAccountsResponse
 Response for a list of accounts for a party
@@ -4604,7 +4768,7 @@ Response for a list of accounts for a party
 
 
 
-<a name="api.PartyByIDRequest"></a>
+<a name="api.v1.PartyByIDRequest"></a>
 
 ### PartyByIDRequest
 Request for a party given a party identifier
@@ -4619,7 +4783,7 @@ Request for a party given a party identifier
 
 
 
-<a name="api.PartyByIDResponse"></a>
+<a name="api.v1.PartyByIDResponse"></a>
 
 ### PartyByIDResponse
 Response for a party given a party identifier
@@ -4634,7 +4798,7 @@ Response for a party given a party identifier
 
 
 
-<a name="api.PositionsByPartyRequest"></a>
+<a name="api.v1.PositionsByPartyRequest"></a>
 
 ### PositionsByPartyRequest
 Request for a list of positions for a party
@@ -4651,7 +4815,7 @@ Optionally, if a market identifier is set, the results will be filtered for that
 
 
 
-<a name="api.PositionsByPartyResponse"></a>
+<a name="api.v1.PositionsByPartyResponse"></a>
 
 ### PositionsByPartyResponse
 Response for a list of positions for a party
@@ -4666,7 +4830,7 @@ Response for a list of positions for a party
 
 
 
-<a name="api.PositionsSubscribeRequest"></a>
+<a name="api.v1.PositionsSubscribeRequest"></a>
 
 ### PositionsSubscribeRequest
 Request to subscribe to a stream of (Positions)[#vega.Position]
@@ -4682,7 +4846,37 @@ Request to subscribe to a stream of (Positions)[#vega.Position]
 
 
 
-<a name="api.PrepareAmendOrderResponse"></a>
+<a name="api.v1.PositionsSubscribeResponse"></a>
+
+### PositionsSubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| position | [vega.Position](#vega.Position) |  |  |
+
+
+
+
+
+
+<a name="api.v1.PrepareAmendOrderRequest"></a>
+
+### PrepareAmendOrderRequest
+Request to amend an existing order
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| amendment | [vega.OrderAmendment](#vega.OrderAmendment) |  | An order amendment |
+
+
+
+
+
+
+<a name="api.v1.PrepareAmendOrderResponse"></a>
 
 ### PrepareAmendOrderResponse
 Response for preparing an order amendment
@@ -4697,7 +4891,22 @@ Response for preparing an order amendment
 
 
 
-<a name="api.PrepareCancelOrderResponse"></a>
+<a name="api.v1.PrepareCancelOrderRequest"></a>
+
+### PrepareCancelOrderRequest
+Request to cancel an existing order
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cancellation | [vega.OrderCancellation](#vega.OrderCancellation) |  | An order cancellation |
+
+
+
+
+
+
+<a name="api.v1.PrepareCancelOrderResponse"></a>
 
 ### PrepareCancelOrderResponse
 Response for preparing an order cancellation
@@ -4712,7 +4921,7 @@ Response for preparing an order cancellation
 
 
 
-<a name="api.PrepareLiquidityProvisionRequest"></a>
+<a name="api.v1.PrepareLiquidityProvisionRequest"></a>
 
 ### PrepareLiquidityProvisionRequest
 Request to prepare liquiditity provision
@@ -4727,7 +4936,7 @@ Request to prepare liquiditity provision
 
 
 
-<a name="api.PrepareLiquidityProvisionResponse"></a>
+<a name="api.v1.PrepareLiquidityProvisionResponse"></a>
 
 ### PrepareLiquidityProvisionResponse
 Response to a liquidity provision request
@@ -4742,7 +4951,7 @@ Response to a liquidity provision request
 
 
 
-<a name="api.PrepareProposalRequest"></a>
+<a name="api.v1.PrepareProposalRequest"></a>
 
 ### PrepareProposalRequest
 Request to prepare a governance proposal
@@ -4759,7 +4968,7 @@ Request to prepare a governance proposal
 
 
 
-<a name="api.PrepareProposalResponse"></a>
+<a name="api.v1.PrepareProposalResponse"></a>
 
 ### PrepareProposalResponse
 Response to prepare a governance proposal
@@ -4775,7 +4984,22 @@ Response to prepare a governance proposal
 
 
 
-<a name="api.PrepareSubmitOrderResponse"></a>
+<a name="api.v1.PrepareSubmitOrderRequest"></a>
+
+### PrepareSubmitOrderRequest
+Request to submit a new order
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | An order submission |
+
+
+
+
+
+
+<a name="api.v1.PrepareSubmitOrderResponse"></a>
 
 ### PrepareSubmitOrderResponse
 Response for preparing an order submission
@@ -4791,7 +5015,7 @@ Response for preparing an order submission
 
 
 
-<a name="api.PrepareVoteRequest"></a>
+<a name="api.v1.PrepareVoteRequest"></a>
 
 ### PrepareVoteRequest
 Request to prepare a governance vote
@@ -4806,7 +5030,7 @@ Request to prepare a governance vote
 
 
 
-<a name="api.PrepareVoteResponse"></a>
+<a name="api.v1.PrepareVoteResponse"></a>
 
 ### PrepareVoteResponse
 Response to prepare a governance vote
@@ -4822,7 +5046,7 @@ Response to prepare a governance vote
 
 
 
-<a name="api.PrepareWithdrawRequest"></a>
+<a name="api.v1.PrepareWithdrawRequest"></a>
 
 ### PrepareWithdrawRequest
 Request for preparing a withdrawal
@@ -4837,7 +5061,7 @@ Request for preparing a withdrawal
 
 
 
-<a name="api.PrepareWithdrawResponse"></a>
+<a name="api.v1.PrepareWithdrawResponse"></a>
 
 ### PrepareWithdrawResponse
 Response for preparing a withdrawal
@@ -4852,7 +5076,7 @@ Response for preparing a withdrawal
 
 
 
-<a name="api.PropagateChainEventRequest"></a>
+<a name="api.v1.PropagateChainEventRequest"></a>
 
 ### PropagateChainEventRequest
 Request for a new event sent by the blockchain queue to be propagated on Vega
@@ -4869,7 +5093,7 @@ Request for a new event sent by the blockchain queue to be propagated on Vega
 
 
 
-<a name="api.PropagateChainEventResponse"></a>
+<a name="api.v1.PropagateChainEventResponse"></a>
 
 ### PropagateChainEventResponse
 Response for a new event sent by the blockchain queue to be propagated on Vega
@@ -4884,22 +5108,22 @@ Response for a new event sent by the blockchain queue to be propagated on Vega
 
 
 
-<a name="api.SubmitOrderRequest"></a>
+<a name="api.v1.StatisticsResponse"></a>
 
-### SubmitOrderRequest
-Request to submit a new order
+### StatisticsResponse
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| submission | [vega.OrderSubmission](#vega.OrderSubmission) |  | An order submission |
+| statistics | [vega.Statistics](#vega.Statistics) |  |  |
 
 
 
 
 
 
-<a name="api.SubmitTransactionRequest"></a>
+<a name="api.v1.SubmitTransactionRequest"></a>
 
 ### SubmitTransactionRequest
 Request for submitting a transaction on Vega
@@ -4908,14 +5132,14 @@ Request for submitting a transaction on Vega
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | tx | [vega.SignedBundle](#vega.SignedBundle) |  | A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain |
-| type | [SubmitTransactionRequest.Type](#api.SubmitTransactionRequest.Type) |  | Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response |
+| type | [SubmitTransactionRequest.Type](#api.v1.SubmitTransactionRequest.Type) |  | Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response |
 
 
 
 
 
 
-<a name="api.SubmitTransactionResponse"></a>
+<a name="api.v1.SubmitTransactionResponse"></a>
 
 ### SubmitTransactionResponse
 Response for submitting a transaction on Vega
@@ -4930,7 +5154,7 @@ Response for submitting a transaction on Vega
 
 
 
-<a name="api.TradesByMarketRequest"></a>
+<a name="api.v1.TradesByMarketRequest"></a>
 
 ### TradesByMarketRequest
 Request for a list of trades on a market
@@ -4939,14 +5163,14 @@ Request for a list of trades on a market
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketID | [string](#string) |  | Market identifier, required field |
-| pagination | [Pagination](#api.Pagination) |  | Pagination controls |
+| pagination | [Pagination](#api.v1.Pagination) |  | Pagination controls |
 
 
 
 
 
 
-<a name="api.TradesByMarketResponse"></a>
+<a name="api.v1.TradesByMarketResponse"></a>
 
 ### TradesByMarketResponse
 Response for a list of trades on a market
@@ -4961,7 +5185,7 @@ Response for a list of trades on a market
 
 
 
-<a name="api.TradesByOrderRequest"></a>
+<a name="api.v1.TradesByOrderRequest"></a>
 
 ### TradesByOrderRequest
 Request for a list of trades related to an order
@@ -4976,7 +5200,7 @@ Request for a list of trades related to an order
 
 
 
-<a name="api.TradesByOrderResponse"></a>
+<a name="api.v1.TradesByOrderResponse"></a>
 
 ### TradesByOrderResponse
 Response for a list of trades related to an order
@@ -4991,7 +5215,7 @@ Response for a list of trades related to an order
 
 
 
-<a name="api.TradesByPartyRequest"></a>
+<a name="api.v1.TradesByPartyRequest"></a>
 
 ### TradesByPartyRequest
 Request for a list of trades relating to the given party
@@ -5002,14 +5226,14 @@ Optionally, the list can be additionally filtered for trades by market
 | ----- | ---- | ----- | ----------- |
 | partyID | [string](#string) |  | Party identifier. Required field |
 | marketID | [string](#string) |  | Market identifier |
-| pagination | [Pagination](#api.Pagination) |  | Pagination controls |
+| pagination | [Pagination](#api.v1.Pagination) |  | Pagination controls |
 
 
 
 
 
 
-<a name="api.TradesByPartyResponse"></a>
+<a name="api.v1.TradesByPartyResponse"></a>
 
 ### TradesByPartyResponse
 Response for a list of trades relating to a party
@@ -5024,22 +5248,7 @@ Response for a list of trades relating to a party
 
 
 
-<a name="api.TradesStream"></a>
-
-### TradesStream
-A stream of trades
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| trades | [vega.Trade](#vega.Trade) | repeated | A list of 0 or more trades |
-
-
-
-
-
-
-<a name="api.TradesSubscribeRequest"></a>
+<a name="api.v1.TradesSubscribeRequest"></a>
 
 ### TradesSubscribeRequest
 Request to subscribe to a stream of (Trades)[#vega.Trade]
@@ -5055,22 +5264,37 @@ Request to subscribe to a stream of (Trades)[#vega.Trade]
 
 
 
-<a name="api.VegaTimeResponse"></a>
+<a name="api.v1.TradesSubscribeResponse"></a>
 
-### VegaTimeResponse
-Response for the current consensus coordinated time on the Vega network, referred to as &#34;VegaTime&#34;
+### TradesSubscribeResponse
+A stream of trades
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  | Timestamp representation of current VegaTime as represented in Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z` |
+| trades | [vega.Trade](#vega.Trade) | repeated | A list of 0 or more trades |
 
 
 
 
 
 
-<a name="api.WithdrawalRequest"></a>
+<a name="api.v1.TransferResponsesSubscribeResponse"></a>
+
+### TransferResponsesSubscribeResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| response | [vega.TransferResponse](#vega.TransferResponse) |  |  |
+
+
+
+
+
+
+<a name="api.v1.WithdrawalRequest"></a>
 
 ### WithdrawalRequest
 A request to get a specific withdrawal by identifier
@@ -5085,7 +5309,7 @@ A request to get a specific withdrawal by identifier
 
 
 
-<a name="api.WithdrawalResponse"></a>
+<a name="api.v1.WithdrawalResponse"></a>
 
 ### WithdrawalResponse
 A response for a withdrawal
@@ -5100,7 +5324,7 @@ A response for a withdrawal
 
 
 
-<a name="api.WithdrawalsRequest"></a>
+<a name="api.v1.WithdrawalsRequest"></a>
 
 ### WithdrawalsRequest
 A request to get a list of withdrawal from a given party
@@ -5115,7 +5339,7 @@ A request to get a list of withdrawal from a given party
 
 
 
-<a name="api.WithdrawalsResponse"></a>
+<a name="api.v1.WithdrawalsResponse"></a>
 
 ### WithdrawalsResponse
 The response for a list of withdrawals
@@ -5132,7 +5356,7 @@ The response for a list of withdrawals
  
 
 
-<a name="api.SubmitTransactionRequest.Type"></a>
+<a name="api.v1.SubmitTransactionRequest.Type"></a>
 
 ### SubmitTransactionRequest.Type
 Blockchain transaction type
@@ -5150,92 +5374,92 @@ Blockchain transaction type
  
 
 
-<a name="api.trading"></a>
+<a name="api.v1.TradingDataService"></a>
 
-### trading
-
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| PrepareSubmitOrder | [SubmitOrderRequest](#api.SubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.PrepareSubmitOrderResponse) | Prepare a submit order request |
-| PrepareCancelOrder | [CancelOrderRequest](#api.CancelOrderRequest) | [PrepareCancelOrderResponse](#api.PrepareCancelOrderResponse) | Prepare a cancel order request |
-| PrepareAmendOrder | [AmendOrderRequest](#api.AmendOrderRequest) | [PrepareAmendOrderResponse](#api.PrepareAmendOrderResponse) | Prepare an amend order request |
-| PrepareWithdraw | [PrepareWithdrawRequest](#api.PrepareWithdrawRequest) | [PrepareWithdrawResponse](#api.PrepareWithdrawResponse) | Request a withdrawal |
-| SubmitTransaction | [SubmitTransactionRequest](#api.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.SubmitTransactionResponse) | Submit a signed transaction |
-| PrepareProposal | [PrepareProposalRequest](#api.PrepareProposalRequest) | [PrepareProposalResponse](#api.PrepareProposalResponse) | Prepare a governance proposal |
-| PrepareVote | [PrepareVoteRequest](#api.PrepareVoteRequest) | [PrepareVoteResponse](#api.PrepareVoteResponse) | Prepare a governance vote |
-| PropagateChainEvent | [PropagateChainEventRequest](#api.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.PropagateChainEventResponse) | Propagate a chain event |
-| PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.PrepareLiquidityProvisionResponse) | Prepare a liquidity provision request |
-
-
-<a name="api.trading_data"></a>
-
-### trading_data
+### TradingDataService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| MarketAccounts | [MarketAccountsRequest](#api.MarketAccountsRequest) | [MarketAccountsResponse](#api.MarketAccountsResponse) | Get a list of Accounts by Market |
-| PartyAccounts | [PartyAccountsRequest](#api.PartyAccountsRequest) | [PartyAccountsResponse](#api.PartyAccountsResponse) | Get a list of Accounts by Party |
-| FeeInfrastructureAccounts | [FeeInfrastructureAccountsRequest](#api.FeeInfrastructureAccountsRequest) | [FeeInfrastructureAccountsResponse](#api.FeeInfrastructureAccountsResponse) | Get a list of infrastructure fees accounts filter eventually by assets |
-| Candles | [CandlesRequest](#api.CandlesRequest) | [CandlesResponse](#api.CandlesResponse) | Get a list of Candles by Market |
-| MarketDataByID | [MarketDataByIDRequest](#api.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.MarketDataByIDResponse) | Get Market Data by Market ID |
-| MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.MarketsDataResponse) | Get a list of Market Data |
-| MarketByID | [MarketByIDRequest](#api.MarketByIDRequest) | [MarketByIDResponse](#api.MarketByIDResponse) | Get a Market by ID |
-| MarketDepth | [MarketDepthRequest](#api.MarketDepthRequest) | [MarketDepthResponse](#api.MarketDepthResponse) | Get Market Depth |
-| Markets | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsResponse](#api.MarketsResponse) | Get a list of Markets |
-| OrderByMarketAndID | [OrderByMarketAndIdRequest](#api.OrderByMarketAndIdRequest) | [OrderByMarketAndIdResponse](#api.OrderByMarketAndIdResponse) | Get an Order by Market and Order ID |
-| OrderByReference | [OrderByReferenceRequest](#api.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
-| OrdersByMarket | [OrdersByMarketRequest](#api.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.OrdersByMarketResponse) | Get a list of Orders by Market |
-| OrdersByParty | [OrdersByPartyRequest](#api.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.OrdersByPartyResponse) | Get a list of Orders by Party |
-| OrderByID | [OrderByIDRequest](#api.OrderByIDRequest) | [.vega.Order](#vega.Order) | Get a specific order by order ID |
-| OrderVersionsByID | [OrderVersionsByIDRequest](#api.OrderVersionsByIDRequest) | [OrderVersionsResponse](#api.OrderVersionsResponse) | Get all versions of the order by its orderID |
-| MarginLevels | [MarginLevelsRequest](#api.MarginLevelsRequest) | [MarginLevelsResponse](#api.MarginLevelsResponse) | Get Margin Levels by Party ID |
-| Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.PartiesResponse) | Get a list of Parties |
-| PartyByID | [PartyByIDRequest](#api.PartyByIDRequest) | [PartyByIDResponse](#api.PartyByIDResponse) | Get a Party by ID |
-| PositionsByParty | [PositionsByPartyRequest](#api.PositionsByPartyRequest) | [PositionsByPartyResponse](#api.PositionsByPartyResponse) | Get a list of Positions by Party |
-| LastTrade | [LastTradeRequest](#api.LastTradeRequest) | [LastTradeResponse](#api.LastTradeResponse) | Get latest Trade |
-| TradesByMarket | [TradesByMarketRequest](#api.TradesByMarketRequest) | [TradesByMarketResponse](#api.TradesByMarketResponse) | Get a list of Trades by Market |
-| TradesByOrder | [TradesByOrderRequest](#api.TradesByOrderRequest) | [TradesByOrderResponse](#api.TradesByOrderResponse) | Get a list of Trades by Order |
-| TradesByParty | [TradesByPartyRequest](#api.TradesByPartyRequest) | [TradesByPartyResponse](#api.TradesByPartyResponse) | Get a list of Trades by Party |
-| GetProposals | [GetProposalsRequest](#api.GetProposalsRequest) | [GetProposalsResponse](#api.GetProposalsResponse) | Get governance data (proposals and votes) for all proposals |
-| GetProposalsByParty | [GetProposalsByPartyRequest](#api.GetProposalsByPartyRequest) | [GetProposalsByPartyResponse](#api.GetProposalsByPartyResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
-| GetVotesByParty | [GetVotesByPartyRequest](#api.GetVotesByPartyRequest) | [GetVotesByPartyResponse](#api.GetVotesByPartyResponse) | Get votes by party casting them |
-| GetNewMarketProposals | [GetNewMarketProposalsRequest](#api.GetNewMarketProposalsRequest) | [GetNewMarketProposalsResponse](#api.GetNewMarketProposalsResponse) | Get governance data (proposals and votes) for proposals that aim creating new markets |
-| GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.GetUpdateMarketProposalsRequest) | [GetUpdateMarketProposalsResponse](#api.GetUpdateMarketProposalsResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
-| GetNetworkParametersProposals | [GetNetworkParametersProposalsRequest](#api.GetNetworkParametersProposalsRequest) | [GetNetworkParametersProposalsResponse](#api.GetNetworkParametersProposalsResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
-| GetNewAssetProposals | [GetNewAssetProposalsRequest](#api.GetNewAssetProposalsRequest) | [GetNewAssetProposalsResponse](#api.GetNewAssetProposalsResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
-| GetProposalByID | [GetProposalByIDRequest](#api.GetProposalByIDRequest) | [GetProposalByIDResponse](#api.GetProposalByIDResponse) | Get governance data (proposals and votes) for a proposal located by ID |
-| GetProposalByReference | [GetProposalByReferenceRequest](#api.GetProposalByReferenceRequest) | [GetProposalByReferenceResponse](#api.GetProposalByReferenceResponse) | Get governance data (proposals and votes) for a proposal located by reference |
-| ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of all governance updates |
-| ObservePartyProposals | [ObservePartyProposalsRequest](#api.ObservePartyProposalsRequest) | [.vega.GovernanceData](#vega.GovernanceData) stream | Subscribe to a stream of proposal updates |
-| ObservePartyVotes | [ObservePartyVotesRequest](#api.ObservePartyVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of votes cast by a specific party |
-| ObserveProposalVotes | [ObserveProposalVotesRequest](#api.ObserveProposalVotesRequest) | [.vega.Vote](#vega.Vote) stream | Subscribe to a stream of proposal votes |
-| ObserveEventBus | [ObserveEventsRequest](#api.ObserveEventsRequest) stream | [ObserveEventsResponse](#api.ObserveEventsResponse) stream | Subscribe to a stream of events from the core |
-| Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.Statistics](#vega.Statistics) | Get Statistics on Vega |
-| GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [VegaTimeResponse](#api.VegaTimeResponse) | Get Time |
-| AccountsSubscribe | [AccountsSubscribeRequest](#api.AccountsSubscribeRequest) | [.vega.Account](#vega.Account) stream | Subscribe to a stream of Accounts |
-| CandlesSubscribe | [CandlesSubscribeRequest](#api.CandlesSubscribeRequest) | [.vega.Candle](#vega.Candle) stream | Subscribe to a stream of Candles |
-| MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.MarginLevelsSubscribeRequest) | [.vega.MarginLevels](#vega.MarginLevels) stream | Subscribe to a stream of Margin Levels |
-| MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.MarketDepthSubscribeRequest) | [.vega.MarketDepth](#vega.MarketDepth) stream | Subscribe to a stream of Market Depth |
-| MarketDepthUpdatesSubscribe | [MarketDepthUpdatesSubscribeRequest](#api.MarketDepthUpdatesSubscribeRequest) | [.vega.MarketDepthUpdate](#vega.MarketDepthUpdate) stream | Subscribe to a stream of Market Depth Price Level Updates |
-| MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.MarketsDataSubscribeRequest) | [.vega.MarketData](#vega.MarketData) stream | Subscribe to a stream of Markets Data |
-| OrdersSubscribe | [OrdersSubscribeRequest](#api.OrdersSubscribeRequest) | [OrdersStream](#api.OrdersStream) stream | Subscribe to a stream of Orders |
-| PositionsSubscribe | [PositionsSubscribeRequest](#api.PositionsSubscribeRequest) | [.vega.Position](#vega.Position) stream | Subscribe to a stream of Positions |
-| TradesSubscribe | [TradesSubscribeRequest](#api.TradesSubscribeRequest) | [TradesStream](#api.TradesStream) stream | Subscribe to a stream of Trades |
-| TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [.vega.TransferResponse](#vega.TransferResponse) stream | Subscribe to a stream of Transfer Responses |
-| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.GetNodeSignaturesAggregateResponse) | Get an aggregate of signatures from all the nodes of the network |
-| AssetByID | [AssetByIDRequest](#api.AssetByIDRequest) | [AssetByIDResponse](#api.AssetByIDResponse) | Get an asset by its identifier |
-| Assets | [AssetsRequest](#api.AssetsRequest) | [AssetsResponse](#api.AssetsResponse) | Get a list of all assets on Vega |
-| EstimateFee | [EstimateFeeRequest](#api.EstimateFeeRequest) | [EstimateFeeResponse](#api.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
-| EstimateMargin | [EstimateMarginRequest](#api.EstimateMarginRequest) | [EstimateMarginResponse](#api.EstimateMarginResponse) | Get an estimate for the margin required for a new order |
-| ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal, these data are being used to bundle the call to the smart contract on the ethereum bridge |
-| Withdrawal | [WithdrawalRequest](#api.WithdrawalRequest) | [WithdrawalResponse](#api.WithdrawalResponse) | Get a withdrawal by its identifier |
-| Withdrawals | [WithdrawalsRequest](#api.WithdrawalsRequest) | [WithdrawalsResponse](#api.WithdrawalsResponse) | Get withdrawals for a party |
-| Deposit | [DepositRequest](#api.DepositRequest) | [DepositResponse](#api.DepositResponse) | Get a deposit by its identifier |
-| Deposits | [DepositsRequest](#api.DepositsRequest) | [DepositsResponse](#api.DepositsResponse) | Get deposits for a party |
-| NetworkParameters | [NetworkParametersRequest](#api.NetworkParametersRequest) | [NetworkParametersResponse](#api.NetworkParametersResponse) | Get the network parameters |
-| LiquidityProvisions | [LiquidityProvisionsRequest](#api.LiquidityProvisionsRequest) | [LiquidityProvisionsResponse](#api.LiquidityProvisionsResponse) | Get the liquidity provision orders |
+| MarketAccounts | [MarketAccountsRequest](#api.v1.MarketAccountsRequest) | [MarketAccountsResponse](#api.v1.MarketAccountsResponse) | Get a list of Accounts by Market |
+| PartyAccounts | [PartyAccountsRequest](#api.v1.PartyAccountsRequest) | [PartyAccountsResponse](#api.v1.PartyAccountsResponse) | Get a list of Accounts by Party |
+| FeeInfrastructureAccounts | [FeeInfrastructureAccountsRequest](#api.v1.FeeInfrastructureAccountsRequest) | [FeeInfrastructureAccountsResponse](#api.v1.FeeInfrastructureAccountsResponse) | Get a list of infrastructure fees accounts filter eventually by assets |
+| Candles | [CandlesRequest](#api.v1.CandlesRequest) | [CandlesResponse](#api.v1.CandlesResponse) | Get a list of Candles by Market |
+| MarketDataByID | [MarketDataByIDRequest](#api.v1.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.v1.MarketDataByIDResponse) | Get Market Data by Market ID |
+| MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.v1.MarketsDataResponse) | Get a list of Market Data |
+| MarketByID | [MarketByIDRequest](#api.v1.MarketByIDRequest) | [MarketByIDResponse](#api.v1.MarketByIDResponse) | Get a Market by ID |
+| MarketDepth | [MarketDepthRequest](#api.v1.MarketDepthRequest) | [MarketDepthResponse](#api.v1.MarketDepthResponse) | Get Market Depth |
+| Markets | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsResponse](#api.v1.MarketsResponse) | Get a list of Markets |
+| OrderByMarketAndID | [OrderByMarketAndIDRequest](#api.v1.OrderByMarketAndIDRequest) | [OrderByMarketAndIDResponse](#api.v1.OrderByMarketAndIDResponse) | Get an Order by Market and Order ID |
+| OrderByReference | [OrderByReferenceRequest](#api.v1.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.v1.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
+| OrdersByMarket | [OrdersByMarketRequest](#api.v1.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.v1.OrdersByMarketResponse) | Get a list of Orders by Market |
+| OrdersByParty | [OrdersByPartyRequest](#api.v1.OrdersByPartyRequest) | [OrdersByPartyResponse](#api.v1.OrdersByPartyResponse) | Get a list of Orders by Party |
+| OrderByID | [OrderByIDRequest](#api.v1.OrderByIDRequest) | [OrderByIDResponse](#api.v1.OrderByIDResponse) | Get a specific order by order ID |
+| OrderVersionsByID | [OrderVersionsByIDRequest](#api.v1.OrderVersionsByIDRequest) | [OrderVersionsByIDResponse](#api.v1.OrderVersionsByIDResponse) | Get all versions of the order by its orderID |
+| MarginLevels | [MarginLevelsRequest](#api.v1.MarginLevelsRequest) | [MarginLevelsResponse](#api.v1.MarginLevelsResponse) | Get Margin Levels by Party ID |
+| Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.v1.PartiesResponse) | Get a list of Parties |
+| PartyByID | [PartyByIDRequest](#api.v1.PartyByIDRequest) | [PartyByIDResponse](#api.v1.PartyByIDResponse) | Get a Party by ID |
+| PositionsByParty | [PositionsByPartyRequest](#api.v1.PositionsByPartyRequest) | [PositionsByPartyResponse](#api.v1.PositionsByPartyResponse) | Get a list of Positions by Party |
+| LastTrade | [LastTradeRequest](#api.v1.LastTradeRequest) | [LastTradeResponse](#api.v1.LastTradeResponse) | Get latest Trade |
+| TradesByMarket | [TradesByMarketRequest](#api.v1.TradesByMarketRequest) | [TradesByMarketResponse](#api.v1.TradesByMarketResponse) | Get a list of Trades by Market |
+| TradesByOrder | [TradesByOrderRequest](#api.v1.TradesByOrderRequest) | [TradesByOrderResponse](#api.v1.TradesByOrderResponse) | Get a list of Trades by Order |
+| TradesByParty | [TradesByPartyRequest](#api.v1.TradesByPartyRequest) | [TradesByPartyResponse](#api.v1.TradesByPartyResponse) | Get a list of Trades by Party |
+| GetProposals | [GetProposalsRequest](#api.v1.GetProposalsRequest) | [GetProposalsResponse](#api.v1.GetProposalsResponse) | Get governance data (proposals and votes) for all proposals |
+| GetProposalsByParty | [GetProposalsByPartyRequest](#api.v1.GetProposalsByPartyRequest) | [GetProposalsByPartyResponse](#api.v1.GetProposalsByPartyResponse) | Get governance data (proposals and votes) for proposals by party authoring them |
+| GetVotesByParty | [GetVotesByPartyRequest](#api.v1.GetVotesByPartyRequest) | [GetVotesByPartyResponse](#api.v1.GetVotesByPartyResponse) | Get votes by party casting them |
+| GetNewMarketProposals | [GetNewMarketProposalsRequest](#api.v1.GetNewMarketProposalsRequest) | [GetNewMarketProposalsResponse](#api.v1.GetNewMarketProposalsResponse) | Get governance data (proposals and votes) for proposals that aim creating new markets |
+| GetUpdateMarketProposals | [GetUpdateMarketProposalsRequest](#api.v1.GetUpdateMarketProposalsRequest) | [GetUpdateMarketProposalsResponse](#api.v1.GetUpdateMarketProposalsResponse) | Get governance data (proposals and votes) for proposals that aim updating markets |
+| GetNetworkParametersProposals | [GetNetworkParametersProposalsRequest](#api.v1.GetNetworkParametersProposalsRequest) | [GetNetworkParametersProposalsResponse](#api.v1.GetNetworkParametersProposalsResponse) | Get governance data (proposals and votes) for proposals that aim updating Vega network parameters |
+| GetNewAssetProposals | [GetNewAssetProposalsRequest](#api.v1.GetNewAssetProposalsRequest) | [GetNewAssetProposalsResponse](#api.v1.GetNewAssetProposalsResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
+| GetProposalByID | [GetProposalByIDRequest](#api.v1.GetProposalByIDRequest) | [GetProposalByIDResponse](#api.v1.GetProposalByIDResponse) | Get governance data (proposals and votes) for a proposal located by ID |
+| GetProposalByReference | [GetProposalByReferenceRequest](#api.v1.GetProposalByReferenceRequest) | [GetProposalByReferenceResponse](#api.v1.GetProposalByReferenceResponse) | Get governance data (proposals and votes) for a proposal located by reference |
+| ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [ObserveGovernanceResponse](#api.v1.ObserveGovernanceResponse) stream | Subscribe to a stream of all governance updates |
+| ObservePartyProposals | [ObservePartyProposalsRequest](#api.v1.ObservePartyProposalsRequest) | [ObservePartyProposalsResponse](#api.v1.ObservePartyProposalsResponse) stream | Subscribe to a stream of proposal updates |
+| ObservePartyVotes | [ObservePartyVotesRequest](#api.v1.ObservePartyVotesRequest) | [ObservePartyVotesResponse](#api.v1.ObservePartyVotesResponse) stream | Subscribe to a stream of votes cast by a specific party |
+| ObserveProposalVotes | [ObserveProposalVotesRequest](#api.v1.ObserveProposalVotesRequest) | [ObserveProposalVotesResponse](#api.v1.ObserveProposalVotesResponse) stream | Subscribe to a stream of proposal votes |
+| ObserveEventBus | [ObserveEventBusRequest](#api.v1.ObserveEventBusRequest) stream | [ObserveEventBusResponse](#api.v1.ObserveEventBusResponse) stream | Subscribe to a stream of events from the core |
+| Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [StatisticsResponse](#api.v1.StatisticsResponse) | Get Statistics on Vega |
+| GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetVegaTimeResponse](#api.v1.GetVegaTimeResponse) | Get Time |
+| AccountsSubscribe | [AccountsSubscribeRequest](#api.v1.AccountsSubscribeRequest) | [AccountsSubscribeResponse](#api.v1.AccountsSubscribeResponse) stream | Subscribe to a stream of Accounts |
+| CandlesSubscribe | [CandlesSubscribeRequest](#api.v1.CandlesSubscribeRequest) | [CandlesSubscribeResponse](#api.v1.CandlesSubscribeResponse) stream | Subscribe to a stream of Candles |
+| MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.v1.MarginLevelsSubscribeRequest) | [MarginLevelsSubscribeResponse](#api.v1.MarginLevelsSubscribeResponse) stream | Subscribe to a stream of Margin Levels |
+| MarketDepthSubscribe | [MarketDepthSubscribeRequest](#api.v1.MarketDepthSubscribeRequest) | [MarketDepthSubscribeResponse](#api.v1.MarketDepthSubscribeResponse) stream | Subscribe to a stream of Market Depth |
+| MarketDepthUpdatesSubscribe | [MarketDepthUpdatesSubscribeRequest](#api.v1.MarketDepthUpdatesSubscribeRequest) | [MarketDepthUpdatesSubscribeResponse](#api.v1.MarketDepthUpdatesSubscribeResponse) stream | Subscribe to a stream of Market Depth Price Level Updates |
+| MarketsDataSubscribe | [MarketsDataSubscribeRequest](#api.v1.MarketsDataSubscribeRequest) | [MarketsDataSubscribeResponse](#api.v1.MarketsDataSubscribeResponse) stream | Subscribe to a stream of Markets Data |
+| OrdersSubscribe | [OrdersSubscribeRequest](#api.v1.OrdersSubscribeRequest) | [OrdersSubscribeResponse](#api.v1.OrdersSubscribeResponse) stream | Subscribe to a stream of Orders |
+| PositionsSubscribe | [PositionsSubscribeRequest](#api.v1.PositionsSubscribeRequest) | [PositionsSubscribeResponse](#api.v1.PositionsSubscribeResponse) stream | Subscribe to a stream of Positions |
+| TradesSubscribe | [TradesSubscribeRequest](#api.v1.TradesSubscribeRequest) | [TradesSubscribeResponse](#api.v1.TradesSubscribeResponse) stream | Subscribe to a stream of Trades |
+| TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [TransferResponsesSubscribeResponse](#api.v1.TransferResponsesSubscribeResponse) stream | Subscribe to a stream of Transfer Responses |
+| GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.v1.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.v1.GetNodeSignaturesAggregateResponse) | Get an aggregate of signatures from all the nodes of the network |
+| AssetByID | [AssetByIDRequest](#api.v1.AssetByIDRequest) | [AssetByIDResponse](#api.v1.AssetByIDResponse) | Get an asset by its identifier |
+| Assets | [AssetsRequest](#api.v1.AssetsRequest) | [AssetsResponse](#api.v1.AssetsResponse) | Get a list of all assets on Vega |
+| EstimateFee | [EstimateFeeRequest](#api.v1.EstimateFeeRequest) | [EstimateFeeResponse](#api.v1.EstimateFeeResponse) | Get an estimate for the fee to be paid for a given order |
+| EstimateMargin | [EstimateMarginRequest](#api.v1.EstimateMarginRequest) | [EstimateMarginResponse](#api.v1.EstimateMarginResponse) | Get an estimate for the margin required for a new order |
+| ERC20WithdrawalApproval | [ERC20WithdrawalApprovalRequest](#api.v1.ERC20WithdrawalApprovalRequest) | [ERC20WithdrawalApprovalResponse](#api.v1.ERC20WithdrawalApprovalResponse) | Get the bundle approval for an ERC20 withdrawal, these data are being used to bundle the call to the smart contract on the ethereum bridge |
+| Withdrawal | [WithdrawalRequest](#api.v1.WithdrawalRequest) | [WithdrawalResponse](#api.v1.WithdrawalResponse) | Get a withdrawal by its identifier |
+| Withdrawals | [WithdrawalsRequest](#api.v1.WithdrawalsRequest) | [WithdrawalsResponse](#api.v1.WithdrawalsResponse) | Get withdrawals for a party |
+| Deposit | [DepositRequest](#api.v1.DepositRequest) | [DepositResponse](#api.v1.DepositResponse) | Get a deposit by its identifier |
+| Deposits | [DepositsRequest](#api.v1.DepositsRequest) | [DepositsResponse](#api.v1.DepositsResponse) | Get deposits for a party |
+| NetworkParameters | [NetworkParametersRequest](#api.v1.NetworkParametersRequest) | [NetworkParametersResponse](#api.v1.NetworkParametersResponse) | Get the network parameters |
+| LiquidityProvisions | [LiquidityProvisionsRequest](#api.v1.LiquidityProvisionsRequest) | [LiquidityProvisionsResponse](#api.v1.LiquidityProvisionsResponse) | Get the liquidity provision orders |
+
+
+<a name="api.v1.TradingService"></a>
+
+### TradingService
+
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| PrepareSubmitOrder | [PrepareSubmitOrderRequest](#api.v1.PrepareSubmitOrderRequest) | [PrepareSubmitOrderResponse](#api.v1.PrepareSubmitOrderResponse) | Prepare a submit order request |
+| PrepareCancelOrder | [PrepareCancelOrderRequest](#api.v1.PrepareCancelOrderRequest) | [PrepareCancelOrderResponse](#api.v1.PrepareCancelOrderResponse) | Prepare a cancel order request |
+| PrepareAmendOrder | [PrepareAmendOrderRequest](#api.v1.PrepareAmendOrderRequest) | [PrepareAmendOrderResponse](#api.v1.PrepareAmendOrderResponse) | Prepare an amend order request |
+| PrepareWithdraw | [PrepareWithdrawRequest](#api.v1.PrepareWithdrawRequest) | [PrepareWithdrawResponse](#api.v1.PrepareWithdrawResponse) | Request a withdrawal |
+| SubmitTransaction | [SubmitTransactionRequest](#api.v1.SubmitTransactionRequest) | [SubmitTransactionResponse](#api.v1.SubmitTransactionResponse) | Submit a signed transaction |
+| PrepareProposal | [PrepareProposalRequest](#api.v1.PrepareProposalRequest) | [PrepareProposalResponse](#api.v1.PrepareProposalResponse) | Prepare a governance proposal |
+| PrepareVote | [PrepareVoteRequest](#api.v1.PrepareVoteRequest) | [PrepareVoteResponse](#api.v1.PrepareVoteResponse) | Prepare a governance vote |
+| PropagateChainEvent | [PropagateChainEventRequest](#api.v1.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.v1.PropagateChainEventResponse) | Propagate a chain event |
+| PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.v1.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.v1.PrepareLiquidityProvisionResponse) | Prepare a liquidity provision request |
 
  
 

@@ -23,12 +23,12 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiAssetsResponse"
+              "$ref": "#/definitions/v1AssetsResponse"
             }
           }
         },
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -40,7 +40,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiAssetByIDResponse"
+              "$ref": "#/definitions/v1AssetByIDResponse"
             }
           }
         },
@@ -54,7 +54,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -66,7 +66,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiFeeInfrastructureAccountsResponse"
+              "$ref": "#/definitions/v1FeeInfrastructureAccountsResponse"
             }
           }
         },
@@ -80,7 +80,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -92,7 +92,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiDepositsResponse"
+              "$ref": "#/definitions/v1DepositsResponse"
             }
           }
         },
@@ -106,7 +106,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -118,7 +118,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiDepositResponse"
+              "$ref": "#/definitions/v1DepositResponse"
             }
           }
         },
@@ -132,7 +132,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -144,7 +144,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiGetNewAssetProposalsResponse"
+              "$ref": "#/definitions/v1GetNewAssetProposalsResponse"
             }
           }
         },
@@ -169,7 +169,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -181,7 +181,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiGetNewMarketProposalsResponse"
+              "$ref": "#/definitions/v1GetNewMarketProposalsResponse"
             }
           }
         },
@@ -206,61 +206,7 @@
           }
         ],
         "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/governance/prepare/proposal": {
-      "post": {
-        "summary": "Prepare a governance proposal",
-        "operationId": "PrepareProposal",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareProposalResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiPrepareProposalRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/governance/prepare/vote": {
-      "post": {
-        "summary": "Prepare a governance vote",
-        "operationId": "PrepareVote",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareVoteResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiPrepareVoteRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
+          "TradingDataService"
         ]
       }
     },
@@ -272,7 +218,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiGetProposalByReferenceResponse"
+              "$ref": "#/definitions/v1GetProposalByReferenceResponse"
             }
           }
         },
@@ -286,7 +232,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -298,7 +244,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiGetProposalByIDResponse"
+              "$ref": "#/definitions/v1GetProposalByIDResponse"
             }
           }
         },
@@ -312,7 +258,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -324,7 +270,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiGetProposalsResponse"
+              "$ref": "#/definitions/v1GetProposalsResponse"
             }
           }
         },
@@ -349,75 +295,7 @@
           }
         ],
         "tags": [
-          "trading_data"
-        ]
-      }
-    },
-    "/liquidity-provisions": {
-      "get": {
-        "summary": "Prepare a liquidity provision request",
-        "operationId": "PrepareLiquidityProvision2",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareLiquidityProvisionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "submission.marketID",
-            "description": "Market identifier for the order, required field.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "submission.commitmentAmount",
-            "description": "Specified as a unitless number that represents the amount of settlement asset of the market.",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
-            "name": "submission.fee",
-            "description": "Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "trading"
-        ]
-      }
-    },
-    "/liquidity-provisions/prepare/submit": {
-      "post": {
-        "summary": "Prepare a liquidity provision request",
-        "operationId": "PrepareLiquidityProvision",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiPrepareLiquidityProvisionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiPrepareLiquidityProvisionRequest"
-            }
-          }
-        ],
-        "tags": [
-          "trading"
+          "TradingDataService"
         ]
       }
     },
@@ -429,12 +307,12 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiMarketsResponse"
+              "$ref": "#/definitions/v1MarketsResponse"
             }
           }
         },
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -446,12 +324,12 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiMarketsDataResponse"
+              "$ref": "#/definitions/v1MarketsDataResponse"
             }
           }
         },
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -463,7 +341,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiMarketDataByIDResponse"
+              "$ref": "#/definitions/v1MarketDataByIDResponse"
             }
           }
         },
@@ -477,7 +355,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -489,7 +367,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiMarketByIDResponse"
+              "$ref": "#/definitions/v1MarketByIDResponse"
             }
           }
         },
@@ -503,7 +381,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -515,7 +393,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiMarketAccountsResponse"
+              "$ref": "#/definitions/v1MarketAccountsResponse"
             }
           }
         },
@@ -536,7 +414,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -548,7 +426,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiCandlesResponse"
+              "$ref": "#/definitions/v1CandlesResponse"
             }
           }
         },
@@ -587,7 +465,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -599,7 +477,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiMarketDepthResponse"
+              "$ref": "#/definitions/v1MarketDepthResponse"
             }
           }
         },
@@ -621,7 +499,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -633,7 +511,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrdersByMarketResponse"
+              "$ref": "#/definitions/v1OrdersByMarketResponse"
             }
           }
         },
@@ -671,7 +549,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -683,7 +561,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrderByMarketAndIdResponse"
+              "$ref": "#/definitions/v1OrderByMarketAndIDResponse"
             }
           }
         },
@@ -704,7 +582,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -716,7 +594,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiTradesByMarketResponse"
+              "$ref": "#/definitions/v1TradesByMarketResponse"
             }
           }
         },
@@ -754,7 +632,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -766,7 +644,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiLastTradeResponse"
+              "$ref": "#/definitions/v1LastTradeResponse"
             }
           }
         },
@@ -780,7 +658,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -792,12 +670,12 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiNetworkParametersResponse"
+              "$ref": "#/definitions/v1NetworkParametersResponse"
             }
           }
         },
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -809,7 +687,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiEstimateFeeResponse"
+              "$ref": "#/definitions/v1EstimateFeeResponse"
             }
           }
         },
@@ -819,12 +697,12 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiEstimateFeeRequest"
+              "$ref": "#/definitions/v1EstimateFeeRequest"
             }
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -836,7 +714,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiEstimateMarginResponse"
+              "$ref": "#/definitions/v1EstimateMarginResponse"
             }
           }
         },
@@ -846,12 +724,12 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiEstimateMarginRequest"
+              "$ref": "#/definitions/v1EstimateMarginRequest"
             }
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -863,7 +741,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPrepareAmendOrderResponse"
+              "$ref": "#/definitions/v1PrepareAmendOrderResponse"
             }
           }
         },
@@ -873,12 +751,12 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiAmendOrderRequest"
+              "$ref": "#/definitions/v1PrepareAmendOrderRequest"
             }
           }
         ],
         "tags": [
-          "trading"
+          "TradingService"
         ]
       }
     },
@@ -890,7 +768,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPrepareCancelOrderResponse"
+              "$ref": "#/definitions/v1PrepareCancelOrderResponse"
             }
           }
         },
@@ -900,12 +778,12 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiCancelOrderRequest"
+              "$ref": "#/definitions/v1PrepareCancelOrderRequest"
             }
           }
         ],
         "tags": [
-          "trading"
+          "TradingService"
         ]
       }
     },
@@ -917,7 +795,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPrepareSubmitOrderResponse"
+              "$ref": "#/definitions/v1PrepareSubmitOrderResponse"
             }
           }
         },
@@ -927,12 +805,12 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiSubmitOrderRequest"
+              "$ref": "#/definitions/v1PrepareSubmitOrderRequest"
             }
           }
         ],
         "tags": [
-          "trading"
+          "TradingService"
         ]
       }
     },
@@ -944,7 +822,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiTradesByOrderResponse"
+              "$ref": "#/definitions/v1TradesByOrderResponse"
             }
           }
         },
@@ -958,7 +836,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -970,7 +848,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrderVersionsResponse"
+              "$ref": "#/definitions/v1OrderVersionsByIDResponse"
             }
           }
         },
@@ -1008,7 +886,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1020,7 +898,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrderByReferenceResponse"
+              "$ref": "#/definitions/v1OrderByReferenceResponse"
             }
           }
         },
@@ -1034,7 +912,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1046,12 +924,12 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPartiesResponse"
+              "$ref": "#/definitions/v1PartiesResponse"
             }
           }
         },
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1063,7 +941,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPrepareWithdrawResponse"
+              "$ref": "#/definitions/v1PrepareWithdrawResponse"
             }
           }
         },
@@ -1073,12 +951,12 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiPrepareWithdrawRequest"
+              "$ref": "#/definitions/v1PrepareWithdrawRequest"
             }
           }
         ],
         "tags": [
-          "trading"
+          "TradingService"
         ]
       }
     },
@@ -1090,7 +968,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPartyByIDResponse"
+              "$ref": "#/definitions/v1PartyByIDResponse"
             }
           }
         },
@@ -1104,7 +982,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1116,7 +994,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPartyAccountsResponse"
+              "$ref": "#/definitions/v1PartyAccountsResponse"
             }
           }
         },
@@ -1165,7 +1043,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1177,7 +1055,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiMarginLevelsResponse"
+              "$ref": "#/definitions/v1MarginLevelsResponse"
             }
           }
         },
@@ -1198,7 +1076,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1210,7 +1088,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiOrdersByPartyResponse"
+              "$ref": "#/definitions/v1OrdersByPartyResponse"
             }
           }
         },
@@ -1248,7 +1126,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1260,7 +1138,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiPositionsByPartyResponse"
+              "$ref": "#/definitions/v1PositionsByPartyResponse"
             }
           }
         },
@@ -1281,7 +1159,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1293,7 +1171,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiGetProposalsByPartyResponse"
+              "$ref": "#/definitions/v1GetProposalsByPartyResponse"
             }
           }
         },
@@ -1325,7 +1203,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1337,7 +1215,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiTradesByPartyResponse"
+              "$ref": "#/definitions/v1TradesByPartyResponse"
             }
           }
         },
@@ -1382,7 +1260,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1394,7 +1272,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiGetVotesByPartyResponse"
+              "$ref": "#/definitions/v1GetVotesByPartyResponse"
             }
           }
         },
@@ -1408,7 +1286,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1420,12 +1298,12 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/vegaStatistics"
+              "$ref": "#/definitions/v1StatisticsResponse"
             }
           }
         },
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1437,12 +1315,12 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiVegaTimeResponse"
+              "$ref": "#/definitions/v1GetVegaTimeResponse"
             }
           }
         },
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1454,7 +1332,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiSubmitTransactionResponse"
+              "$ref": "#/definitions/v1SubmitTransactionResponse"
             }
           }
         },
@@ -1464,12 +1342,12 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiSubmitTransactionRequest"
+              "$ref": "#/definitions/v1SubmitTransactionRequest"
             }
           }
         ],
         "tags": [
-          "trading"
+          "TradingService"
         ]
       }
     },
@@ -1481,7 +1359,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiWithdrawalsResponse"
+              "$ref": "#/definitions/v1WithdrawalsResponse"
             }
           }
         },
@@ -1495,7 +1373,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1507,7 +1385,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiWithdrawalResponse"
+              "$ref": "#/definitions/v1WithdrawalResponse"
             }
           }
         },
@@ -1521,7 +1399,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     },
@@ -1533,7 +1411,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/apiERC20WithdrawalApprovalResponse"
+              "$ref": "#/definitions/v1ERC20WithdrawalApprovalResponse"
             }
           }
         },
@@ -1547,7 +1425,7 @@
           }
         ],
         "tags": [
-          "trading_data"
+          "TradingDataService"
         ]
       }
     }
@@ -1592,874 +1470,6 @@
       "description": "- VALUE_UNSPECIFIED: Default value, always invalid\n - VALUE_NO: A vote against the proposal\n - VALUE_YES: A vote in favour of the proposal",
       "title": "Vote value"
     },
-    "apiAmendOrderRequest": {
-      "type": "object",
-      "properties": {
-        "amendment": {
-          "$ref": "#/definitions/vegaOrderAmendment",
-          "title": "An order amendment"
-        }
-      },
-      "title": "Request to amend an existing order"
-    },
-    "apiAssetByIDResponse": {
-      "type": "object",
-      "properties": {
-        "asset": {
-          "$ref": "#/definitions/vegaAsset",
-          "title": "An asset record, if found"
-        }
-      },
-      "title": "Response for an asset given an asset identifier"
-    },
-    "apiAssetsResponse": {
-      "type": "object",
-      "properties": {
-        "assets": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAsset"
-          },
-          "title": "A list of 0 or more assets"
-        }
-      },
-      "title": "Response for a list of all assets enabled on Vega"
-    },
-    "apiCancelOrderRequest": {
-      "type": "object",
-      "properties": {
-        "cancellation": {
-          "$ref": "#/definitions/vegaOrderCancellation",
-          "title": "An order cancellation"
-        }
-      },
-      "title": "Request to cancel an existing order"
-    },
-    "apiCandlesResponse": {
-      "type": "object",
-      "properties": {
-        "candles": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaCandle"
-          },
-          "title": "A list of 0 or more candles"
-        }
-      },
-      "title": "Response for a list of candles for a market at an interval"
-    },
-    "apiDepositResponse": {
-      "type": "object",
-      "properties": {
-        "deposit": {
-          "$ref": "#/definitions/vegaDeposit",
-          "title": "The deposit matching the identifier from the request"
-        }
-      },
-      "title": "A response for a deposit"
-    },
-    "apiDepositsResponse": {
-      "type": "object",
-      "properties": {
-        "deposits": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaDeposit"
-          },
-          "title": "The list of deposits for the specified party"
-        }
-      },
-      "title": "The response for a list of deposits"
-    },
-    "apiERC20WithdrawalApprovalResponse": {
-      "type": "object",
-      "properties": {
-        "assetSource": {
-          "type": "string",
-          "title": "The address of asset on ethereum"
-        },
-        "amount": {
-          "type": "string",
-          "title": "The amount to be withdrawn"
-        },
-        "expiry": {
-          "type": "string",
-          "format": "int64",
-          "title": "The expiry / until what time the request is valid"
-        },
-        "nonce": {
-          "type": "string",
-          "title": "The nonce, which is actually the internal reference for the withdrawal"
-        },
-        "signatures": {
-          "type": "string",
-          "title": "The signatures bundle as hex encoded data, forward by 0x\ne.g: 0x + sig1 + sig2 + ... + sixN"
-        }
-      },
-      "title": "The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge\nfunction withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)"
-    },
-    "apiEstimateFeeRequest": {
-      "type": "object",
-      "properties": {
-        "order": {
-          "$ref": "#/definitions/vegaOrder",
-          "title": "Order to estimate fees for\nthe following fields in the order are required:\nMarketID (used to specify the fee factors)\nPrice (the price at which the order could trade)\nSize (the size at which the order could eventually trade)"
-        }
-      },
-      "title": "Request to fetch the estimated fee if an order were to trade immediately"
-    },
-    "apiEstimateFeeResponse": {
-      "type": "object",
-      "properties": {
-        "fee": {
-          "$ref": "#/definitions/vegaFee",
-          "title": "Summary of the estimated fees for this order if it were to trade now"
-        }
-      },
-      "title": "Response to a EstimateFeeRequest, containing the estimated fees for a given order"
-    },
-    "apiEstimateMarginRequest": {
-      "type": "object",
-      "properties": {
-        "order": {
-          "$ref": "#/definitions/vegaOrder",
-          "title": "Order to estimate fees for"
-        }
-      },
-      "title": "Request to fetch the estimated MarginLevels if an order were to trade immediately"
-    },
-    "apiEstimateMarginResponse": {
-      "type": "object",
-      "properties": {
-        "marginLevels": {
-          "$ref": "#/definitions/vegaMarginLevels",
-          "title": "Summary of the estimated margins for this order if it were to trade now"
-        }
-      },
-      "title": "Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order"
-    },
-    "apiFeeInfrastructureAccountsResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          },
-          "title": "A list of 0 or more infrastructure fee accounts"
-        }
-      },
-      "title": "Response for a list of infrastructure fee accounts"
-    },
-    "apiGetNetworkParametersProposalsResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaGovernanceData"
-          },
-          "title": "A list of 0 or more governance data"
-        }
-      },
-      "title": "Response for a list of network parameter proposals"
-    },
-    "apiGetNewAssetProposalsResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaGovernanceData"
-          },
-          "title": "A list of 0 or more governance data"
-        }
-      },
-      "title": "Response for a list of new asset proposals"
-    },
-    "apiGetNewMarketProposalsResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaGovernanceData"
-          },
-          "title": "A list of 0 or more governance data"
-        }
-      },
-      "title": "Response for a list of new market proposals"
-    },
-    "apiGetNodeSignaturesAggregateResponse": {
-      "type": "object",
-      "properties": {
-        "signatures": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaNodeSignature"
-          },
-          "title": "A list of 0 or more signatures"
-        }
-      },
-      "title": "Response to specify the identifier of the resource we want to retrieve aggregated signatures for"
-    },
-    "apiGetProposalByIDResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/vegaGovernanceData",
-          "title": "Governance data, if found"
-        }
-      },
-      "title": "Response for a governance proposal given a proposal identifier"
-    },
-    "apiGetProposalByReferenceResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/vegaGovernanceData",
-          "title": "Governance data, if found"
-        }
-      },
-      "title": "Response for a governance proposal given a proposal reference"
-    },
-    "apiGetProposalsByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaGovernanceData"
-          },
-          "title": "A list of 0 or more governance data"
-        }
-      },
-      "title": "Response for a list of proposals for a party"
-    },
-    "apiGetProposalsResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaGovernanceData"
-          },
-          "title": "A list of 0 or more governance data"
-        }
-      },
-      "title": "Response for a list of proposals"
-    },
-    "apiGetUpdateMarketProposalsResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaGovernanceData"
-          },
-          "title": "A list of 0 or more governance data"
-        }
-      },
-      "title": "Response for a list of update market proposals"
-    },
-    "apiGetVotesByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "votes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaVote"
-          },
-          "title": "A list of 0 or more votes"
-        }
-      },
-      "title": "Response for a list of votes for a party"
-    },
-    "apiLastTradeResponse": {
-      "type": "object",
-      "properties": {
-        "trade": {
-          "$ref": "#/definitions/vegaTrade",
-          "title": "A trade, if found"
-        }
-      },
-      "title": "Response for the latest trade that occurred on Vega for a given market"
-    },
-    "apiLiquidityProvisionsResponse": {
-      "type": "object",
-      "properties": {
-        "liquidityProvisions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaLiquidityProvision"
-          }
-        }
-      },
-      "title": "A response containing all of the Vega liquidity provision orders"
-    },
-    "apiMarginLevelsResponse": {
-      "type": "object",
-      "properties": {
-        "marginLevels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaMarginLevels"
-          },
-          "title": "A list of 0 or more margin levels"
-        }
-      },
-      "title": "Response for margin levels for a party"
-    },
-    "apiMarketAccountsResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          },
-          "title": "A list of 0 or more accounts"
-        }
-      },
-      "title": "Response for a list of accounts for a market"
-    },
-    "apiMarketByIDResponse": {
-      "type": "object",
-      "properties": {
-        "market": {
-          "$ref": "#/definitions/vegaMarket",
-          "title": "A market, if found"
-        }
-      },
-      "title": "Response for a market given a market identifier"
-    },
-    "apiMarketDataByIDResponse": {
-      "type": "object",
-      "properties": {
-        "marketData": {
-          "$ref": "#/definitions/vegaMarketData",
-          "title": "Market data, if found"
-        }
-      },
-      "title": "Response for market data for a market"
-    },
-    "apiMarketDepthResponse": {
-      "type": "object",
-      "properties": {
-        "marketID": {
-          "type": "string",
-          "title": "Market identifier"
-        },
-        "buy": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceLevel"
-          },
-          "title": "Zero or more price levels for the buy side of the market depth data"
-        },
-        "sell": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPriceLevel"
-          },
-          "title": "Zero or more price levels for the sell side of the market depth data"
-        },
-        "lastTrade": {
-          "$ref": "#/definitions/vegaTrade",
-          "title": "Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`"
-        },
-        "sequenceNumber": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Sequence number incremented after each update"
-        }
-      },
-      "title": "Response for the market depth/order book price levels on a market"
-    },
-    "apiMarketsDataResponse": {
-      "type": "object",
-      "properties": {
-        "marketsData": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaMarketData"
-          },
-          "title": "A list of 0 or more market data"
-        }
-      },
-      "title": "Response for market data"
-    },
-    "apiMarketsResponse": {
-      "type": "object",
-      "properties": {
-        "markets": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaMarket"
-          },
-          "title": "A list of 0 or more markets"
-        }
-      },
-      "title": "Response for a list of markets on Vega"
-    },
-    "apiNetworkParametersResponse": {
-      "type": "object",
-      "properties": {
-        "networkParameters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaNetworkParameter"
-          }
-        }
-      },
-      "title": "A response containing all of the vega network parameters"
-    },
-    "apiObserveEventsResponse": {
-      "type": "object",
-      "properties": {
-        "events": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaBusEvent"
-          },
-          "title": "One or more events"
-        }
-      },
-      "title": "Response to a subscribed stream of events from the Vega event bus"
-    },
-    "apiOptionalProposalState": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "$ref": "#/definitions/vegaProposalState",
-          "title": "Proposal state value"
-        }
-      },
-      "title": "Optional proposal state"
-    },
-    "apiOrderByMarketAndIdResponse": {
-      "type": "object",
-      "properties": {
-        "order": {
-          "$ref": "#/definitions/vegaOrder",
-          "title": "An order, if found"
-        }
-      },
-      "title": "Response for an order on a market given an order identifier"
-    },
-    "apiOrderByReferenceResponse": {
-      "type": "object",
-      "properties": {
-        "order": {
-          "$ref": "#/definitions/vegaOrder",
-          "title": "An order, if found"
-        }
-      },
-      "title": "Response for an order given an order reference"
-    },
-    "apiOrderVersionsResponse": {
-      "type": "object",
-      "properties": {
-        "orders": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaOrder"
-          },
-          "title": "A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended)"
-        }
-      },
-      "title": "Response to a request for a list of all versions of an order"
-    },
-    "apiOrdersByMarketResponse": {
-      "type": "object",
-      "properties": {
-        "orders": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaOrder"
-          },
-          "title": "A list of 0 or more orders"
-        }
-      },
-      "title": "Response for a list of orders for a market"
-    },
-    "apiOrdersByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "orders": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaOrder"
-          },
-          "title": "A list of 0 or more orders"
-        }
-      },
-      "title": "Response for a list of orders for a party"
-    },
-    "apiOrdersStream": {
-      "type": "object",
-      "properties": {
-        "orders": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaOrder"
-          },
-          "title": "A list of 0 or more orders"
-        }
-      },
-      "title": "A stream of orders"
-    },
-    "apiPagination": {
-      "type": "object",
-      "properties": {
-        "skip": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Skip the number of records specified, default is 0"
-        },
-        "limit": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Limit the number of returned records to the value specified, default is 50"
-        },
-        "descending": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "Descending reverses the order of the records returned,\ndefault is true, if false the results will be returned in ascending order"
-        }
-      },
-      "title": "Pagination controls"
-    },
-    "apiPartiesResponse": {
-      "type": "object",
-      "properties": {
-        "parties": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaParty"
-          },
-          "title": "A list of 0 or more parties"
-        }
-      },
-      "title": "Response to a request for a list of parties"
-    },
-    "apiPartyAccountsResponse": {
-      "type": "object",
-      "properties": {
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaAccount"
-          },
-          "title": "A list of 0 or more accounts"
-        }
-      },
-      "title": "Response for a list of accounts for a party"
-    },
-    "apiPartyByIDResponse": {
-      "type": "object",
-      "properties": {
-        "party": {
-          "$ref": "#/definitions/vegaParty",
-          "title": "A party, if found"
-        }
-      },
-      "title": "Response for a party given a party identifier"
-    },
-    "apiPositionsByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaPosition"
-          },
-          "title": "A list of 0 or more positions"
-        }
-      },
-      "title": "Response for a list of positions for a party"
-    },
-    "apiPrepareAmendOrderResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "description": "Blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction."
-        }
-      },
-      "title": "Response for preparing an order amendment"
-    },
-    "apiPrepareCancelOrderResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "Blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction"
-        }
-      },
-      "title": "Response for preparing an order cancellation"
-    },
-    "apiPrepareLiquidityProvisionRequest": {
-      "type": "object",
-      "properties": {
-        "submission": {
-          "$ref": "#/definitions/vegaLiquidityProvisionSubmission",
-          "title": "Submission, required field"
-        }
-      },
-      "title": "Request to prepare liquiditity provision"
-    },
-    "apiPrepareLiquidityProvisionResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "A blob is an encoded representation of the liquidity provision message ready to sign using the Vega Wallet and then submit as a transaction"
-        }
-      },
-      "title": "Response to a liquidity provision request"
-    },
-    "apiPrepareProposalRequest": {
-      "type": "object",
-      "properties": {
-        "partyID": {
-          "type": "string",
-          "title": "Party identifier, required field"
-        },
-        "reference": {
-          "type": "string",
-          "title": "Unique reference"
-        },
-        "proposal": {
-          "$ref": "#/definitions/vegaProposalTerms",
-          "title": "Proposal terms, required field"
-        }
-      },
-      "title": "Request to prepare a governance proposal"
-    },
-    "apiPrepareProposalResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction"
-        },
-        "pendingProposal": {
-          "$ref": "#/definitions/vegaProposal",
-          "title": "A copy of the prepared proposal"
-        }
-      },
-      "title": "Response to prepare a governance proposal"
-    },
-    "apiPrepareSubmitOrderResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "Blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction"
-        },
-        "submitID": {
-          "type": "string",
-          "title": "Submission identifier (order reference)"
-        }
-      },
-      "title": "Response for preparing an order submission"
-    },
-    "apiPrepareVoteRequest": {
-      "type": "object",
-      "properties": {
-        "vote": {
-          "$ref": "#/definitions/vegaVote",
-          "title": "Vote, required field"
-        }
-      },
-      "title": "Request to prepare a governance vote"
-    },
-    "apiPrepareVoteResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction"
-        },
-        "vote": {
-          "$ref": "#/definitions/vegaVote",
-          "title": "A copy of the prepared vote"
-        }
-      },
-      "title": "Response to prepare a governance vote"
-    },
-    "apiPrepareWithdrawRequest": {
-      "type": "object",
-      "properties": {
-        "withdraw": {
-          "$ref": "#/definitions/vegaWithdrawSubmission",
-          "title": "An asset withdrawal"
-        }
-      },
-      "title": "Request for preparing a withdrawal"
-    },
-    "apiPrepareWithdrawResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "Blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction"
-        }
-      },
-      "title": "Response for preparing a withdrawal"
-    },
-    "apiPropagateChainEventResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "Success will be true if the event was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
-        }
-      },
-      "title": "Response for a new event sent by the blockchain queue to be propagated on Vega"
-    },
-    "apiSubmitOrderRequest": {
-      "type": "object",
-      "properties": {
-        "submission": {
-          "$ref": "#/definitions/vegaOrderSubmission",
-          "title": "An order submission"
-        }
-      },
-      "title": "Request to submit a new order"
-    },
-    "apiSubmitTransactionRequest": {
-      "type": "object",
-      "properties": {
-        "tx": {
-          "$ref": "#/definitions/vegaSignedBundle",
-          "title": "A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain"
-        },
-        "type": {
-          "$ref": "#/definitions/apiSubmitTransactionRequestType",
-          "title": "Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response"
-        }
-      },
-      "title": "Request for submitting a transaction on Vega"
-    },
-    "apiSubmitTransactionRequestType": {
-      "type": "string",
-      "enum": [
-        "TYPE_UNSPECIFIED",
-        "TYPE_ASYNC",
-        "TYPE_SYNC",
-        "TYPE_COMMIT"
-      ],
-      "default": "TYPE_UNSPECIFIED",
-      "description": "- TYPE_ASYNC: The transaction will be submitted without waiting for response\n - TYPE_SYNC: The transaction will be submitted, and blocking until the\ntendermint mempool return a response\n - TYPE_COMMIT: The transaction will submitted, and blocking until the tendermint\nnetwork will have committed it into a block",
-      "title": "Blockchain transaction type"
-    },
-    "apiSubmitTransactionResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "Success will be true if the transaction was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
-        }
-      },
-      "title": "Response for submitting a transaction on Vega"
-    },
-    "apiTradesByMarketResponse": {
-      "type": "object",
-      "properties": {
-        "trades": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTrade"
-          },
-          "title": "A list of 0 or more trades"
-        }
-      },
-      "title": "Response for a list of trades on a market"
-    },
-    "apiTradesByOrderResponse": {
-      "type": "object",
-      "properties": {
-        "trades": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTrade"
-          },
-          "title": "A list of 0 or more trades"
-        }
-      },
-      "title": "Response for a list of trades related to an order"
-    },
-    "apiTradesByPartyResponse": {
-      "type": "object",
-      "properties": {
-        "trades": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTrade"
-          },
-          "title": "A list of 0 or more trades"
-        }
-      },
-      "title": "Response for a list of trades relating to a party"
-    },
-    "apiTradesStream": {
-      "type": "object",
-      "properties": {
-        "trades": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTrade"
-          },
-          "title": "A list of 0 or more trades"
-        }
-      },
-      "title": "A stream of trades"
-    },
-    "apiVegaTimeResponse": {
-      "type": "object",
-      "properties": {
-        "timestamp": {
-          "type": "string",
-          "format": "int64",
-          "title": "Timestamp representation of current VegaTime as represented in\nNanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`"
-        }
-      },
-      "title": "Response for the current consensus coordinated time on the Vega network, referred to as \"VegaTime\""
-    },
-    "apiWithdrawalResponse": {
-      "type": "object",
-      "properties": {
-        "withdrawal": {
-          "$ref": "#/definitions/vegaWithdrawal",
-          "title": "The withdrawal matching the identifier from the request"
-        }
-      },
-      "title": "A response for a withdrawal"
-    },
-    "apiWithdrawalsResponse": {
-      "type": "object",
-      "properties": {
-        "withdrawals": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaWithdrawal"
-          },
-          "title": "The list of withdrawals for the specified party"
-        }
-      },
-      "title": "The response for a list of withdrawals"
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -2496,6 +1506,948 @@
           }
         }
       }
+    },
+    "v1AccountsSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/vegaAccount"
+        }
+      }
+    },
+    "v1AssetByIDResponse": {
+      "type": "object",
+      "properties": {
+        "asset": {
+          "$ref": "#/definitions/vegaAsset",
+          "title": "An asset record, if found"
+        }
+      },
+      "title": "Response for an asset given an asset identifier"
+    },
+    "v1AssetsResponse": {
+      "type": "object",
+      "properties": {
+        "assets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAsset"
+          },
+          "title": "A list of 0 or more assets"
+        }
+      },
+      "title": "Response for a list of all assets enabled on Vega"
+    },
+    "v1CandlesResponse": {
+      "type": "object",
+      "properties": {
+        "candles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaCandle"
+          },
+          "title": "A list of 0 or more candles"
+        }
+      },
+      "title": "Response for a list of candles for a market at an interval"
+    },
+    "v1CandlesSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "candle": {
+          "$ref": "#/definitions/vegaCandle"
+        }
+      }
+    },
+    "v1DepositResponse": {
+      "type": "object",
+      "properties": {
+        "deposit": {
+          "$ref": "#/definitions/vegaDeposit",
+          "title": "The deposit matching the identifier from the request"
+        }
+      },
+      "title": "A response for a deposit"
+    },
+    "v1DepositsResponse": {
+      "type": "object",
+      "properties": {
+        "deposits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaDeposit"
+          },
+          "title": "The list of deposits for the specified party"
+        }
+      },
+      "title": "The response for a list of deposits"
+    },
+    "v1ERC20WithdrawalApprovalResponse": {
+      "type": "object",
+      "properties": {
+        "assetSource": {
+          "type": "string",
+          "title": "The address of asset on ethereum"
+        },
+        "amount": {
+          "type": "string",
+          "title": "The amount to be withdrawn"
+        },
+        "expiry": {
+          "type": "string",
+          "format": "int64",
+          "title": "The expiry / until what time the request is valid"
+        },
+        "nonce": {
+          "type": "string",
+          "title": "The nonce, which is actually the internal reference for the withdrawal"
+        },
+        "signatures": {
+          "type": "string",
+          "title": "The signatures bundle as hex encoded data, forward by 0x\ne.g: 0x + sig1 + sig2 + ... + sixN"
+        }
+      },
+      "title": "The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge\nfunction withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)"
+    },
+    "v1EstimateFeeRequest": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "Order to estimate fees for\nthe following fields in the order are required:\nMarketID (used to specify the fee factors)\nPrice (the price at which the order could trade)\nSize (the size at which the order could eventually trade)"
+        }
+      },
+      "title": "Request to fetch the estimated fee if an order were to trade immediately"
+    },
+    "v1EstimateFeeResponse": {
+      "type": "object",
+      "properties": {
+        "fee": {
+          "$ref": "#/definitions/vegaFee",
+          "title": "Summary of the estimated fees for this order if it were to trade now"
+        }
+      },
+      "title": "Response to a EstimateFeeRequest, containing the estimated fees for a given order"
+    },
+    "v1EstimateMarginRequest": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "Order to estimate fees for"
+        }
+      },
+      "title": "Request to fetch the estimated MarginLevels if an order were to trade immediately"
+    },
+    "v1EstimateMarginResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "$ref": "#/definitions/vegaMarginLevels",
+          "title": "Summary of the estimated margins for this order if it were to trade now"
+        }
+      },
+      "title": "Response to a EstimateMarginRequest, containing the estimated marginLevels for a given order"
+    },
+    "v1FeeInfrastructureAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          },
+          "title": "A list of 0 or more infrastructure fee accounts"
+        }
+      },
+      "title": "Response for a list of infrastructure fee accounts"
+    },
+    "v1GetNetworkParametersProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          },
+          "title": "A list of 0 or more governance data"
+        }
+      },
+      "title": "Response for a list of network parameter proposals"
+    },
+    "v1GetNewAssetProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          },
+          "title": "A list of 0 or more governance data"
+        }
+      },
+      "title": "Response for a list of new asset proposals"
+    },
+    "v1GetNewMarketProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          },
+          "title": "A list of 0 or more governance data"
+        }
+      },
+      "title": "Response for a list of new market proposals"
+    },
+    "v1GetNodeSignaturesAggregateResponse": {
+      "type": "object",
+      "properties": {
+        "signatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaNodeSignature"
+          },
+          "title": "A list of 0 or more signatures"
+        }
+      },
+      "title": "Response to specify the identifier of the resource we want to retrieve aggregated signatures for"
+    },
+    "v1GetProposalByIDResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/vegaGovernanceData",
+          "title": "Governance data, if found"
+        }
+      },
+      "title": "Response for a governance proposal given a proposal identifier"
+    },
+    "v1GetProposalByReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/vegaGovernanceData",
+          "title": "Governance data, if found"
+        }
+      },
+      "title": "Response for a governance proposal given a proposal reference"
+    },
+    "v1GetProposalsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          },
+          "title": "A list of 0 or more governance data"
+        }
+      },
+      "title": "Response for a list of proposals for a party"
+    },
+    "v1GetProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          },
+          "title": "A list of 0 or more governance data"
+        }
+      },
+      "title": "Response for a list of proposals"
+    },
+    "v1GetUpdateMarketProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaGovernanceData"
+          },
+          "title": "A list of 0 or more governance data"
+        }
+      },
+      "title": "Response for a list of update market proposals"
+    },
+    "v1GetVegaTimeResponse": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "Timestamp representation of current VegaTime as represented in\nNanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`"
+        }
+      },
+      "title": "Response for the current consensus coordinated time on the Vega network, referred to as \"VegaTime\""
+    },
+    "v1GetVotesByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "votes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaVote"
+          },
+          "title": "A list of 0 or more votes"
+        }
+      },
+      "title": "Response for a list of votes for a party"
+    },
+    "v1LastTradeResponse": {
+      "type": "object",
+      "properties": {
+        "trade": {
+          "$ref": "#/definitions/vegaTrade",
+          "title": "A trade, if found"
+        }
+      },
+      "title": "Response for the latest trade that occurred on Vega for a given market"
+    },
+    "v1LiquidityProvisionsResponse": {
+      "type": "object",
+      "properties": {
+        "liquidityProvisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityProvision"
+          }
+        }
+      },
+      "title": "A response containing all of the Vega liquidity provision orders"
+    },
+    "v1MarginLevelsResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarginLevels"
+          },
+          "title": "A list of 0 or more margin levels"
+        }
+      },
+      "title": "Response for margin levels for a party"
+    },
+    "v1MarginLevelsSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "marginLevels": {
+          "$ref": "#/definitions/vegaMarginLevels"
+        }
+      }
+    },
+    "v1MarketAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          },
+          "title": "A list of 0 or more accounts"
+        }
+      },
+      "title": "Response for a list of accounts for a market"
+    },
+    "v1MarketByIDResponse": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "$ref": "#/definitions/vegaMarket",
+          "title": "A market, if found"
+        }
+      },
+      "title": "Response for a market given a market identifier"
+    },
+    "v1MarketDataByIDResponse": {
+      "type": "object",
+      "properties": {
+        "marketData": {
+          "$ref": "#/definitions/vegaMarketData",
+          "title": "Market data, if found"
+        }
+      },
+      "title": "Response for market data for a market"
+    },
+    "v1MarketDepthResponse": {
+      "type": "object",
+      "properties": {
+        "marketID": {
+          "type": "string",
+          "title": "Market identifier"
+        },
+        "buy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          },
+          "title": "Zero or more price levels for the buy side of the market depth data"
+        },
+        "sell": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPriceLevel"
+          },
+          "title": "Zero or more price levels for the sell side of the market depth data"
+        },
+        "lastTrade": {
+          "$ref": "#/definitions/vegaTrade",
+          "title": "Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`"
+        },
+        "sequenceNumber": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Sequence number incremented after each update"
+        }
+      },
+      "title": "Response for the market depth/order book price levels on a market"
+    },
+    "v1MarketDepthSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "marketDepth": {
+          "$ref": "#/definitions/vegaMarketDepth"
+        }
+      }
+    },
+    "v1MarketDepthUpdatesSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "update": {
+          "$ref": "#/definitions/vegaMarketDepthUpdate"
+        }
+      }
+    },
+    "v1MarketsDataResponse": {
+      "type": "object",
+      "properties": {
+        "marketsData": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarketData"
+          },
+          "title": "A list of 0 or more market data"
+        }
+      },
+      "title": "Response for market data"
+    },
+    "v1MarketsDataSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "marketData": {
+          "$ref": "#/definitions/vegaMarketData"
+        }
+      }
+    },
+    "v1MarketsResponse": {
+      "type": "object",
+      "properties": {
+        "markets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaMarket"
+          },
+          "title": "A list of 0 or more markets"
+        }
+      },
+      "title": "Response for a list of markets on Vega"
+    },
+    "v1NetworkParametersResponse": {
+      "type": "object",
+      "properties": {
+        "networkParameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaNetworkParameter"
+          }
+        }
+      },
+      "title": "A response containing all of the vega network parameters"
+    },
+    "v1ObserveEventBusResponse": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaBusEvent"
+          },
+          "title": "One or more events"
+        }
+      },
+      "title": "Response to a subscribed stream of events from the Vega event bus"
+    },
+    "v1ObserveGovernanceResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        }
+      }
+    },
+    "v1ObservePartyProposalsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/vegaGovernanceData"
+        }
+      }
+    },
+    "v1ObservePartyVotesResponse": {
+      "type": "object",
+      "properties": {
+        "vote": {
+          "$ref": "#/definitions/vegaVote"
+        }
+      }
+    },
+    "v1ObserveProposalVotesResponse": {
+      "type": "object",
+      "properties": {
+        "vote": {
+          "$ref": "#/definitions/vegaVote"
+        }
+      }
+    },
+    "v1OptionalProposalState": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/vegaProposalState",
+          "title": "Proposal state value"
+        }
+      },
+      "title": "Optional proposal state"
+    },
+    "v1OrderByIDResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder"
+        }
+      }
+    },
+    "v1OrderByMarketAndIDResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "An order, if found"
+        }
+      },
+      "title": "Response for an order on a market given an order identifier"
+    },
+    "v1OrderByReferenceResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "An order, if found"
+        }
+      },
+      "title": "Response for an order given an order reference"
+    },
+    "v1OrderVersionsByIDResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          },
+          "title": "A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended)"
+        }
+      },
+      "title": "Response to a request for a list of all versions of an order"
+    },
+    "v1OrdersByMarketResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          },
+          "title": "A list of 0 or more orders"
+        }
+      },
+      "title": "Response for a list of orders for a market"
+    },
+    "v1OrdersByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          },
+          "title": "A list of 0 or more orders"
+        }
+      },
+      "title": "Response for a list of orders for a party"
+    },
+    "v1OrdersSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaOrder"
+          },
+          "title": "A list of 0 or more orders"
+        }
+      },
+      "title": "A stream of orders"
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "skip": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Skip the number of records specified, default is 0"
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Limit the number of returned records to the value specified, default is 50"
+        },
+        "descending": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Descending reverses the order of the records returned,\ndefault is true, if false the results will be returned in ascending order"
+        }
+      },
+      "title": "Pagination controls"
+    },
+    "v1PartiesResponse": {
+      "type": "object",
+      "properties": {
+        "parties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaParty"
+          },
+          "title": "A list of 0 or more parties"
+        }
+      },
+      "title": "Response to a request for a list of parties"
+    },
+    "v1PartyAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaAccount"
+          },
+          "title": "A list of 0 or more accounts"
+        }
+      },
+      "title": "Response for a list of accounts for a party"
+    },
+    "v1PartyByIDResponse": {
+      "type": "object",
+      "properties": {
+        "party": {
+          "$ref": "#/definitions/vegaParty",
+          "title": "A party, if found"
+        }
+      },
+      "title": "Response for a party given a party identifier"
+    },
+    "v1PositionsByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaPosition"
+          },
+          "title": "A list of 0 or more positions"
+        }
+      },
+      "title": "Response for a list of positions for a party"
+    },
+    "v1PositionsSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/definitions/vegaPosition"
+        }
+      }
+    },
+    "v1PrepareAmendOrderRequest": {
+      "type": "object",
+      "properties": {
+        "amendment": {
+          "$ref": "#/definitions/vegaOrderAmendment",
+          "title": "An order amendment"
+        }
+      },
+      "title": "Request to amend an existing order"
+    },
+    "v1PrepareAmendOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte",
+          "description": "Blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction."
+        }
+      },
+      "title": "Response for preparing an order amendment"
+    },
+    "v1PrepareCancelOrderRequest": {
+      "type": "object",
+      "properties": {
+        "cancellation": {
+          "$ref": "#/definitions/vegaOrderCancellation",
+          "title": "An order cancellation"
+        }
+      },
+      "title": "Request to cancel an existing order"
+    },
+    "v1PrepareCancelOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte",
+          "title": "Blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction"
+        }
+      },
+      "title": "Response for preparing an order cancellation"
+    },
+    "v1PrepareLiquidityProvisionResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte",
+          "title": "A blob is an encoded representation of the liquidity provision message ready to sign using the Vega Wallet and then submit as a transaction"
+        }
+      },
+      "title": "Response to a liquidity provision request"
+    },
+    "v1PrepareProposalResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte",
+          "title": "A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction"
+        },
+        "pendingProposal": {
+          "$ref": "#/definitions/vegaProposal",
+          "title": "A copy of the prepared proposal"
+        }
+      },
+      "title": "Response to prepare a governance proposal"
+    },
+    "v1PrepareSubmitOrderRequest": {
+      "type": "object",
+      "properties": {
+        "submission": {
+          "$ref": "#/definitions/vegaOrderSubmission",
+          "title": "An order submission"
+        }
+      },
+      "title": "Request to submit a new order"
+    },
+    "v1PrepareSubmitOrderResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte",
+          "title": "Blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction"
+        },
+        "submitID": {
+          "type": "string",
+          "title": "Submission identifier (order reference)"
+        }
+      },
+      "title": "Response for preparing an order submission"
+    },
+    "v1PrepareVoteResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte",
+          "title": "A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction"
+        },
+        "vote": {
+          "$ref": "#/definitions/vegaVote",
+          "title": "A copy of the prepared vote"
+        }
+      },
+      "title": "Response to prepare a governance vote"
+    },
+    "v1PrepareWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "withdraw": {
+          "$ref": "#/definitions/vegaWithdrawSubmission",
+          "title": "An asset withdrawal"
+        }
+      },
+      "title": "Request for preparing a withdrawal"
+    },
+    "v1PrepareWithdrawResponse": {
+      "type": "object",
+      "properties": {
+        "blob": {
+          "type": "string",
+          "format": "byte",
+          "title": "Blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction"
+        }
+      },
+      "title": "Response for preparing a withdrawal"
+    },
+    "v1PropagateChainEventResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Success will be true if the event was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
+        }
+      },
+      "title": "Response for a new event sent by the blockchain queue to be propagated on Vega"
+    },
+    "v1StatisticsResponse": {
+      "type": "object",
+      "properties": {
+        "statistics": {
+          "$ref": "#/definitions/vegaStatistics"
+        }
+      }
+    },
+    "v1SubmitTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "tx": {
+          "$ref": "#/definitions/vegaSignedBundle",
+          "title": "A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain"
+        },
+        "type": {
+          "$ref": "#/definitions/v1SubmitTransactionRequestType",
+          "title": "Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response"
+        }
+      },
+      "title": "Request for submitting a transaction on Vega"
+    },
+    "v1SubmitTransactionRequestType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_ASYNC",
+        "TYPE_SYNC",
+        "TYPE_COMMIT"
+      ],
+      "default": "TYPE_UNSPECIFIED",
+      "description": "- TYPE_ASYNC: The transaction will be submitted without waiting for response\n - TYPE_SYNC: The transaction will be submitted, and blocking until the\ntendermint mempool return a response\n - TYPE_COMMIT: The transaction will submitted, and blocking until the tendermint\nnetwork will have committed it into a block",
+      "title": "Blockchain transaction type"
+    },
+    "v1SubmitTransactionResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Success will be true if the transaction was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
+        }
+      },
+      "title": "Response for submitting a transaction on Vega"
+    },
+    "v1TradesByMarketResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          },
+          "title": "A list of 0 or more trades"
+        }
+      },
+      "title": "Response for a list of trades on a market"
+    },
+    "v1TradesByOrderResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          },
+          "title": "A list of 0 or more trades"
+        }
+      },
+      "title": "Response for a list of trades related to an order"
+    },
+    "v1TradesByPartyResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          },
+          "title": "A list of 0 or more trades"
+        }
+      },
+      "title": "Response for a list of trades relating to a party"
+    },
+    "v1TradesSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "trades": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTrade"
+          },
+          "title": "A list of 0 or more trades"
+        }
+      },
+      "title": "A stream of trades"
+    },
+    "v1TransferResponsesSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "response": {
+          "$ref": "#/definitions/vegaTransferResponse"
+        }
+      }
+    },
+    "v1WithdrawalResponse": {
+      "type": "object",
+      "properties": {
+        "withdrawal": {
+          "$ref": "#/definitions/vegaWithdrawal",
+          "title": "The withdrawal matching the identifier from the request"
+        }
+      },
+      "title": "A response for a withdrawal"
+    },
+    "v1WithdrawalsResponse": {
+      "type": "object",
+      "properties": {
+        "withdrawals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaWithdrawal"
+          },
+          "title": "The list of withdrawals for the specified party"
+        }
+      },
+      "title": "The response for a list of withdrawals"
     },
     "vegaAccount": {
       "type": "object",
@@ -5577,161 +5529,185 @@
     }
   },
   "x-stream-definitions": {
-    "apiObserveEventsResponse": {
+    "v1AccountsSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/apiObserveEventsResponse"
+          "$ref": "#/definitions/v1AccountsSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of apiObserveEventsResponse"
+      "title": "Stream result of v1AccountsSubscribeResponse"
     },
-    "apiOrdersStream": {
+    "v1CandlesSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/apiOrdersStream"
+          "$ref": "#/definitions/v1CandlesSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of apiOrdersStream"
+      "title": "Stream result of v1CandlesSubscribeResponse"
     },
-    "apiTradesStream": {
+    "v1MarginLevelsSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/apiTradesStream"
+          "$ref": "#/definitions/v1MarginLevelsSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of apiTradesStream"
+      "title": "Stream result of v1MarginLevelsSubscribeResponse"
     },
-    "vegaAccount": {
+    "v1MarketDepthSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaAccount"
+          "$ref": "#/definitions/v1MarketDepthSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaAccount"
+      "title": "Stream result of v1MarketDepthSubscribeResponse"
     },
-    "vegaCandle": {
+    "v1MarketDepthUpdatesSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaCandle"
+          "$ref": "#/definitions/v1MarketDepthUpdatesSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaCandle"
+      "title": "Stream result of v1MarketDepthUpdatesSubscribeResponse"
     },
-    "vegaGovernanceData": {
+    "v1MarketsDataSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaGovernanceData"
+          "$ref": "#/definitions/v1MarketsDataSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaGovernanceData"
+      "title": "Stream result of v1MarketsDataSubscribeResponse"
     },
-    "vegaMarginLevels": {
+    "v1ObserveEventBusResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaMarginLevels"
+          "$ref": "#/definitions/v1ObserveEventBusResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaMarginLevels"
+      "title": "Stream result of v1ObserveEventBusResponse"
     },
-    "vegaMarketData": {
+    "v1ObserveGovernanceResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaMarketData"
+          "$ref": "#/definitions/v1ObserveGovernanceResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaMarketData"
+      "title": "Stream result of v1ObserveGovernanceResponse"
     },
-    "vegaMarketDepth": {
+    "v1ObservePartyProposalsResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaMarketDepth"
+          "$ref": "#/definitions/v1ObservePartyProposalsResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaMarketDepth"
+      "title": "Stream result of v1ObservePartyProposalsResponse"
     },
-    "vegaMarketDepthUpdate": {
+    "v1ObservePartyVotesResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaMarketDepthUpdate"
+          "$ref": "#/definitions/v1ObservePartyVotesResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaMarketDepthUpdate"
+      "title": "Stream result of v1ObservePartyVotesResponse"
     },
-    "vegaPosition": {
+    "v1ObserveProposalVotesResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaPosition"
+          "$ref": "#/definitions/v1ObserveProposalVotesResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaPosition"
+      "title": "Stream result of v1ObserveProposalVotesResponse"
     },
-    "vegaTransferResponse": {
+    "v1OrdersSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaTransferResponse"
+          "$ref": "#/definitions/v1OrdersSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaTransferResponse"
+      "title": "Stream result of v1OrdersSubscribeResponse"
     },
-    "vegaVote": {
+    "v1PositionsSubscribeResponse": {
       "type": "object",
       "properties": {
         "result": {
-          "$ref": "#/definitions/vegaVote"
+          "$ref": "#/definitions/v1PositionsSubscribeResponse"
         },
         "error": {
           "$ref": "#/definitions/runtimeStreamError"
         }
       },
-      "title": "Stream result of vegaVote"
+      "title": "Stream result of v1PositionsSubscribeResponse"
+    },
+    "v1TradesSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/v1TradesSubscribeResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of v1TradesSubscribeResponse"
+    },
+    "v1TransferResponsesSubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/v1TransferResponsesSubscribeResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of v1TransferResponsesSubscribeResponse"
     }
   }
 }

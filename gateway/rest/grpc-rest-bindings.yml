@@ -2,156 +2,157 @@
 type: google.api.Service
 config_version: 3
 
-name: api.trading
+name: api.v1.trading
 title: Vega Trading API
 
 apis:
-  - name: trading
+  - name: TradingService
+  - name: TradingDataService
 
 http:
   rules:
     # Markets
-    - selector: api.trading_data.Markets
+    - selector: api.v1.TradingDataService.Markets
       get: '/markets'
-    - selector: api.trading_data.MarketByID
+    - selector: api.v1.TradingDataService.MarketByID
       get: '/markets/{marketID}'
-    - selector: api.trading_data.Candles
+    - selector: api.v1.TradingDataService.Candles
       get: '/markets/{marketID}/candles'
-    - selector: api.trading_data.MarketDepth
+    - selector: api.v1.TradingDataService.MarketDepth
       get: '/markets/{marketID}/depth'
-    - selector: api.trading_data.OrdersByMarket
+    - selector: api.v1.TradingDataService.OrdersByMarket
       get: '/markets/{marketID}/orders'
-    - selector: api.trading_data.OrderByMarketAndID
+    - selector: api.v1.TradingDataService.OrderByMarketAndID
       get: '/markets/{marketID}/orders/{orderID}'
-    - selector: api.trading_data.TradesByMarket
+    - selector: api.v1.TradingDataService.TradesByMarket
       get: '/markets/{marketID}/trades'
-    - selector: api.trading_data.LastTrade
+    - selector: api.v1.TradingDataService.LastTrade
       get: '/markets/{marketID}/trades/latest'
-    - selector: api.trading_data.MarketAccounts
+    - selector: api.v1.TradingDataService.MarketAccounts
       get: '/markets/{marketID}/accounts'
 
     # assets
-    - selector: api.trading_data.Assets
+    - selector: api.v1.TradingDataService.Assets
       get: '/assets'
-    - selector: api.trading_data.AssetByID
+    - selector: api.v1.TradingDataService.AssetByID
       get: '/assets/{ID}'
-    - selector: api.trading_data.FeeInfrastructureAccounts
+    - selector: api.v1.TradingDataService.FeeInfrastructureAccounts
       get: '/assets/{asset}/infrastructureFeeAccount'
 
 
     # MarketData
-    - selector: api.trading_data.MarketsData
+    - selector: api.v1.TradingDataService.MarketsData
       get: '/markets-data'
-    - selector: api.trading_data.MarketDataByID
+    - selector: api.v1.TradingDataService.MarketDataByID
       get: '/markets-data/{marketID}'
 
 
     # transaction bundles
-    - selector: api.trading.SubmitTransaction
+    - selector: api.v1.TradingService.SubmitTransaction
       post: '/transaction'
       body: "*"
 
     # Orders
-    - selector: api.trading.PrepareSubmitOrder
+    - selector: api.v1.TradingService.PrepareSubmitOrder
       post: '/orders/prepare/submit'
       body: "*"
-    - selector: api.trading.PrepareCancelOrder
+    - selector: api.v1.TradingService.PrepareCancelOrder
       post: '/orders/prepare/cancel'
       body: "*"
-    - selector: api.trading.PrepareAmendOrder
+    - selector: api.v1.TradingService.PrepareAmendOrder
       post: '/orders/prepare/amend'
       body: "*"
-    - selector: api.trading_data.OrderByReference
+    - selector: api.v1.TradingDataService.OrderByReference
       get: '/orders/{reference}'
-    - selector: api.trading_data.OrderVersionsByID
+    - selector: api.v1.TradingDataService.OrderVersionsByID
       get: '/orders/{orderID}/versions'
-    - selector: api.trading_data.TradesByOrder
+    - selector: api.v1.TradingDataService.TradesByOrder
       get: '/orders/{orderID}/trades'
 
     # Fee
-    - selector: api.trading_data.EstimateFee
+    - selector: api.v1.TradingDataService.EstimateFee
       post: '/orders/fee/estimate'
       body: "*"
 
     # Margins
-    - selector: api.trading_data.EstimateMargin
+    - selector: api.v1.TradingDataService.EstimateMargin
       post: '/orders/margins/estimate'
       body: "*"
 
       # Network parameters
-    - selector: api.trading_data.NetworkParameters
+    - selector: api.v1.TradingDataService.NetworkParameters
       get: '/network/parameters'
 
     # Parties
-    - selector: api.trading_data.Parties
+    - selector: api.v1.TradingDataService.Parties
       get: '/parties'
-    - selector: api.trading_data.PartyByID
+    - selector: api.v1.TradingDataService.PartyByID
       get: '/parties/{partyID}'
-    - selector: api.trading_data.OrdersByParty
+    - selector: api.v1.TradingDataService.OrdersByParty
       get: '/parties/{partyID}/orders'
-    - selector: api.trading_data.PositionsByParty
+    - selector: api.v1.TradingDataService.PositionsByParty
       get: '/parties/{partyID}/positions'
-    - selector: api.trading_data.TradesByParty
+    - selector: api.v1.TradingDataService.TradesByParty
       get: '/parties/{partyID}/trades'
-    - selector: api.trading_data.PartyAccounts
+    - selector: api.v1.TradingDataService.PartyAccounts
       get: '/parties/{partyID}/accounts'
-    - selector: api.trading_data.MarginLevels
+    - selector: api.v1.TradingDataService.MarginLevels
       get: '/parties/{partyID}/markets/{marketID}/margin'
 
-    - selector: api.trading.PrepareWithdraw
+    - selector: api.v1.TradingService.PrepareWithdraw
       post: '/parties/prepare/withdraw'
       body: '*'
 
     # governance stuff by party
-    - selector: api.trading_data.GetProposalsByParty
+    - selector: api.v1.TradingDataService.GetProposalsByParty
       get: '/parties/{partyID}/proposals'
-    - selector: api.trading_data.GetVotesByParty
+    - selector: api.v1.TradingDataService.GetVotesByParty
       get: '/parties/{partyID}/votes'
 
     # withdrawals
-    - selector: api.trading_data.Withdrawal
+    - selector: api.v1.TradingDataService.Withdrawal
       get: '/withdrawals/{ID}'
-    - selector: api.trading_data.Withdrawals
+    - selector: api.v1.TradingDataService.Withdrawals
       get: '/withdrawals/party/{partyID}'
-    - selector: api.trading_data.ERC20WithdrawalApproval
+    - selector: api.v1.TradingDataService.ERC20WithdrawalApproval
       get: '/withdrawals/{withdrawalID}/approval/erc20'
 
     # deposits
-    - selector: api.trading_data.Deposit
+    - selector: api.v1.TradingDataService.Deposit
       get: '/deposits/{ID}'
-    - selector: api.trading_data.Deposits
+    - selector: api.v1.TradingDataService.Deposits
       get: '/deposits/party/{partyID}'
 
     # Governance
-    - selector: api.trading.PrepareProposal
+    - selector: api.v1.Trading.PrepareProposal
       post: '/governance/prepare/proposal'
       body: "*"
-    - selector: api.trading.PrepareVote
+    - selector: api.v1.Trading.PrepareVote
       post: '/governance/prepare/vote'
       body: "*"
 
     # Governance queries
-    - selector: api.trading_data.GetProposalByID
+    - selector: api.v1.TradingDataService.GetProposalByID
       get: '/governance/proposal/{proposalID}'
-    - selector: api.trading_data.GetProposalByReference
+    - selector: api.v1.TradingDataService.GetProposalByReference
       get: '/governance/proposal/reference/{reference}'
-    - selector: api.trading_data.GetNewMarketProposals
+    - selector: api.v1.TradingDataService.GetNewMarketProposals
       get: '/governance/market/proposals'
-    - selector: api.trading_data.GetNewAssetProposals
+    - selector: api.v1.TradingDataService.GetNewAssetProposals
       get: '/governance/asset/proposals'
-    - selector: api.trading_data.GetProposals
+    - selector: api.v1.TradingDataService.GetProposals
       get: '/governance/proposals'
 
 
     # LiquidityProvision
-    - selector: api.trading.PrepareLiquidityProvision
+    - selector: api.v1.Trading.PrepareLiquidityProvision
       post: '/liquidity-provisions/prepare/submit'
       body: "*"
-    - selector: api.trading.PrepareLiquidityProvision
+    - selector: api.v1.Trading.PrepareLiquidityProvision
       get: '/liquidity-provisions'
 
     # Miscellaneous
-    - selector: api.trading_data.Statistics
+    - selector: api.v1.TradingDataService.Statistics
       get: '/statistics'
-    - selector: api.trading_data.GetVegaTime
+    - selector: api.v1.TradingDataService.GetVegaTime
       get: '/time'

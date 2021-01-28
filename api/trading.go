@@ -77,7 +77,7 @@ type tradingService struct {
 	statusChecker *monitoring.Status
 }
 
-func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
+func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.PrepareSubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", startTime)
 	err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
@@ -97,7 +97,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	}, nil
 }
 
-func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.CancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
+func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.PrepareCancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareCancelOrder", startTime)
 	err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
@@ -116,7 +116,7 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 	}, nil
 }
 
-func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
+func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.PrepareAmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
 	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)

@@ -32,8 +32,8 @@ type GraphServer struct {
 	gateway.Config
 
 	log               *logging.Logger
-	tradingClient     protoapi.TradingClient
-	tradingDataClient protoapi.TradingDataClient
+	tradingClient     protoapi.TradingServiceClient
+	tradingDataClient protoapi.TradingDataServiceClient
 	srv               *http.Server
 }
 

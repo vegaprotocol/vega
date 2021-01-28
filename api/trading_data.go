@@ -536,7 +536,7 @@ func (t *tradingDataService) Markets(ctx context.Context, request *empty.Empty) 
 
 // OrdersByMarketAndID provides the given order, searching by Market and (Order)Id.
 func (t *tradingDataService) OrderByMarketAndID(ctx context.Context,
-	request *protoapi.OrderByMarketAndIdRequest) (*protoapi.OrderByMarketAndIdResponse, error) {
+	request *protoapi.OrderByMarketAndIDRequest) (*protoapi.OrderByMarketAndIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrderByMarketAndID")()
 
 	err := request.Validate()
@@ -549,7 +549,7 @@ func (t *tradingDataService) OrderByMarketAndID(ctx context.Context,
 		return nil, apiError(codes.Internal, ErrOrderServiceGetByMarketAndID, err)
 	}
 
-	return &protoapi.OrderByMarketAndIdResponse{
+	return &protoapi.OrderByMarketAndIDResponse{
 		Order: order,
 	}, nil
 }
@@ -739,7 +739,7 @@ func (t *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*pr
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
-func (t *tradingDataService) Statistics(ctx context.Context, request *empty.Empty) (*types.Statistics, error) {
+func (t *tradingDataService) Statistics(ctx context.Context, request *empty.Empty) (*protoapi.StatisticsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Statistics")()
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
@@ -766,7 +766,7 @@ func (t *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 		return nil, apiError(codes.Unavailable, ErrMarketServiceGetMarkets, err)
 	}
 
-	return &types.Statistics{
+	stats := &types.Statistics{
 		BlockHeight:              t.Stats.Blockchain.Height(),
 		BacklogLength:            uint64(backlogLength),
 		TotalPeers:               uint64(numPeers),
@@ -798,18 +798,22 @@ func (t *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 		AccountSubscriptions:     uint32(t.AccountsService.GetAccountSubscribersCount()),
 		MarketDataSubscriptions:  uint32(t.MarketService.GetMarketDataSubscribersCount()),
 		ChainID:                  chainID,
+	}
+	return &protoapi.StatisticsResponse{
+		Statistics: stats,
 	}, nil
 }
 
 // GetVegaTime returns the latest blockchain header timestamp, in UnixNano format.
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
-func (t *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Empty) (*protoapi.VegaTimeResponse, error) {
+func (t *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Empty) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime")()
 	ts, err := t.TimeService.GetTimeNow()
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrTimeServiceGetTimeNow, err)
 	}
-	return &protoapi.VegaTimeResponse{
+
+	return &protoapi.GetVegaTimeResponse{
 		Timestamp: ts.UnixNano(),
 	}, nil
 
@@ -817,7 +821,7 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Emp
 
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
 func (t *tradingDataService) TransferResponsesSubscribe(
-	req *empty.Empty, srv protoapi.TradingData_TransferResponsesSubscribeServer) error {
+	req *empty.Empty, srv protoapi.TradingDataService_TransferResponsesSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("TransferResponseSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -843,8 +847,9 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 			}
 			for _, tr := range transferResponses {
 				tr := tr
-				err = srv.Send(tr)
-				if err != nil {
+				if err := srv.Send(&protoapi.TransferResponsesSubscribeResponse{
+					Response: tr,
+				}); err != nil {
 					t.log.Error("TransferResponses subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
@@ -878,7 +883,7 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 
 // MarketsDataSubscribe opens a subscription to market data provided by the markets service.
 func (t *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubscribeRequest,
-	srv protoapi.TradingData_MarketsDataSubscribeServer) error {
+	srv protoapi.TradingDataService_MarketsDataSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketsDataSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -903,8 +908,10 @@ func (t *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 				return apiError(codes.Internal, err)
 			}
 			for _, md := range mds {
-				err = srv.Send(&md)
-				if err != nil {
+				resp := &protoapi.MarketsDataSubscribeResponse{
+					MarketData: &md,
+				}
+				if err := srv.Send(resp); err != nil {
 					t.log.Error("Markets data subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
@@ -935,7 +942,7 @@ func (t *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 }
 
 // AccountsSubscribe opens a subscription to the Margin Levels provided by the risk service.
-func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSubscribeRequest, srv protoapi.TradingData_MarginLevelsSubscribeServer) error {
+func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSubscribeRequest, srv protoapi.TradingDataService_MarginLevelsSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarginLevelsSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -965,8 +972,10 @@ func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 			}
 			for _, ml := range mls {
 				ml := ml
-				err = srv.Send(&ml)
-				if err != nil {
+				resp := &protoapi.MarginLevelsSubscribeResponse{
+					MarginLevels: &ml,
+				}
+				if err := srv.Send(resp); err != nil {
 					t.log.Error("Margin levels data subscriber - rpc stream error",
 						logging.Error(err),
 						logging.Uint64("ref", ref),
@@ -1000,7 +1009,7 @@ func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 
 // AccountsSubscribe opens a subscription to the Accounts service.
 func (t *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRequest,
-	srv protoapi.TradingData_AccountsSubscribeServer) error {
+	srv protoapi.TradingDataService_AccountsSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("AccountsSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -1027,7 +1036,10 @@ func (t *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 			}
 			for _, account := range accounts {
 				account := account
-				err = srv.Send(account)
+				resp := &protoapi.AccountsSubscribeResponse{
+					Account: account,
+				}
+				err = srv.Send(resp)
 				if err != nil {
 					t.log.Error("Accounts subscriber - rpc stream error",
 						logging.Error(err),
@@ -1064,7 +1076,7 @@ func (t *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 // MarketID: Optional.
 // PartyID: Optional.
 func (t *tradingDataService) OrdersSubscribe(
-	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingData_OrdersSubscribeServer) error {
+	req *protoapi.OrdersSubscribeRequest, srv protoapi.TradingDataService_OrdersSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrdersSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -1104,7 +1116,7 @@ func (t *tradingDataService) OrdersSubscribe(
 				v := v
 				out = append(out, &v)
 			}
-			err = srv.Send(&protoapi.OrdersStream{Orders: out})
+			err = srv.Send(&protoapi.OrdersSubscribeResponse{Orders: out})
 			if err != nil {
 				t.log.Error("Orders subscriber - rpc stream error",
 					logging.Error(err),
@@ -1138,7 +1150,7 @@ func (t *tradingDataService) OrdersSubscribe(
 
 // TradesSubscribe opens a subscription to the Trades service.
 func (t *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeRequest,
-	srv protoapi.TradingData_TradesSubscribeServer) error {
+	srv protoapi.TradingDataService_TradesSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("TradesSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -1178,8 +1190,7 @@ func (t *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 				v := v
 				out = append(out, &v)
 			}
-			err = srv.Send(&protoapi.TradesStream{Trades: out})
-			if err != nil {
+			if err := srv.Send(&protoapi.TradesSubscribeResponse{Trades: out}); err != nil {
 				t.log.Error("Trades subscriber - rpc stream error",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -1209,7 +1220,7 @@ func (t *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 
 // CandlesSubscribe opens a subscription to the Candles service.
 func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequest,
-	srv protoapi.TradingData_CandlesSubscribeServer) error {
+	srv protoapi.TradingDataService_CandlesSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("CandlesSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -1242,8 +1253,10 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 				)
 				return apiError(codes.Internal, err)
 			}
-			err = srv.Send(candle)
-			if err != nil {
+			resp := &protoapi.CandlesSubscribeResponse{
+				Candle: candle,
+			}
+			if err := srv.Send(resp); err != nil {
 				t.log.Error("Candles subscriber - rpc stream error",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -1275,7 +1288,7 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 // MarketDepthSubscribe opens a subscription to the MarketDepth service.
 func (t *tradingDataService) MarketDepthSubscribe(
 	req *protoapi.MarketDepthSubscribeRequest,
-	srv protoapi.TradingData_MarketDepthSubscribeServer,
+	srv protoapi.TradingDataService_MarketDepthSubscribeServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketDepthSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
@@ -1305,8 +1318,10 @@ func (t *tradingDataService) MarketDepthSubscribe(
 				)
 				return apiError(codes.Internal, err)
 			}
-			err = srv.Send(depth)
-			if err != nil {
+			resp := &protoapi.MarketDepthSubscribeResponse{
+				MarketDepth: depth,
+			}
+			if err := srv.Send(resp); err != nil {
 				if t.log.GetLevel() == logging.DebugLevel {
 					t.log.Debug("Depth subscriber - rpc stream error",
 						logging.Error(err),
@@ -1340,7 +1355,7 @@ func (t *tradingDataService) MarketDepthSubscribe(
 // MarketDepthUpdatesSubscribe opens a subscription to the MarketDepth Updates service.
 func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 	req *protoapi.MarketDepthUpdatesSubscribeRequest,
-	srv protoapi.TradingData_MarketDepthUpdatesSubscribeServer,
+	srv protoapi.TradingDataService_MarketDepthUpdatesSubscribeServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketDepthUpdatesSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
@@ -1371,8 +1386,10 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 				}
 				return apiError(codes.Internal, err)
 			}
-			err = srv.Send(depth)
-			if err != nil {
+			resp := &protoapi.MarketDepthUpdatesSubscribeResponse{
+				Update: depth,
+			}
+			if err := srv.Send(resp); err != nil {
 				if t.log.GetLevel() == logging.DebugLevel {
 					t.log.Debug("Depth updates subscriber - rpc stream error",
 						logging.Error(err),
@@ -1406,7 +1423,7 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 // PositionsSubscribe opens a subscription to the Positions service.
 func (t *tradingDataService) PositionsSubscribe(
 	req *protoapi.PositionsSubscribeRequest,
-	srv protoapi.TradingData_PositionsSubscribeServer,
+	srv protoapi.TradingDataService_PositionsSubscribeServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("PositionsSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan on error.
@@ -1430,8 +1447,10 @@ func (t *tradingDataService) PositionsSubscribe(
 				)
 				return apiError(codes.Internal, err)
 			}
-			err := srv.Send(position)
-			if err != nil {
+			resp := &protoapi.PositionsSubscribeResponse{
+				Position: position,
+			}
+			if err := srv.Send(resp); err != nil {
 				t.log.Error("Positions subscriber - rpc stream error",
 					logging.Error(err),
 					logging.Uint64("ref", ref),
@@ -1709,7 +1728,7 @@ func (t *tradingDataService) getGenesisTimeAndChainID(ctx context.Context) error
 	return nil
 }
 
-func (t *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest) (*types.Order, error) {
+func (t *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest) (*protoapi.OrderByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrderByID")()
 	if len(in.OrderID) == 0 {
 		// Invalid parameter
@@ -1717,19 +1736,23 @@ func (t *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 	}
 
 	order, err := t.OrderService.GetByOrderID(ctx, in.OrderID, in.Version)
-	if err == nil {
-		return order, nil
+	if err != nil {
+		// If we get here then no match was found
+		return nil, ErrOrderNotFound
 	}
 
-	// If we get here then no match was found
-	return nil, ErrOrderNotFound
+	resp := &protoapi.OrderByIDResponse{
+		Order: order,
+	}
+	return resp, nil
+
 }
 
 // OrderVersionsByID returns all versions of the order by its orderID
 func (t *tradingDataService) OrderVersionsByID(
 	ctx context.Context,
 	in *protoapi.OrderVersionsByIDRequest,
-) (*protoapi.OrderVersionsResponse, error) {
+) (*protoapi.OrderVersionsByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrderVersionsByID")()
 
 	err := in.Validate()
@@ -1746,7 +1769,7 @@ func (t *tradingDataService) OrderVersionsByID(
 		p.Limit,
 		p.Descending)
 	if err == nil {
-		return &protoapi.OrderVersionsResponse{
+		return &protoapi.OrderVersionsByIDResponse{
 			Orders: orders,
 		}, nil
 	}
@@ -1902,7 +1925,7 @@ func (t *tradingDataService) GetProposalByReference(_ context.Context,
 
 func (t *tradingDataService) ObserveGovernance(
 	_ *empty.Empty,
-	stream protoapi.TradingData_ObserveGovernanceServer,
+	stream protoapi.TradingDataService_ObserveGovernanceServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveGovernance")()
 	ctx, cfunc := context.WithCancel(stream.Context())
@@ -1919,7 +1942,10 @@ func (t *tradingDataService) ObserveGovernance(
 				return nil
 			}
 			for _, p := range props {
-				if err := stream.Send(&p); err != nil {
+				resp := &protoapi.ObserveGovernanceResponse{
+					Data: &p,
+				}
+				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send governance data into stream",
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
@@ -1934,7 +1960,7 @@ func (t *tradingDataService) ObserveGovernance(
 }
 func (t *tradingDataService) ObservePartyProposals(
 	in *protoapi.ObservePartyProposalsRequest,
-	stream protoapi.TradingData_ObservePartyProposalsServer,
+	stream protoapi.TradingDataService_ObservePartyProposalsServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObservePartyProposals")()
 
@@ -1956,7 +1982,10 @@ func (t *tradingDataService) ObservePartyProposals(
 				return nil
 			}
 			for _, p := range props {
-				if err := stream.Send(&p); err != nil {
+				resp := &protoapi.ObservePartyProposalsResponse{
+					Data: &p,
+				}
+				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send party proposal into stream",
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
@@ -1972,7 +2001,7 @@ func (t *tradingDataService) ObservePartyProposals(
 
 func (t *tradingDataService) ObservePartyVotes(
 	in *protoapi.ObservePartyVotesRequest,
-	stream protoapi.TradingData_ObservePartyVotesServer,
+	stream protoapi.TradingDataService_ObservePartyVotesServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObservePartyVotes")()
 
@@ -1994,7 +2023,10 @@ func (t *tradingDataService) ObservePartyVotes(
 				return nil
 			}
 			for _, p := range votes {
-				if err := stream.Send(&p); err != nil {
+				resp := &protoapi.ObservePartyVotesResponse{
+					Vote: &p,
+				}
+				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send party vote into stream",
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, err)
@@ -2010,7 +2042,7 @@ func (t *tradingDataService) ObservePartyVotes(
 
 func (t *tradingDataService) ObserveProposalVotes(
 	in *protoapi.ObserveProposalVotesRequest,
-	stream protoapi.TradingData_ObserveProposalVotesServer,
+	stream protoapi.TradingDataService_ObserveProposalVotesServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveProposalVotes")()
 
@@ -2032,7 +2064,10 @@ func (t *tradingDataService) ObserveProposalVotes(
 				return nil
 			}
 			for _, p := range votes {
-				if err := stream.Send(&p); err != nil {
+				resp := &protoapi.ObserveProposalVotesResponse{
+					Vote: &p,
+				}
+				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send proposal vote into stream",
 						logging.Error(err))
 					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
@@ -2047,7 +2082,7 @@ func (t *tradingDataService) ObserveProposalVotes(
 }
 
 func (t *tradingDataService) ObserveEventBus(
-	stream protoapi.TradingData_ObserveEventBusServer) error {
+	stream protoapi.TradingDataService_ObserveEventBusServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
 
 	ctx, cfunc := context.WithCancel(stream.Context())
@@ -2108,7 +2143,7 @@ func (t *tradingDataService) ObserveEventBus(
 
 func (t *tradingDataService) observeEvents(
 	ctx context.Context,
-	stream protoapi.TradingData_ObserveEventBusServer,
+	stream protoapi.TradingDataService_ObserveEventBusServer,
 	ch <-chan []*types.BusEvent,
 ) error {
 	for {
@@ -2117,7 +2152,7 @@ func (t *tradingDataService) observeEvents(
 			if !ok {
 				return nil
 			}
-			resp := &protoapi.ObserveEventsResponse{
+			resp := &protoapi.ObserveEventBusResponse{
 				Events: data,
 			}
 			if err := stream.Send(resp); err != nil {
@@ -2133,14 +2168,14 @@ func (t *tradingDataService) observeEvents(
 }
 
 func (t *tradingDataService) recvEventRequest(
-	stream protoapi.TradingData_ObserveEventBusServer,
-) (*protoapi.ObserveEventsRequest, error) {
+	stream protoapi.TradingDataService_ObserveEventBusServer,
+) (*protoapi.ObserveEventBusRequest, error) {
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
-	oebCh := make(chan protoapi.ObserveEventsRequest)
+	oebCh := make(chan protoapi.ObserveEventBusRequest)
 	var err error
 	go func() {
 		defer close(oebCh)
-		nb := protoapi.ObserveEventsRequest{}
+		nb := protoapi.ObserveEventBusRequest{}
 		if err = stream.RecvMsg(&nb); err != nil {
 			cfunc()
 			return
@@ -2162,7 +2197,7 @@ func (t *tradingDataService) recvEventRequest(
 
 func (t *tradingDataService) observeEventsWithAck(
 	ctx context.Context,
-	stream protoapi.TradingData_ObserveEventBusServer,
+	stream protoapi.TradingDataService_ObserveEventBusServer,
 	batchSize int64,
 	ch <-chan []*types.BusEvent,
 	bCh chan<- int,
@@ -2173,7 +2208,7 @@ func (t *tradingDataService) observeEventsWithAck(
 			if !ok {
 				return nil
 			}
-			resp := &protoapi.ObserveEventsResponse{
+			resp := &protoapi.ObserveEventBusResponse{
 				Events: data,
 			}
 			if err := stream.Send(resp); err != nil {
