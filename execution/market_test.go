@@ -223,9 +223,11 @@ func addAccount(market *testMarket, party string) {
 	market.collateraEngine.Deposit(context.Background(), party, market.asset, 1000000000)
 	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
-func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
-	market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
+
+func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.TransferResponse {
+	resp, _ := market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
 	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	return resp
 }
 
 func TestMarketClosing(t *testing.T) {
