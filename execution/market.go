@@ -480,12 +480,12 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		return false
 	}
 
-	// distribute fees each `m.lpFeeDistributionTimeStep`
+	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
 	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
 		m.lastEquityShareDistributed = t
 
-		if err := m.distributeShares(ctx); err != nil {
-			m.log.Panic("Distributing Shares", logging.Error(err))
+		if err := m.distributeLiquidityFees(ctx); err != nil {
+			m.log.Panic("Distributing Liquidity Fees", logging.Error(err))
 		}
 	}
 
@@ -3164,7 +3164,7 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 	return out
 }
 
-func (m *Market) distributeShares(ctx context.Context) error {
+func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err
@@ -3185,7 +3185,7 @@ func (m *Market) distributeShares(ctx context.Context) error {
 		return nil
 	}
 
-	feeTransfer := m.fee.DistributeLiquidityFees(shares, acc)
+	feeTransfer := m.fee.BuildLiquidityFeeDistributionTransfer(shares, acc)
 	if feeTransfer == nil {
 		return nil
 	}

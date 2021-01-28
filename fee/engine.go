@@ -392,7 +392,12 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	}, partiesFees, nil
 }
 
-func (e *Engine) DistributeLiquidityFees(shares map[string]float64, acc *types.Account) events.FeesTransfer {
+// BuildLiquidityFeeDistributionTransfer returns the set of transfers that will
+// be used by the collateral engine to distribute the fees.  As shares are
+// represented in float64 and fees are uint64, shares are floored and the
+// remainder is assigned to the last party on the share map. Note that the map
+// is sorted lexicographically to keep determinism.
+func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]float64, acc *types.Account) events.FeesTransfer {
 	if len(shares) == 0 {
 		return nil
 	}
