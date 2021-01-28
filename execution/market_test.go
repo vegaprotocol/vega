@@ -2840,3 +2840,57 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	require.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
 }
+
+func TestGeneralAccountAfterCancellingOrderGoesBackToPreOrderLevel(t *testing.T) {
+	mainParty := "mainParty"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	var matchingPrice uint64 = 111
+	ctx := context.Background()
+
+	var mainPartyInitialDeposit uint64 = 1000 // 735 is the minimum required amount
+	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
+	mainPartyGenAcc := transferResp.Transfers[0].ToAccount
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, matchingPrice+2)
+
+	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, matchingPrice-2)
+
+	confirmationBuy1, err := tm.market.SubmitOrder(ctx, orderBuy1)
+	assert.NotNil(t, confirmationBuy1)
+	assert.NoError(t, err)
+	require.Equal(t, 0, len(confirmationBuy1.Trades))
+
+	genAcc, err := tm.collateraEngine.GetAccountByID(mainPartyGenAcc)
+	require.NoError(t, err)
+	require.NotNil(t, genAcc)
+
+	genAccBalancePreOrder := genAcc.Balance
+
+	orderBuy2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-2", types.Side_SIDE_BUY, mainParty, 50, matchingPrice-2)
+	confirmationBuy2, err := tm.market.SubmitOrder(ctx, orderBuy2)
+	require.NotNil(t, confirmationBuy2)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(confirmationBuy2.Trades))
+
+	conf, err := tm.market.CancelOrder(ctx, orderBuy2.PartyID, orderBuy2.Id)
+	require.NoError(t, err)
+	require.NotNil(t, conf)
+
+	genAcc, err = tm.collateraEngine.GetAccountByID(mainPartyGenAcc)
+	require.NoError(t, err)
+	require.NotNil(t, genAcc)
+
+	genAccBalancePostOrderCancellation := genAcc.Balance
+
+	//In fact I'd expect the test to pass even without updating the time.
+	tm.market.OnChainTimeUpdate(ctx, now.Add(time.Millisecond))
+
+	require.Equal(t, genAccBalancePreOrder, genAccBalancePostOrderCancellation)
+}
