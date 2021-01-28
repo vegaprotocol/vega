@@ -186,8 +186,12 @@ type Market struct {
 
 	lastMarketValueProxy    float64
 	marketValueWindowLength time.Duration
-	feeSplitter             *FeeSplitter
-	equityShares            *EquityShares
+
+	// Liquidity Fee
+	feeSplitter                *FeeSplitter
+	lpFeeDistributionTimeStep  time.Duration
+	lastEquityShareDistributed time.Time
+	equityShares               *EquityShares
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -313,7 +317,7 @@ func NewMarket(
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
-		equityShares:       NewEquityShares(0),
+		equityShares:       NewEquityShares(1),
 	}
 
 	return market, nil
@@ -476,6 +480,15 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		return false
 	}
 
+	// distribute fees each `m.lpFeeDistributionTimeStep`
+	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
+		m.lastEquityShareDistributed = t
+
+		if err := m.distributeShares(ctx); err != nil {
+			m.log.Panic("Distributing Shares", logging.Error(err))
+		}
+	}
+
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
 	m.liquidity.OnChainTimeUpdate(ctx, t)
@@ -570,6 +583,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
 		ts := m.liquidity.ProvisionsPerParty().TotalStake()
 		m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
+		m.equityShares.WithMVP(m.lastMarketValueProxy)
 
 		m.feeSplitter.TimeWindowStart(t)
 	}
@@ -2912,6 +2926,10 @@ func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
 	m.marketValueWindowLength = d
 }
 
+func (m *Market) OnMarketLiquidityProvidersFeeDistribitionTimeStep(d time.Duration) {
+	m.lpFeeDistributionTimeStep = d
+}
+
 // repriceFuncW is an adapter for getNewPeggedPrice.
 // TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
 // 1. do not accept a context, since it's not being used
@@ -3023,6 +3041,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	}
 
 	m.updateLiquidityFee(ctx)
+	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 	return nil
 }
 
@@ -3147,4 +3166,39 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 	})
 
 	return out
+}
+
+func (m *Market) distributeShares(ctx context.Context) error {
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
+
+	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
+	if err != nil {
+		return err
+	}
+
+	// We can't distribute any share when no balance.
+	if acc.Balance == 0 {
+		return nil
+	}
+
+	shares := m.equityShares.Shares()
+	if len(shares) == 0 {
+		return nil
+	}
+
+	feeTransfer := m.fee.DistributeLiquidityFees(shares, acc)
+	if feeTransfer == nil {
+		return nil
+	}
+
+	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
+	if err != nil {
+		return err
+	}
+
+	m.broker.Send(events.NewTransferResponse(ctx, resp))
+	return nil
 }

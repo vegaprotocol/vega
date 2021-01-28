@@ -1619,6 +1619,12 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
+// GetPartyGeneralAccount returns a general account given the partyID.
+func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
+	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
+	return e.GetAccountByID(generalID)
+}
+
 // CreatePartyGeneralAccount create the general account for a trader
 func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error) {
 	if !e.AssetExists(asset) {
@@ -2082,4 +2088,9 @@ func (e *Engine) accountID(marketID, partyID, asset string, ty types.AccountType
 	ln += len(asset)
 	e.idbuf[ln] = byte(ty + 48)
 	return string(e.idbuf[:ln+1])
+}
+
+func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error) {
+	liquidityAccID := e.accountID(market, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+	return e.GetAccountByID(liquidityAccID)
 }

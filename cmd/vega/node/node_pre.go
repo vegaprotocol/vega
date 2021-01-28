@@ -598,6 +598,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.BlockchainsEthereumConfig,
 			Watcher: l.nodeWallet.OnEthereumConfigUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Watcher: l.executionEngine.OnMarketLiquidityProvidersFeeDistribitionTimeStep,
+		},
 	)
 }
 

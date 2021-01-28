@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/events"
@@ -389,6 +390,52 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		totalFeesAmountsPerParty: totalFeesAmounts,
 		transfers:                transfers,
 	}, partiesFees, nil
+}
+
+func (e *Engine) DistributeLiquidityFees(shares map[string]float64, acc *types.Account) events.FeesTransfer {
+	if len(shares) == 0 {
+		return nil
+	}
+
+	ft := &feesTransfer{
+		totalFeesAmountsPerParty: map[string]uint64{},
+		transfers:                make([]*types.Transfer, 0, len(shares)),
+	}
+
+	// Get all the map keys
+	keys := make([]string, 0, len(shares))
+
+	for key := range shares {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	var floored float64
+	for _, key := range keys {
+		share := shares[key]
+		cs := math.Floor(share * float64(acc.Balance))
+		floored += cs
+
+		// populate the return value
+		ft.totalFeesAmountsPerParty[key] = uint64(cs)
+		ft.transfers = append(ft.transfers, &types.Transfer{
+			Owner: key,
+			Amount: &types.FinancialAmount{
+				Amount: int64(cs),
+				Asset:  acc.Asset,
+			},
+			MinAmount: int64(cs),
+			Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE,
+		})
+	}
+
+	// last is the party who will get the remaining from ceil
+	last := keys[len(keys)-1]
+	diff := acc.Balance - uint64(floored)
+	ft.totalFeesAmountsPerParty[last] += diff
+	ft.transfers[len(ft.transfers)-1].Amount.Amount += int64(diff)
+
+	return ft
 }
 
 // this will calculate the transfer the distressed party needs
