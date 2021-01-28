@@ -20,7 +20,7 @@ var (
 	// ErrMarketAlreadyExist signals that a market already exist
 	ErrMarketAlreadyExist = errors.New("market already exist")
 
-	// ErrMarketAlreadyExist signals that a market already exist
+	// ErrMarketDoesNotExist signals that a market already exist
 	ErrMarketDoesNotExist = errors.New("market does not exist")
 
 	// ErrUnknownProposalChange is returned if passed proposal cannot be enacted
@@ -61,7 +61,7 @@ type Engine struct {
 	time   TimeService
 }
 
-// NewEngine takes stores and engines and returns
+// NewEngine takes configs and engines and a broker and returns
 // a new execution engine to process new orders, etc.
 func NewEngine(
 	log *logging.Logger,
@@ -124,6 +124,10 @@ func (e *Engine) Hash() []byte {
 	return crypto.Hash(bytes)
 }
 
+func (e *Engine) isDebugLogging() bool {
+	return e.log.GetLevel() == logging.DebugLevel
+}
+
 func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
 	var tickSize string = "0."
 	for decimalPlaces > 1 {
@@ -135,9 +139,13 @@ func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
 }
 
 // RejectMarket will stop the execution of the market
-// and refund into the general account any funds in margins accounts from any parties
+// and refund into the general account any funds in margins accounts from any parties.
 // This works only if the market is in a PROPOSED STATE
 func (e *Engine) RejectMarket(ctx context.Context, marketid string) error {
+	if e.isDebugLogging() {
+		e.log.Debug("RejectMarket", logging.String("market-id", marketid))
+	}
+
 	mkt, ok := e.markets[marketid]
 	if !ok {
 		return ErrMarketDoesNotExist
@@ -154,6 +162,9 @@ func (e *Engine) RejectMarket(ctx context.Context, marketid string) error {
 // StartOpeningAuction will start the opening auction of the given market.
 // This will work only if the market is currently in a PROPOSED state
 func (e *Engine) StartOpeningAuction(ctx context.Context, marketid string) error {
+	if e.isDebugLogging() {
+		e.log.Debug("StartOpeningAuction", logging.String("market-id", marketid))
+	}
 	mkt, ok := e.markets[marketid]
 	if !ok {
 		return ErrMarketDoesNotExist
@@ -165,6 +176,12 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketid string) error
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process
 func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid string) error {
+	if e.isDebugLogging() {
+		e.log.Debug("SubmitMarketWithLiquidityProvision", logging.String("market", marketConfig.Id),
+			logging.String("party", party),
+			logging.String("lpid", lpid))
+	}
+
 	if err := e.submitMarket(ctx, marketConfig); err != nil {
 		return err
 	}
@@ -186,6 +203,10 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 
 // SubmitMarket will submit a new market configuration to the network
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
+	if e.isDebugLogging() {
+		e.log.Debug("SubmitMarket", logging.String("market-id", marketConfig.Id))
+	}
+
 	if err := e.submitMarket(ctx, marketConfig); err != nil {
 		return err
 	}
@@ -199,13 +220,13 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 }
 
 func (e *Engine) publishMarketInfos(ctx context.Context, mkt *Market) {
-	// we send a market data event for this market when it's created so graphql does not fail
+	// We send a market data event for this market when it's created so graphql does not fail
 	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))
 	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
 }
 
-// SubmitMarket will submit a new market configuration to the network
+// submitMarket will submit a new market configuration to the network
 func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) error {
 	if len(marketConfig.Id) == 0 {
 		return ErrNoMarketID
@@ -216,7 +237,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		return err
 	}
 
-	// ensure the asset for this new market exisrts
+	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
 	if err != nil {
 		return err
@@ -262,7 +283,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	e.markets[marketConfig.Id] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
-	// we ignore the reponse, this cannot fail as the asset
+	// we ignore the response, this cannot fail as the asset
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
 	return nil
@@ -285,7 +306,7 @@ func (e *Engine) removeMarket(mktid string) {
 func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
 
-	if e.log.GetLevel() == logging.DebugLevel {
+	if e.isDebugLogging() {
 		e.log.Debug("Submit order", logging.Order(*order))
 	}
 
@@ -324,7 +345,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
-	if e.log.GetLevel() == logging.DebugLevel {
+	if e.isDebugLogging() {
 		e.log.Debug("Amend order", logging.OrderAmendment(orderAmendment))
 	}
 
@@ -348,7 +369,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
-	if e.log.GetLevel() == logging.DebugLevel {
+	if e.isDebugLogging() {
 		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
 	}
 
@@ -438,7 +459,9 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	// update block time on id generator
 	e.idgen.NewBatch()
 
-	e.log.Debug("updating engine on new time update")
+	if e.isDebugLogging() {
+		e.log.Debug("updating engine on new time update", logging.Time("time", t))
+	}
 
 	// update collateral
 	e.collateral.OnChainTimeUpdate(ctx, t)
@@ -503,6 +526,10 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 }
 
 func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
+	if e.isDebugLogging() {
+		e.log.Debug("GetMarketData", logging.String("market-id", mktid))
+	}
+
 	mkt, ok := e.markets[mktid]
 	if !ok {
 		return types.MarketData{}, types.ErrInvalidMarketID
@@ -511,6 +538,10 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 }
 
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
+	if e.isDebugLogging() {
+		e.log.Debug("SubmitLiquidityProvision", logging.String("party", party), logging.String("lpid", id))
+	}
+
 	mkt, ok := e.markets[sub.MarketID]
 	if !ok {
 		return types.ErrInvalidMarketID
@@ -520,6 +551,10 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 }
 
 func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v interface{}) error {
+	if e.isDebugLogging() {
+		e.log.Debug("OnMarketMarginScalingFectorsUpdate")
+	}
+
 	scalingFactors, ok := v.(*types.ScalingFactors)
 	if !ok {
 		return errors.New("invalid types for Margin ScalingFactors")
@@ -534,6 +569,10 @@ func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v inter
 }
 
 func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
+	if e.isDebugLogging() {
+		e.log.Debug("OnMarketFeeFactorsMakerFeeUpdate", logging.Float64("fee factor", f))
+	}
+
 	for _, mkt := range e.marketsCpy {
 		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, f); err != nil {
 			return err
@@ -543,6 +582,10 @@ func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, f float64
 }
 
 func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
+	if e.isDebugLogging() {
+		e.log.Debug("OmMarketFeeFactorsInfrastructureFeeUpdate", logging.Float64("fee factor", f))
+	}
+
 	for _, mkt := range e.marketsCpy {
 		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, f); err != nil {
 			return err
