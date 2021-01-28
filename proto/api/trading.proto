@@ -9,21 +9,21 @@ import "chain_events.proto";
 import "assets.proto";
 import "events.proto";
 
-package api;
+package api.v1;
 
 import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-service trading {
+service Trading {
 
   // Prepare a submit order request
-  rpc PrepareSubmitOrder(SubmitOrderRequest) returns (PrepareSubmitOrderResponse);
+  rpc PrepareSubmitOrder(PrepareSubmitOrderRequest) returns (PrepareSubmitOrderResponse);
 
   // Prepare a cancel order request
-  rpc PrepareCancelOrder(CancelOrderRequest) returns (PrepareCancelOrderResponse);
+  rpc PrepareCancelOrder(PrepareCancelOrderRequest) returns (PrepareCancelOrderResponse);
 
   // Prepare an amend order request
-  rpc PrepareAmendOrder(AmendOrderRequest) returns (PrepareAmendOrderResponse);
+  rpc PrepareAmendOrder(PrepareAmendOrderRequest) returns (PrepareAmendOrderResponse);
 
   // Request a withdrawal
   rpc PrepareWithdraw(PrepareWithdrawRequest) returns (PrepareWithdrawResponse);
@@ -132,24 +132,24 @@ message PrepareAmendOrderResponse {
 }
 
 // Request to submit a new order
-message SubmitOrderRequest {
+message PrepareSubmitOrderRequest {
   // An order submission
   vega.OrderSubmission submission = 1;
 }
 
 // Request to cancel an existing order
-message CancelOrderRequest {
+message PrepareCancelOrderRequest {
   // An order cancellation
   vega.OrderCancellation cancellation = 1;
 }
 
 // Request to amend an existing order
-message AmendOrderRequest {
+message PrepareAmendOrderRequest {
   // An order amendment
   vega.OrderAmendment amendment = 1;
 }
 
-service trading_data {
+service TradingDataService {
 
   // -- Accounts --
 
@@ -189,7 +189,7 @@ service trading_data {
   // -- Orders --
 
   // Get an Order by Market and Order ID
-  rpc OrderByMarketAndID(OrderByMarketAndIdRequest) returns (OrderByMarketAndIdResponse);
+  rpc OrderByMarketAndID(OrderByMarketAndIDRequest) returns (OrderByMarketAndIDResponse);
 
   // Get an Order by Pending Order reference (UUID)
   rpc OrderByReference(OrderByReferenceRequest) returns (OrderByReferenceResponse);
@@ -201,10 +201,10 @@ service trading_data {
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
 
   // Get a specific order by order ID
-  rpc OrderByID(OrderByIDRequest) returns (vega.Order);
+  rpc OrderByID(OrderByIDRequest) returns (OrderByIDResponse); 
 
   // Get all versions of the order by its orderID
-  rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsResponse);
+  rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsByIDResponse);
 
   // -- Parties --
 
@@ -266,57 +266,57 @@ service trading_data {
   rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalByReferenceResponse);
 
   // Subscribe to a stream of all governance updates
-  rpc ObserveGovernance(google.protobuf.Empty) returns (stream vega.GovernanceData);
+  rpc ObserveGovernance(google.protobuf.Empty) returns (stream ObserveGovernanceResponse);
 
   // Subscribe to a stream of proposal updates
-  rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream vega.GovernanceData);
+  rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream ObservePartyProposalsResponse);
 
   // Subscribe to a stream of votes cast by a specific party
-  rpc ObservePartyVotes(ObservePartyVotesRequest) returns (stream vega.Vote);
+  rpc ObservePartyVotes(ObservePartyVotesRequest) returns (stream ObservePartyVotesResponse);
 
   // Subscribe to a stream of proposal votes
-  rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream vega.Vote);
+  rpc ObserveProposalVotes(ObserveProposalVotesRequest) returns (stream ObserveProposalVotesResponse);
 
   // Subscribe to a stream of events from the core
-  rpc ObserveEventBus(stream ObserveEventsRequest) returns (stream ObserveEventsResponse);
+  rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
 
   // -- Misc --
 
   // Get Statistics on Vega
-  rpc Statistics(google.protobuf.Empty) returns (vega.Statistics);
+  rpc Statistics(google.protobuf.Empty) returns (StatisticsResponse);
 
   // Get Time
-  rpc GetVegaTime(google.protobuf.Empty) returns (VegaTimeResponse);
+  rpc GetVegaTime(google.protobuf.Empty) returns (GetVegaTimeResponse);
 
   // Subscribe to a stream of Accounts
-  rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream vega.Account);
+  rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream AccountsSubscribeResponse);
 
   // Subscribe to a stream of Candles
-  rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream vega.Candle);
+  rpc CandlesSubscribe(CandlesSubscribeRequest) returns (stream CandlesSubscribeResponse);
 
   // Subscribe to a stream of Margin Levels
-  rpc MarginLevelsSubscribe(MarginLevelsSubscribeRequest) returns (stream vega.MarginLevels);
+  rpc MarginLevelsSubscribe(MarginLevelsSubscribeRequest) returns (stream MarginLevelsSubscribeResponse);
 
   // Subscribe to a stream of Market Depth
-  rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream vega.MarketDepth);
+  rpc MarketDepthSubscribe(MarketDepthSubscribeRequest) returns (stream MarketDepthSubscribeResponse);
 
   // Subscribe to a stream of Market Depth Price Level Updates
-  rpc MarketDepthUpdatesSubscribe(MarketDepthUpdatesSubscribeRequest) returns (stream vega.MarketDepthUpdate);
+  rpc MarketDepthUpdatesSubscribe(MarketDepthUpdatesSubscribeRequest) returns (stream MarketDepthUpdatesSubscribeResponse);
 
   // Subscribe to a stream of Markets Data
-  rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream vega.MarketData);
+  rpc MarketsDataSubscribe(MarketsDataSubscribeRequest) returns (stream MarketsDataSubscribeResponse);
 
   // Subscribe to a stream of Orders
-  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersStream);
+  rpc OrdersSubscribe(OrdersSubscribeRequest) returns (stream OrdersSubscribeResponse);
 
   // Subscribe to a stream of Positions
-  rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream vega.Position);
+  rpc PositionsSubscribe(PositionsSubscribeRequest) returns (stream PositionsSubscribeResponse);
 
   // Subscribe to a stream of Trades
-  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesStream);
+  rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesSubscribeResponse);
 
   // Subscribe to a stream of Transfer Responses
-  rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream vega.TransferResponse);
+  rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream TransferResponsesSubscribeResponse);
 
   // Get an aggregate of signatures from all the nodes of the network
   rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
@@ -507,10 +507,18 @@ message GetProposalByReferenceResponse {
   vega.GovernanceData data = 1;
 }
 
+message ObserveGovernanceResponse {
+  vega.GovernanceData data = 1;
+}
+  
 // Request to subscribe to a stream of governance proposals for a party
 message ObservePartyProposalsRequest {
   // Party identifier, required field
   string partyID = 1  [(validator.field) = {string_not_empty : true }];
+}
+
+message ObservePartyProposalsResponse {
+  repeated vega.BusEvent events = 1;
 }
 
 // Request to subscribe to a stream of governance votes for a proposal
@@ -519,10 +527,18 @@ message ObserveProposalVotesRequest {
   string proposalID = 1  [(validator.field) = {string_not_empty : true }];
 }
 
+message ObserveProposalVotesResponse {
+  vega.Vote vote = 1;
+}
+
 // Request to subscribe to a stream of governance votes for a party
 message ObservePartyVotesRequest {
   // Party identifier, required field
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+message ObservePartyVotesResponse {
+  vega.Vote vega= 1;
 }
 
 // Request to subscribe to a stream of MarginLevels data matching the given party identifier
@@ -532,6 +548,10 @@ message MarginLevelsSubscribeRequest {
   string partyID = 1 [(validator.field) = {string_not_empty : true }];
   // Market identifier
   string marketID = 2;
+}
+
+message MarginLevelsSubscribeResponse {
+  vega.MarginLevels marginLevels = 1;
 }
 
 // Request for margin levels for a party
@@ -553,6 +573,10 @@ message MarginLevelsResponse {
 message MarketsDataSubscribeRequest {
   // Market identifier
   string marketID = 1;
+}
+
+message MarketsDataSubscribeResponse {
+  vega.MarketData marketData = 1;
 }
 
 // Request for market data for a market
@@ -656,6 +680,10 @@ message AccountsSubscribeRequest {
   vega.AccountType type = 4;
 }
 
+message AccountsSubscribeResponse {
+  vega.Account account = 1;
+}
+
 // Request to subscribe to a stream of (Orders)[#vega.Order]
 message OrdersSubscribeRequest {
   // The fields for market identifier and party identifier are optional filters:
@@ -692,10 +720,18 @@ message CandlesSubscribeRequest {
   vega.Interval interval = 2;
 }
 
+message CandlesSubscribeResponse {
+  vega.Candle candle = 1;
+}
+
 // Request to subscribe to a stream of (MarketDepth)[#vega.MarketDepth] data
 message MarketDepthSubscribeRequest {
   // Market identifier, required field.
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
+}
+
+message MarketDepthSubscribeResponse {
+  vega.MarketDepth marketDepth = 1;
 }
 
 // Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate] data
@@ -704,12 +740,20 @@ message MarketDepthUpdatesSubscribeRequest {
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
 }
 
+message MarketDepthUpdatesSubscribeResponse {
+  vega.MarketDepthUpdate update = 1; 
+}
+
 // Request to subscribe to a stream of (Positions)[#vega.Position]
 message PositionsSubscribeRequest {
   // Party identifier, optional field
   string partyID = 1;
   // Market identifier, optional field
   string marketID = 2;
+}
+
+message PositionsSubscribeResponse {
+  vega.Position position = 1;
 }
 
 // Request for a list of orders for a market
@@ -741,7 +785,7 @@ message OrdersByPartyResponse {
 }
 
 // Request for an order on a market given an order identifier
-message OrderByMarketAndIdRequest {
+message OrderByMarketAndIDRequest {
   // Market identifier, required field
   string marketID = 1 [(validator.field) = {string_not_empty : true}];
   // Order identifier, required field
@@ -749,7 +793,7 @@ message OrderByMarketAndIdRequest {
 }
 
 // Response for an order on a market given an order identifier
-message OrderByMarketAndIdResponse {
+message OrderByMarketAndIDResponse {
   // An order, if found
   vega.Order order = 1;
 }
@@ -842,7 +886,7 @@ message PositionsByPartyResponse {
 }
 
 // Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
-message VegaTimeResponse {
+message GetVegaTimeResponse {
   // Timestamp representation of current VegaTime as represented in
   // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
   int64 timestamp = 1;
@@ -860,15 +904,19 @@ message Pagination {
 }
 
 // A stream of orders
-message OrdersStream {
+message OrdersSubscribeResponse {
   // A list of 0 or more orders
   repeated vega.Order orders = 1;
 }
 
 // A stream of trades
-message TradesStream {
+message TradesSubscribeResponse {
   // A list of 0 or more trades
   repeated vega.Trade trades = 1;
+}
+
+message TransferResponsesSubscribeResponse {
+  vega.TransferResponse response = 1;
 }
 
 // Request for a list of accounts for a party
@@ -973,6 +1021,10 @@ message OrderByIDRequest {
   uint64 version = 2;
 }
 
+message OrderByIDResponse {
+  vega.Order order = 1;
+}
+
 // Request for a list of all versions of an order given the specified order identifier
 message OrderVersionsByIDRequest {
   // Order identifier, required field
@@ -982,7 +1034,7 @@ message OrderVersionsByIDRequest {
 }
 
 // Response to a request for a list of all versions of an order
-message OrderVersionsResponse {
+message OrderVersionsByIDResponse {
   // A list of 0 or more orders (list will contain the same order but with different versions, if it has been amended)
   repeated vega.Order orders = 1;
 }
@@ -1016,7 +1068,7 @@ message EstimateMarginResponse {
 }
 
 // Request to subscribe to a stream of one or more event types from the Vega event bus
-message ObserveEventsRequest {
+message ObserveEventBusRequest {
   // One or more types of event, required field
   repeated vega.BusEventType type = 1;
   // Market identifier, optional field
@@ -1034,9 +1086,13 @@ message ObserveEventsRequest {
 }
 
 // Response to a subscribed stream of events from the Vega event bus
-message ObserveEventsResponse {
+message ObserveEventBusResponse {
   // One or more events
   repeated vega.BusEvent events = 1;
+}
+
+message StatisticsResponse {
+  vega.Statistics statistics = 1;
 }
 
 // A request to get a list of withdrawal from a given party

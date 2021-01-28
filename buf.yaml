@@ -23,13 +23,14 @@ lint:
     - PACKAGE_SAME_DIRECTORY
     - FIELD_LOWER_SNAKE_CASE
     - ONEOF_LOWER_SNAKE_CASE
+    - RPC_REQUEST_RESPONSE_UNIQUE
   ignore:
     - google/
     - github.com/
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: false
-  rpc_allow_google_protobuf_empty_requests: false
-  rpc_allow_google_protobuf_empty_responses: false
+  rpc_allow_google_protobuf_empty_requests: true
+  rpc_allow_google_protobuf_empty_responses: true
 breaking:
   use:
     - WIRE_JSON
