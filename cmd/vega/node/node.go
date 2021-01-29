@@ -139,6 +139,7 @@ type NodeCommand struct {
 	executionEngine *execution.Engine
 	governance      *governance.Engine
 	collateral      *collateral.Engine
+	oracles         *processor.Oracles
 	netParams       *netparams.Store
 
 	mktscfg []types.Market
