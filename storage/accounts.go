@@ -147,7 +147,11 @@ func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.Acc
 		return nil, ErrMissingPartyID
 	}
 
-	if ty != types.AccountType_ACCOUNT_TYPE_GENERAL && ty != types.AccountType_ACCOUNT_TYPE_MARGIN && ty != types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW && ty != types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+	if ty != types.AccountType_ACCOUNT_TYPE_GENERAL &&
+		ty != types.AccountType_ACCOUNT_TYPE_MARGIN &&
+		ty != types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW &&
+		ty != types.AccountType_ACCOUNT_TYPE_BOND &&
+		ty != types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return nil, errors.New("invalid type for query, only GENERAL, MARGIN, LOCK_WITHDRAW AND BOND accounts for a party supported")
 	}
 

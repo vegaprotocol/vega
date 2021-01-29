@@ -189,6 +189,7 @@ func TestInitialDeplyFailsWorksLater(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
 	lps := &types.LiquidityProvisionSubmission{
@@ -233,7 +234,7 @@ func TestInitialDeplyFailsWorksLater(t *testing.T) {
 		order.Id = uuid.NewV4().String()
 	}).AnyTimes()
 
-	newOrders, amendments, err := tng.engine.Update(markPrice, fn, []*types.Order{})
+	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, fn, []*types.Order{})
 	require.NoError(t, err)
 	require.Len(t, newOrders, 3)
 	require.Len(t, amendments, 0)
@@ -355,6 +356,7 @@ func TestUpdate(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
 	lps := &types.LiquidityProvisionSubmission{
@@ -401,7 +403,7 @@ func TestUpdate(t *testing.T) {
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, amendments, err := tng.engine.Update(markPrice, fn, orders)
+	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 3)
@@ -411,7 +413,7 @@ func TestUpdate(t *testing.T) {
 		)
 	}
 
-	newOrders, amendments, err = tng.engine.Update(markPrice, fn, orders)
+	newOrders, amendments, err = tng.engine.Update(context.Background(), markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 0)

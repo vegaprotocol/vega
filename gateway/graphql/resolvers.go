@@ -941,7 +941,11 @@ func (r *myPartyResolver) Accounts(ctx context.Context, party *types.Party,
 	}
 	if accType != nil {
 		accTy, err = convertAccountTypeToProto(*accType)
-		if err != nil || (accTy != types.AccountType_ACCOUNT_TYPE_GENERAL && accTy != types.AccountType_ACCOUNT_TYPE_MARGIN || accTy != types.AccountType_ACCOUNT_TYPE_BOND) {
+		if err != nil ||
+			(accTy != types.AccountType_ACCOUNT_TYPE_GENERAL &&
+				accTy != types.AccountType_ACCOUNT_TYPE_MARGIN &&
+				accTy != types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW &&
+				accTy != types.AccountType_ACCOUNT_TYPE_BOND) {
 			return nil, fmt.Errorf("invalid account type for party %v", accType)
 		}
 	}
