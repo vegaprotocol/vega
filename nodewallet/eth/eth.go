@@ -153,7 +153,6 @@ func (w *Wallet) PubKeyOrAddress() []byte {
 		panic(err)
 	}
 
-	fmt.Printf("key: %v\n", string(jsonkey))
 	return w.acc.Address.Bytes()
 }
 
