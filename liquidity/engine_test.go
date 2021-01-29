@@ -122,6 +122,7 @@ func testSubmissionCRUD(t *testing.T) {
 		Id:               "some-id-1",
 		MarketId:         tng.marketID,
 		PartyId:          party,
+		Fee:              "0.5",
 		CommitmentAmount: lps1.CommitmentAmount,
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
@@ -295,6 +296,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	lps := &types.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
+		Fee:              "0.1",
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
@@ -305,14 +307,26 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	}
 
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		Id:        id,
-		MarketId:  tng.marketID,
-		PartyId:   party,
-		CreatedAt: now.UnixNano(),
-		Status:    types.LiquidityProvision_STATUS_REJECTED,
+		Id:               id,
+		MarketId:         tng.marketID,
+		PartyId:          party,
+		CreatedAt:        now.UnixNano(),
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		Fee:              "0.1",
+		CommitmentAmount: 10,
+		Sells:            []*types.LiquidityOrderReference{},
+		Buys: []*types.LiquidityOrderReference{
+			{
+				LiquidityOrder: &types.LiquidityOrder{
+					Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+					Offset:     -1,
+					Proportion: 1,
+				},
+			},
+		},
 	})
 
-	tng.broker.EXPECT().Send(eq(t, expected)).Times(3)
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
 	require.Error(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
@@ -321,6 +335,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	lps = &types.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
+		Fee:              "0.2",
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
@@ -330,14 +345,51 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		},
 	}
 
+	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
+		Id:               id,
+		Fee:              "0.2",
+		MarketID:         tng.marketID,
+		PartyID:          party,
+		CreatedAt:        now.UnixNano(),
+		CommitmentAmount: 10,
+		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		Buys:             []*types.LiquidityOrderReference{},
+		Sells: []*types.LiquidityOrderReference{
+			{
+				LiquidityOrder: &types.LiquidityOrder{
+					Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+					Offset:     -1,
+					Proportion: 1,
+				},
+			},
+		},
+	})
+
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
+
 	require.Error(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
 
 	lps = &types.LiquidityProvisionSubmission{
+		Fee:              "0.3",
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
 	}
+
+	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
+		Id:               id,
+		MarketID:         tng.marketID,
+		Fee:              "0.3",
+		PartyID:          party,
+		CreatedAt:        now.UnixNano(),
+		CommitmentAmount: 10,
+		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		Buys:             []*types.LiquidityOrderReference{},
+		Sells:            []*types.LiquidityOrderReference{},
+	})
+
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
 	require.Error(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
