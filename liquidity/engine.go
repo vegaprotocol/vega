@@ -124,7 +124,7 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
 
-func (m *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
+func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
 
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel don't need validations
@@ -557,6 +557,5 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side) error {
 		}
 
 	}
-
 	return nil
 }
