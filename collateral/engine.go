@@ -2059,6 +2059,23 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 	return nil
 }
 
+//TODO: Add comment
+//TODO: Try to do on a copy so we actually only do anything once it's confirmed it can be done
+//TODO: Send event
+//TODO: Add test
+func (e *Engine) RollbackTransfers(ctx context.Context, tresp *types.TransferResponse) error {
+	for _, t := range tresp.Transfers {
+		err := e.DecrementBalance(ctx, t.ToAccount, t.Amount)
+		if err != nil {
+			return err
+		}
+		if err = e.IncrementBalance(ctx, t.FromAccount, t.Amount); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // GetAccountByID will return an account using the given id
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	acc, ok := e.accs[id]

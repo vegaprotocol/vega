@@ -765,7 +765,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Cancel all the orders that were invalid
 	for _, order := range ordersToCancel {
-		m.cancelOrder(ctx, order.PartyId, order.Id)
+		m.cancelOrder(ctx, order.PartyID, order.Id, false)
 	}
 
 	// Send an event bus update
@@ -804,7 +804,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
-		_, err := m.cancelOrder(ctx, order.PartyId, order.Id)
+		_, err := m.cancelOrder(ctx, order.PartyID, order.Id, false)
 		if err != nil {
 			m.log.Error("Failed to cancel order", logging.String("OrderID", order.Id))
 		}
@@ -1808,10 +1808,30 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
+//TODO: Don't return transfers
 func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 	return m.calcMargins(ctx, pos, order)
+}
+
+// this function handles moving money after settle MTM + risk margin updates
+// but does not move the money between trader accounts (ie not to/from margin accounts after risk)
+func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin, price uint64, pos *positions.MarketPosition) (events.Risk, error) {
+	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
+	defer timer.EngineTimeCounterAdd()
+
+	// let risk engine do its thing here - it returns a slice of money that needs
+	// to be moved to and from margin accounts
+	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(ctx, e, price)
+	if err != nil {
+		return nil, err
+	}
+	if riskUpdate == nil {
+		return nil, nil
+	}
+
+	return riskUpdate, nil
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -1924,11 +1944,11 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		return nil, ErrTradingNotAllowed
 	}
 
-	return m.cancelOrder(ctx, partyID, orderID)
+	return m.cancelOrder(ctx, partyID, orderID, false)
 }
 
 // CancelOrder cancels the given order
-func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string, forceCancelLiquidity bool) (*types.OrderCancellationConfirmation, error) {
 
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
@@ -1938,7 +1958,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	}
 
 	// cancelling and amending an order that is part of the LP commitment isn't allowed
-	if m.liquidity.IsLiquidityOrder(partyID, orderID) {
+	if !forceCancelLiquidity && m.liquidity.IsLiquidityOrder(partyID, orderID) {
 		return nil, types.ErrEditNotAllowed
 	}
 
@@ -2158,7 +2178,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if remaining is reduces <= 0, then order is cancelled
 	if amendedOrder.Remaining <= 0 {
 		confirm, err := m.cancelOrder(
-			ctx, existingOrder.PartyId, existingOrder.Id)
+			ctx, existingOrder.PartyId, existingOrder.Id, false)
 		if err != nil {
 			return nil, err
 		}
@@ -2943,21 +2963,14 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		if err == nil {
 			return
 		}
-		if transfer.Type == types.TransferType_TRANSFER_TYPE_BOND_HIGH {
-			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_LOW
-		}
-		transfer.Amount.Amount = -transfer.Amount.Amount
-		transfer.MinAmount = -transfer.MinAmount
-
-		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
-		if newerr != nil {
+		if newerr := m.collateral.RollbackTransfers(ctx, tresp); newerr != nil {
 			m.log.Debug("unable to rollback bon account topup",
 				logging.String("party", party),
 				logging.Int64("amount", amount),
 				logging.Error(err))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
-		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+		//m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}()
 
 	existingOrders := m.matching.GetOrdersPerParty(party)
@@ -2993,7 +3006,7 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		}
 		party := newOrders[0].PartyId
 		for _, v := range submittedIDs {
-			_, newerr := m.cancelOrder(ctx, party, v)
+			_, newerr := m.cancelOrder(ctx, party, v, true)
 			if newerr != nil {
 				m.log.Error("unable to rollback order via cancel",
 					logging.Error(newerr),

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/positions"
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -96,16 +97,10 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	if err != nil {
 		return nil, err
 	}
-	if closed != nil && closed.MarginShortFall() > 0 {
-		// @TODO handle closed
-		return nil, nil
-	}
-	if tr == nil {
-		return nil, nil
-	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
-	// create the rollback transaction
-	// for some reason, we can get a transfer object returned, but no actual transfers?
+
+	// this is a rollback transfer to be used in case the order do not
+	// trade and do not stay in the book to prevent for margin being
+	// locked in the margin account forever
 	var riskRollback *types.Transfer
 	if len(tr.Transfers) > 0 {
 		riskRollback = &types.Transfer{
@@ -118,7 +113,40 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 			MinAmount: int64(tr.Transfers[0].Amount),
 		}
 	}
+
+	if closed != nil {
+		// if closePose is not nil then we return an error as well, it means the trader did not have enough
+		// monies to reach the InitialMargin
+
+		if closed.MarginShortFall() > 0 {
+			// TODO(): we nee to cover cases where we have a margin short fall
+		}
+
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("party did not have enough collateral to reach the InitialMargin",
+				logging.Order(*order),
+				logging.String("market-id", m.GetID()))
+		}
+
+		// Rollback transfers
+		if err := m.collateral.RollbackTransfers(ctx, tr); err != nil {
+			m.log.Error(
+				"Failed to roll back margin transfers for party",
+				logging.String("party-id", order.PartyId),
+				logging.Error(err),
+			)
+		}
+
+		return riskRollback, ErrMarginCheckInsufficient
+	}
+
+	if tr == nil {
+		return nil, nil
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
+
 	return riskRollback, nil
+
 }
 
 func (m *Market) getMarkPrice(o *types.Order) uint64 {

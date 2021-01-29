@@ -116,6 +116,7 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) err
 	// now delete all stuff
 	delete(e.liquidityOrders, party)
 	delete(e.orders, party)
+	delete(e.provisions, party)
 	return nil
 }
 
