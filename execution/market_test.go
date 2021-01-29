@@ -70,10 +70,15 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(
 		func(evt events.Event) {
+			fmt.Printf("EVENT: %v | %v\n", evt.Type(), evt)
 			te := evt.Type()
 			if te == events.OrderEvent {
 				tm.orderEventCount++
+			} else if te == events.LiquidityProvisionEvent {
+				e := evt.(*events.LiquidityProvision)
+				fmt.Printf("%v\n", e.Proto().Status.String())
 			}
+
 			tm.eventCount++
 			tm.events = append(tm.events, evt)
 		},

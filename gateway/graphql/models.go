@@ -1104,6 +1104,8 @@ const (
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
 	// A liquidity provision was invalid and got rejected
 	LiquidityProvisionStatusRejected LiquidityProvisionStatus = "Rejected"
+	// The liquidity provision is valid and accepted by network, but oreders aren't deployed
+	LiquidityProvisionStatusUndeployed LiquidityProvisionStatus = "Undeployed"
 )
 
 var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
@@ -1111,11 +1113,12 @@ var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
 	LiquidityProvisionStatusStopped,
 	LiquidityProvisionStatusCancelled,
 	LiquidityProvisionStatusRejected,
+	LiquidityProvisionStatusUndeployed,
 }
 
 func (e LiquidityProvisionStatus) IsValid() bool {
 	switch e {
-	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected:
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected, LiquidityProvisionStatusUndeployed:
 		return true
 	}
 	return false

@@ -6734,6 +6734,8 @@ enum LiquidityProvisionStatus {
   Cancelled
   "A liquidity provision was invalid and got rejected"
   Rejected
+  "The liquidity provision is valid and accepted by network, but oreders aren't deployed"
+  Undeployed
 }
 
 type LiquidityOrderReference {
