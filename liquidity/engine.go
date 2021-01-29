@@ -21,6 +21,7 @@ var (
 // Broker - event bus
 type Broker interface {
 	Send(e events.Event)
+	SendBatch(evts []events.Event)
 }
 
 // RiskModel allows calculation of min/max price range and a probability of trading.
@@ -248,7 +249,7 @@ func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*t
 
 // Update gets the order changes.
 // It keeps track of all LP orders.
-func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
+func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
 	var (
 		newOrders  []*types.Order
 		amendments []*types.OrderAmendment
@@ -282,6 +283,13 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 		}
 		e.undeployedProvisions = stillUndeployed
 	}
+
+	// send a batch of updates
+	evts := []events.Event{}
+	for _, lp := range e.provisions {
+		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, lp))
+	}
+	e.broker.SendBatch(evts)
 
 	return newOrders, amendments, nil
 }

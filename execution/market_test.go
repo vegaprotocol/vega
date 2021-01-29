@@ -67,7 +67,19 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 	}
 
 	// catch all expected calls
-	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(
+		func(evts []events.Event) {
+			fmt.Printf("SEND BATCH\n\n")
+			for _, evt := range evts {
+				fmt.Printf("EVENT: %v | %v\n", evt.Type(), evt)
+				if evt.Type() == events.LiquidityProvisionEvent {
+					e := evt.(*events.LiquidityProvision)
+					fmt.Printf("%v\n", e.Proto().Status.String())
+				}
+			}
+
+		},
+	)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(
 		func(evt events.Event) {
 			fmt.Printf("EVENT: %v | %v\n", evt.Type(), evt)

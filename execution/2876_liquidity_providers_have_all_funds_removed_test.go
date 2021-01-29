@@ -17,9 +17,13 @@ func TestIssue2876(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 30})
 	ctx := context.Background()
 
+	tm.market.OnChainTimeUpdate(ctx, now)
+
 	addAccountWithAmount(tm, "trader-0", 100000000)
 	addAccountWithAmount(tm, "trader-1", 100000000)
 	addAccountWithAmount(tm, "trader-2", 100000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(5)
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-0", 20, 3500)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -103,12 +107,12 @@ func TestIssue2876(t *testing.T) {
 	// but also some margin to cover the orders
 	marginAccount, err = tm.collateraEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 2646225, int(marginAccount.Balance))
+	assert.Equal(t, 13219725, int(marginAccount.Balance))
 
 	// but also some funds left in the genearal
 	generalAccount, err = tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 96353775, int(generalAccount.Balance))
+	assert.Equal(t, 85780275, int(generalAccount.Balance))
 
 	assert.Equal(t, tm.market.GetPeggedOrderCount(), 4)
 }
