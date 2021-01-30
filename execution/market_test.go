@@ -1858,7 +1858,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 func getMarketOrder(tm *testMarket,
 	now time.Time,
 	orderType types.Order_Type,
-	orderTIME_IN_FORCE types.Order_TimeInForce,
+	orderTIF types.Order_TimeInForce,
 	id string,
 	side types.Side,
 	partyID string,
@@ -1866,7 +1866,7 @@ func getMarketOrder(tm *testMarket,
 	price uint64) *types.Order {
 	order := &types.Order{
 		Type:        orderType,
-		TimeInForce: orderTIME_IN_FORCE,
+		TimeInForce: orderTIF,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          id,
 		Side:        side,

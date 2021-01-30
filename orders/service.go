@@ -31,8 +31,8 @@ var (
 	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
 	// ErrInvalidAmendmentSizeDelta ...
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
-	// ErrInvalidAmendOrderTIME_IN_FORCE ...
-	ErrInvalidAmendOrderTIME_IN_FORCE = errors.New("invalid amend order tif (cannot be IOC and FOK)")
+	// ErrInvalidAmendOrderTIF ...
+	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 	// ErrEmptySubmitTransactionRequest empty transaction
@@ -47,8 +47,8 @@ var (
 	ErrNoType = errors.New("no value has been set for the type")
 	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
 	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
-	// ErrCancelOrderWithOrderIdRequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
-	ErrCancelOrderWithOrderIdRequireMarketID = errors.New("cancel order with orderID require marketID")
+	// ErrCancelOrderWithOrderID RequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
+	ErrCancelOrderWithOrderIDRequireMarketID = errors.New("cancel order with orderID require marketID")
 	// ErrCannotAmendToGFA it is not allowed to amend an order to GFA time in force
 	ErrCannotAmendToGFA = errors.New("cannot amend to time in force GFA")
 	// ErrCannotAmendToGFN it is not allowed to amend an order to GFN time in force
@@ -245,7 +245,7 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 
 	// ensure that if orderID is specified marketId is as well
 	if len(order.OrderId) > 0 && len(order.MarketId) <= 0 {
-		return ErrCancelOrderWithOrderIdRequireMarketID
+		return ErrCancelOrderWithOrderIDRequireMarketID
 	}
 
 	return nil

@@ -622,7 +622,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 
 func TestPeggedOrders(t *testing.T) {
 	t.Run("pegged orders must be LIMIT orders ", testPeggedOrderTypes)
-	t.Run("pegged orders must be either GTT or GTC ", testPeggedOrderTIME_IN_FORCEs)
+	t.Run("pegged orders must be either GTT or GTC ", testPeggedOrderTIFs)
 	t.Run("pegged orders buy side validation", testPeggedOrderBuys)
 	t.Run("pegged orders sell side validation", testPeggedOrderSells)
 	t.Run("pegged orders are parked when price below 0", testPeggedOrderParkWhenPriceBelowZero)
@@ -1010,7 +1010,7 @@ func testPeggedOrderCancelParked(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testPeggedOrderTIME_IN_FORCEs(t *testing.T) {
+func testPeggedOrderTIFs(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)

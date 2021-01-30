@@ -25,7 +25,7 @@ func TestPrepareAmendOrder(t *testing.T) {
 	t.Run("Prepare amend order reduce - success", testPrepareAmendOrderJustReduceSuccess)
 	t.Run("Prepare amend order increase - success", testPrepareAmendOrderJustIncreaseSuccess)
 	t.Run("Prepare amend order expiry - success", testPrepareAmendOrderJustExpirySuccess)
-	t.Run("Prepare amend order tif - success", testPrepareAmendOrderJustTIME_IN_FORCESuccess)
+	t.Run("Prepare amend order tif - success", testPrepareAmendOrderJustTIFSuccess)
 	t.Run("Prepare amend order expiry before creation time - success", testPrepareAmendOrderPastExpiry)
 	t.Run("Prepare amend order empty - fail", testPrepareAmendOrderEmptyFail)
 	t.Run("Prepare amend order nil - fail", testPrepareAmendOrderNilFail)
@@ -88,7 +88,7 @@ func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testPrepareAmendOrderJustTIME_IN_FORCESuccess(t *testing.T) {
+func testPrepareAmendOrderJustTIFSuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderId:     "orderid",
 		PartyId:     "partyid",
