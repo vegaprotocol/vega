@@ -19,7 +19,7 @@ func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
 }
 
 func (t Trade) MarketID() string {
-	return t.t.MarketID
+	return t.t.MarketId
 }
 
 func (t Trade) IsParty(id string) bool {
@@ -36,7 +36,7 @@ func (t Trade) Proto() types.Trade {
 
 func (t Trade) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    t.eventID(),
+		Id:    t.eventID(),
 		Block: t.TraceID(),
 		Type:  t.et.ToProto(),
 		Event: &types.BusEvent_Trade{

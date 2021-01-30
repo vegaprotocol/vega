@@ -24,15 +24,15 @@ func (m MarginLevels) MarginLevels() types.MarginLevels {
 }
 
 func (m MarginLevels) IsParty(id string) bool {
-	return (m.l.PartyID == id)
+	return (m.l.PartyId == id)
 }
 
 func (m MarginLevels) PartyID() string {
-	return m.l.PartyID
+	return m.l.PartyId
 }
 
 func (m MarginLevels) MarketID() string {
-	return m.l.MarketID
+	return m.l.MarketId
 }
 
 func (m MarginLevels) Asset() string {
@@ -45,7 +45,7 @@ func (m MarginLevels) Proto() types.MarginLevels {
 
 func (m MarginLevels) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    m.eventID(),
+		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
 		Event: &types.BusEvent_MarginLevels{

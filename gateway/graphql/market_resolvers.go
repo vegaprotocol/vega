@@ -37,7 +37,7 @@ func (r *myMarketResolver) LiquidityProvisions(
 
 func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*types.MarketData, error) {
 	req := protoapi.MarketDataByIDRequest{
-		MarketID: market.Id,
+		MarketId: market.Id,
 	}
 	res, err := r.tradingDataClient.MarketDataByID(ctx, &req)
 	if err != nil {
@@ -51,7 +51,7 @@ func (r *myMarketResolver) Orders(ctx context.Context, market *types.Market,
 	skip, first, last *int) ([]*types.Order, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.OrdersByMarketRequest{
-		MarketID:   market.Id,
+		MarketId:   market.Id,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.OrdersByMarket(ctx, &req)
@@ -66,7 +66,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 	skip, first, last *int) ([]*types.Trade, error) {
 	p := makePagination(skip, first, last)
 	req := protoapi.TradesByMarketRequest{
-		MarketID:   market.Id,
+		MarketId:   market.Id,
 		Pagination: p,
 	}
 	res, err := r.tradingDataClient.TradesByMarket(ctx, &req)
@@ -84,7 +84,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 		return nil, errors.New("market missing or empty")
 	}
 
-	req := protoapi.MarketDepthRequest{MarketID: market.Id}
+	req := protoapi.MarketDepthRequest{MarketId: market.Id}
 	if maxDepth != nil {
 		if *maxDepth <= 0 {
 			return nil, errors.New("invalid maxDepth, must be a positive number")
@@ -101,7 +101,7 @@ func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxD
 	}
 
 	return &types.MarketDepth{
-		MarketID:       res.MarketID,
+		MarketId:       res.MarketId,
 		Buy:            res.Buy,
 		Sell:           res.Sell,
 		SequenceNumber: res.SequenceNumber,
@@ -126,7 +126,7 @@ func (r *myMarketResolver) Candles(ctx context.Context, market *types.Market,
 	}
 
 	req := protoapi.CandlesRequest{
-		MarketID:       mkt,
+		MarketId:       mkt,
 		SinceTimestamp: since.UnixNano(),
 		Interval:       pinterval,
 	}
@@ -145,8 +145,8 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, p
 	// get margin account for a party
 	if partyID != nil {
 		req := protoapi.PartyAccountsRequest{
-			PartyID:  *partyID,
-			MarketID: market.Id,
+			PartyId:  *partyID,
+			MarketId: market.Id,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    "",
 		}
@@ -162,7 +162,7 @@ func (r *myMarketResolver) Accounts(ctx context.Context, market *types.Market, p
 	}
 	// get accounts for the market
 	req := protoapi.MarketAccountsRequest{
-		MarketID: market.Id,
+		MarketId: market.Id,
 		Asset:    "", // all assets
 	}
 	res, err := r.tradingDataClient.MarketAccounts(ctx, &req)

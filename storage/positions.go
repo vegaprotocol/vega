@@ -31,16 +31,16 @@ func (ts *Trade) GetTradesBySideBuckets(ctx context.Context, party string) map[s
 	}
 
 	for idx, trade := range tradesByTimestamp {
-		if _, ok := marketBuckets[trade.MarketID]; !ok {
-			marketBuckets[trade.MarketID] = &MarketBucket{[]*types.Trade{}, []*types.Trade{}, 0, 0, 1}
+		if _, ok := marketBuckets[trade.MarketId]; !ok {
+			marketBuckets[trade.MarketId] = &MarketBucket{[]*types.Trade{}, []*types.Trade{}, 0, 0, 1}
 		}
 		if trade.Buyer == party {
-			marketBuckets[trade.MarketID].Buys = append(marketBuckets[trade.MarketID].Buys, tradesByTimestamp[idx])
-			marketBuckets[trade.MarketID].BuyVolume += int64(tradesByTimestamp[idx].Size)
+			marketBuckets[trade.MarketId].Buys = append(marketBuckets[trade.MarketId].Buys, tradesByTimestamp[idx])
+			marketBuckets[trade.MarketId].BuyVolume += int64(tradesByTimestamp[idx].Size)
 		}
 		if trade.Seller == party {
-			marketBuckets[trade.MarketID].Sells = append(marketBuckets[trade.MarketID].Sells, tradesByTimestamp[idx])
-			marketBuckets[trade.MarketID].SellVolume += int64(tradesByTimestamp[idx].Size)
+			marketBuckets[trade.MarketId].Sells = append(marketBuckets[trade.MarketId].Sells, tradesByTimestamp[idx])
+			marketBuckets[trade.MarketId].SellVolume += int64(tradesByTimestamp[idx].Size)
 		}
 	}
 

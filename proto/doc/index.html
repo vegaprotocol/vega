@@ -1836,7 +1836,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
             <tbody>
               
                 <tr>
-                  <td>tickSize</td>
+                  <td>tick_size</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Tick size </p></td>
@@ -1860,14 +1860,14 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
             <tbody>
               
                 <tr>
-                  <td>durationNs</td>
+                  <td>duration_ns</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Duration in nanoseconds, maximum 1 month (2592000000000000 ns) </p></td>
                 </tr>
               
                 <tr>
-                  <td>tickSize</td>
+                  <td>tick_size</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Tick size </p></td>
@@ -1890,7 +1890,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
               <tbody>
               
                 <tr>
-                  <td>durationNs</td>
+                  <td>duration_ns</td>
                   <td>
                     <ul>
                     
@@ -1920,7 +1920,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
             <tbody>
               
                 <tr>
-                  <td>contractID</td>
+                  <td>contract_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Ethereum contract identifier </p></td>
@@ -1958,21 +1958,21 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
             <tbody>
               
                 <tr>
-                  <td>makerFee</td>
+                  <td>maker_fee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Maker fee </p></td>
                 </tr>
               
                 <tr>
-                  <td>infrastructureFee</td>
+                  <td>infrastructure_fee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Infrastructure fee </p></td>
                 </tr>
               
                 <tr>
-                  <td>liquidityFee</td>
+                  <td>liquidity_fee</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Liquidity fee </p></td>
@@ -2027,7 +2027,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
                 </tr>
               
                 <tr>
-                  <td>settlementAsset</td>
+                  <td>settlement_asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The asset for the future </p></td>
@@ -2041,7 +2041,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
                 </tr>
               
                 <tr>
-                  <td>ethereumEvent</td>
+                  <td>ethereum_event</td>
                   <td><a href="#vega.EthereumEvent">EthereumEvent</a></td>
                   <td></td>
                   <td><p>Ethereum events </p></td>
@@ -2093,7 +2093,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
                 </tr>
               
                 <tr>
-                  <td>initialMarkPrice</td>
+                  <td>initial_mark_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>An initial mark price for the instrument </p></td>
@@ -2186,7 +2186,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
             <tbody>
               
                 <tr>
-                  <td>riskAversionParameter</td>
+                  <td>risk_aversion_parameter</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Risk Aversion Parameter </p></td>
@@ -2224,7 +2224,7 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
             <tbody>
               
                 <tr>
-                  <td>scalingFactors</td>
+                  <td>scaling_factors</td>
                   <td><a href="#vega.ScalingFactors">ScalingFactors</a></td>
                   <td></td>
                   <td><p>Scaling factors for margin calculation </p></td>
@@ -2255,14 +2255,14 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
                 </tr>
               
                 <tr>
-                  <td>tradableInstrument</td>
+                  <td>tradable_instrument</td>
                   <td><a href="#vega.TradableInstrument">TradableInstrument</a></td>
                   <td></td>
                   <td><p>Tradable instrument configuration </p></td>
                 </tr>
               
                 <tr>
-                  <td>decimalPlaces</td>
+                  <td>decimal_places</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Number of decimal places that a price must be shifted by in order to get a
@@ -2278,7 +2278,7 @@ correct price denominated in the currency of the market, for example:
                 </tr>
               
                 <tr>
-                  <td>openingAuction</td>
+                  <td>opening_auction</td>
                   <td><a href="#vega.AuctionDuration">AuctionDuration</a></td>
                   <td></td>
                   <td><p>Auction duration specifies how long the opening auction will run (minimum
@@ -2300,21 +2300,21 @@ duration and optionally a minimum traded volume) </p></td>
                 </tr>
               
                 <tr>
-                  <td>priceMonitoringSettings</td>
+                  <td>price_monitoring_settings</td>
                   <td><a href="#vega.PriceMonitoringSettings">PriceMonitoringSettings</a></td>
                   <td></td>
                   <td><p>PriceMonitoringSettings for the market </p></td>
                 </tr>
               
                 <tr>
-                  <td>targetStakeParameters</td>
+                  <td>target_stake_parameters</td>
                   <td><a href="#vega.TargetStakeParameters">TargetStakeParameters</a></td>
                   <td></td>
                   <td><p>TargetStakeParameters for the market </p></td>
                 </tr>
               
                 <tr>
-                  <td>tradingMode</td>
+                  <td>trading_mode</td>
                   <td><a href="#vega.Market.TradingMode">Market.TradingMode</a></td>
                   <td></td>
                   <td><p>Current mode of execution of the market </p></td>
@@ -2376,7 +2376,7 @@ duration and optionally a minimum traded volume) </p></td>
                 </tr>
               
                 <tr>
-                  <td>updateFrequency</td>
+                  <td>update_frequency</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Specifies how often (expressed in seconds) the price monitoring bounds should be updated </p></td>
@@ -2414,7 +2414,7 @@ duration and optionally a minimum traded volume) </p></td>
                 </tr>
               
                 <tr>
-                  <td>auctionExtension</td>
+                  <td>auction_extension</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Price monitoring auction extension duration in seconds should the price
@@ -2463,7 +2463,7 @@ probability level </p></td>
                 </tr>
               
                 <tr>
-                  <td>auctionExtension</td>
+                  <td>auction_extension</td>
                   <td>
                     <ul>
                     
@@ -2491,21 +2491,21 @@ probability level </p></td>
             <tbody>
               
                 <tr>
-                  <td>searchLevel</td>
+                  <td>search_level</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Search level </p></td>
                 </tr>
               
                 <tr>
-                  <td>initialMargin</td>
+                  <td>initial_margin</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Initial margin level </p></td>
                 </tr>
               
                 <tr>
-                  <td>collateralRelease</td>
+                  <td>collateral_release</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Collateral release level </p></td>
@@ -2529,35 +2529,35 @@ probability level </p></td>
             <tbody>
               
                 <tr>
-                  <td>factorLong</td>
+                  <td>factor_long</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Pre-defined risk factor value for long </p></td>
                 </tr>
               
                 <tr>
-                  <td>factorShort</td>
+                  <td>factor_short</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Pre-defined risk factor value for short </p></td>
                 </tr>
               
                 <tr>
-                  <td>maxMoveUp</td>
+                  <td>max_move_up</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Pre-defined maximum price move up that the model considers as valid </p></td>
                 </tr>
               
                 <tr>
-                  <td>minMoveDown</td>
+                  <td>min_move_down</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Pre-defined minimum price move down that the model considers as valid </p></td>
                 </tr>
               
                 <tr>
-                  <td>probabilityOfTrading</td>
+                  <td>probability_of_trading</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Pre-defined constant probability of trading </p></td>
@@ -2580,7 +2580,7 @@ probability level </p></td>
               <tbody>
               
                 <tr>
-                  <td>maxMoveUp</td>
+                  <td>max_move_up</td>
                   <td>
                     <ul>
                     
@@ -2591,7 +2591,7 @@ probability level </p></td>
                 </tr>
               
                 <tr>
-                  <td>minMoveDown</td>
+                  <td>min_move_down</td>
                   <td>
                     <ul>
                     
@@ -2602,7 +2602,7 @@ probability level </p></td>
                 </tr>
               
                 <tr>
-                  <td>probabilityOfTrading</td>
+                  <td>probability_of_trading</td>
                   <td>
                     <ul>
                     
@@ -2656,14 +2656,14 @@ probability level </p></td>
             <tbody>
               
                 <tr>
-                  <td>timeWindow</td>
+                  <td>time_window</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Specifies length of time window expressed in seconds for target stake calculation </p></td>
                 </tr>
               
                 <tr>
-                  <td>scalingFactor</td>
+                  <td>scaling_factor</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Specifies scaling factors used in target stake calculation </p></td>
@@ -2686,7 +2686,7 @@ probability level </p></td>
               <tbody>
               
                 <tr>
-                  <td>timeWindow</td>
+                  <td>time_window</td>
                   <td>
                     <ul>
                     
@@ -2697,7 +2697,7 @@ probability level </p></td>
                 </tr>
               
                 <tr>
-                  <td>scalingFactor</td>
+                  <td>scaling_factor</td>
                   <td>
                     <ul>
                     
@@ -2732,21 +2732,21 @@ probability level </p></td>
                 </tr>
               
                 <tr>
-                  <td>marginCalculator</td>
+                  <td>margin_calculator</td>
                   <td><a href="#vega.MarginCalculator">MarginCalculator</a></td>
                   <td></td>
                   <td><p>Margin calculator for the instrument </p></td>
                 </tr>
               
                 <tr>
-                  <td>logNormalRiskModel</td>
+                  <td>log_normal_risk_model</td>
                   <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
                   <td></td>
                   <td><p>Log normal </p></td>
                 </tr>
               
                 <tr>
-                  <td>simpleRiskModel</td>
+                  <td>simple_risk_model</td>
                   <td><a href="#vega.SimpleRiskModel">SimpleRiskModel</a></td>
                   <td></td>
                   <td><p>Simple </p></td>
@@ -2929,7 +2929,7 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the account, if [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty </p></td>
@@ -2960,35 +2960,35 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The market identifier for which this state relates to </p></td>
                 </tr>
               
                 <tr>
-                  <td>indicativePrice</td>
+                  <td>indicative_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now </p></td>
                 </tr>
               
                 <tr>
-                  <td>indicativeVolume</td>
+                  <td>indicative_volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now </p></td>
                 </tr>
               
                 <tr>
-                  <td>auctionStart</td>
+                  <td>auction_start</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>The timestamp at which the auction started </p></td>
                 </tr>
               
                 <tr>
-                  <td>auctionEnd</td>
+                  <td>auction_end</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>The timestamp at which the auction is meant to stop </p></td>
@@ -3100,7 +3100,7 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier of the user initiating the deposit </p></td>
@@ -3121,21 +3121,21 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>txHash</td>
+                  <td>tx_hash</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The hash of the transaction from the foreign chain </p></td>
                 </tr>
               
                 <tr>
-                  <td>creditedTimestamp</td>
+                  <td>credited_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the Vega account was updated with the deposit </p></td>
                 </tr>
               
                 <tr>
-                  <td>createdTimestamp</td>
+                  <td>created_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the deposit was created on the Vega network </p></td>
@@ -3159,7 +3159,7 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>receiverAddress</td>
+                  <td>receiver_address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The address into which the bridge will release the funds </p></td>
@@ -3221,21 +3221,21 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>networkId</td>
+                  <td>network_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Network identifier of this Ethereum network </p></td>
                 </tr>
               
                 <tr>
-                  <td>chainId</td>
+                  <td>chain_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Chain identifier of this Ethereum network </p></td>
                 </tr>
               
                 <tr>
-                  <td>bridgeAddress</td>
+                  <td>bridge_address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Bridge address for this Ethereum network </p></td>
@@ -3266,21 +3266,21 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>makerFee</td>
+                  <td>maker_fee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Fee amount paid to the non-aggressive party of the trade </p></td>
                 </tr>
               
                 <tr>
-                  <td>infrastructureFee</td>
+                  <td>infrastructure_fee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Fee amount paid for maintaining the Vega infrastructure </p></td>
                 </tr>
               
                 <tr>
-                  <td>liquidityFee</td>
+                  <td>liquidity_fee</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Fee amount paid to market makers </p></td>
@@ -3335,14 +3335,14 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>fromAccount</td>
+                  <td>from_account</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>One or more accounts to transfer from </p></td>
                 </tr>
               
                 <tr>
-                  <td>toAccount</td>
+                  <td>to_account</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>One or more accounts to transfer to </p></td>
@@ -3433,14 +3433,14 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique identifier of the pegged order generated by the core to fulfil this liquidity order </p></td>
                 </tr>
               
                 <tr>
-                  <td>liquidityOrder</td>
+                  <td>liquidity_order</td>
                   <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
                   <td></td>
                   <td><p>The liquidity order from the original submission </p></td>
@@ -3471,14 +3471,14 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>EquityLikeShare</td>
+                  <td>equity_like_share</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The share own by this liquidity provider (float) </p></td>
                 </tr>
               
                 <tr>
-                  <td>averageEntryValuation</td>
+                  <td>average_entry_valuation</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The average entry valuation of the liquidity provider for the market </p></td>
@@ -3509,14 +3509,14 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique party identifier for the creator of the provision </p></td>
                 </tr>
               
                 <tr>
-                  <td>createdAt</td>
+                  <td>created_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order was created at, in nanoseconds since the epoch
@@ -3524,7 +3524,7 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>updatedAt</td>
+                  <td>updated_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order was updated at, in nanoseconds since the epoch
@@ -3532,14 +3532,14 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the order, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>commitmentAmount</td>
+                  <td>commitment_amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Specified as a unitless number that represents the amount of settlement asset of the market </p></td>
@@ -3597,7 +3597,7 @@ and importantly balances cannot be negative </p></td>
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -3625,14 +3625,14 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the order, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>commitmentAmount</td>
+                  <td>commitment_amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Specified as a unitless number that represents the amount of settlement asset of the market </p></td>
@@ -3646,14 +3646,14 @@ and importantly balances cannot be negative </p></td>
                 </tr>
               
                 <tr>
-                  <td>Sells</td>
+                  <td>sells</td>
                   <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
                   <td>repeated</td>
                   <td><p>A set of liquidity sell orders to meet the liquidity provision obligation </p></td>
                 </tr>
               
                 <tr>
-                  <td>Buys</td>
+                  <td>buys</td>
                   <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
                   <td>repeated</td>
                   <td><p>A set of liquidity buy orders to meet the liquidity provision obligation </p></td>
@@ -3676,7 +3676,7 @@ and importantly balances cannot be negative </p></td>
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -3704,42 +3704,42 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>maintenanceMargin</td>
+                  <td>maintenance_margin</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Maintenance margin value </p></td>
                 </tr>
               
                 <tr>
-                  <td>searchLevel</td>
+                  <td>search_level</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Search level value </p></td>
                 </tr>
               
                 <tr>
-                  <td>initialMargin</td>
+                  <td>initial_margin</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Initial margin value </p></td>
                 </tr>
               
                 <tr>
-                  <td>collateralReleaseLevel</td>
+                  <td>collateral_release_level</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Collateral release level value </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -3778,7 +3778,7 @@ and importantly balances cannot be negative </p></td>
             <tbody>
               
                 <tr>
-                  <td>markPrice</td>
+                  <td>mark_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Mark price, as an integer, for example `123456` is a correctly
@@ -3786,7 +3786,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>bestBidPrice</td>
+                  <td>best_bid_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
@@ -3794,21 +3794,21 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>bestBidVolume</td>
+                  <td>best_bid_volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Aggregated volume being bid at the best bid price </p></td>
                 </tr>
               
                 <tr>
-                  <td>bestOfferPrice</td>
+                  <td>best_offer_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Lowest price level on an order book for offer orders </p></td>
                 </tr>
               
                 <tr>
-                  <td>bestOfferVolume</td>
+                  <td>best_offer_volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
@@ -3816,35 +3816,35 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>bestStaticBidPrice</td>
+                  <td>best_static_bid_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Highest price on the order book for buy orders not including pegged orders </p></td>
                 </tr>
               
                 <tr>
-                  <td>bestStaticBidVolume</td>
+                  <td>best_static_bid_volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total volume at the best static bid price excluding pegged orders </p></td>
                 </tr>
               
                 <tr>
-                  <td>bestStaticOfferPrice</td>
+                  <td>best_static_offer_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Lowest price on the order book for sell orders not including pegged orders </p></td>
                 </tr>
               
                 <tr>
-                  <td>bestStaticOfferVolume</td>
+                  <td>best_static_offer_volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total volume at the best static offer price excluding pegged orders </p></td>
                 </tr>
               
                 <tr>
-                  <td>midPrice</td>
+                  <td>mid_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
@@ -3852,7 +3852,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>staticMidPrice</td>
+                  <td>static_mid_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Arithmetic average of the best static bid price and best static offer price </p></td>
@@ -3874,42 +3874,42 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>openInterest</td>
+                  <td>open_interest</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>The sum of the size of all positions greater than 0 on the market </p></td>
                 </tr>
               
                 <tr>
-                  <td>auctionEnd</td>
+                  <td>auction_end</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Time in seconds until the end of the auction (0 if currently not in auction period) </p></td>
                 </tr>
               
                 <tr>
-                  <td>auctionStart</td>
+                  <td>auction_start</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Time until next auction (used in FBA&#39;s) - currently always 0 </p></td>
                 </tr>
               
                 <tr>
-                  <td>indicativePrice</td>
+                  <td>indicative_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Indicative price (zero if not in auction) </p></td>
                 </tr>
               
                 <tr>
-                  <td>indicativeVolume</td>
+                  <td>indicative_volume</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Indicative volume (zero if not in auction) </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketTradingMode</td>
+                  <td>market_trading_mode</td>
                   <td><a href="#vega.Market.TradingMode">Market.TradingMode</a></td>
                   <td></td>
                   <td><p>The current trading mode for the market </p></td>
@@ -3923,35 +3923,35 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>targetStake</td>
+                  <td>target_stake</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Targeted stake for the given market </p></td>
                 </tr>
               
                 <tr>
-                  <td>suppliedStake</td>
+                  <td>supplied_stake</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Available stake for the given market </p></td>
                 </tr>
               
                 <tr>
-                  <td>priceMonitoringBounds</td>
+                  <td>price_monitoring_bounds</td>
                   <td><a href="#vega.PriceMonitoringBounds">PriceMonitoringBounds</a></td>
                   <td>repeated</td>
                   <td><p>One or more price monitoring bounds for the current timestamp </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketValueProxy</td>
+                  <td>market_value_proxy</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>the market value proxy </p></td>
                 </tr>
               
                 <tr>
-                  <td>liquidityProviderFeeShare</td>
+                  <td>liquidity_provider_fee_share</td>
                   <td><a href="#vega.LiquidityProviderFeeShare">LiquidityProviderFeeShare</a></td>
                   <td>repeated</td>
                   <td><p>the equity like share of liquidity fee for each liquidity provider </p></td>
@@ -3975,7 +3975,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -3996,7 +3996,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>sequenceNumber</td>
+                  <td>sequence_number</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Sequence number for the market depth data returned </p></td>
@@ -4020,7 +4020,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -4041,7 +4041,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>sequenceNumber</td>
+                  <td>sequence_number</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Sequence number for the market depth update data returned </p></td>
@@ -4065,14 +4065,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>Key</td>
+                  <td>key</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The unique key </p></td>
                 </tr>
               
                 <tr>
-                  <td>Value</td>
+                  <td>value</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The value for the network parameter </p></td>
@@ -4096,14 +4096,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>pubKey</td>
+                  <td>pub_key</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
                   <td><p>Public key, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>chainPubKey</td>
+                  <td>chain_pub_key</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
                   <td><p>Public key for the blockchain, required field </p></td>
@@ -4126,7 +4126,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
               <tbody>
               
                 <tr>
-                  <td>pubKey</td>
+                  <td>pub_key</td>
                   <td>
                     <ul>
                     
@@ -4137,7 +4137,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>chainPubKey</td>
+                  <td>chain_pub_key</td>
                   <td>
                     <ul>
                     
@@ -4165,7 +4165,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The identifier of the resource being signed </p></td>
@@ -4203,7 +4203,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>pubKey</td>
+                  <td>pub_key</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
                   <td><p>Public key, required field </p></td>
@@ -4233,7 +4233,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
               <tbody>
               
                 <tr>
-                  <td>pubKey</td>
+                  <td>pub_key</td>
                   <td>
                     <ul>
                     
@@ -4310,14 +4310,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the order </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier for the order </p></td>
@@ -4353,7 +4353,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>timeInForce</td>
+                  <td>time_in_force</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p>Time in force indicates how long an order will remain active before it is executed or expires.
@@ -4368,7 +4368,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>createdAt</td>
+                  <td>created_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order was created at, in nanoseconds since the epoch
@@ -4384,7 +4384,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>expiresAt</td>
+                  <td>expires_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch
@@ -4408,7 +4408,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>updatedAt</td>
+                  <td>updated_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the Order was last updated, in nanoseconds since the epoch
@@ -4423,7 +4423,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>batchID</td>
+                  <td>batch_id</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Batch identifier for the order, used internally for orders submitted during auctions
@@ -4431,7 +4431,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>peggedOrder</td>
+                  <td>pegged_order</td>
                   <td><a href="#vega.PeggedOrder">PeggedOrder</a></td>
                   <td></td>
                   <td><p>Pegged order details, used only if the order represents a pegged order. </p></td>
@@ -4455,21 +4455,21 @@ to keep track of the auction batch this order falls under (required for fees cal
             <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Order identifier, this is required to find the order and will not be updated, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, this is required to find the order and will not be updated, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, this is required to find the order and will not be updated </p></td>
@@ -4483,7 +4483,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>sizeDelta</td>
+                  <td>size_delta</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Amend the size for the order by the delta specified:
@@ -4493,7 +4493,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>expiresAt</td>
+                  <td>expires_at</td>
                   <td><a href="#vega.Timestamp">Timestamp</a></td>
                   <td></td>
                   <td><p>Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
@@ -4501,7 +4501,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>timeInForce</td>
+                  <td>time_in_force</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p>Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged
@@ -4509,14 +4509,14 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>peggedOffset</td>
+                  <td>pegged_offset</td>
                   <td><a href="#google.protobuf.Int64Value">google.protobuf.Int64Value</a></td>
                   <td></td>
                   <td><p>Amend the pegged order offset for the order </p></td>
                 </tr>
               
                 <tr>
-                  <td>peggedReference</td>
+                  <td>pegged_reference</td>
                   <td><a href="#vega.PeggedReference">PeggedReference</a></td>
                   <td></td>
                   <td><p>Amend the pegged order reference for the order
@@ -4540,7 +4540,7 @@ to keep track of the auction batch this order falls under (required for fees cal
               <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td>
                     <ul>
                     
@@ -4551,7 +4551,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -4579,21 +4579,21 @@ to keep track of the auction batch this order falls under (required for fees cal
             <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique identifier for the order (set by the system after consensus), required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the order, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier for the order, required field </p></td>
@@ -4616,7 +4616,7 @@ to keep track of the auction batch this order falls under (required for fees cal
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -4682,7 +4682,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>passiveOrdersAffected</td>
+                  <td>passive_orders_affected</td>
                   <td><a href="#vega.Order">Order</a></td>
                   <td>repeated</td>
                   <td><p>0 or more passive orders that were affected </p></td>
@@ -4713,14 +4713,14 @@ to keep track of the auction batch this order falls under (required for fees cal
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the order, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier for the order, required field </p></td>
@@ -4750,7 +4750,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places,
                 </tr>
               
                 <tr>
-                  <td>timeInForce</td>
+                  <td>time_in_force</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
                   <td><p>Time in force indicates how long an order will remain active before it is executed or expires, required field
@@ -4758,7 +4758,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places,
                 </tr>
               
                 <tr>
-                  <td>expiresAt</td>
+                  <td>expires_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch,
@@ -4782,7 +4782,7 @@ set internally by the node to return a unique reference identifier for the order
                 </tr>
               
                 <tr>
-                  <td>peggedOrder</td>
+                  <td>pegged_order</td>
                   <td><a href="#vega.PeggedOrder">PeggedOrder</a></td>
                   <td></td>
                   <td><p>Used to specify the details for a pegged order
@@ -4817,7 +4817,7 @@ set internally by the node to return a unique reference identifier for the order
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -4828,7 +4828,7 @@ set internally by the node to return a unique reference identifier for the order
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -4861,7 +4861,7 @@ set internally by the node to return a unique reference identifier for the order
                 </tr>
               
                 <tr>
-                  <td>timeInForce</td>
+                  <td>time_in_force</td>
                   <td>
                     <ul>
                     
@@ -4982,42 +4982,42 @@ set internally by the node to return a unique reference identifier for the order
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>openVolume</td>
+                  <td>open_volume</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Open volume for the position, value is signed &#43;ve for long and -ve for short </p></td>
                 </tr>
               
                 <tr>
-                  <td>realisedPNL</td>
+                  <td>realised_pnl</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Realised profit and loss for the position, value is signed &#43;ve for long and -ve for short </p></td>
                 </tr>
               
                 <tr>
-                  <td>unrealisedPNL</td>
+                  <td>unrealised_pnl</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Unrealised profit and loss for the position, value is signed &#43;ve for long and -ve for short </p></td>
                 </tr>
               
                 <tr>
-                  <td>averageEntryPrice</td>
+                  <td>average_entry_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Average entry price for the position, the price is an integer, for example `123456` is a correctly
@@ -5025,7 +5025,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>updatedAt</td>
+                  <td>updated_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for the latest time the position was updated </p></td>
@@ -5114,7 +5114,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>numberOfOrders</td>
+                  <td>number_of_orders</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Number of orders at the price level </p></td>
@@ -5145,14 +5145,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>minValidPrice</td>
+                  <td>min_valid_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Minimum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
                 </tr>
               
                 <tr>
-                  <td>maxValidPrice</td>
+                  <td>max_valid_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Maximum price that isn&#39;t currently breaching the specified price monitoring trigger </p></td>
@@ -5166,7 +5166,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>referencePrice</td>
+                  <td>reference_price</td>
                   <td><a href="#double">double</a></td>
                   <td></td>
                   <td><p>Reference price used to calculate the valid price range </p></td>
@@ -5228,7 +5228,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>updatedTimestamp</td>
+                  <td>updated_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when risk factors were generated </p></td>
@@ -5242,14 +5242,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>nextUpdateTimestamp</td>
+                  <td>next_update_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when risk factors are expected to change (or empty if risk factors are continually updated) </p></td>
                 </tr>
               
                 <tr>
-                  <td>predictedNextRiskFactors</td>
+                  <td>predicted_next_risk_factors</td>
                   <td><a href="#vega.RiskResult.PredictedNextRiskFactorsEntry">RiskResult.PredictedNextRiskFactorsEntry</a></td>
                   <td>repeated</td>
                   <td><p>Predicted risk factors at next change (what they would be if the change occurred now) </p></td>
@@ -5404,42 +5404,42 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>blockHeight</td>
+                  <td>block_height</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Current block height as reported by the Vega blockchain </p></td>
                 </tr>
               
                 <tr>
-                  <td>backlogLength</td>
+                  <td>backlog_length</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Current backlog length (number of transactions) that are waiting to be included in a block </p></td>
                 </tr>
               
                 <tr>
-                  <td>totalPeers</td>
+                  <td>total_peers</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total number of connected peers to this node </p></td>
                 </tr>
               
                 <tr>
-                  <td>genesisTime</td>
+                  <td>genesis_time</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Genesis block date and time formatted in ISO-8601 datetime format with nanosecond precision </p></td>
                 </tr>
               
                 <tr>
-                  <td>currentTime</td>
+                  <td>current_time</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Current system date and time formatted in ISO-8601 datetime format with nanosecond precision </p></td>
                 </tr>
               
                 <tr>
-                  <td>vegaTime</td>
+                  <td>vega_time</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision </p></td>
@@ -5454,154 +5454,154 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>txPerBlock</td>
+                  <td>tx_per_block</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Transactions per block </p></td>
                 </tr>
               
                 <tr>
-                  <td>averageTxBytes</td>
+                  <td>average_tx_bytes</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Average transaction size in bytes </p></td>
                 </tr>
               
                 <tr>
-                  <td>averageOrdersPerBlock</td>
+                  <td>average_orders_per_block</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Average orders per block </p></td>
                 </tr>
               
                 <tr>
-                  <td>tradesPerSecond</td>
+                  <td>trades_per_second</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Trades emitted per second </p></td>
                 </tr>
               
                 <tr>
-                  <td>ordersPerSecond</td>
+                  <td>orders_per_second</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Orders processed per second </p></td>
                 </tr>
               
                 <tr>
-                  <td>totalMarkets</td>
+                  <td>total_markets</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total markets on this Vega network </p></td>
                 </tr>
               
                 <tr>
-                  <td>totalAmendOrder</td>
+                  <td>total_amend_order</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total number of order amendments since genesis (on all markets) </p></td>
                 </tr>
               
                 <tr>
-                  <td>totalCancelOrder</td>
+                  <td>total_cancel_order</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total number of order cancellations since genesis (on all markets) </p></td>
                 </tr>
               
                 <tr>
-                  <td>totalCreateOrder</td>
+                  <td>total_create_order</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total number of order submissions since genesis (on all markets) </p></td>
                 </tr>
               
                 <tr>
-                  <td>totalOrders</td>
+                  <td>total_orders</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total number of orders processed since genesis (on all markets) </p></td>
                 </tr>
               
                 <tr>
-                  <td>totalTrades</td>
+                  <td>total_trades</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Total number of trades emitted since genesis (on all markets) </p></td>
                 </tr>
               
                 <tr>
-                  <td>orderSubscriptions</td>
+                  <td>order_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to order data </p></td>
                 </tr>
               
                 <tr>
-                  <td>tradeSubscriptions</td>
+                  <td>trade_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to trade data </p></td>
                 </tr>
               
                 <tr>
-                  <td>candleSubscriptions</td>
+                  <td>candle_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to candle-stick data </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketDepthSubscriptions</td>
+                  <td>market_depth_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to market depth data </p></td>
                 </tr>
               
                 <tr>
-                  <td>positionsSubscriptions</td>
+                  <td>positions_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to positions data </p></td>
                 </tr>
               
                 <tr>
-                  <td>accountSubscriptions</td>
+                  <td>account_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to account data </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketDataSubscriptions</td>
+                  <td>market_data_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to market data </p></td>
                 </tr>
               
                 <tr>
-                  <td>appVersionHash</td>
+                  <td>app_version_hash</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The version hash of the Vega node software </p></td>
                 </tr>
               
                 <tr>
-                  <td>appVersion</td>
+                  <td>app_version</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The version of the Vega node software </p></td>
                 </tr>
               
                 <tr>
-                  <td>chainVersion</td>
+                  <td>chain_version</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The version of the underlying Vega blockchain </p></td>
                 </tr>
               
                 <tr>
-                  <td>blockDuration</td>
+                  <td>block_duration</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Current block duration, in nanoseconds </p></td>
@@ -5615,14 +5615,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>chainID</td>
+                  <td>chain_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique identifier for the underlying Vega blockchain </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketDepthUpdatesSubscriptions</td>
+                  <td>market_depth_updates_subscriptions</td>
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>Current number of stream subscribers to market depth update data </p></td>
@@ -5677,7 +5677,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier (the market that the trade occurred on) </p></td>
@@ -5720,14 +5720,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>buyOrder</td>
+                  <td>buy_order</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Identifier of the order from the buy side </p></td>
                 </tr>
               
                 <tr>
-                  <td>sellOrder</td>
+                  <td>sell_order</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Identifier of the order from the sell side </p></td>
@@ -5749,28 +5749,28 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>buyerFee</td>
+                  <td>buyer_fee</td>
                   <td><a href="#vega.Fee">Fee</a></td>
                   <td></td>
                   <td><p>Fee amount charged to the buyer party for the trade </p></td>
                 </tr>
               
                 <tr>
-                  <td>sellerFee</td>
+                  <td>seller_fee</td>
                   <td><a href="#vega.Fee">Fee</a></td>
                   <td></td>
                   <td><p>Fee amount charged to the seller party for the trade </p></td>
                 </tr>
               
                 <tr>
-                  <td>buyerAuctionBatch</td>
+                  <td>buyer_auction_batch</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Auction batch number that the buy side order was placed in </p></td>
                 </tr>
               
                 <tr>
-                  <td>sellerAuctionBatch</td>
+                  <td>seller_auction_batch</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Auction batch number that the sell side order was placed in </p></td>
@@ -5818,7 +5818,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>inputData</td>
+                  <td>input_data</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
                   <td><p>One of the set of Vega commands (proto marshalled) </p></td>
@@ -5832,7 +5832,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>blockHeight</td>
+                  <td>block_height</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>The block height associated to the transaction, this should always be current block height
@@ -5848,7 +5848,7 @@ for replay protection </p></td>
                 </tr>
               
                 <tr>
-                  <td>pubKey</td>
+                  <td>pub_key</td>
                   <td><a href="#bytes">bytes</a></td>
                   <td></td>
                   <td><p>The public key of the sender </p></td>
@@ -5893,7 +5893,7 @@ for replay protection </p></td>
                 </tr>
               
                 <tr>
-                  <td>minAmount</td>
+                  <td>min_amount</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>A minimum amount </p></td>
@@ -5948,14 +5948,14 @@ for replay protection </p></td>
             <tbody>
               
                 <tr>
-                  <td>fromAccount</td>
+                  <td>from_account</td>
                   <td><a href="#vega.Account">Account</a></td>
                   <td>repeated</td>
                   <td><p>One or more accounts to transfer from </p></td>
                 </tr>
               
                 <tr>
-                  <td>toAccount</td>
+                  <td>to_account</td>
                   <td><a href="#vega.Account">Account</a></td>
                   <td>repeated</td>
                   <td><p>One or more accounts to transfer to </p></td>
@@ -5969,7 +5969,7 @@ for replay protection </p></td>
                 </tr>
               
                 <tr>
-                  <td>minAmount</td>
+                  <td>min_amount</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>A minimum amount </p></td>
@@ -6062,7 +6062,7 @@ for replay protection </p></td>
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique party identifier for the user wanting to withdraw funds </p></td>
@@ -6114,7 +6114,7 @@ for replay protection </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique party identifier of the user initiating the withdrawal </p></td>
@@ -6157,21 +6157,21 @@ to refer to this withdrawal </p></td>
                 </tr>
               
                 <tr>
-                  <td>txHash</td>
+                  <td>tx_hash</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The hash of the foreign chain for this transaction </p></td>
                 </tr>
               
                 <tr>
-                  <td>createdTimestamp</td>
+                  <td>created_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the network started to process this withdrawal </p></td>
                 </tr>
               
                 <tr>
-                  <td>withdrawnTimestamp</td>
+                  <td>withdrawn_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the withdrawal was finalised by the network </p></td>
@@ -7289,7 +7289,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Internal identifier of the asset </p></td>
@@ -7310,7 +7310,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
                 </tr>
               
                 <tr>
-                  <td>totalSupply</td>
+                  <td>total_supply</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Total circulating supply for the asset </p></td>
@@ -7348,7 +7348,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
             <tbody>
               
                 <tr>
-                  <td>builtinAsset</td>
+                  <td>builtin_asset</td>
                   <td><a href="#vega.BuiltinAsset">BuiltinAsset</a></td>
                   <td></td>
                   <td><p>A built-in asset </p></td>
@@ -7393,7 +7393,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
                 </tr>
               
                 <tr>
-                  <td>totalSupply</td>
+                  <td>total_supply</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Total circulating supply for the asset </p></td>
@@ -7455,7 +7455,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
             <tbody>
               
                 <tr>
-                  <td>contractAddress</td>
+                  <td>contract_address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The address of the contract for the token, on the ethereum network </p></td>
@@ -7500,14 +7500,14 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
                 </tr>
               
                 <tr>
-                  <td>settlementAsset</td>
+                  <td>settlement_asset</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Product settlement asset identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>quoteName</td>
+                  <td>quote_name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Product quote name </p></td>
@@ -7541,7 +7541,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
                 </tr>
               
                 <tr>
-                  <td>settlementAsset</td>
+                  <td>settlement_asset</td>
                   <td>
                     <ul>
                     
@@ -7552,7 +7552,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
                 </tr>
               
                 <tr>
-                  <td>quoteName</td>
+                  <td>quote_name</td>
                   <td>
                     <ul>
                     
@@ -7601,7 +7601,7 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
                 </tr>
               
                 <tr>
-                  <td>yesParty</td>
+                  <td>yes_party</td>
                   <td><a href="#vega.GovernanceData.YesPartyEntry">GovernanceData.YesPartyEntry</a></td>
                   <td>repeated</td>
                   <td><p>All latest YES votes by party (guaranteed to be unique),
@@ -7610,7 +7610,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>noParty</td>
+                  <td>no_party</td>
                   <td><a href="#vega.GovernanceData.NoPartyEntry">GovernanceData.NoPartyEntry</a></td>
                   <td>repeated</td>
                   <td><p>All latest NO votes by party (guaranteed to be unique),
@@ -7832,7 +7832,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>liquidityCommitment</td>
+                  <td>liquidity_commitment</td>
                   <td><a href="#vega.NewMarketCommitment">NewMarketCommitment</a></td>
                   <td></td>
                   <td><p>The commitment from the party creating the NewMarket proposal </p></td>
@@ -7897,14 +7897,14 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>Sells</td>
+                  <td>sells</td>
                   <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
                   <td>repeated</td>
                   <td><p>A set of liquidity sell orders to meet the liquidity provision obligation </p></td>
                 </tr>
               
                 <tr>
-                  <td>Buys</td>
+                  <td>buys</td>
                   <td><a href="#vega.LiquidityOrder">LiquidityOrder</a></td>
                   <td>repeated</td>
                   <td><p>A set of liquidity buy orders to meet the liquidity provision obligation </p></td>
@@ -7935,7 +7935,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>decimalPlaces</td>
+                  <td>decimal_places</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Decimal places used for the new market </p></td>
@@ -7949,7 +7949,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>priceMonitoringParameters</td>
+                  <td>price_monitoring_parameters</td>
                   <td><a href="#vega.PriceMonitoringParameters">PriceMonitoringParameters</a></td>
                   <td></td>
                   <td><p>Price monitoring parameters </p></td>
@@ -7963,7 +7963,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>logNormal</td>
+                  <td>log_normal</td>
                   <td><a href="#vega.LogNormalRiskModel">LogNormalRiskModel</a></td>
                   <td></td>
                   <td><p>Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected </p></td>
@@ -8011,7 +8011,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>decimalPlaces</td>
+                  <td>decimal_places</td>
                   <td>
                     <ul>
                     
@@ -8039,7 +8039,7 @@ value (Vote) is the vote cast by the given party </p></td>
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique proposal identifier </p></td>
@@ -8053,7 +8053,7 @@ value (Vote) is the vote cast by the given party </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier of the author (the party submitting the proposal) </p></td>
@@ -8104,7 +8104,7 @@ value (Vote) is the vote cast by the given party </p></td>
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -8154,7 +8154,7 @@ value (Vote) is the vote cast by the given party </p></td>
             <tbody>
               
                 <tr>
-                  <td>closingTimestamp</td>
+                  <td>closing_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp (Unix time in seconds) when voting closes for this proposal,
@@ -8162,7 +8162,7 @@ constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>enactmentTimestamp</td>
+                  <td>enactment_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp (Unix time in seconds) when proposal gets enacted (if passed),
@@ -8170,35 +8170,35 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>validationTimestamp</td>
+                  <td>validation_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Validation timestamp (Unix time in seconds) </p></td>
                 </tr>
               
                 <tr>
-                  <td>updateMarket</td>
+                  <td>update_market</td>
                   <td><a href="#vega.UpdateMarket">UpdateMarket</a></td>
                   <td></td>
                   <td><p>Proposal change for modifying an existing market on Vega </p></td>
                 </tr>
               
                 <tr>
-                  <td>newMarket</td>
+                  <td>new_market</td>
                   <td><a href="#vega.NewMarket">NewMarket</a></td>
                   <td></td>
                   <td><p>Proposal change for creating new market on Vega </p></td>
                 </tr>
               
                 <tr>
-                  <td>updateNetworkParameter</td>
+                  <td>update_network_parameter</td>
                   <td><a href="#vega.UpdateNetworkParameter">UpdateNetworkParameter</a></td>
                   <td></td>
                   <td><p>Proposal change for updating Vega network parameters </p></td>
                 </tr>
               
                 <tr>
-                  <td>newAsset</td>
+                  <td>new_asset</td>
                   <td><a href="#vega.NewAsset">NewAsset</a></td>
                   <td></td>
                   <td><p>Proposal change for creating new assets on Vega </p></td>
@@ -8221,7 +8221,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
               <tbody>
               
                 <tr>
-                  <td>closingTimestamp</td>
+                  <td>closing_timestamp</td>
                   <td>
                     <ul>
                     
@@ -8232,7 +8232,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>enactmentTimestamp</td>
+                  <td>enactment_timestamp</td>
                   <td>
                     <ul>
                     
@@ -8318,7 +8318,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Voter&#39;s party identifier </p></td>
@@ -8332,7 +8332,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>proposalID</td>
+                  <td>proposal_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Identifier of the proposal being voted on </p></td>
@@ -8362,7 +8362,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -8384,7 +8384,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>proposalID</td>
+                  <td>proposal_id</td>
                   <td>
                     <ul>
                     
@@ -8705,21 +8705,21 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Vega network internal identifier of the asset </p></td>
                 </tr>
               
                 <tr>
-                  <td>sourceBTCAddress</td>
+                  <td>source_btc_address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The BTC wallet initiating the deposit </p></td>
                 </tr>
               
                 <tr>
-                  <td>targetPartyId</td>
+                  <td>target_party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Vega party identifier (pub-key) which is the target of the deposit </p></td>
@@ -8788,28 +8788,28 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The vega network internal identifier of the asset </p></td>
                 </tr>
               
                 <tr>
-                  <td>sourcePartyId</td>
+                  <td>source_party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The party identifier (pub-key) initiating the withdrawal </p></td>
                 </tr>
               
                 <tr>
-                  <td>targetBTCAddress</td>
+                  <td>target_btc_address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Target Bitcoin wallet address </p></td>
                 </tr>
               
                 <tr>
-                  <td>referenceNonce</td>
+                  <td>reference_nonce</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The nonce reference of the transaction </p></td>
@@ -8857,14 +8857,14 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>A Vega network internal asset identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>A Vega party identifier (pub-key) </p></td>
@@ -8926,14 +8926,14 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>A Vega network internal asset identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>A Vega network party identifier (pub-key) </p></td>
@@ -8964,7 +8964,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>txID</td>
+                  <td>tx_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The identifier of the transaction in which the events happened, usually a hash </p></td>
@@ -9023,7 +9023,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Vega network internal identifier of the asset </p></td>
@@ -9047,7 +9047,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Vega network internal identifier of the asset </p></td>
@@ -9071,21 +9071,21 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The vega network internal identifier of the asset </p></td>
                 </tr>
               
                 <tr>
-                  <td>sourceEthereumAddress</td>
+                  <td>source_ethereum_address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Ethereum wallet that initiated the deposit </p></td>
                 </tr>
               
                 <tr>
-                  <td>targetPartyID</td>
+                  <td>target_party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Vega party identifier (pub-key) which is the target of the deposit </p></td>
@@ -9130,14 +9130,14 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>assetList</td>
+                  <td>asset_list</td>
                   <td><a href="#vega.ERC20AssetList">ERC20AssetList</a></td>
                   <td></td>
                   <td><p>List an ERC20 asset </p></td>
                 </tr>
               
                 <tr>
-                  <td>assetDelist</td>
+                  <td>asset_delist</td>
                   <td><a href="#vega.ERC20AssetDelist">ERC20AssetDelist</a></td>
                   <td></td>
                   <td><p>De-list an ERC20 asset </p></td>
@@ -9175,21 +9175,21 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>vegaAssetID</td>
+                  <td>vega_asset_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The Vega network internal identifier of the asset </p></td>
                 </tr>
               
                 <tr>
-                  <td>targetEthereumAddress</td>
+                  <td>target_ethereum_address</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The target Ethereum wallet address </p></td>
                 </tr>
               
                 <tr>
-                  <td>referenceNonce</td>
+                  <td>reference_nonce</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The reference nonce used for the transaction </p></td>
@@ -9237,14 +9237,14 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>ethereumAddress</td>
+                  <td>ethereum_address</td>
                   <td><a href="#vega.EthereumAddress">EthereumAddress</a></td>
                   <td></td>
                   <td><p>Ethereum network </p></td>
                 </tr>
               
                 <tr>
-                  <td>bitcoinAddress</td>
+                  <td>bitcoin_address</td>
                   <td><a href="#vega.BitcoinAddress">BitcoinAddress</a></td>
                   <td></td>
                   <td><p>Bitcoin network </p></td>
@@ -9292,7 +9292,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>sourceID</td>
+                  <td>source_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The source identifier of the event </p></td>
@@ -9344,14 +9344,14 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the event </p></td>
                 </tr>
               
                 <tr>
-                  <td>openingAuction</td>
+                  <td>opening_auction</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
                   <td><p>True if the event indicates an auction opening and False otherwise </p></td>
@@ -9403,7 +9403,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>A unique event identifier for the message </p></td>
@@ -9424,21 +9424,21 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>timeUpdate</td>
+                  <td>time_update</td>
                   <td><a href="#vega.TimeUpdate">TimeUpdate</a></td>
                   <td></td>
                   <td><p>Time update events - See [TimeUpdate](#vega.TimeUpdate) </p></td>
                 </tr>
               
                 <tr>
-                  <td>transferResponses</td>
+                  <td>transfer_responses</td>
                   <td><a href="#vega.TransferResponses">TransferResponses</a></td>
                   <td></td>
                   <td><p>Transfer responses update events - See [TransferResponses](#vega.TransferResponses) </p></td>
                 </tr>
               
                 <tr>
-                  <td>positionResolution</td>
+                  <td>position_resolution</td>
                   <td><a href="#vega.PositionResolution">PositionResolution</a></td>
                   <td></td>
                   <td><p>Position resolution events - See [PositionResolution](#vega.PositionResolution) </p></td>
@@ -9473,7 +9473,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>marginLevels</td>
+                  <td>margin_levels</td>
                   <td><a href="#vega.MarginLevels">MarginLevels</a></td>
                   <td></td>
                   <td><p>Margin level update events </p></td>
@@ -9494,42 +9494,42 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>marketData</td>
+                  <td>market_data</td>
                   <td><a href="#vega.MarketData">MarketData</a></td>
                   <td></td>
                   <td><p>Market data events </p></td>
                 </tr>
               
                 <tr>
-                  <td>nodeSignature</td>
+                  <td>node_signature</td>
                   <td><a href="#vega.NodeSignature">NodeSignature</a></td>
                   <td></td>
                   <td><p>Node signature events </p></td>
                 </tr>
               
                 <tr>
-                  <td>lossSocialization</td>
+                  <td>loss_socialization</td>
                   <td><a href="#vega.LossSocialization">LossSocialization</a></td>
                   <td></td>
                   <td><p>Loss socialization events - See [LossSocialization](#vega.LossSocialization) </p></td>
                 </tr>
               
                 <tr>
-                  <td>settlePosition</td>
+                  <td>settle_position</td>
                   <td><a href="#vega.SettlePosition">SettlePosition</a></td>
                   <td></td>
                   <td><p>Position settlement events - See [SettlePosition](#vega.SettlePosition) </p></td>
                 </tr>
               
                 <tr>
-                  <td>settleDistressed</td>
+                  <td>settle_distressed</td>
                   <td><a href="#vega.SettleDistressed">SettleDistressed</a></td>
                   <td></td>
                   <td><p>Position distressed events - See [SettleDistressed](#vega.SettleDistressed) </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketCreated</td>
+                  <td>market_created</td>
                   <td><a href="#vega.Market">Market</a></td>
                   <td></td>
                   <td><p>Market created events </p></td>
@@ -9543,7 +9543,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>marketTick</td>
+                  <td>market_tick</td>
                   <td><a href="#vega.MarketTick">MarketTick</a></td>
                   <td></td>
                   <td><p>Market tick events - See [MarketTick](#vega.MarketTick) </p></td>
@@ -9571,28 +9571,28 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>riskFactor</td>
+                  <td>risk_factor</td>
                   <td><a href="#vega.RiskFactor">RiskFactor</a></td>
                   <td></td>
                   <td><p>Risk factor events </p></td>
                 </tr>
               
                 <tr>
-                  <td>networkParameter</td>
+                  <td>network_parameter</td>
                   <td><a href="#vega.NetworkParameter">NetworkParameter</a></td>
                   <td></td>
                   <td><p>Network parameter events </p></td>
                 </tr>
               
                 <tr>
-                  <td>liquidityProvision</td>
+                  <td>liquidity_provision</td>
                   <td><a href="#vega.LiquidityProvision">LiquidityProvision</a></td>
                   <td></td>
                   <td><p>LiquidityProvision  events </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketUpdated</td>
+                  <td>market_updated</td>
                   <td><a href="#vega.Market">Market</a></td>
                   <td></td>
                   <td><p>Market created events </p></td>
@@ -9606,7 +9606,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>txErrEvent</td>
+                  <td>tx_err_event</td>
                   <td><a href="#vega.TxErrorEvent">TxErrorEvent</a></td>
                   <td></td>
                   <td><p>Transaction error events, not included in the ALL event type </p></td>
@@ -9630,14 +9630,14 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the event </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier (public key) for the event </p></td>
@@ -9668,7 +9668,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the event </p></td>
@@ -9699,7 +9699,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the event </p></td>
@@ -9730,7 +9730,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the event </p></td>
@@ -9751,7 +9751,7 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                 </tr>
               
                 <tr>
-                  <td>markPrice</td>
+                  <td>mark_price</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Mark price, as an integer, for example `123456` is a correctly
@@ -9776,14 +9776,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the event </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier (public key) for the event </p></td>
@@ -9823,14 +9823,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier for the event </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier (public key) for the event </p></td>
@@ -9845,7 +9845,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                 </tr>
               
                 <tr>
-                  <td>tradeSettlements</td>
+                  <td>trade_settlements</td>
                   <td><a href="#vega.TradeSettlement">TradeSettlement</a></td>
                   <td>repeated</td>
                   <td><p>A collection of 1 or more trade settlements </p></td>
@@ -9949,35 +9949,35 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>PartyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Unique party identifier for the related party </p></td>
                 </tr>
               
                 <tr>
-                  <td>errMsg</td>
+                  <td>err_msg</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>An error message describing what went wrong </p></td>
                 </tr>
               
                 <tr>
-                  <td>orderSubmission</td>
+                  <td>order_submission</td>
                   <td><a href="#vega.OrderSubmission">OrderSubmission</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
               
                 <tr>
-                  <td>orderAmendment</td>
+                  <td>order_amendment</td>
                   <td><a href="#vega.OrderAmendment">OrderAmendment</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
               
                 <tr>
-                  <td>orderCancellation</td>
+                  <td>order_cancellation</td>
                   <td><a href="#vega.OrderCancellation">OrderCancellation</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -10214,14 +10214,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier </p></td>
@@ -10283,7 +10283,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Asset identifier, required field </p></td>
@@ -10306,7 +10306,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
               <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td>
                     <ul>
                     
@@ -10389,14 +10389,14 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field. </p></td>
                 </tr>
               
                 <tr>
-                  <td>sinceTimestamp</td>
+                  <td>since_timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp to retrieve candles since, in nanoseconds since the epoch,
@@ -10427,7 +10427,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -10438,7 +10438,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
                 </tr>
               
                 <tr>
-                  <td>sinceTimestamp</td>
+                  <td>since_timestamp</td>
                   <td>
                     <ul>
                     
@@ -10490,7 +10490,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
@@ -10520,7 +10520,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -10572,7 +10572,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The identifier of the deposit </p></td>
@@ -10595,7 +10595,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
               <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td>
                     <ul>
                     
@@ -10647,7 +10647,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The party to get the deposits for </p></td>
@@ -10670,7 +10670,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -10722,7 +10722,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
             <tbody>
               
                 <tr>
-                  <td>withdrawalID</td>
+                  <td>withdrawal_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The identifier of the withdrawal </p></td>
@@ -10745,7 +10745,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
               <tbody>
               
                 <tr>
-                  <td>withdrawalID</td>
+                  <td>withdrawal_id</td>
                   <td>
                     <ul>
                     
@@ -10773,7 +10773,7 @@ required field - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p
             <tbody>
               
                 <tr>
-                  <td>assetSource</td>
+                  <td>asset_source</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The address of asset on ethereum </p></td>
@@ -10902,7 +10902,7 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>marginLevels</td>
+                  <td>margin_levels</td>
                   <td><a href="#vega.MarginLevels">vega.MarginLevels</a></td>
                   <td></td>
                   <td><p>Summary of the estimated margins for this order if it were to trade now </p></td>
@@ -10976,7 +10976,7 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>selectInState</td>
+                  <td>select_in_state</td>
                   <td><a href="#api.v1.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p>Optional proposal state </p></td>
@@ -11024,7 +11024,7 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>selectInState</td>
+                  <td>select_in_state</td>
                   <td><a href="#api.v1.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p>Optional proposal state </p></td>
@@ -11072,7 +11072,7 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>selectInState</td>
+                  <td>select_in_state</td>
                   <td><a href="#api.v1.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p>Optional proposal state </p></td>
@@ -11120,7 +11120,7 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Resource identifier, required field </p></td>
@@ -11143,7 +11143,7 @@ Size (the size at which the order could eventually trade) </p></td>
               <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td>
                     <ul>
                     
@@ -11195,7 +11195,7 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>proposalID</td>
+                  <td>proposal_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Proposal identifier, required field </p></td>
@@ -11218,7 +11218,7 @@ Size (the size at which the order could eventually trade) </p></td>
               <tbody>
               
                 <tr>
-                  <td>proposalID</td>
+                  <td>proposal_id</td>
                   <td>
                     <ul>
                     
@@ -11345,14 +11345,14 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>selectInState</td>
+                  <td>select_in_state</td>
                   <td><a href="#api.v1.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p>Optional proposal state </p></td>
@@ -11375,7 +11375,7 @@ Size (the size at which the order could eventually trade) </p></td>
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -11427,7 +11427,7 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>selectInState</td>
+                  <td>select_in_state</td>
                   <td><a href="#api.v1.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p>Optional proposal state </p></td>
@@ -11475,14 +11475,14 @@ Size (the size at which the order could eventually trade) </p></td>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>selectInState</td>
+                  <td>select_in_state</td>
                   <td><a href="#api.v1.OptionalProposalState">OptionalProposalState</a></td>
                   <td></td>
                   <td><p>Proposal state </p></td>
@@ -11505,7 +11505,7 @@ Size (the size at which the order could eventually trade) </p></td>
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -11589,7 +11589,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
@@ -11612,7 +11612,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -11664,7 +11664,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
@@ -11687,7 +11687,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -11770,7 +11770,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>liquidityProvisions</td>
+                  <td>liquidity_provisions</td>
                   <td><a href="#vega.LiquidityProvision">vega.LiquidityProvision</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
@@ -11794,14 +11794,14 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -11824,7 +11824,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -11852,7 +11852,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marginLevels</td>
+                  <td>margin_levels</td>
                   <td><a href="#vega.MarginLevels">vega.MarginLevels</a></td>
                   <td>repeated</td>
                   <td><p>A list of 0 or more margin levels </p></td>
@@ -11876,14 +11876,14 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -11906,7 +11906,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -11934,7 +11934,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marginLevels</td>
+                  <td>margin_levels</td>
                   <td><a href="#vega.MarginLevels">vega.MarginLevels</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -11958,7 +11958,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -12013,7 +12013,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
@@ -12036,7 +12036,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -12088,7 +12088,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -12111,7 +12111,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -12139,7 +12139,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketData</td>
+                  <td>market_data</td>
                   <td><a href="#vega.MarketData">vega.MarketData</a></td>
                   <td></td>
                   <td><p>Market data, if found </p></td>
@@ -12163,14 +12163,14 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>maxDepth</td>
+                  <td>max_depth</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Max depth limits the number of levels returned. Default is 0, which returns all levels </p></td>
@@ -12193,7 +12193,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -12221,7 +12221,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -12242,14 +12242,14 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
                 </tr>
               
                 <tr>
-                  <td>lastTrade</td>
+                  <td>last_trade</td>
                   <td><a href="#vega.Trade">vega.Trade</a></td>
                   <td></td>
                   <td><p>Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse` </p></td>
                 </tr>
               
                 <tr>
-                  <td>sequenceNumber</td>
+                  <td>sequence_number</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p>Sequence number incremented after each update </p></td>
@@ -12273,7 +12273,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field. </p></td>
@@ -12296,7 +12296,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -12324,7 +12324,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketDepth</td>
+                  <td>market_depth</td>
                   <td><a href="#vega.MarketDepth">vega.MarketDepth</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -12348,7 +12348,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
@@ -12371,7 +12371,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -12430,7 +12430,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketsData</td>
+                  <td>markets_data</td>
                   <td><a href="#vega.MarketData">vega.MarketData</a></td>
                   <td>repeated</td>
                   <td><p>A list of 0 or more market data </p></td>
@@ -12454,7 +12454,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -12478,7 +12478,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>marketData</td>
+                  <td>market_data</td>
                   <td><a href="#vega.MarketData">vega.MarketData</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -12540,7 +12540,7 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
             <tbody>
               
                 <tr>
-                  <td>networkParameters</td>
+                  <td>network_parameters</td>
                   <td><a href="#vega.NetworkParameter">vega.NetworkParameter</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
@@ -12571,21 +12571,21 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, optional field </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, optional field </p></td>
                 </tr>
               
                 <tr>
-                  <td>batchSize</td>
+                  <td>batch_size</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Batch size, optional field -
@@ -12670,7 +12670,7 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
@@ -12693,7 +12693,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -12745,7 +12745,7 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
@@ -12768,7 +12768,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -12820,7 +12820,7 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>proposalID</td>
+                  <td>proposal_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Proposal identifier, required field </p></td>
@@ -12843,7 +12843,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>proposalID</td>
+                  <td>proposal_id</td>
                   <td>
                     <ul>
                     
@@ -12919,7 +12919,7 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Order identifier, required field </p></td>
@@ -12952,7 +12952,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td>
                     <ul>
                     
@@ -13004,14 +13004,14 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Order identifier, required field </p></td>
@@ -13034,7 +13034,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -13045,7 +13045,7 @@ Default: 0, send any and all events when they are available. </p></td>
                 </tr>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td>
                     <ul>
                     
@@ -13172,7 +13172,7 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Order identifier, required field </p></td>
@@ -13202,7 +13202,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td>
                     <ul>
                     
@@ -13254,7 +13254,7 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
@@ -13284,7 +13284,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -13336,7 +13336,7 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
@@ -13366,7 +13366,7 @@ Default: 0, send any and all events when they are available. </p></td>
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -13418,14 +13418,14 @@ Default: 0, send any and all events when they are available. </p></td>
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier </p></td>
@@ -13543,14 +13543,14 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -13612,7 +13612,7 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
@@ -13635,7 +13635,7 @@ default is true, if false the results will be returned in ascending order </p></
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -13687,14 +13687,14 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -13717,7 +13717,7 @@ default is true, if false the results will be returned in ascending order </p></
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -13769,14 +13769,14 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, optional field </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, optional field </p></td>
@@ -13995,7 +13995,7 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier, required field </p></td>
@@ -14032,7 +14032,7 @@ default is true, if false the results will be returned in ascending order </p></
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     
@@ -14078,7 +14078,7 @@ default is true, if false the results will be returned in ascending order </p></
                 </tr>
               
                 <tr>
-                  <td>pendingProposal</td>
+                  <td>pending_proposal</td>
                   <td><a href="#vega.Proposal">vega.Proposal</a></td>
                   <td></td>
                   <td><p>A copy of the prepared proposal </p></td>
@@ -14133,7 +14133,7 @@ default is true, if false the results will be returned in ascending order </p></
                 </tr>
               
                 <tr>
-                  <td>submitID</td>
+                  <td>submit_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Submission identifier (order reference) </p></td>
@@ -14294,7 +14294,7 @@ default is true, if false the results will be returned in ascending order </p></
                 </tr>
               
                 <tr>
-                  <td>pubKey</td>
+                  <td>pub_key</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Public key </p></td>
@@ -14437,7 +14437,7 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier, required field </p></td>
@@ -14467,7 +14467,7 @@ default is true, if false the results will be returned in ascending order </p></
               <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td>
                     <ul>
                     
@@ -14519,7 +14519,7 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>orderID</td>
+                  <td>order_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Order identifier, required field </p></td>
@@ -14567,14 +14567,14 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier. Required field </p></td>
                 </tr>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
@@ -14629,14 +14629,14 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>marketID</td>
+                  <td>market_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Market identifier </p></td>
                 </tr>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Party identifier </p></td>
@@ -14715,7 +14715,7 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The identifier of the withdrawal </p></td>
@@ -14738,7 +14738,7 @@ default is true, if false the results will be returned in ascending order </p></
               <tbody>
               
                 <tr>
-                  <td>ID</td>
+                  <td>id</td>
                   <td>
                     <ul>
                     
@@ -14790,7 +14790,7 @@ default is true, if false the results will be returned in ascending order </p></
             <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>The party to get the withdrawals for </p></td>
@@ -14813,7 +14813,7 @@ default is true, if false the results will be returned in ascending order </p></
               <tbody>
               
                 <tr>
-                  <td>partyID</td>
+                  <td>party_id</td>
                   <td>
                     <ul>
                     

@@ -68,10 +68,10 @@ func (w *Withdrawal) consume() {
 				return
 			}
 			w.mu.Lock()
-			withdrawals, ok := w.withdrawals[wit.PartyID]
+			withdrawals, ok := w.withdrawals[wit.PartyId]
 			if !ok {
 				withdrawals = map[string]types.Withdrawal{}
-				w.withdrawals[wit.PartyID] = withdrawals
+				w.withdrawals[wit.PartyId] = withdrawals
 			}
 			withdrawals[wit.Id] = wit
 			w.mu.Unlock()

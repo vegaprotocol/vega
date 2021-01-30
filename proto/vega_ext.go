@@ -32,9 +32,9 @@ func (o *Order) IsPersistent() bool {
 
 func (o *Order) AmendSize(newSize int64) *OrderAmendment {
 	a := &OrderAmendment{
-		OrderID:  o.Id,
-		MarketID: o.MarketID,
-		PartyID:  o.PartyID,
+		OrderId:  o.Id,
+		MarketId: o.MarketId,
+		PartyId:  o.PartyId,
 
 		SizeDelta:   newSize - int64(o.Size),
 		TimeInForce: o.TimeInForce,

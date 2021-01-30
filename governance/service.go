@@ -321,7 +321,7 @@ func (s *Svc) PrepareProposal(
 	}
 	return &types.Proposal{
 		Reference: reference,
-		PartyID:   party,
+		PartyId:   party,
 		State:     types.Proposal_STATE_OPEN,
 		Terms:     terms,
 	}, nil
@@ -331,7 +331,7 @@ func (s *Svc) PrepareProposal(
 func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
 	// to check if the enum value is correct:
 	_, ok := types.Vote_Value_value[vote.Value.String()]
-	if vote.ProposalID == "" || vote.PartyID == "" || !ok {
+	if vote.ProposalId == "" || vote.PartyId == "" || !ok {
 		return nil, ErrMissingVoteData
 	}
 	return vote, nil

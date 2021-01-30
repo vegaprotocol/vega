@@ -58,7 +58,7 @@ func (a *Asset) consume() {
 				return
 			}
 			a.mu.Lock()
-			a.assets[asset.ID] = asset
+			a.assets[asset.Id] = asset
 			a.mu.Unlock()
 		}
 	}

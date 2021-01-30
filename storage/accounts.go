@@ -182,7 +182,7 @@ func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.Acc
 	accounts = append(accounts, bondAccounts...)
 	out := []*types.Account{}
 	for _, acc := range accounts {
-		if (len(marketID) <= 0 || marketID == acc.MarketID) &&
+		if (len(marketID) <= 0 || marketID == acc.MarketId) &&
 			(len(asset) <= 0 || asset == acc.Asset) &&
 			(ty == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED || ty == acc.Type) {
 			// ensure there's no duplicate
@@ -347,7 +347,7 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			continue
 		}
 		// Validate marketID as only MARGIN accounts should have a marketID specified
-		if acc.MarketID == "" && (acc.Type != types.AccountType_ACCOUNT_TYPE_GENERAL || acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW) {
+		if acc.MarketId == "" && (acc.Type != types.AccountType_ACCOUNT_TYPE_GENERAL || acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW) {
 			err := fmt.Errorf("general or withdraw account should not have a market")
 			a.log.Error(err.Error(), logging.Account(*acc))
 			return nil, err
@@ -364,11 +364,11 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		}
 
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
-			insuranceIDKey := a.badger.accountInsuranceIDKey(acc.MarketID, acc.Asset)
+			insuranceIDKey := a.badger.accountInsuranceIDKey(acc.MarketId, acc.Asset)
 			batch[string(insuranceIDKey)] = buf
 		}
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
-			liquidityIDKey := a.badger.accountFeeLiquidityIDKey(acc.MarketID, acc.Asset)
+			liquidityIDKey := a.badger.accountFeeLiquidityIDKey(acc.MarketId, acc.Asset)
 			batch[string(liquidityIDKey)] = buf
 		}
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
@@ -392,8 +392,8 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		}
 		// Check the type of account and write only the data/keys required for MARGIN accounts.
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			marginIDKey := a.badger.accountMarginIDKey(acc.Owner, acc.MarketID, acc.Asset)
-			marginMarketKey := a.badger.accountMarketKey(acc.MarketID, string(marginIDKey))
+			marginIDKey := a.badger.accountMarginIDKey(acc.Owner, acc.MarketId, acc.Asset)
+			marginMarketKey := a.badger.accountMarketKey(acc.MarketId, string(marginIDKey))
 			marginAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(marginIDKey))
 			batch[string(marginIDKey)] = buf
 			batch[string(marginMarketKey)] = marginIDKey
@@ -401,8 +401,8 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		}
 		// Check the type of account and write only the data/keys required for BOND accounts.
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			marginIDKey := a.badger.accountMarginIDKey(acc.Owner, acc.MarketID, acc.Asset)
-			marginMarketKey := a.badger.accountMarketKey(acc.MarketID, string(marginIDKey))
+			marginIDKey := a.badger.accountMarginIDKey(acc.Owner, acc.MarketId, acc.Asset)
+			marginMarketKey := a.badger.accountMarketKey(acc.MarketId, string(marginIDKey))
 			marginAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(marginIDKey))
 			batch[string(marginIDKey)] = buf
 			batch[string(marginMarketKey)] = marginIDKey

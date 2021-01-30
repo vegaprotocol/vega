@@ -114,7 +114,7 @@ func request_TradingService_SubmitTransaction_0(ctx context.Context, marshaler r
 }
 
 var (
-	filter_TradingDataService_MarketAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_MarketAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_MarketAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -128,15 +128,15 @@ func request_TradingDataService_MarketAccounts_0(ctx context.Context, marshaler 
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_MarketAccounts_0); err != nil {
@@ -149,7 +149,7 @@ func request_TradingDataService_MarketAccounts_0(ctx context.Context, marshaler 
 }
 
 var (
-	filter_TradingDataService_PartyAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_PartyAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_PartyAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -163,15 +163,15 @@ func request_TradingDataService_PartyAccounts_0(ctx context.Context, marshaler r
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_PartyAccounts_0); err != nil {
@@ -211,7 +211,7 @@ func request_TradingDataService_FeeInfrastructureAccounts_0(ctx context.Context,
 }
 
 var (
-	filter_TradingDataService_Candles_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_Candles_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_Candles_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -225,15 +225,15 @@ func request_TradingDataService_Candles_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_Candles_0); err != nil {
@@ -256,15 +256,15 @@ func request_TradingDataService_MarketDataByID_0(ctx context.Context, marshaler 
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.MarketDataByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -292,15 +292,15 @@ func request_TradingDataService_MarketByID_0(ctx context.Context, marshaler runt
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.MarketByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -309,7 +309,7 @@ func request_TradingDataService_MarketByID_0(ctx context.Context, marshaler runt
 }
 
 var (
-	filter_TradingDataService_MarketDepth_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_MarketDepth_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_MarketDepth_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -323,15 +323,15 @@ func request_TradingDataService_MarketDepth_0(ctx context.Context, marshaler run
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_MarketDepth_0); err != nil {
@@ -363,26 +363,26 @@ func request_TradingDataService_OrderByMarketAndID_0(ctx context.Context, marsha
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
-	val, ok = pathParams["orderID"]
+	val, ok = pathParams["order_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "orderID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "order_id")
 	}
 
-	protoReq.OrderID, err = runtime.String(val)
+	protoReq.OrderId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "orderID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "order_id", err)
 	}
 
 	msg, err := client.OrderByMarketAndID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -418,7 +418,7 @@ func request_TradingDataService_OrderByReference_0(ctx context.Context, marshale
 }
 
 var (
-	filter_TradingDataService_OrdersByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_OrdersByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_OrdersByMarket_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -432,15 +432,15 @@ func request_TradingDataService_OrdersByMarket_0(ctx context.Context, marshaler 
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_OrdersByMarket_0); err != nil {
@@ -453,7 +453,7 @@ func request_TradingDataService_OrdersByMarket_0(ctx context.Context, marshaler 
 }
 
 var (
-	filter_TradingDataService_OrdersByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_OrdersByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_OrdersByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -467,15 +467,15 @@ func request_TradingDataService_OrdersByParty_0(ctx context.Context, marshaler r
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_OrdersByParty_0); err != nil {
@@ -488,7 +488,7 @@ func request_TradingDataService_OrdersByParty_0(ctx context.Context, marshaler r
 }
 
 var (
-	filter_TradingDataService_OrderVersionsByID_0 = &utilities.DoubleArray{Encoding: map[string]int{"orderID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_OrderVersionsByID_0 = &utilities.DoubleArray{Encoding: map[string]int{"order_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_OrderVersionsByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -502,15 +502,15 @@ func request_TradingDataService_OrderVersionsByID_0(ctx context.Context, marshal
 		_   = err
 	)
 
-	val, ok = pathParams["orderID"]
+	val, ok = pathParams["order_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "orderID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "order_id")
 	}
 
-	protoReq.OrderID, err = runtime.String(val)
+	protoReq.OrderId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "orderID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "order_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_OrderVersionsByID_0); err != nil {
@@ -533,26 +533,26 @@ func request_TradingDataService_MarginLevels_0(ctx context.Context, marshaler ru
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.MarginLevels(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -580,15 +580,15 @@ func request_TradingDataService_PartyByID_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.PartyByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -597,7 +597,7 @@ func request_TradingDataService_PartyByID_0(ctx context.Context, marshaler runti
 }
 
 var (
-	filter_TradingDataService_PositionsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_PositionsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_PositionsByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -611,15 +611,15 @@ func request_TradingDataService_PositionsByParty_0(ctx context.Context, marshale
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_PositionsByParty_0); err != nil {
@@ -642,15 +642,15 @@ func request_TradingDataService_LastTrade_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.LastTrade(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -659,7 +659,7 @@ func request_TradingDataService_LastTrade_0(ctx context.Context, marshaler runti
 }
 
 var (
-	filter_TradingDataService_TradesByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_TradesByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_TradesByMarket_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -673,15 +673,15 @@ func request_TradingDataService_TradesByMarket_0(ctx context.Context, marshaler 
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_TradesByMarket_0); err != nil {
@@ -704,15 +704,15 @@ func request_TradingDataService_TradesByOrder_0(ctx context.Context, marshaler r
 		_   = err
 	)
 
-	val, ok = pathParams["orderID"]
+	val, ok = pathParams["order_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "orderID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "order_id")
 	}
 
-	protoReq.OrderID, err = runtime.String(val)
+	protoReq.OrderId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "orderID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "order_id", err)
 	}
 
 	msg, err := client.TradesByOrder(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -721,7 +721,7 @@ func request_TradingDataService_TradesByOrder_0(ctx context.Context, marshaler r
 }
 
 var (
-	filter_TradingDataService_TradesByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_TradesByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_TradesByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -735,15 +735,15 @@ func request_TradingDataService_TradesByParty_0(ctx context.Context, marshaler r
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_TradesByParty_0); err != nil {
@@ -773,7 +773,7 @@ func request_TradingDataService_GetProposals_0(ctx context.Context, marshaler ru
 }
 
 var (
-	filter_TradingDataService_GetProposalsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_GetProposalsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TradingDataService_GetProposalsByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -787,15 +787,15 @@ func request_TradingDataService_GetProposalsByParty_0(ctx context.Context, marsh
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_GetProposalsByParty_0); err != nil {
@@ -818,15 +818,15 @@ func request_TradingDataService_GetVotesByParty_0(ctx context.Context, marshaler
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.GetVotesByParty(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -879,15 +879,15 @@ func request_TradingDataService_GetProposalByID_0(ctx context.Context, marshaler
 		_   = err
 	)
 
-	val, ok = pathParams["proposalID"]
+	val, ok = pathParams["proposal_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "proposalID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "proposal_id")
 	}
 
-	protoReq.ProposalID, err = runtime.String(val)
+	protoReq.ProposalId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "proposalID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "proposal_id", err)
 	}
 
 	msg, err := client.GetProposalByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -951,15 +951,15 @@ func request_TradingDataService_AssetByID_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["ID"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ID, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.AssetByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1021,15 +1021,15 @@ func request_TradingDataService_ERC20WithdrawalApproval_0(ctx context.Context, m
 		_   = err
 	)
 
-	val, ok = pathParams["withdrawalID"]
+	val, ok = pathParams["withdrawal_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "withdrawalID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "withdrawal_id")
 	}
 
-	protoReq.WithdrawalID, err = runtime.String(val)
+	protoReq.WithdrawalId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "withdrawalID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "withdrawal_id", err)
 	}
 
 	msg, err := client.ERC20WithdrawalApproval(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1048,15 +1048,15 @@ func request_TradingDataService_Withdrawal_0(ctx context.Context, marshaler runt
 		_   = err
 	)
 
-	val, ok = pathParams["ID"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ID, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.Withdrawal(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1075,15 +1075,15 @@ func request_TradingDataService_Withdrawals_0(ctx context.Context, marshaler run
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.Withdrawals(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1102,15 +1102,15 @@ func request_TradingDataService_Deposit_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["ID"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ID, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.Deposit(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1129,15 +1129,15 @@ func request_TradingDataService_Deposits_0(ctx context.Context, marshaler runtim
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.Deposits(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -2181,61 +2181,61 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 }
 
 var (
-	pattern_TradingDataService_MarketAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "accounts"}, ""))
+	pattern_TradingDataService_MarketAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "accounts"}, ""))
 
-	pattern_TradingDataService_PartyAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "accounts"}, ""))
+	pattern_TradingDataService_PartyAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "accounts"}, ""))
 
 	pattern_TradingDataService_FeeInfrastructureAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"assets", "asset", "infrastructureFeeAccount"}, ""))
 
-	pattern_TradingDataService_Candles_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "candles"}, ""))
+	pattern_TradingDataService_Candles_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "candles"}, ""))
 
-	pattern_TradingDataService_MarketDataByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets-data", "marketID"}, ""))
+	pattern_TradingDataService_MarketDataByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets-data", "market_id"}, ""))
 
 	pattern_TradingDataService_MarketsData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markets-data"}, ""))
 
-	pattern_TradingDataService_MarketByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets", "marketID"}, ""))
+	pattern_TradingDataService_MarketByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets", "market_id"}, ""))
 
-	pattern_TradingDataService_MarketDepth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "depth"}, ""))
+	pattern_TradingDataService_MarketDepth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "depth"}, ""))
 
 	pattern_TradingDataService_Markets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markets"}, ""))
 
-	pattern_TradingDataService_OrderByMarketAndID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"markets", "marketID", "orders", "orderID"}, ""))
+	pattern_TradingDataService_OrderByMarketAndID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"markets", "market_id", "orders", "order_id"}, ""))
 
 	pattern_TradingDataService_OrderByReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"orders", "reference"}, ""))
 
-	pattern_TradingDataService_OrdersByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "orders"}, ""))
+	pattern_TradingDataService_OrdersByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "orders"}, ""))
 
-	pattern_TradingDataService_OrdersByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "orders"}, ""))
+	pattern_TradingDataService_OrdersByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "orders"}, ""))
 
-	pattern_TradingDataService_OrderVersionsByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "orderID", "versions"}, ""))
+	pattern_TradingDataService_OrderVersionsByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "order_id", "versions"}, ""))
 
-	pattern_TradingDataService_MarginLevels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"parties", "partyID", "markets", "marketID", "margin"}, ""))
+	pattern_TradingDataService_MarginLevels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"parties", "party_id", "markets", "market_id", "margin"}, ""))
 
 	pattern_TradingDataService_Parties_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"parties"}, ""))
 
-	pattern_TradingDataService_PartyByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"parties", "partyID"}, ""))
+	pattern_TradingDataService_PartyByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"parties", "party_id"}, ""))
 
-	pattern_TradingDataService_PositionsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "positions"}, ""))
+	pattern_TradingDataService_PositionsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "positions"}, ""))
 
-	pattern_TradingDataService_LastTrade_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"markets", "marketID", "trades", "latest"}, ""))
+	pattern_TradingDataService_LastTrade_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"markets", "market_id", "trades", "latest"}, ""))
 
-	pattern_TradingDataService_TradesByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "trades"}, ""))
+	pattern_TradingDataService_TradesByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "trades"}, ""))
 
-	pattern_TradingDataService_TradesByOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "orderID", "trades"}, ""))
+	pattern_TradingDataService_TradesByOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "order_id", "trades"}, ""))
 
-	pattern_TradingDataService_TradesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "trades"}, ""))
+	pattern_TradingDataService_TradesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "trades"}, ""))
 
 	pattern_TradingDataService_GetProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"governance", "proposals"}, ""))
 
-	pattern_TradingDataService_GetProposalsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "proposals"}, ""))
+	pattern_TradingDataService_GetProposalsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "proposals"}, ""))
 
-	pattern_TradingDataService_GetVotesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "votes"}, ""))
+	pattern_TradingDataService_GetVotesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "votes"}, ""))
 
 	pattern_TradingDataService_GetNewMarketProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "market", "proposals"}, ""))
 
 	pattern_TradingDataService_GetNewAssetProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "asset", "proposals"}, ""))
 
-	pattern_TradingDataService_GetProposalByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"governance", "proposal", "proposalID"}, ""))
+	pattern_TradingDataService_GetProposalByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"governance", "proposal", "proposal_id"}, ""))
 
 	pattern_TradingDataService_GetProposalByReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2}, []string{"governance", "proposal", "reference"}, ""))
 
@@ -2243,7 +2243,7 @@ var (
 
 	pattern_TradingDataService_GetVegaTime_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"time"}, ""))
 
-	pattern_TradingDataService_AssetByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"assets", "ID"}, ""))
+	pattern_TradingDataService_AssetByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"assets", "id"}, ""))
 
 	pattern_TradingDataService_Assets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"assets"}, ""))
 
@@ -2251,15 +2251,15 @@ var (
 
 	pattern_TradingDataService_EstimateMargin_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "margins", "estimate"}, ""))
 
-	pattern_TradingDataService_ERC20WithdrawalApproval_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"withdrawals", "withdrawalID", "approval", "erc20"}, ""))
+	pattern_TradingDataService_ERC20WithdrawalApproval_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"withdrawals", "withdrawal_id", "approval", "erc20"}, ""))
 
-	pattern_TradingDataService_Withdrawal_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"withdrawals", "ID"}, ""))
+	pattern_TradingDataService_Withdrawal_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"withdrawals", "id"}, ""))
 
-	pattern_TradingDataService_Withdrawals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"withdrawals", "party", "partyID"}, ""))
+	pattern_TradingDataService_Withdrawals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"withdrawals", "party", "party_id"}, ""))
 
-	pattern_TradingDataService_Deposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"deposits", "ID"}, ""))
+	pattern_TradingDataService_Deposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"deposits", "id"}, ""))
 
-	pattern_TradingDataService_Deposits_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"deposits", "party", "partyID"}, ""))
+	pattern_TradingDataService_Deposits_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"deposits", "party", "party_id"}, ""))
 
 	pattern_TradingDataService_NetworkParameters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"network", "parameters"}, ""))
 )

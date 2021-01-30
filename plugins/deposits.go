@@ -68,10 +68,10 @@ func (d *Deposit) consume() {
 				return
 			}
 			d.mu.Lock()
-			deposits, ok := d.deposits[dep.PartyID]
+			deposits, ok := d.deposits[dep.PartyId]
 			if !ok {
 				deposits = map[string]types.Deposit{}
-				d.deposits[dep.PartyID] = deposits
+				d.deposits[dep.PartyId] = deposits
 			}
 			deposits[dep.Id] = dep
 			d.mu.Unlock()

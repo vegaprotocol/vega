@@ -93,7 +93,7 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.P
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
 		Blob:     raw,
-		SubmitID: req.Submission.Reference,
+		SubmitId: req.Submission.Reference,
 	}, nil
 }
 
@@ -196,7 +196,7 @@ func (s *tradingService) PrepareProposal(
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
-	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyID, req.Reference, req.Proposal)
+	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyId, req.Reference, req.Proposal)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}

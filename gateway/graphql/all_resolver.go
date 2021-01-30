@@ -20,7 +20,7 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 		return nil, customErrorFromStatus(err)
 	}
 	orderReq := &protoapi.OrderByIDRequest{
-		OrderID: id,
+		OrderId: id,
 		Version: v,
 	}
 	order, err := r.clt.OrderByID(ctx, orderReq)
@@ -32,7 +32,7 @@ func (r *allResolver) getAssetByID(ctx context.Context, id string) (*Asset, erro
 		return nil, ErrMissingIDOrReference
 	}
 	req := &protoapi.AssetByIDRequest{
-		ID: id,
+		Id: id,
 	}
 	res, err := r.clt.AssetByID(ctx, req)
 	if err != nil {
@@ -60,7 +60,7 @@ func (r allResolver) allAssets(ctx context.Context) ([]*Asset, error) {
 }
 
 func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Market, error) {
-	req := protoapi.MarketByIDRequest{MarketID: id}
+	req := protoapi.MarketByIDRequest{MarketId: id}
 	res, err := r.clt.MarketByID(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))

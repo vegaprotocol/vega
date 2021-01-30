@@ -204,17 +204,17 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 func (e *Engine) DepositBuiltinAsset(
 	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
+	dep, err := e.newDeposit(id, d.PartyId, d.VegaAssetId, d.Amount, "") // no hash
 	if err != nil {
 		return err
 	}
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	asset, err := e.assets.Get(d.VegaAssetID)
+	asset, err := e.assets.Get(d.VegaAssetId)
 	if err != nil {
 		dep.Status = types.Deposit_STATUS_CANCELLED
 		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		e.log.Error("unable to get asset by id",
-			logging.String("asset-id", d.VegaAssetID),
+			logging.String("asset-id", d.VegaAssetId),
 			logging.Error(err))
 		return err
 	}
@@ -237,7 +237,7 @@ func (e *Engine) DepositBuiltinAsset(
 
 func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
-	asset, _ := e.assets.Get(al.VegaAssetID)
+	asset, _ := e.assets.Get(al.VegaAssetId)
 	aa := &assetAction{
 		id:          id(al, uint64(now.UnixNano())),
 		state:       pendingState,
@@ -258,17 +258,17 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 	if err != nil {
 		return err
 	}
-	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, a, txHash)
+	dep, err := e.newDeposit(id, d.TargetPartyId, d.VegaAssetId, a, txHash)
 	if err != nil {
 		return err
 	}
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	asset, err := e.assets.Get(d.VegaAssetID)
+	asset, err := e.assets.Get(d.VegaAssetId)
 	if err != nil {
 		dep.Status = types.Deposit_STATUS_CANCELLED
 		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		e.log.Error("unable to get asset by id",
-			logging.String("asset-id", d.VegaAssetID),
+			logging.String("asset-id", d.VegaAssetId),
 			logging.Error(err))
 		return err
 	}
@@ -293,10 +293,10 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 
 func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
-	asset, err := e.assets.Get(w.VegaAssetID)
+	asset, err := e.assets.Get(w.VegaAssetId)
 	if err != nil {
 		e.log.Debug("unable to get asset by id",
-			logging.String("asset-id", w.VegaAssetID),
+			logging.String("asset-id", w.VegaAssetId),
 			logging.Error(err))
 		return err
 	}
@@ -475,7 +475,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		dep := e.deposits[aa.id]
 		return e.finalizeDeposit(ctx, dep, aa.id)
 	case aa.IsERC20AssetList():
-		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
+		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetId)
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
 		if err != nil {
@@ -492,7 +492,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		w.WithdrawnTimestamp = now.UnixNano()
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, aa.withdrawal.nonce}
-		return e.finalizeWithdrawal(ctx, w.PartyID, w.Asset, w.Amount)
+		return e.finalizeWithdrawal(ctx, w.PartyId, w.Asset, w.Amount)
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -514,7 +514,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit, id strin
 	e.broker.Send(events.NewDepositEvent(ctx, *d))
 	// no error this have been done before when starting the deposit
 	amount, _ := strconv.ParseUint(d.Amount, 10, 64)
-	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, amount)
+	res, err := e.col.Deposit(ctx, d.PartyId, d.Asset, amount)
 	if err != nil {
 		return err
 	}
@@ -562,7 +562,7 @@ func (e *Engine) newWithdrawal(
 	w = &types.Withdrawal{
 		Id:               id,
 		Status:           types.Withdrawal_STATUS_OPEN,
-		PartyID:          partyID,
+		PartyId:          partyID,
 		Asset:            asset,
 		Amount:           amount,
 		Expiry:           expiry.Unix(),
@@ -581,7 +581,7 @@ func (e *Engine) newDeposit(
 	return &types.Deposit{
 		Id:               id,
 		Status:           types.Deposit_STATUS_OPEN,
-		PartyID:          partyID,
+		PartyId:          partyID,
 		Asset:            asset,
 		Amount:           fmt.Sprintf("%v", amount),
 		CreatedTimestamp: e.currentTime.UnixNano(),

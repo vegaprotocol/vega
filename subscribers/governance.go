@@ -158,20 +158,20 @@ func (g *GovernanceSub) Push(evts ...events.Event) {
 		switch et := e.(type) {
 		case PropE:
 			prop := et.Proposal()
-			gd := g.getData(prop.ID)
+			gd := g.getData(prop.Id)
 			gd.Proposal = &prop
-			g.changed[prop.ID] = *gd
+			g.changed[prop.Id] = *gd
 		case VoteE:
 			vote := et.Vote()
-			gd := g.getData(vote.ProposalID)
+			gd := g.getData(vote.ProposalId)
 			if vote.Value == types.Vote_VALUE_YES {
-				delete(gd.NoParty, vote.PartyID)
-				gd.YesParty[vote.PartyID] = &vote
+				delete(gd.NoParty, vote.PartyId)
+				gd.YesParty[vote.PartyId] = &vote
 			} else {
-				delete(gd.YesParty, vote.PartyID)
-				gd.NoParty[vote.PartyID] = &vote
+				delete(gd.YesParty, vote.PartyId)
+				gd.NoParty[vote.PartyId] = &vote
 			}
-			g.changed[vote.ProposalID] = *gd
+			g.changed[vote.ProposalId] = *gd
 		}
 		// data has changed for the first time
 		// close the signal channel

@@ -95,8 +95,8 @@ func (p *Positions) applyLossSocialization(e LSE) {
 	} else {
 		pos.adjustment += float64(amountLoss)
 	}
-	pos.RealisedPNLFP += float64(amountLoss)
-	pos.RealisedPNL += amountLoss
+	pos.RealisedPnlFP += float64(amountLoss)
+	pos.RealisedPnl += amountLoss
 	pos.Position.UpdatedAt = e.Timestamp()
 	p.data[marketID][partyID] = pos
 }
@@ -125,17 +125,17 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 		calc = seToProto(e)
 	}
 	margin := e.Margin()
-	calc.RealisedPNL += calc.UnrealisedPNL
-	calc.RealisedPNLFP += calc.UnrealisedPNLFP
+	calc.RealisedPnl += calc.UnrealisedPnl
+	calc.RealisedPnlFP += calc.UnrealisedPnlFP
 	calc.OpenVolume = 0
-	calc.UnrealisedPNL = 0
+	calc.UnrealisedPnl = 0
 	calc.AverageEntryPrice = 0
 	// realised P&L includes whatever we had in margin account at this point
-	calc.RealisedPNL -= int64(margin)
-	calc.RealisedPNLFP -= float64(margin)
+	calc.RealisedPnl -= int64(margin)
+	calc.RealisedPnlFP -= float64(margin)
 	// @TODO average entry price shouldn't be affected(?)
 	// the volume now is zero, though, so we'll end up moving this position to storage
-	calc.UnrealisedPNLFP = 0
+	calc.UnrealisedPnlFP = 0
 	calc.AverageEntryPriceFP = 0
 	calc.Position.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
@@ -225,7 +225,7 @@ func closeV(p *Position, closedVolume int64, tradedPrice uint64) float64 {
 		return 0
 	}
 	realisedPnlDelta := float64(closedVolume) * (float64(tradedPrice) - p.AverageEntryPriceFP)
-	p.RealisedPNLFP += realisedPnlDelta
+	p.RealisedPnlFP += realisedPnlDelta
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
 }
@@ -245,11 +245,11 @@ func openV(p *Position, openedVolume int64, tradedPrice uint64) {
 
 func mtm(p *Position, markPrice uint64) {
 	if p.OpenVolume == 0 {
-		p.UnrealisedPNLFP = 0
-		p.UnrealisedPNL = 0
+		p.UnrealisedPnlFP = 0
+		p.UnrealisedPnl = 0
 		return
 	}
-	p.UnrealisedPNLFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
+	p.UnrealisedPnlFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
 }
 
 func updateSettlePosition(p *Position, e SPE) {
@@ -258,17 +258,17 @@ func updateSettlePosition(p *Position, e SPE) {
 		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price())
 		p.AverageEntryPrice = uint64(math.Round(p.AverageEntryPriceFP))
-		p.RealisedPNL = int64(math.Round(p.RealisedPNLFP))
+		p.RealisedPnl = int64(math.Round(p.RealisedPnlFP))
 	}
 	mtm(p, e.Price())
-	p.UnrealisedPNL = int64(math.Round(p.UnrealisedPNLFP))
+	p.UnrealisedPnl = int64(math.Round(p.UnrealisedPnlFP))
 }
 
 type Position struct {
 	types.Position
 	AverageEntryPriceFP float64
-	RealisedPNLFP       float64
-	UnrealisedPNLFP     float64
+	RealisedPnlFP       float64
+	UnrealisedPnlFP     float64
 
 	// what the party lost because of loss socialization
 	loss float64
@@ -279,12 +279,12 @@ type Position struct {
 func seToProto(e SE) Position {
 	return Position{
 		Position: types.Position{
-			MarketID: e.MarketID(),
-			PartyID:  e.PartyID(),
+			MarketId: e.MarketID(),
+			PartyId:  e.PartyID(),
 		},
 		AverageEntryPriceFP: 0,
-		RealisedPNLFP:       0,
-		UnrealisedPNLFP:     0,
+		RealisedPnlFP:       0,
+		UnrealisedPnlFP:     0,
 	}
 }
 

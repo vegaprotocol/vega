@@ -48,7 +48,7 @@ type nodeProposal struct {
 }
 
 func (n *nodeProposal) GetID() string {
-	return fmt.Sprintf("proposal-node-validation-%v", n.ID)
+	return fmt.Sprintf("proposal-node-validation-%v", n.Id)
 }
 
 func (n *nodeProposal) Check() error {
@@ -86,7 +86,7 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 
 func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
 	for _, v := range n.nodeProposals {
-		if v.ID == id {
+		if v.Id == id {
 			return v, true
 		}
 	}
@@ -95,7 +95,7 @@ func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
 
 func (n *NodeValidation) removeProposal(id string) {
 	for i, p := range n.nodeProposals {
-		if p.ID == id {
+		if p.Id == id {
 			copy(n.nodeProposals[i:], n.nodeProposals[i+1:])
 			n.nodeProposals[len(n.nodeProposals)-1] = nil
 			n.nodeProposals = n.nodeProposals[:len(n.nodeProposals)-1]
@@ -125,7 +125,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 		case rejectedProposal:
 			rejected = append(rejected, prop.Proposal)
 		}
-		toRemove = append(toRemove, prop.ID)
+		toRemove = append(toRemove, prop.Id)
 	}
 
 	// now we iterate over all proposal ids to remove them from the list
@@ -149,11 +149,11 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 // Start the node validation of a proposal
 func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
-		n.log.Error("no node validation required", logging.String("ref", p.ID))
+		n.log.Error("no node validation required", logging.String("ref", p.Id))
 		return ErrNoNodeValidationRequired
 	}
 
-	_, ok := n.getProposal(p.ID)
+	_, ok := n.getProposal(p.Id)
 	if ok {
 		return ErrProposalReferenceDuplicate
 	}
@@ -179,7 +179,7 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewAsset:
-		assetID, err := n.assets.NewAsset(p.ID,
+		assetID, err := n.assets.NewAsset(p.Id,
 			change.NewAsset.GetChanges())
 		if err != nil {
 			n.log.Error("unable to instanciate asset",
@@ -188,7 +188,7 @@ func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 			return nil, err
 		}
 		return func() error {
-			return n.checkAsset(p.ID)
+			return n.checkAsset(p.Id)
 		}, nil
 	default: // this should have been check earlier but in case of.
 		return nil, ErrNoNodeValidationRequired

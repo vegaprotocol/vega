@@ -501,7 +501,7 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
-	if order.MarketID != b.marketID {
+	if order.MarketId != b.marketID {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Market ID mismatch",
 				logging.Order(*order),
@@ -644,7 +644,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	var lastTradedPrice uint64
 	var err error
 
-	order.BatchID = b.batchID
+	order.BatchId = b.batchID
 
 	if !b.auction {
 		// uncross with opposite
@@ -701,7 +701,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 			// delete from lookup table
 			delete(b.ordersByID, impactedOrders[idx].Id)
-			delete(b.ordersPerParty[impactedOrders[idx].PartyID], impactedOrders[idx].Id)
+			delete(b.ordersPerParty[impactedOrders[idx].PartyId], impactedOrders[idx].Id)
 		}
 	}
 
@@ -717,8 +717,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	if order.Status == types.Order_STATUS_ACTIVE {
 		b.ordersByID[order.Id] = order
-		if orders, ok := b.ordersPerParty[order.PartyID]; !ok {
-			b.ordersPerParty[order.PartyID] = map[string]struct{}{
+		if orders, ok := b.ordersPerParty[order.PartyId]; !ok {
+			b.ordersPerParty[order.PartyId] = map[string]struct{}{
 				order.Id: struct{}{},
 			}
 		} else {
@@ -745,7 +745,7 @@ func (b *OrderBook) DeleteOrder(
 		return nil, types.ErrOrderRemovalFailure
 	}
 	delete(b.ordersByID, order.Id)
-	delete(b.ordersPerParty[order.PartyID], order.Id)
+	delete(b.ordersPerParty[order.PartyId], order.Id)
 	return dorder, err
 }
 

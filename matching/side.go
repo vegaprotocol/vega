@@ -137,7 +137,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
-	if oldOrder.PartyID != orderAmend.PartyID {
+	if oldOrder.PartyId != orderAmend.PartyId {
 		return types.ErrOrderAmendFailure
 	}
 

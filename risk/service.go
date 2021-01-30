@@ -95,15 +95,15 @@ func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevel
 
 func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.MarginLevels, error) {
 	// first get the risk factors and market data (marketdata->markprice)
-	rf, err := s.store.GetMarketRiskFactors(order.MarketID)
+	rf, err := s.store.GetMarketRiskFactors(order.MarketId)
 	if err != nil {
 		return nil, err
 	}
-	mkt, err := s.mktStore.GetByID(order.MarketID)
+	mkt, err := s.mktStore.GetByID(order.MarketId)
 	if err != nil {
 		return nil, err
 	}
-	mktData, err := s.mktDataStore.GetByID(order.MarketID)
+	mktData, err := s.mktDataStore.GetByID(order.MarketId)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +126,8 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 	maintenanceMargin := float64(order.Size) * f * float64(mktData.MarkPrice)
 	// now we use the risk factors
 	return &types.MarginLevels{
-		PartyID:                order.PartyID,
-		MarketID:               mkt.GetId(),
+		PartyId:                order.PartyId,
+		MarketId:               mkt.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,
 		MaintenanceMargin:      uint64(maintenanceMargin),
@@ -177,8 +177,8 @@ func (s *Svc) ObserveMarginLevels(
 				filtered := make([]types.MarginLevels, 0, len(accs))
 				for _, acc := range accs {
 					acc := acc
-					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
-						partyID == acc.PartyID {
+					if (len(marketID) <= 0 || marketID == acc.MarketId) &&
+						partyID == acc.PartyId {
 						filtered = append(filtered, acc)
 					}
 				}

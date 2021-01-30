@@ -32,7 +32,7 @@ func (p Party) Proto() types.Party {
 
 func (p Party) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    p.eventID(),
+		Id:    p.eventID(),
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
 		Event: &types.BusEvent_Party{

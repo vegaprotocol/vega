@@ -47,8 +47,8 @@ var (
 	ErrNoType = errors.New("no value has been set for the type")
 	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
 	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
-	// ErrCancelOrderWithOrderIDRequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
-	ErrCancelOrderWithOrderIDRequireMarketID = errors.New("cancel order with orderID require marketID")
+	// ErrCancelOrderWithOrderIdRequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
+	ErrCancelOrderWithOrderIdRequireMarketID = errors.New("cancel order with orderID require marketID")
 	// ErrCannotAmendToGFA it is not allowed to amend an order to GFA time in force
 	ErrCannotAmendToGFA = errors.New("cannot amend to time in force GFA")
 	// ErrCannotAmendToGFN it is not allowed to amend an order to GFN time in force
@@ -244,8 +244,8 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 	}
 
 	// ensure that if orderID is specified marketId is as well
-	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
-		return ErrCancelOrderWithOrderIDRequireMarketID
+	if len(order.OrderId) > 0 && len(order.MarketId) <= 0 {
+		return ErrCancelOrderWithOrderIdRequireMarketID
 	}
 
 	return nil
@@ -389,7 +389,7 @@ func (s *Svc) ObserveOrders(ctx context.Context, retries int, market *string, pa
 				validatedOrders := make([]types.Order, 0, len(v))
 				for _, item := range v {
 					// if market is not set, or equals item market and party is not set or equals item party
-					if (market == nil || item.MarketID == *market) && (party == nil || item.PartyID == *party) {
+					if (market == nil || item.MarketId == *market) && (party == nil || item.PartyId == *party) {
 						validatedOrders = append(validatedOrders, item)
 					}
 				}

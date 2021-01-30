@@ -36,14 +36,14 @@ func (m MarketTick) MarketEvent() string {
 
 func (m MarketTick) Proto() types.MarketTick {
 	return types.MarketTick{
-		ID:   m.id,
+		Id:   m.id,
 		Time: m.t.UTC().Unix(),
 	}
 }
 
 func (m MarketTick) MarketProto() types.MarketEvent {
 	return types.MarketEvent{
-		MarketID: m.id,
+		MarketId: m.id,
 		Payload:  m.MarketEvent(),
 	}
 }
@@ -51,7 +51,7 @@ func (m MarketTick) MarketProto() types.MarketEvent {
 func (m MarketTick) StreamMessage() *types.BusEvent {
 	p := m.Proto()
 	return &types.BusEvent{
-		ID:    m.eventID(),
+		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
 		Event: &types.BusEvent_MarketTick{

@@ -15,27 +15,27 @@ http:
     - selector: api.v1.TradingDataService.Markets
       get: '/markets'
     - selector: api.v1.TradingDataService.MarketByID
-      get: '/markets/{marketID}'
+      get: '/markets/{market_id}'
     - selector: api.v1.TradingDataService.Candles
-      get: '/markets/{marketID}/candles'
+      get: '/markets/{market_id}/candles'
     - selector: api.v1.TradingDataService.MarketDepth
-      get: '/markets/{marketID}/depth'
+      get: '/markets/{market_id}/depth'
     - selector: api.v1.TradingDataService.OrdersByMarket
-      get: '/markets/{marketID}/orders'
+      get: '/markets/{market_id}/orders'
     - selector: api.v1.TradingDataService.OrderByMarketAndID
-      get: '/markets/{marketID}/orders/{orderID}'
+      get: '/markets/{market_id}/orders/{order_id}'
     - selector: api.v1.TradingDataService.TradesByMarket
-      get: '/markets/{marketID}/trades'
+      get: '/markets/{market_id}/trades'
     - selector: api.v1.TradingDataService.LastTrade
-      get: '/markets/{marketID}/trades/latest'
+      get: '/markets/{market_id}/trades/latest'
     - selector: api.v1.TradingDataService.MarketAccounts
-      get: '/markets/{marketID}/accounts'
+      get: '/markets/{market_id}/accounts'
 
     # assets
     - selector: api.v1.TradingDataService.Assets
       get: '/assets'
     - selector: api.v1.TradingDataService.AssetByID
-      get: '/assets/{ID}'
+      get: '/assets/{id}'
     - selector: api.v1.TradingDataService.FeeInfrastructureAccounts
       get: '/assets/{asset}/infrastructureFeeAccount'
 
@@ -44,7 +44,7 @@ http:
     - selector: api.v1.TradingDataService.MarketsData
       get: '/markets-data'
     - selector: api.v1.TradingDataService.MarketDataByID
-      get: '/markets-data/{marketID}'
+      get: '/markets-data/{market_id}'
 
 
     # transaction bundles
@@ -65,9 +65,9 @@ http:
     - selector: api.v1.TradingDataService.OrderByReference
       get: '/orders/{reference}'
     - selector: api.v1.TradingDataService.OrderVersionsByID
-      get: '/orders/{orderID}/versions'
+      get: '/orders/{order_id}/versions'
     - selector: api.v1.TradingDataService.TradesByOrder
-      get: '/orders/{orderID}/trades'
+      get: '/orders/{order_id}/trades'
 
     # Fee
     - selector: api.v1.TradingDataService.EstimateFee
@@ -87,17 +87,17 @@ http:
     - selector: api.v1.TradingDataService.Parties
       get: '/parties'
     - selector: api.v1.TradingDataService.PartyByID
-      get: '/parties/{partyID}'
+      get: '/parties/{party_id}'
     - selector: api.v1.TradingDataService.OrdersByParty
-      get: '/parties/{partyID}/orders'
+      get: '/parties/{party_id}/orders'
     - selector: api.v1.TradingDataService.PositionsByParty
-      get: '/parties/{partyID}/positions'
+      get: '/parties/{party_id}/positions'
     - selector: api.v1.TradingDataService.TradesByParty
-      get: '/parties/{partyID}/trades'
+      get: '/parties/{party_id}/trades'
     - selector: api.v1.TradingDataService.PartyAccounts
-      get: '/parties/{partyID}/accounts'
+      get: '/parties/{party_id}/accounts'
     - selector: api.v1.TradingDataService.MarginLevels
-      get: '/parties/{partyID}/markets/{marketID}/margin'
+      get: '/parties/{party_id}/markets/{market_id}/margin'
 
     - selector: api.v1.TradingService.PrepareWithdraw
       post: '/parties/prepare/withdraw'
@@ -105,23 +105,23 @@ http:
 
     # governance stuff by party
     - selector: api.v1.TradingDataService.GetProposalsByParty
-      get: '/parties/{partyID}/proposals'
+      get: '/parties/{party_id}/proposals'
     - selector: api.v1.TradingDataService.GetVotesByParty
-      get: '/parties/{partyID}/votes'
+      get: '/parties/{party_id}/votes'
 
     # withdrawals
     - selector: api.v1.TradingDataService.Withdrawal
-      get: '/withdrawals/{ID}'
+      get: '/withdrawals/{id}'
     - selector: api.v1.TradingDataService.Withdrawals
-      get: '/withdrawals/party/{partyID}'
+      get: '/withdrawals/party/{party_id}'
     - selector: api.v1.TradingDataService.ERC20WithdrawalApproval
-      get: '/withdrawals/{withdrawalID}/approval/erc20'
+      get: '/withdrawals/{withdrawal_id}/approval/erc20'
 
     # deposits
     - selector: api.v1.TradingDataService.Deposit
-      get: '/deposits/{ID}'
+      get: '/deposits/{id}'
     - selector: api.v1.TradingDataService.Deposits
-      get: '/deposits/party/{partyID}'
+      get: '/deposits/party/{party_id}'
 
     # Governance
     - selector: api.v1.Trading.PrepareProposal
@@ -133,7 +133,7 @@ http:
 
     # Governance queries
     - selector: api.v1.TradingDataService.GetProposalByID
-      get: '/governance/proposal/{proposalID}'
+      get: '/governance/proposal/{proposal_id}'
     - selector: api.v1.TradingDataService.GetProposalByReference
       get: '/governance/proposal/reference/{reference}'
     - selector: api.v1.TradingDataService.GetNewMarketProposals

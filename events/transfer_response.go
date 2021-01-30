@@ -44,7 +44,7 @@ func (t *TransferResponse) Proto() types.TransferResponses {
 func (t TransferResponse) StreamMessage() *types.BusEvent {
 	p := t.Proto()
 	return &types.BusEvent{
-		ID:    t.eventID(),
+		Id:    t.eventID(),
 		Block: t.TraceID(),
 		Type:  t.et.ToProto(),
 		Event: &types.BusEvent_TransferResponses{

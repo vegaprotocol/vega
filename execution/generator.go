@@ -32,5 +32,5 @@ func (i *IDgenerator) SetID(o *types.Order) {
 // SetProposalID sets proposal ID and incrememts total proposal count
 func (i *IDgenerator) SetProposalID(p *types.Proposal) {
 	i.proposals++
-	p.ID = fmt.Sprintf("P%010d-%010d", i.batches, i.proposals)
+	p.Id = fmt.Sprintf("P%010d-%010d", i.batches, i.proposals)
 }

@@ -45,8 +45,8 @@ func run(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) err
 	}
 
 	req := &api.ObserveEventBusRequest{
-		MarketID:  market,
-		PartyID:   party,
+		MarketId:  market,
+		PartyId:   party,
 		BatchSize: batchSize,
 		Type:      []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
 	}

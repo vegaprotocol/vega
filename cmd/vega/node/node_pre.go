@@ -334,7 +334,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	for _, v := range l.mktscfg {
 		sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
 		if sym == assetD.Symbol {
-			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.ID
+			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
 		}
 	}
 

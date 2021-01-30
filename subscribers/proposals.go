@@ -25,14 +25,14 @@ type ProposalFilteredSub struct {
 // ProposalByID - filter proposal events by proposal ID
 func ProposalByID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
-		return p.ID == id
+		return p.Id == id
 	}
 }
 
 // ProposalByPartyID - filter proposals submitted by given party
 func ProposalByPartyID(id string) ProposalFilter {
 	return func(p types.Proposal) bool {
-		return p.PartyID == id
+		return p.PartyId == id
 	}
 }
 

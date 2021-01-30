@@ -23,7 +23,6 @@ lint:
     - PACKAGE_SAME_DIRECTORY
     - FIELD_LOWER_SNAKE_CASE
     - ONEOF_LOWER_SNAKE_CASE
-    - RPC_REQUEST_RESPONSE_UNIQUE
   ignore:
     - google/
     - github.com/

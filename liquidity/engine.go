@@ -59,7 +59,7 @@ type Engine struct {
 	provisions ProvisionsPerParty
 
 	// orders stores all the market orders (except the liquidity orders) explicitly submited by a given party.
-	// indexed as: map of PartyID -> OrderID -> order to easy access
+	// indexed as: map of PartyID -> OrderId -> order to easy access
 	orders map[string]map[string]*types.Order
 
 	// liquidityOrder stores the orders generated to satisfy the liquidity commitment of a given party.
@@ -143,8 +143,8 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	if newLp {
 		lp = &types.LiquidityProvision{
 			Id:        id,
-			MarketID:  lps.MarketID,
-			PartyID:   party,
+			MarketId:  lps.MarketId,
+			PartyId:   party,
 			CreatedAt: now,
 			Status:    types.LiquidityProvision_STATUS_REJECTED,
 		}
@@ -271,7 +271,7 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 		stillUndeployed := false
 		for _, lp := range e.provisions {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
-				creates, updates, err := e.createOrUpdateForParty(markPrice, lp.PartyID, repriceFn)
+				creates, updates, err := e.createOrUpdateForParty(markPrice, lp.PartyId, repriceFn)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -338,7 +338,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		}
 		oneOrMoreValidOrdersBuy = true
 		buysShape = append(buysShape, &supplied.LiquidityOrder{
-			OrderID:    buy.OrderID,
+			OrderID:    buy.OrderId,
 			Price:      price,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
 		})
@@ -356,7 +356,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		oneOrMoreValidOrdersSell = true
 
 		sellsShape = append(sellsShape, &supplied.LiquidityOrder{
-			OrderID:    sell.OrderID,
+			OrderID:    sell.OrderId,
 			Price:      price,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		})
@@ -388,11 +388,11 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 
 func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64) *types.Order {
 	return &types.Order{
-		MarketID:    marketID,
+		MarketId:    marketID,
 		Side:        side,
 		PeggedOrder: pegged,
 		Price:       price,
-		PartyID:     partyID,
+		PartyId:     partyID,
 		Size:        size,
 		Remaining:   size,
 		Type:        types.Order_TYPE_LIMIT,
@@ -420,7 +420,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 
 		// If order.Remaining == 0 then that order would've already been removed from the book, hence we need to account for that in this engine.
 		if order != nil && order.Remaining == 0 {
-			delete(lm, ref.OrderID)
+			delete(lm, ref.OrderId)
 			order = nil
 		}
 
@@ -437,13 +437,13 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			e.idGen.SetID(order)
 			newOrders = append(newOrders, order)
 			lm[order.Id] = order
-			ref.OrderID = order.Id
+			ref.OrderId = order.Id
 			continue
 		}
 
 		if o.LiquidityImpliedVolume == 0 {
-			delete(lm, ref.OrderID)
-			ref.OrderID = ""
+			delete(lm, ref.OrderId)
+			ref.OrderId = ""
 		}
 
 		if o.LiquidityImpliedVolume != order.Remaining {
