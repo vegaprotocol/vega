@@ -14,7 +14,6 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/utilities"
 	"google.golang.org/grpc"
@@ -274,7 +273,7 @@ func request_TradingDataService_MarketDataByID_0(ctx context.Context, marshaler 
 }
 
 func request_TradingDataService_MarketsData_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq MarketsDataRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.MarketsData(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -345,7 +344,7 @@ func request_TradingDataService_MarketDepth_0(ctx context.Context, marshaler run
 }
 
 func request_TradingDataService_Markets_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq MarketsRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.Markets(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -562,7 +561,7 @@ func request_TradingDataService_MarginLevels_0(ctx context.Context, marshaler ru
 }
 
 func request_TradingDataService_Parties_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq PartiesRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.Parties(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -924,7 +923,7 @@ func request_TradingDataService_GetProposalByReference_0(ctx context.Context, ma
 }
 
 func request_TradingDataService_Statistics_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq StatisticsRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.Statistics(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -933,7 +932,7 @@ func request_TradingDataService_Statistics_0(ctx context.Context, marshaler runt
 }
 
 func request_TradingDataService_GetVegaTime_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+	var protoReq GetVegaTimeRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.GetVegaTime(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))

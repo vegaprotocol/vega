@@ -1024,6 +1024,10 @@
                 </li>
               
                 <li>
+                  <a href="#api.v1.GetVegaTimeRequest"><span class="badge">M</span>GetVegaTimeRequest</a>
+                </li>
+              
+                <li>
                   <a href="#api.v1.GetVegaTimeResponse"><span class="badge">M</span>GetVegaTimeResponse</a>
                 </li>
               
@@ -1116,6 +1120,10 @@
                 </li>
               
                 <li>
+                  <a href="#api.v1.MarketsDataRequest"><span class="badge">M</span>MarketsDataRequest</a>
+                </li>
+              
+                <li>
                   <a href="#api.v1.MarketsDataResponse"><span class="badge">M</span>MarketsDataResponse</a>
                 </li>
               
@@ -1125,6 +1133,10 @@
               
                 <li>
                   <a href="#api.v1.MarketsDataSubscribeResponse"><span class="badge">M</span>MarketsDataSubscribeResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.MarketsRequest"><span class="badge">M</span>MarketsRequest</a>
                 </li>
               
                 <li>
@@ -1145,6 +1157,10 @@
               
                 <li>
                   <a href="#api.v1.ObserveEventBusResponse"><span class="badge">M</span>ObserveEventBusResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.ObserveGovernanceRequest"><span class="badge">M</span>ObserveGovernanceRequest</a>
                 </li>
               
                 <li>
@@ -1237,6 +1253,10 @@
               
                 <li>
                   <a href="#api.v1.Pagination"><span class="badge">M</span>Pagination</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.PartiesRequest"><span class="badge">M</span>PartiesRequest</a>
                 </li>
               
                 <li>
@@ -1340,6 +1360,10 @@
                 </li>
               
                 <li>
+                  <a href="#api.v1.StatisticsRequest"><span class="badge">M</span>StatisticsRequest</a>
+                </li>
+              
+                <li>
                   <a href="#api.v1.StatisticsResponse"><span class="badge">M</span>StatisticsResponse</a>
                 </li>
               
@@ -1381,6 +1405,10 @@
               
                 <li>
                   <a href="#api.v1.TradesSubscribeResponse"><span class="badge">M</span>TradesSubscribeResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#api.v1.TransferResponsesSubscribeRequest"><span class="badge">M</span>TransferResponsesSubscribeRequest</a>
                 </li>
               
                 <li>
@@ -11518,6 +11546,13 @@ Size (the size at which the order could eventually trade) </p></td>
 
         
       
+        <h3 id="api.v1.GetVegaTimeRequest">GetVegaTimeRequest</h3>
+        <p>Request for the current time of the vega network</p>
+
+        
+
+        
+      
         <h3 id="api.v1.GetVegaTimeResponse">GetVegaTimeResponse</h3>
         <p>Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"</p>
 
@@ -12377,6 +12412,13 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
 
         
       
+        <h3 id="api.v1.MarketsDataRequest">MarketsDataRequest</h3>
+        <p>Request for market data</p>
+
+        
+
+        
+      
         <h3 id="api.v1.MarketsDataResponse">MarketsDataResponse</h3>
         <p>Response for market data</p>
 
@@ -12446,6 +12488,13 @@ Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2
           </table>
 
           
+
+        
+      
+        <h3 id="api.v1.MarketsRequest">MarketsRequest</h3>
+        <p>Request for a list of markets on Vega</p>
+
+        
 
         
       
@@ -12579,8 +12628,15 @@ Default: 0, send any and all events when they are available. </p></td>
 
         
       
+        <h3 id="api.v1.ObserveGovernanceRequest">ObserveGovernanceRequest</h3>
+        <p>Request to obsever all event related to governance</p>
+
+        
+
+        
+      
         <h3 id="api.v1.ObserveGovernanceResponse">ObserveGovernanceResponse</h3>
-        <p></p>
+        <p>All events related to governance</p>
 
         
           <table class="field-table">
@@ -13445,6 +13501,13 @@ default is true, if false the results will be returned in ascending order </p></
 
         
       
+        <h3 id="api.v1.PartiesRequest">PartiesRequest</h3>
+        <p>Request for a list of all parties</p>
+
+        
+
+        
+      
         <h3 id="api.v1.PartiesResponse">PartiesResponse</h3>
         <p>Response to a request for a list of parties</p>
 
@@ -14276,6 +14339,13 @@ default is true, if false the results will be returned in ascending order </p></
 
         
       
+        <h3 id="api.v1.StatisticsRequest">StatisticsRequest</h3>
+        <p>A a request for statistics about the Vega network</p>
+
+        
+
+        
+      
         <h3 id="api.v1.StatisticsResponse">StatisticsResponse</h3>
         <p></p>
 
@@ -14603,6 +14673,13 @@ default is true, if false the results will be returned in ascending order </p></
 
         
       
+        <h3 id="api.v1.TransferResponsesSubscribeRequest">TransferResponsesSubscribeRequest</h3>
+        <p></p>
+
+        
+
+        
+      
         <h3 id="api.v1.TransferResponsesSubscribeResponse">TransferResponsesSubscribeResponse</h3>
         <p></p>
 
@@ -14865,7 +14942,7 @@ network will have committed it into a block</p></td>
             
               <tr>
                 <td>MarketsData</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.v1.MarketsDataRequest">MarketsDataRequest</a></td>
                 <td><a href="#api.v1.MarketsDataResponse">MarketsDataResponse</a></td>
                 <td><p>Get a list of Market Data</p></td>
               </tr>
@@ -14886,7 +14963,7 @@ network will have committed it into a block</p></td>
             
               <tr>
                 <td>Markets</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.v1.MarketsRequest">MarketsRequest</a></td>
                 <td><a href="#api.v1.MarketsResponse">MarketsResponse</a></td>
                 <td><p>Get a list of Markets</p></td>
               </tr>
@@ -14942,7 +15019,7 @@ network will have committed it into a block</p></td>
             
               <tr>
                 <td>Parties</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.v1.PartiesRequest">PartiesRequest</a></td>
                 <td><a href="#api.v1.PartiesResponse">PartiesResponse</a></td>
                 <td><p>Get a list of Parties</p></td>
               </tr>
@@ -15054,7 +15131,7 @@ network will have committed it into a block</p></td>
             
               <tr>
                 <td>ObserveGovernance</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.v1.ObserveGovernanceRequest">ObserveGovernanceRequest</a></td>
                 <td><a href="#api.v1.ObserveGovernanceResponse">ObserveGovernanceResponse</a> stream</td>
                 <td><p>Subscribe to a stream of all governance updates</p></td>
               </tr>
@@ -15089,14 +15166,14 @@ network will have committed it into a block</p></td>
             
               <tr>
                 <td>Statistics</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.v1.StatisticsRequest">StatisticsRequest</a></td>
                 <td><a href="#api.v1.StatisticsResponse">StatisticsResponse</a></td>
                 <td><p>Get Statistics on Vega</p></td>
               </tr>
             
               <tr>
                 <td>GetVegaTime</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.v1.GetVegaTimeRequest">GetVegaTimeRequest</a></td>
                 <td><a href="#api.v1.GetVegaTimeResponse">GetVegaTimeResponse</a></td>
                 <td><p>Get Time</p></td>
               </tr>
@@ -15166,7 +15243,7 @@ network will have committed it into a block</p></td>
             
               <tr>
                 <td>TransferResponsesSubscribe</td>
-                <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
+                <td><a href="#api.v1.TransferResponsesSubscribeRequest">TransferResponsesSubscribeRequest</a></td>
                 <td><a href="#api.v1.TransferResponsesSubscribeResponse">TransferResponsesSubscribeResponse</a> stream</td>
                 <td><p>Subscribe to a stream of Transfer Responses</p></td>
               </tr>

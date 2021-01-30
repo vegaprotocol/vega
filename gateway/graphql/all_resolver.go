@@ -6,7 +6,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"github.com/golang/protobuf/ptypes/empty"
 )
 
 type allResolver struct {
@@ -86,7 +85,7 @@ func (r *allResolver) allMarkets(ctx context.Context, id *string) ([]*types.Mark
 		}
 		return []*types.Market{mkt}, nil
 	}
-	res, err := r.clt.Markets(ctx, &empty.Empty{})
+	res, err := r.clt.Markets(ctx, &protoapi.MarketsRequest{})
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)

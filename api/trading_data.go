@@ -19,7 +19,6 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc/codes"
@@ -523,7 +522,7 @@ func (t *tradingDataService) OrdersByParty(ctx context.Context,
 }
 
 // Markets provides a list of all current markets that exist on the VEGA platform.
-func (t *tradingDataService) Markets(ctx context.Context, request *empty.Empty) (*protoapi.MarketsResponse, error) {
+func (t *tradingDataService) Markets(ctx context.Context, _ *protoapi.MarketsRequest) (*protoapi.MarketsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Markets")()
 	markets, err := t.MarketService.GetAll(ctx)
 	if err != nil {
@@ -723,7 +722,7 @@ func (t *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.Mar
 }
 
 // MarketsData provides all market data for all markets on this network.
-func (t *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*protoapi.MarketsDataResponse, error) {
+func (t *tradingDataService) MarketsData(_ context.Context, _ *protoapi.MarketsDataRequest) (*protoapi.MarketsDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketsData")()
 	mds := t.MarketService.GetMarketsData()
 	mdptrs := make([]*types.MarketData, 0, len(mds))
@@ -739,7 +738,7 @@ func (t *tradingDataService) MarketsData(_ context.Context, _ *empty.Empty) (*pr
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
-func (t *tradingDataService) Statistics(ctx context.Context, request *empty.Empty) (*protoapi.StatisticsResponse, error) {
+func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Statistics")()
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
@@ -806,7 +805,7 @@ func (t *tradingDataService) Statistics(ctx context.Context, request *empty.Empt
 
 // GetVegaTime returns the latest blockchain header timestamp, in UnixNano format.
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
-func (t *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Empty) (*protoapi.GetVegaTimeResponse, error) {
+func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime")()
 	ts, err := t.TimeService.GetTimeNow()
 	if err != nil {
@@ -821,7 +820,7 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, request *empty.Emp
 
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
 func (t *tradingDataService) TransferResponsesSubscribe(
-	req *empty.Empty, srv protoapi.TradingDataService_TransferResponsesSubscribeServer) error {
+	_ *protoapi.TransferResponsesSubscribeRequest, srv protoapi.TradingDataService_TransferResponsesSubscribeServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("TransferResponseSubscribe")()
 	// Wrap context from the request into cancellable. We can close internal chan in error.
 	ctx, cancel := context.WithCancel(srv.Context())
@@ -1493,7 +1492,7 @@ func (t *tradingDataService) MarketByID(ctx context.Context, req *protoapi.Marke
 }
 
 // Parties provides a list of all parties.
-func (t *tradingDataService) Parties(ctx context.Context, req *empty.Empty) (*protoapi.PartiesResponse, error) {
+func (t *tradingDataService) Parties(ctx context.Context, _ *protoapi.PartiesRequest) (*protoapi.PartiesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Parties")()
 	parties, err := t.PartyService.GetAll(ctx)
 	if err != nil {
@@ -1924,7 +1923,7 @@ func (t *tradingDataService) GetProposalByReference(_ context.Context,
 }
 
 func (t *tradingDataService) ObserveGovernance(
-	_ *empty.Empty,
+	_ *protoapi.ObserveGovernanceRequest,
 	stream protoapi.TradingDataService_ObserveGovernanceServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveGovernance")()

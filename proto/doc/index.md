@@ -215,6 +215,7 @@
     - [GetProposalsResponse](#api.v1.GetProposalsResponse)
     - [GetUpdateMarketProposalsRequest](#api.v1.GetUpdateMarketProposalsRequest)
     - [GetUpdateMarketProposalsResponse](#api.v1.GetUpdateMarketProposalsResponse)
+    - [GetVegaTimeRequest](#api.v1.GetVegaTimeRequest)
     - [GetVegaTimeResponse](#api.v1.GetVegaTimeResponse)
     - [GetVotesByPartyRequest](#api.v1.GetVotesByPartyRequest)
     - [GetVotesByPartyResponse](#api.v1.GetVotesByPartyResponse)
@@ -238,14 +239,17 @@
     - [MarketDepthSubscribeResponse](#api.v1.MarketDepthSubscribeResponse)
     - [MarketDepthUpdatesSubscribeRequest](#api.v1.MarketDepthUpdatesSubscribeRequest)
     - [MarketDepthUpdatesSubscribeResponse](#api.v1.MarketDepthUpdatesSubscribeResponse)
+    - [MarketsDataRequest](#api.v1.MarketsDataRequest)
     - [MarketsDataResponse](#api.v1.MarketsDataResponse)
     - [MarketsDataSubscribeRequest](#api.v1.MarketsDataSubscribeRequest)
     - [MarketsDataSubscribeResponse](#api.v1.MarketsDataSubscribeResponse)
+    - [MarketsRequest](#api.v1.MarketsRequest)
     - [MarketsResponse](#api.v1.MarketsResponse)
     - [NetworkParametersRequest](#api.v1.NetworkParametersRequest)
     - [NetworkParametersResponse](#api.v1.NetworkParametersResponse)
     - [ObserveEventBusRequest](#api.v1.ObserveEventBusRequest)
     - [ObserveEventBusResponse](#api.v1.ObserveEventBusResponse)
+    - [ObserveGovernanceRequest](#api.v1.ObserveGovernanceRequest)
     - [ObserveGovernanceResponse](#api.v1.ObserveGovernanceResponse)
     - [ObservePartyProposalsRequest](#api.v1.ObservePartyProposalsRequest)
     - [ObservePartyProposalsResponse](#api.v1.ObservePartyProposalsResponse)
@@ -269,6 +273,7 @@
     - [OrdersSubscribeRequest](#api.v1.OrdersSubscribeRequest)
     - [OrdersSubscribeResponse](#api.v1.OrdersSubscribeResponse)
     - [Pagination](#api.v1.Pagination)
+    - [PartiesRequest](#api.v1.PartiesRequest)
     - [PartiesResponse](#api.v1.PartiesResponse)
     - [PartyAccountsRequest](#api.v1.PartyAccountsRequest)
     - [PartyAccountsResponse](#api.v1.PartyAccountsResponse)
@@ -294,6 +299,7 @@
     - [PrepareWithdrawResponse](#api.v1.PrepareWithdrawResponse)
     - [PropagateChainEventRequest](#api.v1.PropagateChainEventRequest)
     - [PropagateChainEventResponse](#api.v1.PropagateChainEventResponse)
+    - [StatisticsRequest](#api.v1.StatisticsRequest)
     - [StatisticsResponse](#api.v1.StatisticsResponse)
     - [SubmitTransactionRequest](#api.v1.SubmitTransactionRequest)
     - [SubmitTransactionResponse](#api.v1.SubmitTransactionResponse)
@@ -305,6 +311,7 @@
     - [TradesByPartyResponse](#api.v1.TradesByPartyResponse)
     - [TradesSubscribeRequest](#api.v1.TradesSubscribeRequest)
     - [TradesSubscribeResponse](#api.v1.TradesSubscribeResponse)
+    - [TransferResponsesSubscribeRequest](#api.v1.TransferResponsesSubscribeRequest)
     - [TransferResponsesSubscribeResponse](#api.v1.TransferResponsesSubscribeResponse)
     - [WithdrawalRequest](#api.v1.WithdrawalRequest)
     - [WithdrawalResponse](#api.v1.WithdrawalResponse)
@@ -3890,6 +3897,16 @@ Response for a list of update market proposals
 
 
 
+<a name="api.v1.GetVegaTimeRequest"></a>
+
+### GetVegaTimeRequest
+Request for the current time of the vega network
+
+
+
+
+
+
 <a name="api.v1.GetVegaTimeResponse"></a>
 
 ### GetVegaTimeResponse
@@ -4247,6 +4264,16 @@ Request to subscribe to a stream of (MarketDepth Update)[#vega.MarketDepthUpdate
 
 
 
+<a name="api.v1.MarketsDataRequest"></a>
+
+### MarketsDataRequest
+Request for market data
+
+
+
+
+
+
 <a name="api.v1.MarketsDataResponse"></a>
 
 ### MarketsDataResponse
@@ -4287,6 +4314,16 @@ Optionally, the list can be additionally filtered by market
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | marketData | [vega.MarketData](#vega.MarketData) |  |  |
+
+
+
+
+
+
+<a name="api.v1.MarketsRequest"></a>
+
+### MarketsRequest
+Request for a list of markets on Vega
 
 
 
@@ -4366,10 +4403,20 @@ Response to a subscribed stream of events from the Vega event bus
 
 
 
+<a name="api.v1.ObserveGovernanceRequest"></a>
+
+### ObserveGovernanceRequest
+Request to obsever all event related to governance
+
+
+
+
+
+
 <a name="api.v1.ObserveGovernanceResponse"></a>
 
 ### ObserveGovernanceResponse
-
+All events related to governance
 
 
 | Field | Type | Label | Description |
@@ -4714,6 +4761,16 @@ Pagination controls
 | skip | [uint64](#uint64) |  | Skip the number of records specified, default is 0 |
 | limit | [uint64](#uint64) |  | Limit the number of returned records to the value specified, default is 50 |
 | descending | [bool](#bool) |  | Descending reverses the order of the records returned, default is true, if false the results will be returned in ascending order |
+
+
+
+
+
+
+<a name="api.v1.PartiesRequest"></a>
+
+### PartiesRequest
+Request for a list of all parties
 
 
 
@@ -5108,6 +5165,16 @@ Response for a new event sent by the blockchain queue to be propagated on Vega
 
 
 
+<a name="api.v1.StatisticsRequest"></a>
+
+### StatisticsRequest
+A a request for statistics about the Vega network
+
+
+
+
+
+
 <a name="api.v1.StatisticsResponse"></a>
 
 ### StatisticsResponse
@@ -5279,6 +5346,16 @@ A stream of trades
 
 
 
+<a name="api.v1.TransferResponsesSubscribeRequest"></a>
+
+### TransferResponsesSubscribeRequest
+
+
+
+
+
+
+
 <a name="api.v1.TransferResponsesSubscribeResponse"></a>
 
 ### TransferResponsesSubscribeResponse
@@ -5386,10 +5463,10 @@ Blockchain transaction type
 | FeeInfrastructureAccounts | [FeeInfrastructureAccountsRequest](#api.v1.FeeInfrastructureAccountsRequest) | [FeeInfrastructureAccountsResponse](#api.v1.FeeInfrastructureAccountsResponse) | Get a list of infrastructure fees accounts filter eventually by assets |
 | Candles | [CandlesRequest](#api.v1.CandlesRequest) | [CandlesResponse](#api.v1.CandlesResponse) | Get a list of Candles by Market |
 | MarketDataByID | [MarketDataByIDRequest](#api.v1.MarketDataByIDRequest) | [MarketDataByIDResponse](#api.v1.MarketDataByIDResponse) | Get Market Data by Market ID |
-| MarketsData | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsDataResponse](#api.v1.MarketsDataResponse) | Get a list of Market Data |
+| MarketsData | [MarketsDataRequest](#api.v1.MarketsDataRequest) | [MarketsDataResponse](#api.v1.MarketsDataResponse) | Get a list of Market Data |
 | MarketByID | [MarketByIDRequest](#api.v1.MarketByIDRequest) | [MarketByIDResponse](#api.v1.MarketByIDResponse) | Get a Market by ID |
 | MarketDepth | [MarketDepthRequest](#api.v1.MarketDepthRequest) | [MarketDepthResponse](#api.v1.MarketDepthResponse) | Get Market Depth |
-| Markets | [.google.protobuf.Empty](#google.protobuf.Empty) | [MarketsResponse](#api.v1.MarketsResponse) | Get a list of Markets |
+| Markets | [MarketsRequest](#api.v1.MarketsRequest) | [MarketsResponse](#api.v1.MarketsResponse) | Get a list of Markets |
 | OrderByMarketAndID | [OrderByMarketAndIDRequest](#api.v1.OrderByMarketAndIDRequest) | [OrderByMarketAndIDResponse](#api.v1.OrderByMarketAndIDResponse) | Get an Order by Market and Order ID |
 | OrderByReference | [OrderByReferenceRequest](#api.v1.OrderByReferenceRequest) | [OrderByReferenceResponse](#api.v1.OrderByReferenceResponse) | Get an Order by Pending Order reference (UUID) |
 | OrdersByMarket | [OrdersByMarketRequest](#api.v1.OrdersByMarketRequest) | [OrdersByMarketResponse](#api.v1.OrdersByMarketResponse) | Get a list of Orders by Market |
@@ -5397,7 +5474,7 @@ Blockchain transaction type
 | OrderByID | [OrderByIDRequest](#api.v1.OrderByIDRequest) | [OrderByIDResponse](#api.v1.OrderByIDResponse) | Get a specific order by order ID |
 | OrderVersionsByID | [OrderVersionsByIDRequest](#api.v1.OrderVersionsByIDRequest) | [OrderVersionsByIDResponse](#api.v1.OrderVersionsByIDResponse) | Get all versions of the order by its orderID |
 | MarginLevels | [MarginLevelsRequest](#api.v1.MarginLevelsRequest) | [MarginLevelsResponse](#api.v1.MarginLevelsResponse) | Get Margin Levels by Party ID |
-| Parties | [.google.protobuf.Empty](#google.protobuf.Empty) | [PartiesResponse](#api.v1.PartiesResponse) | Get a list of Parties |
+| Parties | [PartiesRequest](#api.v1.PartiesRequest) | [PartiesResponse](#api.v1.PartiesResponse) | Get a list of Parties |
 | PartyByID | [PartyByIDRequest](#api.v1.PartyByIDRequest) | [PartyByIDResponse](#api.v1.PartyByIDResponse) | Get a Party by ID |
 | PositionsByParty | [PositionsByPartyRequest](#api.v1.PositionsByPartyRequest) | [PositionsByPartyResponse](#api.v1.PositionsByPartyResponse) | Get a list of Positions by Party |
 | LastTrade | [LastTradeRequest](#api.v1.LastTradeRequest) | [LastTradeResponse](#api.v1.LastTradeResponse) | Get latest Trade |
@@ -5413,13 +5490,13 @@ Blockchain transaction type
 | GetNewAssetProposals | [GetNewAssetProposalsRequest](#api.v1.GetNewAssetProposalsRequest) | [GetNewAssetProposalsResponse](#api.v1.GetNewAssetProposalsResponse) | Get governance data (proposals and votes) for proposals aiming to create new assets |
 | GetProposalByID | [GetProposalByIDRequest](#api.v1.GetProposalByIDRequest) | [GetProposalByIDResponse](#api.v1.GetProposalByIDResponse) | Get governance data (proposals and votes) for a proposal located by ID |
 | GetProposalByReference | [GetProposalByReferenceRequest](#api.v1.GetProposalByReferenceRequest) | [GetProposalByReferenceResponse](#api.v1.GetProposalByReferenceResponse) | Get governance data (proposals and votes) for a proposal located by reference |
-| ObserveGovernance | [.google.protobuf.Empty](#google.protobuf.Empty) | [ObserveGovernanceResponse](#api.v1.ObserveGovernanceResponse) stream | Subscribe to a stream of all governance updates |
+| ObserveGovernance | [ObserveGovernanceRequest](#api.v1.ObserveGovernanceRequest) | [ObserveGovernanceResponse](#api.v1.ObserveGovernanceResponse) stream | Subscribe to a stream of all governance updates |
 | ObservePartyProposals | [ObservePartyProposalsRequest](#api.v1.ObservePartyProposalsRequest) | [ObservePartyProposalsResponse](#api.v1.ObservePartyProposalsResponse) stream | Subscribe to a stream of proposal updates |
 | ObservePartyVotes | [ObservePartyVotesRequest](#api.v1.ObservePartyVotesRequest) | [ObservePartyVotesResponse](#api.v1.ObservePartyVotesResponse) stream | Subscribe to a stream of votes cast by a specific party |
 | ObserveProposalVotes | [ObserveProposalVotesRequest](#api.v1.ObserveProposalVotesRequest) | [ObserveProposalVotesResponse](#api.v1.ObserveProposalVotesResponse) stream | Subscribe to a stream of proposal votes |
 | ObserveEventBus | [ObserveEventBusRequest](#api.v1.ObserveEventBusRequest) stream | [ObserveEventBusResponse](#api.v1.ObserveEventBusResponse) stream | Subscribe to a stream of events from the core |
-| Statistics | [.google.protobuf.Empty](#google.protobuf.Empty) | [StatisticsResponse](#api.v1.StatisticsResponse) | Get Statistics on Vega |
-| GetVegaTime | [.google.protobuf.Empty](#google.protobuf.Empty) | [GetVegaTimeResponse](#api.v1.GetVegaTimeResponse) | Get Time |
+| Statistics | [StatisticsRequest](#api.v1.StatisticsRequest) | [StatisticsResponse](#api.v1.StatisticsResponse) | Get Statistics on Vega |
+| GetVegaTime | [GetVegaTimeRequest](#api.v1.GetVegaTimeRequest) | [GetVegaTimeResponse](#api.v1.GetVegaTimeResponse) | Get Time |
 | AccountsSubscribe | [AccountsSubscribeRequest](#api.v1.AccountsSubscribeRequest) | [AccountsSubscribeResponse](#api.v1.AccountsSubscribeResponse) stream | Subscribe to a stream of Accounts |
 | CandlesSubscribe | [CandlesSubscribeRequest](#api.v1.CandlesSubscribeRequest) | [CandlesSubscribeResponse](#api.v1.CandlesSubscribeResponse) stream | Subscribe to a stream of Candles |
 | MarginLevelsSubscribe | [MarginLevelsSubscribeRequest](#api.v1.MarginLevelsSubscribeRequest) | [MarginLevelsSubscribeResponse](#api.v1.MarginLevelsSubscribeResponse) stream | Subscribe to a stream of Margin Levels |
@@ -5429,7 +5506,7 @@ Blockchain transaction type
 | OrdersSubscribe | [OrdersSubscribeRequest](#api.v1.OrdersSubscribeRequest) | [OrdersSubscribeResponse](#api.v1.OrdersSubscribeResponse) stream | Subscribe to a stream of Orders |
 | PositionsSubscribe | [PositionsSubscribeRequest](#api.v1.PositionsSubscribeRequest) | [PositionsSubscribeResponse](#api.v1.PositionsSubscribeResponse) stream | Subscribe to a stream of Positions |
 | TradesSubscribe | [TradesSubscribeRequest](#api.v1.TradesSubscribeRequest) | [TradesSubscribeResponse](#api.v1.TradesSubscribeResponse) stream | Subscribe to a stream of Trades |
-| TransferResponsesSubscribe | [.google.protobuf.Empty](#google.protobuf.Empty) | [TransferResponsesSubscribeResponse](#api.v1.TransferResponsesSubscribeResponse) stream | Subscribe to a stream of Transfer Responses |
+| TransferResponsesSubscribe | [TransferResponsesSubscribeRequest](#api.v1.TransferResponsesSubscribeRequest) | [TransferResponsesSubscribeResponse](#api.v1.TransferResponsesSubscribeResponse) stream | Subscribe to a stream of Transfer Responses |
 | GetNodeSignaturesAggregate | [GetNodeSignaturesAggregateRequest](#api.v1.GetNodeSignaturesAggregateRequest) | [GetNodeSignaturesAggregateResponse](#api.v1.GetNodeSignaturesAggregateResponse) | Get an aggregate of signatures from all the nodes of the network |
 | AssetByID | [AssetByIDRequest](#api.v1.AssetByIDRequest) | [AssetByIDResponse](#api.v1.AssetByIDResponse) | Get an asset by its identifier |
 | Assets | [AssetsRequest](#api.v1.AssetsRequest) | [AssetsResponse](#api.v1.AssetsResponse) | Get a list of all assets on Vega |

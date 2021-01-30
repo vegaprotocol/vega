@@ -11,7 +11,6 @@ import "events.proto";
 
 package api.v1;
 
-import "google/protobuf/empty.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 service TradingService {
@@ -173,7 +172,7 @@ service TradingDataService {
   rpc MarketDataByID(MarketDataByIDRequest) returns (MarketDataByIDResponse);
 
   // Get a list of Market Data
-  rpc MarketsData(google.protobuf.Empty) returns (MarketsDataResponse);
+  rpc MarketsData(MarketsDataRequest) returns (MarketsDataResponse);
 
   // -- Markets --
 
@@ -184,7 +183,7 @@ service TradingDataService {
   rpc MarketDepth(MarketDepthRequest) returns (MarketDepthResponse);
 
   // Get a list of Markets
-  rpc Markets(google.protobuf.Empty) returns (MarketsResponse);
+  rpc Markets(MarketsRequest) returns (MarketsResponse);
 
   // -- Orders --
 
@@ -201,7 +200,7 @@ service TradingDataService {
   rpc OrdersByParty(OrdersByPartyRequest) returns (OrdersByPartyResponse);
 
   // Get a specific order by order ID
-  rpc OrderByID(OrderByIDRequest) returns (OrderByIDResponse); 
+  rpc OrderByID(OrderByIDRequest) returns (OrderByIDResponse);
 
   // Get all versions of the order by its orderID
   rpc OrderVersionsByID(OrderVersionsByIDRequest) returns (OrderVersionsByIDResponse);
@@ -212,7 +211,7 @@ service TradingDataService {
   rpc MarginLevels(MarginLevelsRequest) returns (MarginLevelsResponse);
 
   // Get a list of Parties
-  rpc Parties(google.protobuf.Empty) returns (PartiesResponse);
+  rpc Parties(PartiesRequest) returns (PartiesResponse);
 
   // Get a Party by ID
   rpc PartyByID(PartyByIDRequest) returns (PartyByIDResponse);
@@ -266,7 +265,7 @@ service TradingDataService {
   rpc GetProposalByReference(GetProposalByReferenceRequest) returns (GetProposalByReferenceResponse);
 
   // Subscribe to a stream of all governance updates
-  rpc ObserveGovernance(google.protobuf.Empty) returns (stream ObserveGovernanceResponse);
+  rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
 
   // Subscribe to a stream of proposal updates
   rpc ObservePartyProposals(ObservePartyProposalsRequest) returns (stream ObservePartyProposalsResponse);
@@ -283,10 +282,10 @@ service TradingDataService {
   // -- Misc --
 
   // Get Statistics on Vega
-  rpc Statistics(google.protobuf.Empty) returns (StatisticsResponse);
+  rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
 
   // Get Time
-  rpc GetVegaTime(google.protobuf.Empty) returns (GetVegaTimeResponse);
+  rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 
   // Subscribe to a stream of Accounts
   rpc AccountsSubscribe(AccountsSubscribeRequest) returns (stream AccountsSubscribeResponse);
@@ -316,7 +315,7 @@ service TradingDataService {
   rpc TradesSubscribe(TradesSubscribeRequest) returns (stream TradesSubscribeResponse);
 
   // Subscribe to a stream of Transfer Responses
-  rpc TransferResponsesSubscribe(google.protobuf.Empty) returns (stream TransferResponsesSubscribeResponse);
+  rpc TransferResponsesSubscribe(TransferResponsesSubscribeRequest) returns (stream TransferResponsesSubscribeResponse);
 
   // Get an aggregate of signatures from all the nodes of the network
   rpc GetNodeSignaturesAggregate(GetNodeSignaturesAggregateRequest) returns (GetNodeSignaturesAggregateResponse);
@@ -507,10 +506,14 @@ message GetProposalByReferenceResponse {
   vega.GovernanceData data = 1;
 }
 
+// Request to obsever all event related to governance
+message ObserveGovernanceRequest {}
+
+// All events related to governance
 message ObserveGovernanceResponse {
   vega.GovernanceData data = 1;
 }
-  
+
 // Request to subscribe to a stream of governance proposals for a party
 message ObservePartyProposalsRequest {
   // Party identifier, required field
@@ -591,6 +594,9 @@ message MarketDataByIDResponse {
   vega.MarketData marketData = 1;
 }
 
+// Request for market data
+message MarketsDataRequest {}
+
 // Response for market data
 message MarketsDataResponse {
   // A list of 0 or more market data
@@ -632,6 +638,9 @@ message PartyByIDResponse {
   // A party, if found
   vega.Party party = 1;
 }
+
+// Request for a list of all parties
+message PartiesRequest {}
 
 // Response to a request for a list of parties
 message PartiesResponse {
@@ -741,7 +750,7 @@ message MarketDepthUpdatesSubscribeRequest {
 }
 
 message MarketDepthUpdatesSubscribeResponse {
-  vega.MarketDepthUpdate update = 1; 
+  vega.MarketDepthUpdate update = 1;
 }
 
 // Request to subscribe to a stream of (Positions)[#vega.Position]
@@ -809,6 +818,9 @@ message OrderByReferenceResponse {
   // An order, if found
   vega.Order order = 1;
 }
+
+// Request for a list of markets on Vega
+message MarketsRequest {}
 
 // Response for a list of markets on Vega
 message MarketsResponse {
@@ -885,6 +897,9 @@ message PositionsByPartyResponse {
   repeated vega.Position positions = 1;
 }
 
+// Request for the current time of the vega network
+message GetVegaTimeRequest {}
+
 // Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
 message GetVegaTimeResponse {
   // Timestamp representation of current VegaTime as represented in
@@ -914,6 +929,8 @@ message TradesSubscribeResponse {
   // A list of 0 or more trades
   repeated vega.Trade trades = 1;
 }
+
+message TransferResponsesSubscribeRequest {}
 
 message TransferResponsesSubscribeResponse {
   vega.TransferResponse response = 1;
@@ -1090,6 +1107,9 @@ message ObserveEventBusResponse {
   // One or more events
   repeated vega.BusEvent events = 1;
 }
+
+// A a request for statistics about the Vega network
+message StatisticsRequest {}
 
 message StatisticsResponse {
   vega.Statistics statistics = 1;

@@ -9,7 +9,6 @@ import (
 
 	_ "code.vegaprotocol.io/vega/proto"
 	proto "github.com/golang/protobuf/proto"
-	_ "github.com/golang/protobuf/ptypes/empty"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
@@ -289,6 +288,9 @@ func (this *GetProposalByReferenceResponse) Validate() error {
 	}
 	return nil
 }
+func (this *ObserveGovernanceRequest) Validate() error {
+	return nil
+}
 func (this *ObserveGovernanceResponse) Validate() error {
 	if this.Data != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Data); err != nil {
@@ -394,6 +396,9 @@ func (this *MarketDataByIDResponse) Validate() error {
 	}
 	return nil
 }
+func (this *MarketsDataRequest) Validate() error {
+	return nil
+}
 func (this *MarketsDataResponse) Validate() error {
 	for _, item := range this.MarketsData {
 		if item != nil {
@@ -444,6 +449,9 @@ func (this *PartyByIDResponse) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Party", err)
 		}
 	}
+	return nil
+}
+func (this *PartiesRequest) Validate() error {
 	return nil
 }
 func (this *PartiesResponse) Validate() error {
@@ -630,6 +638,9 @@ func (this *OrderByReferenceResponse) Validate() error {
 	}
 	return nil
 }
+func (this *MarketsRequest) Validate() error {
+	return nil
+}
 func (this *MarketsResponse) Validate() error {
 	for _, item := range this.Markets {
 		if item != nil {
@@ -724,6 +735,9 @@ func (this *PositionsByPartyResponse) Validate() error {
 	}
 	return nil
 }
+func (this *GetVegaTimeRequest) Validate() error {
+	return nil
+}
 func (this *GetVegaTimeResponse) Validate() error {
 	return nil
 }
@@ -748,6 +762,9 @@ func (this *TradesSubscribeResponse) Validate() error {
 			}
 		}
 	}
+	return nil
+}
+func (this *TransferResponsesSubscribeRequest) Validate() error {
 	return nil
 }
 func (this *TransferResponsesSubscribeResponse) Validate() error {
@@ -924,6 +941,9 @@ func (this *ObserveEventBusResponse) Validate() error {
 			}
 		}
 	}
+	return nil
+}
+func (this *StatisticsRequest) Validate() error {
 	return nil
 }
 func (this *StatisticsResponse) Validate() error {

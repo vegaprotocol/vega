@@ -9,7 +9,6 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 )
 
@@ -437,7 +436,7 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetUpdateMarketProposals(arg
 }
 
 // GetVegaTime mocks base method
-func (m *MockTradingDataServiceClient) GetVegaTime(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*api.GetVegaTimeResponse, error) {
+func (m *MockTradingDataServiceClient) GetVegaTime(arg0 context.Context, arg1 *api.GetVegaTimeRequest, arg2 ...grpc.CallOption) (*api.GetVegaTimeResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -677,7 +676,7 @@ func (mr *MockTradingDataServiceClientMockRecorder) MarketDepthUpdatesSubscribe(
 }
 
 // Markets mocks base method
-func (m *MockTradingDataServiceClient) Markets(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*api.MarketsResponse, error) {
+func (m *MockTradingDataServiceClient) Markets(arg0 context.Context, arg1 *api.MarketsRequest, arg2 ...grpc.CallOption) (*api.MarketsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -757,7 +756,7 @@ func (mr *MockTradingDataServiceClientMockRecorder) ObserveEventBus(arg0 interfa
 }
 
 // ObserveGovernance mocks base method
-func (m *MockTradingDataServiceClient) ObserveGovernance(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (api.TradingDataService_ObserveGovernanceClient, error) {
+func (m *MockTradingDataServiceClient) ObserveGovernance(arg0 context.Context, arg1 *api.ObserveGovernanceRequest, arg2 ...grpc.CallOption) (api.TradingDataService_ObserveGovernanceClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -977,7 +976,7 @@ func (mr *MockTradingDataServiceClientMockRecorder) OrdersSubscribe(arg0, arg1 i
 }
 
 // Parties mocks base method
-func (m *MockTradingDataServiceClient) Parties(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*api.PartiesResponse, error) {
+func (m *MockTradingDataServiceClient) Parties(arg0 context.Context, arg1 *api.PartiesRequest, arg2 ...grpc.CallOption) (*api.PartiesResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -1077,7 +1076,7 @@ func (mr *MockTradingDataServiceClientMockRecorder) PositionsSubscribe(arg0, arg
 }
 
 // Statistics mocks base method
-func (m *MockTradingDataServiceClient) Statistics(arg0 context.Context, arg1 *emptypb.Empty, arg2 ...grpc.CallOption) (*api.StatisticsResponse, error) {
+func (m *MockTradingDataServiceClient) Statistics(arg0 context.Context, arg1 *api.StatisticsRequest, arg2 ...grpc.CallOption) (*api.StatisticsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {

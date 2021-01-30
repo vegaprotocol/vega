@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -62,13 +61,13 @@ type TradingDataServiceClient interface {
 	OrderVersionsByID(ctx context.Context, in *protoapi.OrderVersionsByIDRequest, opts ...grpc.CallOption) (*protoapi.OrderVersionsByIDResponse, error)
 	// markets
 	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
-	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
+	Markets(ctx context.Context, in *protoapi.MarketsRequest, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
 	MarketDepth(ctx context.Context, in *protoapi.MarketDepthRequest, opts ...grpc.CallOption) (*protoapi.MarketDepthResponse, error)
 	LastTrade(ctx context.Context, in *protoapi.LastTradeRequest, opts ...grpc.CallOption) (*protoapi.LastTradeResponse, error)
 	MarketDataByID(ctx context.Context, in *protoapi.MarketDataByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketDataByIDResponse, error)
 	// parties
 	PartyByID(ctx context.Context, in *protoapi.PartyByIDRequest, opts ...grpc.CallOption) (*protoapi.PartyByIDResponse, error)
-	Parties(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.PartiesResponse, error)
+	Parties(ctx context.Context, in *protoapi.PartiesRequest, opts ...grpc.CallOption) (*protoapi.PartiesResponse, error)
 	// trades
 	TradesByMarket(ctx context.Context, in *protoapi.TradesByMarketRequest, opts ...grpc.CallOption) (*protoapi.TradesByMarketResponse, error)
 	TradesByParty(ctx context.Context, in *protoapi.TradesByPartyRequest, opts ...grpc.CallOption) (*protoapi.TradesByPartyResponse, error)
@@ -78,8 +77,8 @@ type TradingDataServiceClient interface {
 	// candles
 	Candles(ctx context.Context, in *protoapi.CandlesRequest, opts ...grpc.CallOption) (*protoapi.CandlesResponse, error)
 	// metrics
-	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.StatisticsResponse, error)
-	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetVegaTimeResponse, error)
+	Statistics(ctx context.Context, in *protoapi.StatisticsRequest, opts ...grpc.CallOption) (*protoapi.StatisticsResponse, error)
+	GetVegaTime(ctx context.Context, in *protoapi.GetVegaTimeRequest, opts ...grpc.CallOption) (*protoapi.GetVegaTimeResponse, error)
 	// streams
 	AccountsSubscribe(ctx context.Context, in *protoapi.AccountsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_AccountsSubscribeClient, error)
 	OrdersSubscribe(ctx context.Context, in *protoapi.OrdersSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_OrdersSubscribeClient, error)
@@ -106,7 +105,7 @@ type TradingDataServiceClient interface {
 	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByIDResponse, error)
 	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByReferenceResponse, error)
 
-	ObserveGovernance(ctx context.Context, _ *empty.Empty, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveGovernanceClient, error)
+	ObserveGovernance(ctx context.Context, _ *protoapi.ObserveGovernanceRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveGovernanceClient, error)
 	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObservePartyProposalsClient, error)
 	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObservePartyVotesClient, error)
 	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveProposalVotesClient, error)
@@ -605,7 +604,7 @@ func (r *myQueryResolver) Market(ctx context.Context, id string) (*types.Market,
 
 func (r *myQueryResolver) Parties(ctx context.Context, name *string) ([]*types.Party, error) {
 	if name == nil {
-		var empty empty.Empty
+		var empty protoapi.PartiesRequest
 		resp, err := r.tradingDataClient.Parties(ctx, &empty)
 		if err != nil {
 			return nil, err
@@ -634,7 +633,7 @@ func (r *myQueryResolver) Party(ctx context.Context, name string) (*types.Party,
 }
 
 func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
-	res, err := r.tradingDataClient.Statistics(ctx, &empty.Empty{})
+	res, err := r.tradingDataClient.Statistics(ctx, &protoapi.StatisticsRequest{})
 	if err != nil {
 		r.log.Error("tradingCore client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -2389,7 +2388,7 @@ func isStreamClosed(err error, log *logging.Logger) bool {
 }
 
 func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-chan *types.GovernanceData, error) {
-	stream, err := r.tradingDataClient.ObserveGovernance(ctx, &empty.Empty{})
+	stream, err := r.tradingDataClient.ObserveGovernance(ctx, &protoapi.ObserveGovernanceRequest{})
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}

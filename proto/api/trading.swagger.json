@@ -1987,7 +1987,8 @@
         "data": {
           "$ref": "#/definitions/vegaGovernanceData"
         }
-      }
+      },
+      "title": "All events related to governance"
     },
     "v1ObservePartyProposalsResponse": {
       "type": "object",
