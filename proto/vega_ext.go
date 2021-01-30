@@ -22,10 +22,10 @@ func (l *LiquidityProvision) Float64Fee() float64 {
 // A persistent order is a Limit type order that might be
 // matched in the future.
 func (o *Order) IsPersistent() bool {
-	return (o.TimeInForce == Order_TIF_GTC ||
-		o.TimeInForce == Order_TIF_GTT ||
-		o.TimeInForce == Order_TIF_GFN ||
-		o.TimeInForce == Order_TIF_GFA) &&
+	return (o.TimeInForce == Order_TIME_IN_FORCE_GTC ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GTT ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GFN ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
 		o.Type == Order_TYPE_LIMIT &&
 		o.Remaining > 0
 }
@@ -62,9 +62,9 @@ func (o *Order) AmendSize(newSize int64) *OrderAmendment {
 }
 
 func (o *Order) IsExpireable() bool {
-	return (o.TimeInForce == Order_TIF_GFN ||
-		o.TimeInForce == Order_TIF_GTT ||
-		o.TimeInForce == Order_TIF_GFA) &&
+	return (o.TimeInForce == Order_TIME_IN_FORCE_GFN ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GTT ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
 		o.ExpiresAt > 0
 }
 

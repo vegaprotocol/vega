@@ -32,7 +32,7 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 	}
 
@@ -63,7 +63,7 @@ func TestUncross(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 	}
 	l.addOrder(passiveOrder)
@@ -75,7 +75,7 @@ func TestUncross(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 	}
 	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)

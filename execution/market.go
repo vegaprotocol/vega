@@ -828,7 +828,7 @@ func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) ty
 		return types.ErrPeggedOrderMustBeLimitOrder
 	}
 
-	if order.TimeInForce != types.Order_TIF_GTT && order.TimeInForce != types.Order_TIF_GTC {
+	if order.TimeInForce != types.Order_TIME_IN_FORCE_GTT && order.TimeInForce != types.Order_TIME_IN_FORCE_GTC {
 		// Pegged orders can only be GTC or GTT
 		return types.ErrPeggedOrderMustBeGTTOrGTC
 	}
@@ -865,34 +865,34 @@ func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) ty
 			}
 		}
 	}
-	return types.OrderError_ORDER_ERROR_NONE
+	return types.OrderError_ORDER_ERROR_UNSPECIFIED
 }
 
 func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Check we are allowed to handle this order type with the current market status
 	isAuction := m.as.InAuction()
-	if isAuction && order.TimeInForce == types.Order_TIF_GFN {
+	if isAuction && order.TimeInForce == types.Order_TIME_IN_FORCE_GFN {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return ErrGFNOrderReceivedAuctionTrading
 	}
 
-	if isAuction && order.TimeInForce == types.Order_TIF_IOC {
+	if isAuction && order.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return ErrIOCOrderReceivedAuctionTrading
 	}
 
-	if isAuction && order.TimeInForce == types.Order_TIF_FOK {
+	if isAuction && order.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return ErrFOKOrderReceivedAuctionTrading
 	}
 
-	if !isAuction && order.TimeInForce == types.Order_TIF_GFA {
+	if !isAuction && order.TimeInForce == types.Order_TIME_IN_FORCE_GFA {
 		order.Status = types.Order_STATUS_REJECTED
 		order.Reason = types.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -941,7 +941,7 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	// Validate pegged orders
 	if order.PeggedOrder != nil {
 		reason := m.validatePeggedOrder(ctx, order)
-		if reason != types.OrderError_ORDER_ERROR_NONE {
+		if reason != types.OrderError_ORDER_ERROR_UNSPECIFIED {
 			order.Status = types.Order_STATUS_REJECTED
 			order.Reason = reason
 
@@ -1088,7 +1088,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	if order.PeggedOrder != nil {
 		order.Status = types.Order_STATUS_PARKED
-		order.Reason = types.OrderError_ORDER_ERROR_NONE
+		order.Reason = types.OrderError_ORDER_ERROR_UNSPECIFIED
 
 		if m.as.InAuction() {
 			// If we are in an auction, we don't insert this order into the book
@@ -1179,8 +1179,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
 	// remove them from the potential orders,
 	// then we should be able to process the rest of the order properly.
-	if ((order.TimeInForce == types.Order_TIF_FOK ||
-		order.TimeInForce == types.Order_TIF_IOC ||
+	if ((order.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
+		order.TimeInForce == types.Order_TIME_IN_FORCE_IOC ||
 		order.Status == types.Order_STATUS_STOPPED) &&
 		confirmation.Order.Remaining != 0) ||
 		// Also do it if specifically we went against a wash trade
@@ -1533,8 +1533,8 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		PartyID:     networkPartyID,       // network is not a party as such
 		Side:        types.Side_SIDE_SELL, // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
-		Reference:   fmt.Sprintf("LS-%s", o.Id), // liquidity sourcing, reference the order which caused the problem
-		TimeInForce: types.Order_TIF_FOK,        // this is an all-or-nothing order, so TIF == FOK
+		Reference:   fmt.Sprintf("LS-%s", o.Id),    // liquidity sourcing, reference the order which caused the problem
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.Order_TYPE_NETWORK,
 	}
 	no.Size = no.Remaining
@@ -1693,7 +1693,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		Price:       settleOrder.Price,
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
-		TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:        types.Order_TYPE_NETWORK,
 	}
 
@@ -1732,7 +1732,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			Price:       settleOrder.Price, // average price
 			CreatedAt:   m.currentTime.UnixNano(),
 			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.Id),
-			TimeInForce: types.Order_TIF_FOK, // this is an all-or-nothing order, so TIF == FOK
+			TimeInForce: types.Order_TIME_IN_FORCE_FOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 			Type:        types.Order_TYPE_NETWORK,
 		}
 		m.idgen.SetID(&partyOrder)
@@ -2444,8 +2444,8 @@ func (m *Market) validateOrderAmendment(
 	order *types.Order,
 	amendment *types.OrderAmendment,
 ) error {
-	// check TIF and expiry
-	if amendment.TimeInForce == types.Order_TIF_GTT {
+	// check TIME_IN_FORCE and expiry
+	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GTT {
 		if amendment.ExpiresAt == nil {
 			return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
 		}
@@ -2456,30 +2456,30 @@ func (m *Market) validateOrderAmendment(
 		}
 	}
 
-	if amendment.TimeInForce == types.Order_TIF_GTC {
+	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GTC {
 		// this is cool, but we need to ensure and expiry is not set
 		if amendment.ExpiresAt != nil {
 			return types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
 		}
 	}
 
-	if amendment.TimeInForce == types.Order_TIF_FOK ||
-		amendment.TimeInForce == types.Order_TIF_IOC {
+	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
+		amendment.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
 		// IOC and FOK are not acceptable for amend order
 		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
 	}
 
-	if (amendment.TimeInForce == types.Order_TIF_GFN ||
-		amendment.TimeInForce == types.Order_TIF_GFA) &&
+	if (amendment.TimeInForce == types.Order_TIME_IN_FORCE_GFN ||
+		amendment.TimeInForce == types.Order_TIME_IN_FORCE_GFA) &&
 		amendment.TimeInForce != order.TimeInForce {
 		// We cannot amend to a GFA/GFN orders
 		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN
 	}
 
-	if (order.TimeInForce == types.Order_TIF_GFN ||
-		order.TimeInForce == types.Order_TIF_GFA) &&
+	if (order.TimeInForce == types.Order_TIME_IN_FORCE_GFN ||
+		order.TimeInForce == types.Order_TIME_IN_FORCE_GFA) &&
 		(amendment.TimeInForce != order.TimeInForce &&
-			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED) {
+			amendment.TimeInForce != types.Order_TIME_IN_FORCE_UNSPECIFIED) {
 		// We cannot amend from a GFA/GFN orders
 		return types.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
 	}
@@ -2550,9 +2550,9 @@ func (m *Market) applyOrderAmendment(
 	}
 
 	// apply tif
-	if amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
+	if amendment.TimeInForce != types.Order_TIME_IN_FORCE_UNSPECIFIED {
 		order.TimeInForce = amendment.TimeInForce
-		if amendment.TimeInForce != types.Order_TIF_GTT {
+		if amendment.TimeInForce != types.Order_TIME_IN_FORCE_GTT {
 			order.ExpiresAt = 0
 		}
 	}
@@ -2569,7 +2569,7 @@ func (m *Market) applyOrderAmendment(
 		if amendment.PeggedReference != types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			order.PeggedOrder.Reference = amendment.PeggedReference
 		}
-		if verr := m.validatePeggedOrder(ctx, order); verr != types.OrderError_ORDER_ERROR_NONE {
+		if verr := m.validatePeggedOrder(ctx, order); verr != types.OrderError_ORDER_ERROR_UNSPECIFIED {
 			err = verr
 		}
 	}

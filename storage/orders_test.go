@@ -293,7 +293,7 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 		Price:       100,
 		Size:        1000,
 		Remaining:   0,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 		Status:      types.Order_STATUS_ACTIVE,
 		Reference:   "123123-34334343-1231231",
@@ -329,7 +329,7 @@ func TestStorage_GetOrderByID(t *testing.T) {
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1000,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 	}
 
@@ -379,7 +379,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Side:        types.Side_SIDE_BUY,
 		Price:       1,
 		Size:        1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Version:     version,
 	}
@@ -400,7 +400,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Side:        types.Side_SIDE_SELL,
 		Price:       222,
 		Size:        222,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Version:     execution.InitialOrderVersion,
 	}
@@ -411,7 +411,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Side:        types.Side_SIDE_SELL,
 		Price:       222,
 		Size:        222,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Version:     execution.InitialOrderVersion,
 	}

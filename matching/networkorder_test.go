@@ -23,7 +23,7 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 			Price:       100,
 			Size:        4,
 			Remaining:   4,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			Type:        types.Order_TYPE_LIMIT,
 			Id:          "v0000000000000-0000001",
 		},
@@ -35,7 +35,7 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 			Price:       75,
 			Size:        4,
 			Remaining:   4,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			Type:        types.Order_TYPE_LIMIT,
 			Id:          "v0000000000000-0000002",
 		},
@@ -62,7 +62,7 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 		Side:        types.Side_SIDE_SELL,
 		Price:       0,
 		CreatedAt:   0,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_NETWORK,
 	}
 

@@ -111,7 +111,7 @@ func (esm *equityShareMarket) TestMarket() *testMarket { return esm.tm }
 func (esm *equityShareMarket) BuildOrder(id, party string, side types.Side, price uint64) *types.Order {
 	return &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          id,
 		Side:        side,

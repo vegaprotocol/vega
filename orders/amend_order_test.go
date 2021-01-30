@@ -25,7 +25,7 @@ func TestPrepareAmendOrder(t *testing.T) {
 	t.Run("Prepare amend order reduce - success", testPrepareAmendOrderJustReduceSuccess)
 	t.Run("Prepare amend order increase - success", testPrepareAmendOrderJustIncreaseSuccess)
 	t.Run("Prepare amend order expiry - success", testPrepareAmendOrderJustExpirySuccess)
-	t.Run("Prepare amend order tif - success", testPrepareAmendOrderJustTIFSuccess)
+	t.Run("Prepare amend order tif - success", testPrepareAmendOrderJustTIME_IN_FORCESuccess)
 	t.Run("Prepare amend order expiry before creation time - success", testPrepareAmendOrderPastExpiry)
 	t.Run("Prepare amend order empty - fail", testPrepareAmendOrderEmptyFail)
 	t.Run("Prepare amend order nil - fail", testPrepareAmendOrderNilFail)
@@ -88,11 +88,11 @@ func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testPrepareAmendOrderJustTIFSuccess(t *testing.T) {
+func testPrepareAmendOrderJustTIME_IN_FORCESuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:     "orderid",
 		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GTC,
+		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -130,7 +130,7 @@ func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:     "orderid",
 		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GTC,
+		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)
@@ -139,11 +139,11 @@ func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
 	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Error(t, err)
 
-	arg.TimeInForce = proto.Order_TIF_FOK
+	arg.TimeInForce = proto.Order_TIME_IN_FORCE_FOK
 	err = svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Error(t, err)
 
-	arg.TimeInForce = proto.Order_TIF_IOC
+	arg.TimeInForce = proto.Order_TIME_IN_FORCE_IOC
 	err = svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Error(t, err)
 }
@@ -156,7 +156,7 @@ func testPrepareAmendOrderPastExpiry(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:     "orderid",
 		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GTT,
+		TimeInForce: proto.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)
@@ -170,7 +170,7 @@ func testPrepareAmendOrderToGFN(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:     "orderid",
 		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GFN,
+		TimeInForce: proto.Order_TIME_IN_FORCE_GFN,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)
@@ -184,7 +184,7 @@ func testPrepareAmendOrderToGFA(t *testing.T) {
 	arg := proto.OrderAmendment{
 		OrderID:     "orderid",
 		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GFA,
+		TimeInForce: proto.Order_TIME_IN_FORCE_GFA,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)

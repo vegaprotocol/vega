@@ -8,13 +8,13 @@ import (
 
 func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status) (LiquidityProvisionStatus, error) {
 	switch x {
-	case types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE:
+	case types.LiquidityProvision_STATUS_ACTIVE:
 		return LiquidityProvisionStatusActive, nil
-	case types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_STOPPED:
+	case types.LiquidityProvision_STATUS_STOPPED:
 		return LiquidityProvisionStatusStopped, nil
-	case types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_CANCELLED:
+	case types.LiquidityProvision_STATUS_CANCELLED:
 		return LiquidityProvisionStatusCancelled, nil
-	case types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED:
+	case types.LiquidityProvision_STATUS_REJECTED:
 		return LiquidityProvisionStatusRejected, nil
 	default:
 		err := fmt.Errorf("failed to convert LiquidityProvisionStatus from GraphQL to Proto: %v", x)
@@ -24,11 +24,11 @@ func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status)
 
 func convertDepositStatusFromProto(x types.Deposit_Status) (DepositStatus, error) {
 	switch x {
-	case types.Deposit_DEPOSIT_STATUS_OPEN:
+	case types.Deposit_STATUS_OPEN:
 		return DepositStatusOpen, nil
-	case types.Deposit_DEPOSIT_STATUS_CANCELLED:
+	case types.Deposit_STATUS_CANCELLED:
 		return DepositStatusCancelled, nil
-	case types.Deposit_DEPOSIT_STATUS_FINALIZED:
+	case types.Deposit_STATUS_FINALIZED:
 		return DepositStatusFinalized, nil
 	default:
 		err := fmt.Errorf("failed to convert DepositStatus from GraphQL to Proto: %v", x)
@@ -38,11 +38,11 @@ func convertDepositStatusFromProto(x types.Deposit_Status) (DepositStatus, error
 
 func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStatus, error) {
 	switch x {
-	case types.Withdrawal_WITHDRAWAL_STATUS_OPEN:
+	case types.Withdrawal_STATUS_OPEN:
 		return WithdrawalStatusOpen, nil
-	case types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED:
+	case types.Withdrawal_STATUS_CANCELLED:
 		return WithdrawalStatusCancelled, nil
-	case types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED:
+	case types.Withdrawal_STATUS_FINALIZED:
 		return WithdrawalStatusFinalized, nil
 	default:
 		err := fmt.Errorf("failed to convert WithdrawalStatus from GraphQL to Proto: %v", x)
@@ -175,7 +175,7 @@ func convertOrderStatusToProto(x OrderStatus) (types.Order_Status, error) {
 		return types.Order_STATUS_PARKED, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderStatus from GraphQL to Proto: %v", x)
-		return types.Order_STATUS_INVALID, err
+		return types.Order_STATUS_UNSPECIFIED, err
 	}
 }
 
@@ -551,37 +551,37 @@ func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, 
 func convertOrderTimeInForceToProto(x OrderTimeInForce) (types.Order_TimeInForce, error) {
 	switch x {
 	case OrderTimeInForceFok:
-		return types.Order_TIF_FOK, nil
+		return types.Order_TIME_IN_FORCE_FOK, nil
 	case OrderTimeInForceIoc:
-		return types.Order_TIF_IOC, nil
+		return types.Order_TIME_IN_FORCE_IOC, nil
 	case OrderTimeInForceGtc:
-		return types.Order_TIF_GTC, nil
+		return types.Order_TIME_IN_FORCE_GTC, nil
 	case OrderTimeInForceGtt:
-		return types.Order_TIF_GTT, nil
+		return types.Order_TIME_IN_FORCE_GTT, nil
 	case OrderTimeInForceGfa:
-		return types.Order_TIF_GFA, nil
+		return types.Order_TIME_IN_FORCE_GFA, nil
 	case OrderTimeInForceGfn:
-		return types.Order_TIF_GFN, nil
+		return types.Order_TIME_IN_FORCE_GFN, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderTimeInForce from GraphQL to Proto: %v", x)
-		return types.Order_TIF_UNSPECIFIED, err
+		return types.Order_TIME_IN_FORCE_UNSPECIFIED, err
 	}
 }
 
 // convertOrderTimeInForceFromProto converts a Proto enum to a GraphQL enum
 func convertOrderTimeInForceFromProto(x types.Order_TimeInForce) (OrderTimeInForce, error) {
 	switch x {
-	case types.Order_TIF_FOK:
+	case types.Order_TIME_IN_FORCE_FOK:
 		return OrderTimeInForceFok, nil
-	case types.Order_TIF_IOC:
+	case types.Order_TIME_IN_FORCE_IOC:
 		return OrderTimeInForceIoc, nil
-	case types.Order_TIF_GTC:
+	case types.Order_TIME_IN_FORCE_GTC:
 		return OrderTimeInForceGtc, nil
-	case types.Order_TIF_GTT:
+	case types.Order_TIME_IN_FORCE_GTT:
 		return OrderTimeInForceGtt, nil
-	case types.Order_TIF_GFA:
+	case types.Order_TIME_IN_FORCE_GFA:
 		return OrderTimeInForceGfa, nil
-	case types.Order_TIF_GFN:
+	case types.Order_TIME_IN_FORCE_GFN:
 		return OrderTimeInForceGfn, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderTimeInForce from Proto to GraphQL: %v", x)

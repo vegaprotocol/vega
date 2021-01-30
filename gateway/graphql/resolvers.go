@@ -520,7 +520,7 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	}
 
 	// GTT must have an expiration value
-	if order.TimeInForce == types.Order_TIF_GTT && expiration != nil {
+	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
 		var expiresAt time.Time
 		expiresAt, err = vegatime.Parse(*expiration)
 		if err != nil {
@@ -1328,7 +1328,7 @@ func (r *myMarketDepthUpdateResolver) Market(ctx context.Context, md *types.Mark
 type myOrderResolver VegaResolverRoot
 
 func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*OrderRejectionReason, error) {
-	if o.Reason == types.OrderError_ORDER_ERROR_NONE {
+	if o.Reason == types.OrderError_ORDER_ERROR_UNSPECIFIED {
 		return nil, nil
 	}
 	reason, err := convertOrderRejectionReasonFromProto(o.Reason)
@@ -1779,7 +1779,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}
 
 	// GTT must have an expiration value
-	if order.TimeInForce == types.Order_TIF_GTT && expiration != nil {
+	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
 		var expiresAt time.Time
 		expiresAt, err = vegatime.Parse(*expiration)
 		if err != nil {

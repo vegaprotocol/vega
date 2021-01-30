@@ -300,7 +300,7 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 			Remaining:   uint64(vol),
 			ExpiresAt:   tomorrow.UnixNano(),
 			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIF_GTT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		result, err := core.SubmitOrder(context.TODO(), &order)

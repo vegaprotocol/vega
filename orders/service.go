@@ -31,8 +31,8 @@ var (
 	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
 	// ErrInvalidAmendmentSizeDelta ...
 	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
-	// ErrInvalidAmendOrderTIF ...
-	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
+	// ErrInvalidAmendOrderTIME_IN_FORCE ...
+	ErrInvalidAmendOrderTIME_IN_FORCE = errors.New("invalid amend order tif (cannot be IOC and FOK)")
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 	// ErrEmptySubmitTransactionRequest empty transaction
@@ -157,18 +157,18 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrNoType
 	}
 
-	if sub.TimeInForce == types.Order_TIF_UNSPECIFIED {
+	if sub.TimeInForce == types.Order_TIME_IN_FORCE_UNSPECIFIED {
 		return ErrNoTimeInForce
 	}
 
-	if sub.TimeInForce == types.Order_TIF_GTT {
+	if sub.TimeInForce == types.Order_TIME_IN_FORCE_GTT {
 		if sub.ExpiresAt <= 0 {
 			s.log.Error("invalid expiration time")
 			return ErrInvalidExpirationDT
 		}
 	}
 
-	if sub.TimeInForce != types.Order_TIF_GTT && sub.ExpiresAt != 0 {
+	if sub.TimeInForce != types.Order_TIME_IN_FORCE_GTT && sub.ExpiresAt != 0 {
 		return ErrNonGTTOrderWithExpiry
 	}
 
@@ -176,7 +176,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 		return ErrInvalidPriceForMarketOrder
 	}
 	if sub.Type == types.Order_TYPE_MARKET &&
-		(sub.TimeInForce != types.Order_TIF_FOK && sub.TimeInForce != types.Order_TIF_IOC) {
+		(sub.TimeInForce != types.Order_TIME_IN_FORCE_FOK && sub.TimeInForce != types.Order_TIME_IN_FORCE_IOC) {
 		return ErrInvalidTimeInForceForMarketOrder
 	}
 	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 &&
@@ -194,7 +194,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 			return ErrPeggedOrderMustBeLimitOrder
 		}
 
-		if sub.TimeInForce != types.Order_TIF_GTT && sub.TimeInForce != types.Order_TIF_GTC {
+		if sub.TimeInForce != types.Order_TIME_IN_FORCE_GTT && sub.TimeInForce != types.Order_TIME_IN_FORCE_GTC {
 			// Pegged orders can only be GTC or GTT
 			return ErrPeggedOrderMustBeGTTOrGTC
 		}
@@ -260,12 +260,12 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	}
 
 	// Check we are not trying to amend to a GFA
-	if amendment.TimeInForce == types.Order_TIF_GFA {
+	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GFA {
 		return ErrCannotAmendToGFA
 	}
 
 	// Check we are not trying to amend to a GFN
-	if amendment.TimeInForce == types.Order_TIF_GFN {
+	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GFN {
 		return ErrCannotAmendToGFN
 	}
 
@@ -273,23 +273,23 @@ func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmend
 	if amendment.Price == nil &&
 		amendment.SizeDelta == 0 &&
 		(amendment.ExpiresAt == nil || amendment.ExpiresAt.Value == 0) &&
-		amendment.TimeInForce == types.Order_TIF_UNSPECIFIED &&
+		amendment.TimeInForce == types.Order_TIME_IN_FORCE_UNSPECIFIED &&
 		amendment.PeggedOffset == nil &&
 		amendment.PeggedReference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 		return ErrNoParamsInAmendRequest
 	}
 
-	// Only update ExpiresAt when TIF is related
+	// Only update ExpiresAt when TIME_IN_FORCE is related
 	if amendment.ExpiresAt != nil && amendment.ExpiresAt.Value > 0 {
-		if amendment.TimeInForce != types.Order_TIF_GTT &&
-			amendment.TimeInForce != types.Order_TIF_UNSPECIFIED {
+		if amendment.TimeInForce != types.Order_TIME_IN_FORCE_GTT &&
+			amendment.TimeInForce != types.Order_TIME_IN_FORCE_UNSPECIFIED {
 			// We cannot change the expire time for this order type
 			return ErrNonGTTOrderWithExpiry
 		}
 	}
 
 	// if order is GTT convert datetime to blockchain ts
-	if amendment.TimeInForce == types.Order_TIF_GTT {
+	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GTT {
 		if amendment.ExpiresAt == nil {
 			s.log.Error("unable to set trade type to GTT when no expiry given")
 			return ErrGTTOrderWithNoExpiry

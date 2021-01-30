@@ -128,19 +128,19 @@ message Order {
   // See [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail
   enum TimeInForce {
     // Default value for TimeInForce, can be valid for an amend
-    TIF_UNSPECIFIED = 0;
+    TIME_IN_FORCE_UNSPECIFIED = 0;
     // Good until cancelled
-    TIF_GTC = 1;
+    TIME_IN_FORCE_GTC = 1;
     // Good until specified time
-    TIF_GTT = 2;
+    TIME_IN_FORCE_GTT = 2;
     // Immediate or cancel
-    TIF_IOC = 3;
+    TIME_IN_FORCE_IOC = 3;
     // Fill or kill
-    TIF_FOK = 4;
+    TIME_IN_FORCE_FOK = 4;
     // Good for auction
-    TIF_GFA = 5;
+    TIME_IN_FORCE_GFA = 5;
     // Good for normal
-    TIF_GFN = 6;
+    TIME_IN_FORCE_GFN = 6;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -167,7 +167,7 @@ message Order {
   // See resulting status in [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
   enum Status {
     // Default value, always invalid
-    STATUS_INVALID = 0;
+    STATUS_UNSPECIFIED = 0;
     // Used for active unfilled or partially filled orders
     STATUS_ACTIVE = 1;
     // Used for expired GTT orders
@@ -271,7 +271,7 @@ message AuctionIndicativeState {
 // with an order during its life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 enum OrderError {
   // Default value, no error reported
-  ORDER_ERROR_NONE = 0;
+  ORDER_ERROR_UNSPECIFIED = 0;
   // Order was submitted for a market that does not exist
   ORDER_ERROR_INVALID_MARKET_ID = 1;
   // Order was submitted with an invalid identifier
@@ -617,13 +617,13 @@ message Deposit {
   // The status of the deposit
   enum Status {
     // Default value, always invalid
-    DEPOSIT_STATUS_UNSPECIFIED = 0;
+    STATUS_UNSPECIFIED = 0;
     // The deposit is being processed by the network
-    DEPOSIT_STATUS_OPEN = 1;
+    STATUS_OPEN = 1;
     // The deposit has been cancelled by the network
-    DEPOSIT_STATUS_CANCELLED = 2;
+    STATUS_CANCELLED = 2;
     // The deposit has been finalised and accounts have been updated
-    DEPOSIT_STATUS_FINALIZED = 3;
+    STATUS_FINALIZED = 3;
   }
 
   // Unique identifier for the deposit
@@ -649,14 +649,14 @@ message Withdrawal {
   // The status of the withdrawal
   enum Status {
     // Default value, always invalid
-    WITHDRAWAL_STATUS_UNSPECIFIED = 0;
+    STATUS_UNSPECIFIED = 0;
     // The withdrawal is open and being processed by the network
-    WITHDRAWAL_STATUS_OPEN = 1;
+    STATUS_OPEN = 1;
     // The withdrawal have been cancelled
-    WITHDRAWAL_STATUS_CANCELLED = 2;
+    STATUS_CANCELLED = 2;
     // The withdrawal went through and is fully finalised, the funds are removed from the
     // Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network
-    WITHDRAWAL_STATUS_FINALIZED = 3;
+    STATUS_FINALIZED = 3;
   }
 
   // Unique identifier for the withdrawal
@@ -1197,17 +1197,17 @@ message LiquidityProvision {
   // Status of a liquidity provision order
   enum Status {
     // The default value
-    LIQUIDITY_PROVISION_STATUS_UNSPECIFIED = 0;
+    STATUS_UNSPECIFIED = 0;
     // The liquidity provision is active
-    LIQUIDITY_PROVISION_STATUS_ACTIVE = 1;
+    STATUS_ACTIVE = 1;
     // The liquidity provision was stopped by the network
-    LIQUIDITY_PROVISION_STATUS_STOPPED = 2;
+    STATUS_STOPPED = 2;
     // The liquidity provision was cancelled by the liquidity provider
-    LIQUIDITY_PROVISION_STATUS_CANCELLED = 3;
+    STATUS_CANCELLED = 3;
     // The liquidity provision was invalid and got rejected
-    LIQUIDITY_PROVISION_STATUS_REJECTED = 4;
+    STATUS_REJECTED = 4;
     // The liquidity provision is valid and accepted by network, but oreders aren't deployed
-    LIQUIDITY_PROVISION_STATUS_UNDEPLOYED = 5;
+    STATUS_UNDEPLOYED = 5;
   }
 
   // Unique identifier

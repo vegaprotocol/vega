@@ -80,7 +80,7 @@ func TestHash(t *testing.T) {
 			Price:       10,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "2222222222222222222222",
@@ -92,7 +92,7 @@ func TestHash(t *testing.T) {
 			Price:       30,
 			Size:        5,
 			Remaining:   5,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "3333333333333333333333",
@@ -104,7 +104,7 @@ func TestHash(t *testing.T) {
 			Price:       200,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "4444444444444444444444",
@@ -116,7 +116,7 @@ func TestHash(t *testing.T) {
 			Price:       400,
 			Size:        10,
 			Remaining:   10,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 	}
 
@@ -153,7 +153,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "2222222222222222222222",
@@ -165,7 +165,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			Price:       300,
 			Size:        5,
 			Remaining:   5,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "3333333333333333333333",
@@ -177,7 +177,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			Price:       200,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "4444444444444444444444",
@@ -189,7 +189,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			Price:       300,
 			Size:        10,
 			Remaining:   10,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 	}
 	for _, o := range orders {
@@ -229,7 +229,7 @@ func getAllOrderForAParty(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "2222222222222222222222",
@@ -241,7 +241,7 @@ func getAllOrderForAParty(t *testing.T) {
 			Price:       300,
 			Size:        5,
 			Remaining:   5,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "3333333333333333333333",
@@ -253,7 +253,7 @@ func getAllOrderForAParty(t *testing.T) {
 			Price:       200,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "4444444444444444444444",
@@ -265,7 +265,7 @@ func getAllOrderForAParty(t *testing.T) {
 			Price:       300,
 			Size:        10,
 			Remaining:   10,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 	}
 	for _, o := range orders {
@@ -304,7 +304,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "2222222222222222222222",
@@ -316,7 +316,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			Price:       300,
 			Size:        5,
 			Remaining:   5,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "3333333333333333333333",
@@ -328,7 +328,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			Price:       200,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Id:          "4444444444444444444444",
@@ -340,7 +340,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			Price:       300,
 			Size:        10,
 			Remaining:   10,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 	}
 	for _, o := range orders {
@@ -367,7 +367,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
@@ -378,7 +378,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			Price:       300,
 			Size:        5,
 			Remaining:   5,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
@@ -389,7 +389,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			Price:       200,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
@@ -400,7 +400,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			Price:       300,
 			Size:        10,
 			Remaining:   10,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 	}
 	for _, o := range orders {
@@ -433,7 +433,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
@@ -444,7 +444,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			Price:       10,
 			Size:        5,
 			Remaining:   5,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
@@ -455,7 +455,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			Price:       200,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
 			Status:      types.Order_STATUS_ACTIVE,
@@ -466,7 +466,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			Price:       10,
 			Size:        10,
 			Remaining:   10,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 	}
 	for _, o := range orders {
@@ -499,7 +499,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -511,7 +511,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 			Price:       110,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 	}
@@ -554,7 +554,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -566,7 +566,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 			Price:       110,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 	}
@@ -609,7 +609,7 @@ func getClosePNLBuy(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -621,7 +621,7 @@ func getClosePNLBuy(t *testing.T) {
 			Price:       110,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -633,7 +633,7 @@ func getClosePNLBuy(t *testing.T) {
 			Price:       120,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 	}
@@ -674,7 +674,7 @@ func getClosePNLSell(t *testing.T) {
 			Price:       100,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -686,7 +686,7 @@ func getClosePNLSell(t *testing.T) {
 			Price:       110,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -698,7 +698,7 @@ func getClosePNLSell(t *testing.T) {
 			Price:       120,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 	}
@@ -741,7 +741,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Price:       1,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   currentTimestamp,
 		Id:          "v0000000000000-0000001",
 	}
@@ -754,7 +754,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Price:       1,
 		Size:        100,
 		Remaining:   1, // use a wrong remaining here to get the order from the book
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   currentTimestamp,
 		Id:          "v0000000000000-0000001",
 	}
@@ -788,7 +788,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       1,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		CreatedAt:   currentTimestamp,
 		ExpiresAt:   someTimeLater,
 		Id:          "1",
@@ -808,7 +808,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       3298,
 		Size:        99,
 		Remaining:   99,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		CreatedAt:   currentTimestamp,
 		ExpiresAt:   someTimeLater + 1,
 		Id:          "2",
@@ -828,7 +828,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       771,
 		Size:        19,
 		Remaining:   19,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		CreatedAt:   currentTimestamp,
 		ExpiresAt:   someTimeLater,
 		Id:          "3",
@@ -848,7 +848,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       1000,
 		Size:        7,
 		Remaining:   7,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   currentTimestamp,
 		Id:          "4",
 	}
@@ -867,7 +867,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       199,
 		Size:        99999,
 		Remaining:   99999,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		CreatedAt:   currentTimestamp,
 		ExpiresAt:   someTimeLater,
 		Id:          "5",
@@ -888,7 +888,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       100,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   currentTimestamp,
 		Id:          "6",
 	}
@@ -907,7 +907,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       41,
 		Size:        9999,
 		Remaining:   9999,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		CreatedAt:   currentTimestamp,
 		ExpiresAt:   someTimeLater + 9999,
 		Id:          "7",
@@ -927,7 +927,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       1,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		CreatedAt:   currentTimestamp,
 		ExpiresAt:   someTimeLater - 9999,
 		Id:          "8",
@@ -947,7 +947,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       65,
 		Size:        12,
 		Remaining:   12,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   currentTimestamp,
 		Id:          "9",
 	}
@@ -966,7 +966,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Price:       1,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		CreatedAt:   currentTimestamp,
 		ExpiresAt:   someTimeLater - 1,
 		Id:          "10",
@@ -1011,7 +1011,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		Price:       100,
 		Size:        100,
 		Remaining:   300,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 		Id:          "id-number-one",
 	}
@@ -1036,7 +1036,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 	}
 
@@ -1066,7 +1066,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 		Id:          fmt.Sprintf("V%010d-%010d", 1, 1),
 	}
@@ -1104,7 +1104,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 		Id:          id,
 	}
@@ -1150,7 +1150,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 		Id:          id,
 	}
@@ -1195,7 +1195,7 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 		Id:          id,
 	}
@@ -1329,7 +1329,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		Price:       100,
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	confirmation, err := book.SubmitOrder(newOrder)
@@ -1352,7 +1352,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		Price:       100,
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	err = book.AmendOrder(newOrder, editedOrder)
@@ -1378,7 +1378,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		Price:       100,
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	trades, getErr := book.GetTrades(newOrder)
@@ -1401,7 +1401,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		Price:       100,
 		Size:        100,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 	err = book.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE {
@@ -1425,7 +1425,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		Price:       100,
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	trades, getErr := book.GetTrades(newOrder)
@@ -1448,7 +1448,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		Price:       100,
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	err = book.AmendOrder(newOrder, editedOrder)
@@ -1477,7 +1477,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		PartyID:     "A",
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	trades, getErr := book.GetTrades(newOrder)
@@ -1500,7 +1500,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		PartyID:     "B",
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	err = book.AmendOrder(newOrder, editedOrder)
@@ -1530,7 +1530,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		PartyID:     "A",
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
 
@@ -1554,7 +1554,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		PartyID:     "A",
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   5,
 	}
 
@@ -1585,7 +1585,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		PartyID:     "A",
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
 
@@ -1609,7 +1609,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		PartyID:     "B",
 		Size:        300,
 		Remaining:   300,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
 
@@ -1646,7 +1646,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Price:       101,
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -1658,7 +1658,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Price:       101,
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		// Side Buy
@@ -1671,7 +1671,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Price:       98,
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
@@ -1683,7 +1683,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Price:       98,
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 	}
@@ -1700,7 +1700,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Price:       101,
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   1,
 		},
 		// Side Buy
@@ -1713,7 +1713,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			Price:       99,
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   1,
 		},
 	}
@@ -1744,7 +1744,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Price:       101,
 				Size:        100,
 				Remaining:   100,
-				TimeInForce: types.Order_TIF_GTC,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 				CreatedAt:   3,
 			},
 			expectedTrades: []types.Trade{
@@ -1768,7 +1768,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Price:       101,
 					Size:        100,
 					Remaining:   0,
-					TimeInForce: types.Order_TIF_GTC,
+					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 					CreatedAt:   0,
 				},
 			},
@@ -1784,7 +1784,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Price:       102,
 				Size:        200,
 				Remaining:   200,
-				TimeInForce: types.Order_TIF_GTC,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 				CreatedAt:   4,
 			},
 			expectedTrades: []types.Trade{
@@ -1817,7 +1817,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Price:       101,
 					Size:        100,
 					Remaining:   0,
-					TimeInForce: types.Order_TIF_GTC,
+					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 					CreatedAt:   0,
 				},
 				{
@@ -1829,7 +1829,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Price:       101,
 					Size:        100,
 					Remaining:   0,
-					TimeInForce: types.Order_TIF_GTC,
+					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 					CreatedAt:   1,
 				},
 			},
@@ -1845,7 +1845,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Price:       97,
 				Size:        250,
 				Remaining:   250,
-				TimeInForce: types.Order_TIF_GTC,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 				CreatedAt:   5,
 			},
 			expectedTrades: []types.Trade{
@@ -1887,7 +1887,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Price:       99,
 					Size:        100,
 					Remaining:   0,
-					TimeInForce: types.Order_TIF_GTC,
+					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 					CreatedAt:   1,
 				},
 				{
@@ -1899,7 +1899,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Price:       98,
 					Size:        100,
 					Remaining:   0,
-					TimeInForce: types.Order_TIF_GTC,
+					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 					CreatedAt:   0,
 				},
 				{
@@ -1911,7 +1911,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Price:       98,
 					Size:        100,
 					Remaining:   50,
-					TimeInForce: types.Order_TIF_GTC,
+					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 					CreatedAt:   0,
 				},
 			},
@@ -1927,7 +1927,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				Price:       98,
 				Size:        50,
 				Remaining:   50,
-				TimeInForce: types.Order_TIF_GTC,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 				CreatedAt:   6,
 			},
 			expectedTrades: []types.Trade{
@@ -1951,7 +1951,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					Price:       98,
 					Size:        100,
 					Remaining:   0,
-					TimeInForce: types.Order_TIF_GTC,
+					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 					CreatedAt:   0,
 				},
 			},
@@ -2029,7 +2029,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 		PartyID:     "A",
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
 
@@ -2054,7 +2054,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 		PartyID:     "B",
 		Size:        20,
 		Remaining:   20,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		CreatedAt:   10,
 	}
 	trades, getErr = book.GetTrades(iocOrder)
@@ -2090,7 +2090,7 @@ func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side typ
 		PartyID:     partyid,
 		Size:        size,
 		Remaining:   size,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
 	return order
@@ -2110,7 +2110,7 @@ func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
 
 	// Enter a GFN market order with no expiration time
 	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
-	buyOrder.TimeInForce = types.Order_TIF_GFN
+	buyOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	buyOrder.Type = types.Order_TYPE_MARKET
 	buyOrder.ExpiresAt = 0
 	buyOrderConf, err := book.SubmitOrder(buyOrder)
@@ -2119,7 +2119,7 @@ func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
 
 	// Enter a GFN market order with no expiration time
 	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
-	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	sellOrder.Type = types.Order_TYPE_MARKET
 	sellOrder.ExpiresAt = 0
 	sellOrderConf, err := book.SubmitOrder(sellOrder)
@@ -2137,7 +2137,7 @@ func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
 
 	// Enter a GFN market order with an expiration time (which is invalid)
 	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
-	buyOrder.TimeInForce = types.Order_TIF_GFN
+	buyOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	buyOrder.Type = types.Order_TYPE_MARKET
 	buyOrder.ExpiresAt = 100
 	buyOrderConf, err := book.SubmitOrder(buyOrder)
@@ -2146,7 +2146,7 @@ func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
 
 	// Enter a GFN market order with an expiration time (which is invalid)
 	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
-	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	sellOrder.Type = types.Order_TYPE_MARKET
 	sellOrder.ExpiresAt = 100
 	sellOrderConf, err := book.SubmitOrder(sellOrder)
@@ -2170,7 +2170,7 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 
 	// Enter a GFN market order with an expiration time (which is invalid)
 	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 10)
-	sellOrder.TimeInForce = types.Order_TIF_GFN
+	sellOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	sellOrder.Type = types.Order_TYPE_LIMIT
 	sellOrderConf, err := book.SubmitOrder(sellOrder)
 	assert.NoError(t, err)
@@ -2194,7 +2194,7 @@ func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
 
 	// Try to add an order of type GFN which should be rejected
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
-	order.TimeInForce = types.Order_TIF_GFN
+	order.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	orderConf, err := book.SubmitOrder(order)
 	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
 	assert.Nil(t, orderConf)
@@ -2213,7 +2213,7 @@ func TestOrderBook_ContinuousGFAAreRejected(t *testing.T) {
 
 	// Try to add an order of type GFA which should be rejected
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
-	order.TimeInForce = types.Order_TIF_GFA
+	order.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	orderConf, err := book.SubmitOrder(order)
 	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
 	assert.Nil(t, orderConf)
@@ -2232,7 +2232,7 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 
 	// Add a GFN order
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
-	order.TimeInForce = types.Order_TIF_GFN
+	order.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	orderConf, err := book.SubmitOrder(order)
 	assert.NoError(t, err)
 	assert.NotNil(t, orderConf)
@@ -2259,7 +2259,7 @@ func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
 
 	// Add a GFA order
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
-	order.TimeInForce = types.Order_TIF_GFA
+	order.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	orderConf, err := book.SubmitOrder(order)
 	assert.NoError(t, err)
 	assert.NotNil(t, orderConf)
@@ -2786,19 +2786,19 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 	book.EnterAuction()
 
 	bo1 := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 5)
-	bo1.TimeInForce = types.Order_TIF_GFA
+	bo1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	book.SubmitOrder(bo1)
 
 	so1 := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 5)
-	so1.TimeInForce = types.Order_TIF_GFA
+	so1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	book.SubmitOrder(so1)
 
 	bo2 := getOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 100, "party01", 5)
-	bo2.TimeInForce = types.Order_TIF_GFA
+	bo2.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	book.SubmitOrder(bo2)
 
 	so2 := getOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 101, "party02", 5)
-	so2.TimeInForce = types.Order_TIF_GFA
+	so2.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	book.SubmitOrder(so2)
 
 	// Get indicative auction price and volume
@@ -2833,7 +2833,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 			PartyID:     "A",
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   10,
 		},
 		{
@@ -2846,7 +2846,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 			PartyID:     "B",
 			Size:        100,
 			Remaining:   100,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   11,
 		},
 	}
@@ -2869,7 +2869,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 		PartyID:     "C",
 		Size:        200,
 		Remaining:   200,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		CreatedAt:   12,
 	}
 
@@ -2902,7 +2902,7 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 		PartyID:     "A",
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
 
@@ -2926,7 +2926,7 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 		PartyID:     "B",
 		Size:        20,
 		Remaining:   20,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
 	trades, getErr = book.GetTrades(order2)
@@ -2960,11 +2960,11 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	book.EnterAuction()
 
 	bo1 := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 5)
-	bo1.TimeInForce = types.Order_TIF_GFA
+	bo1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	book.SubmitOrder(bo1)
 
 	so1 := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 5)
-	so1.TimeInForce = types.Order_TIF_GFA
+	so1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	book.SubmitOrder(so1)
 
 	// Get indicative auction price and volume
@@ -2992,55 +2992,55 @@ func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
 	book.EnterAuction()
 
 	order1 := getOrder(t, book, market, "Order1", types.Side_SIDE_BUY, 16, "Tamlyn", 100)
-	order1.TimeInForce = types.Order_TIF_GFA
+	order1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err := book.SubmitOrder(order1)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order2 := getOrder(t, book, market, "Order2", types.Side_SIDE_SELL, 20, "Tamlyn", 100)
-	order2.TimeInForce = types.Order_TIF_GFA
+	order2.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order2)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order3 := getOrder(t, book, market, "Order3", types.Side_SIDE_SELL, 3, "Tamlyn", 100)
-	order3.TimeInForce = types.Order_TIF_GFA
+	order3.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order3)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order4 := getOrder(t, book, market, "Order4", types.Side_SIDE_SELL, 18, "David", 100)
-	order4.TimeInForce = types.Order_TIF_GFA
+	order4.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order4)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order5 := getOrder(t, book, market, "Order5", types.Side_SIDE_BUY, 1000, "Tamlyn", 100)
-	order5.TimeInForce = types.Order_TIF_GFA
+	order5.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order5)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order6 := getOrder(t, book, market, "Order6", types.Side_SIDE_BUY, 2000, "David", 100)
-	order6.TimeInForce = types.Order_TIF_GFA
+	order6.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order6)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order7 := getOrder(t, book, market, "Order7", types.Side_SIDE_SELL, 14, "Tamlyn", 15)
-	order7.TimeInForce = types.Order_TIF_GFA
+	order7.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order7)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order8 := getOrder(t, book, market, "Order8", types.Side_SIDE_BUY, 14, "Tamlyn", 2)
-	order8.TimeInForce = types.Order_TIF_GFA
+	order8.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order8)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order9 := getOrder(t, book, market, "Order9", types.Side_SIDE_SELL, 1, "David", 10)
-	order9.TimeInForce = types.Order_TIF_GFA
+	order9.TimeInForce = types.Order_TIME_IN_FORCE_GFA
 	conf, err = book.SubmitOrder(order9)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)

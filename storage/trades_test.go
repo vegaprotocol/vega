@@ -188,7 +188,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		Price:       100,
 		Size:        1000,
 		Remaining:   1000,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 		Status:      types.Order_STATUS_ACTIVE,
 	}
@@ -201,7 +201,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		Price:       100,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   1,
 		Status:      types.Order_STATUS_ACTIVE,
 	}

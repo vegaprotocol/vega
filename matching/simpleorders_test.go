@@ -22,7 +22,7 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -52,7 +52,7 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -82,7 +82,7 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -112,7 +112,7 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -146,7 +146,7 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -176,7 +176,7 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -209,7 +209,7 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -224,7 +224,7 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -254,7 +254,7 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -269,7 +269,7 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -299,7 +299,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -314,7 +314,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -344,7 +344,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -359,7 +359,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -389,7 +389,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -404,7 +404,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -434,7 +434,7 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -449,7 +449,7 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -479,7 +479,7 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
@@ -495,7 +495,7 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_NETWORK,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -525,7 +525,7 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -540,7 +540,7 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order2)
@@ -561,7 +561,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -576,7 +576,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order1)
@@ -591,7 +591,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 		Price:       100,
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 
@@ -614,7 +614,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 		Price:       1,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -629,7 +629,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 		Price:       2,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	confirm, err = book.SubmitOrder(&order1)
@@ -644,7 +644,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 		Price:       100,
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 
@@ -702,7 +702,7 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 		Id:          "v0000000000000-0000001",
@@ -719,7 +719,7 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		Price:       101,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000002",
 	}

@@ -1972,10 +1972,10 @@ The status of the deposit
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| DEPOSIT_STATUS_UNSPECIFIED | 0 | Default value, always invalid |
-| DEPOSIT_STATUS_OPEN | 1 | The deposit is being processed by the network |
-| DEPOSIT_STATUS_CANCELLED | 2 | The deposit has been cancelled by the network |
-| DEPOSIT_STATUS_FINALIZED | 3 | The deposit has been finalised and accounts have been updated |
+| STATUS_UNSPECIFIED | 0 | Default value, always invalid |
+| STATUS_OPEN | 1 | The deposit is being processed by the network |
+| STATUS_CANCELLED | 2 | The deposit has been cancelled by the network |
+| STATUS_FINALIZED | 3 | The deposit has been finalised and accounts have been updated |
 
 
 
@@ -2003,12 +2003,12 @@ Status of a liquidity provision order
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LIQUIDITY_PROVISION_STATUS_UNSPECIFIED | 0 | The default value |
-| LIQUIDITY_PROVISION_STATUS_ACTIVE | 1 | The liquidity provision is active |
-| LIQUIDITY_PROVISION_STATUS_STOPPED | 2 | The liquidity provision was stopped by the network |
-| LIQUIDITY_PROVISION_STATUS_CANCELLED | 3 | The liquidity provision was cancelled by the liquidity provider |
-| LIQUIDITY_PROVISION_STATUS_REJECTED | 4 | The liquidity provision was invalid and got rejected |
-| LIQUIDITY_PROVISION_STATUS_UNDEPLOYED | 5 | The liquidity provision is valid and accepted by network, but oreders aren&#39;t deployed |
+| STATUS_UNSPECIFIED | 0 | The default value |
+| STATUS_ACTIVE | 1 | The liquidity provision is active |
+| STATUS_STOPPED | 2 | The liquidity provision was stopped by the network |
+| STATUS_CANCELLED | 3 | The liquidity provision was cancelled by the liquidity provider |
+| STATUS_REJECTED | 4 | The liquidity provision was invalid and got rejected |
+| STATUS_UNDEPLOYED | 5 | The liquidity provision is valid and accepted by network, but oreders aren&#39;t deployed |
 
 
 
@@ -2045,7 +2045,7 @@ See resulting status in [What order types are available to trade on Vega?](https
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| STATUS_INVALID | 0 | Default value, always invalid |
+| STATUS_UNSPECIFIED | 0 | Default value, always invalid |
 | STATUS_ACTIVE | 1 | Used for active unfilled or partially filled orders |
 | STATUS_EXPIRED | 2 | Used for expired GTT orders |
 | STATUS_CANCELLED | 3 | Used for orders cancelled by the party that created the order |
@@ -2065,13 +2065,13 @@ See [What order types are available to trade on Vega?](https://docs.testnet.vega
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| TIF_UNSPECIFIED | 0 | Default value for TimeInForce, can be valid for an amend |
-| TIF_GTC | 1 | Good until cancelled |
-| TIF_GTT | 2 | Good until specified time |
-| TIF_IOC | 3 | Immediate or cancel |
-| TIF_FOK | 4 | Fill or kill |
-| TIF_GFA | 5 | Good for auction |
-| TIF_GFN | 6 | Good for normal |
+| TIME_IN_FORCE_UNSPECIFIED | 0 | Default value for TimeInForce, can be valid for an amend |
+| TIME_IN_FORCE_GTC | 1 | Good until cancelled |
+| TIME_IN_FORCE_GTT | 2 | Good until specified time |
+| TIME_IN_FORCE_IOC | 3 | Immediate or cancel |
+| TIME_IN_FORCE_FOK | 4 | Fill or kill |
+| TIME_IN_FORCE_GFA | 5 | Good for auction |
+| TIME_IN_FORCE_GFN | 6 | Good for normal |
 
 
 
@@ -2097,7 +2097,7 @@ with an order during its life-cycle, it will be marked with `status.ORDER_STATUS
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| ORDER_ERROR_NONE | 0 | Default value, no error reported |
+| ORDER_ERROR_UNSPECIFIED | 0 | Default value, no error reported |
 | ORDER_ERROR_INVALID_MARKET_ID | 1 | Order was submitted for a market that does not exist |
 | ORDER_ERROR_INVALID_ORDER_ID | 2 | Order was submitted with an invalid identifier |
 | ORDER_ERROR_OUT_OF_SEQUENCE | 3 | Order was amended with a sequence number that was not previous version &#43; 1 |
@@ -2227,10 +2227,10 @@ The status of the withdrawal
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| WITHDRAWAL_STATUS_UNSPECIFIED | 0 | Default value, always invalid |
-| WITHDRAWAL_STATUS_OPEN | 1 | The withdrawal is open and being processed by the network |
-| WITHDRAWAL_STATUS_CANCELLED | 2 | The withdrawal have been cancelled |
-| WITHDRAWAL_STATUS_FINALIZED | 3 | The withdrawal went through and is fully finalised, the funds are removed from the Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network |
+| STATUS_UNSPECIFIED | 0 | Default value, always invalid |
+| STATUS_OPEN | 1 | The withdrawal is open and being processed by the network |
+| STATUS_CANCELLED | 2 | The withdrawal have been cancelled |
+| STATUS_FINALIZED | 3 | The withdrawal went through and is fully finalised, the funds are removed from the Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network |
 
 
  

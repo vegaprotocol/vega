@@ -6365,25 +6365,25 @@ who provide the best priced liquidity that actually allows trading to take place
           <tbody>
             
               <tr>
-                <td>DEPOSIT_STATUS_UNSPECIFIED</td>
+                <td>STATUS_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p>Default value, always invalid</p></td>
               </tr>
             
               <tr>
-                <td>DEPOSIT_STATUS_OPEN</td>
+                <td>STATUS_OPEN</td>
                 <td>1</td>
                 <td><p>The deposit is being processed by the network</p></td>
               </tr>
             
               <tr>
-                <td>DEPOSIT_STATUS_CANCELLED</td>
+                <td>STATUS_CANCELLED</td>
                 <td>2</td>
                 <td><p>The deposit has been cancelled by the network</p></td>
               </tr>
             
               <tr>
-                <td>DEPOSIT_STATUS_FINALIZED</td>
+                <td>STATUS_FINALIZED</td>
                 <td>3</td>
                 <td><p>The deposit has been finalised and accounts have been updated</p></td>
               </tr>
@@ -6453,37 +6453,37 @@ who provide the best priced liquidity that actually allows trading to take place
           <tbody>
             
               <tr>
-                <td>LIQUIDITY_PROVISION_STATUS_UNSPECIFIED</td>
+                <td>STATUS_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p>The default value</p></td>
               </tr>
             
               <tr>
-                <td>LIQUIDITY_PROVISION_STATUS_ACTIVE</td>
+                <td>STATUS_ACTIVE</td>
                 <td>1</td>
                 <td><p>The liquidity provision is active</p></td>
               </tr>
             
               <tr>
-                <td>LIQUIDITY_PROVISION_STATUS_STOPPED</td>
+                <td>STATUS_STOPPED</td>
                 <td>2</td>
                 <td><p>The liquidity provision was stopped by the network</p></td>
               </tr>
             
               <tr>
-                <td>LIQUIDITY_PROVISION_STATUS_CANCELLED</td>
+                <td>STATUS_CANCELLED</td>
                 <td>3</td>
                 <td><p>The liquidity provision was cancelled by the liquidity provider</p></td>
               </tr>
             
               <tr>
-                <td>LIQUIDITY_PROVISION_STATUS_REJECTED</td>
+                <td>STATUS_REJECTED</td>
                 <td>4</td>
                 <td><p>The liquidity provision was invalid and got rejected</p></td>
               </tr>
             
               <tr>
-                <td>LIQUIDITY_PROVISION_STATUS_UNDEPLOYED</td>
+                <td>STATUS_UNDEPLOYED</td>
                 <td>5</td>
                 <td><p>The liquidity provision is valid and accepted by network, but oreders aren&#39;t deployed</p></td>
               </tr>
@@ -6552,7 +6552,7 @@ who provide the best priced liquidity that actually allows trading to take place
           <tbody>
             
               <tr>
-                <td>STATUS_INVALID</td>
+                <td>STATUS_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p>Default value, always invalid</p></td>
               </tr>
@@ -6617,43 +6617,43 @@ who provide the best priced liquidity that actually allows trading to take place
           <tbody>
             
               <tr>
-                <td>TIF_UNSPECIFIED</td>
+                <td>TIME_IN_FORCE_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p>Default value for TimeInForce, can be valid for an amend</p></td>
               </tr>
             
               <tr>
-                <td>TIF_GTC</td>
+                <td>TIME_IN_FORCE_GTC</td>
                 <td>1</td>
                 <td><p>Good until cancelled</p></td>
               </tr>
             
               <tr>
-                <td>TIF_GTT</td>
+                <td>TIME_IN_FORCE_GTT</td>
                 <td>2</td>
                 <td><p>Good until specified time</p></td>
               </tr>
             
               <tr>
-                <td>TIF_IOC</td>
+                <td>TIME_IN_FORCE_IOC</td>
                 <td>3</td>
                 <td><p>Immediate or cancel</p></td>
               </tr>
             
               <tr>
-                <td>TIF_FOK</td>
+                <td>TIME_IN_FORCE_FOK</td>
                 <td>4</td>
                 <td><p>Fill or kill</p></td>
               </tr>
             
               <tr>
-                <td>TIF_GFA</td>
+                <td>TIME_IN_FORCE_GFA</td>
                 <td>5</td>
                 <td><p>Good for auction</p></td>
               </tr>
             
               <tr>
-                <td>TIF_GFN</td>
+                <td>TIME_IN_FORCE_GFN</td>
                 <td>6</td>
                 <td><p>Good for normal</p></td>
               </tr>
@@ -6705,7 +6705,7 @@ who provide the best priced liquidity that actually allows trading to take place
           <tbody>
             
               <tr>
-                <td>ORDER_ERROR_NONE</td>
+                <td>ORDER_ERROR_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p>Default value, no error reported</p></td>
               </tr>
@@ -7239,25 +7239,25 @@ with a distressed party in order to zero-out the position of the party</p></td>
           <tbody>
             
               <tr>
-                <td>WITHDRAWAL_STATUS_UNSPECIFIED</td>
+                <td>STATUS_UNSPECIFIED</td>
                 <td>0</td>
                 <td><p>Default value, always invalid</p></td>
               </tr>
             
               <tr>
-                <td>WITHDRAWAL_STATUS_OPEN</td>
+                <td>STATUS_OPEN</td>
                 <td>1</td>
                 <td><p>The withdrawal is open and being processed by the network</p></td>
               </tr>
             
               <tr>
-                <td>WITHDRAWAL_STATUS_CANCELLED</td>
+                <td>STATUS_CANCELLED</td>
                 <td>2</td>
                 <td><p>The withdrawal have been cancelled</p></td>
               </tr>
             
               <tr>
-                <td>WITHDRAWAL_STATUS_FINALIZED</td>
+                <td>STATUS_FINALIZED</td>
                 <td>3</td>
                 <td><p>The withdrawal went through and is fully finalised, the funds are removed from the
 Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network</p></td>

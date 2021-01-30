@@ -48,7 +48,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// expect error
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 5000)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 5000)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	assert.Nil(t, o1conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
@@ -175,7 +175,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// expect error
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "someparty", 5, 5000)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "someparty", 5, 5000)
 	o1conf, err := tm.market.SubmitOrder(context.Background(), o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)

@@ -25,7 +25,7 @@ func TestMargins(t *testing.T) {
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
@@ -84,7 +84,7 @@ func TestPartialFillMargins(t *testing.T) {
 	// use party 2+3 to set super high mark price
 	orderSell1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Side:        types.Side_SIDE_SELL,
 		PartyID:     party2,
 		MarketID:    tm.market.GetID(),
@@ -106,7 +106,7 @@ func TestPartialFillMargins(t *testing.T) {
 	// other side of the instant match
 	orderBuy1 := &types.Order{
 		Type:        types.Order_TYPE_MARKET,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party3,
 		MarketID:    tm.market.GetID(),
@@ -127,7 +127,7 @@ func TestPartialFillMargins(t *testing.T) {
 	// Attempt to create a new order for party1 that will be margin blocked
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),
@@ -145,7 +145,7 @@ func TestPartialFillMargins(t *testing.T) {
 	// Create a valid smaller order
 	orderBuy3 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		Side:        types.Side_SIDE_BUY,
 		PartyID:     party1,
 		MarketID:    tm.market.GetID(),

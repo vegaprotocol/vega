@@ -676,7 +676,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// What is an Immediate or Cancel Order?
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
-	if order.TimeInForce == types.Order_TIF_IOC && order.Remaining > 0 {
+	if order.TimeInForce == types.Order_TIME_IN_FORCE_IOC && order.Remaining > 0 {
 		// Stopped as not filled at all
 		if order.Remaining == order.Size {
 			order.Status = types.Order_STATUS_STOPPED
@@ -690,7 +690,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// Fill or kill (FOK) is a type of time-in-force designation used in trading that instructs
 	// the protocol to execute an order immediately and completely or not at all.
 	// The order must be filled in its entirety or cancelled (killed).
-	if order.TimeInForce == types.Order_TIF_FOK && order.Remaining == order.Size {
+	if order.TimeInForce == types.Order_TIME_IN_FORCE_FOK && order.Remaining == order.Size {
 		// FOK and didnt trade at all we set status as Stopped
 		order.Status = types.Order_STATUS_STOPPED
 	}

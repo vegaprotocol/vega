@@ -22,7 +22,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	addAccount(tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "aaa", 2, 100)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "aaa", 2, 100)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
 	require.NotNil(t, o1conf)
@@ -32,7 +32,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	amendment := &types.OrderAmendment{
 		OrderID:     o1.Id,
 		PartyID:     "aaa",
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt: &types.Timestamp{
 			Value: now.Add(10 * time.Second).UnixNano(),
 		},
@@ -48,7 +48,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	amendment2 := &types.OrderAmendment{
 		OrderID:     o1.Id,
 		PartyID:     "aaa",
-		TimeInForce: types.Order_TIF_GTT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt: &types.Timestamp{
 			Value: now.Add(20 * time.Second).UnixNano(),
 		},
@@ -64,7 +64,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	amendment3 := &types.OrderAmendment{
 		OrderID:     o1.Id,
 		PartyID:     "aaa",
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	amendConf3, err := tm.market.AmendOrder(ctx, amendment3)

@@ -244,13 +244,13 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 
 	// Non persistent and network orders do not matter
 	if order.Type == types.Order_TYPE_MARKET ||
-		order.TimeInForce == types.Order_TIF_FOK ||
-		order.TimeInForce == types.Order_TIF_IOC {
+		order.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
+		order.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
 		return
 	}
 
 	// Orders that where not valid are ignored
-	if order.Status == types.Order_STATUS_INVALID ||
+	if order.Status == types.Order_STATUS_UNSPECIFIED ||
 		order.Status == types.Order_STATUS_REJECTED {
 		return
 	}

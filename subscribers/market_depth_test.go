@@ -22,7 +22,7 @@ func buildOrder(id string, side types.Side, orderType types.Order_Type, price ui
 		Price:       price,
 		Size:        size,
 		Remaining:   remaining,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketID:    "M",
 	}
@@ -303,7 +303,7 @@ func TestIOCPartialFill(t *testing.T) {
 
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 5)
 	order.Status = types.Order_STATUS_PARTIALLY_FILLED
-	order.TimeInForce = types.Order_TIF_IOC
+	order.TimeInForce = types.Order_TIME_IN_FORCE_IOC
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 
@@ -360,7 +360,7 @@ func TestFOKOrder(t *testing.T) {
 
 	// FOK orders do not stay on the book
 	fokorder := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
-	fokorder.TimeInForce = types.Order_TIF_FOK
+	fokorder.TimeInForce = types.Order_TIME_IN_FORCE_FOK
 	event := events.NewOrderEvent(ctx, fokorder)
 	mdb.Push(event)
 
@@ -378,7 +378,7 @@ func TestIOCOrder(t *testing.T) {
 
 	// IOC orders do not stay on the book
 	iocorder := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
-	iocorder.TimeInForce = types.Order_TIF_IOC
+	iocorder.TimeInForce = types.Order_TIME_IN_FORCE_IOC
 	event := events.NewOrderEvent(ctx, iocorder)
 	mdb.Push(event)
 
@@ -414,7 +414,7 @@ func TestInvalidOrder(t *testing.T) {
 
 	// Invalid orders should be ignored
 	order := buildOrder("Order1", types.Side_SIDE_BUY, types.Order_TYPE_LIMIT, 100, 10, 10)
-	order.Status = types.Order_STATUS_INVALID
+	order.Status = types.Order_STATUS_UNSPECIFIED
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 

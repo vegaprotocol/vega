@@ -1447,16 +1447,16 @@
     "OrderTimeInForce": {
       "type": "string",
       "enum": [
-        "TIF_UNSPECIFIED",
-        "TIF_GTC",
-        "TIF_GTT",
-        "TIF_IOC",
-        "TIF_FOK",
-        "TIF_GFA",
-        "TIF_GFN"
+        "TIME_IN_FORCE_UNSPECIFIED",
+        "TIME_IN_FORCE_GTC",
+        "TIME_IN_FORCE_GTT",
+        "TIME_IN_FORCE_IOC",
+        "TIME_IN_FORCE_FOK",
+        "TIME_IN_FORCE_GFA",
+        "TIME_IN_FORCE_GFN"
       ],
-      "default": "TIF_UNSPECIFIED",
-      "description": "- TIF_UNSPECIFIED: Default value for TimeInForce, can be valid for an amend\n - TIF_GTC: Good until cancelled\n - TIF_GTT: Good until specified time\n - TIF_IOC: Immediate or cancel\n - TIF_FOK: Fill or kill\n - TIF_GFA: Good for auction\n - TIF_GFN: Good for normal",
+      "default": "TIME_IN_FORCE_UNSPECIFIED",
+      "description": "- TIME_IN_FORCE_UNSPECIFIED: Default value for TimeInForce, can be valid for an amend\n - TIME_IN_FORCE_GTC: Good until cancelled\n - TIME_IN_FORCE_GTT: Good until specified time\n - TIME_IN_FORCE_IOC: Immediate or cancel\n - TIME_IN_FORCE_FOK: Fill or kill\n - TIME_IN_FORCE_GFA: Good for auction\n - TIME_IN_FORCE_GFN: Good for normal",
       "title": "Time In Force for an order\nSee [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail"
     },
     "VoteValue": {
@@ -3074,13 +3074,13 @@
     "vegaDepositStatus": {
       "type": "string",
       "enum": [
-        "DEPOSIT_STATUS_UNSPECIFIED",
-        "DEPOSIT_STATUS_OPEN",
-        "DEPOSIT_STATUS_CANCELLED",
-        "DEPOSIT_STATUS_FINALIZED"
+        "STATUS_UNSPECIFIED",
+        "STATUS_OPEN",
+        "STATUS_CANCELLED",
+        "STATUS_FINALIZED"
       ],
-      "default": "DEPOSIT_STATUS_UNSPECIFIED",
-      "description": "- DEPOSIT_STATUS_UNSPECIFIED: Default value, always invalid\n - DEPOSIT_STATUS_OPEN: The deposit is being processed by the network\n - DEPOSIT_STATUS_CANCELLED: The deposit has been cancelled by the network\n - DEPOSIT_STATUS_FINALIZED: The deposit has been finalised and accounts have been updated",
+      "default": "STATUS_UNSPECIFIED",
+      "description": "- STATUS_UNSPECIFIED: Default value, always invalid\n - STATUS_OPEN: The deposit is being processed by the network\n - STATUS_CANCELLED: The deposit has been cancelled by the network\n - STATUS_FINALIZED: The deposit has been finalised and accounts have been updated",
       "title": "The status of the deposit"
     },
     "vegaDiscreteTrading": {
@@ -3603,15 +3603,15 @@
     "vegaLiquidityProvisionStatus": {
       "type": "string",
       "enum": [
-        "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
-        "LIQUIDITY_PROVISION_STATUS_ACTIVE",
-        "LIQUIDITY_PROVISION_STATUS_STOPPED",
-        "LIQUIDITY_PROVISION_STATUS_CANCELLED",
-        "LIQUIDITY_PROVISION_STATUS_REJECTED",
-        "LIQUIDITY_PROVISION_STATUS_UNDEPLOYED"
+        "STATUS_UNSPECIFIED",
+        "STATUS_ACTIVE",
+        "STATUS_STOPPED",
+        "STATUS_CANCELLED",
+        "STATUS_REJECTED",
+        "STATUS_UNDEPLOYED"
       ],
-      "default": "LIQUIDITY_PROVISION_STATUS_UNSPECIFIED",
-      "description": "- LIQUIDITY_PROVISION_STATUS_UNSPECIFIED: The default value\n - LIQUIDITY_PROVISION_STATUS_ACTIVE: The liquidity provision is active\n - LIQUIDITY_PROVISION_STATUS_STOPPED: The liquidity provision was stopped by the network\n - LIQUIDITY_PROVISION_STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - LIQUIDITY_PROVISION_STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - LIQUIDITY_PROVISION_STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but oreders aren't deployed",
+      "default": "STATUS_UNSPECIFIED",
+      "description": "- STATUS_UNSPECIFIED: The default value\n - STATUS_ACTIVE: The liquidity provision is active\n - STATUS_STOPPED: The liquidity provision was stopped by the network\n - STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but oreders aren't deployed",
       "title": "Status of a liquidity provision order"
     },
     "vegaLiquidityProvisionSubmission": {
@@ -4334,7 +4334,7 @@
     "vegaOrderError": {
       "type": "string",
       "enum": [
-        "ORDER_ERROR_NONE",
+        "ORDER_ERROR_UNSPECIFIED",
         "ORDER_ERROR_INVALID_MARKET_ID",
         "ORDER_ERROR_INVALID_ORDER_ID",
         "ORDER_ERROR_OUT_OF_SEQUENCE",
@@ -4382,14 +4382,14 @@
         "ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER",
         "ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER"
       ],
-      "default": "ORDER_ERROR_NONE",
-      "description": "- ORDER_ERROR_NONE: Default value, no error reported\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid identifier\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size)\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: An order with `TimeInForce.TIF_GTT` was submitted or amended\nwith an expiration that was badly formatted or otherwise invalid\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order identifier)\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order\n - ORDER_ERROR_NOT_FOUND: Order not found in an order book or store\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party identifier\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0)\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order submitted from the same party\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order\n - ORDER_ERROR_INCORRECT_MARKET_TYPE: Order was submitted with an incorrect or invalid market type\n - ORDER_ERROR_INVALID_TIME_IN_FORCE: Order was submitted with invalid time in force\n - ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION: A GFN order has got to the market when it is in auction mode\n - ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING: A GFA order has got to the market when it is in continuous trading mode\n - ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT: Attempt to amend order to GTT without ExpiryAt\n - ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT: Attempt to amend ExpiryAt to a value before CreatedAt\n - ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT: Attempt to amend to GTC without an ExpiryAt value\n - ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC: Amending to FOK or IOC is invalid\n - ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN: Amending to GFA or GFN is invalid\n - ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN: Amending from GFA or GFN is invalid\n - ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION: IOC orders are not allowed during auction\n - ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION: FOK orders are not allowed during auction\n - ORDER_ERROR_MUST_BE_LIMIT_ORDER: Pegged orders must be LIMIT orders\n - ORDER_ERROR_MUST_BE_GTT_OR_GTC: Pegged orders can only have TIF GTC or GTT\n - ORDER_ERROR_WITHOUT_REFERENCE_PRICE: Pegged order must have a reference price\n - ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE: Buy pegged order cannot reference best ask price\n - ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO: Pegged order offset must be \u003c= 0\n - ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO: Pegged order offset must be \u003c 0\n - ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO: Pegged order offset must be \u003e= 0\n - ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE: Sell pegged order cannot reference best bid price\n - ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO: Pegged order offset must be \u003e zero\n - ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE: The party has an insufficient balance, or does not have\na general account to submit the order (no deposits made\nfor the required asset)\n - ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER: Cannot amend a non pegged orders details\n - ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER: We are unable to re-price a pegged order because a market price is unavailable\n - ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER: It is not possible to amend the price of an existing pegged order",
+      "default": "ORDER_ERROR_UNSPECIFIED",
+      "description": "- ORDER_ERROR_UNSPECIFIED: Default value, no error reported\n - ORDER_ERROR_INVALID_MARKET_ID: Order was submitted for a market that does not exist\n - ORDER_ERROR_INVALID_ORDER_ID: Order was submitted with an invalid identifier\n - ORDER_ERROR_OUT_OF_SEQUENCE: Order was amended with a sequence number that was not previous version + 1\n - ORDER_ERROR_INVALID_REMAINING_SIZE: Order was amended with an invalid remaining size (e.g. remaining greater than total size)\n - ORDER_ERROR_TIME_FAILURE: Node was unable to get Vega (blockchain) time\n - ORDER_ERROR_REMOVAL_FAILURE: Failed to remove an order from the book\n - ORDER_ERROR_INVALID_EXPIRATION_DATETIME: An order with `TimeInForce.TIF_GTT` was submitted or amended\nwith an expiration that was badly formatted or otherwise invalid\n - ORDER_ERROR_INVALID_ORDER_REFERENCE: Order was submitted or amended with an invalid reference field\n - ORDER_ERROR_EDIT_NOT_ALLOWED: Order amend was submitted for an order field that cannot not be amended (e.g. order identifier)\n - ORDER_ERROR_AMEND_FAILURE: Amend failure because amend details do not match original order\n - ORDER_ERROR_NOT_FOUND: Order not found in an order book or store\n - ORDER_ERROR_INVALID_PARTY_ID: Order was submitted with an invalid or missing party identifier\n - ORDER_ERROR_MARKET_CLOSED: Order was submitted for a market that has closed\n - ORDER_ERROR_MARGIN_CHECK_FAILED: Order was submitted, but the party did not have enough collateral to cover the order\n - ORDER_ERROR_MISSING_GENERAL_ACCOUNT: Order was submitted, but the party did not have an account for this asset\n - ORDER_ERROR_INTERNAL_ERROR: Unspecified internal error\n - ORDER_ERROR_INVALID_SIZE: Order was submitted with an invalid or missing size (e.g. 0)\n - ORDER_ERROR_INVALID_PERSISTENCE: Order was submitted with an invalid persistence for its type\n - ORDER_ERROR_INVALID_TYPE: Order was submitted with an invalid type field\n - ORDER_ERROR_SELF_TRADING: Order was stopped as it would have traded with another order submitted from the same party\n - ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES: Order was submitted, but the party did not have enough collateral to cover the fees for the order\n - ORDER_ERROR_INCORRECT_MARKET_TYPE: Order was submitted with an incorrect or invalid market type\n - ORDER_ERROR_INVALID_TIME_IN_FORCE: Order was submitted with invalid time in force\n - ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION: A GFN order has got to the market when it is in auction mode\n - ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING: A GFA order has got to the market when it is in continuous trading mode\n - ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT: Attempt to amend order to GTT without ExpiryAt\n - ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT: Attempt to amend ExpiryAt to a value before CreatedAt\n - ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT: Attempt to amend to GTC without an ExpiryAt value\n - ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC: Amending to FOK or IOC is invalid\n - ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN: Amending to GFA or GFN is invalid\n - ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN: Amending from GFA or GFN is invalid\n - ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION: IOC orders are not allowed during auction\n - ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION: FOK orders are not allowed during auction\n - ORDER_ERROR_MUST_BE_LIMIT_ORDER: Pegged orders must be LIMIT orders\n - ORDER_ERROR_MUST_BE_GTT_OR_GTC: Pegged orders can only have TIF GTC or GTT\n - ORDER_ERROR_WITHOUT_REFERENCE_PRICE: Pegged order must have a reference price\n - ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE: Buy pegged order cannot reference best ask price\n - ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO: Pegged order offset must be \u003c= 0\n - ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO: Pegged order offset must be \u003c 0\n - ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO: Pegged order offset must be \u003e= 0\n - ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE: Sell pegged order cannot reference best bid price\n - ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO: Pegged order offset must be \u003e zero\n - ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE: The party has an insufficient balance, or does not have\na general account to submit the order (no deposits made\nfor the required asset)\n - ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER: Cannot amend a non pegged orders details\n - ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER: We are unable to re-price a pegged order because a market price is unavailable\n - ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER: It is not possible to amend the price of an existing pegged order",
       "title": "OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue\nwith an order during its life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`"
     },
     "vegaOrderStatus": {
       "type": "string",
       "enum": [
-        "STATUS_INVALID",
+        "STATUS_UNSPECIFIED",
         "STATUS_ACTIVE",
         "STATUS_EXPIRED",
         "STATUS_CANCELLED",
@@ -4399,8 +4399,8 @@
         "STATUS_PARTIALLY_FILLED",
         "STATUS_PARKED"
       ],
-      "default": "STATUS_INVALID",
-      "description": "Status values for an order\nSee resulting status in [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.\n\n - STATUS_INVALID: Default value, always invalid\n - STATUS_ACTIVE: Used for active unfilled or partially filled orders\n - STATUS_EXPIRED: Used for expired GTT orders\n - STATUS_CANCELLED: Used for orders cancelled by the party that created the order\n - STATUS_STOPPED: Used for unfilled FOK or IOC orders, and for orders that were stopped by the network\n - STATUS_FILLED: Used for closed fully filled orders\n - STATUS_REJECTED: Used for orders when not enough collateral was available to fill the margin requirements\n - STATUS_PARTIALLY_FILLED: Used for closed partially filled IOC orders\n - STATUS_PARKED: Order has been removed from the order book and has been parked, this applies to pegged orders only"
+      "default": "STATUS_UNSPECIFIED",
+      "description": "Status values for an order\nSee resulting status in [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.\n\n - STATUS_UNSPECIFIED: Default value, always invalid\n - STATUS_ACTIVE: Used for active unfilled or partially filled orders\n - STATUS_EXPIRED: Used for expired GTT orders\n - STATUS_CANCELLED: Used for orders cancelled by the party that created the order\n - STATUS_STOPPED: Used for unfilled FOK or IOC orders, and for orders that were stopped by the network\n - STATUS_FILLED: Used for closed fully filled orders\n - STATUS_REJECTED: Used for orders when not enough collateral was available to fill the margin requirements\n - STATUS_PARTIALLY_FILLED: Used for closed partially filled IOC orders\n - STATUS_PARKED: Order has been removed from the order book and has been parked, this applies to pegged orders only"
     },
     "vegaOrderSubmission": {
       "type": "object",
@@ -5519,13 +5519,13 @@
     "vegaWithdrawalStatus": {
       "type": "string",
       "enum": [
-        "WITHDRAWAL_STATUS_UNSPECIFIED",
-        "WITHDRAWAL_STATUS_OPEN",
-        "WITHDRAWAL_STATUS_CANCELLED",
-        "WITHDRAWAL_STATUS_FINALIZED"
+        "STATUS_UNSPECIFIED",
+        "STATUS_OPEN",
+        "STATUS_CANCELLED",
+        "STATUS_FINALIZED"
       ],
-      "default": "WITHDRAWAL_STATUS_UNSPECIFIED",
-      "description": "- WITHDRAWAL_STATUS_UNSPECIFIED: Default value, always invalid\n - WITHDRAWAL_STATUS_OPEN: The withdrawal is open and being processed by the network\n - WITHDRAWAL_STATUS_CANCELLED: The withdrawal have been cancelled\n - WITHDRAWAL_STATUS_FINALIZED: The withdrawal went through and is fully finalised, the funds are removed from the\nVega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network",
+      "default": "STATUS_UNSPECIFIED",
+      "description": "- STATUS_UNSPECIFIED: Default value, always invalid\n - STATUS_OPEN: The withdrawal is open and being processed by the network\n - STATUS_CANCELLED: The withdrawal have been cancelled\n - STATUS_FINALIZED: The withdrawal went through and is fully finalised, the funds are removed from the\nVega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network",
       "title": "The status of the withdrawal"
     }
   },

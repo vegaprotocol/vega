@@ -18,7 +18,7 @@ func TestOrderBook_MarketOrderFOKNotFilledResponsePrice(t *testing.T) {
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -39,7 +39,7 @@ func TestOrderBook_MarketOrderIOCNotFilledResponsePrice(t *testing.T) {
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -61,7 +61,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 		Price:       100,
 		Size:        6,
 		Remaining:   6,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order)
@@ -73,7 +73,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order)
@@ -102,7 +102,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 		Price:       100,
 		Size:        6,
 		Remaining:   6,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
 	_, err := book.SubmitOrder(&order)
@@ -114,7 +114,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_IOC,
+		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_MARKET,
 	}
 	confirm, err := book.SubmitOrder(&order2)

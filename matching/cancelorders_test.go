@@ -19,7 +19,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -34,7 +34,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000002", // Invalid, must match original
 	}
@@ -55,7 +55,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -70,7 +70,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -91,7 +91,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -106,7 +106,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -127,7 +127,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -142,7 +142,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		Price:       101, // Invalid, must match original
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -163,7 +163,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Price:       100,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "v0000000000000-0000001",
 	}
@@ -172,15 +172,15 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    market,                   // Must match
-		PartyID:     "B",                      // Does not matter
-		Side:        types.Side_SIDE_BUY,      // Must match
-		Price:       100,                      // Must match
-		Size:        10,                       // Does not matter
-		Remaining:   10,                       // Does not matter
-		TimeInForce: types.Order_TIF_GTC,      // Does not matter
-		Type:        types.Order_TYPE_LIMIT,   // Does not matter
-		Id:          "v0000000000000-0000001", // Must match
+		MarketID:    market,                        // Must match
+		PartyID:     "B",                           // Does not matter
+		Side:        types.Side_SIDE_BUY,           // Must match
+		Price:       100,                           // Must match
+		Size:        10,                            // Does not matter
+		Remaining:   10,                            // Does not matter
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC, // Does not matter
+		Type:        types.Order_TYPE_LIMIT,        // Does not matter
+		Id:          "v0000000000000-0000001",      // Must match
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.NoError(t, err)

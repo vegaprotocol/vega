@@ -627,7 +627,7 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        types.Order_TYPE_LIMIT,
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err := execsetup.engine.SubmitOrder(context.Background(), &order)
@@ -686,7 +686,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
-		tif := types.Order_TIF_GTT
+		tif := types.Order_TIME_IN_FORCE_GTT
 		if len(row.Cells) > 7 {
 			tif, err = tifval(row, 7)
 			if err != nil {
@@ -1173,7 +1173,7 @@ func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 		o := &types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			Id:          "someid",
 			Side:        types.Side_SIDE_BUY,
 			PartyID:     trader,

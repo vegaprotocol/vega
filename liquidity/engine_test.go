@@ -125,7 +125,7 @@ func testSubmissionCRUD(t *testing.T) {
 		CommitmentAmount: lps1.CommitmentAmount,
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
-		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_UNDEPLOYED,
+		Status:           types.LiquidityProvision_STATUS_UNDEPLOYED,
 		Buys: []*types.LiquidityOrderReference{
 			{LiquidityOrder: buyShape[0]},
 		},
@@ -166,7 +166,7 @@ func testSubmissionCRUD(t *testing.T) {
 	// Submit with 0 CommitmentAmount amount should remove the LP and CANCEL it
 	// via event
 	expected.CommitmentAmount = 0
-	expected.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_CANCELLED
+	expected.Status = types.LiquidityProvision_STATUS_CANCELLED
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
@@ -271,7 +271,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 		MarketID:  tng.marketID,
 		PartyID:   party,
 		CreatedAt: now.UnixNano(),
-		Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		Status:    types.LiquidityProvision_STATUS_REJECTED,
 	})
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
@@ -308,7 +308,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		MarketID:  tng.marketID,
 		PartyID:   party,
 		CreatedAt: now.UnixNano(),
-		Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		Status:    types.LiquidityProvision_STATUS_REJECTED,
 	})
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(3)

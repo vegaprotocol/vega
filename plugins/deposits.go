@@ -100,7 +100,7 @@ func (d *Deposit) GetByParty(party string, openOnly bool) []types.Deposit {
 	out := []types.Deposit{}
 	deposits := d.deposits[party]
 	for _, dep := range deposits {
-		if openOnly && dep.Status != types.Deposit_DEPOSIT_STATUS_OPEN {
+		if openOnly && dep.Status != types.Deposit_STATUS_OPEN {
 			continue
 		}
 		out = append(out, dep)
