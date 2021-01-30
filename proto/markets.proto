@@ -40,7 +40,7 @@ message Future {
   // The asset for the future
   string settlement_asset = 2;
   // Quote name of the instrument
-  string quoteName = 4;
+  string quote_name = 4;
 
   // Oracle configuration
   oneof oracle {

@@ -78,7 +78,7 @@ message RiskResult {
   // Timestamp for when risk factors were generated
   int64 updated_timestamp = 1;
   // Risk factors (long and short) for each margin-able asset/currency (usually == settlement assets) in the market
-  map<string, RiskFactor> riskFactors = 2;
+  map<string, RiskFactor> risk_factors = 2;
   // Timestamp for when risk factors are expected to change (or empty if risk factors are continually updated)
   int64 next_update_timestamp = 3;
   // Predicted risk factors at next change (what they would be if the change occurred now)

@@ -2712,7 +2712,7 @@
           "format": "uint64",
           "title": "Number of decimal / precision handled by this asset"
         },
-        "maxFaucetAmountMint": {
+        "max_faucet_amount_mint": {
           "type": "string",
           "title": "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
         }
@@ -3299,7 +3299,7 @@
           "type": "string",
           "title": "The asset for the future"
         },
-        "quoteName": {
+        "quote_name": {
           "type": "string",
           "title": "Quote name of the instrument"
         },
@@ -4085,7 +4085,7 @@
     "vegaNewMarketCommitment": {
       "type": "object",
       "properties": {
-        "commitmentAmount": {
+        "commitment_amount": {
           "type": "string",
           "format": "uint64",
           "title": "Specified as a unitless number that represents the amount of settlement asset of the market"

@@ -21,8 +21,6 @@ lint:
     - PACKAGE_AFFINITY
     - PACKAGE_DIRECTORY_MATCH
     - PACKAGE_SAME_DIRECTORY
-    - FIELD_LOWER_SNAKE_CASE
-    - ONEOF_LOWER_SNAKE_CASE
   ignore:
     - google/
     - github.com/

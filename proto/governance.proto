@@ -61,7 +61,7 @@ message NewMarketConfiguration {
 // A commitment of liquidity to be made by the party which proposes a market
 message NewMarketCommitment {
   // Specified as a unitless number that represents the amount of settlement asset of the market
-  uint64 commitmentAmount = 1;
+  uint64 commitment_amount = 1;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
   string fee = 2;
   // A set of liquidity sell orders to meet the liquidity provision obligation

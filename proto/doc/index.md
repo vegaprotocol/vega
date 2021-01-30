@@ -546,7 +546,7 @@ Future product definition
 | ----- | ---- | ----- | ----------- |
 | maturity | [string](#string) |  | The maturity for the future |
 | settlement_asset | [string](#string) |  | The asset for the future |
-| quoteName | [string](#string) |  | Quote name of the instrument |
+| quote_name | [string](#string) |  | Quote name of the instrument |
 | ethereum_event | [EthereumEvent](#vega.EthereumEvent) |  | Ethereum events |
 
 
@@ -1581,7 +1581,7 @@ Risk results are calculated internally by Vega to attempt to maintain safe tradi
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | updated_timestamp | [int64](#int64) |  | Timestamp for when risk factors were generated |
-| riskFactors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | Risk factors (long and short) for each margin-able asset/currency (usually == settlement assets) in the market |
+| risk_factors | [RiskResult.RiskFactorsEntry](#vega.RiskResult.RiskFactorsEntry) | repeated | Risk factors (long and short) for each margin-able asset/currency (usually == settlement assets) in the market |
 | next_update_timestamp | [int64](#int64) |  | Timestamp for when risk factors are expected to change (or empty if risk factors are continually updated) |
 | predicted_next_risk_factors | [RiskResult.PredictedNextRiskFactorsEntry](#vega.RiskResult.PredictedNextRiskFactorsEntry) | repeated | Predicted risk factors at next change (what they would be if the change occurred now) |
 
@@ -2296,7 +2296,7 @@ A Vega internal asset
 | symbol | [string](#string) |  | Symbol of the asset (e.g: GBP) |
 | total_supply | [string](#string) |  | Total circulating supply for the asset |
 | decimals | [uint64](#uint64) |  | Number of decimal / precision handled by this asset |
-| maxFaucetAmountMint | [string](#string) |  | Maximum amount that can be requested by a party through the built-in asset faucet at a time |
+| max_faucet_amount_mint | [string](#string) |  | Maximum amount that can be requested by a party through the built-in asset faucet at a time |
 
 
 
@@ -2473,7 +2473,7 @@ A commitment of liquidity to be made by the party which proposes a market
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| commitmentAmount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market |
+| commitment_amount | [uint64](#uint64) |  | Specified as a unitless number that represents the amount of settlement asset of the market |
 | fee | [string](#string) |  | Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers |
 | sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | A set of liquidity sell orders to meet the liquidity provision obligation |
 | buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | A set of liquidity buy orders to meet the liquidity provision obligation |
