@@ -84,7 +84,7 @@ func getTestMarket() *types.Market {
 						Maturity: "2019-12-31",
 						Oracle: &types.Future_EthereumEvent{
 							EthereumEvent: &types.EthereumEvent{
-								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 							},
 						},
@@ -131,7 +131,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	root.tradingDataClient.EXPECT().AssetByID(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&protoapi.AssetByIDResponse{Asset: &types.Asset{}}, nil)
 
 	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
-		m, ok := markets[req.MarketID]
+		m, ok := markets[req.MarketId]
 		assert.True(t, ok)
 		if m == nil {
 			return nil, marketNotExistsErr

@@ -83,12 +83,12 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 	assert.Nil(t, err)
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Symbol: "ETH",
-		ID:     "ETH",
+		Id:     "ETH",
 	})
 
 	// add the token asset
 	tokAsset := types.Asset{
-		ID:          "VOTE",
+		Id:          "VOTE",
 		Name:        "VOTE",
 		Symbol:      "VOTE",
 		Decimals:    5,
@@ -176,7 +176,7 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 						Maturity: closingAt.Format(time.RFC3339),
 						Oracle: &types.Future_EthereumEvent{
 							EthereumEvent: &types.EthereumEvent{
-								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 							},
 						},
@@ -266,8 +266,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -281,8 +281,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -333,8 +333,8 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -374,8 +374,8 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -411,8 +411,8 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -436,8 +436,8 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 
 	// now try to amend and make sure monies are updated
 	amendedOrder := &types.OrderAmendment{
-		OrderID:     orderBuy.Id,
-		PartyID:     party1,
+		OrderId:     orderBuy.Id,
+		PartyId:     party1,
 		Price:       &types.Price{Value: 200},
 		SizeDelta:   -50,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -476,7 +476,7 @@ func TestSetMarketID(t *testing.T) {
 							Maturity: "2019-12-31T23:59:59Z",
 							Oracle: &types.Future_EthereumEvent{
 								EthereumEvent: &types.EthereumEvent{
-									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+									ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 									Event:      "price_changed",
 								},
 							},
@@ -547,8 +547,8 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -566,8 +566,8 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -589,8 +589,8 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -608,8 +608,8 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -663,8 +663,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -682,8 +682,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -705,8 +705,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -724,8 +724,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -748,8 +748,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid6",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       validPrice,
 		Remaining:   100,
@@ -766,8 +766,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid5",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       validPrice,
 		Remaining:   100,
@@ -799,8 +799,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid8",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        1,
 		Price:       validPrice,
 		Remaining:   1,
@@ -818,8 +818,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid7",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        1,
 		Price:       validPrice,
 		Remaining:   1,
@@ -864,8 +864,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -883,8 +883,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -906,8 +906,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -925,8 +925,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice - 1,
 		Remaining:   100,
@@ -943,8 +943,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
 	amendedOrder := &types.OrderAmendment{
-		OrderID:     orderBuy2.Id,
-		PartyID:     party1,
+		OrderId:     orderBuy2.Id,
+		PartyId:     party1,
 		Price:       &types.Price{Value: auctionTriggeringPrice},
 		SizeDelta:   0,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -967,8 +967,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid6",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -985,8 +985,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid5",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -1039,8 +1039,8 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -1058,8 +1058,8 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -1081,8 +1081,8 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        3,
 		Price:       auctionTriggeringPriceHigh - 1,
 		Remaining:   3,
@@ -1105,8 +1105,8 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        1,
 		Price:       auctionTriggeringPriceHigh,
 		Remaining:   1,
@@ -1128,8 +1128,8 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		Status:    types.Order_STATUS_ACTIVE,
 		Id:        "someid5",
 		Side:      types.Side_SIDE_BUY,
-		PartyID:   party1,
-		MarketID:  tm.market.GetID(),
+		PartyId:   party1,
+		MarketId:  tm.market.GetID(),
 		Size:      4,
 		Remaining: 4,
 		CreatedAt: now.UnixNano(),
@@ -1204,8 +1204,8 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -1223,8 +1223,8 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -1253,8 +1253,8 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -1272,8 +1272,8 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -1338,8 +1338,8 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        oi,
 		Price:       matchingPrice,
 		Remaining:   oi,
@@ -1357,8 +1357,8 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        oi,
 		Price:       matchingPrice,
 		Remaining:   oi,
@@ -1396,8 +1396,8 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        1,
 		Price:       matchingPrice + 1,
 		Remaining:   1,
@@ -1415,8 +1415,8 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        1,
 		Price:       matchingPrice - 1,
 		Remaining:   1,
@@ -1428,7 +1428,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	require.NoError(t, err)
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -1478,8 +1478,8 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        1,
 		Price:       matchingPrice + 1,
 		Remaining:   1,
@@ -1497,8 +1497,8 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        1,
 		Price:       matchingPrice - 1,
 		Remaining:   1,
@@ -1513,7 +1513,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -1528,7 +1528,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	require.NoError(t, err)
 
 	lp2 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 100,
 		Fee:              "0.06",
 		Buys: []*types.LiquidityOrder{
@@ -1563,7 +1563,7 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -1614,7 +1614,7 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -1690,7 +1690,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.Equal(t, mktData.BestOfferVolume, mktData.BestStaticOfferVolume)
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -1715,8 +1715,8 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeOfferPrev := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 	// Amend limit order
 	amendment := &types.OrderAmendment{
-		OrderID:   confirmationBuy.Order.Id,
-		PartyID:   confirmationBuy.Order.PartyID,
+		OrderId:   confirmationBuy.Order.Id,
+		PartyId:   confirmationBuy.Order.PartyId,
 		SizeDelta: 9,
 	}
 	_, err = tm.market.AmendOrder(ctx, amendment)
@@ -1772,7 +1772,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeOfferPrev = lpOrderVolumeOffer
 	mktDataPrev = mktData
 	// Cancel limit order
-	conf, err := tm.market.CancelOrder(ctx, orderSell1.PartyID, orderSell1.Id)
+	conf, err := tm.market.CancelOrder(ctx, orderSell1.PartyId, orderSell1.Id)
 	require.NoError(t, err)
 	require.NotNil(t, conf)
 
@@ -1870,8 +1870,8 @@ func getMarketOrder(tm *testMarket,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          id,
 		Side:        side,
-		PartyID:     partyID,
-		MarketID:    tm.market.GetID(),
+		PartyId:     partyID,
+		MarketId:    tm.market.GetID(),
 		Size:        size,
 		Price:       price,
 		Remaining:   size,
@@ -2110,8 +2110,8 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid1",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -2129,8 +2129,8 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid2",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       initialPrice,
 		Remaining:   100,
@@ -2157,8 +2157,8 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -2176,8 +2176,8 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       auctionTriggeringPrice,
 		Remaining:   100,
@@ -2274,8 +2274,8 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderID: o1.Id,
-		PartyID: "aaa",
+		OrderId: o1.Id,
+		PartyId: "aaa",
 		Price:   &types.Price{Value: 200},
 	}
 
@@ -2377,8 +2377,8 @@ func TestOrderBook_CrashWithDistressedTraderPeggedOrderNotRemovedFromPeggedList2
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderID: o3.Id,
-		PartyID: "trader-C",
+		OrderId: o3.Id,
+		PartyId: "trader-C",
 		Price:   &types.Price{Value: 1002},
 	}
 
@@ -2460,8 +2460,8 @@ func TestOrderBook_Bug2747(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderID:         o1.Id,
-		PartyID:         "trader-A",
+		OrderId:         o1.Id,
+		PartyId:         "trader-A",
 		PeggedOffset:    &wrapperspb.Int64Value{Value: 20},
 		PeggedReference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
 	}
@@ -2495,8 +2495,8 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 
 	// Amend the pegged order from GTT to GTC
 	amendment := &types.OrderAmendment{
-		OrderID:     o2.Id,
-		PartyID:     "aaa",
+		OrderId:     o2.Id,
+		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
@@ -2541,8 +2541,8 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 
 	// Amend the pegged order so that is has an expiry
 	amendment := &types.OrderAmendment{
-		OrderID:     o2.Id,
-		PartyID:     "aaa",
+		OrderId:     o2.Id,
+		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt:   &types.Timestamp{Value: now.Add(5 * time.Second).UnixNano()},
 	}
@@ -2590,8 +2590,8 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 
 	// Amend the pegged order so that is has an expiry
 	amendment := &types.OrderAmendment{
-		OrderID: o2.Id,
-		PartyID: "trader-B",
+		OrderId: o2.Id,
+		PartyId: "trader-B",
 		Price:   &types.Price{Value: 5000},
 	}
 
@@ -2636,8 +2636,8 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 	// then amend
 	// Amend the pegged order so that is has an expiry
 	amendment := &types.OrderAmendment{
-		OrderID:      o3.Id,
-		PartyID:      "trader-C",
+		OrderId:      o3.Id,
+		PartyId:      "trader-C",
 		PeggedOffset: &wrapperspb.Int64Value{Value: -6500},
 	}
 
@@ -2667,8 +2667,8 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 	// then amend
 	// Amend the pegged order so that is has an expiry
 	amendment := &types.OrderAmendment{
-		OrderID:     o1.Id,
-		PartyID:     "trader-A",
+		OrderId:     o1.Id,
+		PartyId:     "trader-A",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
@@ -2722,8 +2722,8 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderID:   o1.Id,
-		PartyID:   "trader-A",
+		OrderId:   o1.Id,
+		PartyId:   "trader-A",
 		Price:     &types.Price{Value: 4000},
 		SizeDelta: +10,
 	}
@@ -2757,8 +2757,8 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderID:   o1.Id,
-		PartyID:   "trader-A",
+		OrderId:   o1.Id,
+		PartyId:   "trader-A",
 		SizeDelta: -1,
 	}
 
@@ -2791,8 +2791,8 @@ func TestOrderBook_AmendExpPeristParkPeggedOrder(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderID:   o1.Id,
-		PartyID:   "trader-A",
+		OrderId:   o1.Id,
+		PartyId:   "trader-A",
 		SizeDelta: -10,
 	}
 

@@ -113,8 +113,8 @@ func (t *Tx) Validate() error {
 
 	pubkey := hex.EncodeToString(t.PubKey())
 	// Verify party ID on those types who have it.
-	if t, ok := cmd.(interface{ GetPartyID() string }); ok {
-		if t.GetPartyID() != pubkey {
+	if t, ok := cmd.(interface{ GetPartyId() string }); ok {
+		if t.GetPartyId() != pubkey {
 			return errors.New("pubkey does not match with party-id")
 		}
 	}

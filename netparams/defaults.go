@@ -14,7 +14,7 @@ const (
 func defaultNetParams() map[string]value {
 	return map[string]value{
 		// markets
-		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor()).Mutable(true).MustUpdate(`{"searchLevel": 1.1, "initialMargin": 1.2, "collateralRelease": 1.4}`),
+		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor()).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                        NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00025"),
 		MarketFeeFactorsInfrastructureFee:               NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.0005"),
 		MarketFeeFactorsLiquidityFee:                    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.001"),
@@ -78,6 +78,6 @@ func defaultNetParams() map[string]value {
 		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
-			MustUpdate("{\"networkId\": \"XXX\", \"chainId\": \"XXX\", \"bridgeAddress\": \"0xXXX\", \"confirmations\": 3}"),
+			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3}"),
 	}
 }

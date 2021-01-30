@@ -16,8 +16,8 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -46,8 +46,8 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -76,8 +76,8 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -106,8 +106,8 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -140,8 +140,8 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -170,8 +170,8 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -203,8 +203,8 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -218,8 +218,8 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -248,8 +248,8 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -263,8 +263,8 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -293,8 +293,8 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -308,8 +308,8 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -338,8 +338,8 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -353,8 +353,8 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -383,8 +383,8 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -398,8 +398,8 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -428,8 +428,8 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -443,8 +443,8 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -473,8 +473,8 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -489,8 +489,8 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -519,8 +519,8 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -534,8 +534,8 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -555,8 +555,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -570,8 +570,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -585,8 +585,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -608,8 +608,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       1,
 		Size:        1,
@@ -623,8 +623,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       2,
 		Size:        1,
@@ -638,8 +638,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -696,8 +696,8 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -713,8 +713,8 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 
 	order2 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        10,

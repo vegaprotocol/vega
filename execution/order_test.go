@@ -28,8 +28,8 @@ func TestOrderBufferOutputCount(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -52,9 +52,9 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend := &types.OrderAmendment{
-		MarketID: tm.market.GetID(),
-		PartyID:  party1,
-		OrderID:  orderAmend.Id,
+		MarketId: tm.market.GetID(),
+		PartyId:  party1,
+		OrderId:  orderAmend.Id,
 	}
 
 	// Amend price down (generates one order message)
@@ -124,8 +124,8 @@ func TestAmendCancelResubmit(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -142,9 +142,9 @@ func TestAmendCancelResubmit(t *testing.T) {
 	// Amend the price to force a cancel+resubmit to the order book
 
 	amend := &types.OrderAmendment{
-		OrderID:  orderID,
-		PartyID:  confirmation.GetOrder().GetPartyID(),
-		MarketID: confirmation.GetOrder().GetMarketID(),
+		OrderId:  orderID,
+		PartyId:  confirmation.GetOrder().GetPartyId(),
+		MarketId: confirmation.GetOrder().GetMarketId(),
 		Price:    &types.Price{Value: 101},
 	}
 	amended, err := tm.market.AmendOrder(context.TODO(), amend)
@@ -152,9 +152,9 @@ func TestAmendCancelResubmit(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend = &types.OrderAmendment{
-		OrderID:   orderID,
-		PartyID:   confirmation.GetOrder().GetPartyID(),
-		MarketID:  confirmation.GetOrder().GetMarketID(),
+		OrderId:   orderID,
+		PartyId:   confirmation.GetOrder().GetPartyId(),
+		MarketId:  confirmation.GetOrder().GetMarketId(),
 		Price:     &types.Price{Value: 101},
 		SizeDelta: 1,
 	}
@@ -179,8 +179,8 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -194,11 +194,11 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 
 	// Now attempt to cancel it with the wrong partyID
 	cancelOrder := &types.OrderCancellation{
-		OrderID:  confirmation.GetOrder().Id,
-		MarketID: confirmation.GetOrder().MarketID,
-		PartyID:  party2,
+		OrderId:  confirmation.GetOrder().Id,
+		MarketId: confirmation.GetOrder().MarketId,
+		PartyId:  party2,
 	}
-	cancelconf, err := tm.market.CancelOrder(context.TODO(), cancelOrder.PartyID, cancelOrder.OrderID)
+	cancelconf, err := tm.market.CancelOrder(context.TODO(), cancelOrder.PartyId, cancelOrder.OrderId)
 	assert.Nil(t, cancelconf)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
@@ -218,8 +218,8 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       10,
 		Remaining:   100,
@@ -237,8 +237,8 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        50,
 		Price:       10,
 		Remaining:   50,
@@ -269,8 +269,8 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       10,
 		Remaining:   100,
@@ -286,9 +286,9 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), time.Unix(10, 100))
 
 	amend := &types.OrderAmendment{
-		OrderID:     buyConfirmation.GetOrder().GetId(),
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		OrderId:     buyConfirmation.GetOrder().GetId(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		ExpiresAt:   &types.Timestamp{Value: 10000000010},
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 	}
@@ -318,8 +318,8 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        20,
 		Price:       5,
 		Remaining:   20,
@@ -335,8 +335,8 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		Status:      types.Order_STATUS_ACTIVE,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        10,
 		Price:       5,
 		Remaining:   10,
@@ -349,9 +349,9 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend := &types.OrderAmendment{
-		OrderID:  buyConfirmation.GetOrder().GetId(),
-		PartyID:  party1,
-		MarketID: tm.market.GetID(),
+		OrderId:  buyConfirmation.GetOrder().GetId(),
+		PartyId:  party1,
+		MarketId: tm.market.GetID(),
 		Price:    &types.Price{Value: 20},
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
@@ -379,8 +379,8 @@ func TestAmendWrongPartyID(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        100,
 		Price:       100,
 		Remaining:   100,
@@ -394,9 +394,9 @@ func TestAmendWrongPartyID(t *testing.T) {
 
 	// Send an aend but use the wrong partyID
 	amend := &types.OrderAmendment{
-		OrderID:  confirmation.GetOrder().GetId(),
-		PartyID:  party2,
-		MarketID: confirmation.GetOrder().GetMarketID(),
+		OrderId:  confirmation.GetOrder().GetId(),
+		PartyId:  party2,
+		MarketId: confirmation.GetOrder().GetMarketId(),
 		Price:    &types.Price{Value: 101},
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend)
@@ -419,8 +419,8 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        15,
 		Price:       55,
 		Remaining:   15,
@@ -436,8 +436,8 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Side:        types.Side_SIDE_SELL,
-		PartyID:     party2,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
 		Size:        15,
 		Price:       53,
 		Remaining:   15,
@@ -454,8 +454,8 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        30,
 		Price:       60,
 		Remaining:   30,
@@ -473,9 +473,9 @@ func getAmend(market string, party string, orderID string, sizeDelta int64, pric
 	tif types.Order_TimeInForce, expiresAt int64) *types.OrderAmendment {
 
 	amend := &types.OrderAmendment{
-		OrderID:     orderID,
-		PartyID:     party,
-		MarketID:    market,
+		OrderId:     orderID,
+		PartyId:     party,
+		MarketId:    market,
 		SizeDelta:   sizeDelta,
 		TimeInForce: tif,
 	}
@@ -509,8 +509,8 @@ func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Orde
 		Type:        orderType,
 		TimeInForce: tif,
 		Side:        side,
-		PartyID:     party,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party,
+		MarketId:    tm.market.GetID(),
 		Size:        size,
 		Price:       price,
 		Remaining:   size,
@@ -531,8 +531,8 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 		Type:        orderType,
 		TimeInForce: tif,
 		Side:        side,
-		PartyID:     party,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party,
+		MarketId:    tm.market.GetID(),
 		Size:        size,
 		Price:       price,
 		Remaining:   size,
@@ -2016,7 +2016,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, o1conf)
 
-	cncl, err := tm.market.CancelOrder(ctx, o1.PartyID, o1.Id)
+	cncl, err := tm.market.CancelOrder(ctx, o1.PartyId, o1.Id)
 	require.NoError(t, err)
 	require.NotNil(t, cncl)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())

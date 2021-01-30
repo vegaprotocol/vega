@@ -74,8 +74,8 @@ func testDepositSuccess(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "VGT",
-		PartyID:     "someparty",
+		VegaAssetId: "VGT",
+		PartyId:     "someparty",
 		Amount:      42,
 	}
 
@@ -89,7 +89,7 @@ func testDepositSuccess(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyId, bad.VegaAssetId, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }
@@ -103,8 +103,8 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "VGT",
-		PartyID:     "someparty",
+		VegaAssetId: "VGT",
+		PartyId:     "someparty",
 		Amount:      42,
 	}
 
@@ -118,7 +118,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyId, bad.VegaAssetId, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 
@@ -132,7 +132,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyId, bad.VegaAssetId, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }
@@ -146,8 +146,8 @@ func testDepositFailure(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "VGT",
-		PartyID:     "someparty",
+		VegaAssetId: "VGT",
+		PartyId:     "someparty",
 		Amount:      42,
 	}
 
@@ -173,8 +173,8 @@ func testDepositError(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "VGT",
-		PartyID:     "someparty",
+		VegaAssetId: "VGT",
+		PartyId:     "someparty",
 		Amount:      42,
 	}
 
@@ -197,8 +197,8 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetID: "VGT",
-		PartyID:     "someparty",
+		VegaAssetId: "VGT",
+		PartyId:     "someparty",
 		Amount:      42,
 	}
 

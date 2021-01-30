@@ -24,7 +24,7 @@ func buildOrder(id string, side types.Side, orderType types.Order_Type, price ui
 		Remaining:   remaining,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    "M",
+		MarketId:    "M",
 	}
 	return order
 }
@@ -518,7 +518,7 @@ func TestMarketDepthFields(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, md)
 
-	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, md.MarketId, "M")
 	assert.Equal(t, len(md.GetBuy()), 1)
 
 	priceLevels := md.GetBuy()
@@ -550,7 +550,7 @@ func TestParkingOrder(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, md)
 
-	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, md.MarketId, "M")
 	assert.Equal(t, len(md.GetBuy()), 0)
 	assert.Equal(t, len(md.GetSell()), 0)
 
@@ -565,7 +565,7 @@ func TestParkingOrder(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, md2)
 
-	assert.Equal(t, md2.MarketID, "M")
+	assert.Equal(t, md2.MarketId, "M")
 	assert.Equal(t, len(md2.GetBuy()), 1)
 	assert.Equal(t, len(md2.GetSell()), 0)
 }
@@ -585,7 +585,7 @@ func TestParkedOrder(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, md)
 
-	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, md.MarketId, "M")
 	assert.Equal(t, len(md.GetBuy()), 0)
 	assert.Equal(t, len(md.GetSell()), 0)
 }
@@ -661,7 +661,7 @@ func TestParkedOrder2(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, md)
 
-	assert.Equal(t, md.MarketID, "M")
+	assert.Equal(t, md.MarketId, "M")
 	assert.Equal(t, 0, len(md.GetBuy()))
 	assert.Equal(t, 0, len(md.GetSell()))
 }

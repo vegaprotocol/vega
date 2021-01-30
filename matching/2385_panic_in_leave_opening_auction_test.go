@@ -14,8 +14,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 	defer book.Finish()
 	orders := []types.Order{
 		{
-			MarketID:    market,
-			PartyID:     "A",
+			MarketId:    market,
+			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
 			Price:       100,
 			Size:        5,
@@ -25,8 +25,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Id:          "v0000000000000-0000001",
 		},
 		{
-			MarketID:    market,
-			PartyID:     "B",
+			MarketId:    market,
+			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
 			Price:       100,
 			Size:        5,
@@ -36,8 +36,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Id:          "v0000000000000-0000002",
 		},
 		{
-			MarketID:    market,
-			PartyID:     "C",
+			MarketId:    market,
+			PartyId:     "C",
 			Side:        types.Side_SIDE_BUY,
 			Price:       150,
 			Size:        2,
@@ -47,8 +47,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Id:          "v0000000000000-0000003",
 		},
 		{
-			MarketID:    market,
-			PartyID:     "D",
+			MarketId:    market,
+			PartyId:     "D",
 			Side:        types.Side_SIDE_BUY,
 			Price:       150,
 			Size:        2,
@@ -58,8 +58,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Id:          "v0000000000000-0000004",
 		},
 		{
-			MarketID:    market,
-			PartyID:     "E",
+			MarketId:    market,
+			PartyId:     "E",
 			Side:        types.Side_SIDE_SELL,
 			Price:       150,
 			Size:        2,
@@ -69,8 +69,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Id:          "v0000000000000-0000005",
 		},
 		{
-			MarketID:    market,
-			PartyID:     "F",
+			MarketId:    market,
+			PartyId:     "F",
 			Side:        types.Side_SIDE_BUY,
 			Price:       150,
 			Size:        2,
@@ -80,8 +80,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Id:          "v0000000000000-0000006",
 		},
 		{
-			MarketID:    market,
-			PartyID:     "G",
+			MarketId:    market,
+			PartyId:     "G",
 			Side:        types.Side_SIDE_SELL,
 			Price:       150,
 			Size:        2,
@@ -91,8 +91,8 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			Id:          "v0000000000000-0000007",
 		},
 		{
-			MarketID:    market,
-			PartyID:     "A",
+			MarketId:    market,
+			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
 			Price:       120,
 			Size:        33,

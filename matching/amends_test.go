@@ -13,8 +13,8 @@ func TestOrderBookAmends_simpleAmend(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -28,8 +28,8 @@ func TestOrderBookAmends_simpleAmend(t *testing.T) {
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -47,8 +47,8 @@ func TestOrderBookAmends_invalidPartyID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -62,8 +62,8 @@ func TestOrderBookAmends_invalidPartyID(t *testing.T) {
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -81,8 +81,8 @@ func TestOrderBookAmends_invalidPriceAmend(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -96,8 +96,8 @@ func TestOrderBookAmends_invalidPriceAmend(t *testing.T) {
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       101,
 		Size:        1,
@@ -115,8 +115,8 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -130,8 +130,8 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        5,
@@ -149,8 +149,8 @@ func TestOrderBookAmends_reduceToZero(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -164,8 +164,8 @@ func TestOrderBookAmends_reduceToZero(t *testing.T) {
 	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        0,
@@ -183,8 +183,8 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -198,8 +198,8 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 	assert.Equal(t, uint64(10), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        5,
@@ -213,8 +213,8 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        6,
@@ -232,8 +232,8 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -247,8 +247,8 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 	assert.Equal(t, uint64(10), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        5,
@@ -262,8 +262,8 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        3,
@@ -282,8 +282,8 @@ func TestOrderBookAmends_noOrderToAmend(t *testing.T) {
 	defer book.Finish()
 
 	amend := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,

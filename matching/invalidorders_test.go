@@ -13,8 +13,8 @@ func TestOrderBookInvalid_emptyMarketID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    "",
-		PartyID:     "A",
+		MarketId:    "",
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -32,8 +32,8 @@ func TestOrderBookInvalid_emptyPartyID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "",
+		MarketId:    market,
+		PartyId:     "",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -51,8 +51,8 @@ func TestOrderBookInvalid_ZeroSize(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        0,
@@ -70,8 +70,8 @@ func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       0,
 		Size:        1,
@@ -89,8 +89,8 @@ func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -108,8 +108,8 @@ func TestOrderBookInvalid_GTCMarket(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -127,8 +127,8 @@ func TestOrderBookInvalid_GTCNetwork(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -146,8 +146,8 @@ func TestOrderBookInvalid_GTTMarket(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -166,8 +166,8 @@ func TestOrderBookInvalid_GTTNetwork(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -186,8 +186,8 @@ func TestOrderBookInvalid_IOCNetwork(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,

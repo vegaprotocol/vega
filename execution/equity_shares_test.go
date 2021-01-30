@@ -115,8 +115,8 @@ func (esm *equityShareMarket) BuildOrder(id, party string, side types.Side, pric
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          id,
 		Side:        side,
-		PartyID:     party,
-		MarketID:    esm.tm.market.GetID(),
+		PartyId:     party,
+		MarketId:    esm.tm.market.GetID(),
 		Size:        1,
 		Price:       price,
 		Remaining:   1,
@@ -133,7 +133,7 @@ func (esm *equityShareMarket) createPartyIfMissing(party string) {
 }
 
 func (esm *equityShareMarket) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	esm.createPartyIfMissing(order.PartyID)
+	esm.createPartyIfMissing(order.PartyId)
 	return esm.tm.market.SubmitOrder(ctx, order)
 }
 
@@ -150,7 +150,7 @@ func (esm *equityShareMarket) WithSubmittedLiquidityProvision(party, id string, 
 	ctx := context.Background()
 
 	lps := &types.LiquidityProvisionSubmission{
-		MarketID:         esm.tm.market.GetID(),
+		MarketId:         esm.tm.market.GetID(),
 		CommitmentAmount: amount,
 		Fee:              fee,
 		Buys:             buys,

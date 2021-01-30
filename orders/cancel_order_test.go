@@ -11,9 +11,9 @@ import (
 
 var (
 	cancel = proto.OrderCancellation{
-		OrderID:  "order_id",
-		MarketID: "market",
-		PartyID:  "party",
+		OrderId:  "order_id",
+		MarketId: "market",
+		PartyId:  "party",
 	}
 )
 
@@ -38,8 +38,8 @@ func testCancelOrderNoOrderID(t *testing.T) {
 	defer svc.ctrl.Finish()
 	ctx := context.Background()
 	arg := proto.OrderCancellation{
-		MarketID: "marketid",
-		PartyID:  "partyid",
+		MarketId: "marketid",
+		PartyId:  "partyid",
 	}
 	err := svc.svc.PrepareCancelOrder(ctx, &arg)
 	assert.NoError(t, err)
@@ -50,8 +50,8 @@ func testCancelOrderNoPartyID(t *testing.T) {
 	defer svc.ctrl.Finish()
 	ctx := context.Background()
 	arg := proto.OrderCancellation{
-		MarketID: "marketid",
-		OrderID:  "partyid",
+		MarketId: "marketid",
+		OrderId:  "partyid",
 	}
 
 	err := svc.svc.PrepareCancelOrder(ctx, &arg)
@@ -63,8 +63,8 @@ func testCancelOrderNoMarketID(t *testing.T) {
 	defer svc.ctrl.Finish()
 	ctx := context.Background()
 	arg := proto.OrderCancellation{
-		OrderID: "orderid",
-		PartyID: "partyid",
+		OrderId: "orderid",
+		PartyId: "partyid",
 	}
 
 	err := svc.svc.PrepareCancelOrder(ctx, &arg)

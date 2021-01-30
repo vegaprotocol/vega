@@ -70,7 +70,7 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	req := &protoapi.PrepareSubmitOrderRequest{
 		Submission: &types.OrderSubmission{
 			Type:     types.Order_TYPE_LIMIT,
-			MarketID: "nonexistantmarket",
+			MarketId: "nonexistantmarket",
 		},
 	}
 
@@ -331,7 +331,7 @@ func TestPrepareProposal(t *testing.T) {
 	assert.NotNil(t, client)
 
 	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
-		PartyID: "invalid-party",
+		PartyId: "invalid-party",
 		Proposal: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateNetworkParameter{
 				UpdateNetworkParameter: &types.UpdateNetworkParameter{

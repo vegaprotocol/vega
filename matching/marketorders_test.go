@@ -13,8 +13,8 @@ func TestOrderBook_MarketOrderFOKNotFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
@@ -34,8 +34,8 @@ func TestOrderBook_MarketOrderIOCNotFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
@@ -55,8 +55,8 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        6,
@@ -68,8 +68,8 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 	assert.NoError(t, err)
 
 	order = types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,
@@ -96,8 +96,8 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        6,
@@ -109,8 +109,8 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	assert.NoError(t, err)
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "B",
+		MarketId:    market,
+		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
 		Size:        10,
 		Remaining:   10,

@@ -45,8 +45,8 @@ func testFOKStopped(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID,
+		MarketId:    market,
+		PartyId:     partyID,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -71,8 +71,8 @@ func testFOKFilled(t *testing.T) {
 	// place a first order to sit in the book
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -86,8 +86,8 @@ func testFOKFilled(t *testing.T) {
 	// now place our fok order to be filled
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -108,8 +108,8 @@ func testIOCStopped(t *testing.T) {
 	defer book.Finish()
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID,
+		MarketId:    market,
+		PartyId:     partyID,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -134,8 +134,8 @@ func testIOCPartiallyFilled(t *testing.T) {
 	// place a first order to sit in the book
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -149,8 +149,8 @@ func testIOCPartiallyFilled(t *testing.T) {
 	// now place our IOC order to be filled
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        2,
@@ -175,8 +175,8 @@ func testIOCFilled(t *testing.T) {
 	// place a first order to sit in the book
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -190,8 +190,8 @@ func testIOCFilled(t *testing.T) {
 	// now place our fok order to be filled
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -216,8 +216,8 @@ func testGTCActive(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -241,8 +241,8 @@ func testGTCStoppedNotFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -271,8 +271,8 @@ func testGTCCancelledNotFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -302,8 +302,8 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -317,8 +317,8 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 	// now place our order which will consume some of the first order
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -345,8 +345,8 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -360,8 +360,8 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 	// now place our order which will consume some of the first order
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -392,8 +392,8 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -407,8 +407,8 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 	// now place our order which will consume some of the first order
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -437,8 +437,8 @@ func testGTCFilled(t *testing.T) {
 	// place a first order to sit in the book
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -452,8 +452,8 @@ func testGTCFilled(t *testing.T) {
 	// now place our GTC order to be filled
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -478,8 +478,8 @@ func testGTTActive(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -504,8 +504,8 @@ func testGTTStoppedNotFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -535,8 +535,8 @@ func testGTTCancelledNotFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -567,8 +567,8 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -583,8 +583,8 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 	// now place our order which will consume some of the first order
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -612,8 +612,8 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -628,8 +628,8 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	// now place our order which will consume some of the first order
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -661,8 +661,8 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          orderID,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        10,
@@ -677,8 +677,8 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 	// now place our order which will consume some of the first order
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
@@ -708,8 +708,8 @@ func testGTTFilled(t *testing.T) {
 	// place a first order to sit in the book
 	order1 := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID1,
+		MarketId:    market,
+		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
@@ -724,8 +724,8 @@ func testGTTFilled(t *testing.T) {
 	// now place our GTT order to be filled
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
-		MarketID:    market,
-		PartyID:     partyID2,
+		MarketId:    market,
+		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,

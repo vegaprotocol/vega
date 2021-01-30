@@ -73,23 +73,23 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
 		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyID: party,
+			PartyId: party,
 		},
 		// txn.AmendOrderCommand: &types.OrderAmendment{
-		// 	PartyID: party,
+		// 	PartyId: party,
 		// },
 		txn.ProposeCommand: &types.Proposal{
-			PartyID: party,
+			PartyId: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
 		},
 		txn.VoteCommand: &types.Vote{
-			PartyID: party,
+			PartyId: party,
 		},
 		// txn.WithdrawCommand: &types.Withdraw{
-		// 	PartyID: party,
+		// 	PartyId: party,
 		// },
 	}
 	zero := uint64(0)

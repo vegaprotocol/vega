@@ -13,8 +13,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -28,8 +28,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -49,8 +49,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -64,8 +64,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    "incorrectMarket", // Invalid, must match original
-		PartyID:     "A",
+		MarketId:    "incorrectMarket", // Invalid, must match original
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -85,8 +85,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -100,8 +100,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL, // Invalid, must match original
 		Price:       100,
 		Size:        10,
@@ -121,8 +121,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -136,8 +136,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       101, // Invalid, must match original
 		Size:        10,
@@ -157,8 +157,8 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        10,
@@ -172,8 +172,8 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    market,                        // Must match
-		PartyID:     "B",                           // Does not matter
+		MarketId:    market,                        // Must match
+		PartyId:     "B",                           // Does not matter
 		Side:        types.Side_SIDE_BUY,           // Must match
 		Price:       100,                           // Must match
 		Size:        10,                            // Does not matter

@@ -431,8 +431,8 @@ func TestPositionSpecSuite(t *testing.T) {
 			// average entry price should be 1k
 			assert.Equal(t, tc.expect.AverageEntryPrice, int(pp[0].AverageEntryPrice), "invalid average entry price")
 			assert.Equal(t, tc.expect.OpenVolume, int(pp[0].OpenVolume), "invalid open volume")
-			assert.Equal(t, tc.expect.UnrealisedPNL, int(pp[0].UnrealisedPNL), "invalid unrealised pnl")
-			assert.Equal(t, tc.expect.RealisedPNL, int(pp[0].RealisedPNL), "invalid realised pnl")
+			assert.Equal(t, tc.expect.UnrealisedPNL, int(pp[0].UnrealisedPnl), "invalid unrealised pnl")
+			assert.Equal(t, tc.expect.RealisedPNL, int(pp[0].RealisedPnl), "invalid realised pnl")
 		})
 	}
 }

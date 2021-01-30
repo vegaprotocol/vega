@@ -13,8 +13,8 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        100,
@@ -52,8 +52,8 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        100,
@@ -91,8 +91,8 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        100,
@@ -105,8 +105,8 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       90,
 		Size:        100,
@@ -119,8 +119,8 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order3 := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
 		Price:       80,
 		Size:        100,
@@ -153,8 +153,8 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        100,
@@ -167,8 +167,8 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       110,
 		Size:        100,
@@ -181,8 +181,8 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order3 := types.Order{
-		MarketID:    market,
-		PartyID:     "A",
+		MarketId:    market,
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       120,
 		Size:        100,

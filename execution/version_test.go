@@ -28,8 +28,8 @@ func TestVersioning(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Id:          "someid",
 		Side:        types.Side_SIDE_BUY,
-		PartyID:     party1,
-		MarketID:    tm.market.GetID(),
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
 		Size:        size,
 		Price:       price,
 		Remaining:   100,
@@ -46,9 +46,9 @@ func TestVersioning(t *testing.T) {
 
 	// Amend price up, check version moves to 2
 	amend := &types.OrderAmendment{
-		OrderID:  orderID,
-		MarketID: tm.market.GetID(),
-		PartyID:  party1,
+		OrderId:  orderID,
+		MarketId: tm.market.GetID(),
+		PartyId:  party1,
 		Price:    &types.Price{Value: price + 1},
 	}
 
