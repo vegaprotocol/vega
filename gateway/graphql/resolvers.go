@@ -34,7 +34,7 @@ var (
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
-// TradingClient ...
+// TradingServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/vega/gateway/graphql TradingServiceClient
 type TradingServiceClient interface {
 	// prepare calls (unary-like calls)
@@ -50,7 +50,7 @@ type TradingServiceClient interface {
 	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
 }
 
-// TradingDataClient ...
+// TradingDataServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_mock.go -package mocks code.vegaprotocol.io/vega/gateway/graphql TradingDataServiceClient
 type TradingDataServiceClient interface {
 	// orders
@@ -58,8 +58,8 @@ type TradingDataServiceClient interface {
 	OrderByReference(ctx context.Context, in *protoapi.OrderByReferenceRequest, opts ...grpc.CallOption) (*protoapi.OrderByReferenceResponse, error)
 	OrdersByParty(ctx context.Context, in *protoapi.OrdersByPartyRequest, opts ...grpc.CallOption) (*protoapi.OrdersByPartyResponse, error)
 	OrderByMarketAndID(ctx context.Context, in *protoapi.OrderByMarketAndIDRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIDResponse, error)
-	OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest, opts ...grpc.CallOption) (*types.Order, error)
-	OrderVersionsByID(ctx context.Context, in *protoapi.OrderVersionsByIDRequest, opts ...grpc.CallOption) (*protoapi.OrderVersionsResponse, error)
+	OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest, opts ...grpc.CallOption) (*protoapi.OrderByIDResponse, error)
+	OrderVersionsByID(ctx context.Context, in *protoapi.OrderVersionsByIDRequest, opts ...grpc.CallOption) (*protoapi.OrderVersionsByIDResponse, error)
 	// markets
 	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
 	Markets(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
@@ -78,18 +78,18 @@ type TradingDataServiceClient interface {
 	// candles
 	Candles(ctx context.Context, in *protoapi.CandlesRequest, opts ...grpc.CallOption) (*protoapi.CandlesResponse, error)
 	// metrics
-	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*types.Statistics, error)
-	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.VegaTimeResponse, error)
+	Statistics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.StatisticsResponse, error)
+	GetVegaTime(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*protoapi.GetVegaTimeResponse, error)
 	// streams
-	AccountsSubscribe(ctx context.Context, in *protoapi.AccountsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_AccountsSubscribeClient, error)
-	OrdersSubscribe(ctx context.Context, in *protoapi.OrdersSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_OrdersSubscribeClient, error)
-	TradesSubscribe(ctx context.Context, in *protoapi.TradesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_TradesSubscribeClient, error)
-	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_CandlesSubscribeClient, error)
-	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthSubscribeClient, error)
-	MarketDepthUpdatesSubscribe(ctx context.Context, in *protoapi.MarketDepthUpdatesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketDepthUpdatesSubscribeClient, error)
-	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_PositionsSubscribeClient, error)
-	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarketsDataSubscribeClient, error)
-	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingData_MarginLevelsSubscribeClient, error)
+	AccountsSubscribe(ctx context.Context, in *protoapi.AccountsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_AccountsSubscribeClient, error)
+	OrdersSubscribe(ctx context.Context, in *protoapi.OrdersSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_OrdersSubscribeClient, error)
+	TradesSubscribe(ctx context.Context, in *protoapi.TradesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_TradesSubscribeClient, error)
+	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_CandlesSubscribeClient, error)
+	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarketDepthSubscribeClient, error)
+	MarketDepthUpdatesSubscribe(ctx context.Context, in *protoapi.MarketDepthUpdatesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarketDepthUpdatesSubscribeClient, error)
+	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_PositionsSubscribeClient, error)
+	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarketsDataSubscribeClient, error)
+	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarginLevelsSubscribeClient, error)
 	// accounts
 	PartyAccounts(ctx context.Context, req *protoapi.PartyAccountsRequest, opts ...grpc.CallOption) (*protoapi.PartyAccountsResponse, error)
 	MarketAccounts(ctx context.Context, req *protoapi.MarketAccountsRequest, opts ...grpc.CallOption) (*protoapi.MarketAccountsResponse, error)
@@ -106,10 +106,10 @@ type TradingDataServiceClient interface {
 	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByIDResponse, error)
 	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByReferenceResponse, error)
 
-	ObserveGovernance(ctx context.Context, _ *empty.Empty, opts ...grpc.CallOption) (protoapi.TradingData_ObserveGovernanceClient, error)
-	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyProposalsClient, error)
-	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObservePartyVotesClient, error)
-	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingData_ObserveProposalVotesClient, error)
+	ObserveGovernance(ctx context.Context, _ *empty.Empty, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveGovernanceClient, error)
+	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObservePartyProposalsClient, error)
+	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObservePartyVotesClient, error)
+	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveProposalVotesClient, error)
 	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
 	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
 	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
@@ -124,7 +124,7 @@ type TradingDataServiceClient interface {
 	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
 	LiquidityProvisions(ctx context.Context, in *protoapi.LiquidityProvisionsRequest, opts ...grpc.CallOption) (*protoapi.LiquidityProvisionsResponse, error)
 
-	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingData_ObserveEventBusClient, error)
+	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveEventBusClient, error)
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -132,8 +132,8 @@ type VegaResolverRoot struct {
 	gateway.Config
 
 	log               *logging.Logger
-	tradingClient     TradingClient
-	tradingDataClient TradingDataClient
+	tradingClient     TradingServiceClient
+	tradingDataClient TradingDataServiceClient
 	r                 allResolver
 }
 
@@ -141,8 +141,8 @@ type VegaResolverRoot struct {
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
-	tradingClient TradingClient,
-	tradingDataClient TradingDataClient,
+	tradingClient TradingServiceClient,
+	tradingDataClient TradingDataServiceClient,
 ) *VegaResolverRoot {
 
 	return &VegaResolverRoot{
@@ -639,7 +639,7 @@ func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, er
 		r.log.Error("tradingCore client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	return res, nil
+	return res.Statistics, nil
 }
 
 func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version *int) (*types.Order, error) {
@@ -1794,7 +1794,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		order.Reference = *reference
 	}
 
-	req := protoapi.SubmitOrderRequest{
+	req := protoapi.PrepareSubmitOrderRequest{
 		Submission: order,
 	}
 
@@ -1825,7 +1825,7 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string,
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
 
-	req := protoapi.CancelOrderRequest{
+	req := protoapi.PrepareCancelOrderRequest{
 		Cancellation: order,
 	}
 	pendingOrder, err := r.tradingClient.PrepareCancelOrder(ctx, &req)
@@ -1970,7 +1970,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
 	}
 
-	req := protoapi.AmendOrderRequest{
+	req := protoapi.PrepareAmendOrderRequest{
 		Amendment: order,
 	}
 	pendingOrder, err := r.tradingClient.PrepareAmendOrder(ctx, &req)
@@ -2052,7 +2052,7 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 				r.log.Error("margin levls: stream closed", logging.Error(err))
 				break
 			}
-			ch <- m
+			ch <- m.MarginLevels
 		}
 	}()
 
@@ -2088,7 +2088,7 @@ func (r *mySubscriptionResolver) MarketData(ctx context.Context, marketID *strin
 				r.log.Error("marketdata: stream closed", logging.Error(err))
 				break
 			}
-			ch <- m
+			ch <- m.MarketData
 		}
 	}()
 
@@ -2141,7 +2141,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				r.log.Error("accounts: stream closed", logging.Error(err))
 				break
 			}
-			c <- a
+			c <- a.Account
 		}
 	}()
 
@@ -2263,7 +2263,7 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
-			c <- t
+			c <- t.Position
 		}
 	}()
 
@@ -2295,7 +2295,7 @@ func (r *mySubscriptionResolver) MarketDepth(ctx context.Context, market string)
 				r.log.Error("marketDepth: stream closed", logging.Error(err))
 				break
 			}
-			c <- md
+			c <- md.MarketDepth
 		}
 	}()
 
@@ -2331,7 +2331,7 @@ func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market s
 				}
 				break
 			}
-			c <- md
+			c <- md.Update
 		}
 	}()
 
@@ -2370,7 +2370,7 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 				r.log.Error("candles: stream closed", logging.Error(err))
 				break
 			}
-			c <- cdl
+			c <- cdl.Candle
 		}
 	}()
 	return c, nil
@@ -2400,7 +2400,7 @@ func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-c
 			close(output)
 		}()
 		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data
+			output <- data.Data
 		}
 	}()
 	return output, nil
@@ -2420,7 +2420,7 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 			close(output)
 		}()
 		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data
+			output <- data.Data
 		}
 	}()
 	return output, nil
@@ -2451,12 +2451,12 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			party, err := getParty(ctx, r.log, r.tradingDataClient, data.PartyID)
+			party, err := getParty(ctx, r.log, r.tradingDataClient, data.Vote.PartyID)
 			if err != nil {
 				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
 				break
 			}
-			output <- ProposalVoteFromProto(data, party)
+			output <- ProposalVoteFromProto(data.Vote, party)
 		}
 	}()
 	return output, nil
@@ -2480,12 +2480,12 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			party, err := getParty(ctx, r.log, r.tradingDataClient, data.PartyID)
+			party, err := getParty(ctx, r.log, r.tradingDataClient, data.Vote.PartyID)
 			if err != nil {
 				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
 				break
 			}
-			output <- ProposalVoteFromProto(data, party)
+			output <- ProposalVoteFromProto(data.Vote, party)
 		}
 	}()
 	return output, nil
@@ -2509,7 +2509,7 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 		return nil, errors.New("busEvents subscription requires 1 event type")
 	}
 	t := eventTypeToProto(types...)
-	req := protoapi.ObserveEventsRequest{
+	req := protoapi.ObserveEventBusRequest{
 		Type:      t,
 		BatchSize: int64(batchSize),
 	}
@@ -2559,7 +2559,7 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 
 func (r *mySubscriptionResolver) busEvents(
 	ctx context.Context,
-	stream protoapi.TradingData_ObserveEventBusClient,
+	stream protoapi.TradingDataService_ObserveEventBusClient,
 	out chan []*BusEvent,
 ) {
 	for {
@@ -2580,10 +2580,10 @@ func (r *mySubscriptionResolver) busEvents(
 func (r *mySubscriptionResolver) busEventsWithBatch(
 	ctx context.Context,
 	batchSize int64, // always non-0 here
-	stream protoapi.TradingData_ObserveEventBusClient,
+	stream protoapi.TradingDataService_ObserveEventBusClient,
 	out chan []*BusEvent,
 ) {
-	poll := &protoapi.ObserveEventsRequest{
+	poll := &protoapi.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}
 	for {
@@ -2722,7 +2722,7 @@ func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *type
 	return int(obj.TradeSubscriptions), nil
 }
 
-func getParty(ctx context.Context, log *logging.Logger, client TradingDataClient, id string) (*types.Party, error) {
+func getParty(ctx context.Context, log *logging.Logger, client TradingDataServiceClient, id string) (*types.Party, error) {
 	if len(id) == 0 {
 		return nil, nil
 	}

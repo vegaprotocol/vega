@@ -11,7 +11,7 @@ import (
 
 type allResolver struct {
 	log *logging.Logger
-	clt TradingDataClient
+	clt TradingDataServiceClient
 }
 
 func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int) (*types.Order, error) {
@@ -25,7 +25,7 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 		Version: v,
 	}
 	order, err := r.clt.OrderByID(ctx, orderReq)
-	return order, err
+	return order.Order, err
 }
 
 func (r *allResolver) getAssetByID(ctx context.Context, id string) (*Asset, error) {
