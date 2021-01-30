@@ -67,14 +67,14 @@ func (v voteStub) Filter(filters ...subscribers.VoteFilter) []*types.Vote {
 func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	const maxSleep = 2000 // milliseconds
 
-	req := &protoapi.SubmitOrderRequest{
+	req := &protoapi.PrepareSubmitOrderRequest{
 		Submission: &types.OrderSubmission{
 			Type:     types.Order_TYPE_LIMIT,
 			MarketID: "nonexistantmarket",
 		},
 	}
 
-	c := protoapi.NewTradingClient(conn)
+	c := protoapi.NewTradingServiceClient(conn)
 	sleepTime := 10 // milliseconds
 	for sleepTime < maxSleep {
 		_, err := c.PrepareSubmitOrder(ctx, req)
@@ -327,7 +327,7 @@ func TestPrepareProposal(t *testing.T) {
 	}
 	defer tidy()
 
-	client := protoapi.NewTradingClient(conn)
+	client := protoapi.NewTradingServiceClient(conn)
 	assert.NotNil(t, client)
 
 	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
