@@ -299,7 +299,7 @@ run() {
 		return "$?"
 		;;
 	buflint) ## Run
-		buf lint
+		buf check lint
 		return "$?"
 		;;
 	semgrep) ## Run semgrep
