@@ -156,7 +156,7 @@ staticcheck: ## Run statick analysis checks
 	@./script/build.sh -a staticcheck
 
 .PHONY: buflint
-staticcheck: ## Run buf lint
+buflint: ## Run buf lint
 	@./script/build.sh -a buflint
 
 .PHONY: semgrep
