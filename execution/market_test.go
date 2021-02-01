@@ -2860,13 +2860,13 @@ func TestRejectLiquidityProvisionWithInsufficientMargin(t *testing.T) {
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
 
 	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -2875,7 +2875,7 @@ func TestRejectLiquidityProvisionWithInsufficientMargin(t *testing.T) {
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -2914,17 +2914,17 @@ func TestPenaliseLPWhenMarginInsufficient(t *testing.T) {
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -2933,7 +2933,7 @@ func TestPenaliseLPWhenMarginInsufficient(t *testing.T) {
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -2953,7 +2953,7 @@ func TestPenaliseLPWhenMarginInsufficient(t *testing.T) {
 	require.Equal(t, lp1.CommitmentAmount, bondAcc.Balance)
 
 	//TODO: After order fills verify that change in bond acc more than change in general and margin, also, get market insurance pool
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
+	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	assert.NotNil(t, confirmationBuyAux1)

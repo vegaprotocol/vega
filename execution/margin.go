@@ -9,11 +9,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (*types.Transfer, error) {
 	if m.as.InAuction() {
 		return m.marginsAuction(ctx, order)
 	}
-	return m.margins(ctx, pos, order)
+	return m.margins(ctx, pos, order, failOnLPMarginShortfall)
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types.Transfer, error) {
@@ -78,7 +78,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types
 	return nil, nil
 }
 
-func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (*types.Transfer, error) {
 	price := m.getMarkPrice(order)
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
@@ -115,29 +115,38 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	}
 
 	if closed != nil {
-		// if closePose is not nil then we return an error as well, it means the trader did not have enough
+		// if closed is not nil then we return an error as well, it means the trader did not have enough
 		// monies to reach the InitialMargin
+		shortfall := closed.MarginShortFall()
+		if shortfall > 0 {
+			if failOnLPMarginShortfall {
+				if m.log.GetLevel() == logging.DebugLevel {
+					m.log.Debug("party did not have enough collateral to reach the InitialMargin",
+						logging.Order(*order),
+						logging.String("market-id", m.GetID()))
+				}
 
-		if closed.MarginShortFall() > 0 {
-			// TODO(): we nee to cover cases where we have a margin short fall
+				// Rollback transfers in case the order do not
+				// trade and do not stay in the book to prevent for margin being
+				// locked in the margin account forever
+				if err := m.collateral.RollbackTransfers(ctx, tr); err != nil {
+					m.log.Error(
+						"Failed to roll back margin transfers for party",
+						logging.String("party-id", order.PartyId),
+						logging.Error(err),
+					)
+				}
+				return riskRollback, ErrMarginCheckInsufficient
+			}
+			if err := m.applyBondPenalty(ctx, order.PartyId, shortfall, asset); err != nil {
+				m.log.Error("unable to apply bond penalty",
+					logging.String("market-id", m.GetID()),
+					logging.String("party-id", order.PartyId),
+					logging.Error(err))
+				return riskRollback, err
+
+			}
 		}
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("party did not have enough collateral to reach the InitialMargin",
-				logging.Order(*order),
-				logging.String("market-id", m.GetID()))
-		}
-
-		// Rollback transfers
-		if err := m.collateral.RollbackTransfers(ctx, tr); err != nil {
-			m.log.Error(
-				"Failed to roll back margin transfers for party",
-				logging.String("party-id", order.PartyId),
-				logging.Error(err),
-			)
-		}
-
-		return riskRollback, ErrMarginCheckInsufficient
 	}
 
 	if tr == nil {

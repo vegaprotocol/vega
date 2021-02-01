@@ -642,8 +642,6 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	for _, order := range m.peggedOrders {
 		if HasReferenceMoved(order, changes) {
 			if order.Status != types.Order_STATUS_PARKED {
-				// Remove order if any volume remains, otherwise it's already been popped by the matching engine.
-
 				cancellation, err := m.matching.CancelOrder(order)
 				if cancellation == nil || err != nil {
 					m.log.Panic("Failure after cancel order from matching engine",
@@ -685,7 +683,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 		if HasReferenceMoved(order, changes) {
 			if order.Status == types.Order_STATUS_CANCELLED {
 				// try to submit the order
-				if _, err := m.submitValidatedOrder(ctx, order); err != nil {
+				if _, err := m.submitValidatedOrder(ctx, order, false); err != nil {
 					// order could not be submitted, it's then been rejected
 					// we just completely remove it.
 					toRemove = append(toRemove, order)
@@ -765,7 +763,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Cancel all the orders that were invalid
 	for _, order := range ordersToCancel {
-		m.cancelOrder(ctx, order.PartyID, order.Id, false)
+		m.cancelOrder(ctx, order.PartyId, order.Id, false)
 	}
 
 	// Send an event bus update
@@ -804,7 +802,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
-		_, err := m.cancelOrder(ctx, order.PartyID, order.Id, false)
+		_, err := m.cancelOrder(ctx, order.PartyId, order.Id, false)
 		if err != nil {
 			m.log.Error("Failed to cancel order", logging.String("OrderID", order.Id))
 		}
@@ -1026,7 +1024,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
-	conf, err := m.submitOrder(ctx, order, true)
+	conf, err := m.submitOrder(ctx, order, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1038,7 +1036,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return conf, nil
 }
 
-func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool) (*types.OrderConfirmation, error) {
+func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool, failOnLPMarginShortfall bool) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1067,7 +1065,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	}
 
 	// Now that validation is handled, call the code to place the order
-	orderConf, err := m.submitValidatedOrder(ctx, order)
+	orderConf, err := m.submitValidatedOrder(ctx, order, failOnLPMarginShortfall)
 	if err == nil {
 		orderValidity = "valid"
 	}
@@ -1088,7 +1086,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	return orderConf, err
 }
 
-func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order, failOnLPMarginShortfall bool) (*types.OrderConfirmation, error) {
 	isPegged := (order.PeggedOrder != nil)
 	if isPegged {
 		order.Status = types.Order_STATUS_PARKED
@@ -1128,7 +1126,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
-		if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
+		if _, err := m.checkMarginForOrder(ctx, pos, order, failOnLPMarginShortfall); err != nil {
 			if _, err := m.position.UnregisterOrder(order); err != nil {
 				m.log.Error("Unable to unregister potential trader positions",
 					logging.String("market-id", m.GetID()),
@@ -1378,8 +1376,7 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
 	if len(margins) > 0 {
-		// TODO(): handle market makers penalties
-		transfers, closed, _, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 		if err == nil && len(transfers) > 0 {
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
@@ -1389,6 +1386,17 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 			if err != nil {
 				m.log.Error("unable to close out traders",
 					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+		}
+		// if bondPenalties is not nil then we return an error as well, it means the trader did not have enough
+		// monies to reach the InitialMargin
+		for _, bp := range bondPenalties {
+			err := m.applyBondPenalty(ctx, order.PartyId, bp.MarginShortFall(), bp.Asset())
+			if err != nil {
+				m.log.Error("unable to apply bond penalty",
+					logging.String("market-id", m.GetID()),
+					logging.String("party-id", order.PartyId),
 					logging.Error(err))
 			}
 		}
@@ -1809,10 +1817,10 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 }
 
 //TODO: Don't return transfers
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (*types.Transfer, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
-	return m.calcMargins(ctx, pos, order)
+	return m.calcMargins(ctx, pos, order, failOnLPMarginShortfall)
 }
 
 // this function handles moving money after settle MTM + risk margin updates
@@ -2261,7 +2269,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		} else {
 			// We got a new valid price, if we are parked we need to unpark
 			if amendedOrder.Status == types.Order_STATUS_PARKED {
-				orderConf, err := m.submitValidatedOrder(ctx, amendedOrder)
+				orderConf, err := m.submitValidatedOrder(ctx, amendedOrder, false)
 				if err != nil {
 					// If we cannot submit a new order then the amend has failed, return the error
 					return nil, err
@@ -2333,7 +2341,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// will be updated later on for sure.
 
 	if priceIncrease || sizeIncrease {
-		if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+		if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
 			// Undo the position registering
 			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 			if err1 != nil {
@@ -2979,7 +2987,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+	if err := m.createAndUpdateOrders(ctx, newOrders, amendments, true); err != nil {
 		return err
 	}
 
@@ -2994,10 +3002,10 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 		return err
 	}
 
-	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+	return m.createAndUpdateOrders(ctx, newOrders, amendments, false)
 }
 
-func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
+func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment, failOnLPMarginShortfall bool) (err error) {
 	submittedIDs := []string{}
 	// submitted order rollback
 	defer func() {
@@ -3018,7 +3026,7 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range newOrders {
-		if _, err := m.submitOrder(ctx, order, false); err != nil {
+		if _, err := m.submitOrder(ctx, order, false, failOnLPMarginShortfall); err != nil {
 			return err
 		}
 		submittedIDs = append(submittedIDs, order.Id)
@@ -3054,6 +3062,35 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}
 
 	return nil
+}
+
+func (m *Market) applyBondPenalty(ctx context.Context, partyID string, marginShorfall uint64, asset string) error {
+	//TODO: use network parameter
+	//TODO: handle the case where we don't apply penalty (on transition from auction)
+
+	if marginShorfall <= 0 {
+		return nil
+	}
+
+	bondPenaltyParameter := 0.1
+	penalty := int64(bondPenaltyParameter * float64(marginShorfall))
+	transfer := &types.Transfer{
+		Owner: partyID,
+		Amount: &types.FinancialAmount{
+			Amount: penalty,
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+		MinAmount: penalty,
+	}
+	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, partyID, transfer)
+	if err != nil {
+		return err
+	}
+	evt := events.NewTransferResponse(ctx, []*types.TransferResponse{tresp})
+	m.broker.Send(evt)
+	return nil
+
 }
 
 func (m *Market) canTrade() bool {

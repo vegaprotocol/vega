@@ -983,6 +983,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 
 	// we do not have enough money to get to the minimum amount,
 	// we return an error.
+	//TODO: WG (31/01/21): Don't get this, so what that we have enough money in margin account (and say 0 in general) if margin is the one we're meant to be transferring to
 	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.MinAmount) {
 		return nil, mevt, ErrMinAmountNotReached
 	}
@@ -991,6 +992,9 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		// this is a liquiddity provider but it did not have enough funds to
 		// pay from the general account, we'll have to penalize later on
 		mevt.marginShortFall = uint64(transfer.Amount.Amount) - mevt.general.Balance
+		if mevt.marginShortFall > mevt.GeneralBalance() {
+			return nil, mevt, ErrMinAmountNotReached
+		}
 	}
 
 	// from here we know there's enough money,
@@ -1129,6 +1133,18 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		return nil, err
 	}
 
+	// the accounts for the trader we need
+	margin, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the margin trader account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
 	insurancePool, err := e.GetAccountByID(e.accountID(market, systemOwner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_INSURANCE))
 	if err != nil {
@@ -1158,7 +1174,7 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_BOND_SLASHING:
-		treq.FromAccount = []*types.Account{bond}
+		treq.FromAccount = []*types.Account{bond, margin}
 		treq.ToAccount = []*types.Account{insurancePool}
 		return treq, nil
 	default:
