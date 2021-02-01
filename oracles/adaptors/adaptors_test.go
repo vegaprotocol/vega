@@ -1,4 +1,4 @@
-package adaptors
+package adaptors // TODO Move to adaptors_test package
 
 import (
 	"encoding/json"

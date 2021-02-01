@@ -1,6 +1,7 @@
-package adaptors
+package adaptors_test
 
 import (
+	"code.vegaprotocol.io/vega/oracles/adaptors"
 	"encoding/json"
 	"testing"
 
@@ -27,7 +28,7 @@ func testOpenOracleAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 	})
 
 	// when
-	normalisedData, err := NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
 
 	// then
 	assert.Error(t, err)
@@ -83,7 +84,7 @@ func testOpenOracleAdaptorNormalisingCompatibleButInvalidDataFails(t *testing.T)
 	})
 
 	// when
-	normalisedData, err := NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
 
 	// then
 	assert.Error(t, err)
@@ -139,7 +140,7 @@ func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T
 	})
 
 	// when
-	normalisedData, err := NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
 
 	// then
 	expectedData := oracles.OracleData{
