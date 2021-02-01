@@ -661,7 +661,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	// Reprice all the pegged order
 	for _, order := range m.peggedOrders {
 		if HasReferenceMoved(order, changes) {
-			if price, err := m.getNewPeggedPrice(ctx, order); err != nil {
+			if price, err := m.getNewPeggedPrice(order); err != nil {
 				// Failed to reprice, if we are parked we do nothing, if not parked we need to park
 				if order.Status != types.Order_STATUS_PARKED {
 					order.UpdatedAt = m.currentTime.UnixNano()
@@ -699,7 +699,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	return repriceCount
 }
 
-func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uint64, error) {
+func (m *Market) getNewPeggedPrice(order *types.Order) (uint64, error) {
 	var (
 		err   error
 		price uint64
@@ -734,7 +734,7 @@ func (m *Market) getNewPeggedPrice(ctx context.Context, order *types.Order) (uin
 // Reprice a pegged order. This only updates the price on the order
 func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) error {
 	// Work out the new price of the order
-	price, err := m.getNewPeggedPrice(ctx, order)
+	price, err := m.getNewPeggedPrice(order)
 	if err != nil {
 		return err
 	}
@@ -2931,12 +2931,8 @@ func (m *Market) OnMarketLiquidityProvidersFeeDistribitionTimeStep(d time.Durati
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
-// TODO(gchaincl,peterbarrow): getNewPeggedPrice should update its signature to:
-// 1. do not accept a context, since it's not being used
-// 2. receive a PeggedOrder instead of an Order.
 func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 	return m.getNewPeggedPrice(
-		context.Background(),
 		&types.Order{PeggedOrder: po},
 	)
 }
