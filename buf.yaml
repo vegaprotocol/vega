@@ -6,6 +6,7 @@ build:
     - proto
     - vendor
   excludes:
+    - proto/tm
     - vendor/github.com/ethereum
     - vendor/github.com/tendermint
     - vendor/github.com/gogo
@@ -16,16 +17,15 @@ lint:
     - DEFAULT
     - FILE_LOWER_SNAKE_CASE
   except:
-    - PACKAGE_AFFINITY
     - PACKAGE_DIRECTORY_MATCH
-    - PACKAGE_SAME_DIRECTORY
+    - PACKAGE_VERSION_SUFFIX
   ignore:
     - google/
     - github.com/
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: false
-  rpc_allow_google_protobuf_empty_requests: true
-  rpc_allow_google_protobuf_empty_responses: true
+  rpc_allow_google_protobuf_empty_requests: false
+  rpc_allow_google_protobuf_empty_responses: false
 breaking:
   use:
     - WIRE_JSON
