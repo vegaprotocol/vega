@@ -296,7 +296,11 @@ run() {
 		;;
 	staticcheck) ## Run staticcheck
 		staticcheck -checks 'all,-SA1019,-ST1000,-ST1021' ./...
-		return $?
+		return "$?"
+		;;
+	buflint) ## Run
+		buf lint
+		return "$?"
 		;;
 	semgrep) ## Run semgrep
 		semgrep -f "p/dgryski.semgrep-go"
