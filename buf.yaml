@@ -6,7 +6,6 @@ build:
     - proto
     - vendor
   excludes:
-    - proto/tm
     - vendor/github.com/ethereum
     - vendor/github.com/tendermint
     - vendor/github.com/gogo
@@ -20,6 +19,7 @@ lint:
     - PACKAGE_DIRECTORY_MATCH
     - PACKAGE_VERSION_SUFFIX
   ignore:
+    - proto/tm
     - google/
     - github.com/
   enum_zero_value_suffix: _UNSPECIFIED

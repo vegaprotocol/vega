@@ -38,7 +38,7 @@ func intoTMValidatorUpdates(ups []*ValidatorUpdate) []types.ValidatorUpdate {
 func (RequestInitChain) FromTM(t *types.RequestInitChain) *RequestInitChain {
 	return &RequestInitChain{
 		Time:          t.Time.UnixNano(),
-		ChainID:       t.ChainId,
+		ChainId:       t.ChainId,
 		Validators:    fromTMValidatorUpdates(t.Validators),
 		AppStateBytes: t.AppStateBytes,
 	}
@@ -47,7 +47,7 @@ func (RequestInitChain) FromTM(t *types.RequestInitChain) *RequestInitChain {
 func (r *RequestInitChain) IntoTM() types.RequestInitChain {
 	return types.RequestInitChain{
 		Time:          vegatime.UnixNano(r.Time),
-		ChainId:       r.ChainID,
+		ChainId:       r.ChainId,
 		Validators:    intoTMValidatorUpdates(r.Validators),
 		AppStateBytes: r.AppStateBytes,
 	}

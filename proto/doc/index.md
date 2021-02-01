@@ -326,6 +326,31 @@
 - [github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto](#github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto)
     - [StreamError](#grpc.gateway.runtime.StreamError)
   
+- [tm/replay.proto](#tm/replay.proto)
+    - [BlockParams](#tm.BlockParams)
+    - [ConsensusParams](#tm.ConsensusParams)
+    - [Event](#tm.Event)
+    - [EventAttribute](#tm.EventAttribute)
+    - [Evidence](#tm.Evidence)
+    - [EvidenceParams](#tm.EvidenceParams)
+    - [Header](#tm.Header)
+    - [LastCommitInfo](#tm.LastCommitInfo)
+    - [PublicKey](#tm.PublicKey)
+    - [RequestBeginBlock](#tm.RequestBeginBlock)
+    - [RequestDeliverTx](#tm.RequestDeliverTx)
+    - [RequestInitChain](#tm.RequestInitChain)
+    - [ResponseBeginBlock](#tm.ResponseBeginBlock)
+    - [ResponseDeliverTx](#tm.ResponseDeliverTx)
+    - [ResponseInitChain](#tm.ResponseInitChain)
+    - [TmEvent](#tm.TmEvent)
+    - [Validator](#tm.Validator)
+    - [ValidatorParams](#tm.ValidatorParams)
+    - [ValidatorUpdate](#tm.ValidatorUpdate)
+    - [VersionParams](#tm.VersionParams)
+    - [VoteInfo](#tm.VoteInfo)
+  
+    - [EvidenceType](#tm.EvidenceType)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -5544,6 +5569,391 @@ streaming rpc returns an error.
 
 
  
+
+ 
+
+ 
+
+ 
+
+
+
+<a name="tm/replay.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tm/replay.proto
+
+
+
+<a name="tm.BlockParams"></a>
+
+### BlockParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| max_bytes | [int64](#int64) |  |  |
+| max_gas | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tm.ConsensusParams"></a>
+
+### ConsensusParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| block | [BlockParams](#tm.BlockParams) |  |  |
+| evidence | [EvidenceParams](#tm.EvidenceParams) |  |  |
+| validator | [ValidatorParams](#tm.ValidatorParams) |  |  |
+| version | [VersionParams](#tm.VersionParams) |  |  |
+
+
+
+
+
+
+<a name="tm.Event"></a>
+
+### Event
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| attributes | [EventAttribute](#tm.EventAttribute) | repeated |  |
+
+
+
+
+
+
+<a name="tm.EventAttribute"></a>
+
+### EventAttribute
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [bytes](#bytes) |  |  |
+| value | [bytes](#bytes) |  |  |
+| index | [bool](#bool) |  | nondeterministic |
+
+
+
+
+
+
+<a name="tm.Evidence"></a>
+
+### Evidence
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [EvidenceType](#tm.EvidenceType) |  |  |
+| validator | [Validator](#tm.Validator) |  |  |
+| height | [int64](#int64) |  |  |
+| time | [int64](#int64) |  |  |
+| total_voting_power | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tm.EvidenceParams"></a>
+
+### EvidenceParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| max_age_num_blocks | [int64](#int64) |  |  |
+| max_age_duration | [int64](#int64) |  |  |
+| max_num | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="tm.Header"></a>
+
+### Header
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chain_id | [string](#string) |  |  |
+| height | [int64](#int64) |  |  |
+| time | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tm.LastCommitInfo"></a>
+
+### LastCommitInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| round | [int32](#int32) |  |  |
+| votes | [VoteInfo](#tm.VoteInfo) | repeated |  |
+
+
+
+
+
+
+<a name="tm.PublicKey"></a>
+
+### PublicKey
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ed25519 | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tm.RequestBeginBlock"></a>
+
+### RequestBeginBlock
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| hash | [bytes](#bytes) |  |  |
+| header | [Header](#tm.Header) |  |  |
+| last_commit_info | [LastCommitInfo](#tm.LastCommitInfo) |  |  |
+| byzantine_validators | [Evidence](#tm.Evidence) | repeated |  |
+
+
+
+
+
+
+<a name="tm.RequestDeliverTx"></a>
+
+### RequestDeliverTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tx | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tm.RequestInitChain"></a>
+
+### RequestInitChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| time | [int64](#int64) |  |  |
+| chain_id | [string](#string) |  |  |
+| consensus_params | [ConsensusParams](#tm.ConsensusParams) |  |  |
+| validators | [ValidatorUpdate](#tm.ValidatorUpdate) | repeated |  |
+| app_state_bytes | [bytes](#bytes) |  |  |
+| initial_height | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tm.ResponseBeginBlock"></a>
+
+### ResponseBeginBlock
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| events | [Event](#tm.Event) | repeated |  |
+
+
+
+
+
+
+<a name="tm.ResponseDeliverTx"></a>
+
+### ResponseDeliverTx
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| code | [uint32](#uint32) |  |  |
+| data | [bytes](#bytes) |  |  |
+| log | [string](#string) |  | nondeterministic |
+| info | [string](#string) |  | nondeterministic |
+| gas_wanted | [int64](#int64) |  |  |
+| gas_used | [int64](#int64) |  |  |
+| events | [Event](#tm.Event) | repeated |  |
+| codespace | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="tm.ResponseInitChain"></a>
+
+### ResponseInitChain
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| consensus_params | [ConsensusParams](#tm.ConsensusParams) |  |  |
+| validators | [ValidatorUpdate](#tm.ValidatorUpdate) | repeated |  |
+| app_hash | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="tm.TmEvent"></a>
+
+### TmEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| req_init_chain | [RequestInitChain](#tm.RequestInitChain) |  |  |
+| res_init_chain | [ResponseInitChain](#tm.ResponseInitChain) |  |  |
+| req_deliver_tx | [RequestDeliverTx](#tm.RequestDeliverTx) |  |  |
+| res_deliver_tx | [ResponseDeliverTx](#tm.ResponseDeliverTx) |  |  |
+| req_begin_block | [RequestBeginBlock](#tm.RequestBeginBlock) |  |  |
+| res_begin_block | [ResponseBeginBlock](#tm.ResponseBeginBlock) |  |  |
+
+
+
+
+
+
+<a name="tm.Validator"></a>
+
+### Validator
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [bytes](#bytes) |  |  |
+| power | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tm.ValidatorParams"></a>
+
+### ValidatorParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pub_key_types | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="tm.ValidatorUpdate"></a>
+
+### ValidatorUpdate
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pub_key | [PublicKey](#tm.PublicKey) |  |  |
+| power | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="tm.VersionParams"></a>
+
+### VersionParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| app_version | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="tm.VoteInfo"></a>
+
+### VoteInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| validator | [Validator](#tm.Validator) |  |  |
+| signed_last_block | [bool](#bool) |  |  |
+
+
+
+
+
+ 
+
+
+<a name="tm.EvidenceType"></a>
+
+### EvidenceType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 |  |
+| DUPLICATE_VOTE | 1 |  |
+| LIGHT_CLIENT_ATTACK | 2 |  |
+
 
  
 
