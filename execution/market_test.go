@@ -2956,8 +2956,8 @@ func TestPenaliseLPWhenMarginInsufficient(t *testing.T) {
 	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
-	assert.NotNil(t, confirmationBuyAux1)
-	assert.NoError(t, err)
+	require.NotNil(t, confirmationBuyAux1)
+	require.NoError(t, err)
 
 	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
 

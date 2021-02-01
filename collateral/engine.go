@@ -1133,18 +1133,6 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		return nil, err
 	}
 
-	// the accounts for the trader we need
-	margin, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the margin trader account",
-			logging.String("owner-id", t.Owner),
-			logging.String("market-id", market),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
 	insurancePool, err := e.GetAccountByID(e.accountID(market, systemOwner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_INSURANCE))
 	if err != nil {
@@ -1174,6 +1162,17 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_BOND_SLASHING:
+		// the accounts for the trader we need
+		margin, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		if err != nil {
+			e.log.Error(
+				"Failed to get the margin trader account",
+				logging.String("owner-id", t.Owner),
+				logging.String("market-id", market),
+				logging.Error(err),
+			)
+			return nil, err
+		}
 		treq.FromAccount = []*types.Account{bond, margin}
 		treq.ToAccount = []*types.Account{insurancePool}
 		return treq, nil
