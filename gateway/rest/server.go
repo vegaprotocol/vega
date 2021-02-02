@@ -73,7 +73,7 @@ func (s *ProxyServer) Start() {
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
 		Indent:       "  ", // formatted json output
-		OrigName:     true,
+		OrigName:     false,
 	}
 
 	mux := runtime.NewServeMux(
