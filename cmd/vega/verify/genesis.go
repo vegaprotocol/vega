@@ -37,6 +37,11 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		return ""
 	}
 
+	if g.AppState == nil {
+		r.Err("app_state is missing")
+		return ""
+	}
+
 	if g.AppState.Network == nil {
 		r.Err("app_state.network is missing")
 	} else if g.AppState.Network.ReplayAttackThreshold == nil {
