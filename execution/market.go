@@ -1622,6 +1622,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 
 		// add all pegged orders too to the orderUpdates
 		orderUpdates = append(orderUpdates, orders...)
+		//If the party was an LP then cancel commitment, else ignore error
 	}
 
 	// send all orders which got stopped through the event bus
@@ -1850,6 +1851,36 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
 
 	return err
+}
+
+func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Context, partyID string) error {
+	if _, err := m.liquidity.CancelLiquidityProvision(ctx, partyID); err != nil {
+		return err
+	}
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
+	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.Id, asset)
+	if err != nil {
+		return err
+	}
+	var amount int64 = int64(bacc.Balance)
+	transfer := &types.Transfer{
+		Owner: partyID,
+		Amount: &types.FinancialAmount{
+			Amount: amount,
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+		MinAmount: amount,
+	}
+	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, partyID, transfer)
+	if err != nil {
+		return err
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	return nil
 }
 
 func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {
