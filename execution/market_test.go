@@ -67,31 +67,13 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 	}
 
 	// catch all expected calls
-	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(
-		func(evts []events.Event) {
-			// fmt.Printf("SEND BATCH\n\n")
-			// for _, evt := range evts {
-			// 	fmt.Printf("EVENT: %v | %v\n", evt.Type(), evt)
-			// 	if evt.Type() == events.LiquidityProvisionEvent {
-			// 		e := evt.(*events.LiquidityProvision)
-			// 		fmt.Printf("%v\n", e.Proto().Status.String())
-			// 	}
-			// }
-
-		},
-	)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(
 		func(evt events.Event) {
-			// fmt.Printf("EVENT: %v | %v\n", evt.Type(), evt)
 			te := evt.Type()
 			if te == events.OrderEvent {
 				tm.orderEventCount++
-			} else if te == events.LiquidityProvisionEvent {
-				e := evt.(*events.LiquidityProvision)
-				_ = e
-				// fmt.Printf("%v\n", e.Proto().Status.String())
 			}
-
 			tm.eventCount++
 			tm.events = append(tm.events, evt)
 		},
@@ -239,11 +221,12 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 
 func addAccount(market *testMarket, party string) {
 	market.collateraEngine.Deposit(context.Background(), party, market.asset, 1000000000)
-	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
+
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
+	market.broker.EXPECT().Send(gomock.Any()).Times(3)
 	market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
-	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
 
 func TestMarketClosing(t *testing.T) {
