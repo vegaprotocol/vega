@@ -394,6 +394,12 @@ func (e *Engine) GetOpenInterest() uint64 {
 	return openInterest
 }
 
+func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
+	openInterest := e.GetOpenInterest()
+	// TODO: Incorporate info from trades into OI estimate
+	return openInterest
+}
+
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
 func (e *Engine) Positions() []events.MarketPosition {
 	return e.positionsCpy

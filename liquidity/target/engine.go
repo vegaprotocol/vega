@@ -91,6 +91,21 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice ui
 	return float64(markPrice*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
 }
 
+//GetTheoreticalTargetStake returns target stake based current time, risk factors
+//and the supplied trades without modifying the internal state
+func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64, theoreticalOI uint64) float64 {
+	minTime := e.minTime(now)
+	if minTime.After(e.max.Time) {
+		e.computeMaxOI(now, minTime)
+	}
+	maxOI := e.max.OI
+	if theoreticalOI > maxOI {
+		maxOI = theoreticalOI
+	}
+
+	return float64(markPrice*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
+}
+
 func (e *Engine) getMaxFromCurrent() uint64 {
 	if len(e.current) == 0 {
 		return 0

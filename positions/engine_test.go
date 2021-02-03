@@ -256,6 +256,28 @@ func getTestEngine(t *testing.T) *positions.Engine {
 	)
 }
 
+func TestGetOpenInterestGivenTrades(t *testing.T) {
+	//e := getTestEngine(t)
+	//e.GetOpenInterestGivenTrades()
+
+	//A, B represents traders who already have positions
+	//C, D represents traders who don't have positions (but there are entries in "trades" array that contain their trades)
+
+	//None of the parties have positions yet
+	//C: +10, D:-10 => OI: 10
+
+	// Both parties already have positions
+	// A: + 100, B: -100 => OI: 100
+	// A: + 100 - 10, B: -100 + 10=> OI: 90
+	// A: + 100 + 10, B: -100 - 10 => OI: 110
+
+	// There at least 1 new party
+	// A: + 100 + 10, B: -100, C: -10 => OI: 110
+	// A: + 100 - 10, B: -100, C: +10 => OI: 100
+	assert.Fail(t, "WIP")
+
+}
+
 type mp struct {
 	size, buy, sell int64
 	party           string

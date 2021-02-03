@@ -118,6 +118,7 @@ type TargetStakeCalculator interface {
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64
 	UpdateScalingFactor(sFactor float64) error
 	UpdateTimeWindow(tWindow time.Duration)
+	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64, theoreticalOI uint64) float64
 }
 
 // AuctionState ...
@@ -1338,7 +1339,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		m.as, m.currentTime,
 		m.targetStakeTriggeringRatio,
 		float64(m.getSuppliedStake()),
-		m.getTheoreticalTargetStake(trades)
+		m.getTheoreticalTargetStake(trades),
 	)
 
 	if m.as.AuctionStart() {
@@ -1888,14 +1889,13 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 		return err
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
-	
+
 	m.lMonitor.CheckTarget(
 		m.as, m.currentTime,
 		m.targetStakeTriggeringRatio,
 		float64(m.getSuppliedStake()),
 		m.getTargetStake())
-	)
-	
+
 	return nil
 }
 
@@ -3014,9 +3014,15 @@ func (m *Market) getTargetStake() float64 {
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice)
 }
 
-// TODO(gchaincl): Implement this functin properly, using trades.
 func (m *Market) getTheoreticalTargetStake(trades []*types.Trade) float64 {
-	return m.getTargetStake()
+	rf, err := m.getRiskFactors()
+	if err != nil {
+		logging.Error(err)
+		m.log.Debug("unable to get risk factors, can't calculate target")
+		return 0
+	}
+	oi := m.position.GetOpenInterestGivenTrades(trades)
+	return m.tsCalc.GetTheoreticalTargetStake(*rf, m.currentTime, m.markPrice, oi)
 }
 
 func (m *Market) getSuppliedStake() uint64 {
