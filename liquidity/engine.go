@@ -101,6 +101,11 @@ func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	e.stakeToObligationFactor = v
 }
 
+func (e *Engine) IsLiquidityProvider(party string) bool {
+	_, ok := e.provisions[party]
+	return ok
+}
+
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
 	lp := e.provisions[party]
 	if lp == nil {
