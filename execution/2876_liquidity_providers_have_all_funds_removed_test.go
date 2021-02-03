@@ -38,28 +38,28 @@ func TestIssue2876(t *testing.T) {
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(5)
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-0", 20, 3500)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-0", 20, 3500)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-1", 20, 4000)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-1", 20, 4000)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_BUY, "trader-2", 10, 5500)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_BUY, "trader-2", 10, 5500)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order04", types.Side_SIDE_SELL, "trader-2", 10, 5000)
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "trader-2", 10, 5000)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
 	lporder := types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000000,
 		Fee:              "0.01",
 		Buys: []*types.LiquidityOrder{
@@ -151,28 +151,28 @@ func TestIssue2876_NewGetMarket(t *testing.T) {
 
 	tm.broker.EXPECT().Send(gomock.Any()).Times(6)
 	tm.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-0", 20, 3500)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-0", 20, 3500)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
 	tm.broker.EXPECT().Send(gomock.Any()).Times(6)
 	tm.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order02", types.Side_SIDE_SELL, "trader-1", 20, 4000)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-1", 20, 4000)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
 	tm.broker.EXPECT().Send(gomock.Any()).Times(6)
 	tm.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order03", types.Side_SIDE_BUY, "trader-2", 10, 5500)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_BUY, "trader-2", 10, 5500)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
 	tm.broker.EXPECT().Send(gomock.Any()).Times(5)
 	tm.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order04", types.Side_SIDE_SELL, "trader-2", 10, 5000)
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "trader-2", 10, 5000)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -187,7 +187,7 @@ func TestIssue2876_NewGetMarket(t *testing.T) {
 	})
 
 	lporder := types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000000,
 		Fee:              "0.01",
 		Buys: []*types.LiquidityOrder{
@@ -282,12 +282,12 @@ func getTestMarketNoBrokerExpect(t *testing.T, now time.Time, closingAt time.Tim
 	assert.Nil(t, err)
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Symbol: "ETH",
-		ID:     "ETH",
+		Id:     "ETH",
 	})
 
 	// add the token asset
 	tokAsset := types.Asset{
-		ID:          "VOTE",
+		Id:          "VOTE",
 		Name:        "VOTE",
 		Symbol:      "VOTE",
 		Decimals:    5,

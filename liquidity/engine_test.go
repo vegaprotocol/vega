@@ -348,11 +348,11 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:               id,
 		Fee:              "0.2",
-		MarketID:         tng.marketID,
-		PartyID:          party,
+		MarketId:         tng.marketID,
+		PartyId:          party,
 		CreatedAt:        now.UnixNano(),
 		CommitmentAmount: 10,
-		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
 		Buys:             []*types.LiquidityOrderReference{},
 		Sells: []*types.LiquidityOrderReference{
 			{
@@ -379,12 +379,12 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:               id,
-		MarketID:         tng.marketID,
+		MarketId:         tng.marketID,
 		Fee:              "0.3",
-		PartyID:          party,
+		PartyId:          party,
 		CreatedAt:        now.UnixNano(),
 		CommitmentAmount: 10,
-		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
 		Buys:             []*types.LiquidityOrderReference{},
 		Sells:            []*types.LiquidityOrderReference{},
 	})
