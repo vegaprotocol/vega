@@ -225,7 +225,7 @@ func addAccount(market *testMarket, party string) {
 }
 
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
-	market.broker.EXPECT().Send(gomock.Any()).Times(3)
+	// market.broker.EXPECT().Send(gomock.Any()).Times(3)
 	market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
 }
 

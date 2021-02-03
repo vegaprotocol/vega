@@ -143,8 +143,11 @@ func TestIssue2876_NewGetMarket(t *testing.T) {
 	// 2 calls to the mock
 	tm.market.OnChainTimeUpdate(ctx, now)
 	// make accounts
+	tm.broker.EXPECT().Send(gomock.Any()).Times(3)
 	addAccountWithAmount(tm, "trader-0", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).Times(3)
 	addAccountWithAmount(tm, "trader-1", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).Times(3)
 	addAccountWithAmount(tm, "trader-2", 100000000)
 	// update stake factors
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(5)
