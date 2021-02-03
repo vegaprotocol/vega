@@ -207,6 +207,8 @@ func TestInitialDeplyFailsWorksLater(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
 	)
 
+	require.True(t, tng.engine.IsLiquidityProvider(party))
+
 	var (
 		markPrice = uint64(10)
 	)
