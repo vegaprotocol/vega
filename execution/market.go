@@ -1029,9 +1029,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
-		return nil, err
-	}
+	m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order))
 
 	return conf, nil
 }
@@ -1126,11 +1124,19 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order, f
 
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
-		if _, err := m.checkMarginForOrder(ctx, pos, order, failOnLPMarginShortfall); err != nil {
+		if err, lpCloseout := m.checkMarginForOrder(ctx, pos, order, failOnLPMarginShortfall); err != nil {
 			if _, err := m.position.UnregisterOrder(order); err != nil {
 				m.log.Error("Unable to unregister potential trader positions",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
+			}
+			if lpCloseout != nil {
+				if err = m.resolveClosedOutTraders(ctx, []events.Margin{lpCloseout}, order); err != nil {
+					m.log.Error("Unable to closeout a liquidity provider following margin check failure",
+						logging.String("market-id", m.GetID()),
+						logging.String("party", order.PartyId),
+						logging.Error(err))
+				}
 			}
 
 			// adding order to the buffer first
@@ -1381,14 +1387,6 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
 		}
-		if len(closed) > 0 {
-			err = m.resolveClosedOutTraders(ctx, closed, order)
-			if err != nil {
-				m.log.Error("unable to close out traders",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-		}
 		// if bondPenalties is not nil then we return an error as well, it means the trader did not have enough
 		// monies to reach the InitialMargin
 		for _, bp := range bondPenalties {
@@ -1397,6 +1395,14 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 				m.log.Error("unable to apply bond penalty",
 					logging.String("market-id", m.GetID()),
 					logging.String("party-id", order.PartyId),
+					logging.Error(err))
+			}
+		}
+		if len(closed) > 0 {
+			err = m.resolveClosedOutTraders(ctx, closed, order)
+			if err != nil {
+				m.log.Error("unable to close out traders",
+					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
 		}
@@ -1483,6 +1489,12 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			o.Status = types.Order_STATUS_STOPPED // closing out = status STOPPED
 			evts = append(evts, events.NewOrderEvent(ctx, o))
 		}
+		//If the party was an LP then cancel commitment, else ignore error
+		lp := m.liquidity.IsLiquidityProvider(v.Party())
+		if lp {
+
+		}
+
 	}
 
 	// send all orders which got stopped through the event bus
@@ -1543,6 +1555,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			)
 			return err
 		}
+
 		if len(movements.Transfers) > 0 {
 			evt := events.NewTransferResponse(ctx, []*types.TransferResponse{movements})
 			m.broker.Send(evt)
@@ -1703,9 +1716,19 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			logging.String("raw", fmt.Sprintf("%#v", responses)),
 		)
 	}
+
 	// send transfer to buffer
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
 	return err
+}
+
+func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Context, partyID string) error {
+	if err := m.liquidity.CancelLiquidityProvision(ctx, partyID); err != nil {
+		return err
+	}
+
+	//confiscate bond account
+	return nil
 }
 
 func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {
@@ -1817,7 +1840,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 }
 
 //TODO: Don't return transfers
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (*types.Transfer, error) {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (error, events.Margin) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 	return m.calcMargins(ctx, pos, order, failOnLPMarginShortfall)
@@ -2025,9 +2048,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string, force
 	m.checkForReferenceMoves(ctx)
 
 	if foundOnBook {
-		if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
-			return nil, err
-		}
+		m.liquidityUpdate(ctx, []*types.Order{order})
 	}
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
@@ -2079,9 +2100,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
-		return nil, err
-	}
+	m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order))
 
 	return conf, nil
 }
@@ -2341,21 +2360,25 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// will be updated later on for sure.
 
 	if priceIncrease || sizeIncrease {
-		if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
-			// Undo the position registering
-			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
-			if err1 != nil {
-				m.log.Error("Unable to unregister potential amended trader position",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err1))
-			}
+		if err, lpCloseout := m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
+			if lpCloseout != nil {
+				m.resolveClosedOutTraders(ctx, []events.Margin{lpCloseout}, amendedOrder)
+			} else {
+				// Undo the position registering
+				_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
+				if err1 != nil {
+					m.log.Error("Unable to unregister potential amended trader position",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err1))
+				}
 
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("Unable to check/add margin for trader",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
+				if m.log.GetLevel() == logging.DebugLevel {
+					m.log.Debug("Unable to check/add margin for trader",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
+				}
+				return nil, ErrMarginCheckFailed
 			}
-			return nil, ErrMarginCheckFailed
 		}
 	}
 
@@ -2996,13 +3019,23 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	return nil
 }
 
-func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
+func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) {
+
 	newOrders, amendments, err := m.liquidity.Update(ctx, m.markPrice, m.repriceFuncW, orders)
 	if err != nil {
-		return err
+		m.log.Debug("Liquidity update failed for party",
+			logging.String("market-id", m.GetID()),
+			//TODO: Add party id
+			logging.Error(err))
 	}
 
-	return m.createAndUpdateOrders(ctx, newOrders, amendments, false)
+	//TODO: Split by party so that one party doesn't affect the other
+	if err := m.createAndUpdateOrders(ctx, newOrders, amendments, false); err != nil {
+		m.log.Debug("Order creation or update failed during liquidity update",
+			logging.String("market-id", m.GetID()),
+			//TODO: Add party id
+			logging.Error(err))
+	}
 }
 
 func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment, failOnLPMarginShortfall bool) (err error) {

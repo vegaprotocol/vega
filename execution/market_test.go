@@ -2896,7 +2896,7 @@ func TestRejectLiquidityProvisionWithInsufficientMargin(t *testing.T) {
 	require.Equal(t, zero, bondAcc.Balance)
 }
 
-func TestPenaliseLPWhenMarginInsufficient(t *testing.T) {
+func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -2953,6 +2953,12 @@ func TestPenaliseLPWhenMarginInsufficient(t *testing.T) {
 	require.Equal(t, lp1.CommitmentAmount, bondAcc.Balance)
 
 	//TODO: After order fills verify that change in bond acc more than change in general and margin, also, get market insurance pool
+	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
+	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	insurancePoolBalanceBeforeLPCloseout := insurancePool.Balance
+	var zero uint64 = 0
+	require.Equal(t, zero, insurancePoolBalanceBeforeLPCloseout)
+
 	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
@@ -2965,20 +2971,17 @@ func TestPenaliseLPWhenMarginInsufficient(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	var zero uint64 = 0
 	require.Equal(t, zero, genAcc.Balance)
 
 	bondAcc, err = tm.collateraEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
-	require.Greater(t, bondAcc.Balance, zero)
-	require.Less(t, bondAcc.Balance, lp1.CommitmentAmount)
+	require.Equal(t, zero, bondAcc.Balance)
 
-	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
-	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	insurancePool, err = tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	insurancePoolBalanceAfterLPCloseout := insurancePool.Balance
 
 	require.NoError(t, err)
 	require.NotNil(t, insurancePool)
-	require.Greater(t, insurancePool.Balance, zero)
-	//TODO: Check that insurance pool grew
+	require.Greater(t, insurancePoolBalanceAfterLPCloseout, insurancePoolBalanceBeforeLPCloseout)
 }
