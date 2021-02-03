@@ -405,7 +405,7 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		}
 		// Check the type of account and write only the data/keys required for BOND accounts.
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_BOND {
-			bondIDKey := a.badger.accountBondIDKey(acc.Owner, acc.MarketID, acc.Asset)
+			bondIDKey := a.badger.accountBondIDKey(acc.Owner, acc.MarketId, acc.Asset)
 			bondMarketKey := a.badger.accountMarketKey(acc.MarketId, string(bondIDKey))
 			bondAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(bondIDKey))
 			batch[string(bondIDKey)] = buf

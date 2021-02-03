@@ -147,9 +147,9 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 	lp := &types.LiquidityProvision{
 		Id:               id,
 		Fee:              lps.Fee,
-		MarketID:         lps.MarketID,
-		PartyID:          party,
-		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		MarketId:         lps.MarketId,
+		PartyId:          party,
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
 		CreatedAt:        e.currentTime.UnixNano(),
 		CommitmentAmount: lps.CommitmentAmount,
 	}
