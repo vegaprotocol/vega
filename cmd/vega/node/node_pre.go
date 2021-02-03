@@ -30,6 +30,8 @@ import (
 	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
+	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -361,6 +363,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.topology,
 		l.nodeWallet,
 		l.netParams,
+		l.oracles,
 	)
 	if err != nil {
 		return nil, err
@@ -489,6 +492,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
+	}
+
+	l.oracles = &processor.Oracles{
+		Engine:   oracles.NewEngine(),
+		Adaptors: oracleAdaptors.NewAdaptors(),
 	}
 
 	l.genesisHandler.OnGenesisAppStateLoaded(

@@ -41,21 +41,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets     Assets
-	banking    Banking
-	broker     Broker
-	cmd        Commander
-	erc        ExtResChecker
-	evtfwd     EvtForwarder
-	exec       ExecutionEngine
-	ghandler   *genesis.Handler
-	gov        GovernanceEngine
-	notary     Notary
-	stats      Stats
-	time       TimeService
-	top        ValidatorTopology
-	vegaWallet nodewallet.Wallet
-	netp       NetworkParameters
+	assets         Assets
+	banking        Banking
+	broker         Broker
+	cmd            Commander
+	erc            ExtResChecker
+	evtfwd         EvtForwarder
+	exec           ExecutionEngine
+	ghandler       *genesis.Handler
+	gov            GovernanceEngine
+	notary         Notary
+	stats          Stats
+	time           TimeService
+	top            ValidatorTopology
+	vegaWallet     nodewallet.Wallet
+	netp           NetworkParameters
+	oracles        *Oracles
 }
 
 func NewApp(
@@ -77,6 +78,7 @@ func NewApp(
 	top ValidatorTopology,
 	wallet Wallet,
 	netp NetworkParameters,
+	oracles *Oracles,
 ) (*App, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -111,6 +113,7 @@ func NewApp(
 		top:        top,
 		vegaWallet: vegaWallet,
 		netp:       netp,
+		oracles:    oracles,
 	}
 
 	// setup handlers
@@ -526,7 +529,12 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return errors.New("not implemented")
+	oracleData, err := app.oracles.Adaptors.Normalise(*data)
+	if err != nil {
+		return err
+	}
+
+	return app.oracles.Engine.BroadcastData(*oracleData)
 }
 
 func (app *App) CheckSubmitOracleData(ctx context.Context, tx abci.Tx) error {
@@ -535,7 +543,8 @@ func (app *App) CheckSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return errors.New("not implemented")
+	_, err := app.oracles.Adaptors.Normalise(*data)
+	return err
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {

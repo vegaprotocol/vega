@@ -12,21 +12,22 @@ import (
 )
 
 type procTest struct {
-	eng    *mocks.MockExecutionEngine
-	ts     *mocks.MockTimeService
-	stat   *mocks.MockStats
-	tickCB func(context.Context, time.Time)
-	ctrl   *gomock.Controller
-	cmd    *mocks.MockCommander
-	wallet *mocks.MockWallet
-	assets *mocks.MockAssets
-	top    *mocks.MockValidatorTopology
-	gov    *mocks.MockGovernanceEngine
-	notary *mocks.MockNotary
-	evtfwd *mocks.MockEvtForwarder
-	erc    *mocks.MockExtResChecker
-	bank   *mocks.MockBanking
-	netp   *mocks.MockNetworkParameters
+	eng     *mocks.MockExecutionEngine
+	ts      *mocks.MockTimeService
+	stat    *mocks.MockStats
+	tickCB  func(context.Context, time.Time)
+	ctrl    *gomock.Controller
+	cmd     *mocks.MockCommander
+	wallet  *mocks.MockWallet
+	assets  *mocks.MockAssets
+	top     *mocks.MockValidatorTopology
+	gov     *mocks.MockGovernanceEngine
+	notary  *mocks.MockNotary
+	evtfwd  *mocks.MockEvtForwarder
+	erc     *mocks.MockExtResChecker
+	bank    *mocks.MockBanking
+	netp    *mocks.MockNetworkParameters
+	oracles *stubOracles
 }
 
 type stubWallet struct {
@@ -34,6 +35,11 @@ type stubWallet struct {
 	chain  string
 	signed []byte
 	err    error
+}
+
+type stubOracles struct {
+	Engine *mocks.MockOraclesEngine
+	Adaptors *mocks.MockOracleAdaptors
 }
 
 func getTestProcessor(t *testing.T) *procTest {
@@ -51,6 +57,10 @@ func getTestProcessor(t *testing.T) *procTest {
 	erc := mocks.NewMockExtResChecker(ctrl)
 	bank := mocks.NewMockBanking(ctrl)
 	netp := mocks.NewMockNetworkParameters(ctrl)
+	oracles := &stubOracles{
+		Engine:   mocks.NewMockOraclesEngine(ctrl),
+		Adaptors: mocks.NewMockOracleAdaptors(ctrl),
+	}
 
 	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(context.Context, time.Time)
@@ -62,21 +72,22 @@ func getTestProcessor(t *testing.T) *procTest {
 	top.EXPECT().IsValidator().AnyTimes().Return(true)
 
 	return &procTest{
-		eng:    eng,
-		ts:     ts,
-		stat:   stat,
-		tickCB: cb,
-		ctrl:   ctrl,
-		cmd:    cmd,
-		wallet: wallet,
-		assets: assets,
-		top:    top,
-		gov:    gov,
-		notary: notary,
-		evtfwd: evtfwd,
-		erc:    erc,
-		bank:   bank,
-		netp:   netp,
+		eng:     eng,
+		ts:      ts,
+		stat:    stat,
+		tickCB:  cb,
+		ctrl:    ctrl,
+		cmd:     cmd,
+		wallet:  wallet,
+		assets:  assets,
+		top:     top,
+		gov:     gov,
+		notary:  notary,
+		evtfwd:  evtfwd,
+		erc:     erc,
+		bank:    bank,
+		netp:    netp,
+		oracles: oracles,
 	}
 }
 
