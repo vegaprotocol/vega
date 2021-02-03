@@ -1796,25 +1796,6 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	return m.calcMargins(ctx, pos, order)
 }
 
-// this function handles moving money after settle MTM + risk margin updates
-// but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin, price uint64, pos *positions.MarketPosition) (events.Risk, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
-	defer timer.EngineTimeCounterAdd()
-
-	// let risk engine do its thing here - it returns a slice of money that needs
-	// to be moved to and from margin accounts
-	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(ctx, e, price)
-	if err != nil {
-		return nil, err
-	}
-	if riskUpdate == nil {
-		return nil, nil
-	}
-
-	return riskUpdate, nil
-}
-
 func (m *Market) setMarkPrice(trade *types.Trade) {
 	// The current mark price calculation is simply the last trade
 	// in the future this will use varying logic based on market config
