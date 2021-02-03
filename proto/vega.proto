@@ -76,13 +76,13 @@ message RiskFactor {
 // Risk results are calculated internally by Vega to attempt to maintain safe trading
 message RiskResult {
   // Timestamp for when risk factors were generated
-  int64 updatedTimestamp = 1;
+  int64 updated_timestamp = 1;
   // Risk factors (long and short) for each margin-able asset/currency (usually == settlement assets) in the market
-  map<string, RiskFactor> riskFactors = 2;
+  map<string, RiskFactor> risk_factors = 2;
   // Timestamp for when risk factors are expected to change (or empty if risk factors are continually updated)
-  int64 nextUpdateTimestamp = 3;
+  int64 next_update_timestamp = 3;
   // Predicted risk factors at next change (what they would be if the change occurred now)
-  map<string, RiskFactor> predictedNextRiskFactors = 4;
+  map<string, RiskFactor> predicted_next_risk_factors = 4;
 }
 
 // Auction triggers indicate what condition triggered an auction (if market is in auction mode)
@@ -128,19 +128,19 @@ message Order {
   // See [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail
   enum TimeInForce {
     // Default value for TimeInForce, can be valid for an amend
-    TIF_UNSPECIFIED = 0;
+    TIME_IN_FORCE_UNSPECIFIED = 0;
     // Good until cancelled
-    TIF_GTC = 1;
+    TIME_IN_FORCE_GTC = 1;
     // Good until specified time
-    TIF_GTT = 2;
+    TIME_IN_FORCE_GTT = 2;
     // Immediate or cancel
-    TIF_IOC = 3;
+    TIME_IN_FORCE_IOC = 3;
     // Fill or kill
-    TIF_FOK = 4;
+    TIME_IN_FORCE_FOK = 4;
     // Good for auction
-    TIF_GFA = 5;
+    TIME_IN_FORCE_GFA = 5;
     // Good for normal
-    TIF_GFN = 6;
+    TIME_IN_FORCE_GFN = 6;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -167,7 +167,7 @@ message Order {
   // See resulting status in [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.
   enum Status {
     // Default value, always invalid
-    STATUS_INVALID = 0;
+    STATUS_UNSPECIFIED = 0;
     // Used for active unfilled or partially filled orders
     STATUS_ACTIVE = 1;
     // Used for expired GTT orders
@@ -193,9 +193,9 @@ message Order {
   // Unique identifier for the order (set by the system after consensus)
   string id = 1;
   // Market identifier for the order
-  string marketID = 2;
+  string market_id = 2;
   // Party identifier for the order
-  string partyID = 3;
+  string party_id = 3;
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL - See [`Side`](#vega.Side)
   Side side = 4;
   // Price for the order, the price is an integer, for example `123456` is a correctly
@@ -207,18 +207,18 @@ message Order {
   uint64 remaining = 7;
   // Time in force indicates how long an order will remain active before it is executed or expires.
   // - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
-  TimeInForce timeInForce = 8;
+  TimeInForce time_in_force = 8;
   // Type for the order - See [`Order.Type`](#vega.Order.Type)
   Type type = 9;
   // Timestamp for when the order was created at, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 createdAt = 10;
+  int64 created_at = 10;
   // The current status for the order. See [`Order.Status`](#vega.Order.Status)
   // - For detail on `STATUS_REJECTED` please check the [`OrderError`](#vega.OrderError) value given in the `reason` field
   Status status = 11;
   // Timestamp for when the order will expire, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
-  int64 expiresAt = 12;
+  int64 expires_at = 12;
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus
   // - Currently set internally by the node to return a unique reference identifier for the order submission
   string reference = 13;
@@ -227,14 +227,14 @@ message Order {
   OrderError reason = 14;
   // Timestamp for when the Order was last updated, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 updatedAt = 15;
+  int64 updated_at = 15;
   // The version for the order, initial value is version 1 and is incremented after each successful amend
   uint64 version = 16;
   // Batch identifier for the order, used internally for orders submitted during auctions
   // to keep track of the auction batch this order falls under (required for fees calculation)
-  uint64 batchID = 17;
+  uint64 batch_id = 17;
   // Pegged order details, used only if the order represents a pegged order.
-  PeggedOrder peggedOrder = 18;
+  PeggedOrder pegged_order = 18;
 }
 
 // Used when cancelling an Order
@@ -250,28 +250,28 @@ message OrderConfirmation {
   // 0 or more trades that were emitted
   repeated Trade trades = 2;
   // 0 or more passive orders that were affected
-  repeated Order passiveOrdersAffected = 3;
+  repeated Order passive_orders_affected = 3;
 }
 
 // AuctionIndicativeState is used to emit an event with the indicative price/volume per market during an auction
 message AuctionIndicativeState {
   // The market identifier for which this state relates to
-  string marketID = 1;
+  string market_id = 1;
   // The Indicative Uncrossing Price is the price at which all trades would occur if we uncrossed the auction now
-  uint64 indicativePrice = 2;
+  uint64 indicative_price = 2;
   // The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if we uncrossed the auction now
-  uint64 indicativeVolume = 3;
+  uint64 indicative_volume = 3;
   // The timestamp at which the auction started
-  int64 auctionStart = 4;
+  int64 auction_start = 4;
   // The timestamp at which the auction is meant to stop
-  int64 auctionEnd = 5;
+  int64 auction_end = 5;
 }
 
 // OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue
 // with an order during its life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 enum OrderError {
   // Default value, no error reported
-  ORDER_ERROR_NONE = 0;
+  ORDER_ERROR_UNSPECIFIED = 0;
   // Order was submitted for a market that does not exist
   ORDER_ERROR_INVALID_MARKET_ID = 1;
   // Order was submitted with an invalid identifier
@@ -317,8 +317,8 @@ enum OrderError {
   ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES = 21;
   // Order was submitted with an incorrect or invalid market type
   ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
-	// Order was submitted with invalid time in force
-	ORDER_ERROR_INVALID_TIME_IN_FORCE = 23;
+  // Order was submitted with invalid time in force
+  ORDER_ERROR_INVALID_TIME_IN_FORCE = 23;
   // A GFN order has got to the market when it is in auction mode
   ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION = 24;
   // A GFA order has got to the market when it is in continuous trading mode
@@ -356,7 +356,7 @@ enum OrderError {
   // Sell pegged order cannot reference best bid price
   ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE = 41;
   // Pegged order offset must be > zero
-	ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO = 42;
+  ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO = 42;
   // The party has an insufficient balance, or does not have
   // a general account to submit the order (no deposits made
   // for the required asset)
@@ -376,9 +376,7 @@ enum OrderError {
 
 // A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega
 message Trade {
-
   // Type values for a trade
-  //
   enum Type {
     // Default value, always invalid
     TYPE_UNSPECIFIED = 0;
@@ -399,7 +397,7 @@ message Trade {
   // Unique identifier for the trade (generated by Vega)
   string id = 1;
   // Market identifier (the market that the trade occurred on)
-  string marketID = 2;
+  string market_id = 2;
   // Price for the trade, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
   uint64 price = 3;
@@ -412,32 +410,32 @@ message Trade {
   // Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL - See [`Side`](#vega.Side)
   Side aggressor = 7;
   // Identifier of the order from the buy side
-  string buyOrder = 8;
+  string buy_order = 8;
   // Identifier of the order from the sell side
-  string sellOrder = 9;
+  string sell_order = 9;
   // Timestamp for when the trade occurred, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 10;
   // Type for the trade - See [`Trade.Type`](#vega.Trade.Type)
   Type type = 11;
   // Fee amount charged to the buyer party for the trade
-  Fee buyerFee = 12;
+  Fee buyer_fee = 12;
   // Fee amount charged to the seller party for the trade
-  Fee sellerFee = 13;
+  Fee seller_fee = 13;
   // Auction batch number that the buy side order was placed in
-  uint64 buyerAuctionBatch = 14;
+  uint64 buyer_auction_batch = 14;
   // Auction batch number that the sell side order was placed in
-  uint64 sellerAuctionBatch = 15;
+  uint64 seller_auction_batch = 15;
 }
 
 // Represents any fees paid by a party, resulting from a trade
 message Fee {
   // Fee amount paid to the non-aggressive party of the trade
-  uint64 makerFee = 1;
+  uint64 maker_fee = 1;
   // Fee amount paid for maintaining the Vega infrastructure
-  uint64 infrastructureFee = 2;
+  uint64 infrastructure_fee = 2;
   // Fee amount paid to market makers
-  uint64 liquidityFee = 3;
+  uint64 liquidity_fee = 3;
 }
 
 message TradeSet {
@@ -473,7 +471,7 @@ message PriceLevel {
   // formatted price of `1.23456` assuming market configured to 5 decimal places
   uint64 price = 1;
   // Number of orders at the price level
-  uint64 numberOfOrders = 2;
+  uint64 number_of_orders = 2;
   // Volume at the price level
   uint64 volume = 3;
 }
@@ -481,44 +479,44 @@ message PriceLevel {
 // Represents market depth or order book data for the specified market on Vega
 message MarketDepth {
   // Market identifier
-  string marketID = 1;
+  string market_id = 1;
   // Collection of price levels for the buy side of the book
   repeated PriceLevel buy = 2;
   // Collection of price levels for the sell side of the book
   repeated PriceLevel sell = 3;
   // Sequence number for the market depth data returned
-  uint64 sequenceNumber = 4;
+  uint64 sequence_number = 4;
 }
 
 // Represents the changed market depth since the last update
 message MarketDepthUpdate {
   // Market identifier
-  string marketID = 1;
+  string market_id = 1;
   // Collection of updated price levels for the buy side of the book
   repeated PriceLevel buy = 2;
   // Collection of updated price levels for the sell side of the book
   repeated PriceLevel sell = 3;
   // Sequence number for the market depth update data returned
-  uint64 sequenceNumber = 4;
+  uint64 sequence_number = 4;
 }
 
 // Represents position data for a party on the specified market on Vega
 message Position{
   // Market identifier
-  string marketID = 1;
+  string market_id = 1;
   // Party identifier
-  string partyID = 2;
+  string party_id = 2;
   // Open volume for the position, value is signed +ve for long and -ve for short
-  int64 openVolume = 3;
+  int64 open_volume = 3;
   // Realised profit and loss for the position, value is signed +ve for long and -ve for short
-  int64 realisedPNL  = 4;
+  int64 realised_pnl  = 4;
   // Unrealised profit and loss for the position, value is signed +ve for long and -ve for short
-  int64 unrealisedPNL = 5;
+  int64 unrealised_pnl = 5;
   // Average entry price for the position, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 averageEntryPrice = 6;
+  uint64 average_entry_price = 6;
   // Timestamp for the latest time the position was updated
-  int64 updatedAt = 7;
+  int64 updated_at = 7;
 }
 
 message PositionTrade {
@@ -532,70 +530,70 @@ message PositionTrade {
 // Vega domain specific statistics as reported by the node the caller is connected to
 message Statistics {
   // Current block height as reported by the Vega blockchain
-  uint64 blockHeight = 1;
+  uint64 block_height = 1;
   // Current backlog length (number of transactions) that are waiting to be included in a block
-  uint64 backlogLength = 2;
+  uint64 backlog_length = 2;
   // Total number of connected peers to this node
-  uint64 totalPeers = 3;
+  uint64 total_peers = 3;
   // Genesis block date and time formatted in ISO-8601 datetime format with nanosecond precision
-  string genesisTime = 4;
+  string genesis_time = 4;
   // Current system date and time formatted in ISO-8601 datetime format with nanosecond precision
-  string currentTime = 5;
+  string current_time = 5;
   // Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision
-  string vegaTime = 6;
+  string vega_time = 6;
   // Status of the connection to the Vega blockchain
   // - See [`ChainStatus`](#vega.ChainStatus)
   ChainStatus status = 7;
   // Transactions per block
-  uint64 txPerBlock = 8;
+  uint64 tx_per_block = 8;
   // Average transaction size in bytes
-  uint64 averageTxBytes = 9;
+  uint64 average_tx_bytes = 9;
   // Average orders per block
-  uint64 averageOrdersPerBlock = 10;
+  uint64 average_orders_per_block = 10;
   // Trades emitted per second
-  uint64 tradesPerSecond = 11;
+  uint64 trades_per_second = 11;
   // Orders processed per second
-  uint64 ordersPerSecond = 12;
+  uint64 orders_per_second = 12;
   // Total markets on this Vega network
-  uint64 totalMarkets = 13;
+  uint64 total_markets = 13;
   // Total number of order amendments since genesis (on all markets)
-  uint64 totalAmendOrder = 16;
+  uint64 total_amend_order = 16;
   // Total number of order cancellations since genesis (on all markets)
-  uint64 totalCancelOrder = 17;
+  uint64 total_cancel_order = 17;
   // Total number of order submissions since genesis (on all markets)
-  uint64 totalCreateOrder = 18;
+  uint64 total_create_order = 18;
   // Total number of orders processed since genesis (on all markets)
-  uint64 totalOrders = 19;
+  uint64 total_orders = 19;
   // Total number of trades emitted since genesis (on all markets)
-  uint64 totalTrades = 20;
+  uint64 total_trades = 20;
   // Current number of stream subscribers to order data
-  uint32 orderSubscriptions = 21;
+  uint32 order_subscriptions = 21;
   // Current number of stream subscribers to trade data
-  uint32 tradeSubscriptions = 22;
+  uint32 trade_subscriptions = 22;
   // Current number of stream subscribers to candle-stick data
-  uint32 candleSubscriptions = 23;
+  uint32 candle_subscriptions = 23;
   // Current number of stream subscribers to market depth data
-  uint32 marketDepthSubscriptions = 24;
+  uint32 market_depth_subscriptions = 24;
   // Current number of stream subscribers to positions data
-  uint32 positionsSubscriptions = 25;
+  uint32 positions_subscriptions = 25;
   // Current number of stream subscribers to account data
-  uint32 accountSubscriptions = 26;
+  uint32 account_subscriptions = 26;
   // Current number of stream subscribers to market data
-  uint32 marketDataSubscriptions = 27;
+  uint32 market_data_subscriptions = 27;
   // The version hash of the Vega node software
-  string appVersionHash = 28;
+  string app_version_hash = 28;
   // The version of the Vega node software
-  string appVersion = 29;
+  string app_version = 29;
   // The version of the underlying Vega blockchain
-  string chainVersion = 30;
+  string chain_version = 30;
   // Current block duration, in nanoseconds
-  uint64 blockDuration = 31;
+  uint64 block_duration = 31;
   // Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision
   string uptime = 32;
   // Unique identifier for the underlying Vega blockchain
-  string chainID = 33;
+  string chain_id = 33;
   // Current number of stream subscribers to market depth update data
-  uint32 marketDepthUpdatesSubscriptions = 34;
+  uint32 market_depth_updates_subscriptions = 34;
 }
 
 // The Vega blockchain status as reported by the node the caller is connected to
@@ -617,13 +615,13 @@ message Deposit {
   // The status of the deposit
   enum Status {
     // Default value, always invalid
-    DEPOSIT_STATUS_UNSPECIFIED = 0;
+    STATUS_UNSPECIFIED = 0;
     // The deposit is being processed by the network
-    DEPOSIT_STATUS_OPEN = 1;
+    STATUS_OPEN = 1;
     // The deposit has been cancelled by the network
-    DEPOSIT_STATUS_CANCELLED = 2;
+    STATUS_CANCELLED = 2;
     // The deposit has been finalised and accounts have been updated
-    DEPOSIT_STATUS_FINALIZED = 3;
+    STATUS_FINALIZED = 3;
   }
 
   // Unique identifier for the deposit
@@ -631,17 +629,17 @@ message Deposit {
   // Status of the deposit
   Status status = 2;
   // Party identifier of the user initiating the deposit
-  string partyID = 3;
+  string party_id = 3;
   // The Vega asset targeted by this deposit
   string asset = 4;
   // The amount to be deposited
   string amount = 5;
   // The hash of the transaction from the foreign chain
-  string txHash = 6;
+  string tx_hash = 6;
   // Timestamp for when the Vega account was updated with the deposit
-  int64 creditedTimestamp = 7;
+  int64 credited_timestamp = 7;
   // Timestamp for when the deposit was created on the Vega network
-  int64 createdTimestamp = 8;
+  int64 created_timestamp = 8;
 }
 
 // A withdrawal from the Vega network
@@ -649,20 +647,20 @@ message Withdrawal {
   // The status of the withdrawal
   enum Status {
     // Default value, always invalid
-    WITHDRAWAL_STATUS_UNSPECIFIED = 0;
+    STATUS_UNSPECIFIED = 0;
     // The withdrawal is open and being processed by the network
-    WITHDRAWAL_STATUS_OPEN = 1;
+    STATUS_OPEN = 1;
     // The withdrawal have been cancelled
-    WITHDRAWAL_STATUS_CANCELLED = 2;
+    STATUS_CANCELLED = 2;
     // The withdrawal went through and is fully finalised, the funds are removed from the
     // Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network
-    WITHDRAWAL_STATUS_FINALIZED = 3;
+    STATUS_FINALIZED = 3;
   }
 
   // Unique identifier for the withdrawal
   string id = 1;
   // Unique party identifier of the user initiating the withdrawal
-  string partyID = 2;
+  string party_id = 2;
   // The amount to be withdrawn
   uint64 amount = 3;
   // The asset we want to withdraw funds from
@@ -675,11 +673,11 @@ message Withdrawal {
   // The time until when the withdrawal is valid
   int64 expiry = 7;
   // The hash of the foreign chain for this transaction
-  string txHash = 8;
+  string tx_hash = 8;
   // Timestamp for when the network started to process this withdrawal
-  int64 createdTimestamp = 9;
+  int64 created_timestamp = 9;
   // Timestamp for when the withdrawal was finalised by the network
-  int64 withdrawnTimestamp = 10;
+  int64 withdrawn_timestamp = 10;
   // Foreign chain specifics
   WithdrawExt ext = 11;
 }
@@ -687,7 +685,7 @@ message Withdrawal {
 // Represents the submission request to withdraw funds for a party on Vega
 message WithdrawSubmission {
   // Unique party identifier for the user wanting to withdraw funds
-  string partyID = 1;
+  string party_id = 1;
   // The amount to be withdrawn
   uint64 amount = 2;
   // The asset we want to withdraw
@@ -708,7 +706,7 @@ message WithdrawSubmission {
 // An extension of data required for the withdraw submissions
 message Erc20WithdrawExt {
   // The address into which the bridge will release the funds
-  string receiverAddress = 1;
+  string receiver_address = 1;
 }
 
 // An order amendment is a request to amend or update an existing order on Vega
@@ -716,11 +714,11 @@ message OrderAmendment {
   // The `orderID`, `partyID` and `marketID` fields are used for lookup of the order only and cannot be amended by this command
 
   // Order identifier, this is required to find the order and will not be updated, required field
-  string orderID = 1 [(validator.field) = {string_not_empty : true}];
+  string order_id = 1 [(validator.field) = {string_not_empty : true}];
   // Party identifier, this is required to find the order and will not be updated, required field
-  string partyID = 2 [(validator.field) = {string_not_empty: true}];
+  string party_id = 2 [(validator.field) = {string_not_empty: true}];
   // Market identifier, this is required to find the order and will not be updated
-  string marketID = 3;
+  string market_id = 3;
 
   // All fields below can be altered by this command:
 
@@ -730,18 +728,18 @@ message OrderAmendment {
   // - To reduce the size from the current value set a negative integer value
   // - To increase the size from the current value, set a positive integer value
   // - To leave the size unchanged set a value of zero
-  int64 sizeDelta = 5;
+  int64 size_delta = 5;
   // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  Timestamp expiresAt = 6;
+  Timestamp expires_at = 6;
   // Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged
   // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
-  Order.TimeInForce timeInForce = 7;
+  Order.TimeInForce time_in_force = 7;
   // Amend the pegged order offset for the order
-  google.protobuf.Int64Value peggedOffset = 8;
+  google.protobuf.Int64Value pegged_offset = 8;
   // Amend the pegged order reference for the order
   // - See [`PeggedReference`](#vega.PeggedReference)
-  PeggedReference peggedReference = 9;
+  PeggedReference pegged_reference = 9;
 }
 
 // An order submission is a request to submit or create a new order on Vega
@@ -749,9 +747,9 @@ message OrderSubmission {
   // Unique identifier for the order (set by the system after consensus)
   string id = 1 [(validator.field) = {string_not_empty: false}];
   // Market identifier for the order, required field
-  string marketID = 2 [(validator.field) = {string_not_empty: true}];
+  string market_id = 2 [(validator.field) = {string_not_empty: true}];
   // Party identifier for the order, required field
-  string partyID = 3 [(validator.field) = {string_not_empty: true}];
+  string party_id = 3 [(validator.field) = {string_not_empty: true}];
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places,
   // , required field for limit orders, however it is not required for market orders
@@ -762,11 +760,11 @@ message OrderSubmission {
   Side side = 6 [(validator.field) = {is_in_enum: true}];
   // Time in force indicates how long an order will remain active before it is executed or expires, required field
   // - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
-  Order.TimeInForce timeInForce = 7 [(validator.field) = {is_in_enum: true}];
+  Order.TimeInForce time_in_force = 7 [(validator.field) = {is_in_enum: true}];
   // Timestamp for when the order will expire, in nanoseconds since the epoch,
   // required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 expiresAt = 8;
+  int64 expires_at = 8;
   // Type for the order, required field - See [`Order.Type`](#vega.Order.Type)
   Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
@@ -774,7 +772,7 @@ message OrderSubmission {
   string reference = 10;
   // Used to specify the details for a pegged order
   // - See [`PeggedOrder`](#vega.PeggedOrder)
-  PeggedOrder peggedOrder = 11;
+  PeggedOrder pegged_order = 11;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega
@@ -782,26 +780,26 @@ message OrderCancellation {
   // The following three fields are used for lookup of the order only:
 
   // Unique identifier for the order (set by the system after consensus), required field
-  string orderID = 1;
+  string order_id = 1;
   // Market identifier for the order, required field
-  string marketID = 2;
+  string market_id = 2;
   // Party identifier for the order, required field
-  string partyID = 3 [(validator.field) = {string_not_empty: true}];
+  string party_id = 3 [(validator.field) = {string_not_empty: true}];
 }
 
 // Used to Register a node as a validator during network start-up
 message NodeRegistration {
   // Public key, required field
-  bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  bytes pub_key = 1 [(validator.field) = {string_not_empty: true}];
   // Public key for the blockchain, required field
-  bytes chainPubKey = 2 [(validator.field) = {string_not_empty: true}];
+  bytes chain_pub_key = 2 [(validator.field) = {string_not_empty: true}];
 }
 
 // Used when a node votes for validating a given resource exists or is valid,
 // for example, an ERC20 deposit is valid and exists on ethereum
 message NodeVote {
   // Public key, required field
-  bytes pubKey = 1 [(validator.field) = {string_not_empty: true}];
+  bytes pub_key = 1 [(validator.field) = {string_not_empty: true}];
   // Reference, required field
   string reference = 2 [(validator.field) = {string_not_empty: true}];
 }
@@ -861,7 +859,7 @@ message Account {
   // Asset identifier for the account
   string asset = 4;
   // Market identifier for the account, if [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty
-  string marketID = 5;
+  string market_id = 5;
   // The account type related to this account
   AccountType type = 6;
 }
@@ -929,19 +927,19 @@ message Transfer {
   // The type of transfer, gives the reason for the transfer
   TransferType type = 3;
   // A minimum amount
-  int64 minAmount = 4;
+  int64 min_amount = 4;
 }
 
 // Represents a request to transfer from one set of accounts to another
 message TransferRequest {
   // One or more accounts to transfer from
-  repeated Account fromAccount = 1;
+  repeated Account from_account = 1;
   // One or more accounts to transfer to
-  repeated Account toAccount = 2;
+  repeated Account to_account = 2;
   // An amount to transfer for the asset
   uint64 amount = 3;
   // A minimum amount
-  uint64 minAmount = 4;
+  uint64 min_amount = 4;
   // Asset identifier
   string asset = 5;
   // A reference for auditing purposes
@@ -951,9 +949,9 @@ message TransferRequest {
 // Represents a ledger entry on Vega
 message LedgerEntry {
   // One or more accounts to transfer from
-  string fromAccount = 1;
+  string from_account = 1;
   // One or more accounts to transfer to
-  string toAccount = 2;
+  string to_account = 2;
   // An amount to transfer
   uint64 amount = 3;
   // A reference for auditing purposes
@@ -984,17 +982,17 @@ message TransferResponse {
 // Represents the margin levels for a party on a market at a given time
 message MarginLevels {
   // Maintenance margin value
-  uint64 maintenanceMargin = 1;
+  uint64 maintenance_margin = 1;
   // Search level value
-  uint64 searchLevel = 2;
+  uint64 search_level = 2;
   // Initial margin value
-  uint64 initialMargin = 3;
+  uint64 initial_margin = 3;
   // Collateral release level value
-  uint64 collateralReleaseLevel = 4;
+  uint64 collateral_release_level = 4;
   // Party identifier
-  string partyID = 5;
+  string party_id = 5;
   // Market identifier
-  string marketID = 6;
+  string market_id = 6;
   // Asset identifier
   string asset = 7;
   // Timestamp for the time the ledger entry was created, in nanoseconds since the epoch
@@ -1006,59 +1004,59 @@ message MarginLevels {
 message MarketData {
   // Mark price, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 markPrice = 1;
+  uint64 mark_price = 1;
   // Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 bestBidPrice = 2;
+  uint64 best_bid_price = 2;
   // Aggregated volume being bid at the best bid price
-  uint64 bestBidVolume = 3;
+  uint64 best_bid_volume = 3;
   // Lowest price level on an order book for offer orders
-  uint64 bestOfferPrice = 4;
+  uint64 best_offer_price = 4;
   // Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
   //  // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 bestOfferVolume = 5;
+  uint64 best_offer_volume = 5;
   // Highest price on the order book for buy orders not including pegged orders
-  uint64 bestStaticBidPrice = 6;
+  uint64 best_static_bid_price = 6;
   // Total volume at the best static bid price excluding pegged orders
-  uint64 bestStaticBidVolume = 7;
+  uint64 best_static_bid_volume = 7;
   // Lowest price on the order book for sell orders not including pegged orders
-  uint64 bestStaticOfferPrice = 8;
+  uint64 best_static_offer_price = 8;
   // Total volume at the best static offer price excluding pegged orders
-  uint64 bestStaticOfferVolume = 9;
+  uint64 best_static_offer_volume = 9;
   // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
-  uint64 midPrice = 10;
+  uint64 mid_price = 10;
   // Arithmetic average of the best static bid price and best static offer price
-  uint64 staticMidPrice = 11;
+  uint64 static_mid_price = 11;
   // Market identifier for the data
   string market = 12;
   // Timestamp at which this mark price was relevant, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 13;
   // The sum of the size of all positions greater than 0 on the market
-  uint64 openInterest = 14;
+  uint64 open_interest = 14;
   // Time in seconds until the end of the auction (0 if currently not in auction period)
-  int64 auctionEnd = 15;
+  int64 auction_end = 15;
   // Time until next auction (used in FBA's) - currently always 0
-  int64 auctionStart = 16;
+  int64 auction_start = 16;
   // Indicative price (zero if not in auction)
-  uint64 indicativePrice = 17;
+  uint64 indicative_price = 17;
   // Indicative volume (zero if not in auction)
-  uint64 indicativeVolume = 18;
+  uint64 indicative_volume = 18;
   // The current trading mode for the market
-  Market.TradingMode marketTradingMode = 19;
+  Market.TradingMode market_trading_mode = 19;
   // When a market is in an auction trading mode, this field indicates what triggered the auction
   AuctionTrigger trigger = 20;
   // Targeted stake for the given market
-  string targetStake = 21;
+  string target_stake = 21;
   // Available stake for the given market
-  string suppliedStake = 22;
+  string supplied_stake = 22;
   // One or more price monitoring bounds for the current timestamp
-  repeated PriceMonitoringBounds priceMonitoringBounds = 23;
+  repeated PriceMonitoringBounds price_monitoring_bounds = 23;
   // the market value proxy
-  string marketValueProxy = 24;
+  string market_value_proxy = 24;
   // the equity like share of liquidity fee for each liquidity provider
-  repeated LiquidityProviderFeeShare liquidityProviderFeeShare = 25;
+  repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 25;
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -1066,22 +1064,22 @@ message LiquidityProviderFeeShare {
   // The liquidity provider party id
   string party = 1;
   // The share own by this liquidity provider (float)
-  string EquityLikeShare = 2;
+  string equity_like_share = 2;
   // The average entry valuation of the liquidity provider for the market
-  string averageEntryValuation = 3;
+  string average_entry_valuation = 3;
 
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger
 message PriceMonitoringBounds {
   // Minimum price that isn't currently breaching the specified price monitoring trigger
-  uint64 minValidPrice = 1;
+  uint64 min_valid_price = 1;
   // Maximum price that isn't currently breaching the specified price monitoring trigger
-  uint64 maxValidPrice = 2;
+  uint64 max_valid_price = 2;
   // Price monitoring trigger associated with the bounds
   PriceMonitoringTrigger trigger = 3;
   // Reference price used to calculate the valid price range
-  double referencePrice = 4;
+  double reference_price = 4;
 }
 
 // Represents Vega domain specific error information over gRPC/Protobuf
@@ -1097,20 +1095,20 @@ message ErrorDetail {
 // Represents a transaction to be sent to Vega
 message Transaction {
   // One of the set of Vega commands (proto marshalled)
-  bytes inputData = 1;
+  bytes input_data = 1;
   // A random number used to provide uniqueness and prevent against replay attack
   uint64 nonce = 2;
   // The block height associated to the transaction, this should always be current block height
   // of the node at the time of sending the Tx and block height is used as a mechanism
   // for replay protection
-  uint64 blockHeight = 3;
+  uint64 block_height = 3;
   // The sender of the transaction,
   // any of the following would be valid:
   oneof from {
     // The address of the sender
     bytes address = 1001;
     // The public key of the sender
-    bytes pubKey = 1002;
+    bytes pub_key = 1002;
   }
 }
 
@@ -1146,7 +1144,7 @@ enum NodeSignatureKind {
 // Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network
 message NodeSignature {
   // The identifier of the resource being signed
-  string ID = 1;
+  string id = 1;
   // The signature
   bytes sig = 2;
   // The kind of resource being signed
@@ -1156,9 +1154,9 @@ message NodeSignature {
 // Represents a network parameter on Vega
 message NetworkParameter {
   // The unique key
-  string Key = 1;
+  string key = 1;
   // The value for the network parameter
-  string Value = 2;
+  string value = 2;
 }
 
 // Represents a liquidity order
@@ -1173,23 +1171,23 @@ message LiquidityOrder {
 
 message LiquidityProvisionSubmission {
   // Market identifier for the order, required field
-  string marketID = 1 [(validator.field) = {string_not_empty: true}];
+  string market_id = 1 [(validator.field) = {string_not_empty: true}];
   // Specified as a unitless number that represents the amount of settlement asset of the market
-  uint64 commitmentAmount = 2;
+  uint64 commitment_amount = 2;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
   string fee = 3;
   // A set of liquidity sell orders to meet the liquidity provision obligation
-  repeated LiquidityOrder Sells = 4;
+  repeated LiquidityOrder sells = 4;
   // A set of liquidity buy orders to meet the liquidity provision obligation
-  repeated LiquidityOrder Buys  = 5;
+  repeated LiquidityOrder buys  = 5;
 }
 
 // A pair of a liquidity order and the id of the generated order by the core
 message LiquidityOrderReference {
   // Unique identifier of the pegged order generated by the core to fulfil this liquidity order
-  string orderID = 1;
+  string order_id = 1;
   // The liquidity order from the original submission
-  LiquidityOrder liquidityOrder = 2;
+  LiquidityOrder liquidity_order = 2;
 }
 
 // An Liquidity provider commitment
@@ -1197,33 +1195,33 @@ message LiquidityProvision {
   // Status of a liquidity provision order
   enum Status {
     // The default value
-    LIQUIDITY_PROVISION_STATUS_UNSPECIFIED = 0;
+    STATUS_UNSPECIFIED = 0;
     // The liquidity provision is active
-    LIQUIDITY_PROVISION_STATUS_ACTIVE = 1;
+    STATUS_ACTIVE = 1;
     // The liquidity provision was stopped by the network
-    LIQUIDITY_PROVISION_STATUS_STOPPED = 2;
+    STATUS_STOPPED = 2;
     // The liquidity provision was cancelled by the liquidity provider
-    LIQUIDITY_PROVISION_STATUS_CANCELLED = 3;
+    STATUS_CANCELLED = 3;
     // The liquidity provision was invalid and got rejected
-    LIQUIDITY_PROVISION_STATUS_REJECTED = 4;
+    STATUS_REJECTED = 4;
     // The liquidity provision is valid and accepted by network, but oreders aren't deployed
-    LIQUIDITY_PROVISION_STATUS_UNDEPLOYED = 5;
+    STATUS_UNDEPLOYED = 5;
   }
 
   // Unique identifier
   string id = 1;
   // Unique party identifier for the creator of the provision
-  string partyID = 2;
+  string party_id = 2;
   // Timestamp for when the order was created at, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 createdAt = 3;
+  int64 created_at = 3;
   // Timestamp for when the order was updated at, in nanoseconds since the epoch
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 updatedAt = 4;
+  int64 updated_at = 4;
   // Market identifier for the order, required field
-  string marketID = 5 [(validator.field) = {string_not_empty: true}];
+  string market_id = 5 [(validator.field) = {string_not_empty: true}];
   // Specified as a unitless number that represents the amount of settlement asset of the market
-  uint64 commitmentAmount = 6;
+  uint64 commitment_amount = 6;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
   string fee = 7;
   // A set of liquidity sell orders to meet the liquidity provision obligation
@@ -1239,11 +1237,11 @@ message LiquidityProvision {
 // Ethereum configuration details
 message EthereumConfig {
   // Network identifier of this Ethereum network
-  string networkId = 1;
+  string network_id = 1;
   // Chain identifier of this Ethereum network
-  string chainId = 2;
+  string chain_id = 2;
   // Bridge address for this Ethereum network
-  string bridgeAddress = 3;
+  string bridge_address = 3;
   // Number of confirmations
   uint32 confirmations = 4;
 }

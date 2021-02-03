@@ -115,14 +115,14 @@ func TestAccount_GetByPartyAndMarket(t *testing.T) {
 	accs, err := accountStore.GetPartyAccounts(testAccountParty1, testAccountMarket1, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
-	assert.Equal(t, testAccountMarket1, accs[0].MarketID)
-	assert.Equal(t, testAccountMarket1, accs[1].MarketID)
+	assert.Equal(t, testAccountMarket1, accs[0].MarketId)
+	assert.Equal(t, testAccountMarket1, accs[1].MarketId)
 
 	accs, err = accountStore.GetPartyAccounts(testAccountParty1, testAccountMarket2, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 2)
-	assert.Equal(t, testAccountMarket2, accs[0].MarketID)
-	assert.Equal(t, testAccountMarket2, accs[1].MarketID)
+	assert.Equal(t, testAccountMarket2, accs[0].MarketId)
+	assert.Equal(t, testAccountMarket2, accs[1].MarketId)
 
 	err = accountStore.Close()
 	assert.NoError(t, err)
@@ -143,7 +143,7 @@ func TestAccount_GetByParty(t *testing.T) {
 	accs, err := accountStore.GetPartyAccounts(testAccountParty1, "", "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.Nil(t, err)
 	assert.Len(t, accs, 4)
-	assert.Equal(t, testAccountMarket1, accs[0].MarketID)
+	assert.Equal(t, testAccountMarket1, accs[0].MarketId)
 
 	err = accountStore.Close()
 	assert.NoError(t, err)
@@ -153,42 +153,42 @@ func getTestAccounts() []*types.Account {
 	accs := []*types.Account{
 		{
 			Owner:    testAccountParty1,
-			MarketID: testAccountMarket1,
+			MarketId: testAccountMarket1,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetGBP,
 			Balance:  1024,
 		},
 		{
 			Owner:    testAccountParty1,
-			MarketID: testAccountMarket1,
+			MarketId: testAccountMarket1,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetGBP,
 			Balance:  1024,
 		},
 		{
 			Owner:    testAccountParty1,
-			MarketID: testAccountMarket2,
+			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetUSD,
 			Balance:  1,
 		},
 		{
 			Owner:    testAccountParty1,
-			MarketID: testAccountMarket2,
+			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetUSD,
 			Balance:  9,
 		},
 		{
 			Owner:    testAccountParty2,
-			MarketID: testAccountMarket2,
+			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetEUR,
 			Balance:  2048,
 		},
 		{
 			Owner:    testAccountParty2,
-			MarketID: testAccountMarket2,
+			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetEUR,
 			Balance:  1024,

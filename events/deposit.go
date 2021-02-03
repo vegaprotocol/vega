@@ -23,10 +23,10 @@ func (d *Deposit) Deposit() types.Deposit {
 }
 
 func (d Deposit) IsParty(id string) bool {
-	return (d.d.PartyID == id)
+	return (d.d.PartyId == id)
 }
 
-func (d Deposit) PartyID() string { return d.d.PartyID }
+func (d Deposit) PartyID() string { return d.d.PartyId }
 
 func (d Deposit) Proto() types.Deposit {
 	return d.d
@@ -35,7 +35,7 @@ func (d Deposit) Proto() types.Deposit {
 func (d Deposit) StreamMessage() *types.BusEvent {
 	dep := d.d
 	return &types.BusEvent{
-		ID:    d.eventID(),
+		Id:    d.eventID(),
 		Block: d.TraceID(),
 		Type:  d.et.ToProto(),
 		Event: &types.BusEvent_Deposit{

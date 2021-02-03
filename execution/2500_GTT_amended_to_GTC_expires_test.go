@@ -20,7 +20,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	addAccount(tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTT, "Order01", types.Side_SIDE_BUY, "aaa", 1, 10)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_BUY, "aaa", 1, 10)
 	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
@@ -28,9 +28,9 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 
 	// now we edit the order t make it GTC so it should not expire
 	amendment := &types.OrderAmendment{
-		OrderID:     o1.Id,
-		PartyID:     "aaa",
-		TimeInForce: types.Order_TIF_GTC,
+		OrderId:     o1.Id,
+		PartyId:     "aaa",
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment)

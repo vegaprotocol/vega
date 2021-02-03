@@ -15,7 +15,7 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 	evt := &TxErr{
 		Base: newBase(ctx, TxErrEvent),
 		evt: &types.TxErrorEvent{
-			PartyID: partyID,
+			PartyId: partyID,
 			ErrMsg:  err.Error(),
 		},
 	}
@@ -70,7 +70,7 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 }
 
 func (t TxErr) IsParty(id string) bool {
-	return (t.evt.PartyID == id)
+	return (t.evt.PartyId == id)
 }
 
 func (t TxErr) Proto() types.TxErrorEvent {
@@ -79,7 +79,7 @@ func (t TxErr) Proto() types.TxErrorEvent {
 
 func (t TxErr) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    t.eventID(),
+		Id:    t.eventID(),
 		Block: t.TraceID(),
 		Type:  t.et.ToProto(),
 		Event: &types.BusEvent_TxErrEvent{

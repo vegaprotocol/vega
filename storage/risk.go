@@ -141,10 +141,10 @@ func (r *Risk) SaveMarginLevelsBatch(batch []types.MarginLevels) {
 
 	r.marginsMu.Lock()
 	for _, v := range batch {
-		if _, ok := r.margins[v.PartyID]; !ok {
-			r.margins[v.PartyID] = map[string]types.MarginLevels{}
+		if _, ok := r.margins[v.PartyId]; !ok {
+			r.margins[v.PartyId] = map[string]types.MarginLevels{}
 		}
-		r.margins[v.PartyID][v.MarketID] = v
+		r.margins[v.PartyId][v.MarketId] = v
 	}
 	r.marginsMu.Unlock()
 	r.notify(batch)

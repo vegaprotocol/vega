@@ -183,7 +183,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
 	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
 	if err != nil {
-		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		w.Status = types.Withdrawal_STATUS_CANCELLED
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Error("cannot withdraw asset for party",
@@ -193,7 +193,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 			logging.Error(err))
 		return err
 	}
-	w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+	w.Status = types.Withdrawal_STATUS_FINALIZED
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.Id] = withdrawalRef{w, ref}
@@ -204,22 +204,22 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 func (e *Engine) DepositBuiltinAsset(
 	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
+	dep, err := e.newDeposit(id, d.PartyId, d.VegaAssetId, d.Amount, "") // no hash
 	if err != nil {
 		return err
 	}
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	asset, err := e.assets.Get(d.VegaAssetID)
+	asset, err := e.assets.Get(d.VegaAssetId)
 	if err != nil {
-		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		dep.Status = types.Deposit_STATUS_CANCELLED
 		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		e.log.Error("unable to get asset by id",
-			logging.String("asset-id", d.VegaAssetID),
+			logging.String("asset-id", d.VegaAssetId),
 			logging.Error(err))
 		return err
 	}
 	if !asset.IsBuiltinAsset() {
-		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		dep.Status = types.Deposit_STATUS_CANCELLED
 		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
@@ -237,7 +237,7 @@ func (e *Engine) DepositBuiltinAsset(
 
 func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
-	asset, _ := e.assets.Get(al.VegaAssetID)
+	asset, _ := e.assets.Get(al.VegaAssetId)
 	aa := &assetAction{
 		id:          id(al, uint64(now.UnixNano())),
 		state:       pendingState,
@@ -258,22 +258,22 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 	if err != nil {
 		return err
 	}
-	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, a, txHash)
+	dep, err := e.newDeposit(id, d.TargetPartyId, d.VegaAssetId, a, txHash)
 	if err != nil {
 		return err
 	}
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	asset, err := e.assets.Get(d.VegaAssetID)
+	asset, err := e.assets.Get(d.VegaAssetId)
 	if err != nil {
-		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		dep.Status = types.Deposit_STATUS_CANCELLED
 		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		e.log.Error("unable to get asset by id",
-			logging.String("asset-id", d.VegaAssetID),
+			logging.String("asset-id", d.VegaAssetId),
 			logging.Error(err))
 		return err
 	}
 	if !asset.IsERC20() {
-		dep.Status = types.Deposit_DEPOSIT_STATUS_CANCELLED
+		dep.Status = types.Deposit_STATUS_CANCELLED
 		e.broker.Send(events.NewDepositEvent(ctx, *dep))
 		return ErrWrongAssetTypeUsedInERC20ChainEvent
 	}
@@ -293,10 +293,10 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 
 func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
-	asset, err := e.assets.Get(w.VegaAssetID)
+	asset, err := e.assets.Get(w.VegaAssetId)
 	if err != nil {
 		e.log.Debug("unable to get asset by id",
-			logging.String("asset-id", w.VegaAssetID),
+			logging.String("asset-id", w.VegaAssetId),
 			logging.Error(err))
 		return err
 	}
@@ -308,7 +308,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 	if err != nil {
 		return err
 	}
-	if withd.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
+	if withd.Status != types.Withdrawal_STATUS_OPEN {
 		return ErrInvalidWithdrawalState
 	}
 	withd.TxHash = txHash
@@ -357,7 +357,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 	// try to lock the funds
 	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
 	if err != nil {
-		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		w.Status = types.Withdrawal_STATUS_CANCELLED
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Debug("cannot withdraw asset for party",
@@ -371,7 +371,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 
 	// we were able to lock the funds, then we can send the vote through the network
 	if err := e.notary.StartAggregate(w.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); err != nil {
-		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_CANCELLED
+		w.Status = types.Withdrawal_STATUS_CANCELLED
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
 		e.log.Error("unable to start aggregating signature for the withdrawal",
@@ -475,24 +475,24 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		dep := e.deposits[aa.id]
 		return e.finalizeDeposit(ctx, dep, aa.id)
 	case aa.IsERC20AssetList():
-		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
+		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetId)
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
 		if err != nil {
 			// Nothing to do, withrawal does not exists
 			return err
 		}
-		if w.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
+		if w.Status != types.Withdrawal_STATUS_OPEN {
 			// withdrawal was already canceled or finalized
 			return ErrInvalidWithdrawalState
 		}
 		now := e.currentTime
 		// update with finalize time + tx hash
-		w.Status = types.Withdrawal_WITHDRAWAL_STATUS_FINALIZED
+		w.Status = types.Withdrawal_STATUS_FINALIZED
 		w.WithdrawnTimestamp = now.UnixNano()
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, aa.withdrawal.nonce}
-		return e.finalizeWithdrawal(ctx, w.PartyID, w.Asset, w.Amount)
+		return e.finalizeWithdrawal(ctx, w.PartyId, w.Asset, w.Amount)
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -509,12 +509,12 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 }
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit, id string) error {
-	d.Status = types.Deposit_DEPOSIT_STATUS_FINALIZED
+	d.Status = types.Deposit_STATUS_FINALIZED
 	d.CreditedTimestamp = e.currentTime.UnixNano()
 	e.broker.Send(events.NewDepositEvent(ctx, *d))
 	// no error this have been done before when starting the deposit
 	amount, _ := strconv.ParseUint(d.Amount, 10, 64)
-	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, amount)
+	res, err := e.col.Deposit(ctx, d.PartyId, d.Asset, amount)
 	if err != nil {
 		return err
 	}
@@ -561,8 +561,8 @@ func (e *Engine) newWithdrawal(
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
 	w = &types.Withdrawal{
 		Id:               id,
-		Status:           types.Withdrawal_WITHDRAWAL_STATUS_OPEN,
-		PartyID:          partyID,
+		Status:           types.Withdrawal_STATUS_OPEN,
+		PartyId:          partyID,
 		Asset:            asset,
 		Amount:           amount,
 		Expiry:           expiry.Unix(),
@@ -580,8 +580,8 @@ func (e *Engine) newDeposit(
 	asset = strings.TrimPrefix(asset, "0x")
 	return &types.Deposit{
 		Id:               id,
-		Status:           types.Deposit_DEPOSIT_STATUS_OPEN,
-		PartyID:          partyID,
+		Status:           types.Deposit_STATUS_OPEN,
+		PartyId:          partyID,
 		Asset:            asset,
 		Amount:           fmt.Sprintf("%v", amount),
 		CreatedTimestamp: e.currentTime.UnixNano(),

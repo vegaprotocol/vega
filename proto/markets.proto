@@ -22,15 +22,15 @@ message AuctionDuration {
 // Continuous trading
 message ContinuousTrading {
   // Tick size
-  string tickSize = 1;
+  string tick_size = 1;
 }
 
 // Discrete trading
 message DiscreteTrading {
   // Duration in nanoseconds, maximum 1 month (2592000000000000 ns)
-  int64 durationNs = 1 [(validator.field) = {int_gt: 0, int_lt: 2592000000000000}];
+  int64 duration_ns = 1 [(validator.field) = {int_gt: 0, int_lt: 2592000000000000}];
   // Tick size
-  string tickSize = 2;
+  string tick_size = 2;
 }
 
 // Future product definition
@@ -38,21 +38,21 @@ message Future {
   // The maturity for the future
   string maturity = 1;
   // The asset for the future
-  string settlementAsset = 2;
+  string settlement_asset = 2;
   // Quote name of the instrument
-  string quoteName = 4;
+  string quote_name = 4;
 
   // Oracle configuration
   oneof oracle {
     // Ethereum events
-    EthereumEvent ethereumEvent = 100;
+    EthereumEvent ethereum_event = 100;
   }
 }
 
 // Ethereum event (for oracles)
 message EthereumEvent {
   // Ethereum contract identifier
-  string contractID = 1;
+  string contract_id = 1;
   // Event
   string event = 2;
   // Value
@@ -76,7 +76,7 @@ message Instrument {
   // A collection of instrument meta-data
   InstrumentMetadata metadata = 4;
   // An initial mark price for the instrument
-  uint64 initialMarkPrice = 5;
+  uint64 initial_mark_price = 5;
   // The product the instrument is composed of
   oneof product {
     // Future
@@ -87,7 +87,7 @@ message Instrument {
 // Risk model for log normal
 message LogNormalRiskModel {
   // Risk Aversion Parameter
-  double riskAversionParameter = 1;
+  double risk_aversion_parameter = 1;
   // Tau
   double tau = 2;
   // Risk model parameters for log normal
@@ -113,31 +113,31 @@ message SimpleRiskModel {
 // Risk model parameters for simple modelling
 message SimpleModelParams {
   // Pre-defined risk factor value for long
-  double factorLong = 1;
+  double factor_long = 1;
   // Pre-defined risk factor value for short
-  double factorShort = 2;
+  double factor_short = 2;
   // Pre-defined maximum price move up that the model considers as valid
-  double maxMoveUp = 3 [(validator.field) = {float_gte: 0}];
+  double max_move_up = 3 [(validator.field) = {float_gte: 0}];
   // Pre-defined minimum price move down that the model considers as valid
-  double minMoveDown = 4 [(validator.field) = {float_lte: 0}];
+  double min_move_down = 4 [(validator.field) = {float_lte: 0}];
   // Pre-defined constant probability of trading
-  double probabilityOfTrading = 5 [(validator.field) = {float_gte: 0, float_lte: 1}];
+  double probability_of_trading = 5 [(validator.field) = {float_gte: 0, float_lte: 1}];
 }
 
 // Scaling Factors (for use in margin calculation)
 message ScalingFactors {
   // Search level
-  double searchLevel = 1;
+  double search_level = 1;
   // Initial margin level
-  double initialMargin = 2;
+  double initial_margin = 2;
   // Collateral release level
-  double collateralRelease = 3;
+  double collateral_release = 3;
 }
 
 // Margin Calculator definition
 message MarginCalculator {
   // Scaling factors for margin calculation
-  ScalingFactors scalingFactors = 1;
+  ScalingFactors scaling_factors = 1;
 }
 
 // Tradable Instrument definition
@@ -145,24 +145,24 @@ message TradableInstrument {
   // Instrument details
   Instrument instrument = 1;
   // Margin calculator for the instrument
-  MarginCalculator marginCalculator = 2;
+  MarginCalculator margin_calculator = 2;
   // Risk model for use by the instrument
-  oneof riskModel {
+  oneof risk_model {
     // Log normal
-    LogNormalRiskModel logNormalRiskModel = 100;
+    LogNormalRiskModel log_normal_risk_model = 100;
     // Simple
-    SimpleRiskModel simpleRiskModel = 101;
+    SimpleRiskModel simple_risk_model = 101;
   }
 }
 
 // Fee factors definition
 message FeeFactors {
   // Maker fee
-  string makerFee = 1;
+  string maker_fee = 1;
   // Infrastructure fee
-  string infrastructureFee = 2;
+  string infrastructure_fee = 2;
   // Liquidity fee
-  string liquidityFee = 3;
+  string liquidity_fee = 3;
 }
 
 // Fees definition
@@ -180,7 +180,7 @@ message PriceMonitoringTrigger {
   // Price monitoring auction extension duration in seconds should the price
   // breach it's theoretical level over the specified horizon at the specified
   // probability level
-  int64 auctionExtension = 3 [(validator.field) = {int_gt: 0}];
+  int64 auction_extension = 3 [(validator.field) = {int_gt: 0}];
 }
 
 // PriceMonitoringParameters contains a collection of triggers to be used for a given market
@@ -193,15 +193,15 @@ message PriceMonitoringSettings {
   // Specifies price monitoring parameters to be used for price monitoring purposes
   PriceMonitoringParameters parameters = 1;
   // Specifies how often (expressed in seconds) the price monitoring bounds should be updated
-  int64 updateFrequency = 2;
+  int64 update_frequency = 2;
 }
 
 // TargetStakeParameters contains parameters used in target stake calculation
 message TargetStakeParameters {
   // Specifies length of time window expressed in seconds for target stake calculation
-  int64 timeWindow = 1 [(validator.field) = {int_gt: 0}];
+  int64 time_window = 1 [(validator.field) = {int_gt: 0}];
   // Specifies scaling factors used in target stake calculation
-  double scalingFactor = 2 [(validator.field) = {float_gt: 0}];
+  double scaling_factor = 2 [(validator.field) = {float_gt: 0}];
 }
 
 // Market definition
@@ -253,29 +253,29 @@ message Market {
   // Unique identifier
   string id = 1;
   // Tradable instrument configuration
-  TradableInstrument tradableInstrument = 2;
+  TradableInstrument tradable_instrument = 2;
   // Number of decimal places that a price must be shifted by in order to get a
   // correct price denominated in the currency of the market, for example:
   // `realPrice = price / 10^decimalPlaces`
-  uint64 decimalPlaces = 3;
+  uint64 decimal_places = 3;
   // Fees configuration
   Fees fees = 4;
   // Auction duration specifies how long the opening auction will run (minimum
   // duration and optionally a minimum traded volume)
-  AuctionDuration openingAuction = 5;
+  AuctionDuration opening_auction = 5;
   // Trading mode for the market
-  oneof tradingModeConfig {
+  oneof trading_mode_config {
     // Continuous
     ContinuousTrading continuous = 100;
     // Discrete
     DiscreteTrading discrete = 101;
   }
   // PriceMonitoringSettings for the market
-  PriceMonitoringSettings priceMonitoringSettings = 6;
+  PriceMonitoringSettings price_monitoring_settings = 6;
   // TargetStakeParameters for the market
-  TargetStakeParameters targetStakeParameters = 7;
+  TargetStakeParameters target_stake_parameters = 7;
   // Current mode of execution of the market
-  TradingMode tradingMode = 8;
+  TradingMode trading_mode = 8;
   // Current state of the market
   State state = 9;
 }

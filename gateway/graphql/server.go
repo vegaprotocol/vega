@@ -32,8 +32,8 @@ type GraphServer struct {
 	gateway.Config
 
 	log               *logging.Logger
-	tradingClient     protoapi.TradingClient
-	tradingDataClient protoapi.TradingDataClient
+	tradingClient     protoapi.TradingServiceClient
+	tradingDataClient protoapi.TradingDataServiceClient
 	srv               *http.Server
 }
 
@@ -52,13 +52,13 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	tradingDataClient := protoapi.NewTradingDataClient(tdconn)
+	tradingDataClient := protoapi.NewTradingDataServiceClient(tdconn)
 
 	tconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
-	tradingClient := protoapi.NewTradingClient(tconn)
+	tradingClient := protoapi.NewTradingServiceClient(tconn)
 
 	return &GraphServer{
 		log:               log,

@@ -149,10 +149,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
-	pos, found := e.positions[order.PartyID]
+	pos, found := e.positions[order.PartyId]
 	if !found {
-		pos = &MarketPosition{partyID: order.PartyID}
-		e.positions[order.PartyID] = pos
+		pos = &MarketPosition{partyID: order.PartyId}
+		e.positions[order.PartyId] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
@@ -174,7 +174,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
 
-	pos, found := e.positions[order.PartyID]
+	pos, found := e.positions[order.PartyId]
 	if !found {
 		return nil, ErrPositionNotFound
 	}
@@ -205,7 +205,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
 	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
 
-	pos, found := e.positions[originalOrder.PartyID]
+	pos, found := e.positions[originalOrder.PartyId]
 	if !found {
 		// If we can't find the original, we can't amend it
 		err = ErrPositionNotFound

@@ -23,10 +23,10 @@ func (w *Withdrawal) Withdrawal() types.Withdrawal {
 }
 
 func (w Withdrawal) IsParty(id string) bool {
-	return (w.w.PartyID == id)
+	return (w.w.PartyId == id)
 }
 
-func (w Withdrawal) PartyID() string { return w.w.PartyID }
+func (w Withdrawal) PartyID() string { return w.w.PartyId }
 
 func (w Withdrawal) Proto() types.Withdrawal {
 	return w.w
@@ -35,7 +35,7 @@ func (w Withdrawal) Proto() types.Withdrawal {
 func (w Withdrawal) StreamMessage() *types.BusEvent {
 	wit := w.w
 	return &types.BusEvent{
-		ID:    w.eventID(),
+		Id:    w.eventID(),
 		Block: w.TraceID(),
 		Type:  w.et.ToProto(),
 		Event: &types.BusEvent_Withdrawal{

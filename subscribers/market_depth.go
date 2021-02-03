@@ -244,25 +244,25 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 
 	// Non persistent and network orders do not matter
 	if order.Type == types.Order_TYPE_MARKET ||
-		order.TimeInForce == types.Order_TIF_FOK ||
-		order.TimeInForce == types.Order_TIF_IOC {
+		order.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
+		order.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
 		return
 	}
 
 	// Orders that where not valid are ignored
-	if order.Status == types.Order_STATUS_INVALID ||
+	if order.Status == types.Order_STATUS_UNSPECIFIED ||
 		order.Status == types.Order_STATUS_REJECTED {
 		return
 	}
 
 	// See if we already have a MarketDepth item for this market
-	md := mdb.marketDepths[order.MarketID]
+	md := mdb.marketDepths[order.MarketId]
 	if md == nil {
 		// First time we have an update for this market
 		// so we need to create a new MarketDepth
-		md = &MarketDepth{marketID: order.MarketID,
+		md = &MarketDepth{marketID: order.MarketId,
 			liveOrders: map[string]*types.Order{}}
-		mdb.marketDepths[order.MarketID] = md
+		mdb.marketDepths[order.MarketId] = md
 	}
 
 	md.sequenceNumber++
@@ -309,7 +309,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	}
 
 	marketDepthUpdate := &types.MarketDepthUpdate{
-		MarketID:       order.MarketID,
+		MarketId:       order.MarketId,
 		Buy:            buyPtr,
 		Sell:           sellPtr,
 		SequenceNumber: md.sequenceNumber,
@@ -340,7 +340,7 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 		// When a market is new with no orders there will not be any market depth/order book
 		// so we do not need to try and calculate the depth cumulative volumes etc
 		return &types.MarketDepth{
-			MarketID: market,
+			MarketId: market,
 			Buy:      []*types.PriceLevel{},
 			Sell:     []*types.PriceLevel{},
 		}, nil
@@ -370,7 +370,7 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 	}
 
 	return &types.MarketDepth{
-		MarketID:       market,
+		MarketId:       market,
 		Buy:            buyPtr,
 		Sell:           sellPtr,
 		SequenceNumber: md.sequenceNumber,

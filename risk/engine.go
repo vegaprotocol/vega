@@ -181,10 +181,10 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	// update other fields for the margins
-	margins.PartyID = evt.Party()
+	margins.PartyId = evt.Party()
 	margins.Asset = evt.Asset()
 	margins.Timestamp = e.currTime
-	margins.MarketID = e.mktID
+	margins.MarketId = e.mktID
 
 	curBalance := evt.MarginBalance()
 
@@ -252,8 +252,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 		// update other fields for the margins
 		margins.Timestamp = e.currTime
-		margins.MarketID = e.mktID
-		margins.PartyID = evt.Party()
+		margins.MarketId = e.mktID
+		margins.PartyId = evt.Party()
 		margins.Asset = evt.Asset()
 
 		if e.log.GetLevel() == logging.DebugLevel {

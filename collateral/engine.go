@@ -207,43 +207,43 @@ func (e *Engine) ReloadConf(cfg Config) {
 // this enable the asset to be used by new markets or
 // parties to deposit funds
 func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
-	if e.AssetExists(asset.ID) {
+	if e.AssetExists(asset.Id) {
 		return ErrAssetAlreadyEnabled
 	}
-	e.enabledAssets[asset.ID] = asset
+	e.enabledAssets[asset.Id] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
-	infraFeeID := e.accountID("", "", asset.ID, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
+	infraFeeID := e.accountID("", "", asset.Id, types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE)
 	_, ok := e.accs[infraFeeID]
 	if !ok {
 		infraFeeAcc := &types.Account{
 			Id:       infraFeeID,
-			Asset:    asset.ID,
+			Asset:    asset.Id,
 			Owner:    systemOwner,
 			Balance:  0,
-			MarketID: noMarket,
+			MarketId: noMarket,
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
 		}
 		e.accs[infraFeeID] = infraFeeAcc
 		e.addAccountToHashableSlice(infraFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *infraFeeAcc))
 	}
-	externalID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountType_ACCOUNT_TYPE_EXTERNAL)
+	externalID := e.accountID(noMarket, systemOwner, asset.Id, types.AccountType_ACCOUNT_TYPE_EXTERNAL)
 	if _, ok := e.accs[externalID]; !ok {
 		externalAcc := &types.Account{
 			Id:       externalID,
-			Asset:    asset.ID,
+			Asset:    asset.Id,
 			Owner:    systemOwner,
 			Balance:  0,
-			MarketID: noMarket,
+			MarketId: noMarket,
 			Type:     types.AccountType_ACCOUNT_TYPE_EXTERNAL,
 		}
 		e.accs[externalID] = externalAcc
 		// e.addAccountToHashableSlice(externalAcc)
 	}
 	e.log.Info("new asset added successfully",
-		logging.String("asset-id", asset.ID))
+		logging.String("asset-id", asset.Id))
 	return nil
 }
 
@@ -260,9 +260,9 @@ func (e *Engine) UpdateGovernanceAsset(asset string) error {
 		prevAsset = e.enabledAssets[e.governanceAsset]
 	}
 	e.log.Info("governance asset update successfully",
-		logging.String("new-asset-id", nextAsset.ID),
+		logging.String("new-asset-id", nextAsset.Id),
 		logging.String("new-asset", nextAsset.Symbol),
-		logging.String("prev-asset-id", prevAsset.ID),
+		logging.String("prev-asset-id", prevAsset.Id),
 		logging.String("prev-asset", prevAsset.Symbol),
 	)
 	e.governanceAsset = asset
@@ -529,19 +529,19 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("asset", asset))
 		}
 
-		marginAcc, err := e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		marginAcc, err := e.GetAccountByID(e.accountID(settle.MarketId, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			e.log.Error("unable to get party account",
 				logging.String("account-type", "margin"),
 				logging.String("party-id", evt.Party()),
 				logging.String("asset", asset),
-				logging.String("market-id", settle.MarketID))
+				logging.String("market-id", settle.MarketId))
 		}
 
 		marginEvt := &marginUpdate{
 			MarketPosition: evt,
 			asset:          asset,
-			marketID:       settle.MarketID,
+			marketID:       settle.MarketId,
 		}
 		// no transfer needed if transfer is nil, just build the marginUpdate
 		if transfer == nil {
@@ -598,7 +598,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		// if not send an event to notify the plugins
 		if totalInAccount < req.Amount {
 			lsevt := &lossSocializationEvt{
-				market:     settle.MarketID,
+				market:     settle.MarketId,
 				party:      evt.Party(),
 				amountLost: int64(req.Amount - totalInAccount),
 			}
@@ -609,7 +609,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("market-id", lsevt.market))
 
 			brokerEvts = append(brokerEvts,
-				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketID, int64(req.Amount-totalInAccount), e.currentTime))
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketId, int64(req.Amount-totalInAccount), e.currentTime))
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -626,7 +626,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("account-type", "margin"),
 				logging.String("party-id", evt.Party()),
 				logging.String("asset", asset),
-				logging.String("market-id", settle.MarketID))
+				logging.String("market-id", settle.MarketId))
 		}
 
 		responses = append(responses, res)
@@ -660,7 +660,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	// if there's not enough we enter loss socialization
 	distr := simpleDistributor{
 		log:             e.log,
-		marketID:        settle.MarketID,
+		marketID:        settle.MarketId,
 		expectCollected: expectCollected,
 		collected:       int64(settle.Balance),
 		requests:        []request{},
@@ -689,7 +689,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		marginEvt := &marginUpdate{
 			MarketPosition: evt,
 			asset:          asset,
-			marketID:       settle.MarketID,
+			marketID:       settle.MarketId,
 		}
 		// no transfer needed if transfer is nil, just build the marginUpdate
 		if transfer == nil {
@@ -701,13 +701,13 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 					logging.String("asset", asset))
 			}
 
-			marginEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+			marginEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketId, evt.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 			if err != nil {
 				e.log.Error("unable to get party account",
 					logging.String("account-type", "margin"),
 					logging.String("party-id", evt.Party()),
 					logging.String("asset", asset),
-					logging.String("market-id", settle.MarketID))
+					logging.String("market-id", settle.MarketId))
 			}
 
 			marginEvts = append(marginEvts, marginEvt)
@@ -759,7 +759,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("account-type", "margin"),
 				logging.String("party-id", evt.Party()),
 				logging.String("asset", asset),
-				logging.String("market-id", settle.MarketID))
+				logging.String("market-id", settle.MarketId))
 		}
 
 		responses = append(responses, res)
@@ -815,7 +815,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		closed     = make([]events.Margin, 0, len(updates)/2) // half the cap, if we have more than that, the slice will double once, and will fit all updates anyway
 		toPenalise = []events.Margin{}
 		settle     = &types.Account{
-			MarketID: marketID,
+			MarketId: marketID,
 		}
 	)
 	// create "fake" settle account for market ID
@@ -966,7 +966,7 @@ func (e *Engine) BondUpdate(ctx context.Context, market, party string, transfer 
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error) {
 	// create "fake" settle account for market ID
 	settle := &types.Account{
-		MarketID: marketID,
+		MarketId: marketID,
 	}
 	transfer := update.Transfer()
 	// although this is mainly a duplicate event, we need to pass it to getTransferRequest
@@ -1165,17 +1165,17 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		p.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW {
 		// we do not care about errors here as the bon account is not mandatory for the transfers
 		// a partry would have a bond account only if it was also a market maker
-		mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_BOND))
+		mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketId, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_BOND))
 	}
 
 	if settle != nil {
 		// the accounts for the trader we need
-		mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketId, p.Owner, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			e.log.Error(
 				"Failed to get the party margin account",
 				logging.String("owner-id", p.Owner),
-				logging.String("market-id", settle.MarketID),
+				logging.String("market-id", settle.MarketId),
 				logging.Error(err),
 			)
 			return nil, err
@@ -1187,7 +1187,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		e.log.Error(
 			"Failed to get the party general account",
 			logging.String("owner-id", p.Owner),
-			logging.String("market-id", settle.MarketID),
+			logging.String("market-id", settle.MarketId),
 			logging.Error(err),
 		)
 		return nil, err
@@ -1569,7 +1569,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 		acc := types.Account{
 			Id:       bondID,
 			Asset:    asset,
-			MarketID: marketID,
+			MarketId: marketID,
 			Balance:  0,
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_BOND,
@@ -1606,7 +1606,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 		acc := types.Account{
 			Id:       marginID,
 			Asset:    asset,
-			MarketID: marketID,
+			MarketId: marketID,
 			Balance:  0,
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
@@ -1636,7 +1636,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 		acc := types.Account{
 			Id:       generalID,
 			Asset:    asset,
-			MarketID: noMarket,
+			MarketId: noMarket,
 			Balance:  0,
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
@@ -1666,7 +1666,7 @@ func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyI
 		acc = &types.Account{
 			Id:       id,
 			Asset:    asset,
-			MarketID: noMarket,
+			MarketId: noMarket,
 			Balance:  0,
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
@@ -1776,7 +1776,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Asset:    asset,
 			Owner:    systemOwner,
 			Balance:  insurance,
-			MarketID: marketID,
+			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_INSURANCE,
 		}
 		e.accs[insuranceID] = insAcc
@@ -1792,7 +1792,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Asset:    asset,
 			Owner:    systemOwner,
 			Balance:  0,
-			MarketID: marketID,
+			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_SETTLEMENT,
 		}
 		e.accs[settleID] = setAcc
@@ -1809,7 +1809,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Asset:    asset,
 			Owner:    systemOwner,
 			Balance:  0,
-			MarketID: marketID,
+			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
 		}
 		e.accs[liquidityFeeID] = liquidityFeeAcc
@@ -1824,7 +1824,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Asset:    asset,
 			Owner:    systemOwner,
 			Balance:  0,
-			MarketID: marketID,
+			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_MAKER,
 		}
 		e.accs[makerFeeID] = makerFeeAcc

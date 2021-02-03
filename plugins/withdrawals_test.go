@@ -49,7 +49,7 @@ func testGetWithdrawalByID(t *testing.T) {
 	w1 := events.NewWithdrawalEvent(
 		wit.ctx,
 		proto.Withdrawal{
-			PartyID: "party1",
+			PartyId: "party1",
 			Id:      "wid1",
 			Amount:  200,
 		},
@@ -57,7 +57,7 @@ func testGetWithdrawalByID(t *testing.T) {
 	w2 := events.NewWithdrawalEvent(
 		wit.ctx,
 		proto.Withdrawal{
-			PartyID: "party2",
+			PartyId: "party2",
 			Id:      "wid2",
 			Amount:  300,
 		},
@@ -65,7 +65,7 @@ func testGetWithdrawalByID(t *testing.T) {
 	w3 := events.NewWithdrawalEvent(
 		wit.ctx,
 		proto.Withdrawal{
-			PartyID: "party1",
+			PartyId: "party1",
 			Id:      "wid3",
 			Amount:  500,
 		},
@@ -87,15 +87,15 @@ func testGetWithdrawalByID(t *testing.T) {
 	// then test actual values
 	w, err := wit.GetByID("wid1")
 	assert.NoError(t, err)
-	assert.Equal(t, "party1", w.PartyID)
+	assert.Equal(t, "party1", w.PartyId)
 	assert.Equal(t, 200, int(w.Amount))
 	w, err = wit.GetByID("wid2")
 	assert.NoError(t, err)
-	assert.Equal(t, "party2", w.PartyID)
+	assert.Equal(t, "party2", w.PartyId)
 	assert.Equal(t, 300, int(w.Amount))
 	w, err = wit.GetByID("wid3")
 	assert.NoError(t, err)
-	assert.Equal(t, "party1", w.PartyID)
+	assert.Equal(t, "party1", w.PartyId)
 	assert.Equal(t, 500, int(w.Amount))
 }
 
@@ -106,7 +106,7 @@ func testGetWithdrawalByParty(t *testing.T) {
 	w1 := events.NewWithdrawalEvent(
 		wit.ctx,
 		proto.Withdrawal{
-			PartyID: "party1",
+			PartyId: "party1",
 			Id:      "wid1",
 			Amount:  200,
 		},
@@ -114,7 +114,7 @@ func testGetWithdrawalByParty(t *testing.T) {
 	w2 := events.NewWithdrawalEvent(
 		wit.ctx,
 		proto.Withdrawal{
-			PartyID: "party2",
+			PartyId: "party2",
 			Id:      "wid2",
 			Amount:  300,
 		},
@@ -122,7 +122,7 @@ func testGetWithdrawalByParty(t *testing.T) {
 	w3 := events.NewWithdrawalEvent(
 		wit.ctx,
 		proto.Withdrawal{
-			PartyID: "party1",
+			PartyId: "party1",
 			Id:      "wid3",
 			Amount:  500,
 		},

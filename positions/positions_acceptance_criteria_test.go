@@ -57,7 +57,7 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     buyer,
@@ -73,7 +73,7 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      25,
 				Buyer:     buyer,
@@ -119,7 +119,7 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     traderA,
@@ -136,7 +136,7 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      5,
 				Buyer:     traderB,
@@ -182,7 +182,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     traderA,
@@ -199,7 +199,7 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     traderB,
@@ -244,7 +244,7 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     traderA,
@@ -261,7 +261,7 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      15,
 				Buyer:     traderB,
@@ -305,7 +305,7 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 		trade: types.Trade{
 			Type:      types.Trade_TYPE_DEFAULT,
 			Id:        "trade_i1",
-			MarketID:  "market_id",
+			MarketId:  "market_id",
 			Price:     100,
 			Size:      10,
 			Buyer:     traderA,
@@ -356,7 +356,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     traderA,
@@ -375,7 +375,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     traderC,
@@ -394,7 +394,7 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id3",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      3,
 				Buyer:     traderB,
@@ -445,7 +445,7 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_i1",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      10,
 				Buyer:     traderA,
@@ -462,7 +462,7 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
 				Id:        "trade_id2",
-				MarketID:  "market_id",
+				MarketId:  "market_id",
 				Price:     100,
 				Size:      30,
 				Buyer:     traderA,
@@ -509,7 +509,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderA,
+				PartyId:   traderA,
 				Side:      types.Side_SIDE_BUY,
 			},
 			expectedBuy:  10,
@@ -521,7 +521,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      16,
 				Remaining: 16,
-				PartyID:   traderB,
+				PartyId:   traderB,
 				Side:      types.Side_SIDE_SELL,
 			},
 			expectedBuy:  0,
@@ -533,7 +533,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      17,
 				Remaining: 17,
-				PartyID:   traderA,
+				PartyId:   traderA,
 				Side:      types.Side_SIDE_BUY,
 			},
 			expectedBuy:  27,
@@ -545,7 +545,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      5,
 				Remaining: 5,
-				PartyID:   traderB,
+				PartyId:   traderB,
 				Side:      types.Side_SIDE_SELL,
 			},
 			expectedBuy:  0,
@@ -581,13 +581,13 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderA,
+				PartyId:   traderA,
 				Side:      types.Side_SIDE_BUY,
 			},
 			{
 				Size:      16,
 				Remaining: 16,
-				PartyID:   traderB,
+				PartyId:   traderB,
 				Side:      types.Side_SIDE_SELL,
 			},
 		},
@@ -629,7 +629,7 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	trade := types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_i1",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     100,
 		Size:      3,
 		Buyer:     traderA,
@@ -674,13 +674,13 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderA,
+				PartyId:   traderA,
 				Side:      types.Side_SIDE_BUY,
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderB,
+				PartyId:   traderB,
 				Side:      types.Side_SIDE_SELL,
 			},
 		},
@@ -722,7 +722,7 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	trade := types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_i1",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     100,
 		Size:      10,
 		Buyer:     traderA,
@@ -767,13 +767,13 @@ func testOrderCancelled(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderA,
+				PartyId:   traderA,
 				Side:      types.Side_SIDE_BUY,
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderB,
+				PartyId:   traderB,
 				Side:      types.Side_SIDE_SELL,
 			},
 		},
@@ -825,13 +825,13 @@ func testOrderCancelled(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderA,
+				PartyId:   traderA,
 				Side:      types.Side_SIDE_BUY,
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyID:   traderB,
+				PartyId:   traderB,
 				Side:      types.Side_SIDE_SELL,
 			},
 		},

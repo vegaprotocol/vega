@@ -229,7 +229,7 @@ func (g *GRPCServer) Start() {
 		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc
-	protoapi.RegisterTradingServer(g.srv, tradingSvc)
+	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)
 
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,
@@ -260,7 +260,7 @@ func (g *GRPCServer) Start() {
 	}
 	go tradingDataSvc.updateNetInfo(g.ctx)
 	g.tradingDataService = tradingDataSvc
-	protoapi.RegisterTradingDataServer(g.srv, tradingDataSvc)
+	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)
 
 	err = g.srv.Serve(lis)
 	if err != nil {

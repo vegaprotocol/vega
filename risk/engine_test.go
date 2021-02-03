@@ -300,13 +300,13 @@ func testMarginWithOrderInBook(t *testing.T) {
 	for _, v := range ordersInBook {
 		o := &types.Order{
 			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
-			MarketID:    marketID,
-			PartyID:     "A",
+			MarketId:    marketID,
+			PartyId:     "A",
 			Side:        v.side,
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 			Type:        types.Order_TYPE_LIMIT,
 			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,
@@ -405,13 +405,13 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	for _, v := range ordersInBook {
 		o := &types.Order{
 			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
-			MarketID:    marketID,
-			PartyID:     "A",
+			MarketId:    marketID,
+			PartyId:     "A",
 			Side:        v.side,
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 			Type:        types.Order_TYPE_LIMIT,
 			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,

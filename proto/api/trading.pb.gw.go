@@ -14,7 +14,6 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/utilities"
 	"google.golang.org/grpc"
@@ -29,8 +28,8 @@ var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 
-func request_Trading_PrepareSubmitOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SubmitOrderRequest
+func request_TradingService_PrepareSubmitOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PrepareSubmitOrderRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -46,8 +45,8 @@ func request_Trading_PrepareSubmitOrder_0(ctx context.Context, marshaler runtime
 
 }
 
-func request_Trading_PrepareCancelOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CancelOrderRequest
+func request_TradingService_PrepareCancelOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PrepareCancelOrderRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -63,8 +62,8 @@ func request_Trading_PrepareCancelOrder_0(ctx context.Context, marshaler runtime
 
 }
 
-func request_Trading_PrepareAmendOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AmendOrderRequest
+func request_TradingService_PrepareAmendOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PrepareAmendOrderRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -80,7 +79,7 @@ func request_Trading_PrepareAmendOrder_0(ctx context.Context, marshaler runtime.
 
 }
 
-func request_Trading_PrepareWithdraw_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingService_PrepareWithdraw_0(ctx context.Context, marshaler runtime.Marshaler, client TradingServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq PrepareWithdrawRequest
 	var metadata runtime.ServerMetadata
 
@@ -97,7 +96,7 @@ func request_Trading_PrepareWithdraw_0(ctx context.Context, marshaler runtime.Ma
 
 }
 
-func request_Trading_SubmitTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingService_SubmitTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client TradingServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq SubmitTransactionRequest
 	var metadata runtime.ServerMetadata
 
@@ -114,79 +113,11 @@ func request_Trading_SubmitTransaction_0(ctx context.Context, marshaler runtime.
 
 }
 
-func request_Trading_PrepareProposal_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PrepareProposalRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.PrepareProposal(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func request_Trading_PrepareVote_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PrepareVoteRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.PrepareVote(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func request_Trading_PrepareLiquidityProvision_0(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PrepareLiquidityProvisionRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.PrepareLiquidityProvision(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
 var (
-	filter_Trading_PrepareLiquidityProvision_1 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_TradingDataService_MarketAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_Trading_PrepareLiquidityProvision_1(ctx context.Context, marshaler runtime.Marshaler, client TradingClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq PrepareLiquidityProvisionRequest
-	var metadata runtime.ServerMetadata
-
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_Trading_PrepareLiquidityProvision_1); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.PrepareLiquidityProvision(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-var (
-	filter_TradingData_MarketAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
-
-func request_TradingData_MarketAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_MarketAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MarketAccountsRequest
 	var metadata runtime.ServerMetadata
 
@@ -197,18 +128,18 @@ func request_TradingData_MarketAccounts_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_MarketAccounts_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_MarketAccounts_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -218,10 +149,10 @@ func request_TradingData_MarketAccounts_0(ctx context.Context, marshaler runtime
 }
 
 var (
-	filter_TradingData_PartyAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_PartyAccounts_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_PartyAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_PartyAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq PartyAccountsRequest
 	var metadata runtime.ServerMetadata
 
@@ -232,18 +163,18 @@ func request_TradingData_PartyAccounts_0(ctx context.Context, marshaler runtime.
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_PartyAccounts_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_PartyAccounts_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -252,7 +183,7 @@ func request_TradingData_PartyAccounts_0(ctx context.Context, marshaler runtime.
 
 }
 
-func request_TradingData_FeeInfrastructureAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_FeeInfrastructureAccounts_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq FeeInfrastructureAccountsRequest
 	var metadata runtime.ServerMetadata
 
@@ -280,10 +211,10 @@ func request_TradingData_FeeInfrastructureAccounts_0(ctx context.Context, marsha
 }
 
 var (
-	filter_TradingData_Candles_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_Candles_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_Candles_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_Candles_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq CandlesRequest
 	var metadata runtime.ServerMetadata
 
@@ -294,18 +225,18 @@ func request_TradingData_Candles_0(ctx context.Context, marshaler runtime.Marsha
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_Candles_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_Candles_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -314,7 +245,7 @@ func request_TradingData_Candles_0(ctx context.Context, marshaler runtime.Marsha
 
 }
 
-func request_TradingData_MarketDataByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_MarketDataByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MarketDataByIDRequest
 	var metadata runtime.ServerMetadata
 
@@ -325,15 +256,15 @@ func request_TradingData_MarketDataByID_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.MarketDataByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -341,8 +272,8 @@ func request_TradingData_MarketDataByID_0(ctx context.Context, marshaler runtime
 
 }
 
-func request_TradingData_MarketsData_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+func request_TradingDataService_MarketsData_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq MarketsDataRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.MarketsData(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -350,7 +281,7 @@ func request_TradingData_MarketsData_0(ctx context.Context, marshaler runtime.Ma
 
 }
 
-func request_TradingData_MarketByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_MarketByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MarketByIDRequest
 	var metadata runtime.ServerMetadata
 
@@ -361,15 +292,15 @@ func request_TradingData_MarketByID_0(ctx context.Context, marshaler runtime.Mar
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.MarketByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -378,10 +309,10 @@ func request_TradingData_MarketByID_0(ctx context.Context, marshaler runtime.Mar
 }
 
 var (
-	filter_TradingData_MarketDepth_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_MarketDepth_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_MarketDepth_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_MarketDepth_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MarketDepthRequest
 	var metadata runtime.ServerMetadata
 
@@ -392,18 +323,18 @@ func request_TradingData_MarketDepth_0(ctx context.Context, marshaler runtime.Ma
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_MarketDepth_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_MarketDepth_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -412,8 +343,8 @@ func request_TradingData_MarketDepth_0(ctx context.Context, marshaler runtime.Ma
 
 }
 
-func request_TradingData_Markets_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+func request_TradingDataService_Markets_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq MarketsRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.Markets(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -421,8 +352,8 @@ func request_TradingData_Markets_0(ctx context.Context, marshaler runtime.Marsha
 
 }
 
-func request_TradingData_OrderByMarketAndID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq OrderByMarketAndIdRequest
+func request_TradingDataService_OrderByMarketAndID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq OrderByMarketAndIDRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -432,26 +363,26 @@ func request_TradingData_OrderByMarketAndID_0(ctx context.Context, marshaler run
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
-	val, ok = pathParams["orderID"]
+	val, ok = pathParams["order_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "orderID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "order_id")
 	}
 
-	protoReq.OrderID, err = runtime.String(val)
+	protoReq.OrderId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "orderID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "order_id", err)
 	}
 
 	msg, err := client.OrderByMarketAndID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -459,7 +390,7 @@ func request_TradingData_OrderByMarketAndID_0(ctx context.Context, marshaler run
 
 }
 
-func request_TradingData_OrderByReference_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_OrderByReference_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq OrderByReferenceRequest
 	var metadata runtime.ServerMetadata
 
@@ -487,10 +418,10 @@ func request_TradingData_OrderByReference_0(ctx context.Context, marshaler runti
 }
 
 var (
-	filter_TradingData_OrdersByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_OrdersByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_OrdersByMarket_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_OrdersByMarket_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq OrdersByMarketRequest
 	var metadata runtime.ServerMetadata
 
@@ -501,18 +432,18 @@ func request_TradingData_OrdersByMarket_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_OrdersByMarket_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_OrdersByMarket_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -522,10 +453,10 @@ func request_TradingData_OrdersByMarket_0(ctx context.Context, marshaler runtime
 }
 
 var (
-	filter_TradingData_OrdersByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_OrdersByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_OrdersByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_OrdersByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq OrdersByPartyRequest
 	var metadata runtime.ServerMetadata
 
@@ -536,18 +467,18 @@ func request_TradingData_OrdersByParty_0(ctx context.Context, marshaler runtime.
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_OrdersByParty_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_OrdersByParty_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -557,10 +488,10 @@ func request_TradingData_OrdersByParty_0(ctx context.Context, marshaler runtime.
 }
 
 var (
-	filter_TradingData_OrderVersionsByID_0 = &utilities.DoubleArray{Encoding: map[string]int{"orderID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_OrderVersionsByID_0 = &utilities.DoubleArray{Encoding: map[string]int{"order_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_OrderVersionsByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_OrderVersionsByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq OrderVersionsByIDRequest
 	var metadata runtime.ServerMetadata
 
@@ -571,18 +502,18 @@ func request_TradingData_OrderVersionsByID_0(ctx context.Context, marshaler runt
 		_   = err
 	)
 
-	val, ok = pathParams["orderID"]
+	val, ok = pathParams["order_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "orderID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "order_id")
 	}
 
-	protoReq.OrderID, err = runtime.String(val)
+	protoReq.OrderId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "orderID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "order_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_OrderVersionsByID_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_OrderVersionsByID_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -591,7 +522,7 @@ func request_TradingData_OrderVersionsByID_0(ctx context.Context, marshaler runt
 
 }
 
-func request_TradingData_MarginLevels_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_MarginLevels_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MarginLevelsRequest
 	var metadata runtime.ServerMetadata
 
@@ -602,26 +533,26 @@ func request_TradingData_MarginLevels_0(ctx context.Context, marshaler runtime.M
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.MarginLevels(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -629,8 +560,8 @@ func request_TradingData_MarginLevels_0(ctx context.Context, marshaler runtime.M
 
 }
 
-func request_TradingData_Parties_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+func request_TradingDataService_Parties_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq PartiesRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.Parties(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -638,7 +569,7 @@ func request_TradingData_Parties_0(ctx context.Context, marshaler runtime.Marsha
 
 }
 
-func request_TradingData_PartyByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_PartyByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq PartyByIDRequest
 	var metadata runtime.ServerMetadata
 
@@ -649,15 +580,15 @@ func request_TradingData_PartyByID_0(ctx context.Context, marshaler runtime.Mars
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.PartyByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -666,10 +597,10 @@ func request_TradingData_PartyByID_0(ctx context.Context, marshaler runtime.Mars
 }
 
 var (
-	filter_TradingData_PositionsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_PositionsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_PositionsByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_PositionsByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq PositionsByPartyRequest
 	var metadata runtime.ServerMetadata
 
@@ -680,18 +611,18 @@ func request_TradingData_PositionsByParty_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_PositionsByParty_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_PositionsByParty_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -700,7 +631,7 @@ func request_TradingData_PositionsByParty_0(ctx context.Context, marshaler runti
 
 }
 
-func request_TradingData_LastTrade_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_LastTrade_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq LastTradeRequest
 	var metadata runtime.ServerMetadata
 
@@ -711,15 +642,15 @@ func request_TradingData_LastTrade_0(ctx context.Context, marshaler runtime.Mars
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
 	msg, err := client.LastTrade(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -728,10 +659,10 @@ func request_TradingData_LastTrade_0(ctx context.Context, marshaler runtime.Mars
 }
 
 var (
-	filter_TradingData_TradesByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"marketID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_TradesByMarket_0 = &utilities.DoubleArray{Encoding: map[string]int{"market_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_TradesByMarket_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_TradesByMarket_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq TradesByMarketRequest
 	var metadata runtime.ServerMetadata
 
@@ -742,18 +673,18 @@ func request_TradingData_TradesByMarket_0(ctx context.Context, marshaler runtime
 		_   = err
 	)
 
-	val, ok = pathParams["marketID"]
+	val, ok = pathParams["market_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "marketID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "market_id")
 	}
 
-	protoReq.MarketID, err = runtime.String(val)
+	protoReq.MarketId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "marketID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "market_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_TradesByMarket_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_TradesByMarket_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -762,7 +693,7 @@ func request_TradingData_TradesByMarket_0(ctx context.Context, marshaler runtime
 
 }
 
-func request_TradingData_TradesByOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_TradesByOrder_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq TradesByOrderRequest
 	var metadata runtime.ServerMetadata
 
@@ -773,15 +704,15 @@ func request_TradingData_TradesByOrder_0(ctx context.Context, marshaler runtime.
 		_   = err
 	)
 
-	val, ok = pathParams["orderID"]
+	val, ok = pathParams["order_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "orderID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "order_id")
 	}
 
-	protoReq.OrderID, err = runtime.String(val)
+	protoReq.OrderId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "orderID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "order_id", err)
 	}
 
 	msg, err := client.TradesByOrder(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -790,10 +721,10 @@ func request_TradingData_TradesByOrder_0(ctx context.Context, marshaler runtime.
 }
 
 var (
-	filter_TradingData_TradesByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_TradesByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_TradesByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_TradesByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq TradesByPartyRequest
 	var metadata runtime.ServerMetadata
 
@@ -804,18 +735,18 @@ func request_TradingData_TradesByParty_0(ctx context.Context, marshaler runtime.
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_TradesByParty_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_TradesByParty_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -825,14 +756,14 @@ func request_TradingData_TradesByParty_0(ctx context.Context, marshaler runtime.
 }
 
 var (
-	filter_TradingData_GetProposals_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_TradingDataService_GetProposals_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_TradingData_GetProposals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_GetProposals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProposalsRequest
 	var metadata runtime.ServerMetadata
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_GetProposals_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_GetProposals_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -842,10 +773,10 @@ func request_TradingData_GetProposals_0(ctx context.Context, marshaler runtime.M
 }
 
 var (
-	filter_TradingData_GetProposalsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"partyID": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_TradingDataService_GetProposalsByParty_0 = &utilities.DoubleArray{Encoding: map[string]int{"party_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_TradingData_GetProposalsByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_GetProposalsByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProposalsByPartyRequest
 	var metadata runtime.ServerMetadata
 
@@ -856,18 +787,18 @@ func request_TradingData_GetProposalsByParty_0(ctx context.Context, marshaler ru
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_GetProposalsByParty_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_GetProposalsByParty_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -876,7 +807,7 @@ func request_TradingData_GetProposalsByParty_0(ctx context.Context, marshaler ru
 
 }
 
-func request_TradingData_GetVotesByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_GetVotesByParty_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetVotesByPartyRequest
 	var metadata runtime.ServerMetadata
 
@@ -887,15 +818,15 @@ func request_TradingData_GetVotesByParty_0(ctx context.Context, marshaler runtim
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.GetVotesByParty(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -904,14 +835,14 @@ func request_TradingData_GetVotesByParty_0(ctx context.Context, marshaler runtim
 }
 
 var (
-	filter_TradingData_GetNewMarketProposals_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_TradingDataService_GetNewMarketProposals_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_TradingData_GetNewMarketProposals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_GetNewMarketProposals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetNewMarketProposalsRequest
 	var metadata runtime.ServerMetadata
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_GetNewMarketProposals_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_GetNewMarketProposals_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -921,14 +852,14 @@ func request_TradingData_GetNewMarketProposals_0(ctx context.Context, marshaler 
 }
 
 var (
-	filter_TradingData_GetNewAssetProposals_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_TradingDataService_GetNewAssetProposals_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_TradingData_GetNewAssetProposals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_GetNewAssetProposals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetNewAssetProposalsRequest
 	var metadata runtime.ServerMetadata
 
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingData_GetNewAssetProposals_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_TradingDataService_GetNewAssetProposals_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -937,7 +868,7 @@ func request_TradingData_GetNewAssetProposals_0(ctx context.Context, marshaler r
 
 }
 
-func request_TradingData_GetProposalByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_GetProposalByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProposalByIDRequest
 	var metadata runtime.ServerMetadata
 
@@ -948,15 +879,15 @@ func request_TradingData_GetProposalByID_0(ctx context.Context, marshaler runtim
 		_   = err
 	)
 
-	val, ok = pathParams["proposalID"]
+	val, ok = pathParams["proposal_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "proposalID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "proposal_id")
 	}
 
-	protoReq.ProposalID, err = runtime.String(val)
+	protoReq.ProposalId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "proposalID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "proposal_id", err)
 	}
 
 	msg, err := client.GetProposalByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -964,7 +895,7 @@ func request_TradingData_GetProposalByID_0(ctx context.Context, marshaler runtim
 
 }
 
-func request_TradingData_GetProposalByReference_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_GetProposalByReference_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetProposalByReferenceRequest
 	var metadata runtime.ServerMetadata
 
@@ -991,8 +922,8 @@ func request_TradingData_GetProposalByReference_0(ctx context.Context, marshaler
 
 }
 
-func request_TradingData_Statistics_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+func request_TradingDataService_Statistics_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq StatisticsRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.Statistics(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1000,8 +931,8 @@ func request_TradingData_Statistics_0(ctx context.Context, marshaler runtime.Mar
 
 }
 
-func request_TradingData_GetVegaTime_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq empty.Empty
+func request_TradingDataService_GetVegaTime_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetVegaTimeRequest
 	var metadata runtime.ServerMetadata
 
 	msg, err := client.GetVegaTime(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1009,7 +940,7 @@ func request_TradingData_GetVegaTime_0(ctx context.Context, marshaler runtime.Ma
 
 }
 
-func request_TradingData_AssetByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_AssetByID_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq AssetByIDRequest
 	var metadata runtime.ServerMetadata
 
@@ -1020,15 +951,15 @@ func request_TradingData_AssetByID_0(ctx context.Context, marshaler runtime.Mars
 		_   = err
 	)
 
-	val, ok = pathParams["ID"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ID, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.AssetByID(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1036,7 +967,7 @@ func request_TradingData_AssetByID_0(ctx context.Context, marshaler runtime.Mars
 
 }
 
-func request_TradingData_Assets_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_Assets_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq AssetsRequest
 	var metadata runtime.ServerMetadata
 
@@ -1045,7 +976,7 @@ func request_TradingData_Assets_0(ctx context.Context, marshaler runtime.Marshal
 
 }
 
-func request_TradingData_EstimateFee_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_EstimateFee_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq EstimateFeeRequest
 	var metadata runtime.ServerMetadata
 
@@ -1062,7 +993,7 @@ func request_TradingData_EstimateFee_0(ctx context.Context, marshaler runtime.Ma
 
 }
 
-func request_TradingData_EstimateMargin_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_EstimateMargin_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq EstimateMarginRequest
 	var metadata runtime.ServerMetadata
 
@@ -1079,7 +1010,7 @@ func request_TradingData_EstimateMargin_0(ctx context.Context, marshaler runtime
 
 }
 
-func request_TradingData_ERC20WithdrawalApproval_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_ERC20WithdrawalApproval_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ERC20WithdrawalApprovalRequest
 	var metadata runtime.ServerMetadata
 
@@ -1090,15 +1021,15 @@ func request_TradingData_ERC20WithdrawalApproval_0(ctx context.Context, marshale
 		_   = err
 	)
 
-	val, ok = pathParams["withdrawalID"]
+	val, ok = pathParams["withdrawal_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "withdrawalID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "withdrawal_id")
 	}
 
-	protoReq.WithdrawalID, err = runtime.String(val)
+	protoReq.WithdrawalId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "withdrawalID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "withdrawal_id", err)
 	}
 
 	msg, err := client.ERC20WithdrawalApproval(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1106,7 +1037,7 @@ func request_TradingData_ERC20WithdrawalApproval_0(ctx context.Context, marshale
 
 }
 
-func request_TradingData_Withdrawal_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_Withdrawal_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq WithdrawalRequest
 	var metadata runtime.ServerMetadata
 
@@ -1117,15 +1048,15 @@ func request_TradingData_Withdrawal_0(ctx context.Context, marshaler runtime.Mar
 		_   = err
 	)
 
-	val, ok = pathParams["ID"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ID, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.Withdrawal(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1133,7 +1064,7 @@ func request_TradingData_Withdrawal_0(ctx context.Context, marshaler runtime.Mar
 
 }
 
-func request_TradingData_Withdrawals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_Withdrawals_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq WithdrawalsRequest
 	var metadata runtime.ServerMetadata
 
@@ -1144,15 +1075,15 @@ func request_TradingData_Withdrawals_0(ctx context.Context, marshaler runtime.Ma
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.Withdrawals(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1160,7 +1091,7 @@ func request_TradingData_Withdrawals_0(ctx context.Context, marshaler runtime.Ma
 
 }
 
-func request_TradingData_Deposit_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_Deposit_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DepositRequest
 	var metadata runtime.ServerMetadata
 
@@ -1171,15 +1102,15 @@ func request_TradingData_Deposit_0(ctx context.Context, marshaler runtime.Marsha
 		_   = err
 	)
 
-	val, ok = pathParams["ID"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "ID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ID, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "ID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.Deposit(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1187,7 +1118,7 @@ func request_TradingData_Deposit_0(ctx context.Context, marshaler runtime.Marsha
 
 }
 
-func request_TradingData_Deposits_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_Deposits_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DepositsRequest
 	var metadata runtime.ServerMetadata
 
@@ -1198,15 +1129,15 @@ func request_TradingData_Deposits_0(ctx context.Context, marshaler runtime.Marsh
 		_   = err
 	)
 
-	val, ok = pathParams["partyID"]
+	val, ok = pathParams["party_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "partyID")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "party_id")
 	}
 
-	protoReq.PartyID, err = runtime.String(val)
+	protoReq.PartyId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "partyID", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "party_id", err)
 	}
 
 	msg, err := client.Deposits(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -1214,7 +1145,7 @@ func request_TradingData_Deposits_0(ctx context.Context, marshaler runtime.Marsh
 
 }
 
-func request_TradingData_NetworkParameters_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_TradingDataService_NetworkParameters_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq NetworkParametersRequest
 	var metadata runtime.ServerMetadata
 
@@ -1223,9 +1154,9 @@ func request_TradingData_NetworkParameters_0(ctx context.Context, marshaler runt
 
 }
 
-// RegisterTradingHandlerFromEndpoint is same as RegisterTradingHandler but
+// RegisterTradingServiceHandlerFromEndpoint is same as RegisterTradingServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterTradingHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterTradingServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -1245,23 +1176,23 @@ func RegisterTradingHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeM
 		}()
 	}()
 
-	return RegisterTradingHandler(ctx, mux, conn)
+	return RegisterTradingServiceHandler(ctx, mux, conn)
 }
 
-// RegisterTradingHandler registers the http handlers for service Trading to "mux".
+// RegisterTradingServiceHandler registers the http handlers for service TradingService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterTradingHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterTradingHandlerClient(ctx, mux, NewTradingClient(conn))
+func RegisterTradingServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterTradingServiceHandlerClient(ctx, mux, NewTradingServiceClient(conn))
 }
 
-// RegisterTradingHandlerClient registers the http handlers for service Trading
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "TradingClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "TradingClient"
+// RegisterTradingServiceHandlerClient registers the http handlers for service TradingService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "TradingServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "TradingServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "TradingClient" to call the correct interceptors.
-func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TradingClient) error {
+// "TradingServiceClient" to call the correct interceptors.
+func RegisterTradingServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TradingServiceClient) error {
 
-	mux.Handle("POST", pattern_Trading_PrepareSubmitOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TradingService_PrepareSubmitOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1270,18 +1201,18 @@ func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Trading_PrepareSubmitOrder_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingService_PrepareSubmitOrder_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Trading_PrepareSubmitOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingService_PrepareSubmitOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_Trading_PrepareCancelOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TradingService_PrepareCancelOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1290,18 +1221,18 @@ func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Trading_PrepareCancelOrder_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingService_PrepareCancelOrder_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Trading_PrepareCancelOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingService_PrepareCancelOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_Trading_PrepareAmendOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TradingService_PrepareAmendOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1310,18 +1241,18 @@ func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Trading_PrepareAmendOrder_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingService_PrepareAmendOrder_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Trading_PrepareAmendOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingService_PrepareAmendOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_Trading_PrepareWithdraw_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TradingService_PrepareWithdraw_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1330,18 +1261,18 @@ func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Trading_PrepareWithdraw_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingService_PrepareWithdraw_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Trading_PrepareWithdraw_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingService_PrepareWithdraw_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_Trading_SubmitTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TradingService_SubmitTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1350,94 +1281,14 @@ func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Trading_SubmitTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingService_SubmitTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Trading_SubmitTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_Trading_PrepareProposal_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_Trading_PrepareProposal_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_Trading_PrepareProposal_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_Trading_PrepareVote_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_Trading_PrepareVote_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_Trading_PrepareVote_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_Trading_PrepareLiquidityProvision_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_Trading_PrepareLiquidityProvision_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_Trading_PrepareLiquidityProvision_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_Trading_PrepareLiquidityProvision_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_Trading_PrepareLiquidityProvision_1(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_Trading_PrepareLiquidityProvision_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingService_SubmitTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1445,48 +1296,32 @@ func RegisterTradingHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 }
 
 var (
-	pattern_Trading_PrepareSubmitOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "submit"}, ""))
+	pattern_TradingService_PrepareSubmitOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "submit"}, ""))
 
-	pattern_Trading_PrepareCancelOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "cancel"}, ""))
+	pattern_TradingService_PrepareCancelOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "cancel"}, ""))
 
-	pattern_Trading_PrepareAmendOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "amend"}, ""))
+	pattern_TradingService_PrepareAmendOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "prepare", "amend"}, ""))
 
-	pattern_Trading_PrepareWithdraw_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"parties", "prepare", "withdraw"}, ""))
+	pattern_TradingService_PrepareWithdraw_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"parties", "prepare", "withdraw"}, ""))
 
-	pattern_Trading_SubmitTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"transaction"}, ""))
-
-	pattern_Trading_PrepareProposal_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "prepare", "proposal"}, ""))
-
-	pattern_Trading_PrepareVote_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "prepare", "vote"}, ""))
-
-	pattern_Trading_PrepareLiquidityProvision_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"liquidity-provisions", "prepare", "submit"}, ""))
-
-	pattern_Trading_PrepareLiquidityProvision_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"liquidity-provisions"}, ""))
+	pattern_TradingService_SubmitTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"transaction"}, ""))
 )
 
 var (
-	forward_Trading_PrepareSubmitOrder_0 = runtime.ForwardResponseMessage
+	forward_TradingService_PrepareSubmitOrder_0 = runtime.ForwardResponseMessage
 
-	forward_Trading_PrepareCancelOrder_0 = runtime.ForwardResponseMessage
+	forward_TradingService_PrepareCancelOrder_0 = runtime.ForwardResponseMessage
 
-	forward_Trading_PrepareAmendOrder_0 = runtime.ForwardResponseMessage
+	forward_TradingService_PrepareAmendOrder_0 = runtime.ForwardResponseMessage
 
-	forward_Trading_PrepareWithdraw_0 = runtime.ForwardResponseMessage
+	forward_TradingService_PrepareWithdraw_0 = runtime.ForwardResponseMessage
 
-	forward_Trading_SubmitTransaction_0 = runtime.ForwardResponseMessage
-
-	forward_Trading_PrepareProposal_0 = runtime.ForwardResponseMessage
-
-	forward_Trading_PrepareVote_0 = runtime.ForwardResponseMessage
-
-	forward_Trading_PrepareLiquidityProvision_0 = runtime.ForwardResponseMessage
-
-	forward_Trading_PrepareLiquidityProvision_1 = runtime.ForwardResponseMessage
+	forward_TradingService_SubmitTransaction_0 = runtime.ForwardResponseMessage
 )
 
-// RegisterTradingDataHandlerFromEndpoint is same as RegisterTradingDataHandler but
+// RegisterTradingDataServiceHandlerFromEndpoint is same as RegisterTradingDataServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterTradingDataHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterTradingDataServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -1506,23 +1341,23 @@ func RegisterTradingDataHandlerFromEndpoint(ctx context.Context, mux *runtime.Se
 		}()
 	}()
 
-	return RegisterTradingDataHandler(ctx, mux, conn)
+	return RegisterTradingDataServiceHandler(ctx, mux, conn)
 }
 
-// RegisterTradingDataHandler registers the http handlers for service TradingData to "mux".
+// RegisterTradingDataServiceHandler registers the http handlers for service TradingDataService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterTradingDataHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterTradingDataHandlerClient(ctx, mux, NewTradingDataClient(conn))
+func RegisterTradingDataServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterTradingDataServiceHandlerClient(ctx, mux, NewTradingDataServiceClient(conn))
 }
 
-// RegisterTradingDataHandlerClient registers the http handlers for service TradingData
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "TradingDataClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "TradingDataClient"
+// RegisterTradingDataServiceHandlerClient registers the http handlers for service TradingDataService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "TradingDataServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "TradingDataServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "TradingDataClient" to call the correct interceptors.
-func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TradingDataClient) error {
+// "TradingDataServiceClient" to call the correct interceptors.
+func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TradingDataServiceClient) error {
 
-	mux.Handle("GET", pattern_TradingData_MarketAccounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_MarketAccounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1531,18 +1366,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_MarketAccounts_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_MarketAccounts_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_MarketAccounts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_MarketAccounts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_PartyAccounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_PartyAccounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1551,18 +1386,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_PartyAccounts_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_PartyAccounts_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_PartyAccounts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_PartyAccounts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_FeeInfrastructureAccounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_FeeInfrastructureAccounts_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1571,18 +1406,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_FeeInfrastructureAccounts_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_FeeInfrastructureAccounts_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_FeeInfrastructureAccounts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_FeeInfrastructureAccounts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Candles_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Candles_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1591,18 +1426,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Candles_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Candles_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Candles_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Candles_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_MarketDataByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_MarketDataByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1611,18 +1446,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_MarketDataByID_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_MarketDataByID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_MarketDataByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_MarketDataByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_MarketsData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_MarketsData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1631,18 +1466,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_MarketsData_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_MarketsData_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_MarketsData_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_MarketsData_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_MarketByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_MarketByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1651,18 +1486,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_MarketByID_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_MarketByID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_MarketByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_MarketByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_MarketDepth_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_MarketDepth_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1671,18 +1506,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_MarketDepth_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_MarketDepth_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_MarketDepth_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_MarketDepth_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Markets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Markets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1691,18 +1526,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Markets_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Markets_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Markets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Markets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_OrderByMarketAndID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_OrderByMarketAndID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1711,18 +1546,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_OrderByMarketAndID_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_OrderByMarketAndID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_OrderByMarketAndID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_OrderByMarketAndID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_OrderByReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_OrderByReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1731,18 +1566,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_OrderByReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_OrderByReference_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_OrderByReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_OrderByReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_OrdersByMarket_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_OrdersByMarket_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1751,18 +1586,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_OrdersByMarket_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_OrdersByMarket_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_OrdersByMarket_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_OrdersByMarket_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_OrdersByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_OrdersByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1771,18 +1606,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_OrdersByParty_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_OrdersByParty_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_OrdersByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_OrdersByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_OrderVersionsByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_OrderVersionsByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1791,18 +1626,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_OrderVersionsByID_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_OrderVersionsByID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_OrderVersionsByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_OrderVersionsByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_MarginLevels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_MarginLevels_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1811,18 +1646,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_MarginLevels_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_MarginLevels_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_MarginLevels_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_MarginLevels_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Parties_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Parties_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1831,18 +1666,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Parties_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Parties_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Parties_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Parties_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_PartyByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_PartyByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1851,18 +1686,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_PartyByID_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_PartyByID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_PartyByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_PartyByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_PositionsByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_PositionsByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1871,18 +1706,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_PositionsByParty_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_PositionsByParty_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_PositionsByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_PositionsByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_LastTrade_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_LastTrade_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1891,18 +1726,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_LastTrade_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_LastTrade_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_LastTrade_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_LastTrade_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_TradesByMarket_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_TradesByMarket_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1911,18 +1746,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_TradesByMarket_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_TradesByMarket_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_TradesByMarket_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_TradesByMarket_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_TradesByOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_TradesByOrder_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1931,18 +1766,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_TradesByOrder_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_TradesByOrder_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_TradesByOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_TradesByOrder_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_TradesByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_TradesByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1951,18 +1786,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_TradesByParty_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_TradesByParty_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_TradesByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_TradesByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetProposals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetProposals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1971,18 +1806,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetProposals_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetProposals_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetProposals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetProposals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetProposalsByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetProposalsByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -1991,18 +1826,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetProposalsByParty_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetProposalsByParty_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetProposalsByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetProposalsByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetVotesByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetVotesByParty_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2011,18 +1846,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetVotesByParty_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetVotesByParty_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetVotesByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetVotesByParty_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetNewMarketProposals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetNewMarketProposals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2031,18 +1866,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetNewMarketProposals_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetNewMarketProposals_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetNewMarketProposals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetNewMarketProposals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetNewAssetProposals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetNewAssetProposals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2051,18 +1886,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetNewAssetProposals_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetNewAssetProposals_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetNewAssetProposals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetNewAssetProposals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetProposalByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetProposalByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2071,18 +1906,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetProposalByID_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetProposalByID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetProposalByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetProposalByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetProposalByReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetProposalByReference_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2091,18 +1926,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetProposalByReference_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetProposalByReference_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetProposalByReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetProposalByReference_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Statistics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Statistics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2111,18 +1946,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Statistics_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Statistics_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Statistics_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Statistics_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_GetVegaTime_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetVegaTime_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2131,18 +1966,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_GetVegaTime_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetVegaTime_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_GetVegaTime_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetVegaTime_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_AssetByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_AssetByID_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2151,18 +1986,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_AssetByID_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_AssetByID_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_AssetByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_AssetByID_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Assets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Assets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2171,18 +2006,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Assets_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Assets_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Assets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Assets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TradingData_EstimateFee_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TradingDataService_EstimateFee_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2191,18 +2026,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_EstimateFee_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_EstimateFee_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_EstimateFee_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_EstimateFee_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TradingData_EstimateMargin_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TradingDataService_EstimateMargin_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2211,18 +2046,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_EstimateMargin_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_EstimateMargin_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_EstimateMargin_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_EstimateMargin_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_ERC20WithdrawalApproval_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_ERC20WithdrawalApproval_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2231,18 +2066,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_ERC20WithdrawalApproval_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_ERC20WithdrawalApproval_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_ERC20WithdrawalApproval_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_ERC20WithdrawalApproval_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Withdrawal_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Withdrawal_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2251,18 +2086,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Withdrawal_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Withdrawal_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Withdrawal_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Withdrawal_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Withdrawals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Withdrawals_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2271,18 +2106,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Withdrawals_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Withdrawals_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Withdrawals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Withdrawals_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Deposit_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Deposit_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2291,18 +2126,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Deposit_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Deposit_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Deposit_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Deposit_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_Deposits_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_Deposits_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2311,18 +2146,18 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_Deposits_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_Deposits_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_Deposits_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_Deposits_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingData_NetworkParameters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_NetworkParameters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2331,14 +2166,14 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingData_NetworkParameters_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_NetworkParameters_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingData_NetworkParameters_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_NetworkParameters_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -2346,169 +2181,169 @@ func RegisterTradingDataHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_TradingData_MarketAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "accounts"}, ""))
+	pattern_TradingDataService_MarketAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "accounts"}, ""))
 
-	pattern_TradingData_PartyAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "accounts"}, ""))
+	pattern_TradingDataService_PartyAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "accounts"}, ""))
 
-	pattern_TradingData_FeeInfrastructureAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"assets", "asset", "infrastructureFeeAccount"}, ""))
+	pattern_TradingDataService_FeeInfrastructureAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"assets", "asset", "infrastructureFeeAccount"}, ""))
 
-	pattern_TradingData_Candles_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "candles"}, ""))
+	pattern_TradingDataService_Candles_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "candles"}, ""))
 
-	pattern_TradingData_MarketDataByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets-data", "marketID"}, ""))
+	pattern_TradingDataService_MarketDataByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets-data", "market_id"}, ""))
 
-	pattern_TradingData_MarketsData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markets-data"}, ""))
+	pattern_TradingDataService_MarketsData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markets-data"}, ""))
 
-	pattern_TradingData_MarketByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets", "marketID"}, ""))
+	pattern_TradingDataService_MarketByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"markets", "market_id"}, ""))
 
-	pattern_TradingData_MarketDepth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "depth"}, ""))
+	pattern_TradingDataService_MarketDepth_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "depth"}, ""))
 
-	pattern_TradingData_Markets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markets"}, ""))
+	pattern_TradingDataService_Markets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"markets"}, ""))
 
-	pattern_TradingData_OrderByMarketAndID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"markets", "marketID", "orders", "orderID"}, ""))
+	pattern_TradingDataService_OrderByMarketAndID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"markets", "market_id", "orders", "order_id"}, ""))
 
-	pattern_TradingData_OrderByReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"orders", "reference"}, ""))
+	pattern_TradingDataService_OrderByReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"orders", "reference"}, ""))
 
-	pattern_TradingData_OrdersByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "orders"}, ""))
+	pattern_TradingDataService_OrdersByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "orders"}, ""))
 
-	pattern_TradingData_OrdersByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "orders"}, ""))
+	pattern_TradingDataService_OrdersByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "orders"}, ""))
 
-	pattern_TradingData_OrderVersionsByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "orderID", "versions"}, ""))
+	pattern_TradingDataService_OrderVersionsByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "order_id", "versions"}, ""))
 
-	pattern_TradingData_MarginLevels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"parties", "partyID", "markets", "marketID", "margin"}, ""))
+	pattern_TradingDataService_MarginLevels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"parties", "party_id", "markets", "market_id", "margin"}, ""))
 
-	pattern_TradingData_Parties_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"parties"}, ""))
+	pattern_TradingDataService_Parties_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"parties"}, ""))
 
-	pattern_TradingData_PartyByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"parties", "partyID"}, ""))
+	pattern_TradingDataService_PartyByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"parties", "party_id"}, ""))
 
-	pattern_TradingData_PositionsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "positions"}, ""))
+	pattern_TradingDataService_PositionsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "positions"}, ""))
 
-	pattern_TradingData_LastTrade_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"markets", "marketID", "trades", "latest"}, ""))
+	pattern_TradingDataService_LastTrade_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"markets", "market_id", "trades", "latest"}, ""))
 
-	pattern_TradingData_TradesByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "marketID", "trades"}, ""))
+	pattern_TradingDataService_TradesByMarket_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"markets", "market_id", "trades"}, ""))
 
-	pattern_TradingData_TradesByOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "orderID", "trades"}, ""))
+	pattern_TradingDataService_TradesByOrder_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"orders", "order_id", "trades"}, ""))
 
-	pattern_TradingData_TradesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "trades"}, ""))
+	pattern_TradingDataService_TradesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "trades"}, ""))
 
-	pattern_TradingData_GetProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"governance", "proposals"}, ""))
+	pattern_TradingDataService_GetProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"governance", "proposals"}, ""))
 
-	pattern_TradingData_GetProposalsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "proposals"}, ""))
+	pattern_TradingDataService_GetProposalsByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "proposals"}, ""))
 
-	pattern_TradingData_GetVotesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "partyID", "votes"}, ""))
+	pattern_TradingDataService_GetVotesByParty_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "votes"}, ""))
 
-	pattern_TradingData_GetNewMarketProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "market", "proposals"}, ""))
+	pattern_TradingDataService_GetNewMarketProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "market", "proposals"}, ""))
 
-	pattern_TradingData_GetNewAssetProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "asset", "proposals"}, ""))
+	pattern_TradingDataService_GetNewAssetProposals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"governance", "asset", "proposals"}, ""))
 
-	pattern_TradingData_GetProposalByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"governance", "proposal", "proposalID"}, ""))
+	pattern_TradingDataService_GetProposalByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"governance", "proposal", "proposal_id"}, ""))
 
-	pattern_TradingData_GetProposalByReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2}, []string{"governance", "proposal", "reference"}, ""))
+	pattern_TradingDataService_GetProposalByReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2}, []string{"governance", "proposal", "reference"}, ""))
 
-	pattern_TradingData_Statistics_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"statistics"}, ""))
+	pattern_TradingDataService_Statistics_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"statistics"}, ""))
 
-	pattern_TradingData_GetVegaTime_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"time"}, ""))
+	pattern_TradingDataService_GetVegaTime_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"time"}, ""))
 
-	pattern_TradingData_AssetByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"assets", "ID"}, ""))
+	pattern_TradingDataService_AssetByID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"assets", "id"}, ""))
 
-	pattern_TradingData_Assets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"assets"}, ""))
+	pattern_TradingDataService_Assets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"assets"}, ""))
 
-	pattern_TradingData_EstimateFee_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "fee", "estimate"}, ""))
+	pattern_TradingDataService_EstimateFee_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "fee", "estimate"}, ""))
 
-	pattern_TradingData_EstimateMargin_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "margins", "estimate"}, ""))
+	pattern_TradingDataService_EstimateMargin_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"orders", "margins", "estimate"}, ""))
 
-	pattern_TradingData_ERC20WithdrawalApproval_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"withdrawals", "withdrawalID", "approval", "erc20"}, ""))
+	pattern_TradingDataService_ERC20WithdrawalApproval_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"withdrawals", "withdrawal_id", "approval", "erc20"}, ""))
 
-	pattern_TradingData_Withdrawal_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"withdrawals", "ID"}, ""))
+	pattern_TradingDataService_Withdrawal_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"withdrawals", "id"}, ""))
 
-	pattern_TradingData_Withdrawals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"withdrawals", "party", "partyID"}, ""))
+	pattern_TradingDataService_Withdrawals_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"withdrawals", "party", "party_id"}, ""))
 
-	pattern_TradingData_Deposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"deposits", "ID"}, ""))
+	pattern_TradingDataService_Deposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"deposits", "id"}, ""))
 
-	pattern_TradingData_Deposits_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"deposits", "party", "partyID"}, ""))
+	pattern_TradingDataService_Deposits_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"deposits", "party", "party_id"}, ""))
 
-	pattern_TradingData_NetworkParameters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"network", "parameters"}, ""))
+	pattern_TradingDataService_NetworkParameters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"network", "parameters"}, ""))
 )
 
 var (
-	forward_TradingData_MarketAccounts_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_MarketAccounts_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_PartyAccounts_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_PartyAccounts_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_FeeInfrastructureAccounts_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_FeeInfrastructureAccounts_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Candles_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Candles_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_MarketDataByID_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_MarketDataByID_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_MarketsData_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_MarketsData_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_MarketByID_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_MarketByID_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_MarketDepth_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_MarketDepth_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Markets_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Markets_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_OrderByMarketAndID_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_OrderByMarketAndID_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_OrderByReference_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_OrderByReference_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_OrdersByMarket_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_OrdersByMarket_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_OrdersByParty_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_OrdersByParty_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_OrderVersionsByID_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_OrderVersionsByID_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_MarginLevels_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_MarginLevels_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Parties_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Parties_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_PartyByID_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_PartyByID_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_PositionsByParty_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_PositionsByParty_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_LastTrade_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_LastTrade_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_TradesByMarket_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_TradesByMarket_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_TradesByOrder_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_TradesByOrder_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_TradesByParty_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_TradesByParty_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetProposals_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetProposals_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetProposalsByParty_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetProposalsByParty_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetVotesByParty_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetVotesByParty_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetNewMarketProposals_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetNewMarketProposals_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetNewAssetProposals_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetNewAssetProposals_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetProposalByID_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetProposalByID_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetProposalByReference_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetProposalByReference_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Statistics_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Statistics_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_GetVegaTime_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetVegaTime_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_AssetByID_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_AssetByID_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Assets_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Assets_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_EstimateFee_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_EstimateFee_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_EstimateMargin_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_EstimateMargin_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_ERC20WithdrawalApproval_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_ERC20WithdrawalApproval_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Withdrawal_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Withdrawal_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Withdrawals_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Withdrawals_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Deposit_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Deposit_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_Deposits_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_Deposits_0 = runtime.ForwardResponseMessage
 
-	forward_TradingData_NetworkParameters_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_NetworkParameters_0 = runtime.ForwardResponseMessage
 )

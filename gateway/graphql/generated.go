@@ -399,7 +399,7 @@ type ComplexityRoot struct {
 	}
 
 	NodeSignature struct {
-		ID        func(childComplexity int) int
+		Id        func(childComplexity int) int
 		Kind      func(childComplexity int) int
 		Signature func(childComplexity int) int
 	}
@@ -2503,11 +2503,11 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.NewMarket.TradingMode(childComplexity), true
 
 	case "NodeSignature.id":
-		if e.complexity.NodeSignature.ID == nil {
+		if e.complexity.NodeSignature.Id == nil {
 			break
 		}
 
-		return e.complexity.NodeSignature.ID(childComplexity), true
+		return e.complexity.NodeSignature.Id(childComplexity), true
 
 	case "NodeSignature.kind":
 		if e.complexity.NodeSignature.Kind == nil {
@@ -14760,7 +14760,7 @@ func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)

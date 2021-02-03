@@ -38,7 +38,7 @@ func accMarketIDFilter(mID string) subscribers.EventFilter {
 		if !ok {
 			return false
 		}
-		if ae.Account().MarketID != mID {
+		if ae.Account().MarketId != mID {
 			return false
 		}
 		return true
@@ -133,11 +133,11 @@ func testFilteredNoValidEvents(t *testing.T) {
 	set := []events.Event{
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc-1",
-			MarketID: "invalid",
+			MarketId: "invalid",
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc-2",
-			MarketID: "also-invalid",
+			MarketId: "also-invalid",
 		}),
 	}
 	sub.Push(set...)
@@ -160,11 +160,11 @@ func testFilteredSomeValidEvents(t *testing.T) {
 	set := []events.Event{
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc-1",
-			MarketID: "invalid",
+			MarketId: "invalid",
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc-2",
-			MarketID: "valid",
+			MarketId: "valid",
 		}),
 	}
 
@@ -197,15 +197,15 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	set1 := []events.Event{
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc1",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc2",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc50",
-			MarketID: "other-market",
+			MarketId: "other-market",
 		}),
 	}
 	sendRoutine := func(ch chan struct{}, sub *tstStreamSub, set []events.Event) {
@@ -262,39 +262,39 @@ func testCloseChannelWrite(t *testing.T) {
 	set := []events.Event{
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc1",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc2",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc50",
-			MarketID: "other-market",
+			MarketId: "other-market",
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc3",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc4",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc51",
-			MarketID: "other-market",
+			MarketId: "other-market",
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc5",
-			MarketID: "other-market",
+			MarketId: "other-market",
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc6",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, types.Account{
 			Id:       "acc7",
-			MarketID: mID,
+			MarketId: mID,
 		}),
 	}
 	started := make(chan struct{})

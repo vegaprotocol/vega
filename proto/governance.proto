@@ -14,9 +14,9 @@ message FutureProduct {
   // Future product maturity (ISO8601/RFC3339 timestamp)
   string maturity = 1 [(validator.field) = {string_not_empty : true}];
   // Product settlement asset identifier
-  string settlementAsset = 2  [(validator.field) = {string_not_empty : true}];
+  string settlement_asset = 2  [(validator.field) = {string_not_empty : true}];
   // Product quote name
-  string quoteName = 3 [(validator.field) = {string_not_empty : true}];
+  string quote_name = 3 [(validator.field) = {string_not_empty : true}];
 }
 
 // Instrument configuration
@@ -37,20 +37,20 @@ message NewMarketConfiguration {
   // New market instrument configuration
   InstrumentConfiguration instrument = 1 [(validator.field) = {msg_exists: true}];
   // Decimal places used for the new market
-  uint64 decimalPlaces = 2 [(validator.field) = {int_lt: 150}];
+  uint64 decimal_places = 2 [(validator.field) = {int_lt: 150}];
   // Optional new market meta data, tags
   repeated string metadata = 3;
   // Price monitoring parameters
-  PriceMonitoringParameters priceMonitoringParameters = 4;
+  PriceMonitoringParameters price_monitoring_parameters = 4;
   // New market risk model parameters
-  oneof riskParameters {
+  oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
     SimpleModelParams simple = 100;
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
-    LogNormalRiskModel logNormal = 101;
+    LogNormalRiskModel log_normal = 101;
   }
   // Trading mode for the new market
-  oneof tradingMode {
+  oneof trading_mode {
     // Continuous trading
     ContinuousTrading continuous = 200;
     // Discrete trading
@@ -61,13 +61,13 @@ message NewMarketConfiguration {
 // A commitment of liquidity to be made by the party which proposes a market
 message NewMarketCommitment {
   // Specified as a unitless number that represents the amount of settlement asset of the market
-  uint64 commitmentAmount = 1;
+  uint64 commitment_amount = 1;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
   string fee = 2;
   // A set of liquidity sell orders to meet the liquidity provision obligation
-  repeated LiquidityOrder Sells = 3;
+  repeated LiquidityOrder sells = 3;
   // A set of liquidity buy orders to meet the liquidity provision obligation
-  repeated LiquidityOrder Buys  = 4;
+  repeated LiquidityOrder buys  = 4;
 
   // Note: We create a new type here as we do not require the marketID from the submission
   // the governance engine will create a LiquidityProvisionSubmission from
@@ -79,7 +79,7 @@ message NewMarket {
   // The configuration of the new market
   NewMarketConfiguration changes = 1 [(validator.field) = {msg_exists: true}];
   // The commitment from the party creating the NewMarket proposal
-  NewMarketCommitment liquidityCommitment = 2 /* THIS TO BE UN-COMMENTED ONCE WE MAKE THE COMMITMENT MANDATORY [(validator.field) = {msg_exists: true}] */;
+  NewMarketCommitment liquidity_commitment = 2 /* THIS TO BE UN-COMMENTED ONCE WE MAKE THE COMMITMENT MANDATORY [(validator.field) = {msg_exists: true}] */;
 }
 
 // Update an existing market on Vega
@@ -101,22 +101,22 @@ message NewAsset {
 message ProposalTerms {
   // Timestamp (Unix time in seconds) when voting closes for this proposal,
   // constrained by `minCloseInSeconds` and `maxCloseInSeconds` network parameters
-  int64 closingTimestamp = 1 [(validator.field) = {int_gt: 0}];
+  int64 closing_timestamp = 1 [(validator.field) = {int_gt: 0}];
   // Timestamp (Unix time in seconds) when proposal gets enacted (if passed),
   // constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters
-  int64 enactmentTimestamp = 2 [(validator.field) = {int_gt: 0}];
+  int64 enactment_timestamp = 2 [(validator.field) = {int_gt: 0}];
   // Validation timestamp (Unix time in seconds)
-  int64 validationTimestamp = 3;
+  int64 validation_timestamp = 3;
   // Changes being proposed
   oneof change {
     // Proposal change for modifying an existing market on Vega
-    UpdateMarket updateMarket = 101;
+    UpdateMarket update_market = 101;
     // Proposal change for creating new market on Vega
-    NewMarket newMarket = 102;
+    NewMarket new_market = 102;
     // Proposal change for updating Vega network parameters
-    UpdateNetworkParameter updateNetworkParameter = 103;
+    UpdateNetworkParameter update_network_parameter = 103;
     // Proposal change for creating new assets on Vega
-    NewAsset newAsset = 104;
+    NewAsset new_asset = 104;
   };
 }
 
@@ -131,11 +131,11 @@ message GovernanceData {
   // All latest YES votes by party (guaranteed to be unique),
   // where key (string) is the party ID (public key) and
   // value (Vote) is the vote cast by the given party
-  map<string, Vote> yesParty = 4;
+  map<string, Vote> yes_party = 4;
   // All latest NO votes by party (guaranteed to be unique),
   // where key (string) is the party ID (public key) and
   // value (Vote) is the vote cast by the given party
-  map<string, Vote> noParty = 5;
+  map<string, Vote> no_party = 5;
 }
 
 // Governance proposal
@@ -172,11 +172,11 @@ message Proposal {
   }
 
   // Unique proposal identifier
-  string ID = 1;
+  string id = 1;
   // Proposal reference
   string reference = 2;
   // Party identifier of the author (the party submitting the proposal)
-  string partyID = 3 [(validator.field) = {string_not_empty : true}];
+  string party_id = 3 [(validator.field) = {string_not_empty : true}];
   // Proposal state - See (Proposal.State)[#vega.Proposal.State] definition
   State state = 4 [(validator.field) = {is_in_enum: true}];
   // Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network
@@ -262,11 +262,11 @@ message Vote {
   }
 
   // Voter's party identifier
-  string partyID = 1 [(validator.field) = {string_not_empty : true}];
+  string party_id = 1 [(validator.field) = {string_not_empty : true}];
   // Actual vote
   Value value = 2 [(validator.field) = {is_in_enum : true}];
   // Identifier of the proposal being voted on
-  string proposalID = 3 [(validator.field) = {string_not_empty : true}];
+  string proposal_id = 3 [(validator.field) = {string_not_empty : true}];
   // Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network
   int64 timestamp  = 4;
 }

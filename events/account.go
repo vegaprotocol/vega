@@ -27,7 +27,7 @@ func (a Acc) PartyID() string {
 }
 
 func (a Acc) MarketID() string {
-	return a.a.MarketID
+	return a.a.MarketId
 }
 
 func (a *Acc) Account() types.Account {
@@ -40,7 +40,7 @@ func (a Acc) Proto() types.Account {
 
 func (a Acc) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    a.eventID(),
+		Id:    a.eventID(),
 		Block: a.TraceID(),
 		Type:  a.et.ToProto(),
 		Event: &types.BusEvent_Account{

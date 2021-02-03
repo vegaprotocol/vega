@@ -16,14 +16,10 @@ lint:
     - DEFAULT
     - FILE_LOWER_SNAKE_CASE
   except:
-    - ENUM_NO_ALLOW_ALIAS
-    - IMPORT_NO_PUBLIC
-    - PACKAGE_AFFINITY
     - PACKAGE_DIRECTORY_MATCH
-    - PACKAGE_SAME_DIRECTORY
-    - FIELD_LOWER_SNAKE_CASE
-    - ONEOF_LOWER_SNAKE_CASE
+    - PACKAGE_VERSION_SUFFIX
   ignore:
+    - tm
     - google/
     - github.com/
   enum_zero_value_suffix: _UNSPECIFIED

@@ -50,7 +50,7 @@ func testAddKeyForKOResource(t *testing.T) {
 
 	ns := types.NodeSignature{
 		Sig:  sig,
-		ID:   resID,
+		Id:   resID,
 		Kind: kind,
 	}
 
@@ -81,7 +81,7 @@ func testAddKeyForOKResource(t *testing.T) {
 
 	ns := types.NodeSignature{
 		Sig:  sig,
-		ID:   resID,
+		Id:   resID,
 		Kind: kind,
 	}
 
@@ -108,7 +108,7 @@ func testAddKeyFinalize(t *testing.T) {
 
 	ns := types.NodeSignature{
 		Sig:  sig,
-		ID:   resID,
+		Id:   resID,
 		Kind: kind,
 	}
 

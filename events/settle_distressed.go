@@ -52,8 +52,8 @@ func (s SettleDistressed) Timestamp() int64 {
 
 func (s SettleDistressed) Proto() types.SettleDistressed {
 	return types.SettleDistressed{
-		MarketID: s.marketID,
-		PartyID:  s.partyID,
+		MarketId: s.marketID,
+		PartyId:  s.partyID,
 		Margin:   s.margin,
 		Price:    s.price,
 	}
@@ -62,7 +62,7 @@ func (s SettleDistressed) Proto() types.SettleDistressed {
 func (s SettleDistressed) StreamMessage() *types.BusEvent {
 	p := s.Proto()
 	return &types.BusEvent{
-		ID:    s.eventID(),
+		Id:    s.eventID(),
 		Block: s.TraceID(),
 		Type:  s.et.ToProto(),
 		Event: &types.BusEvent_SettleDistressed{

@@ -158,10 +158,10 @@ func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
 	}
 	for _, acc := range data {
 		if acc.Owner == arg1 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			if _, ok := assets[acc.MarketID]; ok {
-				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketID)
+			if _, ok := assets[acc.MarketId]; ok {
+				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketId)
 			}
-			assets[acc.MarketID] = struct{}{}
+			assets[acc.MarketId] = struct{}{}
 		}
 	}
 	return nil
@@ -233,8 +233,8 @@ func tradersPlaceFollowingOrders(orders *gherkin.DataTable) error {
 		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
-			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
+			MarketId:    val(row, 1),
+			PartyId:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
@@ -279,8 +279,8 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
-			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
+			MarketId:    val(row, 1),
+			PartyId:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
@@ -292,7 +292,7 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 			Reference:   val(row, 8),
 		}
 		if _, err := execsetup.engine.SubmitOrder(context.Background(), &order); err == nil {
-			return fmt.Errorf("expected trader %s to not exist", order.PartyID)
+			return fmt.Errorf("expected trader %s to not exist", order.PartyId)
 		}
 	}
 	return nil
@@ -321,8 +321,8 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
-			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
+			MarketId:    val(row, 1),
+			PartyId:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
@@ -335,7 +335,7 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 		}
 		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
 		if err != nil {
-			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, order.PartyID, order.Reference)
+			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, order.PartyId, order.Reference)
 		}
 		if int64(len(result.Trades)) != i64val(row, 5) {
 			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
@@ -356,13 +356,13 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 		}
 
 		cancel := types.OrderCancellation{
-			OrderID:  o.Id,
-			PartyID:  o.PartyID,
-			MarketID: o.MarketID,
+			OrderId:  o.Id,
+			PartyId:  o.PartyId,
+			MarketId: o.MarketId,
 		}
 
 		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
-			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
+			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyId, o.Reference)
 		}
 	}
 
@@ -381,13 +381,13 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 		}
 
 		cancel := types.OrderCancellation{
-			OrderID:  o.Id,
-			PartyID:  o.PartyID,
-			MarketID: o.MarketID,
+			OrderId:  o.Id,
+			PartyId:  o.PartyId,
+			MarketId: o.MarketId,
 		}
 
 		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
-			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyID, o.Reference)
+			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyId, o.Reference)
 		}
 	}
 
@@ -406,14 +406,14 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 		}
 
 		cancel := types.OrderCancellation{
-			OrderID:  o.Id,
-			PartyID:  o.PartyID,
-			MarketID: o.MarketID,
+			OrderId:  o.Id,
+			PartyId:  o.PartyId,
+			MarketId: o.MarketId,
 		}
 
 		_, err = execsetup.engine.CancelOrder(context.Background(), &cancel)
 		if err != nil {
-			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyID, o.Reference)
+			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyId, o.Reference)
 		}
 	}
 
@@ -427,9 +427,9 @@ func tradersCancelPeggedOrders(data *gherkin.DataTable) error {
 			continue
 		}
 		cancel := types.OrderCancellation{
-			PartyID:  trader,
-			MarketID: val(row, 1),
-			OrderID:  val(row, 2),
+			PartyId:  trader,
+			MarketId: val(row, 1),
+			OrderId:  val(row, 2),
 		}
 		_, err := execsetup.engine.CancelOrder(context.Background(), &cancel)
 		if err != nil {
@@ -456,9 +456,9 @@ func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 		for _, o := range orders {
 			if o.PeggedOrder != nil && o.Status != types.Order_STATUS_CANCELLED && o.Status != types.Order_STATUS_REJECTED {
 				cancellations = append(cancellations, types.OrderCancellation{
-					PartyID:  trader,
-					MarketID: mkt,
-					OrderID:  o.Id,
+					PartyId:  trader,
+					MarketId: mkt,
+					OrderId:  o.Id,
 				})
 				found = true
 				break
@@ -474,7 +474,7 @@ func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	}
 	for _, c := range cancellations {
 		if _, err := execsetup.engine.CancelOrder(context.Background(), &c); err != nil {
-			return fmt.Errorf("failed to cancel pegged order %s for %s on market %s", c.OrderID, c.PartyID, c.MarketID)
+			return fmt.Errorf("failed to cancel pegged order %s for %s on market %s", c.OrderId, c.PartyId, c.MarketId)
 		}
 	}
 	return nil
@@ -619,15 +619,15 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 
 		order := types.Order{
 			Id:          uuid.NewV4().String(),
-			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
+			MarketId:    val(row, 1),
+			PartyId:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
 			Remaining:   u64val(row, 3),
 			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
 			Type:        types.Order_TYPE_LIMIT,
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		_, err := execsetup.engine.SubmitOrder(context.Background(), &order)
@@ -686,7 +686,7 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 			return err
 		}
 
-		tif := types.Order_TIF_GTT
+		tif := types.Order_TIME_IN_FORCE_GTT
 		if len(row.Cells) > 7 {
 			tif, err = tifval(row, 7)
 			if err != nil {
@@ -696,8 +696,8 @@ func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 
 		order := types.Order{
 			Id:          uuid.NewV4().String(),
-			MarketID:    val(row, 1),
-			PartyID:     val(row, 0),
+			MarketId:    val(row, 1),
+			PartyId:     val(row, 0),
 			Side:        sideval(row, 2),
 			Price:       u64val(row, 4),
 			Size:        u64val(row, 3),
@@ -728,7 +728,7 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 		data := execsetup.broker.GetOrderEvents()
 		for _, o := range data {
 			v := o.Order()
-			if v.PartyID == val(row, 0) && v.MarketID == val(row, 1) &&
+			if v.PartyId == val(row, 0) && v.MarketId == val(row, 1) &&
 				v.Status == types.Order_STATUS_REJECTED && v.Reason.String() == val(row, 2) {
 				ordCnt -= 1
 			}
@@ -755,7 +755,7 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 			return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
 		}
 
-		if len(pos) == 1 && pos[0].OpenVolume == volume && pos[0].RealisedPNL == realisedPNL && pos[0].UnrealisedPNL == unrealisedPNL {
+		if len(pos) == 1 && pos[0].OpenVolume == volume && pos[0].RealisedPnl == realisedPNL && pos[0].UnrealisedPnl == unrealisedPNL {
 			return nil
 		}
 
@@ -771,7 +771,7 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 	}
 
 	return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
-		party, volume, pos[0].OpenVolume, unrealisedPNL, pos[0].UnrealisedPNL, realisedPNL, pos[0].RealisedPNL)
+		party, volume, pos[0].OpenVolume, unrealisedPNL, pos[0].UnrealisedPnl, realisedPNL, pos[0].RealisedPnl)
 }
 
 func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
@@ -899,9 +899,9 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 		}
 
 		amend := types.OrderAmendment{
-			OrderID:     o.Id,
-			PartyID:     o.PartyID,
-			MarketID:    o.MarketID,
+			OrderId:     o.Id,
+			PartyId:     o.PartyId,
+			MarketId:    o.MarketId,
 			Price:       price,
 			SizeDelta:   i64val(row, 3),
 			TimeInForce: tif,
@@ -909,11 +909,11 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 
 		_, err = execsetup.engine.AmendOrder(context.Background(), &amend)
 		if err != nil && success {
-			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyID, o.Reference, err)
+			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyId, o.Reference, err)
 		}
 
 		if err == nil && !success {
-			return fmt.Errorf("expected to failed amending but succeed for trader %s (reference %s)", o.PartyID, o.Reference)
+			return fmt.Errorf("expected to failed amending but succeed for trader %s (reference %s)", o.PartyId, o.Reference)
 		}
 
 	}
@@ -1060,7 +1060,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 						Maturity: marketExpiry,
 						Oracle: &types.Future_EthereumEvent{
 							EthereumEvent: &types.EthereumEvent{
-								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 								Value:      u64val(row, 14),
 							},
@@ -1173,11 +1173,11 @@ func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 		o := &types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
-			TimeInForce: types.Order_TIF_GTC,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			Id:          "someid",
 			Side:        types.Side_SIDE_BUY,
-			PartyID:     trader,
-			MarketID:    id,
+			PartyId:     trader,
+			MarketId:    id,
 			Size:        vol,
 			Price:       price,
 			Remaining:   vol,
@@ -1223,8 +1223,8 @@ func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.Status != status || o.MarketID != id || o.Side != side || o.Size != vol || o.Price != price {
-				// if o.MarketID != id || o.Side != side || o.Size != vol || o.Price != price {
+			if o.Status != status || o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
+				// if o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
 				continue
 			}
 			// check if pegged:
@@ -1281,7 +1281,7 @@ func submitLP(in *gherkin.DataTable) error {
 		lp, ok := lps[id]
 		if !ok {
 			lp = &types.LiquidityProvisionSubmission{
-				MarketID:         val(row, 2),
+				MarketId:         val(row, 2),
 				CommitmentAmount: u64val(row, 3),
 				Fee:              val(row, 4),
 				Sells:            []*types.LiquidityOrder{},
@@ -1334,7 +1334,7 @@ func seeLPEvents(in *gherkin.DataTable) error {
 			return errors.New("no LP for id found")
 		}
 		party, market, commitment := val(row, 1), val(row, 2), u64val(row, 3)
-		if e.PartyID != party || e.MarketID != market || e.CommitmentAmount != commitment {
+		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment {
 			return errors.New("party,  market ID, or commitment amount mismatch")
 		}
 	}

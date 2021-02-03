@@ -68,10 +68,10 @@ func (w *Withdrawal) consume() {
 				return
 			}
 			w.mu.Lock()
-			withdrawals, ok := w.withdrawals[wit.PartyID]
+			withdrawals, ok := w.withdrawals[wit.PartyId]
 			if !ok {
 				withdrawals = map[string]types.Withdrawal{}
-				w.withdrawals[wit.PartyID] = withdrawals
+				w.withdrawals[wit.PartyId] = withdrawals
 			}
 			withdrawals[wit.Id] = wit
 			w.mu.Unlock()
@@ -100,7 +100,7 @@ func (w *Withdrawal) GetByParty(party string, openOnly bool) []types.Withdrawal 
 	out := []types.Withdrawal{}
 	withdrawals := w.withdrawals[party]
 	for _, w := range withdrawals {
-		if openOnly && w.Status != types.Withdrawal_WITHDRAWAL_STATUS_OPEN {
+		if openOnly && w.Status != types.Withdrawal_STATUS_OPEN {
 			continue
 		}
 		out = append(out, w)

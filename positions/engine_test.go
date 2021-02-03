@@ -31,7 +31,7 @@ func TestGetOpenInterest(t *testing.T) {
 	trade := proto.Trade{
 		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     10000,
 		Size:      uint64(size),
 		Buyer:     buyer,
@@ -44,7 +44,7 @@ func TestGetOpenInterest(t *testing.T) {
 	trade = proto.Trade{
 		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     10000,
 		Size:      uint64(size),
 		Buyer:     buyer2,
@@ -71,7 +71,7 @@ func testUpdatePositionRegular(t *testing.T) {
 	trade := proto.Trade{
 		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     10000,
 		Size:      uint64(size),
 		Buyer:     buyer,
@@ -102,7 +102,7 @@ func testUpdatePositionNetworkBuy(t *testing.T) {
 	trade := proto.Trade{
 		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     10000,
 		Size:      uint64(size),
 		Buyer:     buyer,
@@ -128,7 +128,7 @@ func testUpdatePositionNetworkSell(t *testing.T) {
 	trade := proto.Trade{
 		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     10000,
 		Size:      uint64(size),
 		Buyer:     buyer,
@@ -171,7 +171,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	)
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
-		PartyID:   "test_trader",
+		PartyId:   "test_trader",
 		Side:      proto.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
@@ -186,7 +186,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	assert.Equal(t, pos.Buy(), positions[0].Buy())
 
 	orderSell := proto.Order{
-		PartyID:   "test_trader",
+		PartyId:   "test_trader",
 		Side:      proto.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
@@ -209,7 +209,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	)
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
-		PartyID:   "test_trader",
+		PartyId:   "test_trader",
 		Side:      proto.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
@@ -222,7 +222,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	assert.Zero(t, pos.Buy())
 
 	orderSell := proto.Order{
-		PartyID:   "test_trader",
+		PartyId:   "test_trader",
 		Side:      proto.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
@@ -240,7 +240,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 func testUnregisterOrderUnsuccessful(t *testing.T) {
 	e := getTestEngine(t)
 	orderBuy := proto.Order{
-		PartyID:   "test_trader",
+		PartyId:   "test_trader",
 		Side:      proto.Side_SIDE_BUY,
 		Size:      uint64(999),
 		Remaining: uint64(999),
@@ -296,25 +296,25 @@ func TestHash(t *testing.T) {
 	e := getTestEngine(t)
 	orders := []proto.Order{
 		{
-			PartyID:   "test_trader_1",
+			PartyId:   "test_trader_1",
 			Side:      proto.Side_SIDE_BUY,
 			Size:      uint64(100),
 			Remaining: uint64(100),
 		},
 		{
-			PartyID:   "test_trader_2",
+			PartyId:   "test_trader_2",
 			Side:      proto.Side_SIDE_BUY,
 			Size:      uint64(200),
 			Remaining: uint64(200),
 		},
 		{
-			PartyID:   "test_trader_3",
+			PartyId:   "test_trader_3",
 			Side:      proto.Side_SIDE_BUY,
 			Size:      uint64(300),
 			Remaining: uint64(300),
 		},
 		{
-			PartyID:   "test_trader_1",
+			PartyId:   "test_trader_1",
 			Side:      proto.Side_SIDE_SELL,
 			Size:      uint64(1000),
 			Remaining: uint64(1000),
@@ -328,7 +328,7 @@ func TestHash(t *testing.T) {
 	trade := proto.Trade{
 		Type:      proto.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
-		MarketID:  "market_id",
+		MarketId:  "market_id",
 		Price:     10000,
 		Size:      uint64(15),
 		Buyer:     "test_trader_3",

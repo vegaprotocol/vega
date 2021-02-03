@@ -45,22 +45,22 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 	party := hex.EncodeToString(key)
 	msgs := map[txn.Command]proto.Message{
 		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.AmendOrderCommand: &types.OrderAmendment{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.VoteCommand: &types.Vote{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.WithdrawCommand: &types.WithdrawSubmission{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.ProposeCommand: &types.Proposal{
-			PartyID: party,
+			PartyId: party,
 		},
 	}
 
@@ -82,22 +82,22 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 	party := hex.EncodeToString([]byte("another-party"))
 	msgs := map[txn.Command]proto.Message{
 		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.AmendOrderCommand: &types.OrderAmendment{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.VoteCommand: &types.Vote{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.WithdrawCommand: &types.WithdrawSubmission{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.ProposeCommand: &types.Proposal{
-			PartyID: party,
+			PartyId: party,
 		},
 	}
 
@@ -119,8 +119,8 @@ func (s *TxTestSuite) testValidateSignedInvalidCommand(t *testing.T) {
 	party := []byte("party-id")
 	// wrong type for this command
 	prop := &types.Proposal{
-		ID:        "XXX",
-		PartyID:   hex.EncodeToString(party),
+		Id:        "XXX",
+		PartyId:   hex.EncodeToString(party),
 		Reference: "some-reference",
 	}
 

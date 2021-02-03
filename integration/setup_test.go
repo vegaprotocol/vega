@@ -77,7 +77,7 @@ func getMarketTestSetup(market *types.Market) *marketTestSetup {
 	)
 
 	tokAsset := types.Asset{
-		ID:          "VOTE",
+		Id:          "VOTE",
 		Name:        "VOTE",
 		Symbol:      "VOTE",
 		Decimals:    5,
@@ -163,13 +163,13 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()
 		execsetup.collateral.EnableAsset(context.Background(), types.Asset{
-			ID:     asset,
+			Id:     asset,
 			Symbol: asset,
 		})
 	}
 
 	tokAsset := types.Asset{
-		ID:          "VOTE",
+		Id:          "VOTE",
 		Name:        "VOTE",
 		Symbol:      "VOTE",
 		Decimals:    5,

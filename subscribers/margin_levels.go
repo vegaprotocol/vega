@@ -55,10 +55,10 @@ func (m *MarginLevelSub) Push(evts ...events.Event) {
 		case MLE:
 			ml := te.MarginLevels()
 			m.mu.Lock()
-			if _, ok := m.buf[ml.PartyID]; !ok {
-				m.buf[ml.PartyID] = map[string]types.MarginLevels{}
+			if _, ok := m.buf[ml.PartyId]; !ok {
+				m.buf[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			m.buf[ml.PartyID][ml.MarketID] = ml
+			m.buf[ml.PartyId][ml.MarketId] = ml
 			m.mu.Unlock()
 		case TimeEvent:
 			m.flush()

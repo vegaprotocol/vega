@@ -50,20 +50,20 @@ func (g *GovernanceDataSub) Push(evts ...events.Event) {
 		switch et := e.(type) {
 		case PropE:
 			prop := et.Proposal()
-			gd := g.getData(prop.ID)
-			g.proposals[prop.ID] = prop
+			gd := g.getData(prop.Id)
+			g.proposals[prop.Id] = prop
 			gd.Proposal = &prop
 		case VoteE:
 			vote := et.Vote()
-			gd := g.getData(vote.ProposalID)
+			gd := g.getData(vote.ProposalId)
 			if vote.Value == types.Vote_VALUE_YES {
 				gd.Yes = append(gd.Yes, &vote)
-				delete(gd.NoParty, vote.PartyID)
-				gd.YesParty[vote.PartyID] = &vote
+				delete(gd.NoParty, vote.PartyId)
+				gd.YesParty[vote.PartyId] = &vote
 			} else {
 				gd.No = append(gd.No, &vote)
-				delete(gd.YesParty, vote.PartyID)
-				gd.NoParty[vote.PartyID] = &vote
+				delete(gd.YesParty, vote.PartyId)
+				gd.NoParty[vote.PartyId] = &vote
 			}
 		}
 	}

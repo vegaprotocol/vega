@@ -51,7 +51,7 @@ func IsOrderError(err error) (OrderError, bool) {
 
 func (err OrderError) Error() string {
 	switch err {
-	case OrderError_ORDER_ERROR_NONE:
+	case OrderError_ORDER_ERROR_UNSPECIFIED:
 		return "none"
 	case OrderError_ORDER_ERROR_INVALID_MARKET_ID:
 		return "OrderError: Invalid Market ID"

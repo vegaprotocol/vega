@@ -53,7 +53,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 }
 
 func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, error) {
-	mkt, err := s.mktStore.GetByID(o.MarketID)
+	mkt, err := s.mktStore.GetByID(o.MarketId)
 	if err != nil {
 		return nil, err
 	}

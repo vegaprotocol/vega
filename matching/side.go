@@ -46,8 +46,8 @@ func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) 
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
 			// Find orders to cancel
-			if (order.TimeInForce == types.Order_TIF_GFA && !auction) ||
-				(order.TimeInForce == types.Order_TIF_GFN && auction) {
+			if (order.TimeInForce == types.Order_TIME_IN_FORCE_GFA && !auction) ||
+				(order.TimeInForce == types.Order_TIME_IN_FORCE_GFN && auction) {
 				// Save order to send back to client
 				ordersToCancel = append(ordersToCancel, order)
 			}
@@ -137,7 +137,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 		return types.ErrOrderNotFound
 	}
 
-	if oldOrder.PartyID != orderAmend.PartyID {
+	if oldOrder.PartyId != orderAmend.PartyId {
 		return types.ErrOrderAmendFailure
 	}
 
@@ -330,7 +330,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 		trades            []*types.Trade
 		totalVolumeToFill uint64
 	)
-	if agg.TimeInForce == types.Order_TIF_FOK {
+	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
 		if agg.Side == types.Side_SIDE_SELL {
 			for _, level := range s.levels {
 				// we don't have to account for network orders, they don't apply in price monitoring
@@ -420,7 +420,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		totalVolumeToFill uint64
 	)
 
-	if agg.TimeInForce == types.Order_TIF_FOK {
+	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
 		if agg.Side == types.Side_SIDE_SELL {
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return

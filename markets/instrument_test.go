@@ -27,7 +27,7 @@ func getValidInstrumentProto() *types.Instrument {
 				SettlementAsset: "Ethereum/Ether",
 				Oracle: &types.Future_EthereumEvent{
 					EthereumEvent: &types.EthereumEvent{
-						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+						ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 						Event:      "price_changed",
 					},
 				},
@@ -52,7 +52,7 @@ func TestInstrument(t *testing.T) {
 				SettlementAsset: "Ethereum/Ether",
 				Oracle: &types.Future_EthereumEvent{
 					EthereumEvent: &types.EthereumEvent{
-						ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+						ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 						Event:      "price_changed",
 					},
 				},

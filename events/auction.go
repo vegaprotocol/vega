@@ -76,7 +76,7 @@ func (a Auction) MarketEvent() string {
 // Proto wrap event data in a proto message
 func (a Auction) Proto() types.AuctionEvent {
 	return types.AuctionEvent{
-		MarketID:       a.marketID,
+		MarketId:       a.marketID,
 		OpeningAuction: a.openingAuction,
 		Leave:          a.leave,
 		Start:          a.auctionStart,
@@ -89,7 +89,7 @@ func (a Auction) Proto() types.AuctionEvent {
 func (a Auction) StreamMessage() *types.BusEvent {
 	p := a.Proto()
 	return &types.BusEvent{
-		ID:    a.eventID(),
+		Id:    a.eventID(),
 		Block: a.TraceID(),
 		Type:  a.et.ToProto(),
 		Event: &types.BusEvent_Auction{
@@ -102,12 +102,12 @@ func (a Auction) StreamMessage() *types.BusEvent {
 // containing just market ID and a string akin to a log message
 func (a Auction) StreamMarketMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    a.eventID(),
+		Id:    a.eventID(),
 		Block: a.TraceID(),
 		Type:  types.BusEventType_BUS_EVENT_TYPE_MARKET,
 		Event: &types.BusEvent_Market{
 			Market: &types.MarketEvent{
-				MarketID: a.marketID,
+				MarketId: a.marketID,
 				Payload:  a.MarketEvent(),
 			},
 		},

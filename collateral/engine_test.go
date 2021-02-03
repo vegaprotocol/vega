@@ -534,7 +534,7 @@ func testEnableAssetSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	defer eng.Finish()
 	asset := types.Asset{
-		ID:     "MYASSET",
+		Id:     "MYASSET",
 		Symbol: "MYASSET",
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
@@ -546,7 +546,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	defer eng.Finish()
 	asset := types.Asset{
-		ID:     "MYASSET",
+		Id:     "MYASSET",
 		Symbol: "MYASSET",
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
@@ -2217,7 +2217,7 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 
 	// add the token asset
 	tokAsset := types.Asset{
-		ID:          "VOTE",
+		Id:          "VOTE",
 		Name:        "VOTE",
 		Symbol:      "VOTE",
 		Decimals:    5,
@@ -2240,14 +2240,14 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 
 	// enable the assert for the tests
 	asset := types.Asset{
-		ID:     testMarketAsset,
+		Id:     testMarketAsset,
 		Symbol: testMarketAsset,
 	}
 	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 	// ETH is added hardcoded in some places
 	asset = types.Asset{
-		ID:     "ETH",
+		Id:     "ETH",
 		Symbol: "ETH",
 	}
 	err = eng.EnableAsset(context.Background(), asset)

@@ -136,7 +136,7 @@ func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Ord
 	orders := b.GetOrderEvents()
 	ret := []types.Order{}
 	for _, oe := range orders {
-		if o := oe.Order(); o.MarketID == market && o.PartyID == party {
+		if o := oe.Order(); o.MarketId == market && o.PartyId == party {
 			ret = append(ret, *o)
 		}
 	}
@@ -222,16 +222,16 @@ func (b *brokerStub) getMarginByPartyAndMarket(partyID, marketID string) (types.
 		switch et := e.(type) {
 		case *events.MarginLevels:
 			ml := et.MarginLevels()
-			if _, ok := mapped[ml.PartyID]; !ok {
-				mapped[ml.PartyID] = map[string]types.MarginLevels{}
+			if _, ok := mapped[ml.PartyId]; !ok {
+				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyID][ml.MarketID] = ml
+			mapped[ml.PartyId][ml.MarketId] = ml
 		case events.MarginLevels:
 			ml := et.MarginLevels()
-			if _, ok := mapped[ml.PartyID]; !ok {
-				mapped[ml.PartyID] = map[string]types.MarginLevels{}
+			if _, ok := mapped[ml.PartyId]; !ok {
+				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyID][ml.MarketID] = ml
+			mapped[ml.PartyId][ml.MarketId] = ml
 		}
 	}
 	mkts, ok := mapped[partyID]
@@ -249,7 +249,7 @@ func (b *brokerStub) getMarketInsurancePoolAccount(market string) (types.Account
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketID == market && v.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
+		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
 			return v, nil
 		}
 	}
@@ -260,7 +260,7 @@ func (b *brokerStub) getTraderMarginAccount(trader, market string) (types.Accoun
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketID == market {
+		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketId == market {
 			return v, nil
 		}
 	}
@@ -271,7 +271,7 @@ func (b *brokerStub) getMarketSettlementAccount(market string) (types.Account, e
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == "*" && v.MarketID == market && v.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
+		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
 			return v, nil
 		}
 	}
@@ -307,7 +307,7 @@ func (b *brokerStub) clearOrderByReference(party, ref string) error {
 		default:
 			return errors.New("non-order event ended up in order event group")
 		}
-		if o.Reference != ref || o.PartyID != party {
+		if o.Reference != ref || o.PartyId != party {
 			cleared = append(cleared, evt)
 		}
 	}
@@ -320,7 +320,7 @@ func (b *brokerStub) getFirstByReference(party, ref string) (types.Order, error)
 	data := b.GetOrderEvents()
 	for _, o := range data {
 		v := o.Order()
-		if v.Reference == ref && v.PartyID == party {
+		if v.Reference == ref && v.PartyId == party {
 			return *v, nil
 		}
 	}
@@ -334,7 +334,7 @@ func (b *brokerStub) getByReference(party, ref string) (types.Order, error) {
 	var matched bool = false
 	for _, o := range data {
 		v := o.Order()
-		if v.Reference == ref && v.PartyID == party {
+		if v.Reference == ref && v.PartyId == party {
 			last = *v
 			matched = true
 		}

@@ -128,7 +128,7 @@ func (d *DiscreteTrading) IntoProto() (*types.Market_Discrete, error) {
 func (ee *EthereumEvent) IntoProto() (*types.Future_EthereumEvent, error) {
 	return &types.Future_EthereumEvent{
 		EthereumEvent: &types.EthereumEvent{
-			ContractID: ee.ContractID,
+			ContractId: ee.ContractID,
 			Event:      ee.Event,
 		},
 	}, nil
@@ -293,7 +293,7 @@ func EthereumEventFromProto(pee *types.EthereumEvent) (*EthereumEvent, error) {
 	}
 
 	return &EthereumEvent{
-		ContractID: pee.ContractID,
+		ContractID: pee.ContractId,
 		Event:      pee.Event,
 	}, nil
 }
@@ -853,9 +853,9 @@ func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 			Party:      caster,
 			Value:      value,
 			Datetime:   nanoTSToDatetime(v.Timestamp),
-			ProposalID: v.ProposalID,
+			ProposalID: v.ProposalId,
 		},
-		ProposalID: v.ProposalID,
+		ProposalID: v.ProposalId,
 	}
 }
 
@@ -902,7 +902,7 @@ func AssetFromProto(passet *types.Asset) (*Asset, error) {
 	}
 
 	return &Asset{
-		ID:          passet.ID,
+		ID:          passet.Id,
 		Name:        passet.Name,
 		Symbol:      passet.Symbol,
 		Decimals:    int(passet.Decimals),
@@ -971,7 +971,7 @@ func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
 
 	return &Withdrawal{
 		ID:                 w.Id,
-		Party:              &types.Party{Id: w.PartyID},
+		Party:              &types.Party{Id: w.PartyId},
 		Amount:             fmt.Sprintf("%v", w.Amount),
 		Status:             status,
 		Ref:                w.Ref,
@@ -999,7 +999,7 @@ func busEventFromProto(events ...*types.BusEvent) []*BusEvent {
 			continue
 		}
 		be := BusEvent{
-			EventID: e.ID,
+			EventID: e.Id,
 			Type:    et,
 			Block:   e.Block,
 			Event:   evt,
@@ -1038,7 +1038,7 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 func auctionEventFromProto(ae *types.AuctionEvent) *AuctionEvent {
 	t, _ := convertAuctionTriggerFromProto(ae.Trigger)
 	r := &AuctionEvent{
-		MarketID:       ae.MarketID,
+		MarketID:       ae.MarketId,
 		Leave:          ae.Leave,
 		OpeningAuction: ae.OpeningAuction,
 		AuctionStart:   nanoTSToDatetime(ae.Start),
@@ -1071,7 +1071,7 @@ func eventFromProto(e *types.BusEvent) Event {
 	case types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		pr := e.GetPositionResolution()
 		return &PositionResolution{
-			MarketID:   pr.MarketID,
+			MarketID:   pr.MarketId,
 			Distressed: int(pr.Distressed),
 			Closed:     int(pr.Closed),
 			MarkPrice:  int(pr.MarkPrice),
@@ -1096,10 +1096,10 @@ func eventFromProto(e *types.BusEvent) Event {
 		return &Vote{
 			Value: val,
 			Party: &types.Party{
-				Id: v.PartyID,
+				Id: v.PartyId,
 			},
 			Datetime:   nanoTSToDatetime(v.Timestamp),
-			ProposalID: v.ProposalID,
+			ProposalID: v.ProposalId,
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 		return e.GetMarketData()
@@ -1108,8 +1108,8 @@ func eventFromProto(e *types.BusEvent) Event {
 	case types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
 		ls := e.GetLossSocialization()
 		return &LossSocialization{
-			MarketID: ls.MarketID,
-			PartyID:  ls.PartyID,
+			MarketID: ls.MarketId,
+			PartyID:  ls.PartyId,
 			Amount:   int(ls.Amount),
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
@@ -1122,16 +1122,16 @@ func eventFromProto(e *types.BusEvent) Event {
 			})
 		}
 		return &SettlePosition{
-			MarketID:         dp.MarketID,
-			PartyID:          dp.PartyID,
+			MarketID:         dp.MarketId,
+			PartyID:          dp.PartyId,
 			Price:            int(dp.Price),
 			TradeSettlements: settlements,
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
 		de := e.GetSettleDistressed()
 		return &SettleDistressed{
-			MarketID: de.MarketID,
-			PartyID:  de.PartyID,
+			MarketID: de.MarketId,
+			PartyID:  de.PartyId,
 			Margin:   int(de.Margin),
 			Price:    int(de.Price),
 		}
@@ -1145,7 +1145,7 @@ func eventFromProto(e *types.BusEvent) Event {
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
 		mt := e.GetMarketTick()
 		return &MarketTick{
-			MarketID: mt.ID,
+			MarketID: mt.Id,
 			Time:     secondsTSToDatetime(mt.Time),
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
