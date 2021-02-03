@@ -840,3 +840,10 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
 
 	return nil
 }
+
+func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(_ context.Context, v float64) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(v)
+	}
+	return nil
+}

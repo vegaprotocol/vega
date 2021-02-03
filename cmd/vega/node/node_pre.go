@@ -635,6 +635,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: l.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
+			Watcher: l.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
+		},
 	)
 }
 
