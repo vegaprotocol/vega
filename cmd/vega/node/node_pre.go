@@ -631,6 +631,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: l.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
+			Watcher: l.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
+		},
 	)
 }
 

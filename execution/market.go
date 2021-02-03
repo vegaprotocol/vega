@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
+	lmon "code.vegaprotocol.io/vega/monitor/liquidity"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/products"
@@ -106,6 +107,11 @@ type PriceMonitor interface {
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 }
 
+// LiquidityMonitor
+type LiquidityMonitor interface {
+	CheckTarget(as lmon.AuctionState, t time.Time, c1, current, target float64)
+}
+
 // TargetStakeCalculator interface
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
@@ -171,6 +177,7 @@ type Market struct {
 	parties map[string]struct{}
 
 	pMonitor PriceMonitor
+	lMonitor LiquidityMonitor
 
 	tsCalc TargetStakeCalculator
 
@@ -194,6 +201,7 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
+	targetStakeTriggeringRatio float64
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -286,6 +294,7 @@ func NewMarket(
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
+	lMonitor := lmon.NewMonitor()
 
 	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
@@ -326,6 +335,7 @@ func NewMarket(
 		parties:            map[string]struct{}{},
 		as:                 as,
 		pMonitor:           pMonitor,
+		lMonitor:           lMonitor,
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
@@ -1313,19 +1323,30 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil {
-		for _, t := range trades {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); err != nil {
-				m.log.Error("Price monitoring error", logging.Error(err))
-				// @TODO handle or panic? (panic is last resort)
-			}
-		}
-		if m.as.AuctionStart() {
-			m.EnterAuction(ctx)
-			return nil, err
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range trades {
+		if err := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); err != nil {
+			m.log.Error("Price monitoring error", logging.Error(err))
+			// @TODO handle or panic? (panic is last resort)
 		}
 	}
-	return trades, err
+	if m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+		return nil, err
+	}
+
+	// run LiquidityMonitor checks for market auction mode.
+	m.lMonitor.CheckTarget(
+		m.as, m.currentTime,
+		m.targetStakeTriggeringRatio,
+		float64(m.getSuppliedStake()),
+		m.getTheoreticalTargetStake(trades),
+	)
+
+	return trades, nil
 }
 
 func (m *Market) addParty(party string) {
@@ -2946,6 +2967,11 @@ func (m *Market) getTargetStake() float64 {
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice)
 }
 
+// TODO(gchaincl): Implement this functin properly, using trades.
+func (m *Market) getTheoreticalTargetStake(trades []*types.Trade) float64 {
+	return m.getTargetStake()
+}
+
 func (m *Market) getSuppliedStake() uint64 {
 	return m.liquidity.CalculateSuppliedStake()
 }
@@ -3005,8 +3031,13 @@ func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
 func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
+
 func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64) {
 	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(v)
+}
+
+func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(v float64) {
+	m.targetStakeTriggeringRatio = v
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
@@ -3365,6 +3396,18 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	}
 
 	return nil
+}
+
+//lint:ignore U1000 this will be used when witold'd pr get merged.
+func (m *Market) closeOutLiquidityProvider() {
+	var trades []*types.Trade // TODO: retrieve them
+
+	m.lMonitor.CheckTarget(
+		m.as, m.currentTime,
+		m.targetStakeTriggeringRatio,
+		float64(m.getSuppliedStake()),
+		m.getTheoreticalTargetStake(trades),
+	)
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
