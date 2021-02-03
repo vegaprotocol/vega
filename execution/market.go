@@ -1896,6 +1896,14 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 		return err
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	
+	m.lMonitor.CheckTarget(
+		m.as, m.currentTime,
+		m.targetStakeTriggeringRatio,
+		float64(m.getSuppliedStake()),
+		m.getTargetStake())
+	)
+	
 	return nil
 }
 
@@ -3023,11 +3031,6 @@ func (m *Market) getTargetStake() float64 {
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice)
 }
 
-// TODO(gchaincl): Implement this functin properly, using trades.
-func (m *Market) getTheoreticalTargetStake(trades []*types.Trade) float64 {
-	return m.getTargetStake()
-}
-
 func (m *Market) getSuppliedStake() uint64 {
 	return m.liquidity.CalculateSuppliedStake()
 }
@@ -3462,18 +3465,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	m.liquidity.RemovePending(party)
 
 	return nil
-}
-
-//lint:ignore U1000 this will be used when witold'd pr get merged.
-func (m *Market) closeOutLiquidityProvider() {
-	var trades []*types.Trade // TODO: retrieve them
-
-	m.lMonitor.CheckTarget(
-		m.as, m.currentTime,
-		m.targetStakeTriggeringRatio,
-		float64(m.getSuppliedStake()),
-		m.getTheoreticalTargetStake(trades),
-	)
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
