@@ -1334,6 +1334,14 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 			// @TODO handle or panic? (panic is last resort)
 		}
 	}
+
+	m.lMonitor.CheckTarget(
+		m.as, m.currentTime,
+		m.targetStakeTriggeringRatio,
+		float64(m.getSuppliedStake()),
+		m.getTheoreticalTargetStake(trades)
+	)
+
 	if m.as.AuctionStart() {
 		m.EnterAuction(ctx)
 		return nil, err
@@ -3029,6 +3037,11 @@ func (m *Market) getTargetStake() float64 {
 		return 0
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice)
+}
+
+// TODO(gchaincl): Implement this functin properly, using trades.
+func (m *Market) getTheoreticalTargetStake(trades []*types.Trade) float64 {
+	return m.getTargetStake()
 }
 
 func (m *Market) getSuppliedStake() uint64 {
