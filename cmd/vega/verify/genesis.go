@@ -7,6 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
+
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 type GenesisCmd struct{}
@@ -24,9 +26,7 @@ func verifyGenesis(r *reporter, bs []byte) string {
 			NetworkParameters map[string]string `json:"network_parameters"`
 			Validators        map[string]string `json:"validators"`
 			Assets            *struct {
-				ERC20 map[string]struct {
-					ContractAddress string `json:"contractAddress"`
-				} `json:"ERC20"`
+				ERC20 map[string]types.ERC20 `json:"ERC20"`
 			} `json:"assets"`
 		} `json:"app_state"`
 	}{}
