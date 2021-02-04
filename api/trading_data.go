@@ -235,7 +235,7 @@ type tradingDataService struct {
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
-	lps, err := t.LiquidityService.Get(req.Market, req.Party)
+	lps, err := t.LiquidityService.Get(req.Party, req.Market)
 	if err != nil {
 		return nil, err
 	}

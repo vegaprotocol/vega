@@ -299,6 +299,39 @@
         ]
       }
     },
+    "/liquidity-provisions/party/{party}/market/{market}": {
+      "get": {
+        "summary": "Get the liquidity provision orders",
+        "operationId": "LiquidityProvisions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LiquidityProvisionsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "party",
+            "description": "The party which submitted the liquidity provision orders",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "market",
+            "description": "The target market for the liquidity provision orders",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TradingDataService"
+        ]
+      }
+    },
     "/markets": {
       "get": {
         "summary": "Get a list of Markets",
