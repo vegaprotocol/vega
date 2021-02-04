@@ -3,6 +3,8 @@ package liquidity
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -21,6 +23,7 @@ var (
 // Broker - event bus
 type Broker interface {
 	Send(e events.Event)
+	SendBatch(evts []events.Event)
 }
 
 // RiskModel allows calculation of min/max price range and a probability of trading.
@@ -121,12 +124,64 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
 
+func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
+
+	// we check if the commitment is 0 which would mean this is a cancel
+	// a cancel don't need validations
+	if lp.CommitmentAmount == 0 {
+		return nil
+	}
+	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee <= 0 || len(lp.Fee) <= 0 {
+		return errors.New("invalid liquidity provision fee")
+	}
+	if err := validateShape(lp.Buys, types.Side_SIDE_BUY); err != nil {
+		return err
+	}
+	return validateShape(lp.Sells, types.Side_SIDE_SELL)
+}
+
+func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
+	// here we just build a liquidityProvision and set its
+	// status to rejected before sending it through the bus
+
+	lp := &types.LiquidityProvision{
+		Id:               id,
+		Fee:              lps.Fee,
+		MarketId:         lps.MarketId,
+		PartyId:          party,
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		CreatedAt:        e.currentTime.UnixNano(),
+		CommitmentAmount: lps.CommitmentAmount,
+	}
+
+	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
+	for _, buy := range lps.Buys {
+		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
+			LiquidityOrder: buy,
+		})
+	}
+
+	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
+	for _, sell := range lps.Sells {
+		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
+			LiquidityOrder: sell,
+		})
+	}
+
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+}
+
 // SubmitLiquidityProvision handles a new liquidity provision submission.
 // It's used to create, update or delete a LiquidityProvision.
 // The LiquidityProvision is created if submited for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
+	if err := e.validateLiquidityProvisionSubmission(lps); err != nil {
+		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
+		return err
+	}
+
 	var (
 		lp  *types.LiquidityProvision = e.LiquidityProvisionByPartyID(party)
 		now                           = e.currentTime.UnixNano()
@@ -146,6 +201,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 			MarketId:  lps.MarketId,
 			PartyId:   party,
 			CreatedAt: now,
+			Fee:       lps.Fee,
 			Status:    types.LiquidityProvision_STATUS_REJECTED,
 		}
 	}
@@ -248,7 +304,7 @@ func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*t
 
 // Update gets the order changes.
 // It keeps track of all LP orders.
-func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
+func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
 	var (
 		newOrders  []*types.Order
 		amendments []*types.OrderAmendment
@@ -282,6 +338,13 @@ func (e *Engine) Update(markPrice uint64, repriceFn RepricePeggedOrder, orders [
 		}
 		e.undeployedProvisions = stillUndeployed
 	}
+
+	// send a batch of updates
+	evts := []events.Event{}
+	for _, lp := range e.provisions {
+		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, lp))
+	}
+	e.broker.SendBatch(evts)
 
 	return newOrders, amendments, nil
 }
@@ -453,4 +516,49 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 	}
 
 	return newOrders, amendments
+}
+
+func validateShape(sh []*types.LiquidityOrder, side types.Side) error {
+	if len(sh) <= 0 {
+		return fmt.Errorf("empty %v shape", side)
+	}
+	for _, lo := range sh {
+		if lo.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+			// We must specify a valid reference
+			return errors.New("order in shape without reference")
+		}
+		if lo.Proportion == 0 {
+			return errors.New("order in shape without a proportion")
+		}
+
+		if side == types.Side_SIDE_BUY {
+			switch lo.Reference {
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				return errors.New("order in buy side shape with best ask price reference")
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				if lo.Offset > 0 {
+					return errors.New("order in buy side shape offset must be <= 0")
+				}
+			case types.PeggedReference_PEGGED_REFERENCE_MID:
+				if lo.Offset >= 0 {
+					return errors.New("order in buy side shape offset must be < 0")
+				}
+			}
+		} else {
+			switch lo.Reference {
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				if lo.Offset < 0 {
+					return errors.New("order in sell shape offset must be >= 0")
+				}
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				return errors.New("order in buy side shape with best ask price reference")
+			case types.PeggedReference_PEGGED_REFERENCE_MID:
+				if lo.Offset <= 0 {
+					return errors.New("order in sell shape offset must be > 0")
+				}
+			}
+		}
+
+	}
+	return nil
 }

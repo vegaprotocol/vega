@@ -470,6 +470,12 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// some engines still needs to get updates:
+	m.currentTime = t
+	m.liquidity.OnChainTimeUpdate(ctx, t)
+	m.risk.OnTimeUpdate(t)
+	m.settlement.OnTick(t)
+
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
 	// the opening auction, but settlement at expiry is
@@ -489,13 +495,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		}
 	}
 
-	m.risk.OnTimeUpdate(t)
-	m.settlement.OnTick(t)
-	m.liquidity.OnChainTimeUpdate(ctx, t)
-
 	closed = t.After(m.closingAt)
 	m.closed = closed
-	m.currentTime = t
 
 	// check price auction end
 	if m.as.InAuction() {
@@ -3042,7 +3043,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
-	newOrders, amendments, err := m.liquidity.Update(m.markPrice, m.repriceFuncW, orders)
+	newOrders, amendments, err := m.liquidity.Update(ctx, m.markPrice, m.repriceFuncW, orders)
 	if err != nil {
 		return err
 	}

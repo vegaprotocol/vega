@@ -81,14 +81,14 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
 				Proportion: 1,
-				Offset:     -1,
+				Offset:     1,
 			},
 		},
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
 				Proportion: 1,
-				Offset:     1,
+				Offset:     -1,
 			},
 		},
 	}

@@ -31,8 +31,8 @@ Feature: Test LP orders
     And clear order events
     Then the trader submits LP:
       | id  | party   | market    | commitment amount  | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader1 | ETH/DEC19 | 10000              | 0   | buy        | BID             | 500              | -10          |
-      | lp1 | trader1 | ETH/DEC19 | 10000              | 0   | sell       | ASK             | 500              | 10           |
+      | lp1 | trader1 | ETH/DEC19 | 10000              | 0.1   | buy        | BID             | 500              | -10          |
+      | lp1 | trader1 | ETH/DEC19 | 10000              | 0.1  | sell       | ASK             | 500              | 10           |
     Then I see the LP events:
       | id  | party   | market    | commitment amount |
       | lp1 | trader1 | ETH/DEC19 | 10000              |

@@ -221,11 +221,12 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 
 func addAccount(market *testMarket, party string) {
 	market.collateraEngine.Deposit(context.Background(), party, market.asset, 1000000000)
-	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
+
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
+	// market.broker.EXPECT().Send(gomock.Any()).Times(3)
 	market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
-	market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
 
 func TestMarketClosing(t *testing.T) {

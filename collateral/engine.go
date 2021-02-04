@@ -1619,6 +1619,12 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
+// GetPartyMarginAccount returns a margin account given the partyID and market
+func (e *Engine) GetPartyMarginAccount(market, party, asset string) (*types.Account, error) {
+	margin := e.accountID(market, party, asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
+	return e.GetAccountByID(margin)
+}
+
 // GetPartyGeneralAccount returns a general account given the partyID.
 func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)

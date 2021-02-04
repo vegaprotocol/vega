@@ -147,7 +147,11 @@ func (a *Account) GetPartyAccounts(partyID, marketID, asset string, ty types.Acc
 		return nil, ErrMissingPartyID
 	}
 
-	if ty != types.AccountType_ACCOUNT_TYPE_GENERAL && ty != types.AccountType_ACCOUNT_TYPE_MARGIN && ty != types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW && ty != types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+	if ty != types.AccountType_ACCOUNT_TYPE_GENERAL &&
+		ty != types.AccountType_ACCOUNT_TYPE_MARGIN &&
+		ty != types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW &&
+		ty != types.AccountType_ACCOUNT_TYPE_BOND &&
+		ty != types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return nil, errors.New("invalid type for query, only GENERAL, MARGIN, LOCK_WITHDRAW AND BOND accounts for a party supported")
 	}
 
@@ -400,13 +404,13 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			batch[string(marginAssetKey)] = marginIDKey
 		}
 		// Check the type of account and write only the data/keys required for BOND accounts.
-		if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			marginIDKey := a.badger.accountMarginIDKey(acc.Owner, acc.MarketId, acc.Asset)
-			marginMarketKey := a.badger.accountMarketKey(acc.MarketId, string(marginIDKey))
-			marginAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(marginIDKey))
-			batch[string(marginIDKey)] = buf
-			batch[string(marginMarketKey)] = marginIDKey
-			batch[string(marginAssetKey)] = marginIDKey
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_BOND {
+			bondIDKey := a.badger.accountBondIDKey(acc.Owner, acc.MarketId, acc.Asset)
+			bondMarketKey := a.badger.accountMarketKey(acc.MarketId, string(bondIDKey))
+			bondAssetKey := a.badger.accountAssetKey(acc.Asset, acc.Owner, string(bondIDKey))
+			batch[string(bondIDKey)] = buf
+			batch[string(bondMarketKey)] = bondIDKey
+			batch[string(bondAssetKey)] = bondIDKey
 		}
 	}
 	return batch, nil
