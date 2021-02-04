@@ -94,20 +94,21 @@ type NodeCommand struct {
 
 	broker *broker.Broker
 
-	transferSub    *subscribers.TransferResponse
-	marketEventSub *subscribers.MarketEvent
-	orderSub       *subscribers.OrderEvent
-	accountSub     *subscribers.AccountSub
-	partySub       *subscribers.PartySub
-	tradeSub       *subscribers.TradeSub
-	marginLevelSub *subscribers.MarginLevelSub
-	governanceSub  *subscribers.GovernanceDataSub
-	voteSub        *subscribers.VoteSub
-	marketDataSub  *subscribers.MarketDataSub
-	newMarketSub   *subscribers.Market
-	candleSub      *subscribers.CandleSub
-	riskFactorSub  *subscribers.RiskFactorSub
-	marketDepthSub *subscribers.MarketDepthBuilder
+	transferSub      *subscribers.TransferResponse
+	marketEventSub   *subscribers.MarketEvent
+	orderSub         *subscribers.OrderEvent
+	accountSub       *subscribers.AccountSub
+	partySub         *subscribers.PartySub
+	tradeSub         *subscribers.TradeSub
+	marginLevelSub   *subscribers.MarginLevelSub
+	governanceSub    *subscribers.GovernanceDataSub
+	voteSub          *subscribers.VoteSub
+	marketDataSub    *subscribers.MarketDataSub
+	newMarketSub     *subscribers.Market
+	marketUpdatedSub *subscribers.MarketUpdated
+	candleSub        *subscribers.CandleSub
+	riskFactorSub    *subscribers.RiskFactorSub
+	marketDepthSub   *subscribers.MarketDepthBuilder
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

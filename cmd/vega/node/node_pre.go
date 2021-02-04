@@ -182,6 +182,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
+	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
@@ -451,7 +452,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-		l.liquidityService)
+		l.liquidityService, l.marketUpdatedSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
