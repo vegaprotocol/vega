@@ -9,9 +9,6 @@ import (
 var (
 	// ErrNilOracle signals that the oracle to instantiate was nil
 	ErrNilOracle = errors.New("nil oracle")
-	// ErrUnimplementedOracle signals that the oracle specified
-	// is still not implemented by the market framework
-	ErrUnimplementedOracle = errors.New("unimplemented oracle")
 )
 
 // Oracle is an abstraction of an oracle

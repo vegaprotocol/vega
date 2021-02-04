@@ -264,9 +264,8 @@ func (s *AbciTestSuite) testCheckSubmitOracleDataForwardErrorWithInvalidOracleDa
 	err := app.CheckSubmitOracleData(context.Background(), tx)
 
 	// then
-	if assert.Error(t, err) {
-		assert.Equal(t, errInvalidOracleData, err)
-	}
+	require.Error(t, err)
+	assert.Equal(t, errInvalidOracleData, err)
 }
 
 func (s *AbciTestSuite) testDeliverSubmitOracleDataBroadcastValidOracleData(t *testing.T, app *processor.App, proc *procTest) {
@@ -279,7 +278,7 @@ func (s *AbciTestSuite) testDeliverSubmitOracleDataBroadcastValidOracleData(t *t
 
 	// setup
 	proc.oracles.Adaptors.EXPECT().Normalise(gomock.Any()).Return(&oracles.OracleData{}, nil)
-	proc.oracles.Engine.EXPECT().DispatchData(gomock.Any()).Times(1)
+	proc.oracles.Engine.EXPECT().BroadcastData(gomock.Any(), gomock.Any()).Times(1)
 
 	// when
 	err := app.DeliverSubmitOracleData(context.Background(), tx)
@@ -298,7 +297,7 @@ func (s *AbciTestSuite) testDeliverSubmitOracleDataDoesNotBroadcastInvalidOracle
 
 	// setup
 	proc.oracles.Adaptors.EXPECT().Normalise(gomock.Any()).Return(nil, errors.New("invalid oracle data"))
-	proc.oracles.Engine.EXPECT().DispatchData(gomock.Any()).Times(0)
+	proc.oracles.Engine.EXPECT().BroadcastData(gomock.Any(), gomock.Any()).Times(0)
 
 	// when
 	err := app.DeliverSubmitOracleData(context.Background(), tx)
