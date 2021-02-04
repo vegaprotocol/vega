@@ -158,7 +158,7 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 	addr := ethcmn.HexToAddress(b.address)
-	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.ID)
+	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.Id)
 	buf, err := args.Pack([]interface{}{addr, vegaAssetIDBytes, nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err

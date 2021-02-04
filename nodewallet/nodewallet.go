@@ -248,7 +248,6 @@ func loadWallets(cfg Config, stor *store, ethclt eth.ETHClient) (map[Blockchain]
 			wallets[Vega] = w
 		case Ethereum:
 			w, err := eth.New(cfg.ETH, w.Path, w.Passphrase, ethclt)
-			w.PubKeyOrAddress()
 			if err != nil {
 				return nil, err
 			}

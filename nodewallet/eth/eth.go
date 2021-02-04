@@ -2,7 +2,6 @@ package eth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -139,20 +138,6 @@ func (w *Wallet) Version() uint64 {
 }
 
 func (w *Wallet) PubKeyOrAddress() []byte {
-	keyE, err := w.ks.Export(w.acc, w.passphrase, w.passphrase)
-	if err != nil {
-		panic(err)
-	}
-	key, err := keystore.DecryptKey(keyE, w.passphrase)
-	if err != nil {
-		panic(err)
-	}
-
-	jsonkey, err := json.Marshal(key)
-	if err != nil {
-		panic(err)
-	}
-
 	return w.acc.Address.Bytes()
 }
 
