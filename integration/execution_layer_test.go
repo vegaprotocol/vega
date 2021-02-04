@@ -1318,7 +1318,7 @@ func seeLPEvents(in *gherkin.DataTable) error {
 	evtByID := func(id string) *types.LiquidityProvision {
 		for _, e := range evts {
 			if lp := e.LiquidityProvision(); lp.Id == id {
-				return lp
+				return &lp
 			}
 		}
 		return nil
