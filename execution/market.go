@@ -1087,7 +1087,8 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 }
 
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	if order.PeggedOrder != nil {
+	isPegged := (order.PeggedOrder != nil)
+	if isPegged {
 		order.Status = types.Order_STATUS_PARKED
 		order.Reason = types.OrderError_ORDER_ERROR_UNSPECIFIED
 
@@ -1107,28 +1108,43 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 	}
 
+	oldPos, ok := m.position.GetPositionByPartyID(order.PartyId)
 	// Register order as potential positions
 	pos := m.position.RegisterOrder(order)
-
-	// Perform check and allocate margin
-	if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
-		if _, err := m.position.UnregisterOrder(order); err != nil {
-			m.log.Error("Unable to unregister potential trader positions",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+	checkMargin := true
+	if !isPegged && ok {
+		oldVol, newVol := pos.Size()+pos.Buy()-pos.Sell(), oldPos.Size()+pos.Buy()-pos.Sell()
+		if oldVol < 0 {
+			oldVol = -oldVol
 		}
-
-		// adding order to the buffer first
-		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
-		m.broker.Send(events.NewOrderEvent(ctx, order))
-
-		if m.log.GetLevel() <= logging.DebugLevel {
-			m.log.Debug("Unable to check/add margin for trader",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+		if newVol < 0 {
+			newVol = -newVol
 		}
-		return nil, ErrMarginCheckFailed
+		// check margin if the new volume is greater, or the same (implying long to short, or short to long)
+		checkMargin = (oldVol <= newVol)
+	}
+
+	// Perform check and allocate margin unless the order is (partially) closing the trader position
+	if checkMargin {
+		if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
+			if _, err := m.position.UnregisterOrder(order); err != nil {
+				m.log.Error("Unable to unregister potential trader positions",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+
+			// adding order to the buffer first
+			order.Status = types.Order_STATUS_REJECTED
+			order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			if m.log.GetLevel() <= logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for trader",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			return nil, ErrMarginCheckFailed
+		}
 	}
 
 	// from here we may have assigned some margin.

@@ -74,6 +74,24 @@ func (m MarketPosition) VWSell() uint64 {
 	return m.vwSellPrice
 }
 
+// get max value based on absolute values of int64 vals
+func i64MaxAbs(vals ...int64) int64 {
+	var (
+		r, m int64
+	)
+	for _, v := range vals {
+		av := v
+		if av < 0 {
+			av *= -1
+		}
+		if av > m {
+			r = v
+			m = av // current max abs is av
+		}
+	}
+	return r
+}
+
 // Engine represents the positions engine
 type Engine struct {
 	log *logging.Logger
