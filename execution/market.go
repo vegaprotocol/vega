@@ -1335,18 +1335,12 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		}
 	}
 
-	m.lMonitor.CheckTarget(
-		m.as, m.currentTime,
-		m.targetStakeTriggeringRatio,
-		float64(m.getSuppliedStake()),
-		m.getTheoreticalTargetStake(trades),
-	)
-
+	// start the price monitoring auction if required?
 	if m.as.AuctionStart() {
 		m.EnterAuction(ctx)
-		return nil, err
+		return nil, nil
 	}
-
+	
 	// run LiquidityMonitor checks for market auction mode.
 	m.lMonitor.CheckTarget(
 		m.as, m.currentTime,
@@ -1354,6 +1348,12 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		float64(m.getSuppliedStake()),
 		m.getTheoreticalTargetStake(trades),
 	)
+	
+	// start the liquidity monitoring auction if required? 
+	if m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+		return nil, err
+	}
 
 	return trades, nil
 }
