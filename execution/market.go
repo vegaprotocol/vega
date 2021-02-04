@@ -2241,10 +2241,11 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// from here these are the normal amendment
-	var priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
+	var priceIncrease, priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
 
 	if amendedOrder.Price != existingOrder.Price {
 		priceShift = true
+		priceIncrease = (existingOrder.Price < amendedOrder.Price)
 	}
 
 	if amendedOrder.Size > existingOrder.Size {
@@ -2288,26 +2289,28 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, ErrMarginCheckFailed
 	}
 
-	// Perform check and allocate margin
+	// Perform check and allocate margin if price or order size is increased
 	// ignore rollback return here, as if we amend it means the order
 	// is already on the book, not rollback will be needed, the margin
 	// will be updated later on for sure.
 
-	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
-		// Undo the position registering
-		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
-		if err1 != nil {
-			m.log.Error("Unable to unregister potential amended trader position",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err1))
-		}
+	if priceIncrease || sizeIncrease {
+		if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+			// Undo the position registering
+			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
+			if err1 != nil {
+				m.log.Error("Unable to unregister potential amended trader position",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err1))
+			}
 
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Unable to check/add margin for trader",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for trader",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			return nil, ErrMarginCheckFailed
 		}
-		return nil, ErrMarginCheckFailed
 	}
 
 	// if increase in size or change in price
