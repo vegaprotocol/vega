@@ -178,10 +178,10 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if levels == nil {
 			continue
 		}
-		levels.PartyID = evt.Party()
+		levels.PartyId = evt.Party()
 		levels.Asset = asset // This is assuming there's a single asset at play here
 		levels.Timestamp = e.currTime
-		levels.MarketID = e.mktID
+		levels.MarketId = e.mktID
 
 		curMargin := evt.MarginBalance()
 		if curMargin+evt.GeneralBalance() < levels.MaintenanceMargin {
