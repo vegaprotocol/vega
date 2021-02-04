@@ -106,6 +106,7 @@ func (s *Svc) Get(party, market string) ([]types.LiquidityProvision, error) {
 	if len(party) <= 0 && len(market) <= 0 {
 		return nil, ErrNoMarketOrPartyFilters
 	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if len(market) > 0 {

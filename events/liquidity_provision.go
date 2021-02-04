@@ -31,8 +31,8 @@ func (p LiquidityProvision) MarketID() string {
 	return p.p.MarketId
 }
 
-func (p *LiquidityProvision) LiquidityProvision() *types.LiquidityProvision {
-	return &p.p
+func (p LiquidityProvision) LiquidityProvision() types.LiquidityProvision {
+	return p.p
 }
 
 func (p LiquidityProvision) Proto() types.LiquidityProvision {
