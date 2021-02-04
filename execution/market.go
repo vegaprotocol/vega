@@ -1651,7 +1651,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 
 		// add all pegged orders too to the orderUpdates
 		orderUpdates = append(orderUpdates, orders...)
-		//If the party was an LP then cancel commitment, else ignore error
 	}
 
 	// send all orders which got stopped through the event bus
