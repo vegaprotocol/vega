@@ -158,11 +158,19 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	}
 	if order.Side == types.Side_SIDE_BUY {
 		// calculate vwBuyPrice: total worth of orders divided by total size
-		pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + order.Price*order.Remaining) / (uint64(pos.buy) + order.Remaining)
+		if buyVol := uint64(pos.buy) + order.Remaining; buyVol != 0 {
+			pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + order.Price*order.Remaining) / buyVol
+		} else {
+			pos.vwBuyPrice = 0
+		}
 		pos.buy += int64(order.Remaining)
 	} else {
 		// calculate vwSellPrice: total worth of orders divided by total size
-		pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + order.Price*order.Remaining) / (uint64(pos.sell) + order.Remaining)
+		if sellVol := uint64(pos.sell) + order.Remaining; sellVol != 0 {
+			pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + order.Price*order.Remaining) / sellVol
+		} else {
+			pos.vwSellPrice = 0
+		}
 		pos.sell += int64(order.Remaining)
 	}
 	timer.EngineTimeCounterAdd()
@@ -220,7 +228,6 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		} else {
 			pos.vwBuyPrice = 0
 		}
-		pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + newOrder.Price*newOrder.Remaining) / (uint64(pos.buy) + newOrder.Remaining)
 		pos.buy += int64(newOrder.Remaining)
 	} else {
 		vwap := pos.vwSellPrice*uint64(pos.sell) - originalOrder.Price*originalOrder.Remaining
@@ -230,7 +237,6 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		} else {
 			pos.vwSellPrice = 0
 		}
-		pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + newOrder.Price*newOrder.Remaining) / (uint64(pos.sell) + newOrder.Remaining)
 		pos.sell += int64(newOrder.Remaining)
 	}
 
