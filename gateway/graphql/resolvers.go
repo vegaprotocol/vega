@@ -344,8 +344,7 @@ func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types
 	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
 }
 func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*types.Market, error) {
-	var lp interface{} = r
-	return lp.(QueryResolver).Market(ctx, obj.MarketId)
+	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (int, error) {
 	return int(obj.CommitmentAmount), nil
