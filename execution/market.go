@@ -3016,8 +3016,7 @@ func (m *Market) getTargetStake() float64 {
 func (m *Market) getTheoreticalTargetStake(trades []*types.Trade) float64 {
 	rf, err := m.getRiskFactors()
 	if err != nil {
-		logging.Error(err)
-		m.log.Debug("unable to get risk factors, can't calculate target")
+		m.log.Debug("unable to get risk factors, can't calculate target", logging.Error(err))
 		return 0
 	}
 	oi := m.position.GetOpenInterestGivenTrades(trades)
