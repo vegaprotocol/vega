@@ -527,6 +527,9 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side) error {
 			// We must specify a valid reference
 			return errors.New("order in shape without reference")
 		}
+		if lo.Proportion == 0 {
+			return errors.New("order in shape without a proportion")
+		}
 
 		if side == types.Side_SIDE_BUY {
 			switch lo.Reference {
