@@ -963,10 +963,11 @@ func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
 
 	var withdrawnTS, txHash *string
 	if w.WithdrawnTimestamp != 0 {
-		*withdrawnTS = vegatime.Format(vegatime.UnixNano(w.WithdrawnTimestamp))
+		ts := vegatime.Format(vegatime.UnixNano(w.WithdrawnTimestamp))
+		withdrawnTS = &ts
 	}
 	if len(w.TxHash) > 0 {
-		*txHash = w.TxHash
+		txHash = &w.TxHash
 	}
 
 	return &Withdrawal{
