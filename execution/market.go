@@ -3126,7 +3126,7 @@ func (m *Market) applyBondPenalty(ctx context.Context, partyID string, marginSho
 	}
 
 	bondPenaltyParameter := 0.1
-	penalty := int64(bondPenaltyParameter * float64(marginShorfall))
+	penalty := int64(math.Ceil(bondPenaltyParameter * float64(marginShorfall)))
 	transfer := &types.Transfer{
 		Owner: partyID,
 		Amount: &types.FinancialAmount{

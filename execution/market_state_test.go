@@ -26,7 +26,7 @@ func testInitialStateIsProposed(t *testing.T) {
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
@@ -40,7 +40,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false, false)
 	defer tm.ctrl.Finish()
 	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
 
@@ -106,7 +106,7 @@ func testCanMoveFromProposedToRejectedState(t *testing.T) {
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
@@ -122,7 +122,7 @@ func testCanMoveFromProposedToPendingState(t *testing.T) {
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
@@ -138,7 +138,7 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
@@ -158,7 +158,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	auctionDuration := &types.AuctionDuration{
 		Duration: 30, // seconds
 	}
-	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
+	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false, false)
 	defer tm.ctrl.Finish()
 
 	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
