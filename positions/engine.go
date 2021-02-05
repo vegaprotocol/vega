@@ -74,8 +74,10 @@ func (m MarketPosition) VWSell() uint64 {
 	return m.vwSellPrice
 }
 
-// get max value based on absolute values of int64 vals
-func i64MaxAbs(vals ...int64) int64 {
+// I64MaxAbs - get max value based on absolute values of int64 vals
+// keep this function, perhaps we can reuse it in a numutil package
+// once we have to deal with decimals etc...
+func I64MaxAbs(vals ...int64) int64 {
 	var (
 		r, m int64
 	)
