@@ -27,7 +27,7 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 	return order.Order, err
 }
 
-func (r *allResolver) getAssetByID(ctx context.Context, id string) (*Asset, error) {
+func (r *allResolver) getAssetByID(ctx context.Context, id string) (*types.Asset, error) {
 	if len(id) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
@@ -38,25 +38,16 @@ func (r *allResolver) getAssetByID(ctx context.Context, id string) (*Asset, erro
 	if err != nil {
 		return nil, err
 	}
-	return AssetFromProto(res.Asset)
+	return res.Asset, nil
 }
 
-func (r allResolver) allAssets(ctx context.Context) ([]*Asset, error) {
+func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {
 	req := &protoapi.AssetsRequest{}
 	res, err := r.clt.Assets(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]*Asset, 0, len(res.Assets))
-	for _, v := range res.Assets {
-		a, err := AssetFromProto(v)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, a)
-	}
-
-	return out, nil
+	return res.Assets, nil
 }
 
 func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Market, error) {
