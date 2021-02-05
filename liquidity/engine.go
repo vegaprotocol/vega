@@ -328,8 +328,24 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 		newOrders = append(newOrders, creates...)
 		amendments = append(amendments, updates...)
 	}
+	creates, updates, err := e.handleUndeployedPositions(ctx, markPrice, repriceFn)
+	if err != nil {
+		//Can still return orders and amendments from previous step even if there was an error
+		return newOrders, amendments, err
+	}
+	newOrders = append(newOrders, creates...)
+	amendments = append(amendments, updates...)
+
+	return newOrders, amendments, nil
+}
+
+func (e *Engine) handleUndeployedPositions(ctx context.Context, markPrice uint64, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
+	var (
+		newOrders  []*types.Order
+		amendments []*types.OrderAmendment
+	)
 	if e.undeployedProvisions {
-		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
+		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try and deploy now.
 		stillUndeployed := false
 		for _, lp := range e.provisions {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
@@ -353,6 +369,7 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 	e.broker.SendBatch(evts)
 
 	return newOrders, amendments, nil
+
 }
 
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers

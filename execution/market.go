@@ -3041,21 +3041,23 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) {
 
-	newOrders, amendments, err := m.liquidity.Update(ctx, m.markPrice, m.repriceFuncW, orders)
-	if err != nil {
-		m.log.Debug("Liquidity update failed for party",
-			logging.String("market-id", m.GetID()),
-			//TODO: Add party id
-			logging.Error(err))
+	for p, o := range liquidity.Orders(orders).ByParty() {
+		newOrders, amendments, err := m.liquidity.Update(m.markPrice, m.repriceFuncW, o)
+		if err != nil {
+			m.log.Debug("Liquidity update failed for party",
+				logging.String("market-id", m.GetID()),
+				logging.String("party", p),
+				logging.Error(err))
+		}
+
+		if err := m.createAndUpdateOrders(ctx, newOrders, amendments, false); err != nil {
+			m.log.Debug("Order creation or update failed during liquidity update",
+				logging.String("market-id", m.GetID()),
+				logging.String("party", p),
+				logging.Error(err))
+		}
 	}
 
-	//TODO: Split by party so that one party doesn't affect the other
-	if err := m.createAndUpdateOrders(ctx, newOrders, amendments, false); err != nil {
-		m.log.Debug("Order creation or update failed during liquidity update",
-			logging.String("market-id", m.GetID()),
-			//TODO: Add party id
-			logging.Error(err))
-	}
 }
 
 func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment, failOnLPMarginShortfall bool) (err error) {
@@ -3119,9 +3121,13 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 
 func (m *Market) applyBondPenalty(ctx context.Context, partyID string, marginShorfall uint64, asset string) error {
 	//TODO: use network parameter
-	//TODO: handle the case where we don't apply penalty (on transition from auction)
-
 	if marginShorfall <= 0 {
+		return nil
+	}
+
+	//Check if on transition from auction now
+	lastAuctionEnd := m.as.LastAuctionEndTime()
+	if lastAuctionEnd != nil && lastAuctionEnd.Equal(m.currentTime) {
 		return nil
 	}
 

@@ -3421,4 +3421,107 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(
 	require.Equal(t, suppliedStake, zero)
 }
 
-//TODO: Test that penalty not applied on transition from auction
+func TestBondAccountUsedForMarginShortage_PenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
+	mainParty := "mainParty"
+	auxParty1 := "auxParty1"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	openingAuctionDuration := &types.AuctionDuration{Duration: 10}
+	tm := getTestMarket2(t, now, closingAt, nil, openingAuctionDuration, true, true)
+
+	mktData := tm.market.GetMarketData()
+	require.NotNil(t, mktData)
+	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, mktData.MarketTradingMode)
+
+	var initialMarkPrice uint64 = tm.mktCfg.TradableInstrument.Instrument.InitialMarkPrice
+	ctx := context.Background()
+
+	asset, err := tm.mktCfg.GetAsset()
+	require.NoError(t, err)
+
+	var mainPartyInitialDeposit uint64 = 784 // 794 is the minimum required amount to cover margin without dipping into the bond account
+	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
+	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
+	addAccount(tm, auxParty1)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell1)
+	require.NoError(t, err)
+
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	confirmationBuy1, err := tm.market.SubmitOrder(ctx, orderBuy1)
+	assert.NotNil(t, confirmationBuy1)
+	assert.NoError(t, err)
+	require.Equal(t, 0, len(confirmationBuy1.Trades))
+
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: 200,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	genAcc, err := tm.collateraEngine.GetAccountByID(mainPartyGenAccID)
+	require.NoError(t, err)
+	require.NotNil(t, genAcc)
+	genAccBalanceBeforeLPSubmission := genAcc.Balance
+	var zero uint64 = 0
+	require.Greater(t, genAccBalanceBeforeLPSubmission, zero)
+
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
+	require.NoError(t, err)
+
+	genAcc, err = tm.collateraEngine.GetAccountByID(mainPartyGenAccID)
+	require.NoError(t, err)
+	require.NotNil(t, genAcc)
+	genAccBalanceDuringAuction := genAcc.Balance
+	require.Greater(t, genAccBalanceDuringAuction, zero)
+	require.Equal(t, genAccBalanceDuringAuction, genAccBalanceBeforeLPSubmission-lp.CommitmentAmount)
+
+	bondAcc, err := tm.collateraEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	require.NoError(t, err)
+	require.NotNil(t, bondAcc)
+	bondAccBalanceDuringAuction := bondAcc.Balance
+	require.Equal(t, lp.CommitmentAmount, bondAccBalanceDuringAuction)
+
+	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
+	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	insurancePoolDuringAuction := insurancePool.Balance
+	require.Equal(t, zero, insurancePoolDuringAuction)
+
+	//End auction
+	afterAuction := now.Add(time.Duration(openingAuctionDuration.Duration) * time.Second).Add(time.Millisecond)
+	tm.market.OnChainTimeUpdate(ctx, afterAuction)
+
+	mktData = tm.market.GetMarketData()
+	require.NotNil(t, mktData)
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, mktData.MarketTradingMode)
+
+	genAcc, err = tm.collateraEngine.GetAccountByID(mainPartyGenAccID)
+	require.NoError(t, err)
+	require.NotNil(t, genAcc)
+	genAccBalanceAfterOpeniningAuction := genAcc.Balance
+	require.Equal(t, zero, genAccBalanceAfterOpeniningAuction)
+
+	bondAcc, err = tm.collateraEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	require.NoError(t, err)
+	require.NotNil(t, bondAcc)
+	bondAccBalanceAfterOpeningAuction := bondAcc.Balance
+	require.Less(t, bondAccBalanceAfterOpeningAuction, bondAccBalanceDuringAuction)
+	require.Greater(t, bondAccBalanceAfterOpeningAuction, zero)
+	require.Less(t, bondAccBalanceAfterOpeningAuction, lp.CommitmentAmount)
+
+	insurancePool, err = tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	insurancePoolBalanceAfterOpeningAuction := insurancePool.Balance
+	require.NoError(t, err)
+	require.NotNil(t, insurancePool)
+	require.Equal(t, insurancePoolBalanceAfterOpeningAuction, insurancePoolDuringAuction)
+	require.Equal(t, insurancePoolBalanceAfterOpeningAuction, zero)
+}

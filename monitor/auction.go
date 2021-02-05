@@ -17,6 +17,7 @@ type AuctionState struct {
 	end         *types.AuctionDuration   // will be set when in auction, defines parameters that end an auction period
 	start, stop bool                     // flags to clarify whether we're entering or leaving auction
 	m           *types.Market            // keep market definition handy, useful to end auctions when default is FBA
+	lastEnd     *time.Time               // end of last auction
 }
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
@@ -44,6 +45,7 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 		s.start = false
 		s.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 	}
+	s.lastEnd = nil
 	return &s
 }
 
@@ -171,6 +173,11 @@ func (a AuctionState) AuctionStart() bool {
 	return a.start
 }
 
+// LastAuctionEndTime returns time when last auction ended, nil if there wasn't an auction end yet
+func (a *AuctionState) LastAuctionEndTime() *time.Time {
+	return a.lastEnd
+}
+
 // AuctionStarted is called by the execution package to set flags indicating the market has started the auction
 func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 	a.start = false
@@ -197,5 +204,6 @@ func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.
 	if a.mode == types.Market_TRADING_MODE_BATCH_AUCTION {
 		a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_BATCH
 	}
+	a.lastEnd = &now
 	return evt
 }
