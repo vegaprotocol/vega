@@ -253,6 +253,11 @@ func (r *VegaResolverRoot) Deposit() DepositResolver {
 	return (*myDepositResolver)(r)
 }
 
+// Withdrawal ...
+func (r *VegaResolverRoot) Withdrawal() WithdrawalResolver {
+	return (*myWithdrawalResolver)(r)
+}
+
 func (r *VegaResolverRoot) LiquidityOrder() LiquidityOrderResolver {
 	return (*myLiquidityOrderResolver)(r)
 }
@@ -444,7 +449,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	}, nil
 }
 
-func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*Withdrawal, error) {
+func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
 	res, err := r.tradingDataClient.Withdrawal(
 		ctx, &protoapi.WithdrawalRequest{Id: wid},
 	)
@@ -452,18 +457,7 @@ func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*Withdraw
 		return nil, err
 	}
 
-	w, err := NewWithdrawalFromProto(res.Withdrawal)
-	if err != nil {
-		return nil, err
-	}
-
-	asset, err := r.Asset(ctx, res.Withdrawal.Asset)
-	if err != nil {
-		return nil, err
-	}
-
-	w.Asset = asset
-	return w, nil
+	return res.Withdrawal, nil
 }
 
 func (r *myQueryResolver) Deposit(ctx context.Context, did string) (*types.Deposit, error) {
@@ -987,7 +981,7 @@ func (r *myPartyResolver) Proposals(ctx context.Context, party *types.Party, inS
 	return resp.Data, nil
 }
 
-func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) ([]*Withdrawal, error) {
+func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) ([]*types.Withdrawal, error) {
 	res, err := r.tradingDataClient.Withdrawals(
 		ctx, &protoapi.WithdrawalsRequest{PartyId: party.Id},
 	)
@@ -995,26 +989,7 @@ func (r *myPartyResolver) Withdrawals(ctx context.Context, party *types.Party) (
 		return nil, err
 	}
 
-	out := make([]*Withdrawal, 0, len(res.Withdrawals))
-	for _, v := range res.Withdrawals {
-		w, err := NewWithdrawalFromProto(v)
-		if err != nil {
-			return nil, err
-		}
-		req := protoapi.AssetByIDRequest{Id: v.Asset}
-		res, err := r.tradingDataClient.AssetByID(ctx, &req)
-		if err != nil {
-			r.log.Error("tradingData client", logging.Error(err))
-			return nil, err
-		}
-		w.Asset, err = AssetFromProto(res.Asset)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, w)
-	}
-
-	return out, nil
+	return res.Withdrawals, nil
 }
 
 func (r *myPartyResolver) Deposits(ctx context.Context, party *types.Party) ([]*types.Deposit, error) {

@@ -30,6 +30,7 @@ func (NodeSignature) IsEvent()                   {}
 func (GovernanceData) IsEvent()                  {}
 func (RiskFactor) IsEvent()                      {}
 func (Deposit) IsEvent()                         {}
+func (Withdrawal) IsEvent()                      {}
 func (Market) IsEvent()                          {}
 func (Future) IsProduct()                        {}
 func (NewMarket) IsProposalChange()              {}
