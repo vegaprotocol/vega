@@ -102,5 +102,10 @@ models:
         resolver: true
   Deposit:
     model: code.vegaprotocol.io/vega/proto.Deposit
+  Withdrawal:
+    model: code.vegaprotocol.io/vega/proto.Withdrawal
+    fields:
+      txHash:
+        resolver: true
   PeggedOrder:
     model: code.vegaprotocol.io/vega/proto.PeggedOrder

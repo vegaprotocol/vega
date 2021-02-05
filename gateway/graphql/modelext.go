@@ -6,7 +6,6 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/pkg/errors"
 )
 
@@ -943,47 +942,6 @@ func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
 	}
 }
 
-func WithdrawDetailsFromProto(w *types.WithdrawExt) WithdrawalDetails {
-	if w == nil {
-		return nil
-	}
-	switch ex := w.Ext.(type) {
-	case *types.WithdrawExt_Erc20:
-		return &Erc20WithdrawalDetails{ReceiverAddress: ex.Erc20.ReceiverAddress}
-	default:
-		return nil
-	}
-}
-
-func NewWithdrawalFromProto(w *types.Withdrawal) (*Withdrawal, error) {
-	status, err := convertWithdrawalStatusFromProto(w.Status)
-	if err != nil {
-		return nil, err
-	}
-
-	var withdrawnTS, txHash *string
-	if w.WithdrawnTimestamp != 0 {
-		ts := vegatime.Format(vegatime.UnixNano(w.WithdrawnTimestamp))
-		withdrawnTS = &ts
-	}
-	if len(w.TxHash) > 0 {
-		txHash = &w.TxHash
-	}
-
-	return &Withdrawal{
-		ID:                 w.Id,
-		Party:              &types.Party{Id: w.PartyId},
-		Amount:             fmt.Sprintf("%v", w.Amount),
-		Status:             status,
-		Ref:                w.Ref,
-		Expiry:             vegatime.Format(vegatime.UnixNano(w.Expiry)),
-		CreatedTimestamp:   vegatime.Format(vegatime.UnixNano(w.CreatedTimestamp)),
-		WithdrawnTimestamp: withdrawnTS,
-		TxHash:             txHash,
-		Details:            WithdrawDetailsFromProto(w.Ext),
-	}, nil
-}
-
 func busEventFromProto(events ...*types.BusEvent) []*BusEvent {
 	r := make([]*BusEvent, 0, len(events))
 	for _, e := range events {
@@ -1167,8 +1125,7 @@ func eventFromProto(e *types.BusEvent) Event {
 	case types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
 		return e.GetDeposit()
 	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
-		w, _ := NewWithdrawalFromProto(e.GetWithdrawal())
-		return w
+		return e.GetWithdrawal()
 	}
 	return nil
 }

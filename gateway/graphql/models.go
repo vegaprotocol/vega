@@ -735,34 +735,6 @@ type Vote struct {
 
 func (Vote) IsEvent() {}
 
-// The details of a withdrawal processed by vega
-type Withdrawal struct {
-	// The Vega internal id of the withdrawal
-	ID string `json:"id"`
-	// The PartyID initiating the witndrawal
-	Party *proto.Party `json:"party"`
-	// The amount to be withdrawn
-	Amount string `json:"amount"`
-	// The asset to be withdrawn
-	Asset *Asset `json:"asset"`
-	// The current status of the withdrawal
-	Status WithdrawalStatus `json:"status"`
-	// A reference the foreign chain can use to refere to when processing the withdrawal
-	Ref string `json:"ref"`
-	// The time until when the withdrawal will be valid (RFC3339Nano)
-	Expiry string `json:"expiry"`
-	// Time at which the withdrawal was created (RFC3339Nano)
-	CreatedTimestamp string `json:"createdTimestamp"`
-	// Time at which the withdrawal was finalized (RFC3339Nano)
-	WithdrawnTimestamp *string `json:"withdrawnTimestamp"`
-	// Hash of the transaction on the foreign chain
-	TxHash *string `json:"txHash"`
-	// Foreign chain specific details about the withdrawal
-	Details WithdrawalDetails `json:"details"`
-}
-
-func (Withdrawal) IsEvent() {}
-
 // The various account types we have (used by collateral)
 type AccountType string
 
