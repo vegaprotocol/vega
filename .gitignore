@@ -19,3 +19,4 @@ tmp/
 vendor/
 .vscode/
 proto/**.orig
+integration.test
