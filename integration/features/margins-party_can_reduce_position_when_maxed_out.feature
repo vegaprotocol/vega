@@ -51,12 +51,11 @@ Feature: Trader maxes out their margin account but isn't liquidated. They try to
 
     And the mark price for the market "ETH/DEC19" is "9000000"
 
-    And "trader1" general account for asset "ETH" balance is "0"
+    #And "trader1" general account for asset "ETH" balance is "0"
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 248399970 | 0         |
-
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 82799990    | 165599980 | 248399970 | 413999950 |
@@ -64,11 +63,16 @@ Feature: Trader maxes out their margin account but isn't liquidated. They try to
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | -13    | 2800000       | 0           |
 
+    #
     # reducing position when not maxed out with a market order 
+    # 
     Then traders place following orders:
       | trader  | market id | type | volume | price   | trades | type  | tif |
       | trader1 | ETH/DEC19 | buy  | 2      | 0       | 1      | TYPE_MARKET | TIF_IOC |
     
+    And I expect the trader to have a margin:
+      | trader  | asset | market id | margin    | general   |
+      | trader1 | ETH   | ETH/DEC19 | 219799970 | 0         |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 55440000    | 110880000 | 166320000 | 277200000 |
@@ -76,6 +80,7 @@ Feature: Trader maxes out their margin account but isn't liquidated. They try to
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | -11    | -21830769     | -3969231    |
 
+    And the mark price for the market "ETH/DEC19" is "11200000"
 
     # setting new mark price
     And traders place following orders:
@@ -84,13 +89,13 @@ Feature: Trader maxes out their margin account but isn't liquidated. They try to
 
     And the mark price for the market "ETH/DEC19" is "14000000"
 
-    And I expect the trader to have a margin:
-      | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 248399970 | 0         |
+    #And I expect the trader to have a margin:
+    #  | trader  | asset | market id | margin    | general   |
+    #  | trader1 | ETH   | ETH/DEC19 | 248399970 | 0         |
 
-    And the margins levels for the traders are:
-      | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 55440000    | 110880000 | 166320000 | 277200000 |
+    #And the margins levels for the traders are:
+    #  | trader  | market id | maintenance | search    | initial   | release   |
+    #  | trader1 | ETH/DEC19 | 55440000    | 110880000 | 166320000 | 277200000 |
     
 
 
