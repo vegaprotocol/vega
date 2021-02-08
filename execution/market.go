@@ -1087,7 +1087,8 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 }
 
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	if order.PeggedOrder != nil {
+	isPegged := (order.PeggedOrder != nil)
+	if isPegged {
 		order.Status = types.Order_STATUS_PARKED
 		order.Reason = types.OrderError_ORDER_ERROR_UNSPECIFIED
 
@@ -1107,28 +1108,43 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 	}
 
+	oldPos, ok := m.position.GetPositionByPartyID(order.PartyId)
 	// Register order as potential positions
 	pos := m.position.RegisterOrder(order)
-
-	// Perform check and allocate margin
-	if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
-		if _, err := m.position.UnregisterOrder(order); err != nil {
-			m.log.Error("Unable to unregister potential trader positions",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+	checkMargin := true
+	if !isPegged && ok {
+		oldVol, newVol := pos.Size()+pos.Buy()-pos.Sell(), oldPos.Size()+pos.Buy()-pos.Sell()
+		if oldVol < 0 {
+			oldVol = -oldVol
 		}
-
-		// adding order to the buffer first
-		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
-		m.broker.Send(events.NewOrderEvent(ctx, order))
-
-		if m.log.GetLevel() <= logging.DebugLevel {
-			m.log.Debug("Unable to check/add margin for trader",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+		if newVol < 0 {
+			newVol = -newVol
 		}
-		return nil, ErrMarginCheckFailed
+		// check margin if the new volume is greater, or the same (implying long to short, or short to long)
+		checkMargin = (oldVol <= newVol)
+	}
+
+	// Perform check and allocate margin unless the order is (partially) closing the trader position
+	if checkMargin {
+		if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
+			if _, err := m.position.UnregisterOrder(order); err != nil {
+				m.log.Error("Unable to unregister potential trader positions",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+
+			// adding order to the buffer first
+			order.Status = types.Order_STATUS_REJECTED
+			order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			if m.log.GetLevel() <= logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for trader",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			return nil, ErrMarginCheckFailed
+		}
 	}
 
 	// from here we may have assigned some margin.
@@ -1793,103 +1809,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
-
-	// this is a rollback transfer to be used in case the order do not
-	// trade and do not stay in the book to prevent for margin being
-	// locked in the margin account forever
-	var riskRollback *types.Transfer
-
-	asset, err := m.mkt.GetAsset()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get risk updates")
-	}
-
-	e, err := m.collateral.GetPartyMargin(pos, asset, m.GetID())
-	if err != nil {
-		return nil, err
-	}
-
-	// @TODO replace markPrice with indicative uncross price in auction mode if available
-	price := m.markPrice
-	if m.as.InAuction() {
-		if ip := m.matching.GetIndicativePrice(); ip != 0 {
-			price = ip
-		}
-		// in opening auctions, there might not be price data at all, in which case we should default to
-		// the order price to base our margin requirements on
-		if m.as.IsOpeningAuction() && price < order.Price {
-			price = order.Price
-		}
-	}
-	riskUpdate, err := m.collateralAndRiskForOrder(ctx, e, price, pos)
-	if err != nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("unable to top up margin on new order",
-				logging.String("party-id", order.PartyId),
-				logging.String("market-id", order.MarketId),
-				logging.Error(err),
-			)
-		}
-		return nil, ErrMarginCheckInsufficient
-	} else if riskUpdate != nil {
-		// this should always be a increase to the InitialMargin
-		// if it does fail, we need to return an error straight away
-		transfer, closePos, err := m.collateral.MarginUpdateOnOrder(ctx, m.GetID(), riskUpdate)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get risk updates")
-		}
-		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{transfer})
-		m.broker.Send(evt)
-
-		if closePos != nil && closePos.MarginShortFall() == 0 {
-			// if closePose is not nil then we return an error as well, it means the trader did not have enough
-			// monies to reach the InitialMargin
-
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("party did not have enough collateral to reach the InitialMargin",
-					logging.Order(*order),
-					logging.String("market-id", m.GetID()))
-			}
-
-			return nil, ErrMarginCheckInsufficient
-		} else if closePos != nil && closePos.MarginShortFall() > 0 {
-			// TODO(): we nee to cover cases where we have a margin short fall
-			_ = closePos // just to avoid the warning for empty branch for now
-		}
-
-		if len(transfer.Transfers) > 0 {
-			// we create the rollback transfer here, so it can be used in case of.
-			riskRollback = &types.Transfer{
-				Owner: riskUpdate.Party(),
-				Amount: &types.FinancialAmount{
-					Amount: int64(transfer.Transfers[0].Amount),
-					Asset:  riskUpdate.Asset(),
-				},
-				Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
-				MinAmount: int64(transfer.Transfers[0].Amount),
-			}
-		}
-	}
-	return riskRollback, nil
-}
-
-// this function handles moving money after settle MTM + risk margin updates
-// but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin, price uint64, pos *positions.MarketPosition) (events.Risk, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
-	defer timer.EngineTimeCounterAdd()
-
-	// let risk engine do its thing here - it returns a slice of money that needs
-	// to be moved to and from margin accounts
-	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(ctx, e, price)
-	if err != nil {
-		return nil, err
-	}
-	if riskUpdate == nil {
-		return nil, nil
-	}
-
-	return riskUpdate, nil
+	return m.calcMargins(ctx, pos, order)
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -2337,10 +2257,11 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// from here these are the normal amendment
-	var priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
+	var priceIncrease, priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
 
 	if amendedOrder.Price != existingOrder.Price {
 		priceShift = true
+		priceIncrease = (existingOrder.Price < amendedOrder.Price)
 	}
 
 	if amendedOrder.Size > existingOrder.Size {
@@ -2384,26 +2305,28 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, ErrMarginCheckFailed
 	}
 
-	// Perform check and allocate margin
+	// Perform check and allocate margin if price or order size is increased
 	// ignore rollback return here, as if we amend it means the order
 	// is already on the book, not rollback will be needed, the margin
 	// will be updated later on for sure.
 
-	if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
-		// Undo the position registering
-		_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
-		if err1 != nil {
-			m.log.Error("Unable to unregister potential amended trader position",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err1))
-		}
+	if priceIncrease || sizeIncrease {
+		if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+			// Undo the position registering
+			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
+			if err1 != nil {
+				m.log.Error("Unable to unregister potential amended trader position",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err1))
+			}
 
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Unable to check/add margin for trader",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for trader",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			return nil, ErrMarginCheckFailed
 		}
-		return nil, ErrMarginCheckFailed
 	}
 
 	// if increase in size or change in price

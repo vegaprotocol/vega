@@ -86,12 +86,12 @@ func TestIssue2876(t *testing.T) {
 	// but also some margin to cover the orders
 	marginAccount, err := tm.collateraEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 15000, int(marginAccount.Balance))
+	assert.Equal(t, 29250, int(marginAccount.Balance))
 
 	// but also some funds left in the genearal
 	generalAccount, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 98985000, int(generalAccount.Balance))
+	assert.Equal(t, 98970750, int(generalAccount.Balance))
 
 	// now let's move time and see
 	// this should end the opening auction

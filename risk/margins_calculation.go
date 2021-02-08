@@ -27,7 +27,7 @@ func addMarginLevels(ml *types.MarginLevels, maintenance float64, scalingFactors
 
 func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice int64, rf types.RiskFactor) *types.MarginLevels {
 	// calculate margins without order positions
-	ml := e.calculateMargins(m, markPrice, rf, false)
+	ml := e.calculateMargins(m, markPrice, rf, true, true)
 	// now add the margin levels for orders
 	long, short := m.Buy(), m.Sell()
 	var (
@@ -53,7 +53,7 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice int64, rf ty
 
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
-func (e *Engine) calculateMargins(m events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell bool) *types.MarginLevels {
+func (e *Engine) calculateMargins(m events.Margin, markPrice int64, rf types.RiskFactor, withPotentialBuyAndSell, auction bool) *types.MarginLevels {
 	var (
 		marginMaintenanceLng float64
 		marginMaintenanceSht float64
@@ -85,8 +85,12 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice int64, rf types.Ris
 			slippagePerUnit = markPrice - int64(exitPrice)
 		}
 
-		marginMaintenanceLng = float64(max(slippageVolume*slippagePerUnit, 0)) + float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(m.Buy()) * rf.Long *
-			float64(markPrice))
+		if auction {
+			marginMaintenanceLng = float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(m.Buy()) * rf.Long * float64(markPrice))
+		} else {
+			marginMaintenanceLng = float64(max(slippageVolume*slippagePerUnit, 0)) + float64(slippageVolume)*(rf.Long*float64(markPrice)) + (float64(m.Buy()) * rf.Long *
+				float64(markPrice))
+		}
 	}
 	// calculate margin maintenance short only if riskiest is < 0
 	// marginMaintenanceSht will be 0 by default
@@ -105,7 +109,11 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice int64, rf types.Ris
 			slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
 
-		marginMaintenanceSht = float64(max(abs(slippageVolume)*slippagePerUnit, 0)) + float64(abs(slippageVolume))*(rf.Short*float64(markPrice)) + (float64(abs(m.Sell())) * rf.Short * float64(markPrice))
+		if auction {
+			marginMaintenanceSht = float64(abs(slippageVolume))*(rf.Short*float64(markPrice)) + (float64(abs(m.Sell())) * rf.Short * float64(markPrice))
+		} else {
+			marginMaintenanceSht = float64(max(abs(slippageVolume)*slippagePerUnit, 0)) + float64(abs(slippageVolume))*(rf.Short*float64(markPrice)) + (float64(abs(m.Sell())) * rf.Short * float64(markPrice))
+		}
 	}
 
 	// the greatest liability is the most positive number
