@@ -194,6 +194,8 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
+
+	bondPenaltyFactor float64
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -2919,6 +2921,10 @@ func (m *Market) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(v)
 }
 
+func (m *Market) OnMarketLiquidityBondPenaltyParameter(v float64) {
+	m.bondPenaltyFactor = v
+}
+
 func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
 	m.marketValueWindowLength = d
 }
@@ -3120,7 +3126,6 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 }
 
 func (m *Market) applyBondPenalty(ctx context.Context, partyID string, marginShorfall uint64, asset string) error {
-	//TODO: use network parameter
 	if marginShorfall <= 0 {
 		return nil
 	}
@@ -3131,8 +3136,7 @@ func (m *Market) applyBondPenalty(ctx context.Context, partyID string, marginSho
 		return nil
 	}
 
-	bondPenaltyParameter := 0.1
-	penalty := int64(math.Ceil(bondPenaltyParameter * float64(marginShorfall)))
+	penalty := int64(math.Ceil(m.bondPenaltyFactor * float64(marginShorfall)))
 	transfer := &types.Transfer{
 		Owner: partyID,
 		Amount: &types.FinancialAmount{

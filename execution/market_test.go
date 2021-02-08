@@ -3082,6 +3082,8 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket2(t, now, closingAt, nil, nil, true, true)
+	bondPenaltyParameter := 0.1
+	tm.market.OnMarketLiquidityBondPenaltyParameter(bondPenaltyParameter)
 	var initialMarkPrice uint64 = tm.mktCfg.TradableInstrument.Instrument.InitialMarkPrice
 	ctx := context.Background()
 
@@ -3196,6 +3198,8 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket2(t, now, closingAt, nil, nil, true, true)
+	bondPenaltyParameter := 0.1
+	tm.market.OnMarketLiquidityBondPenaltyParameter(bondPenaltyParameter)
 	var initialMarkPrice uint64 = tm.mktCfg.TradableInstrument.Instrument.InitialMarkPrice
 	ctx := context.Background()
 
@@ -3312,6 +3316,8 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket2(t, now, closingAt, nil, nil, true, true)
+	bondPenaltyParameter := 0.1
+	tm.market.OnMarketLiquidityBondPenaltyParameter(bondPenaltyParameter)
 	var initialMarkPrice uint64 = tm.mktCfg.TradableInstrument.Instrument.InitialMarkPrice
 	ctx := context.Background()
 

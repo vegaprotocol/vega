@@ -587,3 +587,10 @@ func (e *Engine) OnMarketLiquidityProvidersFeeDistribitionTimeStep(_ context.Con
 	}
 	return nil
 }
+
+func (e *Engine) OnMarketLiquidityBondPenaltyParameter(_ context.Context, v float64) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityBondPenaltyParameter(v)
+	}
+	return nil
+}
