@@ -2964,6 +2964,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	require.NoError(t, err)
 	insurancePoolBalanceBeforeLPCloseout := insurancePool.Balance
 	var zero uint64 = 0
 	require.Equal(t, zero, insurancePoolBalanceBeforeLPCloseout)
@@ -3048,6 +3049,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	require.NoError(t, err)
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
 	var zero uint64 = 0
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
@@ -3150,6 +3152,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	require.NoError(t, err)
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
 
@@ -3267,6 +3270,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	require.NoError(t, err)
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
 
@@ -3385,6 +3389,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	require.NoError(t, err)
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
 
@@ -3499,6 +3504,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyNotPaidOnTransitionFromAuction(
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateraEngine.GetAccountByID(insurancePoolAccID)
+	require.NoError(t, err)
 	insurancePoolDuringAuction := insurancePool.Balance
 	require.Equal(t, zero, insurancePoolDuringAuction)
 
