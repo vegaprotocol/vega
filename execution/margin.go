@@ -94,10 +94,6 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil
 	}
 	tr, bondPenalty, err := m.collateral.MarginUpdateOnOrder(ctx, mID, risk)
-	if err != nil {
-		return err, nil
-	}
-
 	if bondPenalty != nil {
 		// if closePose is not nil then we return an error as well, it means the trader did not have enough
 		// monies to reach the InitialMargin
@@ -130,6 +126,9 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 				return nerr, bondPenalty
 			}
 		}
+	}
+	if err != nil {
+		return err, bondPenalty
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
 	return nil, nil

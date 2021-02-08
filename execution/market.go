@@ -1491,10 +1491,16 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			o.Status = types.Order_STATUS_STOPPED // closing out = status STOPPED
 			evts = append(evts, events.NewOrderEvent(ctx, o))
 		}
-		//If the party was an LP then cancel commitment, else ignore error
+		//If the party was an LP then cancel commitment
 		lp := m.liquidity.IsLiquidityProvider(v.Party())
 		if lp {
-			return m.cancelLiquidityProvisionAndConfiscateBondAccount(ctx, v.Party())
+			if err := m.cancelLiquidityProvisionAndConfiscateBondAccount(ctx, v.Party()); err != nil {
+				m.log.Error("unable to cancel liquidity provision for a distressed party",
+					logging.String("party-id", o.PartyId),
+					logging.String("market-id", mktID),
+				)
+				return err
+			}
 		}
 	}
 
@@ -2384,7 +2390,12 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	if priceIncrease || sizeIncrease {
 		if err, lpCloseout := m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
 			if lpCloseout != nil {
-				m.resolveClosedOutTraders(ctx, []events.Margin{lpCloseout}, amendedOrder)
+				if err := m.resolveClosedOutTraders(ctx, []events.Margin{lpCloseout}, amendedOrder); err != nil {
+					m.log.Error("Unable to closeout distressed liquidity providern",
+						logging.String("market-id", m.GetID()),
+						logging.String("party-id", pos.Party()),
+						logging.Error(err))
+				}
 			} else {
 				// Undo the position registering
 				_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
@@ -2399,8 +2410,9 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				}
-				return nil, ErrMarginCheckFailed
 			}
+			return nil, ErrMarginCheckFailed
+
 		}
 	}
 
