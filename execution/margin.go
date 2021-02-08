@@ -98,22 +98,6 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return err, nil
 	}
 
-	// this is a rollback transfer to be used in case the order do not
-	// trade and do not stay in the book to prevent for margin being
-	// locked in the margin account forever
-	var riskRollback *types.Transfer
-	if len(tr.Transfers) > 0 {
-		riskRollback = &types.Transfer{
-			Owner: risk.Party(),
-			Amount: &types.FinancialAmount{
-				Amount: int64(tr.Transfers[0].Amount),
-				Asset:  asset,
-			},
-			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
-			MinAmount: int64(tr.Transfers[0].Amount),
-		}
-	}
-
 	if bondPenalty != nil {
 		// if closePose is not nil then we return an error as well, it means the trader did not have enough
 		// monies to reach the InitialMargin

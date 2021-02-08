@@ -3048,7 +3048,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) {
 
 	for p, o := range liquidity.Orders(orders).ByParty() {
-		newOrders, amendments, err := m.liquidity.Update(m.markPrice, m.repriceFuncW, o)
+		newOrders, amendments, err := m.liquidity.Update(ctx, m.markPrice, m.repriceFuncW, o)
 		if err != nil {
 			m.log.Debug("Liquidity update failed for party",
 				logging.String("market-id", m.GetID()),

@@ -2943,7 +2943,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -3010,24 +3010,24 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -3052,7 +3052,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	var zero uint64 = 0
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
+	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -3097,17 +3097,17 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -3116,7 +3116,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -3153,7 +3153,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
+	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -3213,17 +3213,17 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -3232,7 +3232,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -3270,7 +3270,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
+	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -3331,17 +3331,17 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -3350,7 +3350,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
@@ -3388,7 +3388,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
 	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
+	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -3451,19 +3451,19 @@ func TestBondAccountUsedForMarginShortage_PenaltyNotPaidOnTransitionFromAuction(
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
 	confirmationBuy1, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy1)
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationBuy1.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
 		Buys: []*types.LiquidityOrder{
