@@ -2074,12 +2074,18 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 	return nil
 }
 
-//TODO: Add comment
-//TODO: Try to do on a copy so we actually only do anything once it's confirmed it can be done
-//TODO: Send event
-//TODO: Add test
+//RollbackTransfers reverses the transfers from the supplied transfer response
 func (e *Engine) RollbackTransfers(ctx context.Context, tresp *types.TransferResponse) error {
 	for _, t := range tresp.Transfers {
+
+		// Get accounts first to make sure transfers can happen
+		if _, err := e.GetAccountByID(t.ToAccount); err != nil {
+			return err
+		}
+		if _, err := e.GetAccountByID(t.FromAccount); err != nil {
+			return err
+		}
+
 		err := e.DecrementBalance(ctx, t.ToAccount, t.Amount)
 		if err != nil {
 			return err

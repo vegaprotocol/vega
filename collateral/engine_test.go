@@ -73,6 +73,12 @@ func TestMarginUpdateOnOrder(t *testing.T) {
 	t.Run("Faile update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
 }
 
+func TestRollbackTransfers(t *testing.T) {
+	t.Run("Successfully rollback transfer when both accounts exist", testRollbackTransfers)
+	t.Run("Fail to rollback if from account TO transfer reposnse doesn't exist", testRollbackTransfers_ToAccountDoesNotExist)
+	t.Run("Fail to rollback if from account FROM transfer reposnse doesn't exist", testRollbackTransfers_FromAccountDoesNotExist)
+}
+
 func TestTokenAccounts(t *testing.T) {
 	t.Run("Total tokens is zero at the start, even if we add some traders", testInitialTokens)
 }
@@ -1770,6 +1776,156 @@ func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
 	bondAcc, err := eng.Engine.GetAccountByID(bondAccID)
 	assert.NoError(t, err)
 	assert.Equal(t, 400, int(bondAcc.Balance))
+}
+
+func testRollbackTransfers(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	trader := "oktrader"
+
+	// create traders
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
+	genaccID, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), genaccID, 0)
+	bondAccID, _ := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), bondAccID, 500)
+	marginAccID, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	evt := riskFake{
+		asset:  testMarketAsset,
+		amount: 100,
+		transfer: &types.Transfer{
+			Owner: trader,
+			Amount: &types.FinancialAmount{
+				Amount: 100,
+				Asset:  testMarketAsset,
+			},
+			MinAmount: 100,
+			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+		},
+	}
+
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	genAcc, err := eng.Engine.GetAccountByID(genaccID)
+	assert.NoError(t, err)
+	genAccBalanceBeforeTransfer := genAcc.Balance
+
+	marAcc, err := eng.Engine.GetAccountByID(marginAccID)
+	assert.NoError(t, err)
+	marAccBalanceBeforeTransfer := marAcc.Balance
+
+	bondAcc, err := eng.Engine.GetAccountByID(bondAccID)
+	assert.NoError(t, err)
+	bondAccBalanceBeforeTransfer := bondAcc.Balance
+
+	resp, closed, err := eng.Engine.MarginUpdateOnOrder(context.Background(), testMarketID, evt)
+	assert.Nil(t, err)
+	assert.NotNil(t, closed)
+	assert.NotNil(t, resp)
+
+	assert.Equal(t, int(closed.MarginShortFall()), 100)
+
+	genAcc, err = eng.Engine.GetAccountByID(genaccID)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, int(genAcc.Balance))
+	bondAcc, err = eng.Engine.GetAccountByID(bondAccID)
+	assert.NoError(t, err)
+	assert.Equal(t, 400, int(bondAcc.Balance))
+
+	genAcc, err = eng.Engine.GetAccountByID(genaccID)
+	assert.NoError(t, err)
+	genAccBalanceAfterTransfer := genAcc.Balance
+	require.Equal(t, genAccBalanceBeforeTransfer, genAccBalanceAfterTransfer)
+
+	marAcc, err = eng.Engine.GetAccountByID(marginAccID)
+	assert.NoError(t, err)
+	marAccBalanceAfterTransfer := marAcc.Balance
+	require.Less(t, marAccBalanceBeforeTransfer, marAccBalanceAfterTransfer)
+
+	bondAcc, err = eng.Engine.GetAccountByID(bondAccID)
+	assert.NoError(t, err)
+	bondAccBalanceAfterTransfer := bondAcc.Balance
+	require.Greater(t, bondAccBalanceBeforeTransfer, bondAccBalanceAfterTransfer)
+
+	err = eng.Engine.RollbackTransfers(context.Background(), resp)
+	require.NoError(t, err)
+
+	genAcc, err = eng.Engine.GetAccountByID(genaccID)
+	assert.NoError(t, err)
+	genAccBalanceAfterRollback := genAcc.Balance
+	require.Equal(t, genAccBalanceBeforeTransfer, genAccBalanceAfterRollback)
+
+	marAcc, err = eng.Engine.GetAccountByID(marginAccID)
+	assert.NoError(t, err)
+	marAccBalanceAfterRollback := marAcc.Balance
+	require.Equal(t, marAccBalanceBeforeTransfer, marAccBalanceAfterRollback)
+
+	bondAcc, err = eng.Engine.GetAccountByID(bondAccID)
+	assert.NoError(t, err)
+	bondAccBalanceAfterRollback := bondAcc.Balance
+	require.Equal(t, bondAccBalanceBeforeTransfer, bondAccBalanceAfterRollback)
+}
+
+func testRollbackTransfers_ToAccountDoesNotExist(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	trader := "oktrader"
+
+	// create traders
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
+	genAccID, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	var initialBondAccountBalance uint64 = 100
+	eng.Engine.IncrementBalance(context.Background(), genAccID, initialBondAccountBalance)
+
+	madeUpTresp := &types.TransferResponse{
+		Transfers: []*types.LedgerEntry{
+			{
+				FromAccount: genAccID,
+				ToAccount:   "doesntexist",
+				Amount:      10,
+			},
+		},
+	}
+
+	err := eng.Engine.RollbackTransfers(context.Background(), madeUpTresp)
+	require.Error(t, err)
+	require.EqualError(t, collateral.ErrAccountDoesNotExist, err.Error())
+
+	genAcc, err := eng.Engine.GetAccountByID(genAccID)
+	assert.NoError(t, err)
+	require.Equal(t, initialBondAccountBalance, genAcc.Balance)
+}
+
+func testRollbackTransfers_FromAccountDoesNotExist(t *testing.T) {
+	eng := getTestEngine(t, testMarketID, 0)
+	//defer eng.Finish()
+	trader := "oktrader"
+
+	// create traders
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
+	genAccID, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	var initialBondAccountBalance uint64 = 100
+	eng.Engine.IncrementBalance(context.Background(), genAccID, initialBondAccountBalance)
+
+	madeUpTresp := &types.TransferResponse{
+		Transfers: []*types.LedgerEntry{
+			{
+				FromAccount: "doesntexist",
+				ToAccount:   genAccID,
+				Amount:      10,
+			},
+		},
+	}
+
+	err := eng.Engine.RollbackTransfers(context.Background(), madeUpTresp)
+	require.Error(t, err)
+	require.EqualError(t, collateral.ErrAccountDoesNotExist, err.Error())
+
+	genAcc, err := eng.Engine.GetAccountByID(genAccID)
+	assert.NoError(t, err)
+	require.Equal(t, initialBondAccountBalance, genAcc.Balance)
+
 }
 
 func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
