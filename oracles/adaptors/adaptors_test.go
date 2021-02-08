@@ -1,8 +1,10 @@
-package adaptors
+package adaptors // TODO Move to adaptors_test package
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/oracles"
 	types "code.vegaprotocol.io/vega/proto"
@@ -11,8 +13,17 @@ import (
 )
 
 func TestAdaptors(t *testing.T) {
+	t.Run("Creating adaptors succeeds", testCreatingAdaptorsSucceeds)
 	t.Run("Normalising data from unknown oracle fails", testAdaptorsNormalisingDataFromUnknownOracleFails)
 	t.Run("Normalising data from known oracle succeeds", testAdaptorsNormalisingDataFromKnownOracleSucceeds)
+}
+
+func testCreatingAdaptorsSucceeds(t *testing.T) {
+	// when
+	adaptors := NewAdaptors()
+
+	// then
+	assert.NotNil(t, adaptors)
 }
 
 func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
@@ -26,9 +37,8 @@ func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
 	normalisedData, err := stubbedAdaptors().Normalise(rawData)
 
 	// then
-	if assert.Error(t, err) {
-		assert.Equal(t, "unknown oracle source", err.Error())
-	}
+	require.Error(t, err)
+	assert.Equal(t, "unknown oracle source", err.Error())
 	assert.Nil(t, normalisedData)
 }
 
@@ -43,7 +53,7 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 	normalisedData, err := stubbedAdaptors().Normalise(rawData)
 
 	// then
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, normalisedData)
 }
 

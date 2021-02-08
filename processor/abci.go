@@ -534,10 +534,10 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return app.oracles.Engine.BroadcastData(*oracleData)
+	return app.oracles.Engine.BroadcastData(ctx, *oracleData)
 }
 
-func (app *App) CheckSubmitOracleData(ctx context.Context, tx abci.Tx) error {
+func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 	data := &types.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err

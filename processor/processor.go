@@ -189,7 +189,7 @@ type Oracles struct {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracles_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor OraclesEngine
 type OraclesEngine interface {
-	BroadcastData(oracles.OracleData) error
+	BroadcastData(context.Context, oracles.OracleData) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors

@@ -1,13 +1,15 @@
-package adaptors
+package adaptors_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/oracles-relay/openoracle"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/adaptors"
 
+	"code.vegaprotocol.io/oracles-relay/openoracle"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOpenOracleAdaptor(t *testing.T) {
@@ -27,7 +29,7 @@ func testOpenOracleAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 	})
 
 	// when
-	normalisedData, err := NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
 
 	// then
 	assert.Error(t, err)
@@ -83,7 +85,7 @@ func testOpenOracleAdaptorNormalisingCompatibleButInvalidDataFails(t *testing.T)
 	})
 
 	// when
-	normalisedData, err := NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
 
 	// then
 	assert.Error(t, err)
@@ -139,29 +141,39 @@ func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T
 	})
 
 	// when
-	normalisedData, err := NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
 
 	// then
 	expectedData := oracles.OracleData{
 		Data: map[string]string{
-			"prices.BTC":  "37371725000",
-			"prices.ETH":  "1412670000",
-			"prices.XTZ":  "2957300",
-			"prices.DAI":  "1002286",
-			"prices.REP":  "20210000",
-			"prices.ZRX":  "596059",
-			"prices.BAT":  "312115",
-			"prices.KNC":  "1289400",
-			"prices.LINK": "23602740",
-			"prices.COMP": "249540000",
-			"prices.UNI":  "14625900",
-			"prices.GRT":  "550350",
+			"prices.BTC.value":      "37371725000",
+			"prices.BTC.timestamp":  "1611924180",
+			"prices.ETH.value":      "1412670000",
+			"prices.ETH.timestamp":  "1611924180",
+			"prices.XTZ.value":      "2957300",
+			"prices.XTZ.timestamp":  "1611924180",
+			"prices.DAI.value":      "1002286",
+			"prices.DAI.timestamp":  "1611923940",
+			"prices.REP.value":      "20210000",
+			"prices.REP.timestamp":  "1611923880",
+			"prices.ZRX.value":      "596059",
+			"prices.ZRX.timestamp":  "1611924120",
+			"prices.BAT.value":      "312115",
+			"prices.BAT.timestamp":  "1611924120",
+			"prices.KNC.value":      "1289400",
+			"prices.KNC.timestamp":  "1611924060",
+			"prices.LINK.value":     "23602740",
+			"prices.LINK.timestamp": "1611924120",
+			"prices.COMP.value":     "249540000",
+			"prices.COMP.timestamp": "1611924180",
+			"prices.UNI.value":      "14625900",
+			"prices.UNI.timestamp":  "1611924180",
+			"prices.GRT.value":      "550350",
+			"prices.GRT.timestamp":  "1611924180",
 		},
 		PubKeys: []string{"0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC"},
 	}
 
-	assert.NoError(t, err)
-	if assert.NotNil(t, normalisedData) {
-		assert.Equal(t, expectedData, *normalisedData)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, &expectedData, normalisedData)
 }

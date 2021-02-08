@@ -326,6 +326,15 @@
 - [github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto](#github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto)
     - [StreamError](#grpc.gateway.runtime.StreamError)
   
+- [oracles/v1/oracles.proto](#oracles/v1/oracles.proto)
+    - [Condition](#oracles.v1.Condition)
+    - [Filter](#oracles.v1.Filter)
+    - [OracleSpec](#oracles.v1.OracleSpec)
+    - [PropertyKey](#oracles.v1.PropertyKey)
+  
+    - [Condition.Operator](#oracles.v1.Condition.Operator)
+    - [PropertyKey.Type](#oracles.v1.PropertyKey.Type)
+  
 - [tm/replay.proto](#tm/replay.proto)
     - [BlockParams](#tm.BlockParams)
     - [ConsensusParams](#tm.ConsensusParams)
@@ -5569,6 +5578,122 @@ streaming rpc returns an error.
 
 
  
+
+ 
+
+ 
+
+ 
+
+
+
+<a name="oracles/v1/oracles.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## oracles/v1/oracles.proto
+
+
+
+<a name="oracles.v1.Condition"></a>
+
+### Condition
+Condition describes the condition that must be validated by the
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| operator | [Condition.Operator](#oracles.v1.Condition.Operator) |  | comparator is the type of comparison to make on the value. |
+| value | [string](#string) |  | value is used by the comparator. |
+
+
+
+
+
+
+<a name="oracles.v1.Filter"></a>
+
+### Filter
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [PropertyKey](#oracles.v1.PropertyKey) |  | key is the oracle data property key targeted by the filter. |
+| conditions | [Condition](#oracles.v1.Condition) | repeated | conditions are the conditions that should be matched by the data to be considered of interest. |
+
+
+
+
+
+
+<a name="oracles.v1.OracleSpec"></a>
+
+### OracleSpec
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pub_keys | [string](#string) | repeated | pubKeys is the list of authorized public keys that signed the data for this oracle. All the public keys in the oracle data should be contained in these public keys. |
+| filters | [Filter](#oracles.v1.Filter) | repeated | filters describes which oracle data are considered of interest or not for the product (or the risk model). |
+
+
+
+
+
+
+<a name="oracles.v1.PropertyKey"></a>
+
+### PropertyKey
+PropertyKey describes the property key contained in an oracle data.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | name is the name of the property. |
+| type | [PropertyKey.Type](#oracles.v1.PropertyKey.Type) |  | type is the type of the property. |
+
+
+
+
+
+ 
+
+
+<a name="oracles.v1.Condition.Operator"></a>
+
+### Condition.Operator
+Comparator describes the type of comparison.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| OPERATOR_UNSPECIFIED | 0 | The default value |
+| OPERATOR_EQUALS | 1 | Verify if the property values are strictly equal or not. |
+| OPERATOR_GREATER_THAN | 2 | Verify if the oracle data value is greater than the Condition value. |
+| OPERATOR_GREATER_THAN_OR_EQUAL | 3 | Verify if the oracle data value is greater than or equal to the Condition value. |
+| OPERATOR_LESS_THAN | 4 | Verify if the oracle data value is less than the Condition value. |
+| OPERATOR_LESS_THAN_OR_EQUAL | 5 | Verify if the oracle data value is less or equal to than the Condition value. |
+
+
+
+<a name="oracles.v1.PropertyKey.Type"></a>
+
+### PropertyKey.Type
+Type describes the type of properties that are supported by the oracle
+engine.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TYPE_UNSPECIFIED | 0 | The default value. |
+| TYPE_EMPTY | 1 | Any type. |
+| TYPE_INTEGER | 2 | Integer type. |
+| TYPE_STRING | 3 | String type. |
+| TYPE_BOOLEAN | 4 | Boolean type. |
+| TYPE_DECIMAL | 5 | Any floating point decimal type. |
+| TYPE_TIMESTAMP | 6 | Timestamp date type. |
+
 
  
 

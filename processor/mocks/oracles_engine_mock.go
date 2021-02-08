@@ -6,6 +6,7 @@ package mocks
 
 import (
 	oracles "code.vegaprotocol.io/vega/oracles"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,16 +34,16 @@ func (m *MockOraclesEngine) EXPECT() *MockOraclesEngineMockRecorder {
 	return m.recorder
 }
 
-// DispatchData mocks base method
-func (m *MockOraclesEngine) BroadcastData(arg0 oracles.OracleData) error {
+// BroadcastData mocks base method
+func (m *MockOraclesEngine) BroadcastData(arg0 context.Context, arg1 oracles.OracleData) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BroadcastData", arg0)
+	ret := m.ctrl.Call(m, "BroadcastData", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DispatchData indicates an expected call of DispatchData
-func (mr *MockOraclesEngineMockRecorder) DispatchData(arg0 interface{}) *gomock.Call {
+// BroadcastData indicates an expected call of BroadcastData
+func (mr *MockOraclesEngineMockRecorder) BroadcastData(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastData", reflect.TypeOf((*MockOraclesEngine)(nil).BroadcastData), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastData", reflect.TypeOf((*MockOraclesEngine)(nil).BroadcastData), arg0, arg1)
 }
