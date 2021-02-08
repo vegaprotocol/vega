@@ -1126,19 +1126,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order, f
 
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
-		if err, lpCloseout := m.checkMarginForOrder(ctx, pos, order, failOnLPMarginShortfall); err != nil {
+		if err := m.checkMarginForOrder(ctx, pos, order, failOnLPMarginShortfall); err != nil {
 			if _, err := m.position.UnregisterOrder(order); err != nil {
 				m.log.Error("Unable to unregister potential trader positions",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
-			}
-			if lpCloseout != nil {
-				if err = m.resolveClosedOutTraders(ctx, []events.Margin{lpCloseout}, order); err != nil {
-					m.log.Error("Unable to closeout a liquidity provider following margin check failure",
-						logging.String("market-id", m.GetID()),
-						logging.String("party", order.PartyId),
-						logging.Error(err))
-				}
 			}
 
 			// adding order to the buffer first
@@ -1867,30 +1859,10 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-//TODO: Don't return transfers
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (error, events.Margin) {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 	return m.calcMargins(ctx, pos, order, failOnLPMarginShortfall)
-}
-
-// this function handles moving money after settle MTM + risk margin updates
-// but does not move the money between trader accounts (ie not to/from margin accounts after risk)
-func (m *Market) collateralAndRiskForOrder(ctx context.Context, e events.Margin, price uint64, pos *positions.MarketPosition) (events.Risk, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRiskForOrder")
-	defer timer.EngineTimeCounterAdd()
-
-	// let risk engine do its thing here - it returns a slice of money that needs
-	// to be moved to and from margin accounts
-	riskUpdate, err := m.risk.UpdateMarginOnNewOrder(ctx, e, price)
-	if err != nil {
-		return nil, err
-	}
-	if riskUpdate == nil {
-		return nil, nil
-	}
-
-	return riskUpdate, nil
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -2388,29 +2360,21 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// will be updated later on for sure.
 
 	if priceIncrease || sizeIncrease {
-		if err, lpCloseout := m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
-			if lpCloseout != nil {
-				if err := m.resolveClosedOutTraders(ctx, []events.Margin{lpCloseout}, amendedOrder); err != nil {
-					m.log.Error("Unable to closeout distressed liquidity providern",
-						logging.String("market-id", m.GetID()),
-						logging.String("party-id", pos.Party()),
-						logging.Error(err))
-				}
-			} else {
-				// Undo the position registering
-				_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
-				if err1 != nil {
-					m.log.Error("Unable to unregister potential amended trader position",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err1))
-				}
-
-				if m.log.GetLevel() == logging.DebugLevel {
-					m.log.Debug("Unable to check/add margin for trader",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
+		if err := m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
+			// Undo the position registering
+			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
+			if err1 != nil {
+				m.log.Error("Unable to unregister potential amended trader position",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err1))
 			}
+
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for trader",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+
 			return nil, ErrMarginCheckFailed
 
 		}

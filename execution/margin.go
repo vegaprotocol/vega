@@ -9,9 +9,9 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (error, events.Margin) {
+func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) error {
 	if m.as.InAuction() {
-		return m.marginsAuction(ctx, order), nil
+		return m.marginsAuction(ctx, order)
 	}
 	return m.margins(ctx, pos, order, failOnLPMarginShortfall)
 }
@@ -78,20 +78,20 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) error {
 	return nil
 }
 
-func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (error, events.Margin) {
+func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) error {
 	price := m.getMarkPrice(order)
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	pos, err := m.collateral.GetPartyMargin(mpos, asset, mID)
 	if err != nil {
-		return err, nil
+		return err
 	}
 	risk, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price)
 	if err != nil {
-		return err, nil
+		return err
 	}
 	if risk == nil {
-		return nil, nil
+		return nil
 	}
 	tr, bondPenalty, err := m.collateral.MarginUpdateOnOrder(ctx, mID, risk)
 	if bondPenalty != nil {
@@ -116,23 +116,30 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 						logging.Error(nerr),
 					)
 				}
-				return ErrMarginCheckInsufficient, nil
+				return ErrMarginCheckInsufficient
 			}
-			if nerr := m.applyBondPenalty(ctx, order.PartyId, shortfall, asset); nerr != nil {
+			var nerr error
+			if nerr = m.applyBondPenalty(ctx, order.PartyId, shortfall, asset); nerr != nil {
 				m.log.Error("unable to apply bond penalty",
 					logging.String("market-id", m.GetID()),
 					logging.String("party-id", order.PartyId),
 					logging.Error(nerr))
-				return nerr, bondPenalty
+			}
+			if err != nil || nerr != nil {
+				if err = m.resolveClosedOutTraders(ctx, []events.Margin{bondPenalty}, order); err != nil {
+					m.log.Error("Unable to closeout a liquidity provider following margin check failure",
+						logging.String("market-id", m.GetID()),
+						logging.String("party", order.PartyId),
+						logging.Error(err))
+				}
 			}
 		}
 	}
 	if err != nil {
-		return err, bondPenalty
+		return err
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
-	return nil, nil
-
+	return nil
 }
 
 func (m *Market) getMarkPrice(o *types.Order) uint64 {
