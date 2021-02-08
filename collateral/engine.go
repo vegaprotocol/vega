@@ -1029,15 +1029,21 @@ func (e *Engine) getFeeTransferRequest(
 	)
 
 	// the accounts for the trader we need
-	margin, err = e.GetAccountByID(e.accountID(marketID, t.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the margin trader account",
-			logging.String("owner-id", t.Owner),
-			logging.String("market-id", marketID),
-			logging.Error(err),
-		)
-		return nil, err
+
+	// we do not load the margin all the time
+	// as do not always need it.
+	getMargin := func() (*types.Account, error) {
+		margin, err = e.GetAccountByID(e.accountID(marketID, t.Owner, assetID, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		if err != nil {
+			e.log.Error(
+				"Failed to get the margin trader account",
+				logging.String("owner-id", t.Owner),
+				logging.String("market-id", marketID),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+		return margin, err
 	}
 	general, err = e.GetAccountByID(e.accountID(noMarket, t.Owner, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
 	if err != nil {
@@ -1059,6 +1065,10 @@ func (e *Engine) getFeeTransferRequest(
 
 	switch t.Type {
 	case types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY:
+		margin, err := getMargin()
+		if err != nil {
+			return nil, err
+		}
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{infraFee}
 		return treq, nil
@@ -1067,6 +1077,10 @@ func (e *Engine) getFeeTransferRequest(
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY:
+		margin, err := getMargin()
+		if err != nil {
+			return nil, err
+		}
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{liquiFee}
 		return treq, nil
@@ -1075,6 +1089,10 @@ func (e *Engine) getFeeTransferRequest(
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY:
+		margin, err := getMargin()
+		if err != nil {
+			return nil, err
+		}
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{makerFee}
 		return treq, nil
