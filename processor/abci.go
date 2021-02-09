@@ -25,6 +25,7 @@ import (
 var (
 	ErrPublicKeyExceededRateLimit                    = errors.New("public key excedeed the rate limit")
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
+	ErrLiquidityProvisionCommandNotSupported         = errors.New("command LiquidityProvisionSubmittion is not supported")
 )
 
 type App struct {
@@ -41,22 +42,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets         Assets
-	banking        Banking
-	broker         Broker
-	cmd            Commander
-	erc            ExtResChecker
-	evtfwd         EvtForwarder
-	exec           ExecutionEngine
-	ghandler       *genesis.Handler
-	gov            GovernanceEngine
-	notary         Notary
-	stats          Stats
-	time           TimeService
-	top            ValidatorTopology
-	vegaWallet     nodewallet.Wallet
-	netp           NetworkParameters
-	oracles        *Oracles
+	assets     Assets
+	banking    Banking
+	broker     Broker
+	cmd        Commander
+	erc        ExtResChecker
+	evtfwd     EvtForwarder
+	exec       ExecutionEngine
+	ghandler   *genesis.Handler
+	gov        GovernanceEngine
+	notary     Notary
+	stats      Stats
+	time       TimeService
+	top        ValidatorTopology
+	vegaWallet nodewallet.Wallet
+	netp       NetworkParameters
+	oracles    *Oracles
 }
 
 func NewApp(
@@ -266,6 +267,33 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 // OnCheckTx performs soft validations.
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
+
+	// FIXME(): The two following checks are here just to ensure
+	// some features are disabled in the .30.0 release.
+
+	// First we do not allow parties to create LiquidityProvision
+	if tx.Command() == txn.LiquidityProvisionCommand {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(ErrLiquidityProvisionCommandNotSupported.Error())
+		return ctx, resp
+	}
+
+	// Second we check the proposal for a market
+	// would not submit a liquidity provision as part of it too.
+	if tx.Command() == txn.ProposeCommand {
+		s := &types.Proposal{}
+		if err := tx.Unmarshal(s); err != nil {
+			resp.Code = abci.AbciTxnDecodingFailure
+			return ctx, resp
+		}
+		if s.GetTerms() != nil &&
+			s.Terms.GetNewMarket() != nil &&
+			s.Terms.GetNewMarket().GetLiquidityCommitment() != nil {
+			resp.Code = abci.AbciTxnValidationFailure
+			resp.Data = []byte(ErrLiquidityProvisionCommandNotSupported.Error())
+			return ctx, resp
+		}
+	}
 
 	// Check ratelimits
 	limit, isval := app.limitPubkey(tx.PubKey())
