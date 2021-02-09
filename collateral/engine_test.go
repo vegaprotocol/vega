@@ -75,8 +75,8 @@ func TestMarginUpdateOnOrder(t *testing.T) {
 
 func TestRollbackTransfers(t *testing.T) {
 	t.Run("Successfully rollback transfer when both accounts exist", testRollbackTransfers)
-	t.Run("Fail to rollback if from account TO transfer reposnse doesn't exist", testRollbackTransfers_ToAccountDoesNotExist)
-	t.Run("Fail to rollback if from account FROM transfer reposnse doesn't exist", testRollbackTransfers_FromAccountDoesNotExist)
+	t.Run("Fail to rollback if from account TO transfer reposnse doesn't exist", testRollbackTransfersToAccountDoesNotExist)
+	t.Run("Fail to rollback if from account FROM transfer reposnse doesn't exist", testRollbackTransfersFromAccountDoesNotExist)
 }
 
 func TestTokenAccounts(t *testing.T) {
@@ -1868,7 +1868,7 @@ func testRollbackTransfers(t *testing.T) {
 	require.Equal(t, bondAccBalanceBeforeTransfer, bondAccBalanceAfterRollback)
 }
 
-func testRollbackTransfers_ToAccountDoesNotExist(t *testing.T) {
+func testRollbackTransfersToAccountDoesNotExist(t *testing.T) {
 	eng := getTestEngine(t, testMarketID, 0)
 	trader := "oktrader"
 
@@ -1897,7 +1897,7 @@ func testRollbackTransfers_ToAccountDoesNotExist(t *testing.T) {
 	require.Equal(t, initialBondAccountBalance, genAcc.Balance)
 }
 
-func testRollbackTransfers_FromAccountDoesNotExist(t *testing.T) {
+func testRollbackTransfersFromAccountDoesNotExist(t *testing.T) {
 	eng := getTestEngine(t, testMarketID, 0)
 	//defer eng.Finish()
 	trader := "oktrader"
