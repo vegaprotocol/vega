@@ -198,7 +198,7 @@ const (
 	OrderError_ORDER_ERROR_TIME_FAILURE OrderError = 5
 	// Failed to remove an order from the book
 	OrderError_ORDER_ERROR_REMOVAL_FAILURE OrderError = 6
-	// An order with `TimeInForce.TIF_GTT` was submitted or amended
+	// An order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended
 	// with an expiration that was badly formatted or otherwise invalid
 	OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME OrderError = 7
 	// Order was submitted or amended with an invalid reference field
@@ -1293,7 +1293,7 @@ type Order struct {
 	// - For detail on `STATUS_REJECTED` please check the [`OrderError`](#vega.OrderError) value given in the `reason` field
 	Status Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
 	// Timestamp for when the order will expire, in nanoseconds since the epoch
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
+	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
 	ExpiresAt int64 `protobuf:"varint,12,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus
 	// - Currently set internally by the node to return a unique reference identifier for the order submission
@@ -3112,7 +3112,7 @@ type OrderAmendment struct {
 	// Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	ExpiresAt *Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	// Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged
+	// Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
 	// - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
 	TimeInForce Order_TimeInForce `protobuf:"varint,7,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
 	// Amend the pegged order offset for the order
@@ -3233,7 +3233,7 @@ type OrderSubmission struct {
 	// - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
 	TimeInForce Order_TimeInForce `protobuf:"varint,7,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
 	// Timestamp for when the order will expire, in nanoseconds since the epoch,
-	// required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
+	// required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	ExpiresAt int64 `protobuf:"varint,8,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Type for the order, required field - See [`Order.Type`](#vega.Order.Type)

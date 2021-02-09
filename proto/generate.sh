@@ -21,7 +21,7 @@ function gen_code() {
 	# Make *.validator.pb.go files deterministic.
 	find proto -name '*.validator.pb.go' | sort | while read -r pbfile
 	do
-	sed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
+        sed -i -re 's/this\.Size_/this.Size/' "$pbfile" \
 		&& ./script/fix_imports.sh "$pbfile"
 	done
 
