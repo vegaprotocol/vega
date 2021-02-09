@@ -8,28 +8,28 @@ Many of the fixes below relate to Liquidity Commitments, which are still disable
 
 This release does improve protocol documentation, with all missing fields filled in and the explanations for Pegged Orders expanded. Two crashers have been fixed, although the first is already live as hotfix on testnet, and the other is in functionality that is not yet enabled.
 
-# Improvements
+### Improvements
 - [#2879](https://github.com/vegaprotocol/vega/pull/2879) - Update all the protobuf files with Buf recommendations
-- [#2847](https://github.com/vegaprotocol/vega/issues/2847) - Improve proto documentation, in particular for pegged orders
-- [#2905](https://github.com/vegaprotocol/vega/issues/2905) - Update `vega verify` command to verify genesis block files
-- [#2851](https://github.com/vegaprotocol/vega/issues/2851) - Enable distribution of liquidity fees to liquidity providers
-- [#2871](https://github.com/vegaprotocol/vega/issues/2871) - Add `submitOracleData` command
-- [#2887](https://github.com/vegaprotocol/vega/issues/2887) - Add Open Oracle data processing & data normalisation
-- [#2915](https://github.com/vegaprotocol/vega/issues/2915) - Add Liquidity Commitments to API responses
+- [#2847](https://github.com/vegaprotocol/vega/pull/2847) - Improve proto documentation, in particular for pegged orders
+- [#2905](https://github.com/vegaprotocol/vega/pull/2905) - Update `vega verify` command to verify genesis block files
+- [#2851](https://github.com/vegaprotocol/vega/pull/2851) - Enable distribution of liquidity fees to liquidity providers
+- [#2871](https://github.com/vegaprotocol/vega/pull/2871) - Add `submitOracleData` command
+- [#2887](https://github.com/vegaprotocol/vega/pull/2887) - Add Open Oracle data processing & data normalisation
+- [#2915](https://github.com/vegaprotocol/vega/pull/2915) - Add Liquidity Commitments to API responses
 
-# Fixes
-- [#2913](https://github.com/vegaprotocol/vega/issues/2913) - Fix market lifecycle events not being published through event bus API
-- [#2906](https://github.com/vegaprotocol/vega/issues/2906) - Add new process for calculating margins for orders during auction
-- [#2887](https://github.com/vegaprotocol/vega/issues/2887) - Liquidity Commitment fix-a-thon
-- [#2879](https://github.com/vegaprotocol/vega/issues/2879) - Apply `Buf` lint recommendations
-- [#2872](https://github.com/vegaprotocol/vega/issues/2872) - Improve field names in fee distribution package
-- [#2867](https://github.com/vegaprotocol/vega/issues/2867) - Fix GraphQL bug: deposits `creditedAt` incorrectly showed `createdAt` time, not credit time
-- [#2858](https://github.com/vegaprotocol/vega/issues/2858) - Fix crasher caused by parking pegged orders for auction
-- [#2852](https://github.com/vegaprotocol/vega/issues/2852) - Remove unused binaries from CI builds
-- [#2850](https://github.com/vegaprotocol/vega/issues/2850) - Fix bug that caused fees to be charged for pegged orders
-- [#2893](https://github.com/vegaprotocol/vega/issues/2893) - Remove unused dependency in repricing
-- [#2929](https://github.com/vegaprotocol/vega/issues/2929) - Refactor GraphQL resolver for withdrawals
-- [#2939](https://github.com/vegaprotocol/vega/issues/2939) - Fix crasher caused by incorrectly loading Fee account for transfers
+### Fixes
+- [#2913](https://github.com/vegaprotocol/vega/pull/2913) - Fix market lifecycle events not being published through event bus API
+- [#2906](https://github.com/vegaprotocol/vega/pull/2906) - Add new process for calculating margins for orders during auction
+- [#2887](https://github.com/vegaprotocol/vega/pull/2887) - Liquidity Commitment fix-a-thon
+- [#2879](https://github.com/vegaprotocol/vega/pull/2879) - Apply `Buf` lint recommendations
+- [#2872](https://github.com/vegaprotocol/vega/pull/2872) - Improve field names in fee distribution package
+- [#2867](https://github.com/vegaprotocol/vega/pull/2867) - Fix GraphQL bug: deposits `creditedAt` incorrectly showed `createdAt` time, not credit time
+- [#2858](https://github.com/vegaprotocol/vega/pull/2858) - Fix crasher caused by parking pegged orders for auction
+- [#2852](https://github.com/vegaprotocol/vega/pull/2852) - Remove unused binaries from CI builds
+- [#2850](https://github.com/vegaprotocol/vega/pull/2850) - Fix bug that caused fees to be charged for pegged orders
+- [#2893](https://github.com/vegaprotocol/vega/pull/2893) - Remove unused dependency in repricing
+- [#2929](https://github.com/vegaprotocol/vega/pull/2929) - Refactor GraphQL resolver for withdrawals
+- [#2939](https://github.com/vegaprotocol/vega/pull/2939) - Fix crasher caused by incorrectly loading Fee account for transfers
 
 ## 0.30.0
 
@@ -44,7 +44,6 @@ The Ethereum bridge also received some work - in particular the number of confir
 :two: This fixes an issue on testnet where votes were not registered when voting on open governance proposals. The required number of Ropsten `VOTE` tokens was being calculated incorrectly on testnet, leading to all votes quietly being ignored. In 0.30.0, voting works as expected again.
 
 ### New
-
 - [#2732](https://github.com/vegaprotocol/vega/pull/2732) Add REST endpoint to fetch all proposals (`/governance/proposals`)
 - [#2735](https://github.com/vegaprotocol/vega/pull/2735) Add `FeeSplitter` to correctly split fee portion of an aggressive order
 - [#2745](https://github.com/vegaprotocol/vega/pull/2745) Add transfer bus events for withdrawals and deposits
