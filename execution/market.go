@@ -1381,8 +1381,6 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
 		}
-		// if bondPenalties is not nil then we return an error as well, it means the trader did not have enough
-		// monies to reach the InitialMargin
 		for _, bp := range bondPenalties {
 			err := m.applyBondPenalty(ctx, order.PartyId, bp.MarginShortFall(), bp.Asset())
 			if err != nil {

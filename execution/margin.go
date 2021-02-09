@@ -95,8 +95,6 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	}
 	tr, bondPenalty, err := m.collateral.MarginUpdateOnOrder(ctx, mID, risk)
 	if bondPenalty != nil {
-		// if closePose is not nil then we return an error as well, it means the trader did not have enough
-		// monies to reach the InitialMargin
 		shortfall := bondPenalty.MarginShortFall()
 		if shortfall > 0 {
 			if failOnLPMarginShortfall {
@@ -126,11 +124,11 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 					logging.Error(nerr))
 			}
 			if err != nil || nerr != nil {
-				if err = m.resolveClosedOutTraders(ctx, []events.Margin{bondPenalty}, order); err != nil {
+				if cerr := m.resolveClosedOutTraders(ctx, []events.Margin{bondPenalty}, order); cerr != nil {
 					m.log.Error("Unable to closeout a liquidity provider following margin check failure",
 						logging.String("market-id", m.GetID()),
 						logging.String("party", order.PartyId),
-						logging.Error(err))
+						logging.Error(cerr))
 				}
 			}
 		}
