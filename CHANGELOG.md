@@ -8,8 +8,16 @@ Many of the fixes below relate to Liquidity Commitments, which are still disable
 
 This release does improve protocol documentation, with all missing fields filled in and the explanations for Pegged Orders expanded. Two crashers have been fixed, although the first is already live as hotfix on testnet, and the other is in functionality that is not yet enabled.
 
+This release also makes some major API changes:
+
+- `api.TradingClient` -> `api.v1.TradingServiceClient`
+- `api.TradingDataClient` -> `api.v1.TradingDataServiceClient`
+- Fields have changed from camel-case to snake-cased (e.g. `someFieldName` is now `some_field_name`)
+- All API calls now have request and response messages whose names match the API call name (e.g. `GetSomething` now has a request called `GetSomethingRequest` and a response called `GetSomethingResponse`)
+- See [#2879](https://github.com/vegaprotocol/vega/pull/2879) for details
+
 ### Improvements
-- [#2879](https://github.com/vegaprotocol/vega/pull/2879) - Update all the protobuf files with Buf recommendations
+- [#2879](https://github.com/vegaprotocol/vega/pull/2879) - 🔥Update all the protobuf files with Buf recommendations
 - [#2847](https://github.com/vegaprotocol/vega/pull/2847) - Improve proto documentation, in particular for pegged orders
 - [#2905](https://github.com/vegaprotocol/vega/pull/2905) - Update `vega verify` command to verify genesis block files
 - [#2851](https://github.com/vegaprotocol/vega/pull/2851) - Enable distribution of liquidity fees to liquidity providers
