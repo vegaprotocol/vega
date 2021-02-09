@@ -182,7 +182,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				validatedTrades := make([]types.Trade, 0, len(v))
 				for _, item := range v {
 					// if market is nil or matches item market and party was nil, or matches seller or buyer
-					if (market == nil || item.MarketID == *market) && (party == nil || item.Seller == *party || item.Buyer == *party) {
+					if (market == nil || item.MarketId == *market) && (party == nil || item.Seller == *party || item.Buyer == *party) {
 						validatedTrades = append(validatedTrades, item)
 					}
 				}

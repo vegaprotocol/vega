@@ -187,11 +187,11 @@ func (this *Erc20WithdrawExt) Validate() error {
 	return nil
 }
 func (this *OrderAmendment) Validate() error {
-	if this.OrderID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("OrderID", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderID))
+	if this.OrderId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("OrderId", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderId))
 	}
-	if this.PartyID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	if this.PartyId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
 	}
 	if this.Price != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Price); err != nil {
@@ -211,11 +211,11 @@ func (this *OrderAmendment) Validate() error {
 	return nil
 }
 func (this *OrderSubmission) Validate() error {
-	if this.MarketID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	if this.MarketId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketId", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketId))
 	}
-	if this.PartyID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	if this.PartyId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
 	}
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
@@ -237,8 +237,8 @@ func (this *OrderSubmission) Validate() error {
 	return nil
 }
 func (this *OrderCancellation) Validate() error {
-	if this.PartyID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyID", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyID))
+	if this.PartyId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
 	}
 	return nil
 }
@@ -321,6 +321,16 @@ func (this *MarketData) Validate() error {
 			}
 		}
 	}
+	for _, item := range this.LiquidityProviderFeeShare {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LiquidityProviderFeeShare", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *LiquidityProviderFeeShare) Validate() error {
 	return nil
 }
 func (this *PriceMonitoringBounds) Validate() error {
@@ -358,8 +368,8 @@ func (this *LiquidityOrder) Validate() error {
 	return nil
 }
 func (this *LiquidityProvisionSubmission) Validate() error {
-	if this.MarketID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	if this.MarketId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketId", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketId))
 	}
 	for _, item := range this.Sells {
 		if item != nil {
@@ -386,8 +396,8 @@ func (this *LiquidityOrderReference) Validate() error {
 	return nil
 }
 func (this *LiquidityProvision) Validate() error {
-	if this.MarketID == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("MarketID", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketID))
+	if this.MarketId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("MarketId", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketId))
 	}
 	for _, item := range this.Sells {
 		if item != nil {
@@ -406,5 +416,8 @@ func (this *LiquidityProvision) Validate() error {
 	return nil
 }
 func (this *EthereumConfig) Validate() error {
+	return nil
+}
+func (this *OracleDataSubmission) Validate() error {
 	return nil
 }

@@ -13,7 +13,7 @@ type EthereumEvent struct {
 
 func newEthereumEvent(pee *types.EthereumEvent) (*EthereumEvent, error) {
 	return &EthereumEvent{
-		ContractID: pee.ContractID,
+		ContractID: pee.ContractId,
 		Event:      pee.Event,
 		Value:      pee.Value,
 	}, nil

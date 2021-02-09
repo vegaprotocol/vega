@@ -115,12 +115,12 @@ func getTestAccounts(owner, market string, accTypes ...types.AccountType) []*typ
 			Owner:    owner,
 			Balance:  0,
 			Asset:    asset,
-			MarketID: market,
+			MarketId: market,
 			Type:     t,
 		}
 		// general accounts don't have a market ID
 		if t == types.AccountType_ACCOUNT_TYPE_GENERAL {
-			acc.MarketID = ""
+			acc.MarketId = ""
 		}
 		ret = append(ret, acc)
 	}

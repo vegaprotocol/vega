@@ -94,7 +94,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
-	evtfwd.cb(context.Background(), time.Unix(11, 0))
+	evtfwd.cb(context.Background(), time.Unix(9, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
 	assert.NoError(t, err)
 }
@@ -106,7 +106,7 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
-	evtfwd.cb(context.Background(), time.Unix(11, 0))
+	evtfwd.cb(context.Background(), time.Unix(10, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
 	assert.NoError(t, err)
 	// now the event should exist, let's try toforward againt
@@ -143,14 +143,14 @@ func testAckFailureAlreadyAcked(t *testing.T) {
 
 func getTestChainEvent() *types.ChainEvent {
 	return &types.ChainEvent{
-		TxID: "somehash",
+		TxId: "somehash",
 		Event: &types.ChainEvent_Erc20{
 			Erc20: &types.ERC20Event{
 				Index: 1,
 				Block: 100,
 				Action: &types.ERC20Event_AssetList{
 					AssetList: &types.ERC20AssetList{
-						VegaAssetID: "asset-id-1",
+						VegaAssetId: "asset-id-1",
 					},
 				},
 			},

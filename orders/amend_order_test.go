@@ -12,11 +12,11 @@ import (
 
 var (
 	amend = proto.OrderAmendment{
-		OrderID:   "order_id",
-		PartyID:   "party",
+		OrderId:   "order_id",
+		PartyId:   "party",
 		Price:     &proto.Price{Value: 10000},
 		SizeDelta: 1,
-		MarketID:  "market",
+		MarketId:  "market",
 	}
 )
 
@@ -36,8 +36,8 @@ func TestPrepareAmendOrder(t *testing.T) {
 
 func testPrepareAmendOrderJustPriceSuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID: "orderid",
-		PartyID: "partyid",
+		OrderId: "orderid",
+		PartyId: "partyid",
 		Price:   &proto.Price{Value: 1000},
 	}
 	svc := getTestService(t)
@@ -49,8 +49,8 @@ func testPrepareAmendOrderJustPriceSuccess(t *testing.T) {
 
 func testPrepareAmendOrderJustReduceSuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID:   "orderid",
-		PartyID:   "partyid",
+		OrderId:   "orderid",
+		PartyId:   "partyid",
 		SizeDelta: -10,
 	}
 	svc := getTestService(t)
@@ -62,8 +62,8 @@ func testPrepareAmendOrderJustReduceSuccess(t *testing.T) {
 
 func testPrepareAmendOrderJustIncreaseSuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID:   "orderid",
-		PartyID:   "partyid",
+		OrderId:   "orderid",
+		PartyId:   "partyid",
 		SizeDelta: 10,
 	}
 	svc := getTestService(t)
@@ -77,8 +77,8 @@ func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
 	now := vegatime.Now()
 	expires := now.Add(-2 * time.Hour)
 	arg := proto.OrderAmendment{
-		OrderID:   "orderid",
-		PartyID:   "partyid",
+		OrderId:   "orderid",
+		PartyId:   "partyid",
 		ExpiresAt: &proto.Timestamp{Value: expires.UnixNano()},
 	}
 	svc := getTestService(t)
@@ -90,9 +90,9 @@ func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
 
 func testPrepareAmendOrderJustTIFSuccess(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID:     "orderid",
-		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GTC,
+		OrderId:     "orderid",
+		PartyId:     "partyid",
+		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -110,8 +110,8 @@ func testPrepareAmendOrderEmptyFail(t *testing.T) {
 	assert.Error(t, err)
 
 	arg2 := proto.OrderAmendment{
-		OrderID: "orderid",
-		PartyID: "partyid",
+		OrderId: "orderid",
+		PartyId: "partyid",
 	}
 	err = svc.svc.PrepareAmendOrder(context.Background(), &arg2)
 	assert.Error(t, err)
@@ -128,9 +128,9 @@ func testPrepareAmendOrderNilFail(t *testing.T) {
 
 func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID:     "orderid",
-		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GTC,
+		OrderId:     "orderid",
+		PartyId:     "partyid",
+		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)
@@ -139,11 +139,11 @@ func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
 	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Error(t, err)
 
-	arg.TimeInForce = proto.Order_TIF_FOK
+	arg.TimeInForce = proto.Order_TIME_IN_FORCE_FOK
 	err = svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Error(t, err)
 
-	arg.TimeInForce = proto.Order_TIF_IOC
+	arg.TimeInForce = proto.Order_TIME_IN_FORCE_IOC
 	err = svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Error(t, err)
 }
@@ -154,9 +154,9 @@ func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
  */
 func testPrepareAmendOrderPastExpiry(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID:     "orderid",
-		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GTT,
+		OrderId:     "orderid",
+		PartyId:     "partyid",
+		TimeInForce: proto.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)
@@ -168,9 +168,9 @@ func testPrepareAmendOrderPastExpiry(t *testing.T) {
 
 func testPrepareAmendOrderToGFN(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID:     "orderid",
-		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GFN,
+		OrderId:     "orderid",
+		PartyId:     "partyid",
+		TimeInForce: proto.Order_TIME_IN_FORCE_GFN,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)
@@ -182,9 +182,9 @@ func testPrepareAmendOrderToGFN(t *testing.T) {
 
 func testPrepareAmendOrderToGFA(t *testing.T) {
 	arg := proto.OrderAmendment{
-		OrderID:     "orderid",
-		PartyID:     "partyid",
-		TimeInForce: proto.Order_TIF_GFA,
+		OrderId:     "orderid",
+		PartyId:     "partyid",
+		TimeInForce: proto.Order_TIME_IN_FORCE_GFA,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
 	svc := getTestService(t)

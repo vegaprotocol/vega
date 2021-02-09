@@ -46,6 +46,18 @@ func (mr *MockBrokerMockRecorder) Send(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockBroker)(nil).Send), arg0)
 }
 
+// SendBatch mocks base method
+func (m *MockBroker) SendBatch(arg0 []events.Event) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SendBatch", arg0)
+}
+
+// SendBatch indicates an expected call of SendBatch
+func (mr *MockBrokerMockRecorder) SendBatch(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBatch", reflect.TypeOf((*MockBroker)(nil).SendBatch), arg0)
+}
+
 // MockRiskModel is a mock of RiskModel interface
 type MockRiskModel struct {
 	ctrl     *gomock.Controller

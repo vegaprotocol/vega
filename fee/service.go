@@ -2,8 +2,6 @@ package fee
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"math"
 	"strconv"
 
@@ -55,37 +53,17 @@ func (s *Svc) ReloadConf(cfg Config) {
 }
 
 func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, error) {
-	mkt, err := s.mktStore.GetByID(o.MarketID)
+	mkt, err := s.mktStore.GetByID(o.MarketId)
 	if err != nil {
 		return nil, err
 	}
 	price := o.Price
 	if o.PeggedOrder != nil {
-		mktdata, err := s.mktDataStore.GetByID(o.MarketID)
-		if err != nil {
-			return nil, err
-		}
-
-		switch o.PeggedOrder.Reference {
-		case types.PeggedReference_PEGGED_REFERENCE_MID:
-			price = mktdata.StaticMidPrice
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-			price = mktdata.BestStaticBidPrice
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-			price = mktdata.BestStaticOfferPrice
-		default:
-			return nil, errors.New("can't calculate fees for pegged order without a reference")
-		}
-
-		if o.PeggedOrder.Offset >= 0 {
-			price += uint64(o.PeggedOrder.Offset)
-		} else {
-			offset := uint64(-o.PeggedOrder.Offset)
-			if price <= offset {
-				return nil, fmt.Errorf("can't calculate fees, pegged order price would be negative, price(%v), offset(-%v)", price, offset)
-			}
-			price -= offset
-		}
+		return &types.Fee{
+			MakerFee:          0,
+			InfrastructureFee: 0,
+			LiquidityFee:      0,
+		}, nil
 	}
 
 	base := float64(price * o.Size)

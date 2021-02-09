@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/oracles"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
 
@@ -179,4 +180,19 @@ type Banking interface {
 type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
+}
+
+type Oracles struct {
+	Engine   OraclesEngine
+	Adaptors OracleAdaptors
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracles_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor OraclesEngine
+type OraclesEngine interface {
+	BroadcastData(context.Context, oracles.OracleData) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
+type OracleAdaptors interface {
+	Normalise(types.OracleDataSubmission) (*oracles.OracleData, error)
 }

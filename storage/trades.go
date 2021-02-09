@@ -421,7 +421,7 @@ func (ts *Trade) tradeBatchToMap(batch []types.Trade) (map[string][]byte, error)
 			return nil, err
 		}
 		// Market Index
-		marketKey := ts.badger.tradeMarketKey(trade.MarketID, trade.Id)
+		marketKey := ts.badger.tradeMarketKey(trade.MarketId, trade.Id)
 		// Trade Id index
 		idKey := ts.badger.tradeIDKey(trade.Id)
 		// Party indexes (buyer and seller as parties)

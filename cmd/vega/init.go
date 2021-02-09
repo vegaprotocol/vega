@@ -257,7 +257,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							Maturity:  skel.maturity.Format("2006-01-02T15:04:05Z"),
 							Oracle: &proto.Future_EthereumEvent{
 								EthereumEvent: &proto.EthereumEvent{
-									ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+									ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 									Event:      "price_changed",
 									Value:      skel.settlementValue,
 								},

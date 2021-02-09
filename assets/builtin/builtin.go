@@ -14,7 +14,7 @@ type Builtin struct {
 func New(id string, asset *types.BuiltinAsset) *Builtin {
 	return &Builtin{
 		asset: &types.Asset{
-			ID:          id,
+			Id:          id,
 			Name:        asset.Name,
 			Symbol:      asset.Symbol,
 			TotalSupply: asset.TotalSupply,
@@ -62,6 +62,6 @@ func (b *Builtin) ValidateDeposit() error {
 
 func (b *Builtin) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.ID, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
+		b.asset.Id, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
 		b.asset.Decimals)
 }

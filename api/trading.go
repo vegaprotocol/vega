@@ -35,7 +35,7 @@ type TradeOrderService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
 type LiquidityService interface {
 	PrepareLiquidityProvisionSubmission(context.Context, *types.LiquidityProvisionSubmission) error
-	Get(market, party string) ([]types.LiquidityProvision, error)
+	Get(party, market string) ([]types.LiquidityProvision, error)
 }
 
 // AccountService ...
@@ -77,7 +77,7 @@ type tradingService struct {
 	statusChecker *monitoring.Status
 }
 
-func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.SubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
+func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.PrepareSubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", startTime)
 	err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
@@ -93,11 +93,11 @@ func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.S
 	}
 	return &protoapi.PrepareSubmitOrderResponse{
 		Blob:     raw,
-		SubmitID: req.Submission.Reference,
+		SubmitId: req.Submission.Reference,
 	}, nil
 }
 
-func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.CancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
+func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.PrepareCancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareCancelOrder", startTime)
 	err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
@@ -116,7 +116,7 @@ func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.C
 	}, nil
 }
 
-func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.AmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
+func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.PrepareAmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
 	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
@@ -196,7 +196,7 @@ func (s *tradingService) PrepareProposal(
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
-	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyID, req.Reference, req.Proposal)
+	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyId, req.Reference, req.Proposal)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}

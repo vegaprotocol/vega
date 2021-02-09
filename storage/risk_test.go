@@ -30,21 +30,21 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	tstore := getTestRiskStore()
 	tstore.store.SaveMarginLevelsBatch([]proto.MarginLevels{
 		{
-			PartyID:           "p1",
-			MarketID:          "m1",
+			PartyId:           "p1",
+			MarketId:          "m1",
 			MaintenanceMargin: 42,
 		},
 		{
-			PartyID:           "p1",
-			MarketID:          "m3",
+			PartyId:           "p1",
+			MarketId:          "m3",
 			MaintenanceMargin: 84,
 		},
 	})
 	margins, err := tstore.store.GetMarginLevelsByID("p1", "m1")
 	assert.Len(t, margins, 1)
 	assert.Nil(t, err)
-	assert.Equal(t, margins[0].PartyID, "p1")
-	assert.Equal(t, margins[0].MarketID, "m1")
+	assert.Equal(t, margins[0].PartyId, "p1")
+	assert.Equal(t, margins[0].MarketId, "m1")
 	assert.Equal(t, margins[0].MaintenanceMargin, uint64(42))
 }
 
@@ -52,21 +52,21 @@ func testGetMarginLevelsByPartyIDAndMarketID(t *testing.T) {
 	tstore := getTestRiskStore()
 	tstore.store.SaveMarginLevelsBatch([]proto.MarginLevels{
 		{
-			PartyID:           "p1",
-			MarketID:          "m1",
+			PartyId:           "p1",
+			MarketId:          "m1",
 			MaintenanceMargin: 42,
 		},
 		{
-			PartyID:           "p2",
-			MarketID:          "m3",
+			PartyId:           "p2",
+			MarketId:          "m3",
 			MaintenanceMargin: 84,
 		},
 	})
 	margins, err := tstore.store.GetMarginLevelsByID("p2", "")
 	assert.Len(t, margins, 1)
 	assert.Nil(t, err)
-	assert.Equal(t, margins[0].PartyID, "p2")
-	assert.Equal(t, margins[0].MarketID, "m3")
+	assert.Equal(t, margins[0].PartyId, "p2")
+	assert.Equal(t, margins[0].MarketId, "m3")
 	assert.Equal(t, margins[0].MaintenanceMargin, uint64(84))
 
 }

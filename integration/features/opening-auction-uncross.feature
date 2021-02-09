@@ -30,22 +30,22 @@ Feature: Set up a market, with an opening auction, then uncross the book
 #   And dump orders
     Then the margins levels for the traders are:
       | trader  | id        | maintenance | search | initial | release |
-      | trader1 | ETH/DEC19 |       11200 |  12320 |   13440 |   27679 |
-      | trader2 | ETH/DEC19 |       10899 |  11989 |   13079 |   27258 |
+      | trader1 | ETH/DEC19 |       25201 |  27721 |   30241 |   65521 |
+      | trader2 | ETH/DEC19 |       23899 |  26289 |   28679 |   57458 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general  |
 #     | trader1 | BTC   | ETH/DEC19 |  11200 | 99988800 |
 #     | trader2 | BTC   | ETH/DEC19 |  10899 | 99989101 |
-      | trader1 | BTC   | ETH/DEC19 |  13440 | 99986560 |
-      | trader2 | BTC   | ETH/DEC19 |  13079 | 99986921 |
+      | trader1 | BTC   | ETH/DEC19 |  30241 | 99969759 |
+      | trader2 | BTC   | ETH/DEC19 |  28679 | 99971321 |
     And traders withdraw balance:
       | trader  | asset | amount   |
-      | trader1 | BTC   | 99986560 |
-      | trader2 | BTC   | 99986921 |
+      | trader1 | BTC   | 99969759 |
+      | trader2 | BTC   | 99971321 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general  |
-      | trader1 | BTC   | ETH/DEC19 |  13440 | 0        |
-      | trader2 | BTC   | ETH/DEC19 |  13079 | 0        |
+      | trader1 | BTC   | ETH/DEC19 |  30241 | 0        |
+      | trader2 | BTC   | ETH/DEC19 |  28679 | 0        |
 #   And dump transfers
     Then the opening auction period for market "ETH/DEC19" ends
     ## We're seeing these events twice for some reason
@@ -55,6 +55,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | 10000 | 2    | trader2 |
       | trader1 | 10000 | 3    | trader2 |
     And the mark price for the market "ETH/DEC19" is "10000"
+#   And dump trades
+#   And dump transfers
     ## Network for distressed trader1 -> cancelled, nothing on the book is remaining
     Then verify the status of the order reference:
       | trader  | reference | status           |
@@ -64,13 +66,12 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | t2-s-2    | STATUS_CANCELLED |
       | trader1 | t1-b-3    | STATUS_CANCELLED |
       | trader2 | t2-s-3    | STATUS_FILLED    |
-      | network | LS-       | STATUS_STOPPED   |
 #   And dump trades
 #   And dump transfers
     And the following transfers happened:
       | from    | to      | from account type   | to account type      | market ID | amount | asset |
-      | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 3479   | BTC   |
+      | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 19079  | BTC   |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general  |
-      | trader2 | BTC   | ETH/DEC19 | 9600   | 3479     |
-      | trader1 | BTC   | ETH/DEC19 | 13440  | 0        |
+      | trader2 | BTC   | ETH/DEC19 | 9600   | 19079    |
+      | trader1 | BTC   | ETH/DEC19 | 30241  | 0        |

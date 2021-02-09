@@ -68,7 +68,7 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.NotZero(t, len(pp))
 	// average entry price should be 1k
 	// initialy calculation say the RealisedPNL should be 1000
-	assert.Equal(t, 1000, int(pp[0].RealisedPNL))
+	assert.Equal(t, 1000, int(pp[0].RealisedPnl))
 
 	// then we process the event for LossSocialization
 	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, -300, 1)
@@ -77,8 +77,8 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// with the changes, the RealisedPNL should be 700
-	assert.Equal(t, 700, int(pp[0].RealisedPNL))
-	assert.Equal(t, 0, int(pp[0].UnrealisedPNL))
+	assert.Equal(t, 700, int(pp[0].RealisedPnl))
+	assert.Equal(t, 0, int(pp[0].UnrealisedPnl))
 }
 
 func TestDistressedTraderUpdate(t *testing.T) {
@@ -101,8 +101,8 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.NotZero(t, len(pp))
 	// average entry price should be 1k
 	// initialy calculation say the RealisedPNL should be 1000
-	assert.Equal(t, 0, int(pp[0].RealisedPNL))
-	assert.Equal(t, -600, int(pp[0].UnrealisedPNL))
+	assert.Equal(t, 0, int(pp[0].RealisedPnl))
+	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 
 	// then we process the event for LossSocialization
 	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, -300, 1)
@@ -111,16 +111,16 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// with the changes, the RealisedPNL should be 700
-	assert.Equal(t, -300, int(pp[0].RealisedPNL))
-	assert.Equal(t, -600, int(pp[0].UnrealisedPNL))
+	assert.Equal(t, -300, int(pp[0].RealisedPnl))
+	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 	// now assume this trader is distressed, and we've taken all their funds
 	sde := events.NewSettleDistressed(position.ctx, "trader1", market, 0, 100, 1)
 	position.Push(sde)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
-	assert.Equal(t, 0, int(pp[0].UnrealisedPNL))
-	assert.Equal(t, -1000, int(pp[0].RealisedPNL))
+	assert.Equal(t, 0, int(pp[0].UnrealisedPnl))
+	assert.Equal(t, -1000, int(pp[0].RealisedPnl))
 }
 
 func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
@@ -143,8 +143,8 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 	assert.NotZero(t, len(pp))
 	// average entry price should be 1k
 	// initialy calculation say the RealisedPNL should be 1000
-	assert.Equal(t, 0, int(pp[0].RealisedPNL))
-	assert.Equal(t, -600, int(pp[0].UnrealisedPNL))
+	assert.Equal(t, 0, int(pp[0].RealisedPnl))
+	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 
 	// then we process the event for LossSocialization
 	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, -300, 1)
@@ -153,8 +153,8 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// with the changes, the RealisedPNL should be 700
-	assert.Equal(t, -300, int(pp[0].RealisedPNL))
-	assert.Equal(t, -600, int(pp[0].UnrealisedPNL))
+	assert.Equal(t, -300, int(pp[0].RealisedPnl))
+	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 }
 
 func getPosPlugin(t *testing.T) *posPluginTst {

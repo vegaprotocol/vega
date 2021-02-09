@@ -33,20 +33,20 @@ func testGetByID(t *testing.T) {
 	lastState := types.Proposal_STATE_FAILED
 	for _, id := range ids {
 		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-			PartyID: "party",
-			ID:      id,
+			PartyId: "party",
+			Id:      id,
 			State:   types.Proposal_STATE_OPEN,
 		}))
 		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-			PartyID: "party",
-			ID:      id,
+			PartyId: "party",
+			Id:      id,
 			State:   lastState,
 		}))
 	}
 	for _, id := range ids {
 		data := sub.Filter(false, subscribers.ProposalByID(id))
 		assert.Equal(t, 1, len(data))
-		assert.Equal(t, id, data[0].Proposal.ID)
+		assert.Equal(t, id, data[0].Proposal.Id)
 		assert.Equal(t, lastState, data[0].Proposal.State)
 	}
 }
@@ -76,8 +76,8 @@ func testFilterByState(t *testing.T) {
 	}
 	for i, s := range states {
 		prop := types.Proposal{
-			PartyID: party,
-			ID:      fmt.Sprintf("test-prop-%d", i),
+			PartyId: party,
+			Id:      fmt.Sprintf("test-prop-%d", i),
 			State:   s,
 		}
 		sub.Push(events.NewProposalEvent(ctx, prop))
@@ -101,15 +101,15 @@ func testFilterByParty(t *testing.T) {
 	}
 	for _, id := range ids {
 		prop := types.Proposal{
-			PartyID: party,
-			ID:      id,
+			PartyId: party,
+			Id:      id,
 			State:   types.Proposal_STATE_OPEN,
 		}
 		sub.Push(events.NewProposalEvent(ctx, prop))
 	}
 	sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-		PartyID: "some-other-party",
-		ID:      "foobar",
+		PartyId: "some-other-party",
+		Id:      "foobar",
 		State:   types.Proposal_STATE_OPEN,
 	}))
 	data := sub.Filter(false, subscribers.ProposalByPartyID(party))
@@ -136,32 +136,32 @@ func testNoFilterVotes(t *testing.T) {
 	// last vote will always be yes
 	for i, p := range parties {
 		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-			PartyID: p,
-			ID:      props[i],
+			PartyId: p,
+			Id:      props[i],
 			State:   types.Proposal_STATE_OPEN,
 		}))
 	}
 	for _, p := range parties {
 		for i := range props {
 			sub.Push(events.NewVoteEvent(ctx, types.Vote{
-				ProposalID: props[i],
-				PartyID:    p,
+				ProposalId: props[i],
+				PartyId:    p,
 				Value:      types.Vote_VALUE_NO,
 			}))
 			sub.Push(events.NewVoteEvent(ctx, types.Vote{
-				ProposalID: props[i],
-				PartyID:    p,
+				ProposalId: props[i],
+				PartyId:    p,
 				Value:      types.Vote_VALUE_YES,
 			}))
 			if i > 1 {
 				sub.Push(events.NewVoteEvent(ctx, types.Vote{
-					ProposalID: props[i],
-					PartyID:    p,
+					ProposalId: props[i],
+					PartyId:    p,
 					Value:      types.Vote_VALUE_YES,
 				}))
 				sub.Push(events.NewVoteEvent(ctx, types.Vote{
-					ProposalID: props[i],
-					PartyID:    p,
+					ProposalId: props[i],
+					PartyId:    p,
 					Value:      types.Vote_VALUE_NO,
 				}))
 			}

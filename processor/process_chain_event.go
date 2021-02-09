@@ -75,44 +75,44 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 
 	switch act := evt.Action.(type) {
 	case *types.ERC20Event_AssetList:
-		act.AssetList.VegaAssetID = strings.TrimPrefix(act.AssetList.VegaAssetID, "0x")
+		act.AssetList.VegaAssetId = strings.TrimPrefix(act.AssetList.VegaAssetId, "0x")
 		if err := app.checkVegaAssetID(act.AssetList, "ERC20.AssetList"); err != nil {
 			return err
 		}
 		// now check that the notary is GO for this asset
 		_, ok := app.notary.IsSigned(
-			act.AssetList.VegaAssetID,
+			act.AssetList.VegaAssetId,
 			types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
 		if !ok {
 			return ErrChainEventAssetListERC20WithoutEnoughSignature
 		}
-		return app.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index, ce.TxID)
+		return app.banking.EnableERC20(ctx, act.AssetList, evt.Block, evt.Index, ce.TxId)
 	case *types.ERC20Event_AssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20Event_Deposit:
-		act.Deposit.VegaAssetID = strings.TrimPrefix(act.Deposit.VegaAssetID, "0x")
+		act.Deposit.VegaAssetId = strings.TrimPrefix(act.Deposit.VegaAssetId, "0x")
 
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, ce.TxID)
+		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, ce.TxId)
 	case *types.ERC20Event_Withdrawal:
-		act.Withdrawal.VegaAssetID = strings.TrimPrefix(act.Withdrawal.VegaAssetID, "0x")
+		act.Withdrawal.VegaAssetId = strings.TrimPrefix(act.Withdrawal.VegaAssetId, "0x")
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
 			return err
 		}
-		return app.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index, ce.TxID)
+		return app.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index, ce.TxId)
 	default:
 		return ErrUnsupportedEventAction
 	}
 }
 
 type HasVegaAssetID interface {
-	GetVegaAssetID() string
+	GetVegaAssetId() string
 }
 
 func (app *App) checkVegaAssetID(a HasVegaAssetID, action string) error {
-	id := a.GetVegaAssetID()
+	id := a.GetVegaAssetId()
 	_, err := app.assets.Get(id)
 	if err != nil {
 		app.log.Error("invalid vega asset ID",

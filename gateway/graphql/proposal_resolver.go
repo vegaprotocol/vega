@@ -28,7 +28,7 @@ func (r *proposalResolver) ID(ctx context.Context, data *types.GovernanceData) (
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
-	return &data.Proposal.ID, nil
+	return &data.Proposal.Id, nil
 }
 
 func (r *proposalResolver) Reference(ctx context.Context, data *types.GovernanceData) (string, error) {
@@ -42,13 +42,13 @@ func (r *proposalResolver) Party(ctx context.Context, data *types.GovernanceData
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
-	p, err := getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyID)
+	p, err := getParty(ctx, r.log, r.tradingDataClient, data.Proposal.PartyId)
 	if p == nil && err == nil {
 		// the api could return an nil party in some cases
 		// e.g: when a party does not exists in the stores
 		// this is not an error, but here we are not checking
 		// if a party exists or not, but what party did propose
-		p = &types.Party{Id: data.Proposal.PartyID}
+		p = &types.Party{Id: data.Proposal.PartyId}
 	}
 	return p, err
 }
@@ -81,7 +81,7 @@ func (r *proposalResolver) Terms(ctx context.Context, data *types.GovernanceData
 func (r *proposalResolver) convertVotes(ctx context.Context, data []*types.Vote) ([]*Vote, error) {
 	result := make([]*Vote, len(data))
 	for i, v := range data {
-		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyID)
+		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyId)
 		if err != nil {
 			return nil, err
 		}

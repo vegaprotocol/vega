@@ -121,7 +121,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 						Maturity: "2019-12-31T00:00:00Z",
 						Oracle: &proto.Future_EthereumEvent{
 							EthereumEvent: &proto.EthereumEvent{
-								ContractID: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
+								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
 								Event:      "price_changed",
 							},
 						},
@@ -189,7 +189,7 @@ func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
 	// this should create market accounts, currently same way it's done in execution engine (register market)
 	asset, _ := mktsetup.market.GetAsset()
 	_ = mktsetup.colE.EnableAsset(context.Background(), proto.Asset{
-		ID:     asset,
+		Id:     asset,
 		Symbol: asset,
 	})
 	_, _, _ = mktsetup.colE.CreateMarketAccounts(context.Background(), mktsetup.core.GetID(), asset, 0)
@@ -292,15 +292,15 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 		}
 		order := proto.Order{
 			Id:          uuid.NewV4().String(),
-			MarketID:    market,
-			PartyID:     row.Cells[0].Value,
+			MarketId:    market,
+			PartyId:     row.Cells[0].Value,
 			Side:        side,
 			Price:       uint64(price),
 			Size:        uint64(vol),
 			Remaining:   uint64(vol),
 			ExpiresAt:   tomorrow.UnixNano(),
 			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIF_GTT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTT,
 			CreatedAt:   time.Now().UnixNano(),
 		}
 		result, err := core.SubmitOrder(context.TODO(), &order)

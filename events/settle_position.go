@@ -59,8 +59,8 @@ func (s SettlePos) Proto() types.SettlePosition {
 		})
 	}
 	return types.SettlePosition{
-		MarketID:         s.marketID,
-		PartyID:          s.partyID,
+		MarketId:         s.marketID,
+		PartyId:          s.partyID,
 		Price:            s.price,
 		TradeSettlements: ts,
 	}
@@ -69,7 +69,7 @@ func (s SettlePos) Proto() types.SettlePosition {
 func (s SettlePos) StreamMessage() *types.BusEvent {
 	p := s.Proto()
 	return &types.BusEvent{
-		ID:    s.eventID(),
+		Id:    s.eventID(),
 		Block: s.TraceID(),
 		Type:  s.et.ToProto(),
 		Event: &types.BusEvent_SettlePosition{

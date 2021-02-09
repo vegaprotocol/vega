@@ -38,7 +38,7 @@ func (m MarketCreated) Proto() types.Market {
 
 func (m MarketCreated) MarketProto() types.MarketEvent {
 	return types.MarketEvent{
-		MarketID: m.m.Id,
+		MarketId: m.m.Id,
 		Payload:  m.MarketEvent(),
 	}
 }
@@ -46,7 +46,7 @@ func (m MarketCreated) MarketProto() types.MarketEvent {
 func (m MarketCreated) StreamMessage() *types.BusEvent {
 	p := m.MarketProto()
 	return &types.BusEvent{
-		ID:    m.eventID(),
+		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
 		Event: &types.BusEvent_Market{

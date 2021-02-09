@@ -29,6 +29,7 @@ type Orderbook interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(events.Event)
+	SendBatch([]events.Event)
 }
 
 // AuctionPosition is the enriched market position event (well, it's the same type)
@@ -161,6 +162,57 @@ func (e *Engine) GetRiskFactors(asset string) (*types.RiskFactor, error) {
 	return rf, nil
 }
 
+func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price uint64) ([]events.Risk, []events.Margin, error) {
+	if len(evts) == 0 {
+		return nil, nil, nil
+	}
+	revts := make([]events.Risk, 0, len(evts))
+	// traders with insufficient margin to meet required level, return the event passed as arg
+	low := []events.Margin{}
+	eventBatch := make([]events.Event, 0, len(evts))
+	// for now, we can assume a single asset for all events
+	asset := evts[0].Asset()
+	rFactors := *e.factors.RiskFactors[asset]
+	for _, evt := range evts {
+		levels := e.calculateAuctionMargins(evt, int64(price), rFactors)
+		if levels == nil {
+			continue
+		}
+		levels.PartyId = evt.Party()
+		levels.Asset = asset // This is assuming there's a single asset at play here
+		levels.Timestamp = e.currTime
+		levels.MarketId = e.mktID
+
+		curMargin := evt.MarginBalance()
+		if curMargin+evt.GeneralBalance() < levels.MaintenanceMargin {
+			low = append(low, evt)
+			continue
+		}
+		eventBatch = append(eventBatch, events.NewMarginLevelsEvent(ctx, *levels))
+		// trader has sufficient margin, no need to transfer funds
+		if curMargin >= levels.InitialMargin {
+			continue
+		}
+		minAmount := max(int64(levels.MaintenanceMargin)-int64(curMargin), 0)
+		t := &types.Transfer{
+			Owner: evt.Party(),
+			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+			Amount: &types.FinancialAmount{
+				Asset:  asset,
+				Amount: int64(levels.InitialMargin - curMargin), // we know curBalance is less than initial
+			},
+			MinAmount: minAmount,
+		}
+		revts = append(revts, &marginChange{
+			Margin:   evt,
+			transfer: t,
+			margins:  levels,
+		})
+	}
+	e.broker.SendBatch(eventBatch)
+	return revts, low, nil
+}
+
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
@@ -171,7 +223,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	var margins *types.MarginLevels
 	if !e.ob.InAuction() {
-		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
+		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 	} else {
 		margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
 	}
@@ -181,10 +233,10 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	// update other fields for the margins
-	margins.PartyID = evt.Party()
+	margins.PartyId = evt.Party()
 	margins.Asset = evt.Asset()
 	margins.Timestamp = e.currTime
-	margins.MarketID = e.mktID
+	margins.MarketId = e.mktID
 
 	curBalance := evt.MarginBalance()
 
@@ -241,7 +293,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
 		if !e.ob.InAuction() {
-			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true)
+			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
 		}
@@ -252,8 +304,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 		// update other fields for the margins
 		margins.Timestamp = e.currTime
-		margins.MarketID = e.mktID
-		margins.PartyID = evt.Party()
+		margins.MarketId = e.mktID
+		margins.PartyId = evt.Party()
 		margins.Asset = evt.Asset()
 
 		if e.log.GetLevel() == logging.DebugLevel {
@@ -330,7 +382,7 @@ func (e *Engine) ExpectMargins(
 	for _, evt := range evts {
 		var margins *types.MarginLevels
 		if !e.ob.InAuction() {
-			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false)
+			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
 		}

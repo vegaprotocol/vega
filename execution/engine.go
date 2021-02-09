@@ -283,13 +283,13 @@ func (e *Engine) removeMarket(mktid string) {
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
 func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(order.MarketID, "execution", "SubmitOrder")
+	timer := metrics.NewTimeCounter(order.MarketId, "execution", "SubmitOrder")
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Submit order", logging.Order(*order))
 	}
 
-	mkt, ok := e.markets[order.MarketID]
+	mkt, ok := e.markets[order.MarketId]
 	if !ok {
 		e.idgen.SetID(order)
 
@@ -304,7 +304,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	if order.Status == types.Order_STATUS_ACTIVE {
-		metrics.OrderGaugeAdd(1, order.MarketID)
+		metrics.OrderGaugeAdd(1, order.MarketId)
 	}
 
 	conf, err := mkt.SubmitOrder(ctx, order)
@@ -314,7 +314,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	if conf.Order.Status == types.Order_STATUS_FILLED {
-		metrics.OrderGaugeAdd(-1, order.MarketID)
+		metrics.OrderGaugeAdd(-1, order.MarketId)
 	}
 
 	timer.EngineTimeCounterAdd()
@@ -328,7 +328,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		e.log.Debug("Amend order", logging.OrderAmendment(orderAmendment))
 	}
 
-	mkt, ok := e.markets[orderAmendment.MarketID]
+	mkt, ok := e.markets[orderAmendment.MarketId]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -341,7 +341,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 	// order was active, not anymore -> decrement gauge
 	if conf.Order.Status != types.Order_STATUS_ACTIVE {
-		metrics.OrderGaugeAdd(-1, orderAmendment.MarketID)
+		metrics.OrderGaugeAdd(-1, orderAmendment.MarketId)
 	}
 	return conf, nil
 }
@@ -349,22 +349,22 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
 func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("Cancel order", logging.String("order-id", order.OrderID))
+		e.log.Debug("Cancel order", logging.String("order-id", order.OrderId))
 	}
 
 	// ensure that if orderID is specified marketId is as well
-	if len(order.OrderID) > 0 && len(order.MarketID) <= 0 {
+	if len(order.OrderId) > 0 && len(order.MarketId) <= 0 {
 		return nil, ErrInvalidOrderCancellation
 	}
 
-	if len(order.PartyID) > 0 {
-		if len(order.MarketID) > 0 {
-			if len(order.OrderID) > 0 {
-				return e.cancelOrder(ctx, order.PartyID, order.MarketID, order.OrderID)
+	if len(order.PartyId) > 0 {
+		if len(order.MarketId) > 0 {
+			if len(order.OrderId) > 0 {
+				return e.cancelOrder(ctx, order.PartyId, order.MarketId, order.OrderId)
 			}
-			return e.cancelOrderByMarket(ctx, order.PartyID, order.MarketID)
+			return e.cancelOrderByMarket(ctx, order.PartyId, order.MarketId)
 		}
-		return e.cancelAllPartyOrders(ctx, order.PartyID)
+		return e.cancelAllPartyOrders(ctx, order.PartyId)
 	}
 
 	return nil, ErrInvalidOrderCancellation
@@ -496,7 +496,7 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	for _, order := range expiringOrders {
 		order := order
 		evts = append(evts, events.NewOrderEvent(ctx, &order))
-		metrics.OrderGaugeAdd(-1, order.MarketID) // decrement gauge
+		metrics.OrderGaugeAdd(-1, order.MarketId) // decrement gauge
 	}
 	e.broker.SendBatch(evts)
 	timer.EngineTimeCounterAdd()
@@ -511,7 +511,7 @@ func (e *Engine) GetMarketData(mktid string) (types.MarketData, error) {
 }
 
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error {
-	mkt, ok := e.markets[sub.MarketID]
+	mkt, ok := e.markets[sub.MarketId]
 	if !ok {
 		return types.ErrInvalidMarketID
 	}
@@ -561,6 +561,13 @@ func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, v fl
 func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Duration) error {
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketValueWindowLengthUpdate(d)
+	}
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityProvidersFeeDistribitionTimeStep(_ context.Context, d time.Duration) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(d)
 	}
 	return nil
 }

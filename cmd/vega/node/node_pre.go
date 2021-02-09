@@ -30,6 +30,8 @@ import (
 	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
+	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -180,6 +182,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
 	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
 	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
+	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, true)
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
@@ -334,7 +337,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	for _, v := range l.mktscfg {
 		sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
 		if sym == assetD.Symbol {
-			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.ID
+			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
 		}
 	}
 
@@ -361,6 +364,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.topology,
 		l.nodeWallet,
 		l.netParams,
+		l.oracles,
 	)
 	if err != nil {
 		return nil, err
@@ -448,7 +452,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-		l.liquidityService)
+		l.liquidityService, l.marketUpdatedSub)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -489,6 +493,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
+	}
+
+	l.oracles = &processor.Oracles{
+		Engine:   oracles.NewEngine(),
+		Adaptors: oracleAdaptors.NewAdaptors(),
 	}
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
@@ -597,6 +606,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.BlockchainsEthereumConfig,
 			Watcher: l.nodeWallet.OnEthereumConfigUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Watcher: l.executionEngine.OnMarketLiquidityProvidersFeeDistribitionTimeStep,
 		},
 	)
 }

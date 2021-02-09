@@ -50,8 +50,8 @@ type Faucet struct {
 	stopCh chan struct{}
 
 	// node connections stuff
-	clt     api.TradingClient
-	cltdata api.TradingDataClient
+	clt     api.TradingServiceClient
+	cltdata api.TradingDataServiceClient
 	conn    *grpc.ClientConn
 }
 
@@ -78,8 +78,8 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		return nil, err
 	}
 
-	client := api.NewTradingClient(conn)
-	clientData := api.NewTradingDataClient(conn)
+	client := api.NewTradingServiceClient(conn)
+	clientData := api.NewTradingDataServiceClient(conn)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
@@ -158,8 +158,8 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 			Builtin: &types.BuiltinAssetEvent{
 				Action: &types.BuiltinAssetEvent_Deposit{
 					Deposit: &types.BuiltinAssetDeposit{
-						VegaAssetID: req.Asset,
-						PartyID:     req.Party,
+						VegaAssetId: req.Asset,
+						PartyId:     req.Party,
 						Amount:      req.Amount,
 					},
 				},
@@ -215,7 +215,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset string) error {
 	req := &api.AssetByIDRequest{
-		ID: asset,
+		Id: asset,
 	}
 	resp, err := f.cltdata.AssetByID(ctx, req)
 	if err != nil {

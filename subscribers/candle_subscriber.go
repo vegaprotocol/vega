@@ -91,7 +91,7 @@ func (c *CandleSub) Push(evts ...events.Event) {
 		switch te := e.(type) {
 		case TE:
 			trade := te.Trade()
-			mID := trade.MarketID
+			mID := trade.MarketId
 			if _, ok := c.buf[mID]; !ok {
 				c.buf[mID] = []types.Trade{}
 			}

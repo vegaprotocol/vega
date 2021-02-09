@@ -11,9 +11,9 @@ const maxOrderIDLen = 22
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "validateOrder")
-	if orderMessage.MarketID != b.marketID {
+	if orderMessage.MarketId != b.marketID {
 		b.log.Error("Market ID mismatch",
-			logging.String("market", orderMessage.MarketID),
+			logging.String("market", orderMessage.MarketId),
 			logging.String("order-book", b.marketID),
 			logging.Order(*orderMessage))
 		err = types.ErrInvalidMarketID
@@ -21,25 +21,25 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 		err = types.ErrInvalidType
 	} else if orderMessage.Remaining == 0 {
 		err = types.ErrInvalidRemainingSize
-	} else if orderMessage.TimeInForce == types.Order_TIF_GTT && orderMessage.ExpiresAt == 0 {
+	} else if orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTT && orderMessage.ExpiresAt == 0 {
 		// if order is GTT, validate timestamp and convert to block number
 		err = types.ErrInvalidExpirationDatetime
-	} else if len(orderMessage.PartyID) == 0 {
+	} else if len(orderMessage.PartyId) == 0 {
 		err = types.ErrInvalidPartyID
 	} else if orderMessage.Size == 0 {
 		err = types.ErrInvalidSize
 	} else if orderMessage.Remaining > orderMessage.Size {
 		err = types.ErrInvalidRemainingSize
-	} else if orderMessage.Type == types.Order_TYPE_NETWORK && orderMessage.TimeInForce != types.Order_TIF_FOK {
+	} else if orderMessage.Type == types.Order_TYPE_NETWORK && orderMessage.TimeInForce != types.Order_TIME_IN_FORCE_FOK {
 		err = types.ErrInvalidPersistence
-	} else if orderMessage.TimeInForce == types.Order_TIF_GTT && orderMessage.Type != types.Order_TYPE_LIMIT {
+	} else if orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTT && orderMessage.Type != types.Order_TYPE_LIMIT {
 		err = types.ErrInvalidPersistence
 	} else if orderMessage.Type == types.Order_TYPE_MARKET &&
-		(orderMessage.TimeInForce == types.Order_TIF_GTT || orderMessage.TimeInForce == types.Order_TIF_GTC) {
+		(orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTT || orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTC) {
 		err = types.ErrInvalidPersistence
-	} else if b.auction && orderMessage.TimeInForce == types.Order_TIF_GFN {
+	} else if b.auction && orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GFN {
 		err = types.ErrInvalidTimeInForce
-	} else if !b.auction && orderMessage.TimeInForce == types.Order_TIF_GFA {
+	} else if !b.auction && orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GFA {
 		err = types.ErrInvalidTimeInForce
 	} else if orderMessage.ExpiresAt > 0 && orderMessage.Type == types.Order_TYPE_MARKET {
 		err = types.ErrInvalidExpirationDatetime

@@ -26,13 +26,13 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	side := &OrderBookSide{side: types.Side_SIDE_SELL}
 	l := side.getPriceLevel(100)
 	order := &types.Order{
-		MarketID:    "testOrderBook",
-		PartyID:     "A",
+		MarketId:    "testOrderBook",
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 	}
 
@@ -57,25 +57,25 @@ func TestUncross(t *testing.T) {
 	side := &OrderBookSide{side: types.Side_SIDE_SELL}
 	l := side.getPriceLevel(100)
 	passiveOrder := &types.Order{
-		MarketID:    "testOrderBook",
-		PartyID:     "A",
+		MarketId:    "testOrderBook",
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 	}
 	l.addOrder(passiveOrder)
 
 	aggresiveOrder := &types.Order{
-		MarketID:    "testOrderBook",
-		PartyID:     "B",
+		MarketId:    "testOrderBook",
+		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
 		Price:       101,
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 	}
 	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)

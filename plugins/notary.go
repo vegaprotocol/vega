@@ -61,8 +61,8 @@ func (n *Notary) consume() {
 				return
 			}
 			n.mu.Lock()
-			sigs := n.sigs[sig.ID]
-			n.sigs[sig.ID] = append(sigs, sig)
+			sigs := n.sigs[sig.Id]
+			n.sigs[sig.Id] = append(sigs, sig)
 			n.mu.Unlock()
 		}
 	}

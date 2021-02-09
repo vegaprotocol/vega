@@ -20,15 +20,15 @@ func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
 }
 
 func (o Order) IsParty(id string) bool {
-	return (o.o.PartyID == id)
+	return (o.o.PartyId == id)
 }
 
 func (o Order) PartyID() string {
-	return o.o.PartyID
+	return o.o.PartyId
 }
 
 func (o Order) MarketID() string {
-	return o.o.MarketID
+	return o.o.MarketId
 }
 
 func (o *Order) Order() *types.Order {
@@ -42,7 +42,7 @@ func (o Order) Proto() types.Order {
 func (o Order) StreamMessage() *types.BusEvent {
 	cpy := o.o
 	return &types.BusEvent{
-		ID:    o.eventID(),
+		Id:    o.eventID(),
 		Block: o.TraceID(),
 		Type:  o.et.ToProto(),
 		Event: &types.BusEvent_Order{

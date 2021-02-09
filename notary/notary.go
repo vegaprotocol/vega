@@ -96,7 +96,7 @@ func (n *Notary) StartAggregate(resID string, kind types.NodeSignatureKind) erro
 }
 
 func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error) {
-	sigs, ok := n.sigs[idKind{ns.ID, ns.Kind}]
+	sigs, ok := n.sigs[idKind{ns.Id, ns.Kind}]
 	if !ok {
 		return nil, false, ErrUnknownResourceID
 	}
@@ -109,7 +109,7 @@ func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignatu
 	sigs[nodeSig{string(pubKey), string(ns.Sig)}] = struct{}{}
 	n.broker.Send(events.NewNodeSignatureEvent(ctx, ns))
 
-	sigsout, ok := n.IsSigned(ns.ID, ns.Kind)
+	sigsout, ok := n.IsSigned(ns.Id, ns.Kind)
 	return sigsout, ok, nil
 }
 
@@ -130,7 +130,7 @@ func (n *Notary) IsSigned(resID string, kind types.NodeSignatureKind) ([]types.N
 		if n.top.Exists([]byte(k.node)) {
 			sig[k.node] = struct{}{}
 			out = append(out, types.NodeSignature{
-				ID:   resID,
+				Id:   resID,
 				Kind: kind,
 				Sig:  []byte(k.sig),
 			})
@@ -150,7 +150,7 @@ func (n *Notary) SendSignature(ctx context.Context, id string, sig []byte, kind 
 		return nil
 	}
 	nsig := &types.NodeSignature{
-		ID:   id,
+		Id:   id,
 		Sig:  sig,
 		Kind: kind,
 	}

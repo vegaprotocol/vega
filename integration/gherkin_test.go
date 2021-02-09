@@ -77,7 +77,7 @@ func sideval(rows *gherkin.TableRow, idx int) proto.Side {
 }
 
 func tifval(rows *gherkin.TableRow, idx int) (proto.Order_TimeInForce, error) {
-	tif, ok := proto.Order_TimeInForce_value[rows.Cells[idx].Value]
+	tif, ok := proto.Order_TimeInForce_value[strings.ReplaceAll(rows.Cells[idx].Value, "TIF_", "TIME_IN_FORCE_")]
 	if !ok {
 		return proto.Order_TimeInForce(tif), fmt.Errorf("invalid time in force: %v", rows.Cells[idx].Value)
 	}

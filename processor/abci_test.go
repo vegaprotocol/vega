@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
@@ -63,33 +66,37 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 		proc.top,
 		proc.wallet,
 		proc.netp,
+		&processor.Oracles{
+			Engine:   proc.oracles.Engine,
+			Adaptors: proc.oracles.Adaptors,
+		},
 	)
 }
 
-func (s *AbciTestSuite) testProcessCommandSucess(t *testing.T, app *processor.App, proc *procTest) {
+func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.App, proc *procTest) {
 	pub, priv, err := s.sig.GenKey()
 	require.NoError(t, err)
 
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
 		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyID: party,
+			PartyId: party,
 		},
 		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyID: party,
+			PartyId: party,
 		},
 		// txn.AmendOrderCommand: &types.OrderAmendment{
-		// 	PartyID: party,
+		// 	PartyId: party,
 		// },
 		txn.ProposeCommand: &types.Proposal{
-			PartyID: party,
+			PartyId: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
 		},
 		txn.VoteCommand: &types.Vote{
-			PartyID: party,
+			PartyId: party,
 		},
 		// txn.WithdrawCommand: &types.Withdraw{
-		// 	PartyID: party,
+		// 	PartyId: party,
 		// },
 	}
 	zero := uint64(0)
@@ -209,7 +216,7 @@ func (s *AbciTestSuite) testOnCheckTxFailWithNoBalances(t *testing.T, app *proce
 	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
 	proc.bank.EXPECT().HasBalance(gomock.Any()).AnyTimes().Return(false)
 
-	tx := txStub{pubkey: []byte("some pubkey")}
+	tx := &txStub{pubkey: []byte("some pubkey")}
 	_, resp := app.OnCheckTx(context.Background(), tmtypes.RequestCheckTx{}, tx)
 	assert.Equal(t, resp.Code, uint32(51))
 }
@@ -218,9 +225,85 @@ func (s *AbciTestSuite) testOnCheckTxSuccessWithBalance(t *testing.T, app *proce
 	proc.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
 	proc.bank.EXPECT().HasBalance(gomock.Any()).AnyTimes().Return(true)
 
-	tx := txStub{pubkey: []byte("some pubkey")}
+	tx := &txStub{pubkey: []byte("some pubkey")}
 	_, resp := app.OnCheckTx(context.Background(), tmtypes.RequestCheckTx{}, tx)
 	assert.Equal(t, resp.Code, uint32(0))
+}
+
+func (s *AbciTestSuite) testCheckSubmitOracleDataSucceedsWithValidOracleData(t *testing.T, app *processor.App, proc *procTest) {
+	// given
+	data, _ := json.Marshal(map[string]string{"BTC": "42"})
+	tx := &txStub{
+		cmd:  txn.SubmitOrderCommand,
+		data: data,
+	}
+
+	// setup
+	proc.oracles.Adaptors.EXPECT().Normalise(gomock.Any()).Return(&oracles.OracleData{}, nil)
+
+	// when
+	err := app.CheckSubmitOracleData(context.Background(), tx)
+
+	// then
+	assert.NoError(t, err)
+}
+
+func (s *AbciTestSuite) testCheckSubmitOracleDataForwardErrorWithInvalidOracleData(t *testing.T, app *processor.App, proc *procTest) {
+	// given
+	data, _ := json.Marshal(map[string]string{"BTC": "42"})
+	tx := &txStub{
+		cmd:  txn.SubmitOrderCommand,
+		data: data,
+	}
+
+	// setup
+	errInvalidOracleData := errors.New("invalid oracle data")
+	proc.oracles.Adaptors.EXPECT().Normalise(gomock.Any()).Return(nil, errInvalidOracleData)
+
+	// when
+	err := app.CheckSubmitOracleData(context.Background(), tx)
+
+	// then
+	require.Error(t, err)
+	assert.Equal(t, errInvalidOracleData, err)
+}
+
+func (s *AbciTestSuite) testDeliverSubmitOracleDataBroadcastValidOracleData(t *testing.T, app *processor.App, proc *procTest) {
+	// given
+	data, _ := json.Marshal(map[string]string{"BTC": "42"})
+	tx := &txStub{
+		cmd:  txn.SubmitOrderCommand,
+		data: data,
+	}
+
+	// setup
+	proc.oracles.Adaptors.EXPECT().Normalise(gomock.Any()).Return(&oracles.OracleData{}, nil)
+	proc.oracles.Engine.EXPECT().BroadcastData(gomock.Any(), gomock.Any()).Times(1)
+
+	// when
+	err := app.DeliverSubmitOracleData(context.Background(), tx)
+
+	// then
+	assert.NoError(t, err)
+}
+
+func (s *AbciTestSuite) testDeliverSubmitOracleDataDoesNotBroadcastInvalidOracleData(t *testing.T, app *processor.App, proc *procTest) {
+	// given
+	data, _ := json.Marshal(map[string]string{"BTC": "42"})
+	tx := &txStub{
+		cmd:  txn.SubmitOrderCommand,
+		data: data,
+	}
+
+	// setup
+	proc.oracles.Adaptors.EXPECT().Normalise(gomock.Any()).Return(nil, errors.New("invalid oracle data"))
+	proc.oracles.Engine.EXPECT().BroadcastData(gomock.Any(), gomock.Any()).Times(0)
+
+	// when
+	err := app.DeliverSubmitOracleData(context.Background(), tx)
+
+	// then
+	assert.Error(t, err)
 }
 
 func TestAbci(t *testing.T) {
@@ -233,12 +316,26 @@ func TestAbci(t *testing.T) {
 		name string
 		fn   func(t *testing.T, app *processor.App, proc *procTest)
 	}{
-		{"Test all basic process commands - Success", s.testProcessCommandSucess},
+		{"Test all basic process commands - Success", s.testProcessCommandSuccess},
 
 		{"Call Begin and Commit - success", s.testBeginCommitSuccess},
 		{"Call Begin twice, only calls commander once", s.testBeginCallsCommanderOnce},
 		{"OnCheckTx fail with no balance", s.testOnCheckTxFailWithNoBalances},
 		{"OnCheckTx success with balance", s.testOnCheckTxSuccessWithBalance},
+		{
+			"DeliverSubmitOracleData broadcasts valid oracle data through oracle engine",
+			s.testDeliverSubmitOracleDataBroadcastValidOracleData,
+		}, {
+			"DeliverSubmitOracleData does not broadcast invalid oracle data through oracle engine",
+			s.testDeliverSubmitOracleDataDoesNotBroadcastInvalidOracleData,
+		},
+		{
+			"CheckSubmitOracleData succeeds with valid oracle data",
+			s.testCheckSubmitOracleDataSucceedsWithValidOracleData,
+		}, {
+			"CheckSubmitOracleData forward error with invalid oracle data",
+			s.testCheckSubmitOracleDataForwardErrorWithInvalidOracleData,
+		},
 	}
 
 	for _, test := range tests {
@@ -256,12 +353,14 @@ func TestAbci(t *testing.T) {
 
 type txStub struct {
 	pubkey []byte
+	data   []byte
+	cmd    txn.Command
 }
 
-func (txStub) Command() txn.Command        { return txn.SubmitOrderCommand }
-func (txStub) Unmarshal(interface{}) error { return nil }
-func (t txStub) PubKey() []byte            { return t.pubkey }
-func (txStub) Hash() []byte                { return nil }
-func (txStub) Signature() []byte           { return nil }
-func (txStub) Validate() error             { return nil }
-func (txStub) BlockHeight() uint64         { return 0 }
+func (tx *txStub) Command() txn.Command          { return tx.cmd }
+func (tx *txStub) Unmarshal(v interface{}) error { return json.Unmarshal(tx.data, v) }
+func (tx *txStub) PubKey() []byte                { return tx.pubkey }
+func (txStub) Hash() []byte                      { return nil }
+func (txStub) Signature() []byte                 { return nil }
+func (txStub) Validate() error                   { return nil }
+func (txStub) BlockHeight() uint64               { return 0 }

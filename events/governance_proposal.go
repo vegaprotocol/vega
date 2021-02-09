@@ -24,16 +24,16 @@ func (p *Proposal) Proposal() types.Proposal {
 
 // ProposalID - for combined subscriber, communal interface
 func (p *Proposal) ProposalID() string {
-	return p.p.ID
+	return p.p.Id
 }
 
 func (p Proposal) IsParty(id string) bool {
-	return (p.p.PartyID == id)
+	return (p.p.PartyId == id)
 }
 
 // PartyID - for combined subscriber, communal interface
 func (p *Proposal) PartyID() string {
-	return p.p.PartyID
+	return p.p.PartyId
 }
 
 func (p Proposal) Proto() types.Proposal {
@@ -42,7 +42,7 @@ func (p Proposal) Proto() types.Proposal {
 
 func (p Proposal) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    p.eventID(),
+		Id:    p.eventID(),
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
 		Event: &types.BusEvent_Proposal{

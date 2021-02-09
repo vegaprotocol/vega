@@ -11,7 +11,7 @@ var (
 
 func (c *ChainEvent) PrepareToSign() ([]byte, error) {
 	out := []byte{}
-	out = append(out, []byte(c.TxID)...)
+	out = append(out, []byte(c.TxId)...)
 	out = append(out, []byte(fmt.Sprintf("%v", c.Nonce))...)
 
 	var (
@@ -48,16 +48,16 @@ func (c *BuiltinAssetEvent) PrepareToSign() ([]byte, error) {
 
 func (c *BuiltinAssetDeposit) PrepareToSign() ([]byte, error) {
 	out := []byte{}
-	out = append(out, []byte(c.VegaAssetID)...)
-	out = append(out, []byte(c.PartyID)...)
+	out = append(out, []byte(c.VegaAssetId)...)
+	out = append(out, []byte(c.PartyId)...)
 	out = append(out, []byte(fmt.Sprintf("%v", c.Amount))...)
 	return out, nil
 }
 
 func (c *BuiltinAssetWithdrawal) PrepareToSign() ([]byte, error) {
 	out := []byte{}
-	out = append(out, []byte(c.VegaAssetID)...)
-	out = append(out, []byte(c.PartyID)...)
+	out = append(out, []byte(c.VegaAssetId)...)
+	out = append(out, []byte(c.PartyId)...)
 	out = append(out, []byte(fmt.Sprintf("%v", c.Amount))...)
 	return out, nil
 }
@@ -93,25 +93,25 @@ func (c *ERC20Event) PrepareToSign() ([]byte, error) {
 }
 
 func (c *ERC20AssetList) PrepareToSign() ([]byte, error) {
-	return []byte(c.VegaAssetID), nil
+	return []byte(c.VegaAssetId), nil
 }
 
 func (c *ERC20AssetDelist) PrepareToSign() ([]byte, error) {
-	return []byte(c.VegaAssetID), nil
+	return []byte(c.VegaAssetId), nil
 }
 
 func (c *ERC20Deposit) PrepareToSign() ([]byte, error) {
 	out := []byte{}
-	out = append(out, []byte(c.VegaAssetID)...)
+	out = append(out, []byte(c.VegaAssetId)...)
 	out = append(out, []byte(c.SourceEthereumAddress)...)
-	out = append(out, []byte(c.TargetPartyID)...)
+	out = append(out, []byte(c.TargetPartyId)...)
 	out = append(out, []byte(c.Amount)...)
 	return out, nil
 }
 
 func (c *ERC20Withdrawal) PrepareToSign() ([]byte, error) {
 	out := []byte{}
-	out = append(out, []byte(c.VegaAssetID)...)
+	out = append(out, []byte(c.VegaAssetId)...)
 	out = append(out, []byte(c.TargetEthereumAddress)...)
 	out = append(out, []byte(c.ReferenceNonce)...)
 	return out, nil

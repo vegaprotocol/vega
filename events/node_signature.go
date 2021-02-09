@@ -29,7 +29,7 @@ func (n NodeSignature) Proto() types.NodeSignature {
 
 func (n NodeSignature) StreamMessage() *types.BusEvent {
 	return &types.BusEvent{
-		ID:    n.eventID(),
+		Id:    n.eventID(),
 		Block: n.TraceID(),
 		Type:  n.et.ToProto(),
 		Event: &types.BusEvent_NodeSignature{

@@ -73,7 +73,7 @@ func (s *ProxyServer) Start() {
 	jsonPB := &JSONPb{
 		EmitDefaults: true,
 		Indent:       "  ", // formatted json output
-		OrigName:     true,
+		OrigName:     false,
 	}
 
 	mux := runtime.NewServeMux(
@@ -82,10 +82,10 @@ func (s *ProxyServer) Start() {
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := protoapi.RegisterTradingHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+	if err := protoapi.RegisterTradingServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
-	if err := protoapi.RegisterTradingDataHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+	if err := protoapi.RegisterTradingDataServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
 

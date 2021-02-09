@@ -21,13 +21,13 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 	side := getTestSide(types.Side_SIDE_SELL)
 	o := &types.Order{
 		Id:          "order1",
-		MarketID:    "testmarket",
-		PartyID:     "A",
+		MarketId:    "testmarket",
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 	// add the order to the side
 	side.addOrder(o)
@@ -35,13 +35,13 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 
 	o2 := &types.Order{
 		Id:          "order2",
-		MarketID:    "testmarket",
-		PartyID:     "C",
+		MarketId:    "testmarket",
+		PartyId:     "C",
 		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	// add the order to the side
@@ -120,13 +120,13 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 	side := getTestSide(types.Side_SIDE_SELL)
 	o := &types.Order{
 		Id:          "order1",
-		MarketID:    "testmarket",
-		PartyID:     "A",
+		MarketId:    "testmarket",
+		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 	// add the order to the side
 	side.addOrder(o)
@@ -134,13 +134,13 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 
 	o2 := &types.Order{
 		Id:          "order2",
-		MarketID:    "testmarket",
-		PartyID:     "C",
+		MarketId:    "testmarket",
+		PartyId:     "C",
 		Side:        types.Side_SIDE_SELL,
 		Price:       101,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
 	// add the order to the side
@@ -149,13 +149,13 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 
 	aggressiveOrder := &types.Order{
 		Id:          "order3",
-		MarketID:    "testmarket",
-		PartyID:     "X",
+		MarketId:    "testmarket",
+		PartyId:     "X",
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 	side.uncross(aggressiveOrder, true)
 	assert.Len(t, side.levels, 1)

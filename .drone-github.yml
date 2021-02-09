@@ -91,6 +91,7 @@ steps:
     commands:
       - failed=""
       - make staticcheck
+      - make buflint
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
           make retest || exit 1 ;
           for target in gqlgen_check print_check proto_check race vet ;
@@ -306,9 +307,7 @@ steps:
       api_key:
         from_secret: GITHUB_API_TOKEN
       files:
-        - cmd/dummyriskmodel/dummyriskmodel-*
         - cmd/vega/vega-*
-        - cmd/vegaccount/vegaccount-*
         - cmd/vegastream/vegastream-*
     when:
       event: tag

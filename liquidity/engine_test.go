@@ -2,6 +2,7 @@ package liquidity_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -73,7 +74,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 func TestSubmissions(t *testing.T) {
 	t.Run("CreateUpdateDelete", testSubmissionCRUD)
 	t.Run("CancelNonExisting", testCancelNonExistingSubmission)
-	t.Run("FailWhenNoShape", testSubmissionFailWhenNoShape)
+	t.Run("FailWhenWithoutBothShapes", testSubmissionFailWithoutBothShapes)
 }
 
 func testSubmissionCRUD(t *testing.T) {
@@ -103,28 +104,29 @@ func testSubmissionCRUD(t *testing.T) {
 	}
 
 	lps1 := &types.LiquidityProvisionSubmission{
-		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
 	lps2 := &types.LiquidityProvisionSubmission{
-		MarketID: tng.marketID, CommitmentAmount: 200, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: 200, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
 	lps3 := &types.LiquidityProvisionSubmission{
-		MarketID: tng.marketID, CommitmentAmount: 000, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: 000, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
 	expected := &types.LiquidityProvision{
 		Id:               "some-id-1",
-		MarketID:         tng.marketID,
-		PartyID:          party,
+		MarketId:         tng.marketID,
+		PartyId:          party,
+		Fee:              "0.5",
 		CommitmentAmount: lps1.CommitmentAmount,
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
-		Status:           types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_ACTIVE,
+		Status:           types.LiquidityProvision_STATUS_UNDEPLOYED,
 		Buys: []*types.LiquidityOrderReference{
 			{LiquidityOrder: buyShape[0]},
 		},
@@ -165,7 +167,7 @@ func testSubmissionCRUD(t *testing.T) {
 	// Submit with 0 CommitmentAmount amount should remove the LP and CANCEL it
 	// via event
 	expected.CommitmentAmount = 0
-	expected.Status = types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_CANCELLED
+	expected.Status = types.LiquidityProvision_STATUS_CANCELLED
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
@@ -175,6 +177,68 @@ func testSubmissionCRUD(t *testing.T) {
 	)
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID(party),
 		"Party '%s' should not be a LiquidityProvider after Committing 0 amount", party)
+}
+
+func TestInitialDeplyFailsWorksLater(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		now   = time.Now()
+		tng   = newTestEngine(t, now)
+	)
+	defer tng.ctrl.Finish()
+
+	// We don't care about the following calls
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	// Send a submission to create the shape
+	lps := &types.LiquidityProvisionSubmission{
+		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -2},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
+		},
+	}
+	require.NoError(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+	)
+
+	var (
+		markPrice = uint64(10)
+	)
+
+	fn := func(order *types.PeggedOrder) (uint64, error) {
+		return 0, errors.New("some error")
+	}
+
+	// Expecting no creates as repreiceFn returns an error
+	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, []*types.Order{}, fn)
+	require.NoError(t, err)
+	require.Len(t, creates, 0)
+
+	// Now repreiceFn works as expected, so initial orders should get created now
+	fn = func(order *types.PeggedOrder) (uint64, error) {
+		return markPrice + uint64(order.Offset), nil
+	}
+
+	// Expectations
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(0.0, 100.0).AnyTimes()
+	any := gomock.Any()
+	tng.riskModel.EXPECT().ProbabilityOfTrading(
+		any, any, any, any, any, any, any,
+	).AnyTimes().Return(0.5)
+	tng.idGen.EXPECT().SetID(gomock.Any()).Do(func(order *types.Order) {
+		order.Id = uuid.NewV4().String()
+	}).AnyTimes()
+
+	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, fn, []*types.Order{})
+	require.NoError(t, err)
+	require.Len(t, newOrders, 3)
+	require.Len(t, amendments, 0)
 }
 
 func testCancelNonExistingSubmission(t *testing.T) {
@@ -187,7 +251,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	defer tng.ctrl.Finish()
 
 	lps := &types.LiquidityProvisionSubmission{
-		MarketID:         tng.marketID,
+		MarketId:         tng.marketID,
 		CommitmentAmount: 0,
 		Buys: []*types.LiquidityOrder{
 			{
@@ -196,13 +260,20 @@ func testCancelNonExistingSubmission(t *testing.T) {
 				Proportion: 1,
 			},
 		},
+		Sells: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Offset:     1,
+				Proportion: 1,
+			},
+		},
 	}
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:        "some-id",
-		MarketID:  tng.marketID,
-		PartyID:   party,
+		MarketId:  tng.marketID,
+		PartyId:   party,
 		CreatedAt: now.UnixNano(),
-		Status:    types.LiquidityProvision_LIQUIDITY_PROVISION_STATUS_REJECTED,
+		Status:    types.LiquidityProvision_STATUS_REJECTED,
 	})
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
@@ -211,9 +282,10 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testSubmissionFailWhenNoShape(t *testing.T) {
+func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	var (
 		party = "party-1"
+		id    = "some-id"
 		ctx   = context.Background()
 		now   = time.Now()
 		tng   = newTestEngine(t, now)
@@ -223,11 +295,106 @@ func testSubmissionFailWhenNoShape(t *testing.T) {
 	// Expectations
 	lps := &types.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
+		MarketId:         tng.marketID,
+		Fee:              "0.1",
+		Buys: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Offset:     -1,
+				Proportion: 1,
+			},
+		},
 	}
 
+	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
+		Id:               id,
+		MarketId:         tng.marketID,
+		PartyId:          party,
+		CreatedAt:        now.UnixNano(),
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		Fee:              "0.1",
+		CommitmentAmount: 10,
+		Sells:            []*types.LiquidityOrderReference{},
+		Buys: []*types.LiquidityOrderReference{
+			{
+				LiquidityOrder: &types.LiquidityOrder{
+					Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+					Offset:     -1,
+					Proportion: 1,
+				},
+			},
+		},
+	})
+
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
+
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
+
+	lps = &types.LiquidityProvisionSubmission{
+		CommitmentAmount: 10,
+		MarketId:         tng.marketID,
+		Fee:              "0.2",
+		Sells: []*types.LiquidityOrder{
+			{
+				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Offset:     -1,
+				Proportion: 1,
+			},
+		},
+	}
+
+	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
+		Id:               id,
+		Fee:              "0.2",
+		MarketId:         tng.marketID,
+		PartyId:          party,
+		CreatedAt:        now.UnixNano(),
+		CommitmentAmount: 10,
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		Buys:             []*types.LiquidityOrderReference{},
+		Sells: []*types.LiquidityOrderReference{
+			{
+				LiquidityOrder: &types.LiquidityOrder{
+					Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+					Offset:     -1,
+					Proportion: 1,
+				},
+			},
+		},
+	})
+
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
+
+	require.Error(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+	)
+
+	lps = &types.LiquidityProvisionSubmission{
+		Fee:              "0.3",
+		CommitmentAmount: 10,
+		MarketId:         tng.marketID,
+	}
+
+	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
+		Id:               id,
+		MarketId:         tng.marketID,
+		Fee:              "0.3",
+		PartyId:          party,
+		CreatedAt:        now.UnixNano(),
+		CommitmentAmount: 10,
+		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		Buys:             []*types.LiquidityOrderReference{},
+		Sells:            []*types.LiquidityOrderReference{},
+	})
+
+	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
+
+	require.Error(t,
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+	)
+
 }
 
 func TestUpdate(t *testing.T) {
@@ -241,10 +408,11 @@ func TestUpdate(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
 	lps := &types.LiquidityProvisionSubmission{
-		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -2},
@@ -276,18 +444,18 @@ func TestUpdate(t *testing.T) {
 	}).AnyTimes()
 
 	orders := []*types.Order{
-		{Id: "1", PartyID: party, Price: 10, Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
-		{Id: "2", PartyID: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
+		{Id: "1", PartyId: party, Price: 10, Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
+		{Id: "2", PartyId: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, fn)
+	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, orders, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, amendments, err := tng.engine.Update(markPrice, fn, orders)
+	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 3)
@@ -297,7 +465,7 @@ func TestUpdate(t *testing.T) {
 		)
 	}
 
-	newOrders, amendments, err = tng.engine.Update(markPrice, fn, orders)
+	newOrders, amendments, err = tng.engine.Update(context.Background(), markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 0)
@@ -318,7 +486,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 
 	// Send a submission to create the shape
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketID: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 10, Offset: -2},
@@ -335,7 +503,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
 
 	lp2 := &types.LiquidityProvisionSubmission{
-		MarketID: tng.marketID, CommitmentAmount: 500, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: 500, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -3},
 		},
@@ -351,7 +519,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount, suppliedStake)
 
 	lp3 := &types.LiquidityProvisionSubmission{
-		MarketID: tng.marketID, CommitmentAmount: 962, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: 962, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -5},
 		},

@@ -78,7 +78,7 @@ type Orders []*types.Order
 func (ords Orders) ByParty() map[string][]*types.Order {
 	parties := map[string][]*types.Order{}
 	for _, order := range ords {
-		parties[order.PartyID] = append(parties[order.PartyID], order)
+		parties[order.PartyId] = append(parties[order.PartyId], order)
 	}
 	return parties
 }

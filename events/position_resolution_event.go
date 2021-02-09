@@ -48,7 +48,7 @@ func (p PosRes) Closed() int {
 
 func (p PosRes) Proto() types.PositionResolution {
 	return types.PositionResolution{
-		MarketID:   p.marketID,
+		MarketId:   p.marketID,
 		Closed:     int64(p.closed),
 		Distressed: int64(p.distressed),
 		MarkPrice:  p.markPrice,
@@ -57,7 +57,7 @@ func (p PosRes) Proto() types.PositionResolution {
 
 func (p PosRes) MarketProto() types.MarketEvent {
 	return types.MarketEvent{
-		MarketID: p.marketID,
+		MarketId: p.marketID,
 		Payload:  p.MarketEvent(),
 	}
 }
@@ -65,7 +65,7 @@ func (p PosRes) MarketProto() types.MarketEvent {
 func (p PosRes) StreamMessage() *types.BusEvent {
 	pr := p.Proto()
 	return &types.BusEvent{
-		ID:    p.eventID(),
+		Id:    p.eventID(),
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
 		Event: &types.BusEvent_PositionResolution{
@@ -77,7 +77,7 @@ func (p PosRes) StreamMessage() *types.BusEvent {
 func (p PosRes) StreamMarketMessage() *types.BusEvent {
 	msg := p.MarketProto()
 	return &types.BusEvent{
-		ID:   p.eventID(),
+		Id:   p.eventID(),
 		Type: types.BusEventType_BUS_EVENT_TYPE_MARKET,
 		Event: &types.BusEvent_Market{
 			Market: &msg,

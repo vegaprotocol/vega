@@ -171,15 +171,15 @@ func testPrepareVoteSuccess(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 	vote := types.Vote{
-		PartyID:    "party-1",
-		ProposalID: "prop-1",
+		PartyId:    "party-1",
+		ProposalId: "prop-1",
 		Value:      types.Vote_VALUE_YES,
 	}
 	v, err := svc.PrepareVote(&vote)
 	assert.NoError(t, err)
 	assert.Equal(t, vote.Value, v.Value)
-	assert.Equal(t, vote.PartyID, v.PartyID)
-	assert.Equal(t, vote.ProposalID, v.ProposalID)
+	assert.Equal(t, vote.PartyId, v.PartyId)
+	assert.Equal(t, vote.ProposalId, v.ProposalId)
 }
 
 func testPrepareVoteFail(t *testing.T) {
@@ -188,16 +188,16 @@ func testPrepareVoteFail(t *testing.T) {
 
 	data := map[string]types.Vote{
 		"Missing PartyID": {
-			ProposalID: "prop1",
+			ProposalId: "prop1",
 			Value:      types.Vote_VALUE_NO,
 		},
 		"Missing ProposalID": {
-			PartyID: "Party1",
+			PartyId: "Party1",
 			Value:   types.Vote_VALUE_YES,
 		},
 		"Invalid vote value": {
-			ProposalID: "prop1",
-			PartyID:    "party1",
+			ProposalId: "prop1",
+			PartyId:    "party1",
 			Value:      types.Vote_Value(213),
 		},
 	}
@@ -249,7 +249,7 @@ func testPrepareProposalNormal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
 	assert.NotEmpty(t, proposal.Reference, "reference expected to be auto-generated if empty")
-	assert.EqualValues(t, testAuthor, proposal.PartyID)
+	assert.EqualValues(t, testAuthor, proposal.PartyId)
 	assert.EqualValues(t, types.Proposal_STATE_OPEN, proposal.State)
 	assert.EqualValues(t, terms, *proposal.Terms)
 }

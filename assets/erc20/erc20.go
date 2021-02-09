@@ -51,7 +51,7 @@ func New(id string, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
 
 	return &ERC20{
 		asset: &types.Asset{
-			ID: id,
+			Id: id,
 			Source: &types.AssetSource{
 				Source: &types.AssetSource_Erc20{
 					Erc20: asset,
@@ -140,8 +140,8 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 			Type: typAddr,
 		},
 		{
-			Name: "uint256",
-			Type: typU256,
+			Name: "vega_asset_id",
+			Type: typAddr,
 		},
 		{
 			Name: "nonce",
@@ -158,7 +158,8 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 	addr := ethcmn.HexToAddress(b.address)
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), nonce, listAssetContractName}...)
+	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.Id)
+	buf, err := args.Pack([]interface{}{addr, vegaAssetIDBytes, nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -201,7 +202,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 
 	var resp string = "ok"
 	defer func() {
-		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
+		metrics.EthCallInc("validate_allowlist", b.asset.Id, resp)
 	}()
 
 	iter, err := bf.FilterAssetListed(
@@ -209,7 +210,6 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 			Start: blockNumber - 1,
 		},
 		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
-		[]*big.Int{},
 		[][32]byte{},
 	)
 
@@ -221,7 +221,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	defer iter.Close()
 	var event *bridge.BridgeAssetListed
 	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaId[:]) == w.VegaAssetID {
+		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == w.VegaAssetId {
 			event = iter.Event
 			break
 		}
@@ -276,10 +276,6 @@ func (b *ERC20) SignWithdrawal(
 			Type: typU256,
 		},
 		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
 			Name: "address",
 			Type: typAddr,
 		},
@@ -299,7 +295,7 @@ func (b *ERC20) SignWithdrawal(
 	// we use the withdrawRef as a nonce
 	// they are unique as generated as an increment from the banking
 	// layer
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(0), big.NewInt(int64(amount)), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
+	buf, err := args.Pack([]interface{}{addr, big.NewInt(int64(amount)), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -342,7 +338,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 
 	var resp string = "ok"
 	defer func() {
-		metrics.EthCallInc("validate_withdrawal", b.asset.ID, resp)
+		metrics.EthCallInc("validate_withdrawal", b.asset.Id, resp)
 	}()
 
 	iter, err := bf.FilterAssetWithdrawn(
@@ -352,8 +348,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		// user_address
 		[]ethcmn.Address{ethcmn.HexToAddress(w.TargetEthereumAddress)},
 		// asset_source
-		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
-		[]*big.Int{})
+		[]ethcmn.Address{ethcmn.HexToAddress(b.address)})
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
@@ -397,7 +392,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 
 	var resp string = "ok"
 	defer func() {
-		metrics.EthCallInc("validate_deposit", b.asset.ID, resp)
+		metrics.EthCallInc("validate_deposit", b.asset.Id, resp)
 	}()
 
 	iter, err := bf.FilterAssetDeposited(
@@ -407,8 +402,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		// user_address
 		[]ethcmn.Address{ethcmn.HexToAddress(d.SourceEthereumAddress)},
 		// asset_source
-		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
-		[]*big.Int{})
+		[]ethcmn.Address{ethcmn.HexToAddress(b.address)})
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
@@ -421,7 +415,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 	for iter.Next() {
 		// here the event queu send us a 0x... pubkey
 		// we do the slice operation to remove it ([2:]
-		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyID[2:] &&
+		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyId[2:] &&
 			iter.Event.Amount.Cmp(depamount) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
 			uint64(iter.Event.Raw.Index) == txIndex {
@@ -439,7 +433,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return "", "", "", 0, 0, err
 	}
 
-	return d.TargetPartyID, d.VegaAssetID, event.Raw.TxHash.Hex(), iter.Event.Amount.Uint64(), event.Raw.Index, nil
+	return d.TargetPartyId, d.VegaAssetId, event.Raw.TxHash.Hex(), iter.Event.Amount.Uint64(), event.Raw.Index, nil
 }
 
 func (b *ERC20) checkConfirmations(txBlock uint64) error {
@@ -458,7 +452,7 @@ func (b *ERC20) checkConfirmations(txBlock uint64) error {
 
 func (b *ERC20) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.ID, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
+		b.asset.Id, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
 		b.asset.Decimals)
 }
 

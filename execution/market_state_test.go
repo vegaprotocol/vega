@@ -48,7 +48,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// expect error
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 5000)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-A", 5, 5000)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	assert.Nil(t, o1conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
@@ -62,8 +62,8 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
 	amendment := &types.OrderAmendment{
-		OrderID:   o1.Id,
-		PartyID:   "trader-A",
+		OrderId:   o1.Id,
+		PartyId:   "trader-A",
 		Price:     &types.Price{Value: 4000},
 		SizeDelta: +10,
 	}
@@ -74,21 +74,21 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 
 	// but can place liqui submission
 	lpsub := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1,
 		Fee:              "0.1",
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
 				Proportion: 1,
-				Offset:     -1,
+				Offset:     1,
 			},
 		},
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
 				Proportion: 1,
-				Offset:     1,
+				Offset:     -1,
 			},
 		},
 	}
@@ -97,7 +97,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 
 	// we expect an error as this lp may be stupid
 	// but not equal to the trading not allowed one
-	assert.NotEqual(t, err.Error(), execution.ErrCommitmentSubmissionNotAllowed.Error())
+	assert.NoError(t, err)
 }
 
 func testCanMoveFromProposedToRejectedState(t *testing.T) {
@@ -175,7 +175,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// expect error
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIF_GTC, "Order01", types.Side_SIDE_BUY, "someparty", 5, 5000)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "someparty", 5, 5000)
 	o1conf, err := tm.market.SubmitOrder(context.Background(), o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)

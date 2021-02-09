@@ -539,9 +539,9 @@ func testEventTypeSubscription(t *testing.T) {
 	assert.NotEqual(t, k1, k2)
 	// send the TxErrEvent, a special case none of the subscribers ought to ever receive
 	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("random err"), "party-1", types.Vote{
-		PartyID:    "party-1",
+		PartyId:    "party-1",
 		Value:      types.Vote_VALUE_YES,
-		ProposalID: "prop-1",
+		ProposalId: "prop-1",
 	}))
 	// send the correct event
 	broker.Send(event)
@@ -589,9 +589,9 @@ func testTxErrNotAll(t *testing.T) {
 
 	// TxErrEvent
 	evt := events.NewTxErrEvent(broker.ctx, errors.New("some error"), "party-1", types.Vote{
-		PartyID:    "party-1",
+		PartyId:    "party-1",
 		Value:      types.Vote_VALUE_YES,
-		ProposalID: "prop-1",
+		ProposalId: "prop-1",
 	})
 	k1 := broker.Subscribe(sub)
 	k2 := broker.Subscribe(allSub)
@@ -602,9 +602,9 @@ func testTxErrNotAll(t *testing.T) {
 	broker.Send(evt)
 	// send a second event
 	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("some error 2"), "party-2", types.Vote{
-		PartyID:    "party-2",
+		PartyId:    "party-2",
 		Value:      types.Vote_VALUE_NO,
-		ProposalID: "prop-2",
+		ProposalId: "prop-2",
 	}))
 	// ensure the event was delivered
 	wg.Wait()

@@ -35,7 +35,7 @@ func (l *PriceLevel) reduceVolume(reduceBy uint64) {
 func (l *PriceLevel) getOrdersByParty(partyID string) []*types.Order {
 	ret := []*types.Order{}
 	for _, o := range l.orders {
-		if o.PartyID == partyID {
+		if o.PartyId == partyID {
 			ret = append(ret, o)
 		}
 	}
@@ -67,7 +67,7 @@ func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*ty
 	}
 
 	for _, order := range l.orders {
-		if order.PartyID == agg.PartyID {
+		if order.PartyId == agg.PartyId {
 			err = ErrWashTrade
 			return
 		}
@@ -111,7 +111,7 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 	for i, order := range l.orders {
 		// prevent wash trade
 		if checkWashTrades {
-			if order.PartyID == agg.PartyID {
+			if order.PartyId == agg.PartyId {
 				err = ErrWashTrade
 				break
 			}
@@ -197,12 +197,12 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 
 	return &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		MarketID:  agg.MarketID,
+		MarketId:  agg.MarketId,
 		Price:     pass.Price,
 		Size:      size,
 		Aggressor: agg.Side,
-		Buyer:     buyer.PartyID,
-		Seller:    seller.PartyID,
+		Buyer:     buyer.PartyId,
+		Seller:    seller.PartyId,
 		Timestamp: agg.CreatedAt,
 	}
 }
@@ -218,6 +218,6 @@ func (l PriceLevel) print(log *logging.Logger) {
 		}
 
 		log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
-			o.PartyID, side, o.Price, o.Size, o.Remaining, o.TimeInForce, o.CreatedAt, o.Id))
+			o.PartyId, side, o.Price, o.Size, o.Remaining, o.TimeInForce, o.CreatedAt, o.Id))
 	}
 }

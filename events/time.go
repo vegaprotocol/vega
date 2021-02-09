@@ -35,7 +35,7 @@ func (t Time) Proto() types.TimeUpdate {
 func (t Time) StreamMessage() *types.BusEvent {
 	p := t.Proto()
 	return &types.BusEvent{
-		ID:    t.eventID(),
+		Id:    t.eventID(),
 		Block: t.TraceID(),
 		Type:  t.et.ToProto(),
 		Event: &types.BusEvent_TimeUpdate{

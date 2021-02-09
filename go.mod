@@ -3,6 +3,7 @@ module code.vegaprotocol.io/vega
 go 1.14
 
 require (
+	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/quant v0.2.0
 	github.com/99designs/gqlgen v0.11.3
 	github.com/blang/semver v3.5.1+incompatible
@@ -13,10 +14,10 @@ require (
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/ethereum/go-ethereum v1.9.20
 	github.com/fatih/color v1.7.0
-	github.com/fsnotify/fsnotify v1.4.7
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/golang/mock v1.3.1
-	github.com/golang/protobuf v1.4.0
+	github.com/golang/protobuf v1.4.2
 	github.com/google/btree v1.0.0
 	github.com/google/protobuf v3.7.0+incompatible // indirect
 	github.com/gorilla/websocket v1.4.2

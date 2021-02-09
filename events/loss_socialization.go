@@ -50,8 +50,8 @@ func (l LossSoc) Timestamp() int64 {
 
 func (l LossSoc) Proto() types.LossSocialization {
 	return types.LossSocialization{
-		MarketID: l.marketID,
-		PartyID:  l.partyID,
+		MarketId: l.marketID,
+		PartyId:  l.partyID,
 		Amount:   l.amount,
 	}
 }
@@ -59,7 +59,7 @@ func (l LossSoc) Proto() types.LossSocialization {
 func (l LossSoc) StreamMessage() *types.BusEvent {
 	p := l.Proto()
 	return &types.BusEvent{
-		ID:    l.eventID(),
+		Id:    l.eventID(),
 		Block: l.TraceID(),
 		Type:  l.et.ToProto(),
 		Event: &types.BusEvent_LossSocialization{

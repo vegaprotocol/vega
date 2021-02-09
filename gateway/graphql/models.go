@@ -289,6 +289,16 @@ type LiquidityOrderInput struct {
 	Offset int `json:"offset"`
 }
 
+// The equity like share of liquidity fee for each liquidity provider
+type LiquidityProviderFeeShare struct {
+	// The liquidity provider party id
+	Party *proto.Party `json:"party"`
+	// The share own by this liquidity provider (float)
+	EquityLikeShare string `json:"equityLikeShare"`
+	// the average entry valuation of the liqidity provider for the market
+	AverageEntryValuation string `json:"averageEntryValuation"`
+}
+
 // Parameters for the log normal risk model
 type LogNormalModelParams struct {
 	// mu parameter
@@ -725,34 +735,6 @@ type Vote struct {
 
 func (Vote) IsEvent() {}
 
-// The details of a withdrawal processed by vega
-type Withdrawal struct {
-	// The Vega internal id of the withdrawal
-	ID string `json:"id"`
-	// The PartyID initiating the witndrawal
-	Party *proto.Party `json:"party"`
-	// The amount to be withdrawn
-	Amount string `json:"amount"`
-	// The asset to be withdrawn
-	Asset *Asset `json:"asset"`
-	// The current status of the withdrawal
-	Status WithdrawalStatus `json:"status"`
-	// A reference the foreign chain can use to refere to when processing the withdrawal
-	Ref string `json:"ref"`
-	// The time until when the withdrawal will be valid (RFC3339Nano)
-	Expiry string `json:"expiry"`
-	// Time at which the withdrawal was created (RFC3339Nano)
-	CreatedTimestamp string `json:"createdTimestamp"`
-	// Time at which the withdrawal was finalized (RFC3339Nano)
-	WithdrawnTimestamp *string `json:"withdrawnTimestamp"`
-	// Hash of the transaction on the foreign chain
-	TxHash *string `json:"txHash"`
-	// Foreign chain specific details about the withdrawal
-	Details WithdrawalDetails `json:"details"`
-}
-
-func (Withdrawal) IsEvent() {}
-
 // The various account types we have (used by collateral)
 type AccountType string
 
@@ -1094,6 +1076,8 @@ const (
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
 	// A liquidity provision was invalid and got rejected
 	LiquidityProvisionStatusRejected LiquidityProvisionStatus = "Rejected"
+	// The liquidity provision is valid and accepted by network, but oreders aren't deployed
+	LiquidityProvisionStatusUndeployed LiquidityProvisionStatus = "Undeployed"
 )
 
 var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
@@ -1101,11 +1085,12 @@ var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
 	LiquidityProvisionStatusStopped,
 	LiquidityProvisionStatusCancelled,
 	LiquidityProvisionStatusRejected,
+	LiquidityProvisionStatusUndeployed,
 }
 
 func (e LiquidityProvisionStatus) IsValid() bool {
 	switch e {
-	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected:
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected, LiquidityProvisionStatusUndeployed:
 		return true
 	}
 	return false

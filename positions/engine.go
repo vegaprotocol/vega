@@ -74,6 +74,26 @@ func (m MarketPosition) VWSell() uint64 {
 	return m.vwSellPrice
 }
 
+// I64MaxAbs - get max value based on absolute values of int64 vals
+// keep this function, perhaps we can reuse it in a numutil package
+// once we have to deal with decimals etc...
+func I64MaxAbs(vals ...int64) int64 {
+	var (
+		r, m int64
+	)
+	for _, v := range vals {
+		av := v
+		if av < 0 {
+			av *= -1
+		}
+		if av > m {
+			r = v
+			m = av // current max abs is av
+		}
+	}
+	return r
+}
+
 // Engine represents the positions engine
 type Engine struct {
 	log *logging.Logger
@@ -149,20 +169,28 @@ func (e *Engine) ReloadConf(cfg Config) {
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
-	pos, found := e.positions[order.PartyID]
+	pos, found := e.positions[order.PartyId]
 	if !found {
-		pos = &MarketPosition{partyID: order.PartyID}
-		e.positions[order.PartyID] = pos
+		pos = &MarketPosition{partyID: order.PartyId}
+		e.positions[order.PartyId] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	if order.Side == types.Side_SIDE_BUY {
 		// calculate vwBuyPrice: total worth of orders divided by total size
-		pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + order.Price*order.Remaining) / (uint64(pos.buy) + order.Remaining)
+		if buyVol := uint64(pos.buy) + order.Remaining; buyVol != 0 {
+			pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + order.Price*order.Remaining) / buyVol
+		} else {
+			pos.vwBuyPrice = 0
+		}
 		pos.buy += int64(order.Remaining)
 	} else {
 		// calculate vwSellPrice: total worth of orders divided by total size
-		pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + order.Price*order.Remaining) / (uint64(pos.sell) + order.Remaining)
+		if sellVol := uint64(pos.sell) + order.Remaining; sellVol != 0 {
+			pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + order.Price*order.Remaining) / sellVol
+		} else {
+			pos.vwSellPrice = 0
+		}
 		pos.sell += int64(order.Remaining)
 	}
 	timer.EngineTimeCounterAdd()
@@ -174,7 +202,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
 
-	pos, found := e.positions[order.PartyID]
+	pos, found := e.positions[order.PartyId]
 	if !found {
 		return nil, ErrPositionNotFound
 	}
@@ -205,7 +233,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
 	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
 
-	pos, found := e.positions[originalOrder.PartyID]
+	pos, found := e.positions[originalOrder.PartyId]
 	if !found {
 		// If we can't find the original, we can't amend it
 		err = ErrPositionNotFound
@@ -220,7 +248,6 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		} else {
 			pos.vwBuyPrice = 0
 		}
-		pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + newOrder.Price*newOrder.Remaining) / (uint64(pos.buy) + newOrder.Remaining)
 		pos.buy += int64(newOrder.Remaining)
 	} else {
 		vwap := pos.vwSellPrice*uint64(pos.sell) - originalOrder.Price*originalOrder.Remaining
@@ -230,7 +257,6 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		} else {
 			pos.vwSellPrice = 0
 		}
-		pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + newOrder.Price*newOrder.Remaining) / (uint64(pos.sell) + newOrder.Remaining)
 		pos.sell += int64(newOrder.Remaining)
 	}
 

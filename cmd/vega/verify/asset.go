@@ -22,10 +22,10 @@ func verifyAsset(r *reporter, bs []byte) string {
 		r.Warn("no proposal.reference specified")
 	}
 
-	if len(prop.PartyID) <= 0 {
+	if len(prop.PartyId) <= 0 {
 		r.Err("proposal.partyID is missing")
 	} else {
-		if !isValidParty(prop.PartyID) {
+		if !isValidParty(prop.PartyId) {
 			r.Warn("proposal.partyID does not seems to be a valid party ID")
 		}
 	}

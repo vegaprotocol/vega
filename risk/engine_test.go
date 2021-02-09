@@ -33,18 +33,19 @@ type testEngine struct {
 
 // implements the events.Margin interface
 type testMargin struct {
-	party    string
-	size     int64
-	buy      int64
-	sell     int64
-	price    uint64
-	transfer *types.Transfer
-	asset    string
-	margin   uint64
-	general  uint64
-	market   string
-	vwBuy    uint64
-	vwSell   uint64
+	party           string
+	size            int64
+	buy             int64
+	sell            int64
+	price           uint64
+	transfer        *types.Transfer
+	asset           string
+	margin          uint64
+	general         uint64
+	market          string
+	vwBuy           uint64
+	vwSell          uint64
+	marginShortFall uint64
 }
 
 var (
@@ -299,13 +300,13 @@ func testMarginWithOrderInBook(t *testing.T) {
 	for _, v := range ordersInBook {
 		o := &types.Order{
 			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
-			MarketID:    marketID,
-			PartyID:     "A",
+			MarketId:    marketID,
+			PartyId:     "A",
 			Side:        v.side,
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 			Type:        types.Order_TYPE_LIMIT,
 			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,
@@ -404,13 +405,13 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	for _, v := range ordersInBook {
 		o := &types.Order{
 			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
-			MarketID:    marketID,
-			PartyID:     "A",
+			MarketId:    marketID,
+			PartyId:     "A",
 			Side:        v.side,
 			Price:       uint64(v.price),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_TIF_GTT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 			Type:        types.Order_TYPE_LIMIT,
 			Status:      types.Order_STATUS_ACTIVE,
 			ExpiresAt:   10000,
@@ -536,4 +537,8 @@ func (m testMargin) ClearPotentials() {}
 
 func (m testMargin) Transfer() *types.Transfer {
 	return m.transfer
+}
+
+func (m testMargin) MarginShortFall() uint64 {
+	return m.marginShortFall
 }

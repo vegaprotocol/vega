@@ -14,21 +14,22 @@ const (
 func defaultNetParams() map[string]value {
 	return map[string]value{
 		// markets
-		MarketMarginScalingFactors:                    NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor()).Mutable(true).MustUpdate(`{"searchLevel": 1.1, "initialMargin": 1.2, "collateralRelease": 1.4}`),
-		MarketFeeFactorsMakerFee:                      NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00025"),
-		MarketFeeFactorsInfrastructureFee:             NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.0005"),
-		MarketFeeFactorsLiquidityFee:                  NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.001"),
-		MarketAuctionMinimumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
-		MarketAuctionMaximumDuration:                  NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
-		MarketInitialMarkPrice:                        NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
-		MarketLiquidityBondPenaltyParameter:           NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1"),
-		MarketLiquidityMaximumLiquidityFeeFactorLevel: NewFloat(FloatGT(0), FloatLTE(1)).Mutable(true).MustUpdate("1"),
-		MarketLiquidityStakeToCCYSiskas:               NewFloat(FloatGT(0)).Mutable(true).MustUpdate("1"),
-		MarketTargetStakeTimeWindow:                   NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
-		MarketTargetStakeScalingFactor:                NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("10"),
-		MarketValueWindowLength:                       NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
-		MarketPriceMonitoringDefaultParameters:        NewJSON(&proto.PriceMonitoringParameters{}, JSONProtoValidator()).Mutable(true).MustUpdate(`{"triggers": []}`),
-		MarketPriceMonitoringUpdateFrequency:          NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m0s"),
+		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor()).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
+		MarketFeeFactorsMakerFee:                        NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00025"),
+		MarketFeeFactorsInfrastructureFee:               NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.0005"),
+		MarketFeeFactorsLiquidityFee:                    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.001"),
+		MarketAuctionMinimumDuration:                    NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
+		MarketAuctionMaximumDuration:                    NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
+		MarketInitialMarkPrice:                          NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityBondPenaltyParameter:             NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityMaximumLiquidityFeeFactorLevel:   NewFloat(FloatGT(0), FloatLTE(1)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityStakeToCCYSiskas:                 NewFloat(FloatGT(0)).Mutable(true).MustUpdate("1"),
+		MarketLiquidityProvidersFeeDistribitionTimeStep: NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("0s"),
+		MarketTargetStakeTimeWindow:                     NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
+		MarketTargetStakeScalingFactor:                  NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("10"),
+		MarketValueWindowLength:                         NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
+		MarketPriceMonitoringDefaultParameters:          NewJSON(&proto.PriceMonitoringParameters{}, JSONProtoValidator()).Mutable(true).MustUpdate(`{"triggers": []}`),
+		MarketPriceMonitoringUpdateFrequency:            NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m0s"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -77,6 +78,6 @@ func defaultNetParams() map[string]value {
 		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
-			MustUpdate("{\"networkId\": \"XXX\", \"chainId\": \"XXX\", \"bridgeAddress\": \"0xXXX\", \"confirmations\": 3}"),
+			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3}"),
 	}
 }

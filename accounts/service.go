@@ -64,7 +64,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 }
 
 func (s *Svc) PrepareWithdraw(ctx context.Context, w *types.WithdrawSubmission) error {
-	if len(w.PartyID) <= 0 {
+	if len(w.PartyId) <= 0 {
 		return ErrMissingPartyID
 	}
 	if len(w.Asset) <= 0 {
@@ -87,8 +87,8 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
 		if acc.GetType() == types.AccountType_ACCOUNT_TYPE_GENERAL || acc.GetType() == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
-			if acc.GetMarketID() == "!" {
-				acc.MarketID = ""
+			if acc.GetMarketId() == "!" {
+				acc.MarketId = ""
 			}
 		}
 	}
@@ -117,8 +117,8 @@ func (s *Svc) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, erro
 		if acc.Owner == "*" {
 			acc.Owner = ""
 		}
-		if acc.MarketID == "!" {
-			acc.MarketID = ""
+		if acc.MarketId == "!" {
+			acc.MarketId = ""
 		}
 	}
 	return accounts, err
@@ -174,7 +174,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 				filtered := make([]*types.Account, 0, len(accs))
 				for _, acc := range accs {
 					acc := acc
-					if (len(marketID) <= 0 || marketID == acc.MarketID) &&
+					if (len(marketID) <= 0 || marketID == acc.MarketId) &&
 						(len(partyID) <= 0 || partyID == acc.Owner) &&
 						(len(asset) <= 0 || asset == acc.Asset) &&
 						(ty == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED || ty == acc.Type) {

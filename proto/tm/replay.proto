@@ -1,33 +1,33 @@
 syntax = "proto3";
 
-package vega;
+package tm;
 option go_package = "code.vegaprotocol.io/vega/tm";
 
 message TmEvent {
-  oneof Action {
-    RequestInitChain reqInitChain = 1;
-    ResponseInitChain resInitChain = 2;
-    RequestDeliverTx reqDeliverTx = 3;
-    ResponseDeliverTx resDeliverTx = 4;
-    RequestBeginBlock reqBeginBlock = 5;
-    ResponseBeginBlock resBeginBlock = 6;
+  oneof action {
+    RequestInitChain req_init_chain = 1;
+    ResponseInitChain res_init_chain = 2;
+    RequestDeliverTx req_deliver_tx = 3;
+    ResponseDeliverTx res_deliver_tx = 4;
+    RequestBeginBlock req_begin_block = 5;
+    ResponseBeginBlock res_begin_block = 6;
   }
 }
 
 message RequestInitChain {
   int64 time = 1;
-  string chainID = 2;
-  ConsensusParams consensusParams = 3;
+  string chain_id = 2;
+  ConsensusParams consensus_params = 3;
   repeated ValidatorUpdate validators = 4;
-  bytes appStateBytes = 5;
-  int64 initialHeight = 6;
+  bytes app_state_bytes = 5;
+  int64 initial_height = 6;
 }
 
 message RequestBeginBlock {
   bytes hash = 1;
   Header header = 2;
-  LastCommitInfo lastCommitInfo = 3;
-  repeated Evidence byzantineValidators = 4;
+  LastCommitInfo last_commit_info = 3;
+  repeated Evidence byzantine_validators = 4;
 }
 
 message RequestDeliverTx {
@@ -35,9 +35,9 @@ message RequestDeliverTx {
 }
 
 message ResponseInitChain {
-  ConsensusParams consensusParams = 1;
+  ConsensusParams consensus_params = 1;
   repeated ValidatorUpdate validators = 2;
-  bytes appHash = 3;
+  bytes app_hash = 3;
 }
 
 message ResponseBeginBlock {
@@ -49,8 +49,8 @@ message ResponseDeliverTx {
   bytes data = 2;
   string log = 3;  // nondeterministic
   string info = 4;  // nondeterministic
-  int64 gasWanted = 5;
-  int64 gasUsed = 6;
+  int64 gas_wanted = 5;
+  int64 gas_used = 6;
   repeated Event events = 7;
   string codespace = 8;
 }
@@ -79,8 +79,8 @@ message ConsensusParams {
 }
 
 message BlockParams {
-  int64 maxBytes = 1;
-  int64 maxGas = 2;
+  int64 max_bytes = 1;
+  int64 max_gas = 2;
 }
 
 message Evidence {
@@ -88,7 +88,7 @@ message Evidence {
   Validator validator = 2;
   int64 height = 3;
   int64 time = 4;
-  int64 totalVotingPower = 5;
+  int64 total_voting_power = 5;
 }
 
 enum EvidenceType {
@@ -109,25 +109,25 @@ message LastCommitInfo {
 
 message VoteInfo {
   Validator validator = 1;
-  bool signedLastBlock = 2;
+  bool signed_last_block = 2;
 }
 
 message EvidenceParams {
-  int64 maxAgeNumBlocks = 1;
-  int64 maxAgeDuration = 2;
+  int64 max_age_num_blocks = 1;
+  int64 max_age_duration = 2;
   uint32 max_num = 3;
 }
 
 message ValidatorParams {
-  repeated string pubKeyTypes = 1;
+  repeated string pub_key_types = 1;
 }
 
 message VersionParams {
-  uint64 appVersion = 1;
+  uint64 app_version = 1;
 }
 
 message Header {
-  string chainId = 1;
+  string chain_id = 1;
   int64 height = 2;
   int64 time = 3;
 }

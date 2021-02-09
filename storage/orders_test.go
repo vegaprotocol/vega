@@ -54,8 +54,8 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 
 	var order = types.Order{
 		Id:       "45305210ff7a9bb9450b1833cc10368a",
-		MarketID: "testMarket",
-		PartyID:  "testParty",
+		MarketId: "testMarket",
+		PartyId:  "testParty",
 	}
 
 	err = orderStore.SaveBatch([]types.Order{order})
@@ -80,8 +80,8 @@ func TestStorage_PostAndGetByReference(t *testing.T) {
 	var order = types.Order{
 		Reference: "83cfdf76-8eac-4c7e-8f6a-2aa51e89364f",
 		Id:        "45305210ff7a9bb9450b1833cc10368a",
-		MarketID:  "testMarket",
-		PartyID:   "testParty",
+		MarketId:  "testMarket",
+		PartyId:   "testParty",
 	}
 
 	err = orderStore.SaveBatch([]types.Order{order})
@@ -113,20 +113,20 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "d41d8cd98f00b204e9800998ecf8427e",
-					MarketID: "testMarket1",
-					PartyID:  testParty,
+					MarketId: "testMarket1",
+					PartyId:  testParty,
 				},
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "ad2dc275947362c45893bbeb30fc3098",
-					MarketID: "marketZ",
-					PartyID:  testParty,
+					MarketId: "marketZ",
+					PartyId:  testParty,
 				},
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "4e8e41367997cfe705d62ea80592cbcc",
-					MarketID: "testMarket1",
-					PartyID:  testParty,
+					MarketId: "testMarket1",
+					PartyId:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -139,20 +139,20 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "d41d8cd98f00b204e9800998ecf8427e",
-					MarketID: testMarket,
-					PartyID:  testParty,
+					MarketId: testMarket,
+					PartyId:  testParty,
 				},
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "ad2dc275947362c45893bbeb30fc3098",
-					MarketID: "marketABC",
-					PartyID:  testParty,
+					MarketId: "marketABC",
+					PartyId:  testParty,
 				},
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "4e8e41367997cfe705d62ea80592cbcc",
-					MarketID: testMarket,
-					PartyID:  testParty,
+					MarketId: testMarket,
+					PartyId:  testParty,
 				},
 			},
 			inLimit:        5000,
@@ -165,20 +165,20 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "d41d8cd98f00b204e9800998ecf8427e",
-					MarketID: "marketXYZ",
-					PartyID:  testParty,
+					MarketId: "marketXYZ",
+					PartyId:  testParty,
 				},
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "ad2dc275947362c45893bbeb30fc3098",
-					MarketID: "marketXYZ",
-					PartyID:  testParty,
+					MarketId: "marketXYZ",
+					PartyId:  testParty,
 				},
 				{
 					Status:   types.Order_STATUS_ACTIVE,
 					Id:       "4e8e41367997cfe705d62ea80592cbcc",
-					MarketID: "marketXYZ",
-					PartyID:  testParty,
+					MarketId: "marketXYZ",
+					PartyId:  testParty,
 				},
 			},
 			inLimit:        2,
@@ -223,16 +223,16 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	passiveOrder := types.Order{
 		Status:    types.Order_STATUS_ACTIVE,
 		Id:        "d41d8cd98f00b204e9800998ecf9999e",
-		MarketID:  testMarket,
-		PartyID:   testPartyA,
+		MarketId:  testMarket,
+		PartyId:   testPartyA,
 		Remaining: 0,
 	}
 
 	aggressiveOrder := types.Order{
 		Status:    types.Order_STATUS_ACTIVE,
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-		MarketID:  testMarket,
-		PartyID:   testPartyB,
+		MarketId:  testMarket,
+		PartyId:   testPartyB,
 		Remaining: 100,
 	}
 
@@ -260,8 +260,8 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 	// update order, parties should also be updated as its a pointer
 	updatedAggressiveOrder := types.Order{
 		Id:        "d41d8cd98f00b204e9800998ecf8427e",
-		MarketID:  testMarket,
-		PartyID:   testPartyB,
+		MarketId:  testMarket,
+		PartyId:   testPartyB,
 		Remaining: 0,
 	}
 
@@ -287,13 +287,13 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 
 	order := &types.Order{
 		Id:          "d41d8cd98f00b204e9800998ecf8427b",
-		MarketID:    testMarket,
-		PartyID:     testPartyA,
+		MarketId:    testMarket,
+		PartyId:     testPartyA,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1000,
 		Remaining:   0,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   0,
 		Status:      types.Order_STATUS_ACTIVE,
 		Reference:   "123123-34334343-1231231",
@@ -324,12 +324,12 @@ func TestStorage_GetOrderByID(t *testing.T) {
 	id := "ALA-MA-KOTA"
 	order := &types.Order{
 		Id:          id,
-		MarketID:    testMarket,
-		PartyID:     testPartyA,
+		MarketId:    testMarket,
+		PartyId:     testPartyA,
 		Side:        types.Side_SIDE_BUY,
 		Price:       100,
 		Size:        1000,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 	}
 
@@ -374,12 +374,12 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 
 	orderV1 := &types.Order{
 		Id:          id,
-		MarketID:    testMarket,
-		PartyID:     testPartyA,
+		MarketId:    testMarket,
+		PartyId:     testPartyA,
 		Side:        types.Side_SIDE_BUY,
 		Price:       1,
 		Size:        1,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Version:     version,
 	}
@@ -395,23 +395,23 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 
 	differentOrder := &types.Order{
 		Id:          "d41d8cd98f00b204e9800998ecf8427c",
-		MarketID:    testMarket,
-		PartyID:     testPartyA,
+		MarketId:    testMarket,
+		PartyId:     testPartyA,
 		Side:        types.Side_SIDE_SELL,
 		Price:       222,
 		Size:        222,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Version:     execution.InitialOrderVersion,
 	}
 	anotherOrder := &types.Order{
 		Id:          "000000000000000000000000000000",
-		MarketID:    testMarket,
-		PartyID:     testPartyA,
+		MarketId:    testMarket,
+		PartyId:     testPartyA,
 		Side:        types.Side_SIDE_SELL,
 		Price:       222,
 		Size:        222,
-		TimeInForce: types.Order_TIF_GTC,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Version:     execution.InitialOrderVersion,
 	}
