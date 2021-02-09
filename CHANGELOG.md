@@ -9,11 +9,11 @@ Many of the fixes below relate to Liquidity Commitments, which are still disable
 This release does improve protocol documentation, with all missing fields filled in and the explanations for Pegged Orders expanded. Two crashers have been fixed, although the first is already live as hotfix on testnet, and the other is in functionality that is not yet enabled.
 
 # Improvements
-- [#2879](https://github.com/vegaprotocol/vega/pull/2879) - Update all the protobuf files with buf recommandations
+- [#2879](https://github.com/vegaprotocol/vega/pull/2879) - Update all the protobuf files with Buf recommendations
 - [#2847](https://github.com/vegaprotocol/vega/issues/2847) - Improve proto documentation, in particular for pegged orders
 - [#2905](https://github.com/vegaprotocol/vega/issues/2905) - Update `vega verify` command to verify genesis block files
 - [#2851](https://github.com/vegaprotocol/vega/issues/2851) - Enable distribution of liquidity fees to liquidity providers
-- [#2871](https://github.com/vegaprotocol/vega/issues/2871) - Add submitOracleData command
+- [#2871](https://github.com/vegaprotocol/vega/issues/2871) - Add `submitOracleData` command
 - [#2887](https://github.com/vegaprotocol/vega/issues/2887) - Add Open Oracle data processing & data normalisation
 - [#2915](https://github.com/vegaprotocol/vega/issues/2915) - Add Liquidity Commitments to API responses
 

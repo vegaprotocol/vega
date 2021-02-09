@@ -1,6 +1,7 @@
 # markdown-spellcheck spelling configuration file
 ABI
 ABIs
+a.k.a
 allowlist
 allowlisted
 api
@@ -19,13 +20,16 @@ enums
 ERC20
 Ethereum
 faucet
+fix-a-thon
 github
 GitLab
 Golang
 GraphQL
 gRPC
+hotfix
 Ilya
 init
+lifecycle
 MacOSX
 MarkToMarket
 multisig
