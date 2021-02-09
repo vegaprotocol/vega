@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/pkg/errors"
 )
 
@@ -33,31 +34,28 @@ var (
 	ErrRiskParametersNotSupported = errors.New("risk model parameters are not supported")
 	// ErrMissingRiskParameters ...
 	ErrMissingRiskParameters = errors.New("missing risk parameters")
+
+	// ErrMissingOracleSpec is return when the oracle spec is absent.
+	ErrMissingOracleSpec = errors.New("missing oracle spec")
 )
 
 func assignProduct(
-	netp NetParams,
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
 ) error {
-
 	switch product := source.Product.(type) {
 	case *types.InstrumentConfiguration_Future:
+		if product.Future.OracleSpec == nil {
+			return ErrMissingOracleSpec;
+		}
+
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				SettlementAsset: product.Future.SettlementAsset,
-				QuoteName:       product.Future.QuoteName,
-				Maturity:        product.Future.Maturity,
-				Oracle: &types.Future_EthereumEvent{
-					// FIXME(): this should probably disapear / be removed
-					// or take another forms.
-					// it's totally unused as of now, so it does not matter
-					EthereumEvent: &types.EthereumEvent{
-						ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-						Event:      "price_changed",
-						Value:      1500000,
-					},
-				},
+				Maturity:          product.Future.Maturity,
+				SettlementAsset:   product.Future.SettlementAsset,
+				QuoteName:         product.Future.QuoteName,
+				OracleSpec:        product.Future.OracleSpec.ToOracleSpec(),
+				OracleSpecBinding: product.Future.OracleSpecBinding,
 			},
 		}
 	default:
@@ -87,17 +85,17 @@ func createInstrument(
 	input *types.InstrumentConfiguration,
 	tags []string,
 ) (*types.Instrument, error) {
-	intialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
+	initialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
 	result := &types.Instrument{
 		Name: input.Name,
 		Code: input.Code,
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
 		},
-		InitialMarkPrice: uint64(intialMarkPrice),
+		InitialMarkPrice: uint64(initialMarkPrice),
 	}
 
-	if err := assignProduct(netp, input, result); err != nil {
+	if err := assignProduct(input, result); err != nil {
 		return nil, err
 	}
 	return result, nil

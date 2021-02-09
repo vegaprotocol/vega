@@ -103,6 +103,8 @@ var (
 	ErrMissingProposalReference = errors.New("failed to find proposal with the reference")
 	// ErrMissingWithdrawalID is returned when the ID is missing from the request
 	ErrMissingWithdrawalID = errors.New("missing withdrawal ID")
+	// ErrMissingOracleSpecID is returned when the ID is missing from the request
+	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
 	// ErrMissingDepositID is returned when the ID is missing from the request
 	ErrMissingDepositID = errors.New("missing deposit ID")
 )

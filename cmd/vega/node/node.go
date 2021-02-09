@@ -32,6 +32,8 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -126,6 +128,7 @@ type NodeCommand struct {
 	feeService        *fee.Svc
 	eventService      *subscribers.Service
 	netParamsService  *netparams.Service
+	oracleService     *oracles.Service
 
 	abciServer       *abci.Server
 	blockchainClient *blockchain.Client
@@ -140,7 +143,8 @@ type NodeCommand struct {
 	executionEngine *execution.Engine
 	governance      *governance.Engine
 	collateral      *collateral.Engine
-	oracles         *processor.Oracles
+	oracle          *oracles.Engine
+	oracleAdaptors  *adaptors.Adaptors
 	netParams       *netparams.Store
 
 	mktscfg []types.Market
@@ -233,6 +237,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.assetService,
 		l.feeService,
 		l.eventService,
+		l.oracleService,
 		l.withdrawalPlugin,
 		l.depositPlugin,
 		l.marketDepthSub,

@@ -2,6 +2,7 @@ package governance_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -12,9 +13,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -981,6 +982,21 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 							Maturity:        "2030-06-30T22:59:59Z",
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
+							OracleSpec: &oraclesv1.OracleSpecConfiguration{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "prices.ETH.value",
+											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
+							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+								SettlementPriceProperty: "prices.ETH.value",
+							},
 						},
 					},
 				},

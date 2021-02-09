@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -166,6 +167,14 @@ type WithdrawalService interface {
 	GetByParty(party string, openOnly bool) []types.Withdrawal
 }
 
+// OracleService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_service_mock.go -package mocks code.vegaprotocol.io/vega/api  OracleService
+type OracleService interface {
+	GetSpecByID(id string) (oraclespb.OracleSpec, error)
+	GetSpecs() []oraclespb.OracleSpec
+	GetOracleDataBySpecID(string) ([]oraclespb.OracleData, error)
+}
+
 // Deposit ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/deposit_service_mock.go -package mocks code.vegaprotocol.io/vega/api  DepositService
 type DepositService interface {
@@ -222,7 +231,9 @@ type tradingDataService struct {
 	MarketDepthService      *subscribers.MarketDepthBuilder
 	NetParamsService        NetParamsService
 	LiquidityService        LiquidityService
-	ctx                     context.Context
+	oracleService           OracleService
+
+	ctx context.Context
 
 	chainID                  string
 	genesisTime              time.Time
@@ -376,6 +387,52 @@ func (t *tradingDataService) Withdrawals(ctx context.Context, req *protoapi.With
 	}
 	return &protoapi.WithdrawalsResponse{
 		Withdrawals: out,
+	}, nil
+}
+
+func (t *tradingDataService) OracleSpec(_ context.Context, req *protoapi.OracleSpecRequest) (*protoapi.OracleSpecResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("OracleSpec")()
+	if len(req.Id) <= 0 {
+		return nil, ErrMissingOracleSpecID
+	}
+	spec, err := t.oracleService.GetSpecByID(req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	return &protoapi.OracleSpecResponse{
+		OracleSpec: &spec,
+	}, nil
+}
+
+func (t *tradingDataService) OracleSpecs(_ context.Context, _ *protoapi.OracleSpecsRequest) (*protoapi.OracleSpecsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("OracleSpecs")()
+	specs := t.oracleService.GetSpecs()
+	out := make([]*oraclespb.OracleSpec, 0, len(specs))
+	for _, v := range specs {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.OracleSpecsResponse{
+		OracleSpecs: out,
+	}, nil
+}
+
+func (t *tradingDataService) OracleDataBySpec(_ context.Context, req *protoapi.OracleDataBySpecRequest) (*protoapi.OracleDataBySpecResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("OracleDataBySpec")()
+	if len(req.Id) <= 0 {
+		return nil, ErrMissingOracleSpecID
+	}
+	data, err := t.oracleService.GetOracleDataBySpecID(req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	out := make([]*oraclespb.OracleData, 0, len(data))
+	for _, v := range data {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.OracleDataBySpecResponse{
+		OracleData: out,
 	}, nil
 }
 

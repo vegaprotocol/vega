@@ -3,8 +3,11 @@ Feature: Regression test for issue 596
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu |     r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading |
-      | ETH/DEC19 | ETH      | BTC       | BTC   |        94 | simple     |        0.2 |      0.1 |  0 | 0.016 |   2.0 |              5 |              4 |           3.2 |              42 | 0           | continuous   |        0 |                 0 |            0 |                 0  |                |             |                 | 0.1             |
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r     | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
+      | ETH/DEC19 | ETH      | BTC       | BTC   | 94        | simple     | 0.2       | 0.1       | 0  | 0.016 | 2.0   | 5              | 4              | 3.2           | 42              | 0           | continuous   | 0        | 0                 | 0            | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+    And oracles broadcast data signed with "0xDEADBEEF":
+      | name             | value |
+      | prices.ETH.value | 42   |
 
   Scenario: Traded out position but monies left in margin account
 # setup accounts

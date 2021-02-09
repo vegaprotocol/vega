@@ -156,3 +156,11 @@ http:
       get: '/statistics'
     - selector: api.v1.TradingDataService.GetVegaTime
       get: '/time'
+
+    # oracles
+    - selector: api.v1.TradingDataService.OracleSpec
+      get: '/oracle-specs/{id}'
+    - selector: api.v1.TradingDataService.OracleDataBySpec
+      get: '/oracle-specs/{id}/oracle-data'
+    - selector: api.v1.TradingDataService.OracleSpecs
+      get: '/oracle-specs'

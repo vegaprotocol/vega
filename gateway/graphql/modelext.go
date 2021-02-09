@@ -1,11 +1,12 @@
 package gql
 
 import (
+	"errors"
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"github.com/pkg/errors"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
 var (
@@ -15,16 +16,10 @@ var (
 	ErrAmbiguousTradingMode = errors.New("more than one trading mode selected")
 	// ErrUnimplementedTradingMode ...
 	ErrUnimplementedTradingMode = errors.New("unimplemented trading mode")
-	// ErrNilOracle ..
-	ErrNilOracle = errors.New("nil oracle")
-	// ErrUnimplementedOracle ...
-	ErrUnimplementedOracle = errors.New("unimplemented oracle")
 	// ErrNilProduct ...
 	ErrNilProduct = errors.New("nil product")
 	// ErrNilRiskModel ...
 	ErrNilRiskModel = errors.New("nil risk model")
-	// ErrNilEthereumEvent ...
-	ErrNilEthereumEvent = errors.New("nil ethereum event")
 	// ErrInvalidChange ...
 	ErrInvalidChange = errors.New("nil update market, new market and update network")
 	// ErrNilAssetSource returned when an asset source is not specified at creation
@@ -124,32 +119,6 @@ func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	}
 }
 
-// EthereumEventFromProto ...
-func EthereumEventFromProto(pee *types.EthereumEvent) (*EthereumEvent, error) {
-	if pee == nil {
-		return nil, ErrNilEthereumEvent
-	}
-
-	return &EthereumEvent{
-		ContractID: pee.ContractId,
-		Event:      pee.Event,
-	}, nil
-}
-
-// OracleFromProto ...
-func OracleFromProto(o interface{}) (Oracle, error) {
-	if o == nil {
-		return nil, ErrNilOracle
-	}
-
-	switch oimpl := o.(type) {
-	case *types.Future_EthereumEvent:
-		return EthereumEventFromProto(oimpl.EthereumEvent)
-	default:
-		return nil, ErrUnimplementedOracle
-	}
-}
-
 func PriceMonitoringTriggerFromProto(ppmt *types.PriceMonitoringTrigger) *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		HorizonSecs:          int(ppmt.Horizon),
@@ -214,17 +183,111 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 			return nil, errors.New("FutureProduct.Maturity: string cannot be empty")
 		}
 
+		spec, err := i.FutureProduct.OracleSpec.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+
+		binding, err := i.FutureProduct.OracleSpecBinding.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+
 		result.Product = &types.InstrumentConfiguration_Future{
 			Future: &types.FutureProduct{
-				SettlementAsset: i.FutureProduct.SettlementAsset,
-				Maturity:        i.FutureProduct.Maturity,
-				QuoteName:       i.FutureProduct.QuoteName,
+				SettlementAsset:   i.FutureProduct.SettlementAsset,
+				Maturity:          i.FutureProduct.Maturity,
+				QuoteName:         i.FutureProduct.QuoteName,
+				OracleSpec:        spec,
+				OracleSpecBinding: binding,
 			},
 		}
 	} else {
 		return nil, ErrNilProduct
 	}
 	return result, nil
+}
+
+// IntoProto ...
+func (o *OracleSpecConfigurationInput) IntoProto() (*oraclesv1.OracleSpecConfiguration, error) {
+	filters := []*oraclesv1.Filter{}
+	for _, f := range o.Filters {
+		typ, err := f.Key.Type.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+
+		conditions := []*oraclesv1.Condition{}
+		for _, c := range f.Conditions {
+			op, err := c.Operator.IntoProto()
+			if err != nil {
+				return nil, err
+			}
+
+			conditions = append(conditions, &oraclesv1.Condition{
+				Operator: op,
+				Value:    c.Value,
+			})
+		}
+
+		filters = append(filters, &oraclesv1.Filter{
+			Key: &oraclesv1.PropertyKey{
+				Name: f.Key.Name,
+				Type: typ,
+			},
+			Conditions: conditions,
+		})
+	}
+
+	return &oraclesv1.OracleSpecConfiguration{
+		PubKeys: o.PubKeys,
+		Filters: filters,
+	}, nil
+}
+
+// IntoProto ...
+func (t PropertyKeyType) IntoProto() (oraclesv1.PropertyKey_Type, error) {
+	switch t {
+	case PropertyKeyTypeTypeEmpty:
+		return oraclesv1.PropertyKey_TYPE_EMPTY, nil
+	case PropertyKeyTypeTypeInteger:
+		return oraclesv1.PropertyKey_TYPE_INTEGER, nil
+	case PropertyKeyTypeTypeDecimal:
+		return oraclesv1.PropertyKey_TYPE_DECIMAL, nil
+	case PropertyKeyTypeTypeBoolean:
+		return oraclesv1.PropertyKey_TYPE_BOOLEAN, nil
+	case PropertyKeyTypeTypeTimestamp:
+		return oraclesv1.PropertyKey_TYPE_TIMESTAMP, nil
+	case PropertyKeyTypeTypeString:
+		return oraclesv1.PropertyKey_TYPE_STRING, nil
+	default:
+		err := fmt.Errorf("failed to convert PropertyKeyType from GraphQL to Proto: %v", t)
+		return oraclesv1.PropertyKey_TYPE_EMPTY, err
+	}
+}
+
+// IntoProto ...
+func (o ConditionOperator) IntoProto() (oraclesv1.Condition_Operator, error) {
+	switch o {
+	case ConditionOperatorOperatorEquals:
+		return oraclesv1.Condition_OPERATOR_EQUALS, nil
+	case ConditionOperatorOperatorGreaterThan:
+		return oraclesv1.Condition_OPERATOR_GREATER_THAN, nil
+	case ConditionOperatorOperatorGreaterThanOrEqual:
+		return oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, nil
+	case ConditionOperatorOperatorLessThan:
+		return oraclesv1.Condition_OPERATOR_LESS_THAN, nil
+	case ConditionOperatorOperatorLessThanOrEqual:
+		return oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL, nil
+	default:
+		err := fmt.Errorf("failed to convert ConditionOperator from Proto to GraphQL: %v", o)
+		return oraclesv1.Condition_OPERATOR_EQUALS, err
+	}
+}
+
+// IntoProto ...
+func (o *OracleSpecToFutureBindingInput) IntoProto() (*types.OracleSpecToFutureBinding, error) {
+	return nil, nil
 }
 
 // IntoProto ...
@@ -752,6 +815,8 @@ func eventFromProto(e *types.BusEvent) Event {
 		return e.GetDeposit()
 	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
 		return e.GetWithdrawal()
+	case types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
+		return e.GetOracleSpec()
 	}
 	return nil
 }
@@ -812,6 +877,8 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_DEPOSIT)
 		case BusEventTypeWithdrawal:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL)
+		case BusEventTypeOracleSpec:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC)
 		}
 	}
 	return r
@@ -869,6 +936,8 @@ func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 		return BusEventTypeDeposit, nil
 	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
 		return BusEventTypeWithdrawal, nil
+	case types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
+		return BusEventTypeOracleSpec, nil
 	}
 	return "", errors.New("unsupported proto event type")
 }

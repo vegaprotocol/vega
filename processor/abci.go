@@ -41,22 +41,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets     Assets
-	banking    Banking
-	broker     Broker
-	cmd        Commander
-	erc        ExtResChecker
-	evtfwd     EvtForwarder
-	exec       ExecutionEngine
-	ghandler   *genesis.Handler
-	gov        GovernanceEngine
-	notary     Notary
-	stats      Stats
-	time       TimeService
-	top        ValidatorTopology
-	vegaWallet nodewallet.Wallet
-	netp       NetworkParameters
-	oracles    *Oracles
+	assets         Assets
+	banking        Banking
+	broker         Broker
+	cmd            Commander
+	erc            ExtResChecker
+	evtfwd         EvtForwarder
+	exec           ExecutionEngine
+	ghandler       *genesis.Handler
+	gov            GovernanceEngine
+	notary         Notary
+	stats          Stats
+	time           TimeService
+	top            ValidatorTopology
+	vegaWallet     nodewallet.Wallet
+	netp           NetworkParameters
+	oracles        *Oracle
 }
 
 func NewApp(
@@ -78,7 +78,7 @@ func NewApp(
 	top ValidatorTopology,
 	wallet Wallet,
 	netp NetworkParameters,
-	oracles *Oracles,
+	oracles *Oracle,
 ) (*App, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())

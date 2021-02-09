@@ -8,5 +8,5 @@ internal and external data sources for a variety of purposes.
 These external data sources are called **oracles**.
 
 Any features that want to consume oracle data can specify conditions on the data
-they are expecting.
+they are expecting. This condition are defined inside an **oracle spec**.
 
