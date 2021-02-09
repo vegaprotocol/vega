@@ -217,7 +217,7 @@ message Order {
   // - For detail on `STATUS_REJECTED` please check the [`OrderError`](#vega.OrderError) value given in the `reason` field
   Status status = 11;
   // Timestamp for when the order will expire, in nanoseconds since the epoch
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
+  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
   int64 expires_at = 12;
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus
   // - Currently set internally by the node to return a unique reference identifier for the order submission
@@ -284,7 +284,7 @@ enum OrderError {
   ORDER_ERROR_TIME_FAILURE = 5;
   // Failed to remove an order from the book
   ORDER_ERROR_REMOVAL_FAILURE = 6;
-  // An order with `TimeInForce.TIF_GTT` was submitted or amended
+  // An order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended
   // with an expiration that was badly formatted or otherwise invalid
   ORDER_ERROR_INVALID_EXPIRATION_DATETIME = 7;
   // Order was submitted or amended with an invalid reference field
@@ -732,7 +732,7 @@ message OrderAmendment {
   // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   Timestamp expires_at = 6;
-  // Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged
+  // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
   // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
   Order.TimeInForce time_in_force = 7;
   // Amend the pegged order offset for the order
@@ -762,7 +762,7 @@ message OrderSubmission {
   // - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
   Order.TimeInForce time_in_force = 7 [(validator.field) = {is_in_enum: true}];
   // Timestamp for when the order will expire, in nanoseconds since the epoch,
-  // required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
+  // required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 expires_at = 8;
   // Type for the order, required field - See [`Order.Type`](#vega.Order.Type)

@@ -1335,7 +1335,7 @@ An order can be submitted, amended and cancelled on Vega in an attempt to make t
 | type | [Order.Type](#vega.Order.Type) |  | Type for the order - See [`Order.Type`](#vega.Order.Type) |
 | created_at | [int64](#int64) |  | Timestamp for when the order was created at, in nanoseconds since the epoch - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` |
 | status | [Order.Status](#vega.Order.Status) |  | The current status for the order. See [`Order.Status`](#vega.Order.Status) - For detail on `STATUS_REJECTED` please check the [`OrderError`](#vega.OrderError) value given in the `reason` field |
-| expires_at | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT` |
+| expires_at | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT` |
 | reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus - Currently set internally by the node to return a unique reference identifier for the order submission |
 | reason | [OrderError](#vega.OrderError) |  | If the Order `status` is `STATUS_REJECTED` then an [`OrderError`](#vega.OrderError) reason will be specified - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors |
 | updated_at | [int64](#int64) |  | Timestamp for when the Order was last updated, in nanoseconds since the epoch - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` |
@@ -1362,7 +1362,7 @@ An order amendment is a request to amend or update an existing order on Vega
 | price | [Price](#vega.Price) |  | Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price) |
 | size_delta | [int64](#int64) |  | Amend the size for the order by the delta specified: - To reduce the size from the current value set a negative integer value - To increase the size from the current value, set a positive integer value - To leave the size unchanged set a value of zero |
 | expires_at | [Timestamp](#vega.Timestamp) |  | Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` |
-| time_in_force | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp` |
+| time_in_force | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp` |
 | pegged_offset | [google.protobuf.Int64Value](#google.protobuf.Int64Value) |  | Amend the pegged order offset for the order |
 | pegged_reference | [PeggedReference](#vega.PeggedReference) |  | Amend the pegged order reference for the order - See [`PeggedReference`](#vega.PeggedReference) |
 
@@ -1435,7 +1435,7 @@ An order submission is a request to submit or create a new order on Vega
 | size | [uint64](#uint64) |  | Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative |
 | side | [Side](#vega.Side) |  | Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field - See [`Side`](#vega.Side) |
 | time_in_force | [Order.TimeInForce](#vega.Order.TimeInForce) |  | Time in force indicates how long an order will remain active before it is executed or expires, required field - See [`Order.TimeInForce`](#vega.Order.TimeInForce) |
-| expires_at | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch, required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT` - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` |
+| expires_at | [int64](#int64) |  | Timestamp for when the order will expire, in nanoseconds since the epoch, required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT` - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` |
 | type | [Order.Type](#vega.Order.Type) |  | Type for the order, required field - See [`Order.Type`](#vega.Order.Type) |
 | reference | [string](#string) |  | Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently set internally by the node to return a unique reference identifier for the order submission |
 | pegged_order | [PeggedOrder](#vega.PeggedOrder) |  | Used to specify the details for a pegged order - See [`PeggedOrder`](#vega.PeggedOrder) |
@@ -2113,7 +2113,7 @@ with an order during its life-cycle, it will be marked with `status.ORDER_STATUS
 | ORDER_ERROR_INVALID_REMAINING_SIZE | 4 | Order was amended with an invalid remaining size (e.g. remaining greater than total size) |
 | ORDER_ERROR_TIME_FAILURE | 5 | Node was unable to get Vega (blockchain) time |
 | ORDER_ERROR_REMOVAL_FAILURE | 6 | Failed to remove an order from the book |
-| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 | An order with `TimeInForce.TIF_GTT` was submitted or amended with an expiration that was badly formatted or otherwise invalid |
+| ORDER_ERROR_INVALID_EXPIRATION_DATETIME | 7 | An order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended with an expiration that was badly formatted or otherwise invalid |
 | ORDER_ERROR_INVALID_ORDER_REFERENCE | 8 | Order was submitted or amended with an invalid reference field |
 | ORDER_ERROR_EDIT_NOT_ALLOWED | 9 | Order amend was submitted for an order field that cannot not be amended (e.g. order identifier) |
 | ORDER_ERROR_AMEND_FAILURE | 10 | Amend failure because amend details do not match original order |
