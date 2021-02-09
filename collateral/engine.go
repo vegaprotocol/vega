@@ -983,7 +983,6 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 
 	// we do not have enough money to get to the minimum amount,
 	// we return an error.
-	//TODO: WG (31/01/21): Don't get this, so what that we have enough money in margin account (and say 0 in general) if margin is the one we're meant to be transferring to
 	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.MinAmount) {
 		return nil, mevt, ErrMinAmountNotReached
 	}
