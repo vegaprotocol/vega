@@ -32,6 +32,8 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -140,7 +142,8 @@ type NodeCommand struct {
 	executionEngine *execution.Engine
 	governance      *governance.Engine
 	collateral      *collateral.Engine
-	oracles         *processor.Oracles
+	oracle          *oracles.Engine
+	oracleAdaptors  *adaptors.Adaptors
 	netParams       *netparams.Store
 
 	mktscfg []types.Market

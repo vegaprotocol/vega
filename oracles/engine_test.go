@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,8 +24,8 @@ func TestOracleEngine(t *testing.T) {
 
 func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec("BTC", oraclesv1.Condition_OPERATOR_EQUALS, "42")
-	ethLess84 := spec("ETH", oraclesv1.Condition_OPERATOR_LESS_THAN, "84")
+	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec("ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
 
 	// setup
 	engine := newEngine(t)
@@ -40,7 +41,7 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 
 func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 	// given
-	spec := spec("BTC", oraclesv1.Condition_OPERATOR_EQUALS, "42")
+	spec := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
 
 	// when
 	subscribe := func() {
@@ -53,11 +54,11 @@ func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 
 func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec("BTC", oraclesv1.Condition_OPERATOR_EQUALS, "42")
-	btcGreater21 := spec("BTC", oraclesv1.Condition_OPERATOR_GREATER_THAN, "21")
-	ethEquals42 := spec("ETH", oraclesv1.Condition_OPERATOR_EQUALS, "42")
-	ethLess84 := spec("ETH", oraclesv1.Condition_OPERATOR_LESS_THAN, "84")
-	btcGreater100 := spec("BTC", oraclesv1.Condition_OPERATOR_GREATER_THAN, "100")
+	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	btcGreater21 := spec("BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21")
+	ethEquals42 := spec("ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec("ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
+	btcGreater100 := spec("BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "100")
 	dataBTC42 := dataWithPrice("BTC", "42")
 
 	// setup
@@ -82,7 +83,7 @@ func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
 
 func testOracleEngineBroadcastingIncorrectDataFails(t *testing.T) {
 	// given
-	btcEquals42 := spec("BTC", oraclesv1.Condition_OPERATOR_EQUALS, "42")
+	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
 	dataBTC42 := dataWithPrice("BTC", "hello")
 
 	// setup
@@ -112,8 +113,8 @@ func testOracleEngineUnsubscribingUnknownIDPanics(t *testing.T) {
 
 func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	// given
-	btcEquals42 := spec("BTC", oraclesv1.Condition_OPERATOR_EQUALS, "42")
-	ethEquals42 := spec("ETH", oraclesv1.Condition_OPERATOR_EQUALS, "42")
+	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	ethEquals42 := spec("ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
 	dataBTC42 := dataWithPrice("BTC", "42")
 	dataETH42 := dataWithPrice("ETH", "42")
 
@@ -139,7 +140,7 @@ type testEngine struct {
 }
 
 func newEngine(_ *testing.T) *testEngine {
-	return &testEngine{oracles.NewEngine()}
+	return &testEngine{oracles.NewEngine(logging.NewTestLogger(), oracles.NewDefaultConfig())}
 }
 
 func dataWithPrice(currency, price string) oracles.OracleData {
@@ -158,18 +159,18 @@ type specBundle struct {
 	Subscriber dummySubscriber
 }
 
-func spec(currency string, op oraclesv1.Condition_Operator, price string) specBundle {
-	spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+func spec(currency string, op oraclespb.Condition_Operator, price string) specBundle {
+	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 		PubKeys: []string{
 			"0xCAFED00D",
 		},
-		Filters: []*oraclesv1.Filter{
+		Filters: []*oraclespb.Filter{
 			{
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: fmt.Sprintf("prices.%s.value", currency),
-					Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclesv1.Condition{
+				Conditions: []*oraclespb.Condition{
 					{
 						Value:    price,
 						Operator: op,
@@ -189,6 +190,7 @@ type dummySubscriber struct {
 	ReceivedData *oracles.OracleData
 }
 
-func (d *dummySubscriber) Cb(_ context.Context, data oracles.OracleData) {
+func (d *dummySubscriber) Cb(_ context.Context, data oracles.OracleData) error {
 	d.ReceivedData = &data
+	return nil
 }

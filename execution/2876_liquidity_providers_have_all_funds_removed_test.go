@@ -78,18 +78,18 @@ func TestIssue2876(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(ctx, &lporder, "trader-2", "lp-order-01")
 	assert.NoError(t, err)
 
-	bondAccount, err := tm.collateraEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
+	bondAccount, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)
 	// we expect the whole commitment to be there
 	assert.Equal(t, 1000000, int(bondAccount.Balance))
 
 	// but also some margin to cover the orders
-	marginAccount, err := tm.collateraEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
+	marginAccount, err := tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
 	assert.Equal(t, 29250, int(marginAccount.Balance))
 
 	// but also some funds left in the genearal
-	generalAccount, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
+	generalAccount, err := tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
 	assert.Equal(t, 98970750, int(generalAccount.Balance))
 
@@ -99,18 +99,18 @@ func TestIssue2876(t *testing.T) {
 
 	tm.market.OnChainTimeUpdate(ctx, now)
 
-	bondAccount, err = tm.collateraEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
+	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)
 	// we expect the whole commitment to be there
 	assert.Equal(t, 1000000, int(bondAccount.Balance))
 
 	// but also some margin to cover the orders
-	marginAccount, err = tm.collateraEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
+	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
 	assert.Equal(t, 13219725, int(marginAccount.Balance))
 
 	// but also some funds left in the genearal
-	generalAccount, err = tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
+	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
 	assert.Equal(t, 85780275, int(generalAccount.Balance))
 

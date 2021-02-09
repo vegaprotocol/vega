@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/pkg/errors"
+
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"github.com/pkg/errors"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
 var (
@@ -16,48 +18,24 @@ var (
 	ErrAmbiguousTradingMode = errors.New("more than one trading mode selected")
 	// ErrUnimplementedTradingMode ...
 	ErrUnimplementedTradingMode = errors.New("unimplemented trading mode")
-	// ErrNilMarket ...
-	ErrNilMarket = errors.New("nil market")
-	// ErrNilTradableInstrument ...
-	ErrNilTradableInstrument = errors.New("nil tradable instrument")
-	// ErrNilOracle ..
-	ErrNilOracle = errors.New("nil oracle")
-	// ErrUnimplementedOracle ...
-	ErrUnimplementedOracle = errors.New("unimplemented oracle")
 	// ErrNilProduct ...
 	ErrNilProduct = errors.New("nil product")
-	// ErrUnimplementedProduct ...
-	ErrUnimplementedProduct = errors.New("unimplemented product")
 	// ErrNilRiskModel ...
 	ErrNilRiskModel = errors.New("nil risk model")
 	// ErrUnimplementedRiskModel ...
 	ErrUnimplementedRiskModel = errors.New("unimplemented risk model")
 	// ErrNilInstrumentMetadata ...
 	ErrNilInstrumentMetadata = errors.New("nil instrument metadata")
-	// ErrNilEthereumEvent ...
-	ErrNilEthereumEvent = errors.New("nil ethereum event")
-	// ErrNilFuture ...
-	ErrNilFuture = errors.New("nil future")
-	// ErrNilInstrument ...
-	ErrNilInstrument = errors.New("nil instrument")
 	// ErrTradingDurationNegative ...
 	ErrTradingDurationNegative = errors.New("invalid trading duration (negative)")
 	// ErrTickSizeNegative ...
 	ErrTickSizeNegative = errors.New("invalid tick size (negative)")
-	// ErrNilContinuousTradingTickSize ...
-	ErrNilContinuousTradingTickSize = errors.New("nil continuous trading tick-size")
 	// ErrNilScalingFactors ...
 	ErrNilScalingFactors = errors.New("nil scaling factors")
 	// ErrNilMarginCalculator ...
 	ErrNilMarginCalculator = errors.New("nil margin calculator")
-	// ErrInvalidTickSize ...
-	ErrInvalidTickSize = errors.New("invalid tick size")
-	// ErrInvalidDecimalPlaces ...
-	ErrInvalidDecimalPlaces = errors.New("invalid decimal places value")
 	// ErrInvalidChange ...
 	ErrInvalidChange = errors.New("nil update market, new market and update network")
-	// ErrInvalidProposalState ...
-	ErrInvalidProposalState = errors.New("invalid proposal state")
 	// ErrInvalidRiskConfiguration ...
 	ErrInvalidRiskConfiguration = errors.New("invalid risk configuration")
 	// ErrNilAssetSource returned when an asset source is not specified at creation
@@ -71,10 +49,6 @@ var (
 	ErrMultipleAssetSourcesSpecified = errors.New("multiple asset sources specified")
 	// ErrNilFeeFactors is raised when the fee factors are missing from the fees
 	ErrNilFeeFactors = errors.New("nil fee factors")
-	// ErrNilFees is raised when the fees are missing from the market
-	ErrNilFees = errors.New("nil fees")
-	// ErrNilAuctionDuration is raised when auction duration is missing from the market
-	ErrNilAuctionDuration = errors.New("nil auction duration")
 	// ErrNilPriceMonitoringParameters ...
 	ErrNilPriceMonitoringParameters = errors.New("nil price monitoring parameters")
 )
@@ -119,16 +93,6 @@ func (d *DiscreteTrading) IntoProto() (*types.Market_Discrete, error) {
 		Discrete: &types.DiscreteTrading{
 			TickSize:   d.TickSize,
 			DurationNs: int64(d.Duration),
-		},
-	}, nil
-}
-
-// IntoProto ...
-func (ee *EthereumEvent) IntoProto() (*types.Future_EthereumEvent, error) {
-	return &types.Future_EthereumEvent{
-		EthereumEvent: &types.EthereumEvent{
-			ContractId: ee.ContractID,
-			Event:      ee.Event,
 		},
 	}, nil
 }
@@ -285,32 +249,6 @@ func InstrumentMetadataFromProto(pim *types.InstrumentMetadata) (*InstrumentMeta
 	return im, nil
 }
 
-// EthereumEventFromProto ...
-func EthereumEventFromProto(pee *types.EthereumEvent) (*EthereumEvent, error) {
-	if pee == nil {
-		return nil, ErrNilEthereumEvent
-	}
-
-	return &EthereumEvent{
-		ContractID: pee.ContractId,
-		Event:      pee.Event,
-	}, nil
-}
-
-// OracleFromProto ...
-func OracleFromProto(o interface{}) (Oracle, error) {
-	if o == nil {
-		return nil, ErrNilOracle
-	}
-
-	switch oimpl := o.(type) {
-	case *types.Future_EthereumEvent:
-		return EthereumEventFromProto(oimpl.EthereumEvent)
-	default:
-		return nil, ErrUnimplementedOracle
-	}
-}
-
 // ForwardFromProto ...
 func ForwardFromProto(f *types.LogNormalRiskModel) (*LogNormalRiskModel, error) {
 	return &LogNormalRiskModel{
@@ -370,38 +308,6 @@ func ScalingFactorsFromProto(psf *types.ScalingFactors) (*ScalingFactors, error)
 		SearchLevel:       psf.SearchLevel,
 		InitialMargin:     psf.InitialMargin,
 		CollateralRelease: psf.CollateralRelease,
-	}, nil
-}
-
-func FeeFactorsFromProto(pff *types.FeeFactors) (*FeeFactors, error) {
-	if pff == nil {
-		return nil, ErrNilFeeFactors
-	}
-	return &FeeFactors{
-		MakerFee:          pff.MakerFee,
-		InfrastructureFee: pff.InfrastructureFee,
-		LiquidityFee:      pff.LiquidityFee,
-	}, nil
-}
-
-func FeesFromProto(pf *types.Fees) (*Fees, error) {
-	if pf == nil {
-		return nil, ErrNilFees
-	}
-	factors, _ := FeeFactorsFromProto(pf.Factors)
-	return &Fees{
-		Factors: factors,
-	}, nil
-}
-
-func AuctionDurationFromProto(pad *types.AuctionDuration) (*AuctionDuration, error) {
-	if pad == nil {
-		return &AuctionDuration{}, nil
-	}
-
-	return &AuctionDuration{
-		Volume:       int(pad.Volume),
-		DurationSecs: int(pad.Duration),
 	}, nil
 }
 
@@ -497,17 +403,111 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 			return nil, errors.New("FutureProduct.Maturity: string cannot be empty")
 		}
 
+		spec, err := i.FutureProduct.OracleSpec.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+
+		binding, err := i.FutureProduct.OracleSpecBinding.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+
 		result.Product = &types.InstrumentConfiguration_Future{
 			Future: &types.FutureProduct{
-				SettlementAsset: i.FutureProduct.SettlementAsset,
-				Maturity:        i.FutureProduct.Maturity,
-				QuoteName:       i.FutureProduct.QuoteName,
+				SettlementAsset:   i.FutureProduct.SettlementAsset,
+				Maturity:          i.FutureProduct.Maturity,
+				QuoteName:         i.FutureProduct.QuoteName,
+				OracleSpec:        spec,
+				OracleSpecBinding: binding,
 			},
 		}
 	} else {
 		return nil, ErrNilProduct
 	}
 	return result, nil
+}
+
+// IntoProto ...
+func (o *OracleSpecInput) IntoProto() (*oraclesv1.OracleSpecConfiguration, error) {
+	filters := []*oraclesv1.Filter{}
+	for _, f := range o.Filters {
+		typ, err := f.Key.Type.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+
+		conditions := []*oraclesv1.Condition{}
+		for _, c := range f.Conditions {
+			op, err := c.Operator.IntoProto()
+			if err != nil {
+				return nil, err
+			}
+
+			conditions = append(conditions, &oraclesv1.Condition{
+				Operator: op,
+				Value:    c.Value,
+			})
+		}
+
+		filters = append(filters, &oraclesv1.Filter{
+			Key: &oraclesv1.PropertyKey{
+				Name: f.Key.Name,
+				Type: typ,
+			},
+			Conditions: conditions,
+		})
+	}
+
+	return &oraclesv1.OracleSpecConfiguration{
+		PubKeys: o.PubKeys,
+		Filters: filters,
+	}, nil
+}
+
+// IntoProto ...
+func (t PropertyKeyType) IntoProto() (oraclesv1.PropertyKey_Type, error) {
+	switch t {
+	case PropertyKeyTypeTypeEmpty:
+		return oraclesv1.PropertyKey_TYPE_EMPTY, nil
+	case PropertyKeyTypeTypeInteger:
+		return oraclesv1.PropertyKey_TYPE_INTEGER, nil
+	case PropertyKeyTypeTypeDecimal:
+		return oraclesv1.PropertyKey_TYPE_DECIMAL, nil
+	case PropertyKeyTypeTypeBoolean:
+		return oraclesv1.PropertyKey_TYPE_BOOLEAN, nil
+	case PropertyKeyTypeTypeTimestamp:
+		return oraclesv1.PropertyKey_TYPE_TIMESTAMP, nil
+	case PropertyKeyTypeTypeString:
+		return oraclesv1.PropertyKey_TYPE_STRING, nil
+	default:
+		err := fmt.Errorf("failed to convert PropertyKeyType from GraphQL to Proto: %v", t)
+		return oraclesv1.PropertyKey_TYPE_EMPTY, err
+	}
+}
+
+// IntoProto ...
+func (o ConditionOperator) IntoProto() (oraclesv1.Condition_Operator, error) {
+	switch o {
+	case ConditionOperatorOperatorEquals:
+		return oraclesv1.Condition_OPERATOR_EQUALS, nil
+	case ConditionOperatorOperatorGreaterThan:
+		return oraclesv1.Condition_OPERATOR_GREATER_THAN, nil
+	case ConditionOperatorOperatorGreaterThanOrEqual:
+		return oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, nil
+	case ConditionOperatorOperatorLessThan:
+		return oraclesv1.Condition_OPERATOR_LESS_THAN, nil
+	case ConditionOperatorOperatorLessThanOrEqual:
+		return oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL, nil
+	default:
+		err := fmt.Errorf("failed to convert ConditionOperator from Proto to GraphQL: %v", o)
+		return oraclesv1.Condition_OPERATOR_EQUALS, err
+	}
+}
+
+// IntoProto ...
+func (o *OracleSpecToFutureBindingInput) IntoProto() (*types.OracleSpecToFutureBinding, error) {
+	return nil, nil
 }
 
 // IntoProto ...
@@ -637,7 +637,7 @@ func (e *ERC20Input) IntoProto() (*types.ERC20, error) {
 func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 	var (
 		isSet       bool
-		assetSource *types.AssetSource = &types.AssetSource{}
+		assetSource = &types.AssetSource{}
 	)
 
 	if n.BuiltinAsset != nil {

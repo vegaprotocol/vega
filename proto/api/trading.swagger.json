@@ -1545,6 +1545,19 @@
     }
   },
   "definitions": {
+    "ConditionOperator": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_UNSPECIFIED",
+        "OPERATOR_EQUALS",
+        "OPERATOR_GREATER_THAN",
+        "OPERATOR_GREATER_THAN_OR_EQUAL",
+        "OPERATOR_LESS_THAN",
+        "OPERATOR_LESS_THAN_OR_EQUAL"
+      ],
+      "default": "OPERATOR_UNSPECIFIED",
+      "description": "Comparator describes the type of comparison.\n\n - OPERATOR_UNSPECIFIED: The default value\n - OPERATOR_EQUALS: Verify if the property values are strictly equal or not.\n - OPERATOR_GREATER_THAN: Verify if the oracle data value is greater than the Condition value.\n - OPERATOR_GREATER_THAN_OR_EQUAL: Verify if the oracle data value is greater than or equal to the Condition\nvalue.\n - OPERATOR_LESS_THAN: Verify if the oracle data value is less than the Condition value.\n - OPERATOR_LESS_THAN_OR_EQUAL: Verify if the oracle data value is less or equal to than the Condition\nvalue."
+    },
     "MarketTradingMode": {
       "type": "string",
       "enum": [
@@ -1673,6 +1686,20 @@
         }
       }
     },
+    "v1Condition": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "$ref": "#/definitions/ConditionOperator",
+          "description": "comparator is the type of comparison to make on the value."
+        },
+        "value": {
+          "type": "string",
+          "description": "value is used by the comparator."
+        }
+      },
+      "title": "Condition describes the condition that must be validated by the"
+    },
     "v1DepositResponse": {
       "type": "object",
       "properties": {
@@ -1775,6 +1802,23 @@
         }
       },
       "title": "Response for a list of infrastructure fee accounts"
+    },
+    "v1Filter": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "$ref": "#/definitions/v1PropertyKey",
+          "description": "key is the oracle data property key targeted by the filter."
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Condition"
+          },
+          "description": "conditions are the conditions that should be matched by the data to be\nconsidered of interest."
+        }
+      },
+      "description": "Filter describes the conditions under which an oracle data is considered of\ninterest or not."
     },
     "v1GetNetworkParametersProposalsResponse": {
       "type": "object",
@@ -2138,6 +2182,26 @@
       },
       "title": "Optional proposal state"
     },
+    "v1OracleSpecConfiguration": {
+      "type": "object",
+      "properties": {
+        "pub_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "pubKeys is the list of authorized public keys that signed the data for this\noracle. All the public keys in the oracle data should be contained in these\npublic keys."
+        },
+        "filters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Filter"
+          },
+          "description": "filters describes which oracle data are considered of interest or not for\nthe product (or the risk model)."
+        }
+      },
+      "description": "An oracle spec describe the oracle data that a product (or a risk model)\nwants to get from the oracle engine."
+    },
     "v1OrderByIDResponse": {
       "type": "object",
       "properties": {
@@ -2473,6 +2537,34 @@
         }
       },
       "title": "Response for a new event sent by the blockchain queue to be propagated on Vega"
+    },
+    "v1PropertyKey": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is the name of the property."
+        },
+        "type": {
+          "$ref": "#/definitions/v1PropertyKeyType",
+          "description": "type is the type of the property."
+        }
+      },
+      "description": "PropertyKey describes the property key contained in an oracle data."
+    },
+    "v1PropertyKeyType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_EMPTY",
+        "TYPE_INTEGER",
+        "TYPE_STRING",
+        "TYPE_BOOLEAN",
+        "TYPE_DECIMAL",
+        "TYPE_TIMESTAMP"
+      ],
+      "default": "TYPE_UNSPECIFIED",
+      "description": "Type describes the type of properties that are supported by the oracle\nengine.\n\n - TYPE_UNSPECIFIED: The default value.\n - TYPE_EMPTY: Any type.\n - TYPE_INTEGER: Integer type.\n - TYPE_STRING: String type.\n - TYPE_BOOLEAN: Boolean type.\n - TYPE_DECIMAL: Any floating point decimal type.\n - TYPE_TIMESTAMP: Timestamp date type."
     },
     "v1StatisticsResponse": {
       "type": "object",
@@ -3372,25 +3464,6 @@
       },
       "title": "Used as a wrapper for an Ethereum address (wallet/contract)"
     },
-    "vegaEthereumEvent": {
-      "type": "object",
-      "properties": {
-        "contract_id": {
-          "type": "string",
-          "title": "Ethereum contract identifier"
-        },
-        "event": {
-          "type": "string",
-          "title": "Event"
-        },
-        "value": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Value"
-        }
-      },
-      "title": "Ethereum event (for oracles)"
-    },
     "vegaFee": {
       "type": "object",
       "properties": {
@@ -3455,9 +3528,13 @@
           "type": "string",
           "title": "Quote name of the instrument"
         },
-        "ethereum_event": {
-          "$ref": "#/definitions/vegaEthereumEvent",
-          "title": "Ethereum events"
+        "oracle_spec": {
+          "$ref": "#/definitions/v1OracleSpecConfiguration",
+          "title": "The oracle spec describing the oracle data of interest"
+        },
+        "oracle_spec_binding": {
+          "$ref": "#/definitions/vegaOracleSpecToFutureBinding",
+          "title": "The binding between the oracle spec and the settlement price"
         }
       },
       "title": "Future product definition"
@@ -3476,6 +3553,14 @@
         "quote_name": {
           "type": "string",
           "title": "Product quote name"
+        },
+        "oracle_spec": {
+          "$ref": "#/definitions/v1OracleSpecConfiguration",
+          "title": "The oracle spec describing the oracle data of interest"
+        },
+        "oracle_spec_binding": {
+          "$ref": "#/definitions/vegaOracleSpecToFutureBinding",
+          "title": "The binding between the oracle spec and the settlement price"
         }
       },
       "title": "Future product configuration"
@@ -4334,6 +4419,16 @@
       "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
       "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents an unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
       "title": "The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc"
+    },
+    "vegaOracleSpecToFutureBinding": {
+      "type": "object",
+      "properties": {
+        "settlement_price_property": {
+          "type": "string",
+          "description": "settlement_price_property holds the name of the property in the oracle data\nthat should be used as settlement price.\nIf it is set to \"prices.BTC.value\", then the Future will use the value of\nthis property as settlement price."
+        }
+      },
+      "description": "OracleSpecToFutureBinding tells on which property oracle data should be\nused as settlement price."
     },
     "vegaOrder": {
       "type": "object",

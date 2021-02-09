@@ -12,6 +12,3 @@ func (r *myFutureResolver) SettlementAsset(ctx context.Context, obj *types.Futur
 	return r.r.getAssetByID(ctx, obj.SettlementAsset)
 }
 
-func (r *myFutureResolver) Oracle(ctx context.Context, obj *types.Future) (Oracle, error) {
-	return OracleFromProto(obj.Oracle)
-}

@@ -242,8 +242,10 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.accs[externalID] = externalAcc
 		// e.addAccountToHashableSlice(externalAcc)
 	}
-	e.log.Info("new asset added successfully",
-		logging.String("asset-id", asset.Id))
+	e.log.Info(
+		"new asset added successfully",
+		logging.String("asset-id", asset.Id),
+	)
 	return nil
 }
 

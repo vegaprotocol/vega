@@ -8,6 +8,7 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "markets.proto";
 import "vega.proto";
 import "assets.proto";
+import "oracles/v1/oracles.proto";
 
 // Future product configuration
 message FutureProduct {
@@ -17,6 +18,10 @@ message FutureProduct {
   string settlement_asset = 2  [(validator.field) = {string_not_empty : true}];
   // Product quote name
   string quote_name = 3 [(validator.field) = {string_not_empty : true}];
+  // The oracle spec describing the oracle data of interest
+  oracles.v1.OracleSpecConfiguration oracle_spec = 5;
+  // The binding between the oracle spec and the settlement price
+  OracleSpecToFutureBinding oracle_spec_binding = 6;
 }
 
 // Instrument configuration

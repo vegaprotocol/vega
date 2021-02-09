@@ -20,10 +20,6 @@ type Event interface {
 	IsEvent()
 }
 
-type Oracle interface {
-	IsOracle()
-}
-
 type Product interface {
 	IsProduct()
 }
@@ -66,11 +62,11 @@ func (Asset) IsEvent() {}
 
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
-//   The auction will last for at least N seconds.
+// The auction will last for at least N seconds.
 // 2. `duration == 0`, `volume > 0`:
-//   The auction will end once we can close with given traded volume.
+// The auction will end once we can close with given traded volume.
 // 3. `duration > 0`, `volume > 0`:
-//   The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+// The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
 type AuctionDuration struct {
 	// Duration of the auction in seconds
 	DurationSecs int `json:"durationSecs"`
@@ -136,6 +132,14 @@ type BusEvent struct {
 	Type BusEventType `json:"type"`
 	// the payload - the wrapped event
 	Event Event `json:"event"`
+}
+
+// Condition describes the condition that must be validated by the
+type ConditionInput struct {
+	// comparator is the type of comparison to make on the value.
+	Operator ConditionOperator `json:"operator"`
+	// value is used by the comparator.
+	Value string `json:"value"`
 }
 
 // A mode where Vega try to execute order as soon as they are received
@@ -213,16 +217,6 @@ type Erc20WithdrawalDetailsInput struct {
 	ReceiverAddress string `json:"receiverAddress"`
 }
 
-// An Ethereum oracle
-type EthereumEvent struct {
-	// The ID of the ethereum contract to use (string)
-	ContractID string `json:"contractId"`
-	// Name of the Ethereum event to listen to. (string)
-	Event string `json:"event"`
-}
-
-func (EthereumEvent) IsOracle() {}
-
 // The factors applied to calculate the fees
 type FeeFactors struct {
 	// The factor applied to calculate MakerFees, a non-negative float
@@ -239,6 +233,16 @@ type Fees struct {
 	Factors *FeeFactors `json:"factors"`
 }
 
+// Filter describes the conditions under which an oracle data is considered of
+// interest or not.
+type FilterInput struct {
+	// key is the oracle data property key targeted by the filter.
+	Key *PropertyKeyInput `json:"key"`
+	// conditions are the conditions that should be matched by the data to be
+	// considered of interest.
+	Conditions []*ConditionInput `json:"conditions"`
+}
+
 // Future product configuration
 type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
@@ -247,6 +251,10 @@ type FutureProductInput struct {
 	SettlementAsset string `json:"settlementAsset"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
+	// The oracle spec describing the oracle data of interest.
+	OracleSpec *OracleSpecInput `json:"oracleSpec"`
+	// The binding between the oracle spec and the settlement price
+	OracleSpecBinding *OracleSpecToFutureBindingInput `json:"oracleSpecBinding"`
 }
 
 type InstrumentConfigurationInput struct {
@@ -415,6 +423,24 @@ type NewMarketInput struct {
 	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
 }
 
+// An oracle spec describe the oracle data that a product (or a risk model)
+// wants to get from the oracle engine.
+type OracleSpecInput struct {
+	// pubKeys is the list of authorized public keys that signed the data for this
+	// oracle. All the public keys in the oracle data should be contained in these
+	// public keys.
+	PubKeys []string `json:"pubKeys"`
+	// filters describes which oracle data are considered of interest or not for
+	// the product (or the risk model).
+	Filters []*FilterInput `json:"filters"`
+}
+
+// OracleSpecToFutureBindingInput tells on which property oracle data should be
+// used as settlement price.
+type OracleSpecToFutureBindingInput struct {
+	SettlementPriceProperty string `json:"settlementPriceProperty"`
+}
+
 // An estimate of the fee to be paid by the order
 type OrderEstimate struct {
 	// The estimated fee if the order was to trade
@@ -548,6 +574,14 @@ type PriceMonitoringTriggerInput struct {
 	// breach it's theoretical level over the specified horizon at the specified
 	// probability level (> 0)
 	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// PropertyKey describes the property key contained in an oracle data.
+type PropertyKeyInput struct {
+	// name is the name of the property.
+	Name string `json:"name"`
+	// type is the type of the property.
+	Type PropertyKeyType `json:"type"`
 }
 
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
@@ -958,6 +992,61 @@ func (e *BusEventType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e BusEventType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Comparator describes the type of comparison.
+type ConditionOperator string
+
+const (
+	// Verify if the property values are strictly equal or not.
+	ConditionOperatorOperatorEquals ConditionOperator = "OperatorEquals"
+	// Verify if the oracle data value is greater than the Condition value.
+	ConditionOperatorOperatorGreaterThan ConditionOperator = "OperatorGreaterThan"
+	// Verify if the oracle data value is greater than or equal to the Condition
+	// value.
+	ConditionOperatorOperatorGreaterThanOrEqual ConditionOperator = "OperatorGreaterThanOrEqual"
+	//  Verify if the oracle data value is less than the Condition value.
+	ConditionOperatorOperatorLessThan ConditionOperator = "OperatorLessThan"
+	// Verify if the oracle data value is less or equal to than the Condition
+	// value.
+	ConditionOperatorOperatorLessThanOrEqual ConditionOperator = "OperatorLessThanOrEqual"
+)
+
+var AllConditionOperator = []ConditionOperator{
+	ConditionOperatorOperatorEquals,
+	ConditionOperatorOperatorGreaterThan,
+	ConditionOperatorOperatorGreaterThanOrEqual,
+	ConditionOperatorOperatorLessThan,
+	ConditionOperatorOperatorLessThanOrEqual,
+}
+
+func (e ConditionOperator) IsValid() bool {
+	switch e {
+	case ConditionOperatorOperatorEquals, ConditionOperatorOperatorGreaterThan, ConditionOperatorOperatorGreaterThanOrEqual, ConditionOperatorOperatorLessThan, ConditionOperatorOperatorLessThanOrEqual:
+		return true
+	}
+	return false
+}
+
+func (e ConditionOperator) String() string {
+	return string(e)
+}
+
+func (e *ConditionOperator) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConditionOperator(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConditionOperator", str)
+	}
+	return nil
+}
+
+func (e ConditionOperator) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1668,6 +1757,63 @@ func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Type describes the type of properties that are supported by the oracle
+// engine.
+type PropertyKeyType string
+
+const (
+	// Any type.
+	PropertyKeyTypeTypeEmpty PropertyKeyType = "TypeEmpty"
+	// Integer type.
+	PropertyKeyTypeTypeInteger PropertyKeyType = "TypeInteger"
+	// String type.
+	PropertyKeyTypeTypeString PropertyKeyType = "TypeString"
+	// Boolean type.
+	PropertyKeyTypeTypeBoolean PropertyKeyType = "TypeBoolean"
+	// Any floating point decimal type.
+	PropertyKeyTypeTypeDecimal PropertyKeyType = "TypeDecimal"
+	// Timestamp date type.
+	PropertyKeyTypeTypeTimestamp PropertyKeyType = "TypeTimestamp"
+)
+
+var AllPropertyKeyType = []PropertyKeyType{
+	PropertyKeyTypeTypeEmpty,
+	PropertyKeyTypeTypeInteger,
+	PropertyKeyTypeTypeString,
+	PropertyKeyTypeTypeBoolean,
+	PropertyKeyTypeTypeDecimal,
+	PropertyKeyTypeTypeTimestamp,
+}
+
+func (e PropertyKeyType) IsValid() bool {
+	switch e {
+	case PropertyKeyTypeTypeEmpty, PropertyKeyTypeTypeInteger, PropertyKeyTypeTypeString, PropertyKeyTypeTypeBoolean, PropertyKeyTypeTypeDecimal, PropertyKeyTypeTypeTimestamp:
+		return true
+	}
+	return false
+}
+
+func (e PropertyKeyType) String() string {
+	return string(e)
+}
+
+func (e *PropertyKeyType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PropertyKeyType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PropertyKeyType", str)
+	}
+	return nil
+}
+
+func (e PropertyKeyType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Reason for the proposal being rejected by the core node
 type ProposalRejectionReason string
 
@@ -1782,10 +1928,10 @@ func (e ProposalRejectionReason) MarshalGQL(w io.Writer) {
 }
 
 // Various states a proposal can transition through:
-//   Open ->
-//       - Passed -> Enacted.
-//       - Rejected.
-//   Proposal can enter Failed state from any other state.
+// Open ->
+// - Passed -> Enacted.
+// - Rejected.
+// Proposal can enter Failed state from any other state.
 type ProposalState string
 
 const (

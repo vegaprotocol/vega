@@ -2,18 +2,18 @@ syntax = "proto3";
 
 package oracles.v1;
 
-option go_package = "code.vegaprotocol.io/vega/proto/oraclesv1";
+option go_package = "code.vegaprotocol.io/vega/proto/oracles/v1";
 
 // An oracle spec describe the oracle data that a product (or a risk model)
 // wants to get from the oracle engine.
-message OracleSpec {
+message OracleSpecConfiguration {
   // pubKeys is the list of authorized public keys that signed the data for this
   // oracle. All the public keys in the oracle data should be contained in these
   // public keys.
-  repeated string pub_keys = 2;
+  repeated string pub_keys = 1;
   // filters describes which oracle data are considered of interest or not for
   // the product (or the risk model).
-  repeated Filter filters = 4;
+  repeated Filter filters = 2;
 }
 
 // Filter describes the conditions under which an oracle data is considered of

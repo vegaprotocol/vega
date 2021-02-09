@@ -2,9 +2,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
-    And the executon engine have these markets:
-      | name      | baseName | quoteName | asset |   markprice  | risk model |     lamd/long |              tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. |    p. m. horizons |  p. m. probs | p. m. durations | Prob of trading |
-      | ETH/DEC20 | BTC      | ETH       | ETH   |      900000  | forward    |      0.000001 | 0.00011407711613050422 |              0 | 0.016           |   2.0 |            1.4 |            1.2 |           1.1 |              42 |           5 | continuous   |        0 |                 0 |            0 |                 4  |              5,10 |    0.95,0.99 |             6,8 | 0.1             |
+    And the execution engine have these markets:
+      | name      | baseName | quoteName | asset |   markprice  | risk model |     lamd/long |              tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. |    p. m. horizons |  p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys    | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
+      | ETH/DEC20 | BTC      | ETH       | ETH   |      900000  | forward    |      0.000001 | 0.00011407711613050422 |              0 | 0.016           |   2.0 |            1.4 |            1.2 |           1.1 |              42 |           5 | continuous   |        0 |                 0 |            0 |                 4  |              5,10 |    0.95,0.99 |             6,8 | 0.1             | 0xDEADBEEF,0xCAFEDOOD| prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
 

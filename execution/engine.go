@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
+	"code.vegaprotocol.io/vega/products"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -59,6 +60,8 @@ type Engine struct {
 
 	broker Broker
 	time   TimeService
+
+	oracle products.OracleEngine
 }
 
 // NewEngine takes stores and engines and returns
@@ -68,6 +71,7 @@ func NewEngine(
 	executionConfig Config,
 	ts TimeService,
 	collateral *collateral.Engine,
+	oracle products.OracleEngine,
 	broker Broker,
 ) *Engine {
 	// setup logger
@@ -81,6 +85,7 @@ func NewEngine(
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
+		oracle:     oracle,
 	}
 
 	// Add time change event handler
@@ -192,7 +197,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	// here straight away we start the OPENING_AUCTION
 	mkt := e.markets[marketConfig.Id]
-	mkt.StartOpeningAuction(ctx)
+	_ = mkt.StartOpeningAuction(ctx)
 
 	e.publishMarketInfos(ctx, mkt)
 	return nil
@@ -246,6 +251,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.Config.Matching,
 		e.Config.Fee,
 		e.collateral,
+		e.oracle,
 		marketConfig,
 		now,
 		e.broker,

@@ -4,35 +4,37 @@ import (
 	"context"
 	"fmt"
 	"sync/atomic"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
-type OnMatchedOracleData func(ctx context.Context, data OracleData)
+type OnMatchedOracleData func(ctx context.Context, data OracleData) error
 type SubscriptionID uint64
-
-// OracleData holds normalized data coming from an oracle.
-type OracleData struct {
-	PubKeys []string
-	Data    map[string]string
-}
 
 // Engine is responsible of broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
+	log                *logging.Logger
 	lastSubscriptionID SubscriptionID
 	// TODO Using a map is not deterministic. Should be a list.
-	subscribers        map[SubscriptionID]oracleSpecSubscriber
+	subscribers map[SubscriptionID]oracleSpecSubscriber
 }
 
 // oracleSpecSubscriber groups a OnMatchedOracleData callback to its
-// oraclesv1.OracleSpec.
+// oraclesv1.OracleSpecConfiguration.
 type oracleSpecSubscriber struct {
 	oracleSpec OracleSpec
 	callback   OnMatchedOracleData
 }
 
 // NewEngine creates a new oracle Engine.
-func NewEngine() *Engine {
+func NewEngine(log *logging.Logger, conf Config) *Engine {
+	// setup logger
+	log = log.Named(namedLogger)
+	log.SetLevel(conf.Level.Get())
+
 	return &Engine{
+		log:         log,
 		subscribers: make(map[SubscriptionID]oracleSpecSubscriber),
 	}
 }
@@ -46,14 +48,20 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 			return err
 		}
 		if matched {
-			subscriber.callback(ctx, data)
+			if err := subscriber.callback(ctx, data); err != nil {
+				e.log.Error(
+					"broadcasting data to subscriber failed",
+					logging.Error(err),
+				)
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-// Subscribe registers a callback for a given oraclesv1.OracleSpec that is call
-// when an OracleData matches the spec.
+// Subscribe registers a callback for a given oraclesv1.OracleSpecConfiguration
+// that is call when an OracleData matches the spec.
 // It returns a SubscriptionID that is used to Unsubscribe.
 // If cb is nil, the method panics.
 func (e *Engine) Subscribe(spec OracleSpec, cb OnMatchedOracleData) SubscriptionID {

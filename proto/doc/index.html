@@ -202,6 +202,41 @@
         
           
           <li>
+            <a href="#oracles%2fv1%2foracles.proto">oracles/v1/oracles.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#oracles.v1.Condition"><span class="badge">M</span>Condition</a>
+                </li>
+              
+                <li>
+                  <a href="#oracles.v1.Filter"><span class="badge">M</span>Filter</a>
+                </li>
+              
+                <li>
+                  <a href="#oracles.v1.OracleSpecConfiguration"><span class="badge">M</span>OracleSpecConfiguration</a>
+                </li>
+              
+                <li>
+                  <a href="#oracles.v1.PropertyKey"><span class="badge">M</span>PropertyKey</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#oracles.v1.Condition.Operator"><span class="badge">E</span>Condition.Operator</a>
+                </li>
+              
+                <li>
+                  <a href="#oracles.v1.PropertyKey.Type"><span class="badge">E</span>PropertyKey.Type</a>
+                </li>
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
             <a href="#markets.proto">markets.proto</a>
             <ul>
               
@@ -215,10 +250,6 @@
               
                 <li>
                   <a href="#vega.DiscreteTrading"><span class="badge">M</span>DiscreteTrading</a>
-                </li>
-              
-                <li>
-                  <a href="#vega.EthereumEvent"><span class="badge">M</span>EthereumEvent</a>
                 </li>
               
                 <li>
@@ -255,6 +286,10 @@
               
                 <li>
                   <a href="#vega.Market"><span class="badge">M</span>Market</a>
+                </li>
+              
+                <li>
+                  <a href="#vega.OracleSpecToFutureBinding"><span class="badge">M</span>OracleSpecToFutureBinding</a>
                 </li>
               
                 <li>
@@ -1451,41 +1486,6 @@
         
           
           <li>
-            <a href="#oracles%2fv1%2foracles.proto">oracles/v1/oracles.proto</a>
-            <ul>
-              
-                <li>
-                  <a href="#oracles.v1.Condition"><span class="badge">M</span>Condition</a>
-                </li>
-              
-                <li>
-                  <a href="#oracles.v1.Filter"><span class="badge">M</span>Filter</a>
-                </li>
-              
-                <li>
-                  <a href="#oracles.v1.OracleSpec"><span class="badge">M</span>OracleSpec</a>
-                </li>
-              
-                <li>
-                  <a href="#oracles.v1.PropertyKey"><span class="badge">M</span>PropertyKey</a>
-                </li>
-              
-              
-                <li>
-                  <a href="#oracles.v1.Condition.Operator"><span class="badge">E</span>Condition.Operator</a>
-                </li>
-              
-                <li>
-                  <a href="#oracles.v1.PropertyKey.Type"><span class="badge">E</span>PropertyKey.Type</a>
-                </li>
-              
-              
-              
-            </ul>
-          </li>
-        
-          
-          <li>
             <a href="#tm%2freplay.proto">tm/replay.proto</a>
             <ul>
               
@@ -1809,6 +1809,250 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
     
       
       <div class="file-heading">
+        <h2 id="oracles/v1/oracles.proto">oracles/v1/oracles.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="oracles.v1.Condition">Condition</h3>
+        <p>Condition describes the condition that must be validated by the</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>operator</td>
+                  <td><a href="#oracles.v1.Condition.Operator">Condition.Operator</a></td>
+                  <td></td>
+                  <td><p>comparator is the type of comparison to make on the value. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>value is used by the comparator. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="oracles.v1.Filter">Filter</h3>
+        <p>Filter describes the conditions under which an oracle data is considered of</p><p>interest or not.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>key</td>
+                  <td><a href="#oracles.v1.PropertyKey">PropertyKey</a></td>
+                  <td></td>
+                  <td><p>key is the oracle data property key targeted by the filter. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>conditions</td>
+                  <td><a href="#oracles.v1.Condition">Condition</a></td>
+                  <td>repeated</td>
+                  <td><p>conditions are the conditions that should be matched by the data to be
+considered of interest. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="oracles.v1.OracleSpecConfiguration">OracleSpecConfiguration</h3>
+        <p>An oracle spec describe the oracle data that a product (or a risk model)</p><p>wants to get from the oracle engine.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>pub_keys</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>pubKeys is the list of authorized public keys that signed the data for this
+oracle. All the public keys in the oracle data should be contained in these
+public keys. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>filters</td>
+                  <td><a href="#oracles.v1.Filter">Filter</a></td>
+                  <td>repeated</td>
+                  <td><p>filters describes which oracle data are considered of interest or not for
+the product (or the risk model). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="oracles.v1.PropertyKey">PropertyKey</h3>
+        <p>PropertyKey describes the property key contained in an oracle data.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>name is the name of the property. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>type</td>
+                  <td><a href="#oracles.v1.PropertyKey.Type">PropertyKey.Type</a></td>
+                  <td></td>
+                  <td><p>type is the type of the property. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="oracles.v1.Condition.Operator">Condition.Operator</h3>
+        <p>Comparator describes the type of comparison.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>OPERATOR_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>The default value</p></td>
+              </tr>
+            
+              <tr>
+                <td>OPERATOR_EQUALS</td>
+                <td>1</td>
+                <td><p>Verify if the property values are strictly equal or not.</p></td>
+              </tr>
+            
+              <tr>
+                <td>OPERATOR_GREATER_THAN</td>
+                <td>2</td>
+                <td><p>Verify if the oracle data value is greater than the Condition value.</p></td>
+              </tr>
+            
+              <tr>
+                <td>OPERATOR_GREATER_THAN_OR_EQUAL</td>
+                <td>3</td>
+                <td><p>Verify if the oracle data value is greater than or equal to the Condition
+value.</p></td>
+              </tr>
+            
+              <tr>
+                <td>OPERATOR_LESS_THAN</td>
+                <td>4</td>
+                <td><p>Verify if the oracle data value is less than the Condition value.</p></td>
+              </tr>
+            
+              <tr>
+                <td>OPERATOR_LESS_THAN_OR_EQUAL</td>
+                <td>5</td>
+                <td><p>Verify if the oracle data value is less or equal to than the Condition
+value.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="oracles.v1.PropertyKey.Type">PropertyKey.Type</h3>
+        <p>Type describes the type of properties that are supported by the oracle</p><p>engine.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>TYPE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>The default value.</p></td>
+              </tr>
+            
+              <tr>
+                <td>TYPE_EMPTY</td>
+                <td>1</td>
+                <td><p>Any type.</p></td>
+              </tr>
+            
+              <tr>
+                <td>TYPE_INTEGER</td>
+                <td>2</td>
+                <td><p>Integer type.</p></td>
+              </tr>
+            
+              <tr>
+                <td>TYPE_STRING</td>
+                <td>3</td>
+                <td><p>String type.</p></td>
+              </tr>
+            
+              <tr>
+                <td>TYPE_BOOLEAN</td>
+                <td>4</td>
+                <td><p>Boolean type.</p></td>
+              </tr>
+            
+              <tr>
+                <td>TYPE_DECIMAL</td>
+                <td>5</td>
+                <td><p>Any floating point decimal type.</p></td>
+              </tr>
+            
+              <tr>
+                <td>TYPE_TIMESTAMP</td>
+                <td>6</td>
+                <td><p>Timestamp date type.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
         <h2 id="markets.proto">markets.proto</h2><a href="#title">Top</a>
       </div>
       <p></p>
@@ -1929,44 +2173,6 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
 
         
       
-        <h3 id="vega.EthereumEvent">EthereumEvent</h3>
-        <p>Ethereum event (for oracles)</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>contract_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Ethereum contract identifier </p></td>
-                </tr>
-              
-                <tr>
-                  <td>event</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>Event </p></td>
-                </tr>
-              
-                <tr>
-                  <td>value</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p>Value </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
         <h3 id="vega.FeeFactors">FeeFactors</h3>
         <p>Fee factors definition</p>
 
@@ -2061,10 +2267,17 @@ If uuid_ver is 0 all UUID versions are accepted. </p></td>
                 </tr>
               
                 <tr>
-                  <td>ethereum_event</td>
-                  <td><a href="#vega.EthereumEvent">EthereumEvent</a></td>
+                  <td>oracle_spec</td>
+                  <td><a href="#oracles.v1.OracleSpecConfiguration">oracles.v1.OracleSpecConfiguration</a></td>
                   <td></td>
-                  <td><p>Ethereum events </p></td>
+                  <td><p>The oracle spec describing the oracle data of interest </p></td>
+                </tr>
+              
+                <tr>
+                  <td>oracle_spec_binding</td>
+                  <td><a href="#vega.OracleSpecToFutureBinding">OracleSpecToFutureBinding</a></td>
+                  <td></td>
+                  <td><p>The binding between the oracle spec and the settlement price </p></td>
                 </tr>
               
             </tbody>
@@ -2345,6 +2558,33 @@ duration and optionally a minimum traded volume) </p></td>
                   <td><a href="#vega.Market.State">Market.State</a></td>
                   <td></td>
                   <td><p>Current state of the market </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="vega.OracleSpecToFutureBinding">OracleSpecToFutureBinding</h3>
+        <p>OracleSpecToFutureBinding tells on which property oracle data should be</p><p>used as settlement price.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>settlement_price_property</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>settlement_price_property holds the name of the property in the oracle data
+that should be used as settlement price.
+If it is set to &#34;prices.BTC.value&#34;, then the Future will use the value of
+this property as settlement price. </p></td>
                 </tr>
               
             </tbody>
@@ -4874,8 +5114,6 @@ set internally by the node to return a unique reference identifier for the order
                   <td>
                     <ul>
                     
-                      <li>is_in_enum: true</li>
-                    
                     </ul>
                   </td>
                 </tr>
@@ -4885,8 +5123,6 @@ set internally by the node to return a unique reference identifier for the order
                   <td>
                     <ul>
                     
-                      <li>is_in_enum: true</li>
-                    
                     </ul>
                   </td>
                 </tr>
@@ -4895,8 +5131,6 @@ set internally by the node to return a unique reference identifier for the order
                   <td>type</td>
                   <td>
                     <ul>
-                    
-                      <li>is_in_enum: true</li>
                     
                     </ul>
                   </td>
@@ -7533,6 +7767,20 @@ Vega network and are unlocked on the foreign chain bridge, for example, on the E
                   <td><p>Product quote name </p></td>
                 </tr>
               
+                <tr>
+                  <td>oracle_spec</td>
+                  <td><a href="#oracles.v1.OracleSpecConfiguration">oracles.v1.OracleSpecConfiguration</a></td>
+                  <td></td>
+                  <td><p>The oracle spec describing the oracle data of interest </p></td>
+                </tr>
+              
+                <tr>
+                  <td>oracle_spec_binding</td>
+                  <td><a href="#vega.OracleSpecToFutureBinding">OracleSpecToFutureBinding</a></td>
+                  <td></td>
+                  <td><p>The binding between the oracle spec and the settlement price </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -8139,8 +8387,6 @@ value (Vote) is the vote cast by the given party </p></td>
                   <td>
                     <ul>
                     
-                      <li>is_in_enum: true</li>
-                    
                     </ul>
                   </td>
                 </tr>
@@ -8396,8 +8642,6 @@ constrained by `minEnactInSeconds` and `maxEnactInSeconds` network parameters </
                   <td>value</td>
                   <td>
                     <ul>
-                    
-                      <li>is_in_enum: true</li>
                     
                     </ul>
                   </td>
@@ -15432,250 +15676,6 @@ these data are being used to bundle the call to the smart contract on the ethere
         </table>
 
         
-    
-      
-      <div class="file-heading">
-        <h2 id="oracles/v1/oracles.proto">oracles/v1/oracles.proto</h2><a href="#title">Top</a>
-      </div>
-      <p></p>
-
-      
-        <h3 id="oracles.v1.Condition">Condition</h3>
-        <p>Condition describes the condition that must be validated by the</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>operator</td>
-                  <td><a href="#oracles.v1.Condition.Operator">Condition.Operator</a></td>
-                  <td></td>
-                  <td><p>comparator is the type of comparison to make on the value. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>value</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>value is used by the comparator. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="oracles.v1.Filter">Filter</h3>
-        <p>Filter describes the conditions under which an oracle data is considered of</p><p>interest or not.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>key</td>
-                  <td><a href="#oracles.v1.PropertyKey">PropertyKey</a></td>
-                  <td></td>
-                  <td><p>key is the oracle data property key targeted by the filter. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>conditions</td>
-                  <td><a href="#oracles.v1.Condition">Condition</a></td>
-                  <td>repeated</td>
-                  <td><p>conditions are the conditions that should be matched by the data to be
-considered of interest. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="oracles.v1.OracleSpec">OracleSpec</h3>
-        <p>An oracle spec describe the oracle data that a product (or a risk model)</p><p>wants to get from the oracle engine.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>pub_keys</td>
-                  <td><a href="#string">string</a></td>
-                  <td>repeated</td>
-                  <td><p>pubKeys is the list of authorized public keys that signed the data for this
-oracle. All the public keys in the oracle data should be contained in these
-public keys. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>filters</td>
-                  <td><a href="#oracles.v1.Filter">Filter</a></td>
-                  <td>repeated</td>
-                  <td><p>filters describes which oracle data are considered of interest or not for
-the product (or the risk model). </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="oracles.v1.PropertyKey">PropertyKey</h3>
-        <p>PropertyKey describes the property key contained in an oracle data.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>name</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>name is the name of the property. </p></td>
-                </tr>
-              
-                <tr>
-                  <td>type</td>
-                  <td><a href="#oracles.v1.PropertyKey.Type">PropertyKey.Type</a></td>
-                  <td></td>
-                  <td><p>type is the type of the property. </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-
-      
-        <h3 id="oracles.v1.Condition.Operator">Condition.Operator</h3>
-        <p>Comparator describes the type of comparison.</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            
-              <tr>
-                <td>OPERATOR_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>The default value</p></td>
-              </tr>
-            
-              <tr>
-                <td>OPERATOR_EQUALS</td>
-                <td>1</td>
-                <td><p>Verify if the property values are strictly equal or not.</p></td>
-              </tr>
-            
-              <tr>
-                <td>OPERATOR_GREATER_THAN</td>
-                <td>2</td>
-                <td><p>Verify if the oracle data value is greater than the Condition value.</p></td>
-              </tr>
-            
-              <tr>
-                <td>OPERATOR_GREATER_THAN_OR_EQUAL</td>
-                <td>3</td>
-                <td><p>Verify if the oracle data value is greater than or equal to the Condition
-value.</p></td>
-              </tr>
-            
-              <tr>
-                <td>OPERATOR_LESS_THAN</td>
-                <td>4</td>
-                <td><p>Verify if the oracle data value is less than the Condition value.</p></td>
-              </tr>
-            
-              <tr>
-                <td>OPERATOR_LESS_THAN_OR_EQUAL</td>
-                <td>5</td>
-                <td><p>Verify if the oracle data value is less or equal to than the Condition
-value.</p></td>
-              </tr>
-            
-          </tbody>
-        </table>
-      
-        <h3 id="oracles.v1.PropertyKey.Type">PropertyKey.Type</h3>
-        <p>Type describes the type of properties that are supported by the oracle</p><p>engine.</p>
-        <table class="enum-table">
-          <thead>
-            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
-          </thead>
-          <tbody>
-            
-              <tr>
-                <td>TYPE_UNSPECIFIED</td>
-                <td>0</td>
-                <td><p>The default value.</p></td>
-              </tr>
-            
-              <tr>
-                <td>TYPE_EMPTY</td>
-                <td>1</td>
-                <td><p>Any type.</p></td>
-              </tr>
-            
-              <tr>
-                <td>TYPE_INTEGER</td>
-                <td>2</td>
-                <td><p>Integer type.</p></td>
-              </tr>
-            
-              <tr>
-                <td>TYPE_STRING</td>
-                <td>3</td>
-                <td><p>String type.</p></td>
-              </tr>
-            
-              <tr>
-                <td>TYPE_BOOLEAN</td>
-                <td>4</td>
-                <td><p>Boolean type.</p></td>
-              </tr>
-            
-              <tr>
-                <td>TYPE_DECIMAL</td>
-                <td>5</td>
-                <td><p>Any floating point decimal type.</p></td>
-              </tr>
-            
-              <tr>
-                <td>TYPE_TIMESTAMP</td>
-                <td>6</td>
-                <td><p>Timestamp date type.</p></td>
-              </tr>
-            
-          </tbody>
-        </table>
-      
-
-      
-
-      
     
       
       <div class="file-heading">

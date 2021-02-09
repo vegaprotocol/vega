@@ -9,11 +9,6 @@ import (
 )
 
 var (
-	// ErrUnsupportedType is returned when the comparison of
-	// values of the given type is not supported by the strictEquality interface
-	ErrUnsupportedType = errors.New("unsupported property type")
-	// ErrUnsupportedOperator is returned when an operator is not supported yet.
-	ErrUnsupportedOperator = errors.New("unsupported operator type")
 	// ErrMissingPubKeys is returned when the oraclespb.OracleSpec is missing
 	// its public keys.
 	ErrMissingPubKeys = errors.New("public keys are required")
@@ -45,7 +40,7 @@ type condition func(string) (bool, error)
 
 // NewOracleSpec build an OracleSpec from an oraclespb.OracleSpec in a form that
 // suits the processing of the filters.
-func NewOracleSpec(spec oraclespb.OracleSpec) (*OracleSpec, error) {
+func NewOracleSpec(spec oraclespb.OracleSpecConfiguration) (*OracleSpec, error) {
 	if len(spec.PubKeys) == 0 {
 		return nil, ErrMissingPubKeys
 	}
@@ -67,6 +62,7 @@ func NewOracleSpec(spec oraclespb.OracleSpec) (*OracleSpec, error) {
 		}
 
 		typedFilter, ok := typedFilters[f.Key.Name]
+
 		if !ok {
 			typedFilters[f.Key.Name] = &filter{
 				propertyName: f.Key.Name,
@@ -87,6 +83,11 @@ func NewOracleSpec(spec oraclespb.OracleSpec) (*OracleSpec, error) {
 		pubKeys: pubKeys,
 		filters: typedFilters,
 	}, nil
+}
+
+func (s OracleSpec) CanBindProperty(property string) bool {
+	_, ok := s.filters[property]
+	return ok
 }
 
 // MatchData indicates if a given OracleData matches the spec or not.
@@ -112,7 +113,7 @@ func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
 }
 
 // containsRequiredPubKeys verifies if all the public keys is the OracleData is
-// matches the keys authorized by the OracleSpec
+// matches the keys authorized by the OracleSpec.
 func containsRequiredPubKeys(dataPKs []string, authPks map[string]struct{}) bool {
 	for _, pk := range dataPKs {
 		if _, ok := authPks[pk]; !ok {
@@ -133,7 +134,7 @@ var conditionConverters = map[oraclespb.PropertyKey_Type]func(*oraclespb.Conditi
 func toConditions(typ oraclespb.PropertyKey_Type, cs []*oraclespb.Condition) ([]condition, error) {
 	converter, ok := conditionConverters[typ]
 	if !ok {
-		return nil, ErrUnsupportedType
+		panic(fmt.Sprintf("property type %s", typ))
 	}
 
 	conditions := []condition{}
@@ -156,7 +157,7 @@ func toIntegerCondition(c *oraclespb.Condition) (condition, error) {
 
 	matcher, ok := integerMatchers[c.Operator]
 	if !ok {
-		return nil, ErrUnsupportedOperator
+		return nil, err
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -208,7 +209,7 @@ func toDecimalCondition(c *oraclespb.Condition) (condition, error) {
 
 	matcher, ok := decimalMatchers[c.Operator]
 	if !ok {
-		return nil, ErrUnsupportedOperator
+		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_DECIMAL)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -260,7 +261,7 @@ func toTimestampCondition(c *oraclespb.Condition) (condition, error) {
 
 	matcher, ok := timestampMatchers[c.Operator]
 	if !ok {
-		return nil, ErrUnsupportedOperator
+		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_TIMESTAMP)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -320,7 +321,7 @@ func toBooleanCondition(c *oraclespb.Condition) (condition, error) {
 
 	matcher, ok := booleanMatchers[c.Operator]
 	if !ok {
-		return nil, ErrUnsupportedOperator
+		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_BOOLEAN)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -347,7 +348,7 @@ func equalsBoolean(dataValue, condValue bool) bool {
 func toStringCondition(c *oraclespb.Condition) (condition, error) {
 	matcher, ok := stringMatchers[c.Operator]
 	if !ok {
-		return nil, ErrUnsupportedOperator
+		return nil, errUnsupportedOperatorForType(c.Operator, oraclespb.PropertyKey_TYPE_STRING)
 	}
 
 	return func(dataValue string) (bool, error) {
@@ -363,9 +364,17 @@ func equalsString(dataValue, condValue string) bool {
 	return dataValue == condValue
 }
 
+// errMismatchPropertyType is returned when a property is redeclared in
+// conditions but with a different type.
 func errMismatchPropertyType(prop string, first, new oraclespb.PropertyKey_Type) error {
 	return fmt.Errorf(
-		"cannot redeclared property %v with different type, first %v then %v",
+		"cannot redeclared property %s with different type, first %s then %s",
 		prop, first, new,
 	)
+}
+
+// errUnsupportedOperatorForType is returned when the property type does not
+// support the specified operator.
+func errUnsupportedOperatorForType(o oraclespb.Condition_Operator, t oraclespb.PropertyKey_Type) error {
+	return fmt.Errorf("unsupported operator %s for type %s", o, t)
 }

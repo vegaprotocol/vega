@@ -56,7 +56,7 @@ type App struct {
 	top            ValidatorTopology
 	vegaWallet     nodewallet.Wallet
 	netp           NetworkParameters
-	oracles        *Oracles
+	oracles        *Oracle
 }
 
 func NewApp(
@@ -78,7 +78,7 @@ func NewApp(
 	top ValidatorTopology,
 	wallet Wallet,
 	netp NetworkParameters,
-	oracles *Oracles,
+	oracles *Oracle,
 ) (*App, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())

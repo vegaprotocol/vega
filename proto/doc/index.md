@@ -10,11 +10,19 @@
     - [File-level Extensions](#github.com/mwitkow/go-proto-validators/validator.proto-extensions)
     - [File-level Extensions](#github.com/mwitkow/go-proto-validators/validator.proto-extensions)
   
+- [oracles/v1/oracles.proto](#oracles/v1/oracles.proto)
+    - [Condition](#oracles.v1.Condition)
+    - [Filter](#oracles.v1.Filter)
+    - [OracleSpecConfiguration](#oracles.v1.OracleSpecConfiguration)
+    - [PropertyKey](#oracles.v1.PropertyKey)
+  
+    - [Condition.Operator](#oracles.v1.Condition.Operator)
+    - [PropertyKey.Type](#oracles.v1.PropertyKey.Type)
+  
 - [markets.proto](#markets.proto)
     - [AuctionDuration](#vega.AuctionDuration)
     - [ContinuousTrading](#vega.ContinuousTrading)
     - [DiscreteTrading](#vega.DiscreteTrading)
-    - [EthereumEvent](#vega.EthereumEvent)
     - [FeeFactors](#vega.FeeFactors)
     - [Fees](#vega.Fees)
     - [Future](#vega.Future)
@@ -24,6 +32,7 @@
     - [LogNormalRiskModel](#vega.LogNormalRiskModel)
     - [MarginCalculator](#vega.MarginCalculator)
     - [Market](#vega.Market)
+    - [OracleSpecToFutureBinding](#vega.OracleSpecToFutureBinding)
     - [PriceMonitoringParameters](#vega.PriceMonitoringParameters)
     - [PriceMonitoringSettings](#vega.PriceMonitoringSettings)
     - [PriceMonitoringTrigger](#vega.PriceMonitoringTrigger)
@@ -323,15 +332,6 @@
     - [TradingDataService](#api.v1.TradingDataService)
     - [TradingService](#api.v1.TradingService)
   
-- [oracles/v1/oracles.proto](#oracles/v1/oracles.proto)
-    - [Condition](#oracles.v1.Condition)
-    - [Filter](#oracles.v1.Filter)
-    - [OracleSpec](#oracles.v1.OracleSpec)
-    - [PropertyKey](#oracles.v1.PropertyKey)
-  
-    - [Condition.Operator](#oracles.v1.Condition.Operator)
-    - [PropertyKey.Type](#oracles.v1.PropertyKey.Type)
-  
 - [tm/replay.proto](#tm/replay.proto)
     - [BlockParams](#tm.BlockParams)
     - [ConsensusParams](#tm.ConsensusParams)
@@ -433,6 +433,122 @@
 
 
 
+<a name="oracles/v1/oracles.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## oracles/v1/oracles.proto
+
+
+
+<a name="oracles.v1.Condition"></a>
+
+### Condition
+Condition describes the condition that must be validated by the
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| operator | [Condition.Operator](#oracles.v1.Condition.Operator) |  | comparator is the type of comparison to make on the value. |
+| value | [string](#string) |  | value is used by the comparator. |
+
+
+
+
+
+
+<a name="oracles.v1.Filter"></a>
+
+### Filter
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [PropertyKey](#oracles.v1.PropertyKey) |  | key is the oracle data property key targeted by the filter. |
+| conditions | [Condition](#oracles.v1.Condition) | repeated | conditions are the conditions that should be matched by the data to be considered of interest. |
+
+
+
+
+
+
+<a name="oracles.v1.OracleSpecConfiguration"></a>
+
+### OracleSpecConfiguration
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pub_keys | [string](#string) | repeated | pubKeys is the list of authorized public keys that signed the data for this oracle. All the public keys in the oracle data should be contained in these public keys. |
+| filters | [Filter](#oracles.v1.Filter) | repeated | filters describes which oracle data are considered of interest or not for the product (or the risk model). |
+
+
+
+
+
+
+<a name="oracles.v1.PropertyKey"></a>
+
+### PropertyKey
+PropertyKey describes the property key contained in an oracle data.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  | name is the name of the property. |
+| type | [PropertyKey.Type](#oracles.v1.PropertyKey.Type) |  | type is the type of the property. |
+
+
+
+
+
+ 
+
+
+<a name="oracles.v1.Condition.Operator"></a>
+
+### Condition.Operator
+Comparator describes the type of comparison.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| OPERATOR_UNSPECIFIED | 0 | The default value |
+| OPERATOR_EQUALS | 1 | Verify if the property values are strictly equal or not. |
+| OPERATOR_GREATER_THAN | 2 | Verify if the oracle data value is greater than the Condition value. |
+| OPERATOR_GREATER_THAN_OR_EQUAL | 3 | Verify if the oracle data value is greater than or equal to the Condition value. |
+| OPERATOR_LESS_THAN | 4 | Verify if the oracle data value is less than the Condition value. |
+| OPERATOR_LESS_THAN_OR_EQUAL | 5 | Verify if the oracle data value is less or equal to than the Condition value. |
+
+
+
+<a name="oracles.v1.PropertyKey.Type"></a>
+
+### PropertyKey.Type
+Type describes the type of properties that are supported by the oracle
+engine.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| TYPE_UNSPECIFIED | 0 | The default value. |
+| TYPE_EMPTY | 1 | Any type. |
+| TYPE_INTEGER | 2 | Integer type. |
+| TYPE_STRING | 3 | String type. |
+| TYPE_BOOLEAN | 4 | Boolean type. |
+| TYPE_DECIMAL | 5 | Any floating point decimal type. |
+| TYPE_TIMESTAMP | 6 | Timestamp date type. |
+
+
+ 
+
+ 
+
+ 
+
+
+
 <a name="markets.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -493,23 +609,6 @@ Discrete trading
 
 
 
-<a name="vega.EthereumEvent"></a>
-
-### EthereumEvent
-Ethereum event (for oracles)
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| contract_id | [string](#string) |  | Ethereum contract identifier |
-| event | [string](#string) |  | Event |
-| value | [uint64](#uint64) |  | Value |
-
-
-
-
-
-
 <a name="vega.FeeFactors"></a>
 
 ### FeeFactors
@@ -553,7 +652,8 @@ Future product definition
 | maturity | [string](#string) |  | The maturity for the future |
 | settlement_asset | [string](#string) |  | The asset for the future |
 | quote_name | [string](#string) |  | Quote name of the instrument |
-| ethereum_event | [EthereumEvent](#vega.EthereumEvent) |  | Ethereum events |
+| oracle_spec | [oracles.v1.OracleSpecConfiguration](#oracles.v1.OracleSpecConfiguration) |  | The oracle spec describing the oracle data of interest |
+| oracle_spec_binding | [OracleSpecToFutureBinding](#vega.OracleSpecToFutureBinding) |  | The binding between the oracle spec and the settlement price |
 
 
 
@@ -663,6 +763,22 @@ Market definition
 | target_stake_parameters | [TargetStakeParameters](#vega.TargetStakeParameters) |  | TargetStakeParameters for the market |
 | trading_mode | [Market.TradingMode](#vega.Market.TradingMode) |  | Current mode of execution of the market |
 | state | [Market.State](#vega.Market.State) |  | Current state of the market |
+
+
+
+
+
+
+<a name="vega.OracleSpecToFutureBinding"></a>
+
+### OracleSpecToFutureBinding
+OracleSpecToFutureBinding tells on which property oracle data should be
+used as settlement price.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| settlement_price_property | [string](#string) |  | settlement_price_property holds the name of the property in the oracle data that should be used as settlement price. If it is set to &#34;prices.BTC.value&#34;, then the Future will use the value of this property as settlement price. |
 
 
 
@@ -2366,6 +2482,8 @@ Future product configuration
 | maturity | [string](#string) |  | Future product maturity (ISO8601/RFC3339 timestamp) |
 | settlement_asset | [string](#string) |  | Product settlement asset identifier |
 | quote_name | [string](#string) |  | Product quote name |
+| oracle_spec | [oracles.v1.OracleSpecConfiguration](#oracles.v1.OracleSpecConfiguration) |  | The oracle spec describing the oracle data of interest |
+| oracle_spec_binding | [OracleSpecToFutureBinding](#vega.OracleSpecToFutureBinding) |  | The binding between the oracle spec and the settlement price |
 
 
 
@@ -5543,122 +5661,6 @@ Blockchain transaction type
 | PrepareVote | [PrepareVoteRequest](#api.v1.PrepareVoteRequest) | [PrepareVoteResponse](#api.v1.PrepareVoteResponse) | Prepare a governance vote |
 | PropagateChainEvent | [PropagateChainEventRequest](#api.v1.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.v1.PropagateChainEventResponse) | Propagate a chain event |
 | PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.v1.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.v1.PrepareLiquidityProvisionResponse) | Prepare a liquidity provision request |
-
- 
-
-
-
-<a name="oracles/v1/oracles.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## oracles/v1/oracles.proto
-
-
-
-<a name="oracles.v1.Condition"></a>
-
-### Condition
-Condition describes the condition that must be validated by the
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| operator | [Condition.Operator](#oracles.v1.Condition.Operator) |  | comparator is the type of comparison to make on the value. |
-| value | [string](#string) |  | value is used by the comparator. |
-
-
-
-
-
-
-<a name="oracles.v1.Filter"></a>
-
-### Filter
-Filter describes the conditions under which an oracle data is considered of
-interest or not.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [PropertyKey](#oracles.v1.PropertyKey) |  | key is the oracle data property key targeted by the filter. |
-| conditions | [Condition](#oracles.v1.Condition) | repeated | conditions are the conditions that should be matched by the data to be considered of interest. |
-
-
-
-
-
-
-<a name="oracles.v1.OracleSpec"></a>
-
-### OracleSpec
-An oracle spec describe the oracle data that a product (or a risk model)
-wants to get from the oracle engine.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| pub_keys | [string](#string) | repeated | pubKeys is the list of authorized public keys that signed the data for this oracle. All the public keys in the oracle data should be contained in these public keys. |
-| filters | [Filter](#oracles.v1.Filter) | repeated | filters describes which oracle data are considered of interest or not for the product (or the risk model). |
-
-
-
-
-
-
-<a name="oracles.v1.PropertyKey"></a>
-
-### PropertyKey
-PropertyKey describes the property key contained in an oracle data.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | name is the name of the property. |
-| type | [PropertyKey.Type](#oracles.v1.PropertyKey.Type) |  | type is the type of the property. |
-
-
-
-
-
- 
-
-
-<a name="oracles.v1.Condition.Operator"></a>
-
-### Condition.Operator
-Comparator describes the type of comparison.
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| OPERATOR_UNSPECIFIED | 0 | The default value |
-| OPERATOR_EQUALS | 1 | Verify if the property values are strictly equal or not. |
-| OPERATOR_GREATER_THAN | 2 | Verify if the oracle data value is greater than the Condition value. |
-| OPERATOR_GREATER_THAN_OR_EQUAL | 3 | Verify if the oracle data value is greater than or equal to the Condition value. |
-| OPERATOR_LESS_THAN | 4 | Verify if the oracle data value is less than the Condition value. |
-| OPERATOR_LESS_THAN_OR_EQUAL | 5 | Verify if the oracle data value is less or equal to than the Condition value. |
-
-
-
-<a name="oracles.v1.PropertyKey.Type"></a>
-
-### PropertyKey.Type
-Type describes the type of properties that are supported by the oracle
-engine.
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| TYPE_UNSPECIFIED | 0 | The default value. |
-| TYPE_EMPTY | 1 | Any type. |
-| TYPE_INTEGER | 2 | Integer type. |
-| TYPE_STRING | 3 | String type. |
-| TYPE_BOOLEAN | 4 | Boolean type. |
-| TYPE_DECIMAL | 5 | Any floating point decimal type. |
-| TYPE_TIMESTAMP | 6 | Timestamp date type. |
-
-
- 
-
- 
 
  
 

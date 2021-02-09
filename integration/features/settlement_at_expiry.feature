@@ -2,9 +2,9 @@ Feature: Test mark to market settlement
 
   Background:
     Given the markets starts on "2019-11-30T00:00:00Z" and expires on "2019-12-31T23:59:59Z"
-    And the executon engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlement price | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading |
-      | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |       0.11 |      0.1 |  0 | 0 |     0 |            1.4 |            1.2 |           1.1 |               42 | 0           | continuous   |        0 |                 0 |            0 |                 0  |                |             |                 | 0.1             |
+    And the execution engine have these markets:
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlement price | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys    | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
+      | ETH/DEC19 | BTC      | ETH       | ETH   |      1000 | simple     |       0.11 |      0.1 |  0 | 0 |     0 |            1.4 |            1.2 |           1.1 |               42 | 0           | continuous   |        0 |                 0 |            0 |                 0  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD| prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
   Scenario: Order cannot be placed once the market is expired
     Given the following traders:
       | name    | amount |
@@ -44,6 +44,7 @@ Feature: Test mark to market settlement
       | trader3 | ETH   | ETH/DEC19 |    132 |    4868 |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     And All balances cumulated are worth "16000"
+    Then oracle sends future settlement price event at "42" signed with "0xDEADBEEF"
     Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
       | trader  | id        | type | volume | price | resulting trades | error                         |

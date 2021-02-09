@@ -1,9 +1,9 @@
 ## VEGA - GraphQL schema
 
 schema {
-    query: Query
-    subscription: Subscription
-    mutation: Mutation
+  query: Query
+  subscription: Subscription
+  mutation: Mutation
 }
 
 "Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data."
@@ -131,7 +131,7 @@ type Mutation {
     sig: SignatureInput!
     "The way to send the transaction"
     type: SubmitTransactionType
-): TransactionSubmitted!
+  ): TransactionSubmitted!
 
   "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
@@ -376,9 +376,9 @@ type LiquidityProviderFeeShare {
   party: Party!
   "The share own by this liquidity provider (float)"
   equityLikeShare: String!
- "the average entry valuation of the liqidity provider for the market"
+  "the average entry valuation of the liqidity provider for the market"
   averageEntryValuation: String!
- }
+}
 
 "The MM commitments for this market"
 type MarketDataCommitments {
@@ -516,7 +516,7 @@ type Query {
 
   "An asset which is used in the vega network"
   asset(
-   "Id of the asset"
+    "Id of the asset"
     assetId: String!
   ): Asset
 
@@ -790,17 +790,6 @@ type InstrumentMetadata {
   tags: [String!]
 }
 
-"An Ethereum oracle"
-type EthereumEvent {
-
-  "The ID of the ethereum contract to use (string)"
-  contractId: String!
-
-  "Name of the Ethereum event to listen to. (string)"
-  event: String!
-}
-
-union Oracle = EthereumEvent
 
 "A Future product"
 type Future {
@@ -814,9 +803,111 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle used for this product (Oracle union)"
-  oracle: Oracle!
+  "The oracle spec describing the oracle data of interest."
+  oracleSpec: OracleSpec!
+
+  "The binding between the oracle spec and the settlement price"
+  oracleSpecBinding: OracleSpecToFutureBinding!
 }
+
+"""
+OracleSpecToFutureBinding tells on which property oracle data should be
+used as settlement price.
+"""
+type OracleSpecToFutureBinding {
+  settlementPriceProperty: String!
+}
+
+"""
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+"""
+type OracleSpec {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [Filter!]
+}
+
+"""
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+"""
+type Filter {
+  "key is the oracle data property key targeted by the filter."
+  key: PropertyKey!
+  """
+  conditions are the conditions that should be matched by the data to be
+  considered of interest.
+  """
+  conditions: [Condition!]
+}
+
+
+"PropertyKey describes the property key contained in an oracle data."
+type PropertyKey {
+  "name is the name of the property."
+  name: String
+  "type is the type of the property."
+  type: PropertyKeyType!
+}
+
+"""
+Type describes the type of properties that are supported by the oracle
+engine.
+"""
+enum PropertyKeyType {
+  "Any type."
+  TypeEmpty
+  "Integer type."
+  TypeInteger
+  "String type."
+  TypeString
+  "Boolean type."
+  TypeBoolean
+  "Any floating point decimal type."
+  TypeDecimal
+  "Timestamp date type."
+  TypeTimestamp
+}
+
+"""
+Condition describes the condition that must be validated by the
+"""
+type Condition {
+  "comparator is the type of comparison to make on the value."
+  operator: ConditionOperator!
+  "value is used by the comparator."
+  value: String
+}
+
+"Comparator describes the type of comparison."
+enum ConditionOperator {
+  "Verify if the property values are strictly equal or not."
+  OperatorEquals
+  "Verify if the oracle data value is greater than the Condition value."
+  OperatorGreaterThan
+  """
+  Verify if the oracle data value is greater than or equal to the Condition
+  value.
+  """
+  OperatorGreaterThanOrEqual
+  " Verify if the oracle data value is less than the Condition value."
+  OperatorLessThan
+  """
+  Verify if the oracle data value is less or equal to than the Condition
+  value.
+  """
+  OperatorLessThanOrEqual
+}
+
 
 union Product = Future
 
@@ -886,11 +977,11 @@ type Fees {
 """
 An auction duration is used to configure 3 auction periods:
 1. `duration > 0`, `volume == 0`:
-  The auction will last for at least N seconds.
+The auction will last for at least N seconds.
 2. `duration == 0`, `volume > 0`:
-  The auction will end once we can close with given traded volume.
+The auction will end once we can close with given traded volume.
 3. `duration > 0`, `volume > 0`:
-  The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
 """
 type AuctionDuration {
   "Duration of the auction in seconds"
@@ -977,16 +1068,16 @@ type Market {
   number denominated in the currency of the Market. (uint64)
 
   Examples:
-    Currency     Balance  decimalPlaces  Real Balance
-    GBP              100              0       GBP 100
-    GBP              100              2       GBP   1.00
-    GBP              100              4       GBP   0.01
-    GBP                1              4       GBP   0.0001   (  0.01p  )
+  Currency     Balance  decimalPlaces  Real Balance
+  GBP              100              0       GBP 100
+  GBP              100              2       GBP   1.00
+  GBP              100              4       GBP   0.01
+  GBP                1              4       GBP   0.0001   (  0.01p  )
 
-    GBX (pence)      100              0       GBP   1.00     (100p     )
-    GBX (pence)      100              2       GBP   0.01     (  1p     )
-    GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-    GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+  GBX (pence)      100              0       GBP   1.00     (100p     )
+  GBX (pence)      100              2       GBP   0.01     (  1p     )
+  GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+  GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
   """
   decimalPlaces: Int!
 
@@ -1064,20 +1155,20 @@ The depth of market measure provides an indication of the liquidity and depth fo
 """
 type MarketDepth {
 
-    "Market id"
-    market: Market!
+  "Market id"
+  market: Market!
 
-    "Buy side price levels (if available)"
-    buy: [PriceLevel!]
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
 
-    "Sell side price levels (if available)"
-    sell: [PriceLevel!]
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
 
-    "Last trade for the given market (if available)"
-    lastTrade: Trade
+  "Last trade for the given market (if available)"
+  lastTrade: Trade
 
-    "Sequence number for the current snapshot of the market depth"
-    sequenceNumber: String!
+  "Sequence number for the current snapshot of the market depth"
+  sequenceNumber: String!
 }
 
 """
@@ -1086,58 +1177,58 @@ market depth structure to keep it correct
 """
 type MarketDepthUpdate {
 
-    "Market id"
-    market: Market!
+  "Market id"
+  market: Market!
 
-    "Buy side price levels (if available)"
-    buy: [PriceLevel!]
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
 
-    "Sell side price levels (if available)"
-    sell: [PriceLevel!]
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
 
-    "Sequence number for the current snapshot of the market depth"
-    sequenceNumber: String!
+  "Sequence number for the current snapshot of the market depth"
+  sequenceNumber: String!
 }
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
 
-    "The price of all the orders at this level (uint64)"
-    price: String!
+  "The price of all the orders at this level (uint64)"
+  price: String!
 
-    "The total remaining size of all orders at this level (uint64)"
-    volume: String!
+  "The total remaining size of all orders at this level (uint64)"
+  volume: String!
 
-    "The number of orders at this price level (uint64)"
-    numberOfOrders: String!
+  "The number of orders at this price level (uint64)"
+  numberOfOrders: String!
 }
 
 "Candle stick representation of trading"
 type Candle {
 
-    "Unix epoch+nanoseconds for when the candle occurred"
-    timestamp: String!
+  "Unix epoch+nanoseconds for when the candle occurred"
+  timestamp: String!
 
-    "ISO-8601 RFC3339+Nano formatted data and time for the candle"
-    datetime: String!
+  "ISO-8601 RFC3339+Nano formatted data and time for the candle"
+  datetime: String!
 
-    "High price (uint64)"
-    high: String!
+  "High price (uint64)"
+  high: String!
 
-    "Low price (uint64)"
-    low: String!
+  "Low price (uint64)"
+  low: String!
 
-    "Open price (uint64)"
-    open: String!
+  "Open price (uint64)"
+  open: String!
 
-    "Close price (uint64)"
-    close: String!
+  "Close price (uint64)"
+  close: String!
 
-    "Volume price (uint64)"
-    volume: String!
+  "Volume price (uint64)"
+  volume: String!
 
-    "Interval price (string)"
-    interval: Interval!
+  "Interval price (string)"
+  interval: Interval!
 }
 
 "Represents a party on Vega, could be an ethereum wallet address in the future"
@@ -1488,26 +1579,26 @@ enum DepositStatus {
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
 
-    "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
-    FOK
+  "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
+  FOK
 
-    "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
-    IOC
+  "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
+  IOC
 
-    "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
-    GTC
+  "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
+  GTC
 
-    """
-    This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
-    NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-    """
-    GTT
+  """
+  This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+  NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
+  """
+  GTT
 
-    "This order is only accepted during an auction period"
-    GFA
+  "This order is only accepted during an auction period"
+  GFA
 
-    "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
-    GFN
+  "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
+  GFN
 }
 
 "Valid references used for pegged orders."
@@ -1732,7 +1823,7 @@ enum OrderRejectionReason {
   PeggedOrderSellCannotReferenceBestBidPrice
 
   "Pegged order offset must be > zero"
-	PeggedOrderOffsetMustBeGreaterThanZero
+  PeggedOrderOffsetMustBeGreaterThanZero
 
   "Insufficient balance to submit the order (no deposit made)"
   InsufficientAssetBalance
@@ -1894,6 +1985,69 @@ input FutureProductInput {
   settlementAsset: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
+  "The oracle spec describing the oracle data of interest."
+  oracleSpec: OracleSpecInput!
+  "The binding between the oracle spec and the settlement price"
+  oracleSpecBinding: OracleSpecToFutureBindingInput!
+}
+
+"""
+OracleSpecToFutureBindingInput tells on which property oracle data should be
+used as settlement price.
+"""
+input OracleSpecToFutureBindingInput {
+  settlementPriceProperty: String!
+}
+
+"""
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+"""
+input OracleSpecInput {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [FilterInput!]
+}
+
+"""
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+"""
+input FilterInput {
+  "key is the oracle data property key targeted by the filter."
+  key: PropertyKeyInput!
+  """
+  conditions are the conditions that should be matched by the data to be
+  considered of interest.
+  """
+  conditions: [ConditionInput!]
+}
+
+
+"PropertyKey describes the property key contained in an oracle data."
+input PropertyKeyInput {
+  "name is the name of the property."
+  name: String!
+  "type is the type of the property."
+  type: PropertyKeyType!
+}
+
+"""
+Condition describes the condition that must be validated by the
+"""
+input ConditionInput {
+  "comparator is the type of comparison to make on the value."
+  operator: ConditionOperator!
+  "value is used by the comparator."
+  value: String!
 }
 
 type FutureProduct {
@@ -1901,7 +2055,7 @@ type FutureProduct {
   maturity: String!
   "Product asset ID"
   settlementAsset: Asset!
- "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
 }
@@ -2141,10 +2295,10 @@ input BuiltinAssetInput {
 
 """
 Various states a proposal can transition through:
-  Open ->
-      - Passed -> Enacted.
-      - Rejected.
-  Proposal can enter Failed state from any other state.
+Open ->
+- Passed -> Enacted.
+- Rejected.
+Proposal can enter Failed state from any other state.
 """
 enum ProposalState {
   "Proposal became invalid and cannot be processed"

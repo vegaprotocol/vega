@@ -17,7 +17,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/storage"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jessevdk/go-flags"
 	"github.com/zannen/toml"
@@ -253,16 +255,24 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 					InitialMarkPrice: skel.initialMarkPrice,
 					Product: &proto.Instrument_Future{
 						Future: &proto.Future{
-							QuoteName: skel.quoteName,
-							Maturity:  skel.maturity.Format("2006-01-02T15:04:05Z"),
-							Oracle: &proto.Future_EthereumEvent{
-								EthereumEvent: &proto.EthereumEvent{
-									ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-									Event:      "price_changed",
-									Value:      skel.settlementValue,
+							QuoteName:       skel.quoteName,
+							Maturity:        skel.maturity.Format("2006-01-02T15:04:05Z"),
+							SettlementAsset: skel.settlementAsset,
+							OracleSpec: &oraclesv1.OracleSpecConfiguration{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "prices.ETH.value",
+											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
 								},
 							},
-							SettlementAsset: skel.settlementAsset,
+							OracleSpecBinding: &proto.OracleSpecToFutureBinding{
+								SettlementPriceProperty: "prices.ETH.value",
+							},
 						},
 					},
 				},

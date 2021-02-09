@@ -364,7 +364,10 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.topology,
 		l.nodeWallet,
 		l.netParams,
-		l.oracles,
+		&processor.Oracle{
+			Engine:   l.oracle,
+			Adaptors: l.oracleAdaptors,
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -468,12 +471,16 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
+	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles)
+	l.oracleAdaptors = oracleAdaptors.New()
+
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log,
 		l.conf.Execution,
 		l.timeService,
 		l.collateral,
+		l.oracle,
 		l.broker,
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
@@ -493,11 +500,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
 		return err
-	}
-
-	l.oracles = &processor.Oracles{
-		Engine:   oracles.NewEngine(),
-		Adaptors: oracleAdaptors.NewAdaptors(),
 	}
 
 	l.genesisHandler.OnGenesisAppStateLoaded(

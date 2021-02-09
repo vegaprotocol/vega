@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/oracles"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,19 +26,20 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Matching presence of present properties succeeds", testOracleSpecMatchingPropertiesPresenceSucceeds)
 	t.Run("Matching presence of missing properties fails", testOracleSpecMatchingPropertiesPresenceFails)
 	t.Run("Matching with inconvertible type fails", testOracleSpecMatchingWithInconvertibleTypeFails)
+	t.Run("Verifying binding of property works", testOracleSpecVerifyingBindingWorks)
 }
 
 func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 	// given
-	spec := oraclesv1.OracleSpec{
+	spec := oraclespb.OracleSpecConfiguration{
 		PubKeys: []string{},
-		Filters: []*oraclesv1.Filter{
+		Filters: []*oraclespb.Filter{
 			{
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "price",
-					Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclesv1.Condition{},
+				Conditions: []*oraclespb.Condition{},
 			},
 		},
 	}
@@ -54,11 +55,11 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 
 func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 	// given
-	spec := oraclesv1.OracleSpec{
+	spec := oraclespb.OracleSpecConfiguration{
 		PubKeys: []string{
 			"0xCAFED00D",
 		},
-		Filters: []*oraclesv1.Filter{},
+		Filters: []*oraclespb.Filter{},
 	}
 
 	// when
@@ -72,32 +73,32 @@ func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 
 func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 		},
-		Filters: []*oraclesv1.Filter{
+		Filters: []*oraclespb.Filter{
 			{
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "prices.BTC.value",
-					Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclesv1.Condition{
+				Conditions: []*oraclespb.Condition{
 					{
 						Value:    "42",
-						Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN,
+						Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
 					},
 				},
 			}, {
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "prices.BTC.value",
-					Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclesv1.Condition{
+				Conditions: []*oraclespb.Condition{
 					{
 						Value:    "84",
-						Operator: oraclesv1.Condition_OPERATOR_LESS_THAN,
+						Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
 					},
 				},
 			},
@@ -141,32 +142,32 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 
 func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) {
 	// given
-	originalSpec := oraclesv1.OracleSpec{
+	originalSpec := oraclespb.OracleSpecConfiguration{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 		},
-		Filters: []*oraclesv1.Filter{
+		Filters: []*oraclespb.Filter{
 			{
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "prices.BTC.value",
-					Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclesv1.Condition{
+				Conditions: []*oraclespb.Condition{
 					{
 						Value:    "42",
-						Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN,
+						Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
 					},
 				},
 			}, {
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "prices.BTC.value",
-					Type: oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+					Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
 				},
-				Conditions: []*oraclesv1.Condition{
+				Conditions: []*oraclespb.Condition{
 					{
 						Value:    "84",
-						Operator: oraclesv1.Condition_OPERATOR_LESS_THAN,
+						Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
 					},
 				},
 			},
@@ -185,24 +186,24 @@ func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) 
 func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 	cases := []struct {
 		msg   string
-		typ   oraclesv1.PropertyKey_Type
+		typ   oraclespb.PropertyKey_Type
 		value string
 	}{
 		{
 			msg:   "not an integer",
-			typ:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			typ:   oraclespb.PropertyKey_TYPE_INTEGER,
 			value: "not an integer",
 		}, {
 			msg:   "not a boolean",
-			typ:   oraclesv1.PropertyKey_TYPE_BOOLEAN,
+			typ:   oraclespb.PropertyKey_TYPE_BOOLEAN,
 			value: "42",
 		}, {
 			msg:   "not a decimal",
-			typ:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			typ:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			value: "not a decimal",
 		}, {
 			msg:   "not a timestamp",
-			typ:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			typ:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			value: "not a timestamp",
 		},
 	}
@@ -210,20 +211,20 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			originalSpec := oraclesv1.OracleSpec{
+			originalSpec := oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.typ,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    c.value,
-								Operator: oraclesv1.Condition_OPERATOR_EQUALS,
+								Operator: oraclespb.Condition_OPERATOR_EQUALS,
 							},
 						},
 					},
@@ -242,21 +243,21 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 
 func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 		},
-		Filters: []*oraclesv1.Filter{
+		Filters: []*oraclespb.Filter{
 			{
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "prices.BTC.value",
-					Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclesv1.Condition{
+				Conditions: []*oraclespb.Condition{
 					{
 						Value:    "42",
-						Operator: oraclesv1.Condition_OPERATOR_EQUALS,
+						Operator: oraclespb.Condition_OPERATOR_EQUALS,
 					},
 				},
 			},
@@ -283,22 +284,22 @@ func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 
 func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
 			"0xBADDCAFE",
 		},
-		Filters: []*oraclesv1.Filter{
+		Filters: []*oraclespb.Filter{
 			{
-				Key: &oraclesv1.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "prices.BTC.value",
-					Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},
-				Conditions: []*oraclesv1.Condition{
+				Conditions: []*oraclespb.Condition{
 					{
 						Value:    "42",
-						Operator: oraclesv1.Condition_OPERATOR_EQUALS,
+						Operator: oraclespb.Condition_OPERATOR_EQUALS,
 					},
 				},
 			},
@@ -326,68 +327,68 @@ func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclesv1.PropertyKey_Type
+		keyType   oraclespb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer values should be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer values should not be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   false,
 		}, {
 			msg:       "boolean values should be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_BOOLEAN,
+			keyType:   oraclespb.PropertyKey_TYPE_BOOLEAN,
 			specValue: "true",
 			dataValue: "true",
 			matched:   true,
 		}, {
 			msg:       "boolean values should not be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_BOOLEAN,
+			keyType:   oraclespb.PropertyKey_TYPE_BOOLEAN,
 			specValue: "true",
 			dataValue: "false",
 			matched:   false,
 		}, {
 			msg:       "decimal values should be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal values should not be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   false,
 		}, {
 			msg:       "string values should be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_STRING,
+			keyType:   oraclespb.PropertyKey_TYPE_STRING,
 			specValue: "hello, world!",
 			dataValue: "hello, world!",
 			matched:   true,
 		}, {
 			msg:       "string values should not be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_STRING,
+			keyType:   oraclespb.PropertyKey_TYPE_STRING,
 			specValue: "hello, world!",
 			dataValue: "hello, galaxy!",
 			matched:   false,
 		}, {
 			msg:       "timestamp values should be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1612279145",
 			dataValue: "1612279145",
 			matched:   true,
 		}, {
 			msg:       "timestamp values should not be equal",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   false,
@@ -398,31 +399,31 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    c.specValue,
-								Operator: oraclesv1.Condition_OPERATOR_EQUALS,
+								Operator: oraclespb.Condition_OPERATOR_EQUALS,
 							},
 						},
 					}, {
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.ETH.value",
-							Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    "42",
-								Operator: oraclesv1.Condition_OPERATOR_EQUALS,
+								Operator: oraclespb.Condition_OPERATOR_EQUALS,
 							},
 						},
 					},
@@ -452,44 +453,44 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclesv1.PropertyKey_Type
+		keyType   oraclespb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   false,
@@ -500,31 +501,31 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    c.specValue,
-								Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN,
+								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
 							},
 						},
 					}, {
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.ETH.value",
-							Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    "42",
-								Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN,
+								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN,
 							},
 						},
 					},
@@ -554,62 +555,62 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclesv1.PropertyKey_Type
+		keyType   oraclespb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be equal to spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be equal to spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be equal to spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be greater than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   false,
@@ -620,31 +621,31 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    c.specValue,
-								Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 							},
 						},
 					}, {
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.ETH.value",
-							Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    "42",
-								Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+								Operator: oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 							},
 						},
 					},
@@ -674,44 +675,44 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclesv1.PropertyKey_Type
+		keyType   oraclespb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   false,
@@ -722,31 +723,31 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    c.specValue,
-								Operator: oraclesv1.Condition_OPERATOR_LESS_THAN,
+								Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
 							},
 						},
 					}, {
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.ETH.value",
-							Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    "42",
-								Operator: oraclesv1.Condition_OPERATOR_LESS_THAN,
+								Operator: oraclespb.Condition_OPERATOR_LESS_THAN,
 							},
 						},
 					},
@@ -776,62 +777,62 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclesv1.PropertyKey_Type
+		keyType   oraclespb.PropertyKey_Type
 		specValue string
 		dataValue string
 		matched   bool
 	}{
 		{
 			msg:       "integer: data value should be equal to spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "84",
 			dataValue: "42",
 			matched:   true,
 		}, {
 			msg:       "integer: data value should not be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "84",
 			matched:   false,
 		}, {
 			msg:       "decimal: data value should be equal to spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "3.4",
 			dataValue: "1.2",
 			matched:   true,
 		}, {
 			msg:       "decimal: data value should not be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "3.4",
 			matched:   false,
 		}, {
 			msg:       "timestamp: data value should be equal to spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "2222222222",
 			dataValue: "1111111111",
 			matched:   true,
 		}, {
 			msg:       "timestamp: data value should not be less than spec value",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "2222222222",
 			matched:   false,
@@ -842,31 +843,31 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    c.specValue,
-								Operator: oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+								Operator: oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
 							},
 						},
 					}, {
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.ETH.value",
-							Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    "42",
-								Operator: oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+								Operator: oraclespb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
 							},
 						},
 					},
@@ -896,23 +897,23 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 	cases := []struct {
 		msg     string
-		keyType oraclesv1.PropertyKey_Type
+		keyType oraclespb.PropertyKey_Type
 	}{
 		{
 			msg:     "integer values is present",
-			keyType: oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType: oraclespb.PropertyKey_TYPE_INTEGER,
 		}, {
 			msg:     "boolean values is present",
-			keyType: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+			keyType: oraclespb.PropertyKey_TYPE_BOOLEAN,
 		}, {
 			msg:     "decimal values is present",
-			keyType: oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType: oraclespb.PropertyKey_TYPE_DECIMAL,
 		}, {
 			msg:     "string values is present",
-			keyType: oraclesv1.PropertyKey_TYPE_STRING,
+			keyType: oraclespb.PropertyKey_TYPE_STRING,
 		}, {
 			msg:     "timestamp values is present",
-			keyType: oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType: oraclespb.PropertyKey_TYPE_TIMESTAMP,
 		},
 	}
 
@@ -920,24 +921,24 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{},
+						Conditions: []*oraclespb.Condition{},
 					},
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.ETH.value",
-							Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclesv1.Condition{},
+						Conditions: []*oraclespb.Condition{},
 					},
 				},
 			})
@@ -965,23 +966,23 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 	cases := []struct {
 		msg     string
-		keyType oraclesv1.PropertyKey_Type
+		keyType oraclespb.PropertyKey_Type
 	}{
 		{
 			msg:     "integer values is absent",
-			keyType: oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType: oraclespb.PropertyKey_TYPE_INTEGER,
 		}, {
 			msg:     "boolean values is absent",
-			keyType: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+			keyType: oraclespb.PropertyKey_TYPE_BOOLEAN,
 		}, {
 			msg:     "decimal values is absent",
-			keyType: oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType: oraclespb.PropertyKey_TYPE_DECIMAL,
 		}, {
 			msg:     "string values is absent",
-			keyType: oraclesv1.PropertyKey_TYPE_STRING,
+			keyType: oraclespb.PropertyKey_TYPE_STRING,
 		}, {
 			msg:     "timestamp values is absent",
-			keyType: oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType: oraclespb.PropertyKey_TYPE_TIMESTAMP,
 		},
 	}
 
@@ -989,24 +990,24 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{},
+						Conditions: []*oraclespb.Condition{},
 					},
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.ETH.value",
-							Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							Type: oraclespb.PropertyKey_TYPE_INTEGER,
 						},
-						Conditions: []*oraclesv1.Condition{},
+						Conditions: []*oraclespb.Condition{},
 					},
 				},
 			})
@@ -1033,28 +1034,28 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 	cases := []struct {
 		msg       string
-		keyType   oraclesv1.PropertyKey_Type
+		keyType   oraclespb.PropertyKey_Type
 		specValue string
 		dataValue string
 	}{
 		{
 			msg:       "not an integer",
-			keyType:   oraclesv1.PropertyKey_TYPE_INTEGER,
+			keyType:   oraclespb.PropertyKey_TYPE_INTEGER,
 			specValue: "42",
 			dataValue: "not an integer",
 		}, {
 			msg:       "not a boolean",
-			keyType:   oraclesv1.PropertyKey_TYPE_BOOLEAN,
+			keyType:   oraclespb.PropertyKey_TYPE_BOOLEAN,
 			specValue: "true",
 			dataValue: "not a boolean",
 		}, {
 			msg:       "not a decimal",
-			keyType:   oraclesv1.PropertyKey_TYPE_DECIMAL,
+			keyType:   oraclespb.PropertyKey_TYPE_DECIMAL,
 			specValue: "1.2",
 			dataValue: "not a decimal",
 		}, {
 			msg:       "not a timestamp",
-			keyType:   oraclesv1.PropertyKey_TYPE_TIMESTAMP,
+			keyType:   oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			specValue: "1111111111",
 			dataValue: "not a timestamp",
 		},
@@ -1064,20 +1065,20 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclesv1.OracleSpec{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
-				Filters: []*oraclesv1.Filter{
+				Filters: []*oraclespb.Filter{
 					{
-						Key: &oraclesv1.PropertyKey{
+						Key: &oraclespb.PropertyKey{
 							Name: "prices.BTC.value",
 							Type: c.keyType,
 						},
-						Conditions: []*oraclesv1.Condition{
+						Conditions: []*oraclespb.Condition{
 							{
 								Value:    c.specValue,
-								Operator: oraclesv1.Condition_OPERATOR_EQUALS,
+								Operator: oraclespb.Condition_OPERATOR_EQUALS,
 							},
 						},
 					},
@@ -1099,6 +1100,105 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 			// then
 			require.Error(t, err)
 			assert.False(t, matched)
+		})
+	}
+}
+
+func testOracleSpecVerifyingBindingWorks(t *testing.T) {
+	cases := []struct {
+		msg              string
+		keyType          oraclespb.PropertyKey_Type
+		declaredProperty string
+		boundProperty    string
+		expectedMatch    bool
+	}{
+		{
+			msg:              "same integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_INTEGER,
+			declaredProperty: "price.ETH.value",
+			boundProperty:    "price.ETH.value",
+			expectedMatch:    true,
+		}, {
+			msg:              "different integer properties cannot be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_INTEGER,
+			declaredProperty: "price.USD.value",
+			boundProperty:    "price.BTC.value",
+			expectedMatch:    false,
+		}, {
+			msg:              "same integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_BOOLEAN,
+			declaredProperty: "price.ETH.value",
+			boundProperty:    "price.ETH.value",
+			expectedMatch:    true,
+		}, {
+			msg:              "different integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_BOOLEAN,
+			declaredProperty: "price.USD.value",
+			boundProperty:    "price.BTC.value",
+			expectedMatch:    false,
+		}, {
+			msg:              "same integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_DECIMAL,
+			declaredProperty: "price.ETH.value",
+			boundProperty:    "price.ETH.value",
+			expectedMatch:    true,
+		}, {
+			msg:              "different integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_DECIMAL,
+			declaredProperty: "price.USD.value",
+			boundProperty:    "price.BTC.value",
+			expectedMatch:    false,
+		}, {
+			msg:              "same integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_STRING,
+			declaredProperty: "price.ETH.value",
+			boundProperty:    "price.ETH.value",
+			expectedMatch:    true,
+		}, {
+			msg:              "different integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_STRING,
+			declaredProperty: "price.USD.value",
+			boundProperty:    "price.BTC.value",
+			expectedMatch:    false,
+		}, {
+			msg:              "same integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredProperty: "price.ETH.value",
+			boundProperty:    "price.ETH.value",
+			expectedMatch:    true,
+		}, {
+			msg:              "different integer properties can be bound",
+			keyType:          oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredProperty: "price.USD.value",
+			boundProperty:    "price.BTC.value",
+			expectedMatch:    false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.msg, func(t *testing.T) {
+
+			// given
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+				PubKeys: []string{
+					"0xCAFED00D",
+				},
+				Filters: []*oraclespb.Filter{
+					{
+						Key: &oraclespb.PropertyKey{
+							Name: c.declaredProperty,
+							Type: c.keyType,
+						},
+						Conditions: []*oraclespb.Condition{},
+					},
+				},
+			})
+
+			// when
+			matched := spec.CanBindProperty(c.boundProperty)
+
+			// then
+			assert.Equal(t, c.expectedMatch, matched)
 		})
 	}
 }

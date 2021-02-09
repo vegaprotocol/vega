@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/oracles"
 	types "code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
@@ -36,7 +39,7 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	return nil
 }
 
-func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
+func theExecutionEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
 	mkts := []types.Market{}
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "name" {
@@ -49,7 +52,7 @@ func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
 	t, _ := time.Parse("2006-01-02T15:04:05Z", marketStart)
 	execsetup = getExecutionTestSetup(t, mkts)
 
-	// reset market startime and expiry for next run
+	// reset market start time and expiry for next run
 	marketExpiry = defaultMarketExpiry
 	marketStart = defaultMarketStart
 
@@ -122,7 +125,7 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 		if err != nil {
 			return err
 		}
-		if uint64(acc.Balance) != balance {
+		if acc.Balance != balance {
 			return fmt.Errorf("invalid general account balance, expected %v got %v", arg2, acc.Balance)
 		}
 	}
@@ -184,7 +187,7 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 		return err
 	}
 
-	if uint64(acc.Balance) != balance {
+	if acc.Balance != balance {
 		return fmt.Errorf("invalid general asset=%v account balance=%v for trader=%v", asset, acc.Balance, trader)
 	}
 
@@ -523,7 +526,7 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	for _, v := range data {
 		// remove vote token
 		if v.Asset != "VOTE" {
-			cumul += uint64(v.Balance)
+			cumul += v.Balance
 		}
 	}
 
@@ -533,7 +536,7 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	return nil
 }
 
-func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
+func theFollowingTransfersHappened(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
 		from := val(row, 0)
 		if from == "from" {
@@ -766,7 +769,7 @@ func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
 		retries--
 	}
 
-	if len(pos) <= 0 {
+	if pos == nil || len(pos) <= 0 {
 		return fmt.Errorf("party do not have a position, party(%v)", party)
 	}
 
@@ -853,7 +856,6 @@ func theFollowingTradesHappened(trades *gherkin.DataTable) error {
 		if val(row, 0) == "buyer" {
 			continue
 		}
-		ok := false
 		buyer, seller, price, volume := val(row, 0), val(row, 1), u64val(row, 2), u64val(row, 3)
 		data := execsetup.broker.getTrades()
 		for _, v := range data {
@@ -862,10 +864,7 @@ func theFollowingTradesHappened(trades *gherkin.DataTable) error {
 			}
 		}
 
-		if !ok {
-			err = fmt.Errorf("expecting trade was missing: buyer(%v), seller(%v), price(%v), volume(%v)", buyer, seller, price, volume)
-			break
-		}
+		return fmt.Errorf("expecting trade was missing: buyer(%v), seller(%v), price(%v), volume(%v)", buyer, seller, price, volume)
 	}
 
 	return err
@@ -1031,6 +1030,11 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 		openingAuction = nil
 	}
 
+	oracleSpecPropertyType, err := oracleSpecPropertyTypeVal(row, 27)
+	if err != nil {
+		log.Fatalf("Can't parse oracleSpecPropertyType %v to PropertyKey_Type: %v", row.Cells[28].Value, err)
+	}
+
 	mkt := types.Market{
 		TradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
 		State:         types.Market_STATE_ACTIVE,
@@ -1058,15 +1062,23 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
 						Maturity: marketExpiry,
-						Oracle: &types.Future_EthereumEvent{
-							EthereumEvent: &types.EthereumEvent{
-								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-								Event:      "price_changed",
-								Value:      u64val(row, 14),
-							},
-						},
 						SettlementAsset: val(row, 3),
 						QuoteName:       val(row, 2),
+						OracleSpec: &oraclesv1.OracleSpecConfiguration{
+							PubKeys: strings.Split(val(row, 25),","),
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: val(row, 26),
+										Type: oracleSpecPropertyType,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
+						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							SettlementPriceProperty: val(row, 28),
+						},
 					},
 				},
 			},
@@ -1114,7 +1126,6 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 	}
 
 	return mkt
-
 }
 
 func executedTrades(trades *gherkin.DataTable) error {
@@ -1125,7 +1136,7 @@ func executedTrades(trades *gherkin.DataTable) error {
 			price := u64val(row, 1)
 			size := u64val(row, 2)
 			counterparty := val(row, 3)
-			var found bool = false
+			var found = false
 			data := execsetup.broker.getTrades()
 			for _, v := range data {
 				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
@@ -1375,4 +1386,13 @@ func tradersWithdrawBalance(in *gherkin.DataTable) error {
 		}
 	}
 	return nil
+}
+
+func oracleSendsFutureSettlementPriceEventAt(price, pubKey string) error {
+	return execsetup.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{pubKey},
+		Data:    map[string]string {
+			"prices.ETH.value": price,
+		},
+	})
 }

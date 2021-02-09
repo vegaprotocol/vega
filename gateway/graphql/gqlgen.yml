@@ -109,3 +109,13 @@ models:
         resolver: true
   PeggedOrder:
     model: code.vegaprotocol.io/vega/proto.PeggedOrder
+  OracleSpecToFutureBinding:
+    model: code.vegaprotocol.io/vega/proto.OracleSpecToFutureBinding
+  OracleSpec:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.OracleSpecConfiguration
+  Filter:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.Filter
+  PropertyKey:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.PropertyKey
+  Condition:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.Condition
