@@ -3314,7 +3314,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	require.Equal(t, lp.CommitmentAmount, suppliedStake)
 }
 
-func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(t *testing.T) {
+func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -3432,7 +3432,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_Closeout(
 	require.Equal(t, suppliedStake, zero)
 }
 
-func TestBondAccountUsedForMarginShortage_PenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
+func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
