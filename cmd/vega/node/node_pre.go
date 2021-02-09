@@ -596,7 +596,7 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeScalingFactor,
+			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
 			Watcher: l.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
 		netparams.WatchParam{
