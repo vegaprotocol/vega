@@ -1937,6 +1937,11 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		return nil, ErrTradingNotAllowed
 	}
 
+	// cancelling and amending an order that is part of the LP commitment isn't allowed
+	if m.liquidity.IsLiquidityOrder(partyID, orderID) {
+		return nil, types.ErrEditNotAllowed
+	}
+
 	return m.cancelOrder(ctx, partyID, orderID)
 }
 
@@ -1948,11 +1953,6 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	if m.closed {
 		return nil, ErrMarketClosed
-	}
-
-	// cancelling and amending an order that is part of the LP commitment isn't allowed
-	if m.liquidity.IsLiquidityOrder(partyID, orderID) {
-		return nil, types.ErrEditNotAllowed
 	}
 
 	order, foundOnBook, err := m.getOrderByID(orderID)
