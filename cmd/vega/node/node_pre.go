@@ -604,6 +604,14 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
 		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeScalingFactor,
+			Watcher: l.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeTimeWindow,
+			Watcher: l.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.BlockchainsEthereumConfig,
 			Watcher: l.nodeWallet.OnEthereumConfigUpdate,
 		},

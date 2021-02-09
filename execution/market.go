@@ -111,6 +111,8 @@ type PriceMonitor interface {
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64
+	UpdateScalingFactor(sFactor float64) error
+	UpdateTimeWindow(tWindow time.Duration)
 }
 
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
@@ -2852,6 +2854,14 @@ func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
 
 func (m *Market) OnMarketLiquidityProvidersFeeDistribitionTimeStep(d time.Duration) {
 	m.lpFeeDistributionTimeStep = d
+}
+
+func (m *Market) OnMarketTargetStakeTimeWindowUpdate(d time.Duration) {
+	m.tsCalc.UpdateTimeWindow(d)
+}
+
+func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
+	return m.tsCalc.UpdateScalingFactor(v)
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
