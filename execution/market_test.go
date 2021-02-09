@@ -3134,3 +3134,104 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 }
+
+// Tests that during a list of LiquidityProvision order creation (tiggered by
+// SubmitLiquidityProvision) fails, the created orders are rolled back.
+func TestLPOrdersRollback(t *testing.T) {
+	ctx := context.Background()
+	party1 := "party1"
+	party2 := "party2"
+	matchingPrice := uint64(10000)
+
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	addAccountWithAmount(tm, party1, 1000)
+	addAccount(tm, party2)
+
+	orderSell1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid2",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice + 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party2-sell-order-1",
+	}
+	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid1",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
+		Size:        1,
+		Price:       matchingPrice - 1,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order-1",
+	}
+	_, err = tm.market.SubmitOrder(ctx, orderBuy1)
+	require.NoError(t, err)
+
+	lp := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 195000,
+		Fee:              "0.01",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 22, Offset: -800},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 64, Offset: -900},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 45, Offset: 1200},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 66, Offset: 1300},
+		},
+	}
+	// With this LiquidityProvisionSubmission we expect the following Order type events:
+	// 1. First Buy LP order gets accepted
+	// 2. Second Buy LP order gets rejected (Margin Error)
+	// 3. First Buy LP order is rolled back (cancelled)
+
+	// reset the registered events
+	tm.events = nil
+
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp")
+	require.Error(t, err)
+	assert.Equal(t, execution.ErrMarginCheckFailed, err)
+
+	expectedStatus := []types.Order_Status{
+		types.Order_STATUS_ACTIVE,    // first gets created
+		types.Order_STATUS_REJECTED,  // second gets rejected
+		types.Order_STATUS_CANCELLED, // first gets cancelled
+	}
+
+	// First collect all the orders events
+	orders := []*types.Order{}
+	for _, e := range tm.events {
+		evt, ok := e.(*events.Order)
+		if !ok {
+			continue
+		}
+		orders = append(orders, evt.Order())
+	}
+	require.Len(t, orders, 3, "Expected 3 order events")
+
+	for i, status := range expectedStatus {
+		got := orders[i].Status
+		assert.Equal(t, status, got, "Status:", got.String())
+	}
+}
