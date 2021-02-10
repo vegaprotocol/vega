@@ -4423,7 +4423,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch
-- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT` </p></td>
+- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT` </p></td>
                 </tr>
               
                 <tr>
@@ -4539,7 +4539,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                   <td>time_in_force</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
-                  <td><p>Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged
+                  <td><p>Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
 - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp` </p></td>
                 </tr>
               
@@ -4797,7 +4797,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places,
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch,
-required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
+required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
 - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p></td>
                 </tr>
               
@@ -6784,7 +6784,7 @@ who provide the best priced liquidity that actually allows trading to take place
               <tr>
                 <td>ORDER_ERROR_INVALID_EXPIRATION_DATETIME</td>
                 <td>7</td>
-                <td><p>An order with `TimeInForce.TIF_GTT` was submitted or amended
+                <td><p>An order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended
 with an expiration that was badly formatted or otherwise invalid</p></td>
               </tr>
             
