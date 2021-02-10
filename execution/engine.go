@@ -565,6 +565,22 @@ func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Durat
 	return nil
 }
 
+func (e *Engine) OnMarketTargetStakeScalingFactorUpdate(_ context.Context, v float64) error {
+	for _, mkt := range e.marketsCpy {
+		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *Engine) OnMarketTargetStakeTimeWindowUpdate(_ context.Context, d time.Duration) error {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketTargetStakeTimeWindowUpdate(d)
+	}
+	return nil
+}
+
 func (e *Engine) OnMarketLiquidityProvidersFeeDistribitionTimeStep(_ context.Context, d time.Duration) error {
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(d)
