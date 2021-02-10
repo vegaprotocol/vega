@@ -2593,7 +2593,7 @@ func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (st
 }
 
 func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*types.Market, error) {
-	if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
+	if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN || acc.Type == types.AccountType_ACCOUNT_TYPE_BOND {
 		return r.r.getMarketByID(ctx, acc.MarketId)
 	}
 	return nil, nil
