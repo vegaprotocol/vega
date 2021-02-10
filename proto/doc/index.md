@@ -323,9 +323,6 @@
     - [TradingDataService](#api.v1.TradingDataService)
     - [TradingService](#api.v1.TradingService)
   
-- [github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto](#github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto)
-    - [StreamError](#grpc.gateway.runtime.StreamError)
-  
 - [oracles/v1/oracles.proto](#oracles/v1/oracles.proto)
     - [Condition](#oracles.v1.Condition)
     - [Filter](#oracles.v1.Filter)
@@ -5546,42 +5543,6 @@ Blockchain transaction type
 | PrepareVote | [PrepareVoteRequest](#api.v1.PrepareVoteRequest) | [PrepareVoteResponse](#api.v1.PrepareVoteResponse) | Prepare a governance vote |
 | PropagateChainEvent | [PropagateChainEventRequest](#api.v1.PropagateChainEventRequest) | [PropagateChainEventResponse](#api.v1.PropagateChainEventResponse) | Propagate a chain event |
 | PrepareLiquidityProvision | [PrepareLiquidityProvisionRequest](#api.v1.PrepareLiquidityProvisionRequest) | [PrepareLiquidityProvisionResponse](#api.v1.PrepareLiquidityProvisionResponse) | Prepare a liquidity provision request |
-
- 
-
-
-
-<a name="github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto
-
-
-
-<a name="grpc.gateway.runtime.StreamError"></a>
-
-### StreamError
-StreamError is a response type which is returned when
-streaming rpc returns an error.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| grpc_code | [int32](#int32) |  |  |
-| http_code | [int32](#int32) |  |  |
-| message | [string](#string) |  |  |
-| http_status | [string](#string) |  |  |
-| details | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
-
-
-
-
-
- 
-
- 
-
- 
 
  
 
