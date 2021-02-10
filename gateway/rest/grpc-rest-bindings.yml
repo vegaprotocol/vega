@@ -124,10 +124,10 @@ http:
       get: '/deposits/party/{party_id}'
 
     # Governance
-    - selector: api.v1.Trading.PrepareProposal
+    - selector: api.v1.TradingService.PrepareProposal
       post: '/governance/prepare/proposal'
       body: "*"
-    - selector: api.v1.Trading.PrepareVote
+    - selector: api.v1.TradingService.PrepareVote
       post: '/governance/prepare/vote'
       body: "*"
 
@@ -145,7 +145,7 @@ http:
 
 
     # LiquidityProvision
-    - selector: api.v1.Trading.PrepareLiquidityProvision
+    - selector: api.v1.TradingService.PrepareLiquidityProvision
       post: '/liquidity-provisions/prepare/submit'
       body: "*"
     - selector: api.v1.TradingDataService.LiquidityProvisions
