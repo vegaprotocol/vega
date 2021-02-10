@@ -232,6 +232,46 @@ func (b OrderBook) InAuction() bool {
 	return b.auction
 }
 
+// CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
+// on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended
+func (b *OrderBook) CanUncross() bool {
+	bb, _ := b.GetBestBidPrice() // sell
+	ba, _ := b.GetBestAskPrice() // buy
+	if bb < ba || bb == 0 || ba == 0 {
+		return false
+	}
+	// check all buy price levels below ba, find limit orders
+	match := false
+	for _, l := range b.buy.levels {
+		if match || l.price >= ba {
+			break
+		}
+		for _, o := range l.orders {
+			// limit order && not just GFA found
+			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				match = true
+				break
+			}
+		}
+	}
+	// no buy orders remaining on the book
+	if !match {
+		return false
+	}
+
+	for _, l := range b.sell.levels {
+		if l.price <= bb {
+			return false
+		}
+		for _, o := range l.orders {
+			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 	bestBid, _ := b.GetBestBidPrice()
