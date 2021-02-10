@@ -443,7 +443,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource: res.AssetSource,
 		Amount:      res.Amount,
-		Expiry:      vegatime.Format(vegatime.UnixNano(res.Expiry)),
+		Expiry:      strconv.FormatInt(res.Expiry, 10),
 		Nonce:       res.Nonce,
 		Signatures:  res.Signatures,
 	}, nil
