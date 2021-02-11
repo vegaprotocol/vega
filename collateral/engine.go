@@ -1161,15 +1161,16 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_BOND_SLASHING:
-		margin, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
-		if err != nil {
-			e.log.Error(
+		if margin, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_MARGIN)); err != nil {
+			e.log.Debug(
 				"Failed to get the margin trader account",
 				logging.String("owner-id", t.Owner),
 				logging.String("market-id", market),
 				logging.Error(err),
 			)
-			return nil, err
+			treq.FromAccount = []*types.Account{bond}
+		} else {
+			treq.FromAccount = []*types.Account{bond, margin}
 		}
 		treq.FromAccount = []*types.Account{bond, margin}
 		treq.ToAccount = []*types.Account{insurancePool}
