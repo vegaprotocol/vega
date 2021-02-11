@@ -395,9 +395,30 @@ func (e *Engine) GetOpenInterest() uint64 {
 }
 
 func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
-	openInterest := e.GetOpenInterest()
-	// TODO: Incorporate info from trades into OI estimate
-	return openInterest
+	oi := int64(e.GetOpenInterest())
+	for _, t := range trades {
+		var bPosSizeOld int64 = 0
+		var sPosSizeOld int64 = 0
+		bPos, bExists := e.positions[t.Buyer]
+		sPos, sExists := e.positions[t.Seller]
+
+		if bExists {
+			bPosSizeOld = bPos.size
+		}
+		if sExists {
+			sPosSizeOld = sPos.size
+		}
+		// Change in open interest due to trades equals change in longs
+		oi += max(0, bPosSizeOld+int64(t.Size)) - max(0, bPosSizeOld) + max(0, sPosSizeOld-int64(t.Size)) - max(0, sPosSizeOld)
+	}
+	return uint64(oi)
+}
+
+func max(a int64, b int64) int64 {
+	if a >= b {
+		return a
+	}
+	return b
 }
 
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push

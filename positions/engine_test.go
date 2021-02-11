@@ -257,62 +257,56 @@ func getTestEngine(t *testing.T) *positions.Engine {
 }
 
 func TestGetOpenInterestGivenTrades(t *testing.T) {
-	// aliases to improve readability on test cases.
-	var (
-		buy  = proto.Side_SIDE_BUY
-		sell = proto.Side_SIDE_SELL
-	)
-
 	//A, B represents traders who already have positions
 	//C, D represents traders who don't have positions (but there are entries in "trades" array that contain their trades)
 
 	cases := []struct {
-		A          *proto.Order
-		B          *proto.Order
-		Trades     []*proto.Trade
-		ExpectedOI uint64
+		ExistingPositions []*proto.Trade
+		Trades            []*proto.Trade
+		ExpectedOI        uint64
 	}{
-		// Both parties already have positions
+		//Both parties already have positions
 		{ //A: + 100, B: -100 => OI: 100
-			A:          &proto.Order{PartyId: "A", Side: buy, Size: 100},
-			B:          &proto.Order{PartyId: "B", Side: sell, Size: 100},
+			ExistingPositions: []*proto.Trade{
+				{Seller: "B", Buyer: "A", Size: 100},
+			},
 			ExpectedOI: 100,
 		},
 		{ //A: + 100 - 10, B: -100 + 10=> OI: 90
-			A: &proto.Order{PartyId: "A", Side: buy, Size: 100},
-			B: &proto.Order{PartyId: "B", Side: sell, Size: 100},
+			ExistingPositions: []*proto.Trade{
+				{Seller: "B", Buyer: "A", Size: 100},
+			},
 			Trades: []*proto.Trade{
-				{Seller: "A", Size: 10},
-				{Buyer: "B", Size: 10},
+				{Seller: "A", Buyer: "B", Size: 10},
 			},
 			ExpectedOI: 90,
 		},
 		{ //A: + 100 + 10, B: -100 - 10 => OI: 110
-			A: &proto.Order{PartyId: "A", Side: buy, Size: 100},
-			B: &proto.Order{PartyId: "B", Side: sell, Size: 100},
+			ExistingPositions: []*proto.Trade{
+				{Seller: "B", Buyer: "A", Size: 100},
+			},
 			Trades: []*proto.Trade{
-				{Buyer: "A", Size: 10},
-				{Seller: "B", Size: 10},
+				{Seller: "B", Buyer: "A", Size: 10},
 			},
 			ExpectedOI: 110,
 		},
 
 		// There at least 1 new party
 		{ //A: + 100 + 10, B: -100, C: -10 => OI: 110
-			A: &proto.Order{PartyId: "A", Side: buy, Size: 100},
-			B: &proto.Order{PartyId: "B", Side: sell, Size: 100},
+			ExistingPositions: []*proto.Trade{
+				{Seller: "B", Buyer: "A", Size: 100},
+			},
 			Trades: []*proto.Trade{
-				{Buyer: "A", Size: 10},
-				{Seller: "C", Size: 10},
+				{Seller: "C", Buyer: "A", Size: 10},
 			},
 			ExpectedOI: 110,
 		},
 		{ //A: + 100 - 10, B: -100, C: +10 => OI: 100
-			A: &proto.Order{PartyId: "A", Side: buy, Size: 100},
-			B: &proto.Order{PartyId: "B", Side: sell, Size: 100},
+			ExistingPositions: []*proto.Trade{
+				{Seller: "B", Buyer: "A", Size: 100},
+			},
 			Trades: []*proto.Trade{
-				{Seller: "A", Size: 10},
-				{Buyer: "C", Size: 10},
+				{Seller: "A", Buyer: "C", Size: 10},
 			},
 			ExpectedOI: 100,
 		},
@@ -320,33 +314,120 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		//None of the parties have positions yet
 		{ //C: +10, D:-10 => OI: 10
 			Trades: []*proto.Trade{
-				{Buyer: "C", Size: 10},
-				{Seller: "D", Size: 10},
+				{Seller: "D", Buyer: "C", Size: 10},
 			},
 			ExpectedOI: 10,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 100},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "B", Buyer: "A", Size: 5},
+			},
+			ExpectedOI: 200,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 100},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "A", Buyer: "B", Size: 5},
+			},
+			ExpectedOI: 200,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 100},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "C", Buyer: "B", Size: 5},
+			},
+			ExpectedOI: 205,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 100},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "B", Buyer: "C", Size: 5},
+			},
+			ExpectedOI: 195,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 100},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "D", Buyer: "C", Size: 500},
+			},
+			ExpectedOI: 500,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 100},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "D", Buyer: "C", Size: 5},
+			},
+			ExpectedOI: 200,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 10},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "A", Buyer: "B", Size: 5},
+			},
+			ExpectedOI: 110,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 10},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "B", Buyer: "A", Size: 5},
+			},
+			ExpectedOI: 110,
+		},
+		{
+			ExistingPositions: []*proto.Trade{
+				{Seller: "C", Buyer: "A", Size: 10},
+				{Seller: "C", Buyer: "B", Size: 100},
+			},
+			Trades: []*proto.Trade{
+				{Seller: "A", Buyer: "B", Size: 200},
+			},
+			ExpectedOI: 300,
 		},
 	}
 
 	for _, tc := range cases {
 		e := getTestEngine(t)
-		if tc.A != nil {
-			tc.A.Remaining = 1
-			tc.A.Price = 1
-			e.RegisterOrder(tc.A)
+
+		for _, tr := range tc.ExistingPositions {
+			e.Update(tr)
 		}
-		if tc.B != nil {
-			tc.B.Remaining = 1
-			tc.B.Price = 1
-			e.RegisterOrder(tc.B)
-		}
+
+		oiGivenTrades := e.GetOpenInterestGivenTrades(tc.Trades)
 
 		for _, tr := range tc.Trades {
-			e.UpdateNetwork(tr)
+			e.Update(tr)
 		}
 
-		oi := e.GetOpenInterestGivenTrades(tc.Trades)
+		// Now check it matches ones those trades are registered as positions
+		oiAfterUpdatingPositions := e.GetOpenInterest()
 		t.Run("", func(t *testing.T) {
-			require.Equal(t, tc.ExpectedOI, oi)
+			require.Equal(t, tc.ExpectedOI, oiGivenTrades)
+			require.Equal(t, tc.ExpectedOI, oiAfterUpdatingPositions)
 		})
 	}
 }
