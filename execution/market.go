@@ -109,7 +109,7 @@ type PriceMonitor interface {
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
-	CheckTarget(as lmon.AuctionState, t time.Time, c1, current, target float64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, current, target float64)
 }
 
 // TargetStakeCalculator interface
@@ -1340,16 +1340,16 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		m.EnterAuction(ctx)
 		return nil, nil
 	}
-	
+
 	// run LiquidityMonitor checks for market auction mode.
-	m.lMonitor.CheckTarget(
+	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
 		m.targetStakeTriggeringRatio,
 		float64(m.getSuppliedStake()),
 		m.getTheoreticalTargetStake(trades),
 	)
-	
-	// start the liquidity monitoring auction if required? 
+
+	// start the liquidity monitoring auction if required?
 	if m.as.AuctionStart() {
 		m.EnterAuction(ctx)
 		return nil, err
@@ -1889,7 +1889,7 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 
-	m.lMonitor.CheckTarget(
+	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
 		m.targetStakeTriggeringRatio,
 		float64(m.getSuppliedStake()),
