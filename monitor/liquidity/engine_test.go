@@ -47,7 +47,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 			if test.auctionShouldEnd {
 				h.AuctionState.EXPECT().AuctionEnd().Times(1)
 			}
-			mon.CheckTarget(h.AuctionState, time.Now(), constant, test.current, test.target)
+			mon.CheckLiquidity(h.AuctionState, time.Now(), constant, test.current, test.target)
 		})
 	}
 }
@@ -79,7 +79,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 				h.AuctionState.EXPECT().StartLiquidityAuction(now, nil).Times(1)
 			}
 
-			mon.CheckTarget(h.AuctionState, now, constant, test.current, test.target)
+			mon.CheckLiquidity(h.AuctionState, now, constant, test.current, test.target)
 		})
 	}
 }

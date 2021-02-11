@@ -19,9 +19,9 @@ func NewMonitor() *Engine {
 	return nil
 }
 
-// CheckTarget Starts or Ends a Liquidity auction given the current and target stakes.
+// CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes.
 // The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`.
-func (e *Engine) CheckTarget(as AuctionState, t time.Time, c1, current, target float64) {
+func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, c1, current, target float64) {
 	if as.IsLiquidityAuction() {
 		if current >= target {
 			as.AuctionEnd()
