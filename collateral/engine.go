@@ -1172,7 +1172,6 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		} else {
 			treq.FromAccount = []*types.Account{bond, margin}
 		}
-		treq.FromAccount = []*types.Account{bond, margin}
 		treq.ToAccount = []*types.Account{insurancePool}
 		return treq, nil
 	default:
