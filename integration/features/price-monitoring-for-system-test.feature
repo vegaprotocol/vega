@@ -13,11 +13,16 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | name    |      amount  |
       | trader1 | 100000000000  |
       | trader2 | 100000000000  |
+      | trader3 | 100000000000  |
+      | trader4 | 100000000000  |
 
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell |      1 |   100000  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100000  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC20 | sell |      2 |   100000  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC20 | buy  |      1 |   100000  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC20 | buy  |      1 |    80000  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader4 | ETH/DEC20 | buy  |      1 |    90000  |                0 | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC20" is "900000"
 

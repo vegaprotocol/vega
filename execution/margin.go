@@ -46,14 +46,10 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types
 	// 6. Attempt margin updates where possible. If position is to be closed, append it to the closed slice we already have
 	marginEvts := make([]events.Event, 0, len(risk))
 	for _, ru := range risk {
-		tr, closeP, err := m.collateral.MarginUpdateOnOrder(ctx, mID, ru)
+		tr, _, err := m.collateral.MarginUpdateOnOrder(ctx, mID, ru)
 		if err != nil {
 			// @TODO handle this
 			return nil, err
-		}
-		if closeP != nil {
-			mposEvts = append(mposEvts, closeP)
-			continue
 		}
 		marginEvts = append(marginEvts, events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
 	}

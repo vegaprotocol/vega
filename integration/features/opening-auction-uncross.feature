@@ -13,14 +13,20 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | name    | amount    |
       | trader1 | 100000000 |
       | trader2 | 100000000 |
+      | trader3 | 100000000 |
+      | trader4 | 100000000 |
     Then I Expect the traders to have new general account:
       | name    | asset |
       | trader1 | BTC   |
       | trader2 | BTC   |
+      | trader3 | BTC   |
+      | trader4 | BTC   |
 
     # place orders and generate trades
     Then traders place following orders with references:
       | trader  | id        | type | volume | price  | resulting trades | type        | tif     | reference |
+      | trader3 | ETH/DEC19 | buy  | 1      | 1000   | 0                | TYPE_LIMIT  | TIF_GTC | t3-b-1    |
+      | trader4 | ETH/DEC19 | sell | 1      | 11000  | 0                | TYPE_LIMIT  | TIF_GTC | t4-s-1    |
       | trader1 | ETH/DEC19 | buy  | 5      | 10000  | 0                | TYPE_LIMIT  | TIF_GFA | t1-b-1    |
       | trader2 | ETH/DEC19 | sell | 5      | 10000  | 0                | TYPE_LIMIT  | TIF_GFA | t2-s-1    |
       | trader1 | ETH/DEC19 | buy  | 5      | 10000  | 0                | TYPE_LIMIT  | TIF_GFA | t1-b-2    |
@@ -31,6 +37,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the margins levels for the traders are:
       | trader  | id        | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 |       25201 |  27721 |   30241 |   65521 |
+      # | trader2 | ETH/DEC19 |       23899 |  26289 |   28679 |   62137 |
       | trader2 | ETH/DEC19 |       23899 |  26289 |   28679 |   57458 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general  |
@@ -70,8 +77,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
 #   And dump transfers
     And the following transfers happened:
       | from    | to      | from account type   | to account type      | market ID | amount | asset |
-      | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 19079  | BTC   |
+      | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9479   | BTC   |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general  |
-      | trader2 | BTC   | ETH/DEC19 | 9600   | 19079    |
+      | trader2 | BTC   | ETH/DEC19 | 19200  | 9479     |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0        |
