@@ -30,7 +30,40 @@ import (
 const MAXMOVEUP = 10
 const MINMOVEDOWN = -5
 
+var defaultCollateralAssets = []types.Asset{
+	{
+		Id:     "ETH",
+		Symbol: "ETH",
+	},
+	{
+		Id:          "VOTE",
+		Name:        "VOTE",
+		Symbol:      "VOTE",
+		Decimals:    5,
+		TotalSupply: "1000",
+		Source: &types.AssetSource{
+			Source: &types.AssetSource_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					Name:        "VOTE",
+					Symbol:      "VOTE",
+					Decimals:    5,
+					TotalSupply: "1000",
+				},
+			},
+		},
+	},
+}
+
+var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
+	Parameters: &types.PriceMonitoringParameters{
+		Triggers: []*types.PriceMonitoringTrigger{},
+	},
+	UpdateFrequency: 0,
+}
+
 type testMarket struct {
+	t *testing.T
+
 	market          *execution.Market
 	log             *logging.Logger
 	ctrl            *gomock.Controller
@@ -43,6 +76,98 @@ type testMarket struct {
 	orderEventCount uint64
 	events          []events.Event
 	mktCfg          *types.Market
+
+	// Options
+	Assets []types.Asset
+}
+
+func newTestMarket(t *testing.T, now time.Time) *testMarket {
+	ctrl := gomock.NewController(t)
+	tm := &testMarket{
+		t:    t,
+		ctrl: ctrl,
+		log:  logging.NewTestLogger(),
+		now:  now,
+	}
+
+	// Setup Mocking Expectations
+	tm.broker = mocks.NewMockBroker(ctrl)
+
+	// eventFn records and count events and orderEvents
+	eventFn := func(evt events.Event) {
+		if evt.Type() == events.OrderEvent {
+			tm.orderEventCount++
+		}
+		tm.eventCount++
+		tm.events = append(tm.events, evt)
+	}
+	// eventsFn is the same as eventFn above but handles []event
+	eventsFn := func(evts []events.Event) {
+		for _, evt := range evts {
+			eventFn(evt)
+		}
+	}
+
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(eventFn)
+	tm.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(eventsFn)
+
+	return tm
+}
+
+func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket {
+	collateralEngine, err := collateral.New(tm.log, collateral.NewDefaultConfig(), tm.broker, tm.now)
+	require.NoError(tm.t, err)
+	var assets = tm.Assets
+	if len(assets) == 0 {
+		assets = defaultCollateralAssets
+	}
+	for _, asset := range assets {
+		collateralEngine.EnableAsset(ctx, asset)
+	}
+
+	var (
+		riskConfig       = risk.NewDefaultConfig()
+		positionConfig   = positions.NewDefaultConfig()
+		settlementConfig = settlement.NewDefaultConfig()
+		matchingConfig   = matching.NewDefaultConfig()
+		feeConfig        = fee.NewDefaultConfig()
+	)
+
+	mas := monitor.NewAuctionState(&mktCfg, tm.now)
+	monitor.NewAuctionState(&mktCfg, tm.now)
+	mktEngine, err := execution.NewMarket(ctx,
+		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
+		feeConfig, collateralEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas,
+	)
+	require.NoError(tm.t, err)
+
+	asset, err := mktCfg.GetAsset()
+	require.NoError(tm.t, err)
+
+	_, _, err = collateralEngine.CreateMarketAccounts(ctx, mktEngine.GetID(), asset, 0)
+	require.NoError(tm.t, err)
+
+	tm.market = mktEngine
+	tm.collateraEngine = collateralEngine
+	tm.asset = asset
+	tm.mas = mas
+	tm.mktCfg = &mktCfg
+
+	// Reset event counters
+	tm.eventCount = 0
+	tm.orderEventCount = 0
+
+	return tm
+}
+
+func (tm *testMarket) StartOpeningAuction() *testMarket {
+	tm.market.StartOpeningAuction(context.Background())
+	return tm
+}
+
+func (tm *testMarket) WithAccountAndAmount(id string, amount uint64) *testMarket {
+	addAccountWithAmount(tm, id, amount)
+	return tm
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) *testMarket {
@@ -66,18 +191,24 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 		now:    now,
 	}
 
+	handleEvent := func(evt events.Event) {
+		te := evt.Type()
+		if te == events.OrderEvent {
+			tm.orderEventCount++
+		}
+		tm.eventCount++
+		tm.events = append(tm.events, evt)
+	}
+
 	// catch all expected calls
-	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(
-		func(evt events.Event) {
-			te := evt.Type()
-			if te == events.OrderEvent {
-				tm.orderEventCount++
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(
+		func(evts []events.Event) {
+			for _, evt := range evts {
+				handleEvent(evt)
 			}
-			tm.eventCount++
-			tm.events = append(tm.events, evt)
 		},
 	)
+	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(handleEvent)
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
@@ -116,9 +247,8 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 		}
 	}
 
-	mkts := getMarkets(closingAt, pMonitorSettings, openingAuctionDuration)
-
-	mktCfg := &mkts[0]
+	mkt := getMarket(closingAt, pMonitorSettings, openingAuctionDuration)
+	mktCfg := &mkt
 
 	mas := monitor.NewAuctionState(mktCfg, now)
 	mktEngine, err := execution.NewMarket(context.Background(),
@@ -130,7 +260,7 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 		mktEngine.StartOpeningAuction(context.Background())
 	}
 
-	asset, err := mkts[0].GetAsset()
+	asset, err := mkt.GetAsset()
 	assert.NoError(t, err)
 
 	// ignore response ids here + this cannot fail
@@ -150,13 +280,13 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 	return tm
 }
 
-func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) []types.Market {
+func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) types.Market {
 	mkt := types.Market{
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				LiquidityFee:      "0.001",
-				InfrastructureFee: "0.0005",
-				MakerFee:          "0.00025",
+				LiquidityFee:      "0.3",
+				InfrastructureFee: "0.001",
+				MakerFee:          "0.004",
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
@@ -216,7 +346,7 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 	}
 
 	execution.SetMarketID(&mkt, 0)
-	return []types.Market{mkt}
+	return mkt
 }
 
 func addAccount(market *testMarket, party string) {
@@ -227,6 +357,38 @@ func addAccount(market *testMarket, party string) {
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
 	// market.broker.EXPECT().Send(gomock.Any()).Times(3)
 	market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
+}
+
+// WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors
+func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string,
+	buys, sells []*types.LiquidityOrder) *testMarket {
+	ctx := context.Background()
+
+	lps := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: amount,
+		Fee:              fee,
+		Buys:             buys,
+		Sells:            sells,
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lps, party, id),
+	)
+
+	return tm
+}
+
+// WithSubmittedOrder returns a market with Submitted orders defined in `orders`.
+// If one submission fails, it will make the test fail and stop.
+func (tm *testMarket) WithSubmittedOrders(t *testing.T, orders ...*types.Order) *testMarket {
+	ctx := context.Background()
+	for i, order := range orders {
+		order.MarketId = tm.market.GetID()
+		_, err := tm.market.SubmitOrder(ctx, order)
+		require.NoError(t, err, "Submitting Order(@index#%d): '%s' failed", i, order.String())
+	}
+	return tm
 }
 
 func TestMarketClosing(t *testing.T) {
@@ -3139,54 +3301,134 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 // SubmitLiquidityProvision) fails, the created orders are rolled back.
 func TestLPOrdersRollback(t *testing.T) {
 	ctx := context.Background()
-	party1 := "party1"
-	party2 := "party2"
-	matchingPrice := uint64(10000)
-
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 1.5,
+			},
+		},
+	}
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount("trader-0", 1000000).
+		WithAccountAndAmount("trader-1", 1000000).
+		WithAccountAndAmount("trader-2", 1000000).
+		WithAccountAndAmount("trader-3", 1000000).
+		WithAccountAndAmount("trader-4", 1000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
-	addAccountWithAmount(tm, party1, 1000)
-	addAccount(tm, party2)
-
-	orderSell1 := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          "someid2",
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     party2,
-		MarketId:    tm.market.GetID(),
-		Size:        1,
-		Price:       matchingPrice + 1,
-		Remaining:   1,
-		CreatedAt:   now.UnixNano(),
-		ExpiresAt:   closingAt.UnixNano(),
-		Reference:   "party2-sell-order-1",
+	orderParams := []struct {
+		id        string
+		size      uint64
+		side      types.Side
+		tif       types.Order_TimeInForce
+		pegRef    types.PeggedReference
+		pegOffset int64
+	}{
+		{"trader-4", 1, types.Side_SIDE_BUY, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_BID, -2000},
+		{"trader-3", 1, types.Side_SIDE_SELL, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, 1000},
 	}
-	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
-	require.NotNil(t, confirmationSell)
-	require.NoError(t, err)
+	traderA, traderB := orderParams[0], orderParams[1]
 
-	orderBuy1 := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          "someid1",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
-		Size:        1,
-		Price:       matchingPrice - 1,
-		Remaining:   1,
-		CreatedAt:   now.UnixNano(),
-		ExpiresAt:   closingAt.UnixNano(),
-		Reference:   "party1-buy-order-1",
+	tpl := OrderTemplate{
+		Type: types.Order_TYPE_LIMIT,
 	}
-	_, err = tm.market.SubmitOrder(ctx, orderBuy1)
-	require.NoError(t, err)
+	var orders = []*types.Order{
+		// Limit Orders
+		tpl.New(types.Order{
+			Size:        20,
+			Remaining:   20,
+			Price:       uint64(5500 + traderA.pegOffset), // 3500
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-0",
+			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+		}),
+		tpl.New(types.Order{
+			Size:        20,
+			Remaining:   20,
+			Price:       uint64(5000 - traderB.pegOffset), // 4000
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     "trader-1",
+			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+		}),
+		tpl.New(types.Order{
+			Size:        10,
+			Remaining:   10,
+			Price:       5500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-2",
+			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+		}),
+		tpl.New(types.Order{
+			Size:        100,
+			Remaining:   100,
+			Price:       5000,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     "trader-2",
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		}),
+		tpl.New(types.Order{
+			Size:        100,
+			Remaining:   100,
+			Price:       3500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-0",
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		}),
+		tpl.New(types.Order{
+			Size:        100,
+			Remaining:   100,
+			Price:       8500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-0",
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		}),
+
+		// Pegged Orders
+		tpl.New(types.Order{
+			PartyId:     traderA.id,
+			Side:        traderA.side,
+			Size:        traderA.size,
+			Remaining:   traderA.size,
+			TimeInForce: traderA.tif,
+			PeggedOrder: &types.PeggedOrder{
+				Reference: traderA.pegRef,
+				Offset:    traderA.pegOffset,
+			},
+		}),
+		tpl.New(types.Order{
+			PartyId:     traderB.id,
+			Side:        traderB.side,
+			Size:        traderB.size,
+			Remaining:   traderB.size,
+			TimeInForce: traderB.tif,
+			PeggedOrder: &types.PeggedOrder{
+				Reference: traderB.pegRef,
+				Offset:    traderB.pegOffset,
+			},
+		}),
+	}
+	tm.WithSubmittedOrders(t, orders...)
 
 	lp := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
@@ -3201,37 +3443,73 @@ func TestLPOrdersRollback(t *testing.T) {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 66, Offset: 1300},
 		},
 	}
-	// With this LiquidityProvisionSubmission we expect the following Order type events:
-	// 1. First Buy LP order gets accepted
-	// 2. Second Buy LP order gets rejected (Margin Error)
-	// 3. First Buy LP order is rolled back (cancelled)
+
+	// Leave the auction
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
 
 	// reset the registered events
 	tm.events = nil
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp")
+	gpa, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
+	require.NoError(t, err)
+	balanceBeforeLP := gpa.Balance
+
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp")
 	require.Error(t, err)
 	assert.Equal(t, execution.ErrMarginCheckFailed, err)
 
-	expectedStatus := []types.Order_Status{
-		types.Order_STATUS_ACTIVE,    // first gets created
-		types.Order_STATUS_REJECTED,  // second gets rejected
-		types.Order_STATUS_CANCELLED, // first gets cancelled
-	}
+	t.Run("GeneralAccountBalance", func(t *testing.T) {
+		gpa, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
+		require.NoError(t, err)
+		assert.Equal(t, int(balanceBeforeLP), int(gpa.Balance),
+			"Balance should == value before LiquidityProvision",
+		)
 
-	// First collect all the orders events
-	orders := []*types.Order{}
-	for _, e := range tm.events {
-		evt, ok := e.(*events.Order)
-		if !ok {
-			continue
+	})
+
+	t.Run("BondAccountShouldBeZero", func(t *testing.T) {
+		bacc, err := tm.collateraEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
+		require.NoError(t, err)
+		require.Zero(t, bacc.Balance)
+	})
+
+	t.Run("LiquidityProvision_REJECTED", func(t *testing.T) {
+		// Filter events until LP is found
+		var found types.LiquidityProvision
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				found = evt.LiquidityProvision()
+			}
 		}
-		orders = append(orders, evt.Order())
-	}
-	require.Len(t, orders, 3, "Expected 3 order events")
 
-	for i, status := range expectedStatus {
-		got := orders[i].Status
-		assert.Equal(t, status, got, "Status:", got.String())
-	}
+		assert.Equal(t, types.LiquidityProvision_STATUS_REJECTED, found.Status)
+	})
+
+	t.Run("ExpectedEventStatus", func(t *testing.T) {
+		// First collect all the orders events
+		found := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				found = append(found, evt.Order())
+			}
+		}
+
+		expectedStatus := []types.Order_Status{
+			types.Order_STATUS_ACTIVE,    // first gets created
+			types.Order_STATUS_ACTIVE,    // first gets created
+			types.Order_STATUS_ACTIVE,    // first gets created
+			types.Order_STATUS_ACTIVE,    // first gets created
+			types.Order_STATUS_REJECTED,  // second gets rejected
+			types.Order_STATUS_CANCELLED, // first gets cancelled
+		}
+
+		require.Len(t, found, 6, "Expected 6 order events")
+
+		for i, status := range expectedStatus {
+			got := found[i].Status
+			assert.Equal(t, status, got, "Status:", got.String())
+		}
+	})
 }

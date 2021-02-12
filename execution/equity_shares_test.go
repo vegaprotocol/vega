@@ -146,21 +146,10 @@ func (esm *equityShareMarket) WithSubmittedOrder(id, party string, side types.Si
 	return esm
 }
 
-func (esm *equityShareMarket) WithSubmittedLiquidityProvision(party, id string, amount uint64, fee string, buys, sells []*types.LiquidityOrder) *equityShareMarket {
-	ctx := context.Background()
-
-	lps := &types.LiquidityProvisionSubmission{
-		MarketId:         esm.tm.market.GetID(),
-		CommitmentAmount: amount,
-		Fee:              fee,
-		Buys:             buys,
-		Sells:            sells,
-	}
-
+func (esm *equityShareMarket) WithSubmittedLiquidityProvision(party, id string, amount uint64, fee string,
+	buys, sells []*types.LiquidityOrder) *equityShareMarket {
 	esm.createPartyIfMissing(party)
-	require.NoError(esm.t,
-		esm.tm.market.SubmitLiquidityProvision(ctx, lps, party, id),
-	)
+	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, id, amount, fee, buys, sells)
 	return esm
 }
 
