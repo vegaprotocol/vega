@@ -170,6 +170,20 @@ func (tm *testMarket) WithAccountAndAmount(id string, amount uint64) *testMarket
 	return tm
 }
 
+func (tm *testMarket) PartyGeneralAccount(t *testing.T, party string) *types.Account {
+	acc, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
+	require.NoError(t, err)
+	require.NotNil(t, acc)
+	return acc
+}
+
+func (tm *testMarket) PartyMarginAccount(t *testing.T, party string) *types.Account {
+	acc, err := tm.collateraEngine.GetPartyMarginAccount(tm.market.GetID(), party, tm.asset)
+	require.NoError(t, err)
+	require.NotNil(t, acc)
+	return acc
+}
+
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) *testMarket {
 	return getTestMarket2(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true)
 }
@@ -3450,19 +3464,18 @@ func TestLPOrdersRollback(t *testing.T) {
 	// reset the registered events
 	tm.events = nil
 
-	gpa, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
-	require.NoError(t, err)
-	balanceBeforeLP := gpa.Balance
+	balanceBeforeLP := tm.PartyGeneralAccount(t, "trader-2").Balance +
+		tm.PartyMarginAccount(t, "trader-2").Balance
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp")
+	err := tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp")
 	require.Error(t, err)
 	assert.Equal(t, execution.ErrMarginCheckFailed, err)
 
 	t.Run("GeneralAccountBalance", func(t *testing.T) {
-		t.Skip()
-		gpa, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
-		require.NoError(t, err)
-		assert.Equal(t, int(balanceBeforeLP), int(gpa.Balance),
+		newBalance := tm.PartyGeneralAccount(t, "trader-2").Balance +
+			tm.PartyMarginAccount(t, "trader-2").Balance
+
+		assert.Equal(t, int(balanceBeforeLP), int(newBalance),
 			"Balance should == value before LiquidityProvision",
 		)
 
