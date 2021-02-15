@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"sync"
 
@@ -61,11 +62,22 @@ func (n *Notary) consume() {
 				return
 			}
 			n.mu.Lock()
-			sigs := n.sigs[sig.Id]
-			n.sigs[sig.Id] = append(sigs, sig)
+			n.appendSig(sig)
 			n.mu.Unlock()
 		}
 	}
+}
+
+func (n *Notary) appendSig(sig types.NodeSignature) {
+	sigs := n.sigs[sig.Id]
+	for _, s := range sigs {
+		if bytes.Equal(s.Sig, sig.Sig) {
+			// we already have this sig
+			return
+		}
+	}
+	// let's add the sig to the list
+	n.sigs[sig.Id] = append(sigs, sig)
 }
 
 func (n *Notary) GetByID(id string) ([]types.NodeSignature, error) {

@@ -81,6 +81,7 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 		}
 		// now check that the notary is GO for this asset
 		_, ok := app.notary.IsSigned(
+			ctx,
 			act.AssetList.VegaAssetId,
 			types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
 		if !ok {
@@ -101,7 +102,7 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
 			return err
 		}
-		return app.banking.WithdrawalERC20(act.Withdrawal, evt.Block, evt.Index, ce.TxId)
+		return app.banking.WithdrawalERC20(ctx, act.Withdrawal, evt.Block, evt.Index, ce.TxId)
 	default:
 		return ErrUnsupportedEventAction
 	}

@@ -26,6 +26,7 @@ func getTestNotary(t *testing.T) *testNotary {
 	broker := mocks.NewMockBroker(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	notr := notary.New(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd)
 	return &testNotary{
 		Notary: notr,
