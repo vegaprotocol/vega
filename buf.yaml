@@ -4,7 +4,7 @@ version: v1beta1
 build:
   roots:
     - proto
-    - third_party
+    - third_party/proto
 lint:
   use:
     - DEFAULT
