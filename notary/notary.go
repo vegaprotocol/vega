@@ -110,6 +110,15 @@ func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignatu
 	sigs[nodeSig{string(pubKey), string(ns.Sig)}] = struct{}{}
 
 	sigsout, ok := n.IsSigned(ctx, ns.Id, ns.Kind)
+	if ok {
+		// enough signature to reach the threshold have been received, let's send them to the
+		// the api
+		evts := make([]events.Event, 0, len(sigsout))
+		for _, ns := range sigsout {
+			evts = append(evts, events.NewNodeSignatureEvent(ctx, ns))
+		}
+		n.broker.SendBatch(evts)
+	}
 	return sigsout, ok, nil
 }
 
@@ -139,13 +148,6 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind types.NodeSign
 
 	// now we check the number of required node sigs
 	if float64(len(sig))/float64(n.top.Len()) >= n.cfg.SignaturesRequiredPercent {
-		// enough signature to reach the threshold have been received, let's send them to the
-		// the api
-		evts := make([]events.Event, 0, len(out))
-		for _, ns := range out {
-			evts = append(evts, events.NewNodeSignatureEvent(ctx, ns))
-		}
-		n.broker.SendBatch(evts)
 		return out, true
 	}
 

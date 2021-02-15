@@ -35,18 +35,18 @@ func (m *MockNotary) EXPECT() *MockNotaryMockRecorder {
 }
 
 // IsSigned mocks base method
-func (m *MockNotary) IsSigned(arg0 string, arg1 proto.NodeSignatureKind) ([]proto.NodeSignature, bool) {
+func (m *MockNotary) IsSigned(arg0 context.Context, arg1 string, arg2 proto.NodeSignatureKind) ([]proto.NodeSignature, bool) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSigned", arg0, arg1)
+	ret := m.ctrl.Call(m, "IsSigned", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]proto.NodeSignature)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
 
 // IsSigned indicates an expected call of IsSigned
-func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSigned", reflect.TypeOf((*MockNotary)(nil).IsSigned), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSigned", reflect.TypeOf((*MockNotary)(nil).IsSigned), arg0, arg1, arg2)
 }
 
 // SendSignature mocks base method
