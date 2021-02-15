@@ -324,6 +324,9 @@ func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, 
 		blockNumber: blockNumber,
 		txIndex:     txIndex,
 		hash:        txHash,
+		withdrawal: &withdrawal{
+			nonce: nonce,
+		},
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
@@ -501,6 +504,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	for _, v := range e.withdrawals {
 		if v.ref.Cmp(ref) == 0 {
+
 			return v.w, nil
 		}
 	}
@@ -559,6 +563,7 @@ func (e *Engine) newWithdrawal(
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
+	e.withdrawalCnt.Add(e.withdrawalCnt, big.NewInt(1))
 	w = &types.Withdrawal{
 		Id:               id,
 		Status:           types.Withdrawal_STATUS_OPEN,
