@@ -42,7 +42,7 @@ type Assets interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
 	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
-	IsSigned(id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
 // Collateral engine
@@ -291,7 +291,7 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
+func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
 	asset, err := e.assets.Get(w.VegaAssetId)
 	if err != nil {
@@ -312,7 +312,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 		return ErrInvalidWithdrawalState
 	}
 	withd.TxHash = txHash
-	if _, ok := e.notary.IsSigned(withd.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
+	if _, ok := e.notary.IsSigned(ctx, withd.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
 		return ErrWithdrawalNotReady
 	}
 

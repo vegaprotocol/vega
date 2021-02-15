@@ -29,6 +29,7 @@ type ValidatorTopology interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/notary Broker
 type Broker interface {
 	Send(event events.Event)
+	SendBatch(events []events.Event)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
@@ -107,13 +108,12 @@ func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignatu
 	}
 
 	sigs[nodeSig{string(pubKey), string(ns.Sig)}] = struct{}{}
-	n.broker.Send(events.NewNodeSignatureEvent(ctx, ns))
 
-	sigsout, ok := n.IsSigned(ns.Id, ns.Kind)
+	sigsout, ok := n.IsSigned(ctx, ns.Id, ns.Kind)
 	return sigsout, ok, nil
 }
 
-func (n *Notary) IsSigned(resID string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool) {
+func (n *Notary) IsSigned(ctx context.Context, resID string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool) {
 	// early exit if we don't have enough sig anyway
 	if float64(len(n.sigs[idKind{resID, kind}]))/float64(n.top.Len()) < n.cfg.SignaturesRequiredPercent {
 		return nil, false
@@ -139,6 +139,13 @@ func (n *Notary) IsSigned(resID string, kind types.NodeSignatureKind) ([]types.N
 
 	// now we check the number of required node sigs
 	if float64(len(sig))/float64(n.top.Len()) >= n.cfg.SignaturesRequiredPercent {
+		// enough signature to reach the threshold have been received, let's send them to the
+		// the api
+		evts := make([]events.Event, 0, len(out))
+		for _, ns := range out {
+			evts = append(evts, events.NewNodeSignatureEvent(ctx, ns))
+		}
+		n.broker.SendBatch(evts)
 		return out, true
 	}
 
