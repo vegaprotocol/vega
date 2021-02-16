@@ -400,7 +400,7 @@ func (e *Engine) ExpectMargins(
 		}
 
 		curMargin := evt.MarginBalance()
-		if curMargin > margins.MaintenanceMargin && evt.MarginShortFall() <= 0 {
+		if curMargin > margins.MaintenanceMargin && evt.MarginShortFall() == 0 {
 			okMargins = append(okMargins, evt)
 		} else {
 			distressedPositions = append(distressedPositions, evt)
