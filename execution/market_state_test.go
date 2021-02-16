@@ -147,6 +147,21 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, types.Market_STATE_PENDING, tm.market.State())
 
+	addAccountWithAmount(tm, "party1", 100000000)
+	addAccountWithAmount(tm, "party2", 100000000)
+	addAccountWithAmount(tm, "party3", 100000000)
+	addAccountWithAmount(tm, "party4", 100000000)
+	orders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order1", types.Side_SIDE_BUY, "party1", 1, 5000),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order2", types.Side_SIDE_SELL, "party2", 1, 5000),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order3", types.Side_SIDE_BUY, "party3", 1, 4500),  // buy too low
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order4", types.Side_SIDE_SELL, "party4", 1, 5500), // sell too expensive
+	}
+	for _, o := range orders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		assert.NotNil(t, conf)
+		assert.NoError(t, err)
+	}
 	// now move to after the opening auctuon in tiem
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
 	assert.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
@@ -167,6 +182,21 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, types.Market_STATE_PENDING, tm.market.State())
 
+	addAccountWithAmount(tm, "party1", 100000000)
+	addAccountWithAmount(tm, "party2", 100000000)
+	addAccountWithAmount(tm, "party3", 100000000)
+	addAccountWithAmount(tm, "party4", 100000000)
+	orders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order1", types.Side_SIDE_BUY, "party1", 1, 5000),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order2", types.Side_SIDE_SELL, "party2", 1, 5000),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order3", types.Side_SIDE_BUY, "party3", 1, 4500),  // buy too low
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order4", types.Side_SIDE_SELL, "party4", 1, 5500), // sell too expensive
+	}
+	for _, o := range orders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		assert.NotNil(t, conf)
+		assert.NoError(t, err)
+	}
 	// now move to after the opening auctuon in tiem
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
 	assert.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())

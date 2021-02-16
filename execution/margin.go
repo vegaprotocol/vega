@@ -18,7 +18,7 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types.Transfer, error) {
 	// 1. Get the price
 	price := m.getMarkPrice(order)
-	m.log.Infof("calculating margins at %d for order at price %d", price, order.Price)
+	// m.log.Infof("calculating margins at %d for order at price %d", price, order.Price)
 	// 2. Get all positions - we have to update margins for all traders on the book so nobody can get distressed when we eventually do uncross
 	allPos := m.position.Positions()
 	// 3. get the asset and ID for this market
