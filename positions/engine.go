@@ -399,13 +399,13 @@ func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 	for _, t := range trades {
 		var bPosSizeOld int64 = 0
 		var sPosSizeOld int64 = 0
-		bPos, bExists := e.positions[t.Buyer]
-		sPos, sExists := e.positions[t.Seller]
+		bPos, bOk := e.positions[t.Buyer]
+		sPos, sOk := e.positions[t.Seller]
 
-		if bExists {
+		if bOk {
 			bPosSizeOld = bPos.size
 		}
-		if sExists {
+		if sOk {
 			sPosSizeOld = sPos.size
 		}
 		// Change in open interest due to trades equals change in longs
