@@ -16,7 +16,7 @@ type AuctionState interface {
 type Engine struct{}
 
 func NewMonitor() *Engine {
-	return nil
+	return &Engine{}
 }
 
 // CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes.
