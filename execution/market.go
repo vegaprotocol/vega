@@ -823,6 +823,12 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// We are moving to continuous trading so we have to unpark any pegged orders
 	m.repriceAllPeggedOrders(ctx, PriceMoveAll)
+
+	// Store the lastest prices so we can see if anything moves
+	m.lastMidBuyPrice, _ = m.getStaticMidPrice(types.Side_SIDE_BUY)
+	m.lastMidSellPrice, _ = m.getStaticMidPrice(types.Side_SIDE_SELL)
+	m.lastBestBidPrice, _ = m.getBestStaticBidPrice()
+	m.lastBestAskPrice, _ = m.getBestStaticAskPrice()
 }
 
 func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) types.OrderError {
