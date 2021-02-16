@@ -235,9 +235,12 @@ func (b OrderBook) InAuction() bool {
 // CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
 // on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended
 func (b *OrderBook) CanUncross() bool {
-	bb, _ := b.GetBestBidPrice() // sell
-	ba, _ := b.GetBestAskPrice() // buy
-	if bb < ba || bb == 0 || ba == 0 {
+	bb, err := b.GetBestBidPrice() // sell
+	if err != nil {
+		return false
+	}
+	ba, err := b.GetBestAskPrice() // buy
+	if err != nil || bb < ba || bb == 0 || ba == 0 {
 		return false
 	}
 	// check all buy price levels below ba, find limit orders
@@ -274,8 +277,14 @@ func (b *OrderBook) CanUncross() bool {
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
-	bestBid, _ := b.GetBestBidPrice()
-	bestAsk, _ := b.GetBestAskPrice()
+	bestBid, err := b.GetBestBidPrice()
+	if err != nil {
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
+	}
+	bestAsk, err := b.GetBestAskPrice()
+	if err != nil {
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
+	}
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -319,8 +328,14 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePrice() uint64 {
-	bestBid, _ := b.GetBestBidPrice()
-	bestAsk, _ := b.GetBestAskPrice()
+	bestBid, err := b.GetBestBidPrice()
+	if err != nil {
+		return 0
+	}
+	bestAsk, err := b.GetBestAskPrice()
+	if err != nil {
+		return 0
+	}
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -759,7 +774,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		b.ordersByID[order.Id] = order
 		if orders, ok := b.ordersPerParty[order.PartyId]; !ok {
 			b.ordersPerParty[order.PartyId] = map[string]struct{}{
-				order.Id: struct{}{},
+				order.Id: {},
 			}
 		} else {
 			orders[order.Id] = struct{}{}
