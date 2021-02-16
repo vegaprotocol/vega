@@ -2089,6 +2089,10 @@ func (e *Engine) RollbackTransfers(ctx context.Context, tresp *types.TransferRes
 			return err
 		}
 		if err = e.IncrementBalance(ctx, t.FromAccount, t.Amount); err != nil {
+			// return the money back to ToAccount so it doesn't end up in limbo
+			if nerr := e.IncrementBalance(ctx, t.ToAccount, t.Amount); nerr != nil {
+				e.log.Panic(fmt.Sprintf("Failed to return the funds to the source account (%v) after incrementing the target account (%v) resulted in an error.", t.ToAccount, t.FromAccount))
+			}
 			return err
 		}
 	}
