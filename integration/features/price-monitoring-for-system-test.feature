@@ -70,8 +70,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # 2nd trigger breached with persistent order -> auction extended by 8s (total auction time no 14s).
     Then traders place following orders:
       | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   101491  |                0 | TYPE_LIMIT | TIF_GFA |
-      | trader2 | ETH/DEC20 | buy  |      1 |   101491  |                0 | TYPE_LIMIT | TIF_GFA |
+      | trader1 | ETH/DEC20 | sell |      1 |   101491  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  |      1 |   101491  |                0 | TYPE_LIMIT | TIF_GTC |
 
     # T + 10s (last second of the auciton)
     Then the time is updated to "2020-10-16T00:00:20Z"
