@@ -94,6 +94,20 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil
 	}
 	tr, bondPenalty, err := m.collateral.MarginUpdateOnOrder(ctx, mID, risk)
+
+	if err != nil {
+		// Rollback transfers in case the order do not
+		// trade and do not stay in the book to prevent for margin being
+		// locked in the margin account forever
+		if nerr := m.collateral.RollbackTransfers(ctx, tr); nerr != nil {
+			m.log.Error(
+				"Failed to roll back margin transfers for party",
+				logging.String("party-id", order.PartyId),
+				logging.Error(nerr),
+			)
+		}
+	}
+
 	if bondPenalty != nil {
 		shortfall := bondPenalty.MarginShortFall()
 		if shortfall > 0 {
@@ -102,17 +116,6 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 					m.log.Debug("party did not have enough collateral to reach the InitialMargin",
 						logging.Order(*order),
 						logging.String("market-id", m.GetID()))
-				}
-
-				// Rollback transfers in case the order do not
-				// trade and do not stay in the book to prevent for margin being
-				// locked in the margin account forever
-				if nerr := m.collateral.RollbackTransfers(ctx, tr); nerr != nil {
-					m.log.Error(
-						"Failed to roll back margin transfers for party",
-						logging.String("party-id", order.PartyId),
-						logging.Error(nerr),
-					)
 				}
 				return ErrMarginCheckInsufficient
 			}
