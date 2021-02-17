@@ -238,6 +238,16 @@ func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market strin
 					logging.Uint64("id", ref),
 					logging.String("ip-address", ip),
 				)
+
+				go func() {
+					// here we just discard all event coming in, until the
+					// channel is actually properly closed.
+					// this is kind of necessary as we wait first to unsusubscribe
+					// which is locking in the subscriber, while the subscriber
+					// may be still sending us some data
+					for range internal {
+					}
+				}()
 				if err := s.marketDepth.Unsubscribe(ref); err != nil {
 					if s.log.GetLevel() == logging.DebugLevel {
 						s.log.Debug(

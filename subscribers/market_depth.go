@@ -463,5 +463,6 @@ func (mdb *MarketDepthBuilder) Unsubscribe(id uint64) error {
 		delete(mdb.subscribers, id)
 		return nil
 	}
+
 	return fmt.Errorf("subscriber to market depth updates does not exist with id: %d", id)
 }
