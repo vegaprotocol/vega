@@ -1129,6 +1129,11 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		return nil, err
 	}
 
+	// do we have enough in the general account to make the transfer?
+	if general.Balance < uint64(t.Amount.Amount) {
+		return nil, errors.New("not enough collateral in general account")
+	}
+
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
 	insurancePool, err := e.GetAccountByID(e.accountID(market, systemOwner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_INSURANCE))
 	if err != nil {
