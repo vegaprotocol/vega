@@ -1130,7 +1130,7 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 	}
 
 	// do we have enough in the general account to make the transfer?
-	if general.Balance < uint64(t.Amount.Amount) {
+	if t.Amount.Amount > 0 && general.Balance < uint64(t.Amount.Amount) {
 		return nil, errors.New("not enough collateral in general account")
 	}
 
