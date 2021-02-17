@@ -2921,6 +2921,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	ty := types.TransferType_TRANSFER_TYPE_BOND_LOW
 	if amount < 0 {
 		ty = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+		amount = -amount
 	}
 	transfer := &types.Transfer{
 		Owner: party,
