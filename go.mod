@@ -28,6 +28,7 @@ require (
 	github.com/jinzhu/copier v0.2.8
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/mwitkow/go-proto-validators v0.2.0
+	github.com/oasisprotocol/ed25519 v0.0.0-20210201150809-58be049e4f78
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.9.1

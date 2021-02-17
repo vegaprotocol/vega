@@ -6,7 +6,7 @@ import (
 
 	vcrypto "code.vegaprotocol.io/vega/crypto"
 
-	"golang.org/x/crypto/ed25519"
+	"github.com/oasisprotocol/ed25519"
 )
 
 var (
