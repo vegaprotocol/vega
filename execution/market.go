@@ -3012,6 +3012,10 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range newOrders {
+		if order.Price == 0 {
+			order.Status = types.Order_STATUS_PARKED
+		}
+
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
 			return err
 		}

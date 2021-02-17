@@ -397,16 +397,17 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 			Reference: buy.LiquidityOrder.Reference,
 			Offset:    buy.LiquidityOrder.Offset,
 		}
-		price, err := repriceFn(pegged)
-		if err != nil {
-			continue
+		order := &supplied.LiquidityOrder{
+			OrderID:    buy.OrderId,
+			Proportion: uint64(buy.LiquidityOrder.Proportion),
+		}
+		if price, err := repriceFn(pegged); err != nil {
+			e.log.Debug("Building Buy Shape", logging.Error(err))
+		} else {
+			order.Price = price
 		}
 		oneOrMoreValidOrdersBuy = true
-		buysShape = append(buysShape, &supplied.LiquidityOrder{
-			OrderID:    buy.OrderId,
-			Price:      price,
-			Proportion: uint64(buy.LiquidityOrder.Proportion),
-		})
+		buysShape = append(buysShape, order)
 	}
 
 	for _, sell := range lp.Sells {
@@ -414,17 +415,18 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 			Reference: sell.LiquidityOrder.Reference,
 			Offset:    sell.LiquidityOrder.Offset,
 		}
-		price, err := repriceFn(pegged)
-		if err != nil {
-			continue
+		order := &supplied.LiquidityOrder{
+			OrderID:    sell.OrderId,
+			Proportion: uint64(sell.LiquidityOrder.Proportion),
+		}
+		if price, err := repriceFn(pegged); err != nil {
+			e.log.Debug("Building Sell Shape", logging.Error(err))
+		} else {
+			order.Price = price
 		}
 		oneOrMoreValidOrdersSell = true
 
-		sellsShape = append(sellsShape, &supplied.LiquidityOrder{
-			OrderID:    sell.OrderId,
-			Price:      price,
-			Proportion: uint64(sell.LiquidityOrder.Proportion),
-		})
+		sellsShape = append(sellsShape, order)
 	}
 
 	if !(oneOrMoreValidOrdersBuy && oneOrMoreValidOrdersSell) {

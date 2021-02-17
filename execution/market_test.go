@@ -2934,3 +2934,39 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	require.Equal(t, 4, tm.market.GetPeggedOrderCount())
 	require.Equal(t, 2, tm.market.GetParkedOrderCount())
 }
+
+func TestOrderBook_ParkLiquidityProvisionOrders(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1000,
+	})
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+
+	lp := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 200000,
+		Fee:              "0.01",
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 2000},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 1000},
+		},
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 10, Offset: -1000},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 13, Offset: -1500},
+		},
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp, "trader-A", "id-lp"),
+	)
+
+	assert.Equal(t,
+		len(lp.Sells)+len(lp.Buys),
+		tm.market.GetParkedOrderCount(),
+		"Market should Park shapes when can't reprice",
+	)
+
+}
