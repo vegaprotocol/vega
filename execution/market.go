@@ -1126,7 +1126,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order, f
 
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
-		if err := m.checkMarginForOrder(ctx, pos, order, failOnLPMarginShortfall); err != nil {
+		if _, err := m.checkMarginForOrder(ctx, pos, order, failOnLPMarginShortfall); err != nil {
 			if _, err := m.position.UnregisterOrder(order); err != nil {
 				m.log.Error("Unable to unregister potential trader positions",
 					logging.String("market-id", m.GetID()),
@@ -1857,7 +1857,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) error {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (*types.Transfer, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
 	return m.calcMargins(ctx, pos, order, failOnLPMarginShortfall)
@@ -2358,7 +2358,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// will be updated later on for sure.
 
 	if priceIncrease || sizeIncrease {
-		if err := m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
+		if _, err := m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
 			// Undo the position registering
 			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 			if err1 != nil {

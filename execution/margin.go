@@ -9,14 +9,14 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) error {
+func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (*types.Transfer, error) {
 	if m.as.InAuction() {
 		return m.marginsAuction(ctx, order)
 	}
 	return m.margins(ctx, pos, order, failOnLPMarginShortfall)
 }
 
-func (m *Market) marginsAuction(ctx context.Context, order *types.Order) error {
+func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types.Transfer, error) {
 	// 1. Get the price
 	price := m.getMarkPrice(order)
 	// 2. Get all positions - we have to update margins for all traders on the book so nobody can get distressed when we eventually do uncross
@@ -30,7 +30,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) error {
 		e, err := m.collateral.GetPartyMargin(p, asset, mID)
 		if err != nil {
 			// this shouldn't happen
-			return err
+			return nil, err
 		}
 		posEvts = append(posEvts, e)
 	}
@@ -38,7 +38,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) error {
 	risk, closed, err := m.risk.UpdateMarginAuction(ctx, posEvts, price)
 	if err != nil {
 		// @TODO handle this properly
-		return err
+		return nil, err
 	}
 	mposEvts := make([]events.MarketPosition, 0, len(closed))
 	for _, e := range closed {
@@ -50,7 +50,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) error {
 		tr, closeP, err := m.collateral.MarginUpdateOnOrder(ctx, mID, ru)
 		if err != nil {
 			// @TODO handle this
-			return err
+			return nil, err
 		}
 		if closeP != nil {
 			mposEvts = append(mposEvts, closeP)
@@ -63,7 +63,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) error {
 	// 8. Close out untenable positions
 	rmorders, err := m.matching.RemoveDistressedOrders(mposEvts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	evts := make([]events.Event, 0, len(rmorders))
 	for _, o := range rmorders {
@@ -75,36 +75,38 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) error {
 		m.position.UnregisterOrder(o)
 	}
 	m.broker.SendBatch(evts)
-	return nil
+	return nil, nil
 }
 
-func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) error {
+func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order, failOnLPMarginShortfall bool) (*types.Transfer, error) {
 	price := m.getMarkPrice(order)
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	pos, err := m.collateral.GetPartyMargin(mpos, asset, mID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	risk, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if risk == nil {
-		return nil
+		return nil, nil
 	}
 	tr, bondPenalty, err := m.collateral.MarginUpdateOnOrder(ctx, mID, risk)
 
-	if err != nil {
-		// Rollback transfers in case the order do not
-		// trade and do not stay in the book to prevent for margin being
-		// locked in the margin account forever
-		if nerr := m.collateral.RollbackTransfers(ctx, tr); nerr != nil {
-			m.log.Error(
-				"Failed to roll back margin transfers for party",
-				logging.String("party-id", order.PartyId),
-				logging.Error(nerr),
-			)
+	// create the rollback transaction
+	// for some reason, we can get a transfer object returned, but no actual transfers?
+	var riskRollback *types.Transfer
+	if len(tr.Transfers) > 0 {
+		riskRollback = &types.Transfer{
+			Owner: risk.Party(),
+			Amount: &types.FinancialAmount{
+				Amount: int64(tr.Transfers[0].Amount),
+				Asset:  asset,
+			},
+			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+			MinAmount: int64(tr.Transfers[0].Amount),
 		}
 	}
 
@@ -117,7 +119,19 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 						logging.Order(*order),
 						logging.String("market-id", m.GetID()))
 				}
-				return ErrMarginCheckInsufficient
+				if err != nil {
+					// Rollback transfers in case the order do not
+					// trade and do not stay in the book to prevent for margin being
+					// locked in the margin account forever
+					if nerr := m.collateral.RollbackTransfers(ctx, tr); nerr != nil {
+						m.log.Error(
+							"Failed to roll back margin transfers for party",
+							logging.String("party-id", order.PartyId),
+							logging.Error(nerr),
+						)
+					}
+				}
+				return riskRollback, ErrMarginCheckInsufficient
 			}
 			var nerr error
 			if nerr = m.applyBondPenalty(ctx, order.PartyId, shortfall, asset); nerr != nil {
@@ -136,11 +150,12 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 			}
 		}
 	}
+
 	if err != nil {
-		return err
+		return riskRollback, err
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
-	return nil
+	return riskRollback, nil
 }
 
 func (m *Market) getMarkPrice(o *types.Order) uint64 {
