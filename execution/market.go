@@ -1057,7 +1057,14 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 		m.idgen.SetID(order)
 	}
 	order.Version = InitialOrderVersion
-	order.Status = types.Order_STATUS_ACTIVE
+
+	// If price is 0 it means that a reference price could not be found and it
+	// should be parked.
+	if order.Price != 0 {
+		order.Status = types.Order_STATUS_ACTIVE
+	} else {
+		order.Status = types.Order_STATUS_PARKED
+	}
 
 	if err := m.validateOrder(ctx, order); err != nil {
 		return nil, err
@@ -3012,10 +3019,6 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range newOrders {
-		if order.Price == 0 {
-			order.Status = types.Order_STATUS_PARKED
-		}
-
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
 			return err
 		}
