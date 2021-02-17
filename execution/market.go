@@ -2946,9 +2946,9 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		}
 		if transfer.Type == types.TransferType_TRANSFER_TYPE_BOND_HIGH {
 			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_LOW
+		} else {
+			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_HIGH
 		}
-		transfer.Amount.Amount = -transfer.Amount.Amount
-		transfer.MinAmount = -transfer.MinAmount
 
 		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
 		if newerr != nil {
