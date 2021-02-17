@@ -2841,3 +2841,64 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	require.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
 }
+
+func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	addAccount(tm, "trader-A")
+	addAccount(tm, "trader-B")
+	addAccount(tm, "trader-C")
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Start the opening auction
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx)
+	tm.market.EnterAuction(ctx)
+
+	// Add orders that will outlive the auction to set the reference prices
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 10, 1010)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-A", 10, 990)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	require.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+
+	buys := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20, Proportion: 50}}
+	sells := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50}}
+
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              "0.01",
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 1000000000,
+		Buys:             buys,
+		Sells:            sells}
+
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-C", "LPOrder01")
+	require.NoError(t, err)
+
+	// Leave the auction so pegged orders are unparked
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+
+	// 6 live orders, 2 normal and 4 pegged
+	require.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
+	require.Equal(t, 4, tm.market.GetPeggedOrderCount())
+	require.Equal(t, 0, tm.market.GetParkedOrderCount())
+
+	// Remove an order to invalidate reference prices and force pegged orders to park
+	tm.market.CancelOrder(ctx, o1.PartyId, o1.Id)
+
+	// 3 live orders, 1 normal and 2 pegged with 2 parked pegged orders
+	require.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
+	require.Equal(t, 4, tm.market.GetPeggedOrderCount())
+	require.Equal(t, 2, tm.market.GetParkedOrderCount())
+}
