@@ -1233,21 +1233,6 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 
 type myMarketDepthResolver VegaResolverRoot
 
-func (r *myMarketDepthResolver) Buy(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Buy {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
-func (r *myMarketDepthResolver) Sell(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Sell {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
-
 func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketDepth) (*types.Trade, error) {
 	if md == nil {
 		return nil, errors.New("invalid market depth")
@@ -1275,21 +1260,6 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 // BEGIN: Market Depth Update Resolver
 
 type myMarketDepthUpdateResolver VegaResolverRoot
-
-func (r *myMarketDepthUpdateResolver) Buy(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Buy {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
-func (r *myMarketDepthUpdateResolver) Sell(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Sell {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
 
 func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
 	return strconv.FormatUint(md.SequenceNumber, 10), nil
@@ -1547,7 +1517,7 @@ func (r *myPriceLevelResolver) Volume(ctx context.Context, obj *types.PriceLevel
 }
 
 func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.PriceLevel) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return strconv.FormatUint(obj.NumberOfOrders, 10), nil
 }
 
 // END: Price Level Resolver
@@ -2308,6 +2278,7 @@ func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market s
 				}
 				break
 			}
+
 			c <- md.Update
 		}
 	}()
