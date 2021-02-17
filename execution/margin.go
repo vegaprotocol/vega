@@ -98,7 +98,7 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	// create the rollback transaction
 	// for some reason, we can get a transfer object returned, but no actual transfers?
 	var riskRollback *types.Transfer
-	if len(tr.Transfers) > 0 {
+	if tr != nil && len(tr.Transfers) > 0 {
 		riskRollback = &types.Transfer{
 			Owner: risk.Party(),
 			Amount: &types.FinancialAmount{
@@ -119,17 +119,16 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 						logging.Order(*order),
 						logging.String("market-id", m.GetID()))
 				}
-				if err != nil {
-					// Rollback transfers in case the order do not
-					// trade and do not stay in the book to prevent for margin being
-					// locked in the margin account forever
-					if nerr := m.collateral.RollbackTransfers(ctx, tr); nerr != nil {
-						m.log.Error(
-							"Failed to roll back margin transfers for party",
-							logging.String("party-id", order.PartyId),
-							logging.Error(nerr),
-						)
-					}
+
+				// Rollback transfers in case the order do not
+				// trade and do not stay in the book to prevent for margin being
+				// locked in the margin account forever
+				if nerr := m.collateral.RollbackTransfers(ctx, tr); nerr != nil {
+					m.log.Error(
+						"Failed to roll back margin transfers for party",
+						logging.String("party-id", order.PartyId),
+						logging.Error(nerr),
+					)
 				}
 				return riskRollback, ErrMarginCheckInsufficient
 			}
