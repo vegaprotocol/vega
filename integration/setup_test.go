@@ -73,14 +73,15 @@ func getMarketTestSetup(market *types.Market) *marketTestSetup {
 	// this can happen any number of times, just set the mock up to accept all of them
 	// Over time, these mocks will be replaced with stubs that store all elements to a map
 	// again: allow all calls, replace with stub over time
+	currentTime := time.Now()
 	colE, _ := collateral.New(
 		log,
 		collateral.NewDefaultConfig(),
 		broker,
-		time.Now(),
+		currentTime,
 	)
 
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig())
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), currentTime, broker)
 
 	tokAsset := types.Asset{
 		Id:          "VOTE",
@@ -163,10 +164,11 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.proposal = NewProposalStub()
 	execsetup.votes = NewVoteStub()
 	execsetup.broker = NewBrokerStub()
+	currentTime := time.Now()
 	execsetup.collateral, _ = collateral.New(
-		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, time.Now(),
+		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
-	execsetup.oracleEngine = oracles.NewEngine(execsetup.log, oracles.NewDefaultConfig())
+	execsetup.oracleEngine = oracles.NewEngine(execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker)
 
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()

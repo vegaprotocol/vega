@@ -99,7 +99,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	return nil
 }
 
-func newFuture(log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
+func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
 	maturity, err := time.Parse(time.RFC3339, f.Maturity)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid maturity time format")
@@ -133,7 +133,7 @@ func newFuture(log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, 
 		},
 	}
 
-	future.oracle.subscriptionID = oe.Subscribe(*oracleSpec, future.updateSettlementPrice)
+	future.oracle.subscriptionID = oe.Subscribe(ctx, *oracleSpec, future.updateSettlementPrice)
 
 	if log.GetLevel() == logging.DebugLevel {
 		log.Debug(

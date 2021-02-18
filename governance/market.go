@@ -34,6 +34,9 @@ var (
 	ErrRiskParametersNotSupported = errors.New("risk model parameters are not supported")
 	// ErrMissingRiskParameters ...
 	ErrMissingRiskParameters = errors.New("missing risk parameters")
+
+	// ErrMissingOracleSpec is return when the oracle spec is absent.
+	ErrMissingOracleSpec = errors.New("missing oracle spec")
 )
 
 func assignProduct(
@@ -42,12 +45,16 @@ func assignProduct(
 ) error {
 	switch product := source.Product.(type) {
 	case *types.InstrumentConfiguration_Future:
+		if product.Future.OracleSpec == nil {
+			return ErrMissingOracleSpec;
+		}
+
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
 				Maturity:          product.Future.Maturity,
 				SettlementAsset:   product.Future.SettlementAsset,
 				QuoteName:         product.Future.QuoteName,
-				OracleSpec:        product.Future.OracleSpec,
+				OracleSpec:        product.Future.OracleSpec.ToOracleSpec(),
 				OracleSpecBinding: product.Future.OracleSpecBinding,
 			},
 		}

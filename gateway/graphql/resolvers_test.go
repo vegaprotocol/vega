@@ -84,7 +84,7 @@ func getTestMarket() *types.Market {
 					Future: &types.Future{
 						Maturity:        "2019-12-31",
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpec: &oraclesv1.OracleSpecConfiguration{
+						OracleSpec: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{

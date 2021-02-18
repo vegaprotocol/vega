@@ -8,6 +8,8 @@ import "governance.proto";
 import "chain_events.proto";
 import "assets.proto";
 import "events.proto";
+import "oracles/v1/oracle_spec.proto";
+import "oracles/v1/oracle_data.proto";
 
 package api.v1;
 
@@ -353,6 +355,15 @@ service TradingDataService {
 
   // Get the liquidity provision orders
   rpc LiquidityProvisions(LiquidityProvisionsRequest) returns (LiquidityProvisionsResponse);
+
+  // Get an oracle spec by ID
+  rpc OracleSpec(OracleSpecRequest) returns (OracleSpecResponse);
+
+  // Get the oracle specs
+  rpc OracleSpecs(OracleSpecsRequest) returns (OracleSpecsResponse);
+
+  // Get all oracle data
+  rpc OracleDataBySpec(OracleDataBySpecRequest) returns (OracleDataBySpecResponse);
 }
 
 // Request for a list of all assets enabled on Vega
@@ -1205,4 +1216,38 @@ message LiquidityProvisionsRequest {
 // A response containing all of the Vega liquidity provision orders
 message LiquidityProvisionsResponse {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
+}
+
+// A request to get a specific oracle spec by identifier
+message OracleSpecRequest {
+  // The id to get the oracle spec for
+  string id = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+// A response for a oracle spec
+message OracleSpecResponse {
+  // The withdrawal matching the identifier from the request
+  oracles.v1.OracleSpec oracle_spec = 1 ;
+}
+
+// A request to get a specific oracle spec by identifier
+message OracleSpecsRequest {
+}
+
+// The response for a list of withdrawals
+message OracleSpecsResponse {
+  // The list of oracle specs
+  repeated oracles.v1.OracleSpec oracle_specs = 1;
+}
+
+// A request to all oracle data broadcast to a given spec
+message OracleDataBySpecRequest {
+  // The id to get the oracle spec for
+  string id = 1 [(validator.field) = {string_not_empty : true }];
+}
+
+// The response for a list of all oracle data broadcast to a given spec
+message OracleDataBySpecResponse {
+  // The list of oracle data broadcast to a given spec
+  repeated oracles.v1.OracleData oracle_data = 1;
 }

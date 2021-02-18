@@ -258,7 +258,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							QuoteName:       skel.quoteName,
 							Maturity:        skel.maturity.Format("2006-01-02T15:04:05Z"),
 							SettlementAsset: skel.settlementAsset,
-							OracleSpec: &oraclesv1.OracleSpecConfiguration{
+							OracleSpec: &oraclesv1.OracleSpec{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*oraclesv1.Filter{
 									{

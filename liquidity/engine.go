@@ -18,7 +18,7 @@ var (
 	ErrEmptyShape                     = errors.New("liquidity provision contains an empty shape")
 )
 
-//go:generate mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
 
 // Broker - event bus
 type Broker interface {

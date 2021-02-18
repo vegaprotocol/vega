@@ -7,6 +7,7 @@ import (
 	fmt "fmt"
 	math "math"
 
+	_ "code.vegaprotocol.io/vega/proto/oracles/v1"
 	proto "github.com/golang/protobuf/proto"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
@@ -271,6 +272,20 @@ func (this *BusEvent) Validate() error {
 		if oneOfNester.MarketUpdated != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.MarketUpdated); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("MarketUpdated", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_OracleSpec); ok {
+		if oneOfNester.OracleSpec != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.OracleSpec); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("OracleSpec", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetEvent().(*BusEvent_OracleData); ok {
+		if oneOfNester.OracleData != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.OracleData); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("OracleData", err)
 			}
 		}
 	}

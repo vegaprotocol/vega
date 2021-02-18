@@ -429,7 +429,7 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 }
 
 // IntoProto ...
-func (o *OracleSpecInput) IntoProto() (*oraclesv1.OracleSpecConfiguration, error) {
+func (o *OracleSpecConfigurationInput) IntoProto() (*oraclesv1.OracleSpecConfiguration, error) {
 	filters := []*oraclesv1.Filter{}
 	for _, f := range o.Filters {
 		typ, err := f.Key.Type.IntoProto()
@@ -1126,6 +1126,8 @@ func eventFromProto(e *types.BusEvent) Event {
 		return e.GetDeposit()
 	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
 		return e.GetWithdrawal()
+	case types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
+		return e.GetOracleSpec()
 	}
 	return nil
 }
@@ -1186,6 +1188,8 @@ func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_DEPOSIT)
 		case BusEventTypeWithdrawal:
 			r = append(r, types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL)
+		case BusEventTypeOracleSpec:
+			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC)
 		}
 	}
 	return r
@@ -1243,6 +1247,8 @@ func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
 		return BusEventTypeDeposit, nil
 	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
 		return BusEventTypeWithdrawal, nil
+	case types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
+		return BusEventTypeOracleSpec, nil
 	}
 	return "", errors.New("unsupported proto event type")
 }

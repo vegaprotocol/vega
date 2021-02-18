@@ -1064,7 +1064,7 @@ func baseMarket(row *gherkin.TableRow) types.Market {
 						Maturity: marketExpiry,
 						SettlementAsset: val(row, 3),
 						QuoteName:       val(row, 2),
-						OracleSpec: &oraclesv1.OracleSpecConfiguration{
+						OracleSpec: &oraclesv1.OracleSpec{
 							PubKeys: strings.Split(val(row, 25),","),
 							Filters: []*oraclesv1.Filter{
 								{

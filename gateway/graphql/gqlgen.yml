@@ -111,11 +111,17 @@ models:
     model: code.vegaprotocol.io/vega/proto.PeggedOrder
   OracleSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/proto.OracleSpecToFutureBinding
-  OracleSpec:
+  OracleSpecConfiguration:
     model: code.vegaprotocol.io/vega/proto/oracles/v1.OracleSpecConfiguration
+  OracleSpec:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.OracleSpec
   Filter:
     model: code.vegaprotocol.io/vega/proto/oracles/v1.Filter
   PropertyKey:
     model: code.vegaprotocol.io/vega/proto/oracles/v1.PropertyKey
   Condition:
     model: code.vegaprotocol.io/vega/proto/oracles/v1.Condition
+  OracleData:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.OracleData
+  Property:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.Property

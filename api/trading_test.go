@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -262,6 +263,7 @@ func getTestGRPCServer(
 	withdrawal := plugins.NewWithdrawal(ctx)
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
+	oracleService := oracles.NewService(ctx)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -284,6 +286,7 @@ func getTestGRPCServer(
 		assetService,
 		feeService,
 		eventService,
+		oracleService,
 		withdrawal,
 		deposit,
 		marketDepth,

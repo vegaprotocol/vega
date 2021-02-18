@@ -48,7 +48,7 @@ var (
 	ErrInsufficientFundsToPayFees = errors.New("insufficient funds to pay fees")
 	// ErrInvalidTransferTypeForFeeRequest an invalid transfer type was send to build a fee transfer request
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
-	// ErrNotEnoughFundsToWithdraa a party requested to withdraw more than on its general account
+	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
 	// ErrGovernanceAssetIDMatchNoAsset
 	ErrGovernanceAssetIDMatchNoAsset = errors.New("governance asset ID match no asset")
@@ -350,8 +350,7 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 }
 
 func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
-	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(
-		marketID, assetID)
+	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(marketID, assetID)
 	if err != nil {
 		return nil, err
 	}
@@ -1169,7 +1168,7 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 }
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
-func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
+func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	var (
 		asset = p.Amount.Asset
 		err   error
@@ -1443,7 +1442,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 
 		req.FromAccount[0] = marginAcc
 		req.ToAccount[0] = generalAcc
-		req.Amount = uint64(marginAcc.Balance)
+		req.Amount = marginAcc.Balance
 
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("Clearing party margin account",
@@ -1500,7 +1499,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 
 		req.FromAccount[0] = bondAcc
 		req.ToAccount[0] = generalAcc
-		req.Amount = uint64(marginAcc.Balance)
+		req.Amount = marginAcc.Balance
 
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("Clearing party bond account",
@@ -1925,7 +1924,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 	}
 
 	// check we have more money than required to withdraw
-	if uint64(acc.Balance) < amount {
+	if acc.Balance < amount {
 		return nil, fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
 	}
 

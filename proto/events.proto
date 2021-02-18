@@ -7,6 +7,8 @@ import "markets.proto";
 import "assets.proto";
 import "governance.proto";
 import "vega.proto";
+import "oracles/v1/oracle_spec.proto";
+import "oracles/v1/oracle_data.proto";
 
 // MarketEvent - the common denominator for all market events
 // interface has a method to return a string for logging
@@ -188,6 +190,10 @@ enum BusEventType {
     BUS_EVENT_TYPE_LIQUIDITY_PROVISION = 25;
     // Event indicating a new market was created
     BUS_EVENT_TYPE_MARKET_UPDATED = 26;
+    // Event indicating an oracle spec has been created or updated
+    BUS_EVENT_TYPE_ORACLE_SPEC = 27;
+    // Event indicating that an oracle data has been broadcast
+    BUS_EVENT_TYPE_ORACLE_DATA = 28;
     // Event indicating a market related event, for example when a market opens
     BUS_EVENT_TYPE_MARKET = 101;
     // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -253,6 +259,10 @@ message BusEvent {
     LiquidityProvision liquidity_provision = 124;
     // Market created events
     Market market_updated = 125;
+    // OracleSpec events
+    oracles.v1.OracleSpec oracle_spec = 126;
+    // OracleData events
+    oracles.v1.OracleData oracle_data = 127;
     // Market tick events - See [MarketEvent](#vega.MarketEvent)
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type

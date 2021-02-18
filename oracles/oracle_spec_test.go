@@ -31,7 +31,7 @@ func TestOracleSpec(t *testing.T) {
 
 func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 	// given
-	spec := oraclespb.OracleSpecConfiguration{
+	spec := oraclespb.OracleSpec{
 		PubKeys: []string{},
 		Filters: []*oraclespb.Filter{
 			{
@@ -55,7 +55,7 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 
 func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 	// given
-	spec := oraclespb.OracleSpecConfiguration{
+	spec := oraclespb.OracleSpec{
 		PubKeys: []string{
 			"0xCAFED00D",
 		},
@@ -67,13 +67,13 @@ func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 
 	// then
 	require.Error(t, err)
-	assert.Equal(t, "at least one filter is required", err.Error())
+	assert.Equal(t, "at least one filterSubscribers is required", err.Error())
 	assert.Nil(t, oracleSpec)
 }
 
 func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
@@ -142,7 +142,7 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 
 func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) {
 	// given
-	originalSpec := oraclespb.OracleSpecConfiguration{
+	originalSpec := oraclespb.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
@@ -211,7 +211,7 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			originalSpec := oraclespb.OracleSpecConfiguration{
+			originalSpec := oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -243,7 +243,7 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 
 func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
@@ -284,7 +284,7 @@ func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 
 func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 	// given
-	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+	spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 		PubKeys: []string{
 			"0xDEADBEEF",
 			"0xCAFED00D",
@@ -399,7 +399,7 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -501,7 +501,7 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -621,7 +621,7 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -723,7 +723,7 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -843,7 +843,7 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -921,7 +921,7 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -990,7 +990,7 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -1065,7 +1065,7 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},
@@ -1179,7 +1179,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 		t.Run(c.msg, func(t *testing.T) {
 
 			// given
-			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpecConfiguration{
+			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
 					"0xCAFED00D",
 				},

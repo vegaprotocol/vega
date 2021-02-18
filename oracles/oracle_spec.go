@@ -15,19 +15,25 @@ var (
 	// ErrMissingPropertiesAndFilters is returned when the oraclespb.OracleSpec
 	// has no expected properties nor filters. At least one of these should be
 	// defined.
-	ErrMissingFilters = errors.New("at least one filter is required")
+	ErrMissingFilters = errors.New("at least one filterSubscribers is required")
 	// ErrInvalidTimestamp is returned when the timestamp has a negative value
 	// which may happen in case of unsigned integer overflow.
 	ErrInvalidTimestamp = errors.New("invalid timestamp")
 )
 
+type OracleSpecID string
+
 type OracleSpec struct {
+	// id is a unique identifier for the OracleSpec
+	id OracleSpecID
 	// pubKeys list all the authorized public keys from where an OracleData can
 	// come from.
 	pubKeys map[string]struct{}
 	// filters holds all the expected property keys with the conditions they
 	// should match.
 	filters map[string]*filter
+	// Proto is the protobuf description of OracleSpec
+	Proto oraclespb.OracleSpec
 }
 
 type filter struct {
@@ -40,22 +46,22 @@ type condition func(string) (bool, error)
 
 // NewOracleSpec build an OracleSpec from an oraclespb.OracleSpec in a form that
 // suits the processing of the filters.
-func NewOracleSpec(spec oraclespb.OracleSpecConfiguration) (*OracleSpec, error) {
-	if len(spec.PubKeys) == 0 {
+func NewOracleSpec(proto oraclespb.OracleSpec) (*OracleSpec, error) {
+	if len(proto.PubKeys) == 0 {
 		return nil, ErrMissingPubKeys
 	}
 
 	pubKeys := map[string]struct{}{}
-	for _, pk := range spec.PubKeys {
+	for _, pk := range proto.PubKeys {
 		pubKeys[pk] = struct{}{}
 	}
 
-	if len(spec.Filters) == 0 {
+	if len(proto.Filters) == 0 {
 		return nil, ErrMissingFilters
 	}
 
 	typedFilters := map[string]*filter{}
-	for _, f := range spec.Filters {
+	for _, f := range proto.Filters {
 		conditions, err := toConditions(f.Key.Type, f.Conditions)
 		if err != nil {
 			return nil, err
@@ -80,8 +86,10 @@ func NewOracleSpec(spec oraclespb.OracleSpecConfiguration) (*OracleSpec, error) 
 	}
 
 	return &OracleSpec{
+		id:      OracleSpecID(proto.Id),
 		pubKeys: pubKeys,
 		filters: typedFilters,
+		Proto:   proto,
 	}, nil
 }
 

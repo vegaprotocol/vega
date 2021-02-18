@@ -120,7 +120,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
 						Maturity: "2019-12-31T00:00:00Z",
-						OracleSpec: &oraclesv1.OracleSpecConfiguration{
+						OracleSpec: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{

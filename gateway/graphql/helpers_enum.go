@@ -7,6 +7,18 @@ import (
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
+func convertOracleSpecStatusFromProto(s oraclesv1.OracleSpec_Status) (OracleSpecStatus, error) {
+	switch s {
+	case oraclesv1.OracleSpec_STATUS_ACTIVE:
+		return OracleSpecStatusStatusActive, nil
+	case oraclesv1.OracleSpec_STATUS_DEACTIVATED:
+		return OracleSpecStatusStatusUnused, nil
+	default:
+		err := fmt.Errorf("failed to convert OracleSpecStatus from Proto to GraphQL: %v", s)
+		return OracleSpecStatusStatusUnused, err
+	}
+}
+
 func convertPropertyKeyTypeFromProto(t oraclesv1.PropertyKey_Type) (PropertyKeyType, error) {
 	switch t {
 	case oraclesv1.PropertyKey_TYPE_EMPTY:

@@ -1,15 +1,19 @@
 package markets_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/mocks"
 	"code.vegaprotocol.io/vega/products"
 	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +21,7 @@ import (
 func TestInstrument(t *testing.T) {
 	t.Run("Create a valid new instrument", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		inst, err := markets.NewInstrument(logging.NewTestLogger(), pinst, newOracleEngine())
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
 		assert.NotNil(t, inst)
 		assert.Nil(t, err)
 	})
@@ -28,7 +32,7 @@ func TestInstrument(t *testing.T) {
 			Future: &types.Future{
 				Maturity:        "notavaliddate",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpec: &oraclesv1.OracleSpecConfiguration{
+				OracleSpec: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*oraclesv1.Filter{
 						{
@@ -45,7 +49,7 @@ func TestInstrument(t *testing.T) {
 				},
 			},
 		}
-		inst, err := markets.NewInstrument(logging.NewTestLogger(), pinst, newOracleEngine())
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
 	})
@@ -53,7 +57,7 @@ func TestInstrument(t *testing.T) {
 	t.Run("nil product", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = nil
-		inst, err := markets.NewInstrument(logging.NewTestLogger(), pinst, newOracleEngine())
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "unable to instantiate product from instrument configuration: nil product")
@@ -71,7 +75,7 @@ func TestInstrument(t *testing.T) {
 				},
 			},
 		}
-		inst, err := markets.NewInstrument(logging.NewTestLogger(), pinst, newOracleEngine())
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: an oracle spec and an oracle spec binding are required", err.Error())
@@ -83,7 +87,7 @@ func TestInstrument(t *testing.T) {
 			Future: &types.Future{
 				Maturity:        "2019-12-31T00:00:00Z",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpec: &oraclesv1.OracleSpecConfiguration{
+				OracleSpec: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*oraclesv1.Filter{
 						{
@@ -98,15 +102,23 @@ func TestInstrument(t *testing.T) {
 				OracleSpecBinding: nil,
 			},
 		}
-		inst, err := markets.NewInstrument(logging.NewTestLogger(), pinst, newOracleEngine())
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: an oracle spec and an oracle spec binding are required", err.Error())
 	})
 }
 
-func newOracleEngine() products.OracleEngine {
-	return oracles.NewEngine(logging.NewTestLogger(), oracles.NewDefaultConfig())
+func newOracleEngine(t *testing.T) products.OracleEngine {
+	ctrl := gomock.NewController(t)
+	broker := mocks.NewMockBroker(ctrl)
+	broker.EXPECT().Send(gomock.Any())
+	return oracles.NewEngine(
+		logging.NewTestLogger(),
+		oracles.NewDefaultConfig(),
+		time.Now(),
+		broker,
+	)
 }
 
 func getValidInstrumentProto() *types.Instrument {
@@ -125,7 +137,7 @@ func getValidInstrumentProto() *types.Instrument {
 				QuoteName:       "USD",
 				Maturity:        "2019-12-31T00:00:00Z",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpec: &oraclesv1.OracleSpecConfiguration{
+				OracleSpec: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*oraclesv1.Filter{
 						{

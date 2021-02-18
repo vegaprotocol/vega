@@ -5,7 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-import "oracles/v1/oracles.proto";
+import "oracles/v1/oracle_spec.proto";
 
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
@@ -44,7 +44,7 @@ message Future {
   // Quote name of the instrument
   string quote_name = 4;
   // The oracle spec describing the oracle data of interest
-  oracles.v1.OracleSpecConfiguration oracle_spec = 5;
+  oracles.v1.OracleSpec oracle_spec = 5;
   // The binding between the oracle spec and the settlement price
   OracleSpecToFutureBinding oracle_spec_binding = 6;
 }

@@ -135,7 +135,7 @@ func TestModelConverters(t *testing.T) {
 					Maturity:        "asdasdas",
 					SettlementAsset: "Ethereum/Ether",
 					QuoteName:       "Xyz",
-					OracleSpec: &gql.OracleSpecInput{
+					OracleSpec: &gql.OracleSpecConfigurationInput{
 						PubKeys: []string{
 							"0xDEADBEEF",
 						},
@@ -198,7 +198,7 @@ func TestModelConverters(t *testing.T) {
 					Maturity:        "asdasdas",
 					SettlementAsset: "Ethereum/Ether",
 					QuoteName:       "Xyz",
-					OracleSpec: &gql.OracleSpecInput{
+					OracleSpec: &gql.OracleSpecConfigurationInput{
 						PubKeys: []string{
 							"0xDEADBEEF",
 						},

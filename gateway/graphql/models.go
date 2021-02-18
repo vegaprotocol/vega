@@ -252,7 +252,7 @@ type FutureProductInput struct {
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
 	// The oracle spec describing the oracle data of interest.
-	OracleSpec *OracleSpecInput `json:"oracleSpec"`
+	OracleSpec *OracleSpecConfigurationInput `json:"oracleSpec"`
 	// The binding between the oracle spec and the settlement price
 	OracleSpecBinding *OracleSpecToFutureBindingInput `json:"oracleSpecBinding"`
 }
@@ -425,7 +425,7 @@ type NewMarketInput struct {
 
 // An oracle spec describe the oracle data that a product (or a risk model)
 // wants to get from the oracle engine.
-type OracleSpecInput struct {
+type OracleSpecConfigurationInput struct {
 	// pubKeys is the list of authorized public keys that signed the data for this
 	// oracle. All the public keys in the oracle data should be contained in these
 	// public keys.
@@ -934,6 +934,8 @@ const (
 	BusEventTypeDeposit BusEventType = "Deposit"
 	// Collateral has been withdrawn from this Vega network via the bridge
 	BusEventTypeWithdrawal BusEventType = "Withdrawal"
+	// An oracle spec has been registered
+	BusEventTypeOracleSpec BusEventType = "OracleSpec"
 	// constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
@@ -963,12 +965,13 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeLiquidityProvision,
 	BusEventTypeDeposit,
 	BusEventTypeWithdrawal,
+	BusEventTypeOracleSpec,
 	BusEventTypeMarket,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket:
 		return true
 	}
 	return false
@@ -1364,6 +1367,51 @@ func (e *NodeSignatureKind) UnmarshalGQL(v interface{}) error {
 }
 
 func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Status describe the status of the oracle spec
+type OracleSpecStatus string
+
+const (
+	// STATUS_ACTIVE describes an active oracle spec.
+	OracleSpecStatusStatusActive OracleSpecStatus = "StatusActive"
+	// STATUS_ACTIVE describes an oracle spec that is not listening to data
+	// anymore.
+	OracleSpecStatusStatusUnused OracleSpecStatus = "StatusUnused"
+)
+
+var AllOracleSpecStatus = []OracleSpecStatus{
+	OracleSpecStatusStatusActive,
+	OracleSpecStatusStatusUnused,
+}
+
+func (e OracleSpecStatus) IsValid() bool {
+	switch e {
+	case OracleSpecStatusStatusActive, OracleSpecStatusStatusUnused:
+		return true
+	}
+	return false
+}
+
+func (e OracleSpecStatus) String() string {
+	return string(e)
+}
+
+func (e *OracleSpecStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OracleSpecStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OracleSpecStatus", str)
+	}
+	return nil
+}
+
+func (e OracleSpecStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

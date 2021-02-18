@@ -442,6 +442,21 @@ type Query {
   "a bunch of statistics about the node"
   statistics: Statistics!
 
+  "All registered oracle specs"
+  oracleSpecs: [OracleSpec!]
+
+  "An oracle spec for a given oracle spec ID"
+  oracleSpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+  ): OracleSpec
+
+  "All oracle data for a given oracle spec ID"
+  oracleDataBySpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+  ): [OracleData!]
+
   "An order in the VEGA network found by orderID"
   orderByID(
     "ID for an order"
@@ -823,6 +838,12 @@ An oracle spec describe the oracle data that a product (or a risk model)
 wants to get from the oracle engine.
 """
 type OracleSpec {
+  "id is a hash generated from the OracleSpec data."
+  id: String!
+  "Creation Date time (ISO-8601 RFC3339+Nano formatted date)"
+  createdAt: String!
+  "Last Updated timestamp (ISO-8601 RFC3339+Nano formatted date)"
+  updatedAt: String
   """
   pubKeys is the list of authorized public keys that signed the data for this
   oracle. All the public keys in the oracle data should be contained in these
@@ -834,6 +855,21 @@ type OracleSpec {
   the product (or the risk model).
   """
   filters: [Filter!]
+  "status describes the status of the oracle spec"
+  status: OracleSpecStatus!
+  "data list all the oracle data broadcast to this spec"
+  data: [OracleData!]
+}
+
+"Status describe the status of the oracle spec"
+enum OracleSpecStatus {
+  "STATUS_ACTIVE describes an active oracle spec."
+  StatusActive
+  """
+  STATUS_ACTIVE describes an oracle spec that is not listening to data
+  anymore.
+  """
+  StatusUnused
 }
 
 """
@@ -908,6 +944,21 @@ enum ConditionOperator {
   OperatorLessThanOrEqual
 }
 
+"An oracle data contains the data sent by an oracle"
+type OracleData {
+  "pubKeys is the list of public keys that signed the data"
+  pubKeys: [String!]
+  "data contains all the properties send by an oracle"
+  data: [Property!]
+}
+
+"A property associates a name to a value"
+type Property {
+  "name of the property"
+  name: String!
+  "value of the property"
+  value: String!
+}
 
 union Product = Future
 
@@ -1986,7 +2037,7 @@ input FutureProductInput {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   "The oracle spec describing the oracle data of interest."
-  oracleSpec: OracleSpecInput!
+  oracleSpec: OracleSpecConfigurationInput!
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBindingInput!
 }
@@ -2003,7 +2054,7 @@ input OracleSpecToFutureBindingInput {
 An oracle spec describe the oracle data that a product (or a risk model)
 wants to get from the oracle engine.
 """
-input OracleSpecInput {
+input OracleSpecConfigurationInput {
   """
   pubKeys is the list of authorized public keys that signed the data for this
   oracle. All the public keys in the oracle data should be contained in these
@@ -2562,12 +2613,38 @@ enum BusEventType {
   Deposit
   "Collateral has been withdrawn from this Vega network via the bridge"
   Withdrawal
+  "An oracle spec has been registered"
+  OracleSpec
   "constant for market events - mainly used for logging"
   Market
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor | Deposit | Withdrawal
+union Event =
+  TimeUpdate
+  | MarketEvent
+  | TransferResponses
+  | PositionResolution
+  | Order
+  | Trade
+  | Account
+  | Party
+  | MarginLevels
+  | Proposal
+  | Vote
+  | MarketData
+  | NodeSignature
+  | LossSocialization
+  | SettlePosition
+  | Market
+  | Asset
+  | MarketTick
+  | SettleDistressed
+  | AuctionEvent
+  | RiskFactor
+  | Deposit
+  | Withdrawal
+  | OracleSpec
 
 type BusEvent {
   "the id for this event"

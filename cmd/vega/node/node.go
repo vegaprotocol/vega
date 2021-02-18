@@ -128,6 +128,7 @@ type NodeCommand struct {
 	feeService        *fee.Svc
 	eventService      *subscribers.Service
 	netParamsService  *netparams.Service
+	oracleService     *oracles.Service
 
 	abciServer       *abci.Server
 	blockchainClient *blockchain.Client
@@ -236,6 +237,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.assetService,
 		l.feeService,
 		l.eventService,
+		l.oracleService,
 		l.withdrawalPlugin,
 		l.depositPlugin,
 		l.marketDepthSub,

@@ -95,7 +95,7 @@ func getTestMarket2(
 		Id:     "ETH",
 	})
 
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig())
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker)
 
 	// add the token asset
 	tokAsset := types.Asset{
@@ -187,7 +187,7 @@ func getMarkets(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSett
 						Maturity: closingAt.Format(time.RFC3339),
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpec: &oraclesv1.OracleSpecConfiguration{
+						OracleSpec: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{
@@ -496,7 +496,7 @@ func TestSetMarketID(t *testing.T) {
 						Future: &types.Future{
 							Maturity: "2019-12-31T23:59:59Z",
 							SettlementAsset: "Ethereum/Ether",
-							OracleSpec: &oraclesv1.OracleSpecConfiguration{
+							OracleSpec: &oraclesv1.OracleSpec{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*oraclesv1.Filter{
 									{

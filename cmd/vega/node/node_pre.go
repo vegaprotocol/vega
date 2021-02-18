@@ -444,6 +444,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
 	l.netParamsService = netparams.NewService(l.ctx)
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
+	l.oracleService = oracles.NewService(l.ctx)
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
@@ -455,7 +456,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-		l.liquidityService, l.marketUpdatedSub)
+		l.liquidityService, l.marketUpdatedSub, l.oracleService)
 
 	now, _ := l.timeService.GetTimeNow()
 
@@ -471,7 +472,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles)
+	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker)
+	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()
 
 	// instantiate the execution engine
