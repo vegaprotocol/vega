@@ -2842,6 +2842,38 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
 }
 
+func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	// Create a new trader account with very little funding
+	addAccountWithAmount(tm, "trader-C", 1)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Start the opening auction
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx)
+	tm.market.EnterAuction(ctx)
+
+	buys := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20, Proportion: 50}}
+	sells := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50}}
+
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              "0.01",
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 1000000000,
+		Buys:             buys,
+		Sells:            sells}
+
+	// Because we do not have enough funds to support our commitment level, we should reject this call
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-C", "LPOrder01")
+	require.Error(t, err)
+}
+
 func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)

@@ -1388,6 +1388,7 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 			resp := &protoapi.MarketDepthUpdatesSubscribeResponse{
 				Update: depth,
 			}
+
 			if err := srv.Send(resp); err != nil {
 				if t.log.GetLevel() == logging.DebugLevel {
 					t.log.Debug("Depth updates subscriber - rpc stream error",
