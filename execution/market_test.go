@@ -4956,3 +4956,233 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 		assert.Equal(t, 500000, int(gacc.Balance))
 	})
 }
+
+func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	openingDuration := &types.AuctionDuration{
+		Duration: 1,
+	}
+	tm := getTestMarket(t, now, closingAt, nil, openingDuration)
+	c1 := 0.7
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(c1)
+	ctx := context.Background()
+
+	md := tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
+
+	lp1 := "lp1"
+	lp2 := "lp2"
+	trader1 := "trader1"
+	trader2 := "trader2"
+
+	addAccount(tm, lp1)
+	addAccount(tm, lp2)
+	addAccount(tm, trader1)
+	addAccount(tm, trader2)
+
+	var lp1Commitment uint64 = 50000
+	var lp2Commitment uint64 = 10000
+
+	var matchingPrice uint64 = 100
+	//Add orders that will stay on the book thus maintaining best_bid and best_ask
+	buyOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder1", types.Side_SIDE_BUY, trader1, 1, matchingPrice-10)
+	buyConf1, err := tm.market.SubmitOrder(ctx, buyOrder1)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, buyConf1.Order.Status)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
+
+	sellOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "sellOrder1", types.Side_SIDE_SELL, trader2, 1, matchingPrice+10)
+	sellConf1, err := tm.market.SubmitOrder(ctx, sellOrder1)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, sellConf1.Order.Status)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
+
+	lp1sub := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: lp1Commitment,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	lp2sub := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: lp2Commitment,
+		Fee:              "0.1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -1},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: +1},
+		},
+	}
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp1sub, lp1, "id-lp-1"),
+	)
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp2sub, lp2, "id-lp-2"),
+	)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
+
+	buyOrder2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder2", types.Side_SIDE_BUY, trader1, 1, matchingPrice)
+	buyConf2, err := tm.market.SubmitOrder(ctx, buyOrder2)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, buyConf2.Order.Status)
+
+	sellOrder2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "sellOrder2", types.Side_SIDE_SELL, trader2, 1, matchingPrice)
+	sellConf2, err := tm.market.SubmitOrder(ctx, sellOrder2)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, sellConf2.Order.Status)
+	require.Equal(t, 0, len(sellConf2.Trades))
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
+	require.Equal(t, strconv.FormatUint(lp1Commitment+lp2Commitment, 10), md.SuppliedStake)
+
+	now = now.Add(time.Second * time.Duration(openingDuration.Duration)).Add(time.Millisecond)
+	closed := tm.market.OnChainTimeUpdate(ctx, now)
+	require.False(t, closed)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, strconv.FormatUint(lp1Commitment+lp2Commitment, 10), md.SuppliedStake)
+	require.Equal(t, matchingPrice, md.MarkPrice)
+
+	//current = (target * c1) auction not triggered
+	currentStake := float64(lp1Commitment + lp2Commitment)
+	riskParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
+	maxOrderSizeFp := currentStake/(c1*float64(matchingPrice)*math.Max(riskParams.FactorShort, riskParams.FactorLong)*tm.mktCfg.TargetStakeParameters.ScalingFactor) - float64(sellConf2.Order.Size)
+	require.Greater(t, maxOrderSizeFp, 1.0)
+	maxOrderSize := uint64(math.Floor(maxOrderSizeFp))
+
+	require.NotNil(t, riskParams)
+
+	//Add orders that will trade (no auction triggered yet)
+	buyOrder3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder3", types.Side_SIDE_BUY, trader1, maxOrderSize, matchingPrice)
+	buyConf3, err := tm.market.SubmitOrder(ctx, buyOrder3)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, buyConf3.Order.Status)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+
+	sellOrder3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "sellOrder3", types.Side_SIDE_SELL, trader2, maxOrderSize, matchingPrice)
+	sellConf3, err := tm.market.SubmitOrder(ctx, sellOrder3)
+
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_FILLED, sellConf3.Order.Status)
+	require.Equal(t, 1, len(sellConf3.Trades))
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+
+	//Add orders that will trade and trigger liquidity auction
+	buyOrder4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder4", types.Side_SIDE_BUY, trader1, 1, matchingPrice)
+	buyConf4, err := tm.market.SubmitOrder(ctx, buyOrder4)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, buyConf4.Order.Status)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+
+	sellOrder4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "sellOrder4", types.Side_SIDE_SELL, trader2, 1, matchingPrice)
+	sellConf4, err := tm.market.SubmitOrder(ctx, sellOrder4)
+
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, sellConf4.Order.Status)
+	require.Equal(t, 0, len(sellConf4.Trades))
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+
+	lp2sub.CommitmentAmount = lp2Commitment + 25750
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp2sub, lp2, "id-lp-2"),
+	)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_FILLED, sellConf4.Order.Status)
+
+	//Bringing commitment back to old level shouldn't be allowed
+	lp2sub.CommitmentAmount = lp2Commitment
+	require.Error(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp2sub, lp2, "id-lp-2"),
+	)
+
+	md = tm.market.GetMarketData()
+	var zero uint64 = 0
+	require.Greater(t, md.BestStaticBidVolume, zero)
+
+	// Cancelling best_bid should start auction
+	conf, err := tm.market.CancelOrder(ctx, buyOrder1.PartyId, buyOrder1.Id)
+	require.NoError(t, err)
+	require.NotNil(t, conf)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, zero, md.BestStaticBidVolume)
+	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+
+	buyOrder5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder5", types.Side_SIDE_BUY, trader1, 1, matchingPrice-10)
+	buyConf5, err := tm.market.SubmitOrder(ctx, buyOrder5)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, buyConf5.Order.Status)
+
+	//Submitting an order on buy side so that best_bid does exist should stop an auction
+	md = tm.market.GetMarketData()
+	require.Equal(t, buyOrder5.Size, md.BestStaticBidVolume)
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+
+	//Trading with best_ask so it dissappears should start an auction
+	buyOrder6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder6", types.Side_SIDE_BUY, trader1, 1, sellOrder1.Price)
+	buyConf6, err := tm.market.SubmitOrder(ctx, buyOrder6)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_FILLED, buyConf6.Order.Status)
+	require.Equal(t, 1, len(buyConf6.Trades))
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, zero, md.BestStaticOfferVolume)
+	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+
+	//Increasing total stake so that the new target stake is accomodated AND adding a sell so best_ask exists should stop the auction
+	lp1sub.CommitmentAmount = lp1Commitment + 10000
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp1sub, lp1, "id-lp-2"),
+	)
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+
+	sellOrder5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "sellOrder5", types.Side_SIDE_SELL, trader2, 1, matchingPrice-5)
+	sellConf5, err := tm.market.SubmitOrder(ctx, sellOrder5)
+
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, sellConf5.Order.Status)
+	require.Equal(t, 0, len(sellConf5.Trades))
+
+	md = tm.market.GetMarketData()
+	require.Equal(t, sellOrder5.Size, md.BestStaticOfferVolume)
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+
+	//TODO: Refactor m.checkLiquidity() so it handles auction
+	//TODO: In all cases compare target_stake and supplied_stake returned by market data API to make sure it's in line with engine's behaviour
+	//TODO: Liquidity monitoring engine should handle checking if commitment can be reduced
+	//TODO: Liquidity monitoring engine should handle checking best_bid & best_ask
+	//TODO: Market config should contain c1
+	//TODO: Make sure triggers specify Liquidity monitoring where necessary
+}
