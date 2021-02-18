@@ -61,7 +61,7 @@ type Engine struct {
 	// state
 	provisions ProvisionsPerParty
 
-	// orders stores all the market orders (except the liquidity orders) explicitly submited by a given party.
+	// orders stores all the market orders (except the liquidity orders) explicitly submitted by a given party.
 	// indexed as: map of PartyID -> OrderId -> order to easy access
 	orders map[string]map[string]*types.Order
 
@@ -100,10 +100,12 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
 }
 
+// OnSuppliedStakeToObligationFactorUpdate updates the stake factor
 func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	e.stakeToObligationFactor = v
 }
 
+// CancelLiquidityProvision removes a parties commitment of liquidity
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
 	lp := e.provisions[party]
 	if lp == nil {
@@ -119,7 +121,7 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) err
 	return nil
 }
 
-// ProvisionsPerParty returns the resgistered a map of party-id -> LiquidityProvision.
+// ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
 func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
@@ -127,7 +129,7 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
 
 	// we check if the commitment is 0 which would mean this is a cancel
-	// a cancel don't need validations
+	// a cancel does not need validations
 	if lp.CommitmentAmount == 0 {
 		return nil
 	}
@@ -173,7 +175,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 
 // SubmitLiquidityProvision handles a new liquidity provision submission.
 // It's used to create, update or delete a LiquidityProvision.
-// The LiquidityProvision is created if submited for the first time, updated if a
+// The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
@@ -187,7 +189,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		now                           = e.currentTime.UnixNano()
 	)
 
-	// regardless of the final operaion (create,update or delete) we finish
+	// regardless of the final operation (create,update or delete) we finish
 	// sending an event.
 	defer func() {
 		evt := events.NewLiquidityProvisionEvent(ctx, lp)
@@ -291,8 +293,8 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 	return ok
 }
 
-// CreateInitialOrders returns two slices of orders, one are the one to be
-// created and the other the one to be updates.
+// CreateInitialOrders returns two slices of orders, one for orders to be
+// created and the other for orders to be updated.
 func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*types.Order, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
@@ -558,7 +560,6 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side) error {
 				}
 			}
 		}
-
 	}
 	return nil
 }
