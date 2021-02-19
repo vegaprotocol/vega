@@ -1728,10 +1728,32 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		Transfers: make([]*types.LedgerEntry, 0, tl),
 	}
 	for _, trader := range traders {
+		genAcc, err := e.GetAccountByID(e.accountID(noMarket, trader.Party(), asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
+		if err != nil {
+			return nil, err
+		}
 		// move monies from the margin account first
 		acc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			return nil, err
+		}
+		// take whatever is left on the general account, and move to margin balance
+		// we can take everything from the account, as whatever amount was left here didn't cover the minimum margin requirement
+		if genAcc.Balance > 0 {
+			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
+				FromAccount: genAcc.Id,
+				ToAccount:   acc.Id,
+				Amount:      genAcc.Balance,
+				Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_LOW.String(),
+				Type:        "position-resolution",
+				Timestamp:   e.currentTime,
+			})
+			if err := e.IncrementBalance(ctx, acc.Id, genAcc.Balance); err != nil {
+				return nil, err
+			}
+			if err := e.UpdateBalance(ctx, genAcc.Id, 0); err != nil {
+				return nil, err
+			}
 		}
 		if acc.Balance > 0 {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
