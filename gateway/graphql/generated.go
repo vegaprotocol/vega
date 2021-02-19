@@ -377,7 +377,7 @@ type ComplexityRoot struct {
 		PrepareOrderCancel        func(childComplexity int, id *string, partyID string, marketID *string) int
 		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
-		PrepareVote               func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
+		PrepareVote               func(childComplexity int, value VoteValue, partyID string, proposalID string) int
 		PrepareWithdrawal         func(childComplexity int, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
 		SubmitTransaction         func(childComplexity int, data string, sig SignatureInput, typeArg *SubmitTransactionType) int
 	}
@@ -881,7 +881,7 @@ type MutationResolver interface {
 	PrepareOrderCancel(ctx context.Context, id *string, partyID string, marketID *string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
-	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
+	PrepareVote(ctx context.Context, value VoteValue, partyID string, proposalID string) (*PreparedVote, error)
 	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
 	SubmitTransaction(ctx context.Context, data string, sig SignatureInput, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
 	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error)
@@ -2435,7 +2435,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyID"].(string), args["propopsalID"].(string)), true
+		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyID"].(string), args["proposalID"].(string)), true
 
 	case "Mutation.prepareWithdrawal":
 		if e.complexity.Mutation.PrepareWithdrawal == nil {
@@ -4380,7 +4380,7 @@ type Mutation {
     "the party casting the vote"
     partyID: String!
     "the proposal voted on"
-    propopsalID: String!
+    proposalID: String!
   ): PreparedVote!
 
   """
@@ -7205,13 +7205,13 @@ func (ec *executionContext) field_Mutation_prepareVote_args(ctx context.Context,
 	}
 	args["partyID"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["propopsalID"]; ok {
+	if tmp, ok := rawArgs["proposalID"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["propopsalID"] = arg2
+	args["proposalID"] = arg2
 	return args, nil
 }
 
@@ -14351,7 +14351,7 @@ func (ec *executionContext) _Mutation_prepareVote(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyID"].(string), args["propopsalID"].(string))
+		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyID"].(string), args["proposalID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

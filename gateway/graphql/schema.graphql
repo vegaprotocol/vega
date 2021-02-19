@@ -97,7 +97,7 @@ type Mutation {
     "the party casting the vote"
     partyID: String!
     "the proposal voted on"
-    propopsalID: String!
+    proposalID: String!
   ): PreparedVote!
 
   """
