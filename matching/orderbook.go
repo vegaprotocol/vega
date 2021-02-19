@@ -257,22 +257,68 @@ func (b *OrderBook) CanUncross() bool {
 			}
 		}
 	}
-	// no buy orders remaining on the book
-	if !match {
-		return false
-	}
-
+	sellMatch := false
 	for _, l := range b.sell.levels {
 		if l.price <= bb {
-			return false
+			break
 		}
 		for _, o := range l.orders {
 			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
-				return true
+				sellMatch = true
+				break
 			}
 		}
 	}
-	return false
+	// non-GFA orders outside the price range found on the book, we can uncross
+	if match && sellMatch {
+		return true
+	}
+	p, v, _ := b.GetIndicativePriceAndVolume()
+	// no buy orders remaining on the book after uncrossing, it matches exactly
+	vol := uint64(0)
+	if !match {
+		for _, l := range b.buy.levels {
+			// buy orders are ordered descending
+			if l.price < p {
+				continue
+			}
+			for _, o := range l.orders {
+				vol += o.Remaining
+				// we've filled the uncrossing volume, and found an order that is not GFA
+				if vol > v && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+					match = true
+					break
+				}
+			}
+			if match {
+				break
+			}
+		}
+		vol = 0
+		if !match {
+			return false
+		}
+	}
+	// we've had to check buy side - sell side is fine
+	if sellMatch {
+		return true
+	}
+	vol = 0
+	for _, l := range b.sell.levels {
+		// sell side is ordered ascending
+		if sellMatch || l.price > p {
+			break
+		}
+		for _, o := range l.orders {
+			vol += o.Remaining
+			if vol > v && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				sellMatch = true
+				break
+			}
+		}
+	}
+
+	return sellMatch
 }
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
