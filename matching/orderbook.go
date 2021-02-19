@@ -244,15 +244,15 @@ func (b *OrderBook) CanUncross() bool {
 		return false
 	}
 	// check all buy price levels below ba, find limit orders
-	match := false
+	buyMatch := false
 	for _, l := range b.buy.levels {
-		if match || l.price >= ba {
+		if buyMatch || l.price >= ba {
 			break
 		}
 		for _, o := range l.orders {
 			// limit order && not just GFA found
 			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
-				match = true
+				buyMatch = true
 				break
 			}
 		}
@@ -270,13 +270,13 @@ func (b *OrderBook) CanUncross() bool {
 		}
 	}
 	// non-GFA orders outside the price range found on the book, we can uncross
-	if match && sellMatch {
+	if buyMatch && sellMatch {
 		return true
 	}
 	p, v, _ := b.GetIndicativePriceAndVolume()
-	// no buy orders remaining on the book after uncrossing, it matches exactly
+	// no buy orders remaining on the book after uncrossing, it buyMatches exactly
 	vol := uint64(0)
-	if !match {
+	if !buyMatch {
 		for _, l := range b.buy.levels {
 			// buy orders are ordered descending
 			if l.price < p {
@@ -286,16 +286,16 @@ func (b *OrderBook) CanUncross() bool {
 				vol += o.Remaining
 				// we've filled the uncrossing volume, and found an order that is not GFA
 				if vol > v && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
-					match = true
+					buyMatch = true
 					break
 				}
 			}
-			if match {
+			if buyMatch {
 				break
 			}
 		}
 		vol = 0
-		if !match {
+		if !buyMatch {
 			return false
 		}
 	}
