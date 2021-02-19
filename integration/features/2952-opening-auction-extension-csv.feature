@@ -57,7 +57,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference   | price    | sizeDelta | expiresAt | tif     | success |
       | trader1 | t1-s-1      | 12500000 |        0  |         0 | TIF_GTC | true    |
       | trader2 | t2-b-1      | 10500000 |        0  |         0 | TIF_GTC | true    |
-    # first order, as placed by trader2 uncrosses with first order placed during opening auction
+
     Then traders place following orders with references:
       | trader  | id        | type | volume | price    | resulting trades | type        | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT  | TIF_GTC | t1-s-2    |
@@ -66,8 +66,31 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
-    And dump transfers
+    # And dump transfers
+    # MTM loss + margin low
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC20 |  275489 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC20 | 1949413 | ETH   |
+    And clear transfer events
+
+    # Amend orders to set slippage to 140
+    Then traders amends the following orders reference:
+      | trader  | reference   | price    | sizeDelta | expiresAt | tif     | success |
+      | trader1 | t1-s-1      | 14500000 |        0  |         0 | TIF_GTC | true    |
+      | trader2 | t2-b-1      | 13500000 |        0  |         0 | TIF_GTC | true    |
+
+    Then traders place following orders with references:
+      | trader  | id        | type | volume | price    | resulting trades | type        | tif     | reference |
+      | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT  | TIF_GTC | t1-s-3    |
+      | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT  | TIF_GTC | t2-b-4    |
+
+    Then I expect the trader to have a margin:
+      | trader  | asset | id        | margin  | general   |
+      | trader3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
+    # And dump transfers
+    # Check MTM Loss transfer happened
+    And the following transfers happened:
+      | from    | to      | fromType                | toType                           | id        | amount  | asset |
+      | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC20 |   50587 | ETH   |
+    And clear transfer events
