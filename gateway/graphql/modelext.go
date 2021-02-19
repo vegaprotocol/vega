@@ -864,52 +864,6 @@ func (a AccountType) IntoProto() types.AccountType {
 	return at
 }
 
-func BuiltinAssetFromProto(ba *types.BuiltinAsset) *BuiltinAsset {
-	return &BuiltinAsset{
-		Name:                ba.Name,
-		Symbol:              ba.Symbol,
-		TotalSupply:         ba.TotalSupply,
-		Decimals:            int(ba.Decimals),
-		MaxFaucetAmountMint: ba.MaxFaucetAmountMint,
-	}
-}
-
-func ERC20FromProto(ea *types.ERC20) *Erc20 {
-	return &Erc20{
-		ContractAddress: ea.ContractAddress,
-	}
-}
-
-func AssetSourceFromProto(psource *types.AssetSource) (AssetSource, error) {
-	if psource == nil {
-		return nil, ErrNilAssetSource
-	}
-	switch asimpl := psource.Source.(type) {
-	case *types.AssetSource_BuiltinAsset:
-		return BuiltinAssetFromProto(asimpl.BuiltinAsset), nil
-	case *types.AssetSource_Erc20:
-		return ERC20FromProto(asimpl.Erc20), nil
-	default:
-		return nil, ErrUnimplementedAssetSource
-	}
-}
-
-func AssetFromProto(passet *types.Asset) (*Asset, error) {
-	source, err := AssetSourceFromProto(passet.Source)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Asset{
-		ID:          passet.Id,
-		Name:        passet.Name,
-		Symbol:      passet.Symbol,
-		Decimals:    int(passet.Decimals),
-		TotalSupply: passet.TotalSupply,
-		Source:      source,
-	}, nil
-}
-
 func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
 	return &types.NewMarketConfiguration_LogNormal{
 		LogNormal: &types.LogNormalRiskModel{
@@ -1099,8 +1053,7 @@ func eventFromProto(e *types.BusEvent) Event {
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
 		return e.GetMarketUpdated()
 	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
-		a, _ := AssetFromProto(e.GetAsset())
-		return a
+		return e.GetAsset()
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
 		mt := e.GetMarketTick()
 		return &MarketTick{

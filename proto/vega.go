@@ -20,6 +20,7 @@ func NewTxFromSignedBundlePayload(payload []byte) (*Transaction, *SignedBundle, 
 }
 
 // IsEvent methods needs to be implemented so we can used mapped types in GQL union
+func (Asset) IsEvent()                           {}
 func (Order) IsEvent()                           {}
 func (Account) IsEvent()                         {}
 func (Trade) IsEvent()                           {}

@@ -363,7 +363,7 @@ func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.Li
 
 type myDepositResolver VegaResolverRoot
 
-func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*Asset, error) {
+func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
@@ -391,30 +391,6 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 
 func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (DepositStatus, error) {
 	return convertDepositStatusFromProto(obj.Status)
-}
-
-// asset resolver
-
-type myAssetResolver VegaResolverRoot
-
-func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*types.Account, error) {
-	if len(obj.ID) <= 0 {
-		return nil, ErrMissingIDOrReference
-	}
-	req := &protoapi.FeeInfrastructureAccountsRequest{
-		Asset: obj.ID,
-	}
-	res, err := r.tradingDataClient.FeeInfrastructureAccounts(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	var acc *types.Account
-	if len(res.Accounts) > 0 {
-		acc = res.Accounts[0]
-	}
-
-	return acc, nil
 }
 
 // BEGIN: Query Resolver
@@ -564,11 +540,11 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 
 }
 
-func (r *myQueryResolver) Asset(ctx context.Context, id string) (*Asset, error) {
+func (r *myQueryResolver) Asset(ctx context.Context, id string) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, id)
 }
 
-func (r *myQueryResolver) Assets(ctx context.Context) ([]*Asset, error) {
+func (r *myQueryResolver) Assets(ctx context.Context) ([]*types.Asset, error) {
 	return r.r.allAssets(ctx)
 }
 
@@ -1048,7 +1024,7 @@ func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevel
 	return res.Party, nil
 }
 
-func (r *myMarginLevelsResolver) Asset(ctx context.Context, m *types.MarginLevels) (*Asset, error) {
+func (r *myMarginLevelsResolver) Asset(ctx context.Context, m *types.MarginLevels) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, m.Asset)
 }
 
@@ -1584,9 +1560,7 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
-	out = append(out, res.MarginLevels...)
-	return out, nil
+	return res.MarginLevels, nil
 }
 
 // END: Position Resolver
@@ -2574,7 +2548,7 @@ func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (Accou
 	return convertAccountTypeFromProto(obj.Type)
 }
 
-func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*Asset, error) {
+func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 

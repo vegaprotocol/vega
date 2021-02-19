@@ -17,7 +17,7 @@ func (r *myWithdrawalResolver) Amount(ctx context.Context, obj *types.Withdrawal
 	return strconv.FormatUint(obj.Amount, 10), nil
 }
 
-func (r *myWithdrawalResolver) Asset(ctx context.Context, obj *types.Withdrawal) (*Asset, error) {
+func (r *myWithdrawalResolver) Asset(ctx context.Context, obj *types.Withdrawal) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 

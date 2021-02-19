@@ -44,26 +44,6 @@ type WithdrawalDetails interface {
 	IsWithdrawalDetails()
 }
 
-// Represents an asset in vega
-type Asset struct {
-	// The id of the asset
-	ID string `json:"id"`
-	// The full name of the asset (e.g: Great British Pound)
-	Name string `json:"name"`
-	// The symbol of the asset (e.g: GBP)
-	Symbol string `json:"symbol"`
-	// The total supply of the market
-	TotalSupply string `json:"totalSupply"`
-	// The precision of the asset
-	Decimals int `json:"decimals"`
-	// The origin source of the asset (e.g: an erc20 asset)
-	Source AssetSource `json:"source"`
-	// The infrastructure fee account for this asset
-	InfrastructureFeeAccount *proto.Account `json:"infrastructureFeeAccount"`
-}
-
-func (Asset) IsEvent() {}
-
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
 //   The auction will last for at least N seconds.

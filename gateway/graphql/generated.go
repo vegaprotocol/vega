@@ -87,7 +87,7 @@ type ComplexityRoot struct {
 
 	Asset struct {
 		Decimals                 func(childComplexity int) int
-		ID                       func(childComplexity int) int
+		Id                       func(childComplexity int) int
 		InfrastructureFeeAccount func(childComplexity int) int
 		Name                     func(childComplexity int) int
 		Source                   func(childComplexity int) int
@@ -751,12 +751,14 @@ type ComplexityRoot struct {
 
 type AccountResolver interface {
 	Balance(ctx context.Context, obj *proto.Account) (string, error)
-	Asset(ctx context.Context, obj *proto.Account) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.Account) (*proto.Asset, error)
 	Type(ctx context.Context, obj *proto.Account) (AccountType, error)
 	Market(ctx context.Context, obj *proto.Account) (*proto.Market, error)
 }
 type AssetResolver interface {
-	InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error)
+	Decimals(ctx context.Context, obj *proto.Asset) (int, error)
+	Source(ctx context.Context, obj *proto.Asset) (AssetSource, error)
+	InfrastructureFeeAccount(ctx context.Context, obj *proto.Asset) (*proto.Account, error)
 }
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *proto.Candle) (string, error)
@@ -771,18 +773,18 @@ type CandleResolver interface {
 type DepositResolver interface {
 	Party(ctx context.Context, obj *proto.Deposit) (*proto.Party, error)
 
-	Asset(ctx context.Context, obj *proto.Deposit) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.Deposit) (*proto.Asset, error)
 	Status(ctx context.Context, obj *proto.Deposit) (DepositStatus, error)
 	CreatedTimestamp(ctx context.Context, obj *proto.Deposit) (string, error)
 	CreditedTimestamp(ctx context.Context, obj *proto.Deposit) (*string, error)
 }
 type FutureResolver interface {
-	SettlementAsset(ctx context.Context, obj *proto.Future) (*Asset, error)
+	SettlementAsset(ctx context.Context, obj *proto.Future) (*proto.Asset, error)
 
 	Oracle(ctx context.Context, obj *proto.Future) (Oracle, error)
 }
 type FutureProductResolver interface {
-	SettlementAsset(ctx context.Context, obj *proto.FutureProduct) (*Asset, error)
+	SettlementAsset(ctx context.Context, obj *proto.FutureProduct) (*proto.Asset, error)
 }
 type InstrumentResolver interface {
 	Metadata(ctx context.Context, obj *proto.Instrument) (*InstrumentMetadata, error)
@@ -809,7 +811,7 @@ type LiquidityProvisionResolver interface {
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *proto.MarginLevels) (*proto.Market, error)
-	Asset(ctx context.Context, obj *proto.MarginLevels) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.MarginLevels) (*proto.Asset, error)
 	Party(ctx context.Context, obj *proto.MarginLevels) (*proto.Party, error)
 	MaintenanceLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
 	SearchLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
@@ -979,8 +981,8 @@ type QueryResolver interface {
 	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	NodeSignatures(ctx context.Context, resourceID string) ([]*proto.NodeSignature, error)
-	Asset(ctx context.Context, assetID string) (*Asset, error)
-	Assets(ctx context.Context) ([]*Asset, error)
+	Asset(ctx context.Context, assetID string) (*proto.Asset, error)
+	Assets(ctx context.Context) ([]*proto.Asset, error)
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*OrderEstimate, error)
 	Withdrawal(ctx context.Context, id string) (*proto.Withdrawal, error)
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
@@ -1055,7 +1057,7 @@ type UpdateNetworkParameterResolver interface {
 type WithdrawalResolver interface {
 	Party(ctx context.Context, obj *proto.Withdrawal) (*proto.Party, error)
 	Amount(ctx context.Context, obj *proto.Withdrawal) (string, error)
-	Asset(ctx context.Context, obj *proto.Withdrawal) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.Withdrawal) (*proto.Asset, error)
 	Status(ctx context.Context, obj *proto.Withdrawal) (WithdrawalStatus, error)
 
 	Expiry(ctx context.Context, obj *proto.Withdrawal) (string, error)
@@ -1116,11 +1118,11 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.Asset.Decimals(childComplexity), true
 
 	case "Asset.id":
-		if e.complexity.Asset.ID == nil {
+		if e.complexity.Asset.Id == nil {
 			break
 		}
 
-		return e.complexity.Asset.ID(childComplexity), true
+		return e.complexity.Asset.Id(childComplexity), true
 
 	case "Asset.infrastructureFeeAccount":
 		if e.complexity.Asset.InfrastructureFeeAccount == nil {
@@ -8168,9 +8170,9 @@ func (ec *executionContext) _Account_asset(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Account_type(ctx context.Context, field graphql.CollectedField, obj *proto.Account) (ret graphql.Marshaler) {
@@ -8238,7 +8240,7 @@ func (ec *executionContext) _Account_market(ctx context.Context, field graphql.C
 	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarket(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8255,7 +8257,7 @@ func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.Collect
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8272,7 +8274,7 @@ func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.Collect
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8306,7 +8308,7 @@ func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8340,7 +8342,7 @@ func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8374,7 +8376,7 @@ func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8385,13 +8387,13 @@ func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.C
 		Object:   "Asset",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Decimals, nil
+		return ec.resolvers.Asset().Decimals(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8408,7 +8410,7 @@ func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.C
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8419,13 +8421,13 @@ func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.Col
 		Object:   "Asset",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Source, nil
+		return ec.resolvers.Asset().Source(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8442,7 +8444,7 @@ func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.Col
 	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9525,9 +9527,9 @@ func (ec *executionContext) _Deposit_asset(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Deposit_status(ctx context.Context, field graphql.CollectedField, obj *proto.Deposit) (ret graphql.Marshaler) {
@@ -10233,9 +10235,9 @@ func (ec *executionContext) _Future_settlementAsset(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
@@ -10369,9 +10371,9 @@ func (ec *executionContext) _FutureProduct_settlementAsset(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
@@ -11958,9 +11960,9 @@ func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_party(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -18223,9 +18225,9 @@ func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -18254,9 +18256,9 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Asset)
+	res := resTmp.([]*proto.Asset)
 	fc.Result = res
-	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetᚄ(ctx, field.Selections, res)
+	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAssetᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_estimateOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -22083,9 +22085,9 @@ func (ec *executionContext) _Withdrawal_asset(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_status(ctx context.Context, field graphql.CollectedField, obj *proto.Withdrawal) (ret graphql.Marshaler) {
@@ -24145,9 +24147,9 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._Market(ctx, sel, obj)
-	case Asset:
+	case proto.Asset:
 		return ec._Asset(ctx, sel, &obj)
-	case *Asset:
+	case *proto.Asset:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -24411,7 +24413,7 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 
 var assetImplementors = []string{"Asset", "Event"}
 
-func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, obj *Asset) graphql.Marshaler {
+func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, obj *proto.Asset) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, assetImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -24441,15 +24443,33 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "decimals":
-			out.Values[i] = ec._Asset_decimals(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_decimals(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "source":
-			out.Values[i] = ec._Asset_source(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_source(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "infrastructureFeeAccount":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -30201,11 +30221,11 @@ func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v Asset) graphql.Marshaler {
+func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v proto.Asset) graphql.Marshaler {
 	return ec._Asset(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v *Asset) graphql.Marshaler {
+func (ec *executionContext) marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v *proto.Asset) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -31753,11 +31773,11 @@ func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return v
 }
 
-func (ec *executionContext) marshalOAsset2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v proto.Asset) graphql.Marshaler {
 	return ec._Asset(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.Asset) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -31784,7 +31804,7 @@ func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, sel, v[i])
+			ret[i] = ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -31797,7 +31817,7 @@ func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
-func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v *Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v *proto.Asset) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
