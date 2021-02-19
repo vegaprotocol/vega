@@ -765,7 +765,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Cancel all the orders that were invalid
 	for _, order := range ordersToCancel {
-		m.cancelOrder(ctx, order.PartyId, order.Id, false)
+		m.cancelOrder(ctx, order.PartyId, order.Id)
 	}
 
 	// Send an event bus update
@@ -804,7 +804,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
-		_, err := m.cancelOrder(ctx, order.PartyId, order.Id, false)
+		_, err := m.cancelOrder(ctx, order.PartyId, order.Id)
 		if err != nil {
 			m.log.Error("Failed to cancel order", logging.String("OrderID", order.Id))
 		}
@@ -1972,23 +1972,22 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
+	// cancelling and amending an order that is part of the LP commitment isn't allowed
+	if m.liquidity.IsLiquidityOrder(partyID, orderID) {
+		return nil, types.ErrEditNotAllowed
+	}
 
-	return m.cancelOrder(ctx, partyID, orderID, false)
+	return m.cancelOrder(ctx, partyID, orderID)
 }
 
 // CancelOrder cancels the given order
-func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string, forceCancelLiquidity bool) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	if m.closed {
 		return nil, ErrMarketClosed
-	}
-
-	// cancelling and amending an order that is part of the LP commitment isn't allowed
-	if !forceCancelLiquidity && m.liquidity.IsLiquidityOrder(partyID, orderID) {
-		return nil, types.ErrEditNotAllowed
 	}
 
 	order, foundOnBook, err := m.getOrderByID(orderID)
@@ -2203,7 +2202,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if remaining is reduces <= 0, then order is cancelled
 	if amendedOrder.Remaining <= 0 {
 		confirm, err := m.cancelOrder(
-			ctx, existingOrder.PartyId, existingOrder.Id, false)
+			ctx, existingOrder.PartyId, existingOrder.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -3049,7 +3048,7 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		}
 		party := newOrders[0].PartyId
 		for _, v := range submittedIDs {
-			_, newerr := m.cancelOrder(ctx, party, v, true)
+			_, newerr := m.cancelOrder(ctx, party, v)
 			if newerr != nil {
 				m.log.Error("unable to rollback order via cancel",
 					logging.Error(newerr),
