@@ -3100,7 +3100,7 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 }
 
 func (m *Market) applyBondPenalty(ctx context.Context, partyID string, marginShorfall uint64, asset string) error {
-	if marginShorfall <= 0 {
+	if marginShorfall == 0 {
 		return nil
 	}
 
