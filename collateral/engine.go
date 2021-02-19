@@ -1736,7 +1736,6 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		if err != nil {
 			return nil, err
 		}
-		// move monies from the margin account first
 		acc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			return nil, err
@@ -1776,6 +1775,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 				return nil, err
 			}
 		}
+		// move monies from the margin account (balance is general, bond, and margin combined now)
 		if acc.Balance > 0 {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
 				FromAccount: acc.Id,
