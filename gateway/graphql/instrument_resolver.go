@@ -13,9 +13,6 @@ var (
 
 type myInstrumentResolver VegaResolverRoot
 
-func (r *myInstrumentResolver) Metadata(ctx context.Context, obj *types.Instrument) (*InstrumentMetadata, error) {
-	return InstrumentMetadataFromProto(obj.Metadata)
-}
 func (r *myInstrumentResolver) Product(ctx context.Context, obj *types.Instrument) (Product, error) {
 	switch obj.GetProduct().(type) {
 	case *types.Instrument_Future:

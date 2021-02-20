@@ -58,23 +58,6 @@ type AuctionDuration struct {
 	Volume int `json:"volume"`
 }
 
-type AuctionEvent struct {
-	// the market ID
-	MarketID string `json:"marketID"`
-	// event fired because of auction end
-	Leave bool `json:"leave"`
-	// event related to opening auction
-	OpeningAuction bool `json:"openingAuction"`
-	// RFC3339Nano start time of auction
-	AuctionStart string `json:"auctionStart"`
-	// RFC3339Nano optional end time of auction
-	AuctionEnd string `json:"auctionEnd"`
-	// What triggered the auction
-	Trigger AuctionTrigger `json:"trigger"`
-}
-
-func (AuctionEvent) IsEvent() {}
-
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
 	// The id of the asset
@@ -238,12 +221,6 @@ type InstrumentConfigurationInput struct {
 	FutureProduct *FutureProductInput `json:"futureProduct"`
 }
 
-// A set of metadata to associate to an instruments
-type InstrumentMetadata struct {
-	// An arbitrary list of tags to associated to associate to the Instrument (string list)
-	Tags []string `json:"tags"`
-}
-
 type LedgerEntry struct {
 	// account from which the asset was taken
 	FromAccount string `json:"fromAccount"`
@@ -279,16 +256,6 @@ type LiquidityProviderFeeShare struct {
 	AverageEntryValuation string `json:"averageEntryValuation"`
 }
 
-// Parameters for the log normal risk model
-type LogNormalModelParams struct {
-	// mu parameter
-	Mu float64 `json:"mu"`
-	// r parameter
-	R float64 `json:"r"`
-	// sigma parameter
-	Sigma float64 `json:"sigma"`
-}
-
 type LogNormalModelParamsInput struct {
 	// mu parameter
 	Mu float64 `json:"mu"`
@@ -297,18 +264,6 @@ type LogNormalModelParamsInput struct {
 	// sigma parameter
 	Sigma float64 `json:"sigma"`
 }
-
-// A type of risk model for futures trading
-type LogNormalRiskModel struct {
-	// Lambda parameter of the risk model
-	RiskAversionParameter float64 `json:"riskAversionParameter"`
-	// Tau parameter of the risk model
-	Tau float64 `json:"tau"`
-	// Params for the log normal risk model
-	Params *LogNormalModelParams `json:"params"`
-}
-
-func (LogNormalRiskModel) IsRiskModel() {}
 
 type LogNormalRiskModelInput struct {
 	// Lambda parameter of the risk model
@@ -611,22 +566,6 @@ type SignatureInput struct {
 	Algo string `json:"algo"`
 	// The version of the signature
 	Version int `json:"version"`
-}
-
-// A type of simple/dummy risk model where we can specify the risk factor long and short in params
-type SimpleRiskModel struct {
-	// Params for the simple risk model
-	Params *SimpleRiskModelParams `json:"params"`
-}
-
-func (SimpleRiskModel) IsRiskModel() {}
-
-// Parameters for the simple risk model
-type SimpleRiskModelParams struct {
-	// Risk factor for long
-	FactorLong float64 `json:"factorLong"`
-	// Risk factor for short
-	FactorShort float64 `json:"factorShort"`
 }
 
 type SimpleRiskModelParamsInput struct {

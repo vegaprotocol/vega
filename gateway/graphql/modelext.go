@@ -2,7 +2,6 @@ package gql
 
 import (
 	"fmt"
-	"strconv"
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -84,111 +83,6 @@ type MarketLogEvent interface {
 	GetPayload() string
 }
 
-// IntoProto ...
-func (c *ContinuousTrading) IntoProto() (*types.Market_Continuous, error) {
-	if len(c.TickSize) <= 0 {
-		return nil, ErrTickSizeNegative
-	}
-	// parsing just make sure it's a valid float
-	_, err := strconv.ParseFloat(c.TickSize, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.Market_Continuous{
-		Continuous: &types.ContinuousTrading{
-			TickSize: c.TickSize,
-		},
-	}, nil
-}
-
-// IntoProto ...
-func (d *DiscreteTrading) IntoProto() (*types.Market_Discrete, error) {
-	if len(d.TickSize) <= 0 {
-		return nil, ErrTickSizeNegative
-	}
-	// parsing just make sure it's a valid float
-	_, err := strconv.ParseFloat(d.TickSize, 64)
-	if err != nil {
-		return nil, err
-	}
-	if d.Duration < 0 {
-		return nil, ErrTradingDurationNegative
-	}
-	return &types.Market_Discrete{
-		Discrete: &types.DiscreteTrading{
-			TickSize:   d.TickSize,
-			DurationNs: int64(d.Duration),
-		},
-	}, nil
-}
-
-// IntoProto ...
-func (ee *EthereumEvent) IntoProto() (*types.Future_EthereumEvent, error) {
-	return &types.Future_EthereumEvent{
-		EthereumEvent: &types.EthereumEvent{
-			ContractId: ee.ContractID,
-			Event:      ee.Event,
-		},
-	}, nil
-}
-
-// IntoProto ...
-func (im *InstrumentMetadata) IntoProto() (*types.InstrumentMetadata, error) {
-	pim := &types.InstrumentMetadata{
-		Tags: []string{},
-	}
-	pim.Tags = append(pim.Tags, im.Tags...)
-	return pim, nil
-}
-
-// IntoProto ...
-func (f *LogNormalRiskModel) IntoProto() (*types.TradableInstrument_LogNormalRiskModel, error) {
-	return &types.TradableInstrument_LogNormalRiskModel{
-		LogNormalRiskModel: &types.LogNormalRiskModel{
-			RiskAversionParameter: f.RiskAversionParameter,
-			Tau:                   f.Tau,
-			Params: &types.LogNormalModelParams{
-				Mu:    f.Params.Mu,
-				R:     f.Params.R,
-				Sigma: f.Params.Sigma,
-			},
-		},
-	}, nil
-}
-
-func (m *MarginCalculator) IntoProto() (*types.MarginCalculator, error) {
-	pm := &types.MarginCalculator{}
-	if m.ScalingFactors != nil {
-		pm.ScalingFactors, _ = m.ScalingFactors.IntoProto()
-	}
-	return pm, nil
-}
-
-func (s *ScalingFactors) IntoProto() (*types.ScalingFactors, error) {
-	return &types.ScalingFactors{
-		SearchLevel:       s.SearchLevel,
-		InitialMargin:     s.InitialMargin,
-		CollateralRelease: s.CollateralRelease,
-	}, nil
-}
-
-func (f *FeeFactors) IntoProto() (*types.FeeFactors, error) {
-	return &types.FeeFactors{
-		LiquidityFee:      f.LiquidityFee,
-		MakerFee:          f.MakerFee,
-		InfrastructureFee: f.InfrastructureFee,
-	}, nil
-}
-
-func (f *Fees) IntoProto() (*types.Fees, error) {
-	pf := &types.Fees{}
-	if f.Factors != nil {
-		pf.Factors, _ = f.Factors.IntoProto()
-	}
-	return pf, nil
-}
-
 func (o *LiquidityOrderInput) IntoProto() (*types.LiquidityOrder, error) {
 	if o.Proportion < 0 {
 		return nil, errors.New("proportion can't be negative")
@@ -268,23 +162,6 @@ func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
 	}
 }
 
-// InstrumentMetadataFromProto ...
-func InstrumentMetadataFromProto(pim *types.InstrumentMetadata) (*InstrumentMetadata, error) {
-	if pim == nil {
-		return nil, ErrNilInstrumentMetadata
-	}
-	im := &InstrumentMetadata{
-		Tags: []string{},
-	}
-
-	for _, v := range pim.Tags {
-		v := v
-		im.Tags = append(im.Tags, v)
-	}
-
-	return im, nil
-}
-
 // EthereumEventFromProto ...
 func EthereumEventFromProto(pee *types.EthereumEvent) (*EthereumEvent, error) {
 	if pee == nil {
@@ -308,44 +185,6 @@ func OracleFromProto(o interface{}) (Oracle, error) {
 		return EthereumEventFromProto(oimpl.EthereumEvent)
 	default:
 		return nil, ErrUnimplementedOracle
-	}
-}
-
-// ForwardFromProto ...
-func ForwardFromProto(f *types.LogNormalRiskModel) (*LogNormalRiskModel, error) {
-	return &LogNormalRiskModel{
-		RiskAversionParameter: f.RiskAversionParameter,
-		Tau:                   f.Tau,
-		Params: &LogNormalModelParams{
-			Mu:    f.Params.Mu,
-			R:     f.Params.R,
-			Sigma: f.Params.Sigma,
-		},
-	}, nil
-}
-
-// SimpleRiskModelFromProto ...
-func SimpleRiskModelFromProto(f *types.SimpleRiskModel) (*SimpleRiskModel, error) {
-	return &SimpleRiskModel{
-		Params: &SimpleRiskModelParams{
-			FactorLong:  f.Params.FactorLong,
-			FactorShort: f.Params.FactorShort,
-		},
-	}, nil
-}
-
-// RiskModelFromProto ...
-func RiskModelFromProto(rm interface{}) (RiskModel, error) {
-	if rm == nil {
-		return nil, ErrNilRiskModel
-	}
-	switch rmimpl := rm.(type) {
-	case *types.TradableInstrument_LogNormalRiskModel:
-		return ForwardFromProto(rmimpl.LogNormalRiskModel)
-	case *types.TradableInstrument_SimpleRiskModel:
-		return SimpleRiskModelFromProto(rmimpl.SimpleRiskModel)
-	default:
-		return nil, ErrUnimplementedRiskModel
 	}
 }
 
@@ -442,34 +281,6 @@ func PriceMonitoringSettingsFromProto(ppmst *types.PriceMonitoringSettings) (*Pr
 		Parameters:          params,
 		UpdateFrequencySecs: int(ppmst.UpdateFrequency),
 	}, nil
-}
-
-// RiskConfigurationFromProto ...
-func RiskConfigurationFromProto(newMarket *types.NewMarketConfiguration) (RiskModel, error) {
-	if newMarket.RiskParameters == nil {
-		newMarket.RiskParameters = defaultRiskParameters()
-	}
-	switch params := newMarket.RiskParameters.(type) {
-	case *types.NewMarketConfiguration_Simple:
-		return &SimpleRiskModel{
-			Params: &SimpleRiskModelParams{
-				FactorLong:  params.Simple.FactorLong,
-				FactorShort: params.Simple.FactorShort,
-			},
-		}, nil
-	case *types.NewMarketConfiguration_LogNormal:
-		return &LogNormalRiskModel{
-			RiskAversionParameter: params.LogNormal.RiskAversionParameter,
-			Tau:                   params.LogNormal.Tau,
-			Params: &LogNormalModelParams{
-				Mu:    params.LogNormal.Params.Mu,
-				R:     params.LogNormal.Params.R,
-				Sigma: params.LogNormal.Params.Sigma,
-			},
-		}, nil
-	default:
-		return nil, ErrInvalidRiskConfiguration
-	}
 }
 
 // IntoProto ...
@@ -948,21 +759,6 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 	return gql
 }
 
-func auctionEventFromProto(ae *types.AuctionEvent) *AuctionEvent {
-	t, _ := convertAuctionTriggerFromProto(ae.Trigger)
-	r := &AuctionEvent{
-		MarketID:       ae.MarketId,
-		Leave:          ae.Leave,
-		OpeningAuction: ae.OpeningAuction,
-		AuctionStart:   nanoTSToDatetime(ae.Start),
-		Trigger:        t,
-	}
-	if ae.End != 0 {
-		r.AuctionEnd = nanoTSToDatetime(ae.End)
-	}
-	return r
-}
-
 func eventFromProto(e *types.BusEvent) Event {
 	switch e.Type {
 	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
@@ -1074,7 +870,7 @@ func eventFromProto(e *types.BusEvent) Event {
 			Payload:  me.GetPayload(),
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
-		return auctionEventFromProto(e.GetAuction())
+		return e.GetAuction()
 	case types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
 		return e.GetDeposit()
 	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:

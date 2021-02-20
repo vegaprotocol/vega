@@ -314,6 +314,10 @@ func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
 	return (*myPeggedOrderResolver)(r)
 }
 
+func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
+	return (*auctionEventResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
