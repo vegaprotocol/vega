@@ -345,8 +345,13 @@ func (r *myLiquidityProvisionResolver) Party(ctx context.Context, obj *types.Liq
 func (r *myLiquidityProvisionResolver) CreatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
-func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
 }
 func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
@@ -1301,11 +1306,13 @@ func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (stri
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
 
-func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (string, error) {
-	if obj.UpdatedAt <= 0 {
-		return "", nil
+func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
 	}
-	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+	return updatedAt, nil
 }
 
 func (r *myOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
@@ -1520,8 +1527,13 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
 }
 
 func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {

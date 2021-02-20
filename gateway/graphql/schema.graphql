@@ -1194,8 +1194,8 @@ type Position {
   "margins of the party for the given position"
   margins: [MarginLevels!]
 
-  "RFC3339Nano time the position was updated, can be empty string"
-  updatedAt: String!
+  "RFC3339Nano time the position was updated"
+  updatedAt: String
 }
 
 "An order in Vega, if active it will be on the OrderBook for the market"
@@ -1248,8 +1248,8 @@ type Order {
   "Version of this order, counts the number of amends"
   version: String!
 
-  "RFC3339Nano time the order was altered, can be empty string"
-  updatedAt: String!
+  "RFC3339Nano time the order was altered"
+  updatedAt: String
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
@@ -2463,8 +2463,8 @@ type LiquidityProvision {
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
   createdAt: String!
-  "RFC3339Nano time of when the liquidity provision was updated, can be empty string"
-  updatedAt: String!
+  "RFC3339Nano time of when the liquidity provision was updated"
+  updatedAt: String
   "Market identifier for the order"
   market: Market!
   "Specified as a unitless number that represents the amount of settlement asset of the market."

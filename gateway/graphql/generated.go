@@ -803,7 +803,7 @@ type LiquidityOrderReferenceResolver interface {
 type LiquidityProvisionResolver interface {
 	Party(ctx context.Context, obj *proto.LiquidityProvision) (*proto.Party, error)
 	CreatedAt(ctx context.Context, obj *proto.LiquidityProvision) (string, error)
-	UpdatedAt(ctx context.Context, obj *proto.LiquidityProvision) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.LiquidityProvision) (*string, error)
 	Market(ctx context.Context, obj *proto.LiquidityProvision) (*proto.Market, error)
 	CommitmentAmount(ctx context.Context, obj *proto.LiquidityProvision) (int, error)
 
@@ -916,7 +916,7 @@ type OrderResolver interface {
 	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
 	RejectionReason(ctx context.Context, obj *proto.Order) (*OrderRejectionReason, error)
 	Version(ctx context.Context, obj *proto.Order) (string, error)
-	UpdatedAt(ctx context.Context, obj *proto.Order) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.Order) (*string, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *proto.Party, skip *int, first *int, last *int) ([]*proto.Order, error)
@@ -942,7 +942,7 @@ type PositionResolver interface {
 	UnrealisedPnl(ctx context.Context, obj *proto.Position) (string, error)
 	AverageEntryPrice(ctx context.Context, obj *proto.Position) (string, error)
 	Margins(ctx context.Context, obj *proto.Position) ([]*proto.MarginLevels, error)
-	UpdatedAt(ctx context.Context, obj *proto.Position) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.Position) (*string, error)
 }
 type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *proto.PriceLevel) (string, error)
@@ -5517,7 +5517,7 @@ type Position {
   margins: [MarginLevels!]
 
   "last time the position was updated (RFC3339Nano)"
-  updatedAt: String!
+  updatedAt: String
 }
 
 "An order in Vega, if active it will be on the OrderBook for the market"
@@ -5572,7 +5572,7 @@ type Order {
   version: String!
 
   "UpdatedAt is the last time the order was altered"
-  updatedAt: String!
+  updatedAt: String
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
@@ -6769,7 +6769,7 @@ type LiquidityProvision {
   "When the liquidity provision was initially created (formatted RFC3339)"
   createdAt: String!
   "When the liquidity provision was updated (formatted RFC3339)"
-  updatedAt: String!
+  updatedAt: String
   "Market identifier for the order"
   market: Market!
   "Specified as a unitless number that represents the amount of settlement asset of the market."
@@ -11309,14 +11309,11 @@ func (ec *executionContext) _LiquidityProvision_updatedAt(ctx context.Context, f
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_market(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
@@ -15409,14 +15406,11 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -16265,14 +16259,11 @@ func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PositionResolution_marketID(ctx context.Context, field graphql.CollectedField, obj *PositionResolution) (ret graphql.Marshaler) {
@@ -25628,9 +25619,6 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 					}
 				}()
 				res = ec._LiquidityProvision_updatedAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "market":
@@ -27252,9 +27240,6 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Order_updatedAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "peggedOrder":
@@ -27609,9 +27594,6 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Position_updatedAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
