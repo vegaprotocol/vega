@@ -186,22 +186,6 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
-// The factors applied to calculate the fees
-type FeeFactors struct {
-	// The factor applied to calculate MakerFees, a non-negative float
-	MakerFee string `json:"makerFee"`
-	// The factor applied to calculate InfrastructureFees, a non-negative float
-	InfrastructureFee string `json:"infrastructureFee"`
-	// The factor applied to calculate LiquidityFees, a non-negative float
-	LiquidityFee string `json:"liquidityFee"`
-}
-
-// The fees applicable to a market
-type Fees struct {
-	// The factors used to calculate the different fees
-	Factors *FeeFactors `json:"factors"`
-}
-
 // Future product configuration
 type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
@@ -284,11 +268,6 @@ type LossSocialization struct {
 }
 
 func (LossSocialization) IsEvent() {}
-
-type MarginCalculator struct {
-	// The scaling factors that will be used for margin calculation
-	ScalingFactors *ScalingFactors `json:"scalingFactors"`
-}
 
 // The MM commitments for this market
 type MarketDataCommitments struct {
@@ -521,15 +500,6 @@ type RiskParametersInput struct {
 	Simple *SimpleRiskModelParamsInput `json:"simple"`
 	// Log normal risk model parameters. Set only if risk model is LogNormal
 	LogNormal *LogNormalRiskModelInput `json:"logNormal"`
-}
-
-type ScalingFactors struct {
-	// the scaling factor that determines the margin level at which we have to search for more money
-	SearchLevel float64 `json:"searchLevel"`
-	// the scaling factor that determines the optimal margin level
-	InitialMargin float64 `json:"initialMargin"`
-	// The scaling factor that determines the overflow margin level
-	CollateralRelease float64 `json:"collateralRelease"`
 }
 
 type SettleDistressed struct {

@@ -122,3 +122,11 @@ models:
     model: code.vegaprotocol.io/vega/proto.PeggedOrder
   AuctionEvent:
     model: code.vegaprotocol.io/vega/proto.AuctionEvent
+  FeeFactors:
+    model: code.vegaprotocol.io/vega/proto.FeeFactors
+  Fees:
+    model: code.vegaprotocol.io/vega/proto.Fees
+  ScalingFactors:
+    model: code.vegaprotocol.io/vega/proto.ScalingFactors
+  MarginCalculator:
+    model: code.vegaprotocol.io/vega/proto.MarginCalculator

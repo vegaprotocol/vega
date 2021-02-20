@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/proto"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 type myTradableInstrumentResolver VegaResolverRoot
@@ -19,8 +18,4 @@ func (r *myTradableInstrumentResolver) RiskModel(ctx context.Context, obj *proto
 	default:
 		return nil, errors.New("invalid risk model")
 	}
-}
-
-func (r *myTradableInstrumentResolver) MarginCalculator(ctx context.Context, obj *types.TradableInstrument) (*MarginCalculator, error) {
-	return MarginCalculatorFromProto(obj.MarginCalculator)
 }

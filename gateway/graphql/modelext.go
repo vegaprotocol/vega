@@ -188,62 +188,6 @@ func OracleFromProto(o interface{}) (Oracle, error) {
 	}
 }
 
-func MarginCalculatorFromProto(mc *types.MarginCalculator) (*MarginCalculator, error) {
-	if mc == nil {
-		return nil, ErrNilMarginCalculator
-	}
-	m := &MarginCalculator{}
-	sf, err := ScalingFactorsFromProto(mc.ScalingFactors)
-	if err != nil {
-		return nil, err
-	}
-	m.ScalingFactors = sf
-	return m, nil
-}
-
-func ScalingFactorsFromProto(psf *types.ScalingFactors) (*ScalingFactors, error) {
-	if psf == nil {
-		return nil, ErrNilScalingFactors
-	}
-	return &ScalingFactors{
-		SearchLevel:       psf.SearchLevel,
-		InitialMargin:     psf.InitialMargin,
-		CollateralRelease: psf.CollateralRelease,
-	}, nil
-}
-
-func FeeFactorsFromProto(pff *types.FeeFactors) (*FeeFactors, error) {
-	if pff == nil {
-		return nil, ErrNilFeeFactors
-	}
-	return &FeeFactors{
-		MakerFee:          pff.MakerFee,
-		InfrastructureFee: pff.InfrastructureFee,
-		LiquidityFee:      pff.LiquidityFee,
-	}, nil
-}
-
-func FeesFromProto(pf *types.Fees) (*Fees, error) {
-	if pf == nil {
-		return nil, ErrNilFees
-	}
-	factors, _ := FeeFactorsFromProto(pf.Factors)
-	return &Fees{
-		Factors: factors,
-	}, nil
-}
-
-func AuctionDurationFromProto(pad *types.AuctionDuration) (*AuctionDuration, error) {
-	if pad == nil {
-		return &AuctionDuration{}, nil
-	}
-
-	return &AuctionDuration{
-		Volume:       int(pad.Volume),
-		DurationSecs: int(pad.Duration),
-	}, nil
-}
-
 func PriceMonitoringTriggerFromProto(ppmt *types.PriceMonitoringTrigger) *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		HorizonSecs:          int(ppmt.Horizon),
