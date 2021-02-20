@@ -600,15 +600,9 @@ func (s ProposalState) IntoProtoValue() (types.Proposal_State, error) {
 }
 
 // ProposalVoteFromProto ...
-func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
-	value, _ := convertVoteValueFromProto(v.Value)
+func ProposalVoteFromProto(v *types.Vote) *ProposalVote {
 	return &ProposalVote{
-		Vote: &Vote{
-			Party:      caster,
-			Value:      value,
-			Datetime:   nanoTSToDatetime(v.Timestamp),
-			ProposalID: v.ProposalId,
-		},
+		Vote:       v,
 		ProposalID: v.ProposalId,
 	}
 }
@@ -617,20 +611,6 @@ func ProposalVoteFromProto(v *types.Vote, caster *types.Party) *ProposalVote {
 func (a AccountType) IntoProto() types.AccountType {
 	at, _ := convertAccountTypeToProto(a)
 	return at
-}
-
-func defaultRiskParameters() *types.NewMarketConfiguration_LogNormal {
-	return &types.NewMarketConfiguration_LogNormal{
-		LogNormal: &types.LogNormalRiskModel{
-			RiskAversionParameter: 0,
-			Tau:                   0,
-			Params: &types.LogNormalModelParams{
-				Mu:    0,
-				R:     0,
-				Sigma: 0,
-			},
-		},
-	}
 }
 
 func (e *Erc20WithdrawalDetailsInput) IntoProtoExt() *types.WithdrawExt {
@@ -744,16 +724,7 @@ func eventFromProto(e *types.BusEvent) Event {
 			Proposal: e.GetProposal(),
 		}
 	case types.BusEventType_BUS_EVENT_TYPE_VOTE:
-		v := e.GetVote()
-		val, _ := convertVoteValueFromProto(v.Value)
-		return &Vote{
-			Value: val,
-			Party: &types.Party{
-				Id: v.PartyId,
-			},
-			Datetime:   nanoTSToDatetime(v.Timestamp),
-			ProposalID: v.ProposalId,
-		}
+		return e.GetVote()
 	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 		return e.GetMarketData()
 	case types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:

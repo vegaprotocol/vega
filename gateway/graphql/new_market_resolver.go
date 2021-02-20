@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -20,9 +19,9 @@ func (r *newMarketResolver) DecimalPlaces(ctx context.Context, obj *types.NewMar
 
 func (r *newMarketResolver) RiskParameters(ctx context.Context, obj *types.NewMarket) (RiskModel, error) {
 	switch rm := obj.Changes.RiskParameters.(type) {
-	case *proto.NewMarketConfiguration_LogNormal:
+	case *types.NewMarketConfiguration_LogNormal:
 		return rm.LogNormal, nil
-	case *proto.NewMarketConfiguration_Simple:
+	case *types.NewMarketConfiguration_Simple:
 		return rm.Simple, nil
 	default:
 		return nil, errors.New("invalid risk model")

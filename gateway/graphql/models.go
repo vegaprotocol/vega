@@ -490,7 +490,7 @@ type ProposalTermsInput struct {
 
 type ProposalVote struct {
 	// Cast vote
-	Vote *Vote `json:"vote"`
+	Vote *proto.Vote `json:"vote"`
 	// Proposal casting the vote on
 	ProposalID string `json:"proposalId"`
 }
@@ -610,19 +610,6 @@ type UpdateMarketInput struct {
 type UpdateNetworkParameterInput struct {
 	NetworkParameter *NetworkParameterInput `json:"networkParameter"`
 }
-
-type Vote struct {
-	// The vote value cast
-	Value VoteValue `json:"value"`
-	// The party casting the vote
-	Party *proto.Party `json:"party"`
-	// RFC3339Nano time and date when the vote reached Vega network
-	Datetime string `json:"datetime"`
-	// The ID of the proposal this vote applies to
-	ProposalID string `json:"proposalId"`
-}
-
-func (Vote) IsEvent() {}
 
 // The various account types we have (used by collateral)
 type AccountType string

@@ -130,3 +130,5 @@ models:
     model: code.vegaprotocol.io/vega/proto.ScalingFactors
   MarginCalculator:
     model: code.vegaprotocol.io/vega/proto.MarginCalculator
+  Vote:
+    model: code.vegaprotocol.io/vega/proto.Vote

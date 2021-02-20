@@ -78,36 +78,16 @@ func (r *proposalResolver) Terms(ctx context.Context, data *types.GovernanceData
 	return data.Proposal.Terms, nil
 }
 
-func (r *proposalResolver) convertVotes(ctx context.Context, data []*types.Vote) ([]*Vote, error) {
-	result := make([]*Vote, len(data))
-	for i, v := range data {
-		voter, err := getParty(ctx, r.log, r.tradingDataClient, v.PartyId)
-		if err != nil {
-			return nil, err
-		}
-		value, err := convertVoteValueFromProto(v.Value)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = &Vote{
-			Value:    value,
-			Party:    voter,
-			Datetime: nanoTSToDatetime(v.Timestamp),
-		}
-	}
-	return result, nil
-}
-
-func (r *proposalResolver) YesVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
-	if data == nil || data.Proposal == nil {
+func (r *proposalResolver) YesVotes(ctx context.Context, obj *types.GovernanceData) ([]*types.Vote, error) {
+	if obj == nil {
 		return nil, ErrInvalidProposal
 	}
-	return r.convertVotes(ctx, data.Yes)
+	return obj.Yes, nil
 }
 
-func (r *proposalResolver) NoVotes(ctx context.Context, data *types.GovernanceData) ([]*Vote, error) {
-	if data == nil || data.Proposal == nil {
+func (r *proposalResolver) NoVotes(ctx context.Context, obj *types.GovernanceData) ([]*types.Vote, error) {
+	if obj == nil {
 		return nil, ErrInvalidProposal
 	}
-	return r.convertVotes(ctx, data.No)
+	return obj.No, nil
 }

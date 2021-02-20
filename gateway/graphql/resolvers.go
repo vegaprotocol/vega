@@ -316,6 +316,10 @@ func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
 
 func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
 	return (*auctionEventResolver)(r)
+
+}
+func (r *VegaResolverRoot) Vote() VoteResolver {
+	return (*voteResolver)(r)
 }
 
 // LiquidityOrder resolver
@@ -1011,12 +1015,7 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 	}
 	result := make([]*ProposalVote, len(resp.Votes))
 	for i, vote := range resp.Votes {
-		//TODO: voter might be shortcut to party once all testing is done, vote.PartyId should be party.ID
-		voter, err := getParty(ctx, r.log, r.tradingDataClient, vote.PartyId)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = ProposalVoteFromProto(vote, voter)
+		result[i] = ProposalVoteFromProto(vote)
 	}
 	return result, nil
 }
@@ -1818,7 +1817,7 @@ func (r *myMutationResolver) PrepareProposal(
 }
 
 func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, partyID, proposalID string) (*PreparedVote, error) {
-	party, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
+	_, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1837,17 +1836,10 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	gqlValue, err := convertVoteValueFromProto(resp.Vote.Value)
-	if err != nil {
-		return nil, err
-	}
 	return &PreparedVote{
 		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 		Vote: &ProposalVote{
-			Vote: &Vote{
-				Party: party,
-				Value: gqlValue,
-			},
+			Vote:       req.Vote,
 			ProposalID: resp.Vote.ProposalId,
 		},
 	}, nil
@@ -2409,12 +2401,7 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			party, err := getParty(ctx, r.log, r.tradingDataClient, data.Vote.PartyId)
-			if err != nil {
-				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
-				break
-			}
-			output <- ProposalVoteFromProto(data.Vote, party)
+			output <- ProposalVoteFromProto(data.Vote)
 		}
 	}()
 	return output, nil
@@ -2438,12 +2425,7 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			party, err := getParty(ctx, r.log, r.tradingDataClient, data.Vote.PartyId)
-			if err != nil {
-				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
-				break
-			}
-			output <- ProposalVoteFromProto(data.Vote, party)
+			output <- ProposalVoteFromProto(data.Vote)
 		}
 	}()
 	return output, nil
