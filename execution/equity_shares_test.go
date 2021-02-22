@@ -180,6 +180,14 @@ func (esm *equityShareMarket) PartyGeneralAccount(party string) *types.Account {
 	return acc
 }
 
+func (esm *equityShareMarket) PartyMarginAccount(party string) *types.Account {
+	acc, err := esm.tm.collateraEngine.GetPartyMarginAccount(
+		esm.tm.market.GetID(), party, esm.tm.asset,
+	)
+	require.NoError(esm.t, err)
+	return acc
+}
+
 func testWithinMarket(t *testing.T) {
 	var (
 		ctx = context.Background()
@@ -250,8 +258,8 @@ func testWithinMarket(t *testing.T) {
 	// before the fee distribution.
 	var (
 		originalBalance = esm.LiquidityFeeAccount().Balance
-		party1Balance   = esm.PartyGeneralAccount("party1").Balance
-		party2Balance   = esm.PartyGeneralAccount("party2").Balance
+		party1Balance   = esm.PartyMarginAccount("party1").Balance
+		party2Balance   = esm.PartyMarginAccount("party2").Balance
 	)
 
 	curTime = curTime.Add(1 * time.Second)
@@ -262,13 +270,13 @@ func testWithinMarket(t *testing.T) {
 
 	assert.EqualValues(t,
 		float64(originalBalance)*(2.0/3),
-		esm.PartyGeneralAccount("party1").Balance-party1Balance,
+		esm.PartyMarginAccount("party1").Balance-party1Balance,
 		"party1 should get 2/3 of the fees",
 	)
 
 	assert.EqualValues(t,
 		float64(originalBalance)*(1.0/3),
-		esm.PartyGeneralAccount("party2").Balance-party2Balance,
+		esm.PartyMarginAccount("party2").Balance-party2Balance,
 		"party2 should get 1/3 of the fees",
 	)
 }
