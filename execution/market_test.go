@@ -3512,14 +3512,11 @@ func TestLPOrdersRollback(t *testing.T) {
 
 		expectedStatus := []types.Order_Status{
 			types.Order_STATUS_ACTIVE,    // first gets created
-			types.Order_STATUS_ACTIVE,    // first gets created
-			types.Order_STATUS_ACTIVE,    // first gets created
-			types.Order_STATUS_ACTIVE,    // first gets created
 			types.Order_STATUS_REJECTED,  // second gets rejected
 			types.Order_STATUS_CANCELLED, // first gets cancelled
 		}
 
-		require.Len(t, found, 6, "Expected 6 order events")
+		require.Len(t, found, len(expectedStatus))
 
 		for i, status := range expectedStatus {
 			got := found[i].Status
