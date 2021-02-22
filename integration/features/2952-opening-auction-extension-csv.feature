@@ -223,7 +223,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |
-    And dump transfers
+    # And dump transfers
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -233,13 +233,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     Then traders place following orders with references:
       | trader  | id        | type | volume | price    | resulting trades | type        | tif     | reference |
-      | trader1 | ETH/DEC20 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC | post-oa-3 |
-      | trader3 | ETH/DEC20 | sell | 1      | 10000000 | 1                | TYPE_LIMIT  | TIF_GTC | post-oa-4 |
+      | trader1 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC | post-oa-3 |
+      | trader3 | ETH/DEC20 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT  | TIF_GTC | post-oa-4 |
 
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
-      | trader3 | ETH   | ETH/DEC20 | 3449022 | 990450978 |
-    And dump transfers
+      | trader3 | ETH   | ETH/DEC20 | 0       | 993900000 |
+    # And dump transfers
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 |   40000 | ETH   |
