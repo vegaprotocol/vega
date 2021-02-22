@@ -49,3 +49,8 @@ func (m *Market) TSCalc() TargetStakeCalculator {
 func (m *Market) State() types.Market_State {
 	return m.mkt.State
 }
+
+// Return the number if liquidity provisions in the market
+func (m *Market) GetLPSCount() int {
+	return len(m.equityShares.lps)
+}
