@@ -504,7 +504,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	if m.as.InAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if m.as.IsOpeningAuction() {
-			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
+			// if the opening auction period has expired and the book can be uncrossed safely
+			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) && m.matching.CanUncross() {
 				// mark opening auction as ending
 				// Prime price monitoring engine with the uncrossing price of the opening auction
 				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {

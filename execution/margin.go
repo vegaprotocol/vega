@@ -18,11 +18,29 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types.Transfer, error) {
 	// 1. Get the price
 	price := m.getMarkPrice(order)
+	// m.log.Infof("calculating margins at %d for order at price %d", price, order.Price)
 	// 2. Get all positions - we have to update margins for all traders on the book so nobody can get distressed when we eventually do uncross
 	allPos := m.position.Positions()
 	// 3. get the asset and ID for this market
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
+	// 3-b. Get position for the trader placing this order, if exists
+	if cPos, ok := m.position.GetPositionByPartyID(order.PartyId); ok {
+		e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
+		if err != nil {
+			return nil, err
+		}
+		_, closed, err := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
+		if err != nil {
+			return nil, err
+		}
+		if len(closed) > 0 {
+			// this order would take party below maintenance -> stop here
+			return nil, ErrMarginCheckInsufficient
+		}
+		// we could transfer the funds for this trader here, but we're handling all positions lower down, including this one
+		// this is just to stop all margins being updated based on a price that the trader can't even manage
+	}
 	// 4. construct the events for all positions + margin balances
 	posEvts := make([]events.Margin, 0, len(allPos))
 	for _, p := range allPos {
@@ -46,14 +64,10 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types
 	// 6. Attempt margin updates where possible. If position is to be closed, append it to the closed slice we already have
 	marginEvts := make([]events.Event, 0, len(risk))
 	for _, ru := range risk {
-		tr, closeP, err := m.collateral.MarginUpdateOnOrder(ctx, mID, ru)
+		tr, _, err := m.collateral.MarginUpdateOnOrder(ctx, mID, ru)
 		if err != nil {
 			// @TODO handle this
 			return nil, err
-		}
-		if closeP != nil {
-			mposEvts = append(mposEvts, closeP)
-			continue
 		}
 		marginEvts = append(marginEvts, events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
 	}

@@ -1249,6 +1249,11 @@ func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
 	return nil
 }
 
+func clearTransferEvents() error {
+	execsetup.broker.clearTransferEvents()
+	return nil
+}
+
 func clearOrderEvents() error {
 	execsetup.broker.clearOrderEvents()
 	return nil

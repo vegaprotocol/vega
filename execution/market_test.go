@@ -1604,6 +1604,7 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	ctx := context.Background()
 	mainParty := "mainParty"
 	auxParty := "auxParty"
+	p1, p2 := "party1", "party2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	var auctionDuration int64 = 5
@@ -1612,6 +1613,8 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 
 	addAccount(tm, mainParty)
 	addAccount(tm, auxParty)
+	addAccount(tm, p1)
+	addAccount(tm, p2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	lp1 := &types.LiquidityProvisionSubmission{
@@ -1631,6 +1634,15 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	err := tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
 	require.NoError(t, err)
 
+	tradingOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "p1-sell-order", types.Side_SIDE_SELL, p1, 1, midPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "p2-buy-order", types.Side_SIDE_BUY, p2, 1, midPrice),
+	}
+	for _, o := range tradingOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		assert.NoError(t, err)
+		assert.NotNil(t, conf)
+	}
 	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "auxParty-sell-order-1", types.Side_SIDE_SELL, auxParty, 1, midPrice+2)
 
 	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
@@ -2080,6 +2092,8 @@ func TestOrderBook_Crash2599(t *testing.T) {
 func TestTriggerAfterOpeningAuction(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
+	party3 := "party3"
+	party4 := "party4"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	var auctionExtensionSeconds int64 = 45
@@ -2103,8 +2117,45 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
+	addAccount(tm, party3)
+	addAccount(tm, party4)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
+	gtcOrders := []*types.Order{
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			Status:      types.Order_STATUS_ACTIVE,
+			Id:          "someid3",
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     party3,
+			MarketId:    tm.market.GetID(),
+			Size:        1,
+			Price:       initialPrice - 5,
+			Remaining:   1,
+			CreatedAt:   now.UnixNano(),
+			ExpiresAt:   closingAt.UnixNano(),
+			Reference:   "party3-buy-order-1",
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			Status:      types.Order_STATUS_ACTIVE,
+			Id:          "someid4",
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     party4,
+			MarketId:    tm.market.GetID(),
+			Size:        1,
+			Price:       initialPrice + 10,
+			Remaining:   1,
+			CreatedAt:   now.UnixNano(),
+			Reference:   "party4-sell-order-1",
+		}}
+	for _, o := range gtcOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		assert.NotNil(t, conf)
+		assert.NoError(t, err)
+	}
 	orderBuy1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -2152,6 +2203,11 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
+	// let's cancel the orders we had to place to end opening auction
+	for _, o := range gtcOrders {
+		_, err := tm.market.CancelOrder(context.Background(), o.PartyId, o.Id)
+		assert.NoError(t, err)
+	}
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
