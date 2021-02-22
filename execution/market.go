@@ -1057,14 +1057,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 		m.idgen.SetID(order)
 	}
 	order.Version = InitialOrderVersion
-
-	// If price is 0 it means that a reference price could not be found and it
-	// should be parked.
-	if order.Price != 0 {
-		order.Status = types.Order_STATUS_ACTIVE
-	} else {
-		order.Status = types.Order_STATUS_PARKED
-	}
+	order.Status = types.Order_STATUS_ACTIVE
 
 	if err := m.validateOrder(ctx, order); err != nil {
 		return nil, err
