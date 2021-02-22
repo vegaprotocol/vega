@@ -10,7 +10,7 @@ import (
 type AuctionState interface {
 	IsLiquidityAuction() bool
 	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
-	AuctionEnd() bool
+	EndAuction()
 }
 
 type Engine struct{}
@@ -19,15 +19,15 @@ func NewMonitor() *Engine {
 	return &Engine{}
 }
 
-// CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes.
+// CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes along with best static bid and ask volumes.
 // The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`.
-func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, c1, current, target float64) {
+func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, c1, current, target float64, bestStaticBidVolume, bestStaticAskVolume uint64) {
 	if as.IsLiquidityAuction() {
-		if current >= target {
-			as.AuctionEnd()
+		if current >= target && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
+			as.EndAuction()
 		}
 	} else {
-		if current < (target * c1) {
+		if current < (target*c1) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
 			as.StartLiquidityAuction(t, nil)
 		}
 	}
