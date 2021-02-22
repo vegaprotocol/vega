@@ -34,18 +34,16 @@ func (m *MockAuctionState) EXPECT() *MockAuctionStateMockRecorder {
 	return m.recorder
 }
 
-// AuctionEnd mocks base method
-func (m *MockAuctionState) AuctionEnd() bool {
+// EndAuction mocks base method
+func (m *MockAuctionState) EndAuction() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AuctionEnd")
-	ret0, _ := ret[0].(bool)
-	return ret0
+	m.ctrl.Call(m, "EndAuction")
 }
 
-// AuctionEnd indicates an expected call of AuctionEnd
-func (mr *MockAuctionStateMockRecorder) AuctionEnd() *gomock.Call {
+// EndAuction indicates an expected call of EndAuction
+func (mr *MockAuctionStateMockRecorder) EndAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuctionEnd", reflect.TypeOf((*MockAuctionState)(nil).AuctionEnd))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndAuction", reflect.TypeOf((*MockAuctionState)(nil).EndAuction))
 }
 
 // IsLiquidityAuction mocks base method
