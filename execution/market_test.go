@@ -3410,8 +3410,8 @@ func TestLPOrdersRollback(t *testing.T) {
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		}),
 		tpl.New(types.Order{
-			Size:        100,
-			Remaining:   100,
+			Size:        20,
+			Remaining:   20,
 			Price:       8500,
 			Side:        types.Side_SIDE_BUY,
 			PartyId:     "trader-0",
@@ -3442,6 +3442,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			},
 		}),
 	}
+
 	tm.WithSubmittedOrders(t, orders...)
 
 	lp := &types.LiquidityProvisionSubmission{
@@ -3458,9 +3459,9 @@ func TestLPOrdersRollback(t *testing.T) {
 		},
 	}
 
+	tm.events = nil
 	// Leave the auction
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
-
 	// reset the registered events
 	tm.events = nil
 
@@ -3468,8 +3469,11 @@ func TestLPOrdersRollback(t *testing.T) {
 		tm.PartyMarginAccount(t, "trader-2").Balance
 
 	err := tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp")
-	require.Error(t, err)
-	assert.Equal(t, execution.ErrMarginCheckFailed, err)
+	// require.Error(t, err)
+	assert.EqualError(t, err, "no valid orders to cover the liquidity obligation with")
+	for _, evt := range tm.events {
+		fmt.Printf("%#v\n", evt)
+	}
 
 	t.Run("GeneralAccountBalance", func(t *testing.T) {
 		newBalance := tm.PartyGeneralAccount(t, "trader-2").Balance +
@@ -3497,7 +3501,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			}
 		}
 
-		assert.Equal(t, types.LiquidityProvision_STATUS_REJECTED, found.Status)
+		assert.Equal(t, types.LiquidityProvision_STATUS_REJECTED.String(), found.Status.String())
 	})
 
 	t.Run("ExpectedEventStatus", func(t *testing.T) {

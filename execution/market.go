@@ -819,6 +819,17 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.AuctionEnded(ctx, now)
 
+	for _, uncrossedOrder := range uncrossedOrders {
+		for _, trade := range uncrossedOrder.Trades {
+			err := m.pMonitor.CheckPrice(
+				ctx, m.as, trade.Price, trade.Size, now,
+			)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
 	// Send an event bus update
 	m.broker.Send(endEvt)
 
