@@ -3072,3 +3072,65 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp2, "trader-A", "id-lp"))
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 }
+
+func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1000,
+	})
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 2000)
+	addAccountWithAmount(tm, "trader-B", 10000000)
+	addAccountWithAmount(tm, "trader-C", 10000000)
+
+	// Leave auction right away
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+
+	// Create some normal orders to set the reference prices
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 10)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 50)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "trader-C", 10, 50000000)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	// Create a LP order for trader-A
+	lp := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 500,
+		Fee:              "0.01",
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 25, Offset: 2},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 25, Offset: 3},
+		},
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 25, Offset: -2},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 25, Offset: -3},
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "trader-A", "id-lp"))
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, int64(7), tm.market.GetOrdersOnBookCount())
+
+	// Now move the mark price
+	o10 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
+	o10conf, err := tm.market.SubmitOrder(ctx, o10)
+	require.NotNil(t, o10conf)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+}

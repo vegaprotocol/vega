@@ -1704,6 +1704,12 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	}
 	// send transfer to buffer
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
+
+	// Any of the closed out traders could be liquidity providers,
+	// we should cancel their LP submission
+	for _, trader := range closedMPs {
+		m.liquidity.CancelLiquidityProvision(ctx, trader.Party())
+	}
 	return err
 }
 
