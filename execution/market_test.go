@@ -3134,3 +3134,109 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 }
+
+func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashIOC(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1000,
+	})
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 10000000)
+	addAccountWithAmount(tm, "trader-B", 10000000)
+
+	// Leave auction right away
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+
+	// Create 2 buy orders that we will try to match against
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 100)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-A", 10, 90)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	// Send the sell order with enough volume to match both existing trades
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order03", types.Side_SIDE_SELL, "trader-A", 20, 0)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, o3.Status)
+	assert.Equal(t, uint64(10), o3.Remaining)
+}
+
+func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOK(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1000,
+	})
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 10000000)
+	addAccountWithAmount(tm, "trader-B", 10000000)
+
+	// Leave auction right away
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+
+	// Create 2 buy orders that we will try to match against
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 100)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-A", 10, 90)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	// Send the sell order with enough volume to match both existing trades
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_FOK, "Order03", types.Side_SIDE_SELL, "trader-A", 20, 0)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	// Even though this is FOK we can still partially match if a wash trade is found
+	require.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, o3.Status)
+	assert.Equal(t, uint64(10), o3.Remaining)
+}
+
+func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1000,
+	})
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 10000000)
+	addAccountWithAmount(tm, "trader-B", 10000000)
+
+	// Leave auction right away
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+
+	// Create 2 buy orders that we will try to match against
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 100)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-A", 10, 90)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	// Send the sell order with enough volume to match both existing trades
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_FOK, "Order03", types.Side_SIDE_SELL, "trader-A", 20, 90)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	// Even though this is FOK we can still partially match if a wash trade is found
+	require.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, o3.Status)
+	assert.Equal(t, uint64(10), o3.Remaining)
+}
