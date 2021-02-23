@@ -11,6 +11,8 @@ import (
 var (
 	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
+	// ErrNegativeScalingFactor indicates that a negative scaling factor was supplied to the engine
+	ErrNegativeScalingFactor = errors.New("scaling factor can't be negative")
 )
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
@@ -36,6 +38,21 @@ func NewEngine(parameters types.TargetStakeParameters) *Engine {
 		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
 		sFactor: parameters.ScalingFactor,
 	}
+}
+
+// UpdateTimeWindow updates the time windows used in target stake calculation
+func (e *Engine) UpdateTimeWindow(tWindow time.Duration) {
+	e.tWindow = tWindow
+}
+
+// UpdateScalingFactor updates the scaling factor used in target stake calculation
+// if it's non-negative and returns an error otherwise
+func (e *Engine) UpdateScalingFactor(sFactor float64) error {
+	if sFactor < 0 {
+		return ErrNegativeScalingFactor
+	}
+	e.sFactor = sFactor
+	return nil
 }
 
 // RecordOpenInterest records open interset history so that target stake can be calculated

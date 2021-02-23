@@ -104,6 +104,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders place pegged orders:$`, tradersPlacePeggedOrders)
 	s.Step(`^I see the following order events:$`, seeTheFollowingOrderEvents)
 	s.Step(`^clear order events by reference:$`, clearOrdersByRef)
+	s.Step(`^clear transfer events$`, clearTransferEvents)
 	s.Step(`^traders cancel pegged orders:$`, tradersCancelPeggedOrders)
 	s.Step(`^traders cancel pegged orders and clear:$`, tradersCancelPeggedOrdersAndClear)
 	s.Step(`^the trader submits LP:$`, submitLP)

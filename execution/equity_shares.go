@@ -38,7 +38,17 @@ func (es *EquityShares) SetPartyStake(id string, newStake float64) {
 	v, found := es.lps[id]
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		es.lps[id] = &lp{stake: newStake, avg: es.mvp}
+		if newStake > 0 {
+			es.lps[id] = &lp{stake: newStake, avg: es.mvp}
+			return
+		}
+		// If we didn't previously have stake and are trying to set it to zero, just return
+		return
+	}
+
+	if newStake <= 0 {
+		// We are removing an existing stake
+		delete(es.lps, id)
 		return
 	}
 

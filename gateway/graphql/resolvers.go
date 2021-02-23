@@ -345,8 +345,13 @@ func (r *myLiquidityProvisionResolver) Party(ctx context.Context, obj *types.Liq
 func (r *myLiquidityProvisionResolver) CreatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
-func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
 }
 func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
@@ -363,7 +368,7 @@ func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.Li
 
 type myDepositResolver VegaResolverRoot
 
-func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*Asset, error) {
+func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
@@ -393,30 +398,6 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 	return convertDepositStatusFromProto(obj.Status)
 }
 
-// asset resolver
-
-type myAssetResolver VegaResolverRoot
-
-func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*types.Account, error) {
-	if len(obj.ID) <= 0 {
-		return nil, ErrMissingIDOrReference
-	}
-	req := &protoapi.FeeInfrastructureAccountsRequest{
-		Asset: obj.ID,
-	}
-	res, err := r.tradingDataClient.FeeInfrastructureAccounts(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	var acc *types.Account
-	if len(res.Accounts) > 0 {
-		acc = res.Accounts[0]
-	}
-
-	return acc, nil
-}
-
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
@@ -443,7 +424,7 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource: res.AssetSource,
 		Amount:      res.Amount,
-		Expiry:      vegatime.Format(vegatime.UnixNano(res.Expiry)),
+		Expiry:      strconv.FormatInt(res.Expiry, 10),
 		Nonce:       res.Nonce,
 		Signatures:  res.Signatures,
 	}, nil
@@ -564,11 +545,11 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 
 }
 
-func (r *myQueryResolver) Asset(ctx context.Context, id string) (*Asset, error) {
+func (r *myQueryResolver) Asset(ctx context.Context, id string) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, id)
 }
 
-func (r *myQueryResolver) Assets(ctx context.Context) ([]*Asset, error) {
+func (r *myQueryResolver) Assets(ctx context.Context) ([]*types.Asset, error) {
 	return r.r.allAssets(ctx)
 }
 
@@ -1048,7 +1029,7 @@ func (r *myMarginLevelsResolver) Party(ctx context.Context, m *types.MarginLevel
 	return res.Party, nil
 }
 
-func (r *myMarginLevelsResolver) Asset(ctx context.Context, m *types.MarginLevels) (*Asset, error) {
+func (r *myMarginLevelsResolver) Asset(ctx context.Context, m *types.MarginLevels) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, m.Asset)
 }
 
@@ -1233,21 +1214,6 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 
 type myMarketDepthResolver VegaResolverRoot
 
-func (r *myMarketDepthResolver) Buy(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Buy {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
-func (r *myMarketDepthResolver) Sell(ctx context.Context, obj *types.MarketDepth) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Sell {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
-
 func (r *myMarketDepthResolver) LastTrade(ctx context.Context, md *types.MarketDepth) (*types.Trade, error) {
 	if md == nil {
 		return nil, errors.New("invalid market depth")
@@ -1275,21 +1241,6 @@ func (r *myMarketDepthResolver) Market(ctx context.Context, md *types.MarketDept
 // BEGIN: Market Depth Update Resolver
 
 type myMarketDepthUpdateResolver VegaResolverRoot
-
-func (r *myMarketDepthUpdateResolver) Buy(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Buy {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
-func (r *myMarketDepthUpdateResolver) Sell(ctx context.Context, obj *types.MarketDepthUpdate) ([]types.PriceLevel, error) {
-	valBuyLevels := make([]types.PriceLevel, 0)
-	for _, v := range obj.Sell {
-		valBuyLevels = append(valBuyLevels, *v)
-	}
-	return valBuyLevels, nil
-}
 
 func (r *myMarketDepthUpdateResolver) SequenceNumber(ctx context.Context, md *types.MarketDepthUpdate) (string, error) {
 	return strconv.FormatUint(md.SequenceNumber, 10), nil
@@ -1355,11 +1306,13 @@ func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (stri
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
 
-func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (string, error) {
-	if obj.UpdatedAt <= 0 {
-		return "", nil
+func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
 	}
-	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+	return updatedAt, nil
 }
 
 func (r *myOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
@@ -1547,7 +1500,7 @@ func (r *myPriceLevelResolver) Volume(ctx context.Context, obj *types.PriceLevel
 }
 
 func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.PriceLevel) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return strconv.FormatUint(obj.NumberOfOrders, 10), nil
 }
 
 // END: Price Level Resolver
@@ -1574,8 +1527,13 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (string, error) {
-	return vegatime.Format(vegatime.UnixNano(obj.UpdatedAt)), nil
+func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+	var updatedAt *string
+	if obj.UpdatedAt > 0 {
+		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
+		updatedAt = &t
+	}
+	return updatedAt, nil
 }
 
 func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
@@ -1614,9 +1572,7 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, customErrorFromStatus(err)
 	}
-	out := make([]*types.MarginLevels, 0, len(res.MarginLevels))
-	out = append(out, res.MarginLevels...)
-	return out, nil
+	return res.MarginLevels, nil
 }
 
 // END: Position Resolver
@@ -2308,6 +2264,7 @@ func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market s
 				}
 				break
 			}
+
 			c <- md.Update
 		}
 	}()
@@ -2593,7 +2550,7 @@ func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (st
 }
 
 func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*types.Market, error) {
-	if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
+	if acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN || acc.Type == types.AccountType_ACCOUNT_TYPE_BOND {
 		return r.r.getMarketByID(ctx, acc.MarketId)
 	}
 	return nil, nil
@@ -2603,7 +2560,7 @@ func (r *myAccountResolver) Type(ctx context.Context, obj *types.Account) (Accou
 	return convertAccountTypeFromProto(obj.Type)
 }
 
-func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*Asset, error) {
+func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*types.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 

@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.32.0
+
+*2021-02-23*
+
+More fixes, primarily related to liquidity provisioning (still disabled in this release) and asset withdrawals, which will soon be enabled in the UI.
+
+Two minor breaking changes in the GraphQL API are included - one fixing a typo, the other changing the content of date fields on the withdrawal object - they're now date formatted.
+
+# Improvements
+- [#3004](https://github.com/vegaprotocol/vega/pull/3004) - Incorporate `buf.yaml` tidy up submitted by `bufdev` on api-clients repo
+- [#3002](https://github.com/vegaprotocol/vega/pull/3002) -🔥GraphQL: Withdrawal fields `expiry`, `createdAt` & `updatedAt` are now `RFC3339Nano` date formatted
+- [#3000](https://github.com/vegaprotocol/vega/pull/3002) -🔥GraphQL: Fix typo in `prepareVote` mutation - `propopsalId` is now `proposalId`
+- [#2957](https://github.com/vegaprotocol/vega/pull/2957) - REST: Add missing prepare endpoints (`PrepareProposal`, `PrepareVote`, `PrepareLiquiditySubmission`)
+
+# Fixes
+- [#3011](https://github.com/vegaprotocol/vega/pull/3011) - Liquidity fees are distributed in to margin accounts, not general accounts
+- [#2991](https://github.com/vegaprotocol/vega/pull/2991) - Liquidity Provisions are now rejected if there is not enough collateral
+- [#2990](https://github.com/vegaprotocol/vega/pull/2990) - Fix a lock caused by GraphQL subscribers unsubscribing from certain endpoints
+- [#2996](https://github.com/vegaprotocol/vega/pull/2986) - Liquidity Provisions are now parked when repricing fails
+- [#2951](https://github.com/vegaprotocol/vega/pull/2951) - Store reference prices when parking pegs for auction
+- [#2982](https://github.com/vegaprotocol/vega/pull/2982) - Fix withdrawal data availability before it is verified
+- [#2981](https://github.com/vegaprotocol/vega/pull/2981) - Fix sending multisig bundle for withdrawals before threshold is reached
+- [#2964](https://github.com/vegaprotocol/vega/pull/2964) - Extend auctions if uncrossing price is unreasonable
+- [#2961](https://github.com/vegaprotocol/vega/pull/2961) - GraphQL: Fix incorrect market in bond account resolver
+- [#2958](https://github.com/vegaprotocol/vega/pull/2958) - Create `third_party` folder to avoid excluding vendor protobuf files in build
+- [#3009](https://github.com/vegaprotocol/vega/pull/3009) - Remove LP commitments when a trader is closed out
+- [#3012](https://github.com/vegaprotocol/vega/pull/3012) - Remove LP commitments when a trader reduces their commitment to 0
+
 ## 0.31.0
 
 *2021-02-09*

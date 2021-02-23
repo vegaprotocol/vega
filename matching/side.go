@@ -63,17 +63,22 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 
 // BestPriceAndVolume returns the top of book price and volume
 // returns an error if the book is empty
-func (s OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
+func (s *OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, 0, errors.New("no orders on the book")
 	}
-	return s.levels[len(s.levels)-1].price, s.levels[len(s.levels)-1].volume, nil
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		if lvl := s.levels[i]; lvl.price > 0 && lvl.volume > 0 {
+			return lvl.price, lvl.volume, nil
+		}
+	}
+	return 0, 0, errors.New("no orders on the book")
 }
 
 // BestStaticPrice returns the top of book price for non pegged orders
 // We do not keep count of the volume which makes this slightly quicker
 // returns an error if the book is empty
-func (s OrderBookSide) BestStaticPrice() (uint64, error) {
+func (s *OrderBookSide) BestStaticPrice() (uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, errors.New("no orders on the book")
 	}
@@ -91,7 +96,7 @@ func (s OrderBookSide) BestStaticPrice() (uint64, error) {
 
 // BestStaticPriceAndVolume returns the top of book price for non pegged orders
 // returns an error if the book is empty
-func (s OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
+func (s *OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, 0, errors.New("no orders on the book")
 	}

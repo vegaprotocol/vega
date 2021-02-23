@@ -147,7 +147,7 @@ type Broker interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
 	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
-	IsSigned(string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	IsSigned(context.Context, string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
 // ExtResChecker ...
@@ -171,7 +171,7 @@ type Banking interface {
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64, string) error
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	LockWithdrawalERC20(context.Context, string, string, string, uint64, *types.Erc20WithdrawExt) error
-	WithdrawalERC20(*types.ERC20Withdrawal, uint64, uint64, string) error
+	WithdrawalERC20(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
 	HasBalance(string) bool
 }
 

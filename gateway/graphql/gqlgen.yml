@@ -97,6 +97,7 @@ models:
   FutureProduct:
     model: code.vegaprotocol.io/vega/proto.FutureProduct
   Asset:
+    model: code.vegaprotocol.io/vega/proto.Asset
     fields:
       infrastructureFeeAccount:
         resolver: true

@@ -4,28 +4,18 @@ version: v1beta1
 build:
   roots:
     - proto
-    - vendor
-  excludes:
-    - vendor/github.com/ethereum
-    - vendor/github.com/tendermint
-    - vendor/github.com/gogo
-    - vendor/github.com/dgraph-io/badger
-    - vendor/github.com/google
+    - third_party/proto
 lint:
   use:
     - DEFAULT
-    - FILE_LOWER_SNAKE_CASE
   except:
     - PACKAGE_DIRECTORY_MATCH
     - PACKAGE_VERSION_SUFFIX
-  ignore:
-    - tm
-    - google/
-    - github.com/
-  enum_zero_value_suffix: _UNSPECIFIED
-  rpc_allow_same_request_response: false
-  rpc_allow_google_protobuf_empty_requests: false
-  rpc_allow_google_protobuf_empty_responses: false
+  ignore_only:
+    ENUM_VALUE_PREFIX:
+      - tm/replay.proto
+    ENUM_ZERO_VALUE_SUFFIX:
+      - tm/replay.proto
 breaking:
   use:
     - WIRE_JSON

@@ -596,12 +596,20 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeScalingFactor,
+			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
 			Watcher: l.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: l.executionEngine.OnMarketValueWindowLengthUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeScalingFactor,
+			Watcher: l.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeTimeWindow,
+			Watcher: l.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.BlockchainsEthereumConfig,

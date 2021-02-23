@@ -2,7 +2,6 @@ package liquidity_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -211,17 +210,8 @@ func TestInitialDeplyFailsWorksLater(t *testing.T) {
 		markPrice = uint64(10)
 	)
 
-	fn := func(order *types.PeggedOrder) (uint64, error) {
-		return 0, errors.New("some error")
-	}
-
-	// Expecting no creates as repreiceFn returns an error
-	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, []*types.Order{}, fn)
-	require.NoError(t, err)
-	require.Len(t, creates, 0)
-
 	// Now repreiceFn works as expected, so initial orders should get created now
-	fn = func(order *types.PeggedOrder) (uint64, error) {
+	fn := func(order *types.PeggedOrder) (uint64, error) {
 		return markPrice + uint64(order.Offset), nil
 	}
 

@@ -79,8 +79,8 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		}
 	}
 
-	if g.AppState.Validators == nil {
-		r.Err("app_state.validators is missing")
+	if g.AppState.Validators == nil || len(g.AppState.Validators) <= 0 {
+		r.Warn("app_state.validators is missing or empty")
 	} else {
 		for k, v := range g.AppState.Validators {
 			if len(k) <= 0 {

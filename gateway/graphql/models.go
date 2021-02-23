@@ -44,26 +44,6 @@ type WithdrawalDetails interface {
 	IsWithdrawalDetails()
 }
 
-// Represents an asset in vega
-type Asset struct {
-	// The id of the asset
-	ID string `json:"id"`
-	// The full name of the asset (e.g: Great British Pound)
-	Name string `json:"name"`
-	// The symbol of the asset (e.g: GBP)
-	Symbol string `json:"symbol"`
-	// The total supply of the market
-	TotalSupply string `json:"totalSupply"`
-	// The precision of the asset
-	Decimals int `json:"decimals"`
-	// The origin source of the asset (e.g: an erc20 asset)
-	Source AssetSource `json:"source"`
-	// The infrastructure fee account for this asset
-	InfrastructureFeeAccount *proto.Account `json:"infrastructureFeeAccount"`
-}
-
-func (Asset) IsEvent() {}
-
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
 //   The auction will last for at least N seconds.
@@ -85,9 +65,9 @@ type AuctionEvent struct {
 	Leave bool `json:"leave"`
 	// event related to opening auction
 	OpeningAuction bool `json:"openingAuction"`
-	// start time of auction
+	// RFC3339Nano start time of auction
 	AuctionStart string `json:"auctionStart"`
-	// optional end time of auction
+	// RFC3339Nano optional end time of auction
 	AuctionEnd string `json:"auctionEnd"`
 	// What triggered the auction
 	Trigger AuctionTrigger `json:"trigger"`
@@ -190,7 +170,7 @@ type Erc20WithdrawalApproval struct {
 	AssetSource string `json:"assetSource"`
 	// The amount to be withdrawan
 	Amount string `json:"amount"`
-	// The expiry of the approval (RFC3339Nano)
+	// Timestamp in seconds for expiry of the approval
 	Expiry string `json:"expiry"`
 	// The nonce to be used in the request
 	Nonce string `json:"nonce"`
@@ -275,7 +255,7 @@ type LedgerEntry struct {
 	Reference string `json:"reference"`
 	// Type of ledger entry
 	Type string `json:"type"`
-	// The time at which the transfer was made
+	// RFC3339Nano time at which the transfer was made
 	Timestamp string `json:"timestamp"`
 }
 
@@ -552,10 +532,10 @@ type PriceMonitoringTriggerInput struct {
 
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
 type ProposalTermsInput struct {
-	// ISO-8601 time and date when voting closes for this proposal.
+	// RFC3339Nano/ISO-8601 time and date when voting closes for this proposal.
 	// Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
 	ClosingDatetime string `json:"closingDatetime"`
-	// ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+	// RFC3339Nano/ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
 	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
 	EnactmentDatetime string `json:"enactmentDatetime"`
 	// Field defining new market change - the proposal will create new market if passed and enacted.
@@ -665,7 +645,7 @@ type TargetStakeParameters struct {
 }
 
 type TimeUpdate struct {
-	// timestamp - new block time
+	// RFC3339Nano time of new block time
 	Timestamp string `json:"timestamp"`
 }
 
@@ -727,7 +707,7 @@ type Vote struct {
 	Value VoteValue `json:"value"`
 	// The party casting the vote
 	Party *proto.Party `json:"party"`
-	// ISO-8601 time and date when the vote reached Vega network
+	// RFC3339Nano time and date when the vote reached Vega network
 	Datetime string `json:"datetime"`
 	// The ID of the proposal this vote applies to
 	ProposalID string `json:"proposalId"`

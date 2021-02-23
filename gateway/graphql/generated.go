@@ -87,7 +87,7 @@ type ComplexityRoot struct {
 
 	Asset struct {
 		Decimals                 func(childComplexity int) int
-		ID                       func(childComplexity int) int
+		Id                       func(childComplexity int) int
 		InfrastructureFeeAccount func(childComplexity int) int
 		Name                     func(childComplexity int) int
 		Source                   func(childComplexity int) int
@@ -377,7 +377,7 @@ type ComplexityRoot struct {
 		PrepareOrderCancel        func(childComplexity int, id *string, partyID string, marketID *string) int
 		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
-		PrepareVote               func(childComplexity int, value VoteValue, partyID string, propopsalID string) int
+		PrepareVote               func(childComplexity int, value VoteValue, partyID string, proposalID string) int
 		PrepareWithdrawal         func(childComplexity int, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
 		SubmitTransaction         func(childComplexity int, data string, sig SignatureInput, typeArg *SubmitTransactionType) int
 	}
@@ -751,12 +751,14 @@ type ComplexityRoot struct {
 
 type AccountResolver interface {
 	Balance(ctx context.Context, obj *proto.Account) (string, error)
-	Asset(ctx context.Context, obj *proto.Account) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.Account) (*proto.Asset, error)
 	Type(ctx context.Context, obj *proto.Account) (AccountType, error)
 	Market(ctx context.Context, obj *proto.Account) (*proto.Market, error)
 }
 type AssetResolver interface {
-	InfrastructureFeeAccount(ctx context.Context, obj *Asset) (*proto.Account, error)
+	Decimals(ctx context.Context, obj *proto.Asset) (int, error)
+	Source(ctx context.Context, obj *proto.Asset) (AssetSource, error)
+	InfrastructureFeeAccount(ctx context.Context, obj *proto.Asset) (*proto.Account, error)
 }
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *proto.Candle) (string, error)
@@ -771,18 +773,18 @@ type CandleResolver interface {
 type DepositResolver interface {
 	Party(ctx context.Context, obj *proto.Deposit) (*proto.Party, error)
 
-	Asset(ctx context.Context, obj *proto.Deposit) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.Deposit) (*proto.Asset, error)
 	Status(ctx context.Context, obj *proto.Deposit) (DepositStatus, error)
 	CreatedTimestamp(ctx context.Context, obj *proto.Deposit) (string, error)
 	CreditedTimestamp(ctx context.Context, obj *proto.Deposit) (*string, error)
 }
 type FutureResolver interface {
-	SettlementAsset(ctx context.Context, obj *proto.Future) (*Asset, error)
+	SettlementAsset(ctx context.Context, obj *proto.Future) (*proto.Asset, error)
 
 	Oracle(ctx context.Context, obj *proto.Future) (Oracle, error)
 }
 type FutureProductResolver interface {
-	SettlementAsset(ctx context.Context, obj *proto.FutureProduct) (*Asset, error)
+	SettlementAsset(ctx context.Context, obj *proto.FutureProduct) (*proto.Asset, error)
 }
 type InstrumentResolver interface {
 	Metadata(ctx context.Context, obj *proto.Instrument) (*InstrumentMetadata, error)
@@ -801,7 +803,7 @@ type LiquidityOrderReferenceResolver interface {
 type LiquidityProvisionResolver interface {
 	Party(ctx context.Context, obj *proto.LiquidityProvision) (*proto.Party, error)
 	CreatedAt(ctx context.Context, obj *proto.LiquidityProvision) (string, error)
-	UpdatedAt(ctx context.Context, obj *proto.LiquidityProvision) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.LiquidityProvision) (*string, error)
 	Market(ctx context.Context, obj *proto.LiquidityProvision) (*proto.Market, error)
 	CommitmentAmount(ctx context.Context, obj *proto.LiquidityProvision) (int, error)
 
@@ -809,7 +811,7 @@ type LiquidityProvisionResolver interface {
 }
 type MarginLevelsResolver interface {
 	Market(ctx context.Context, obj *proto.MarginLevels) (*proto.Market, error)
-	Asset(ctx context.Context, obj *proto.MarginLevels) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.MarginLevels) (*proto.Asset, error)
 	Party(ctx context.Context, obj *proto.MarginLevels) (*proto.Party, error)
 	MaintenanceLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
 	SearchLevel(ctx context.Context, obj *proto.MarginLevels) (string, error)
@@ -879,7 +881,7 @@ type MutationResolver interface {
 	PrepareOrderCancel(ctx context.Context, id *string, partyID string, marketID *string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
-	PrepareVote(ctx context.Context, value VoteValue, partyID string, propopsalID string) (*PreparedVote, error)
+	PrepareVote(ctx context.Context, value VoteValue, partyID string, proposalID string) (*PreparedVote, error)
 	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
 	SubmitTransaction(ctx context.Context, data string, sig SignatureInput, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
 	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error)
@@ -914,7 +916,7 @@ type OrderResolver interface {
 	Type(ctx context.Context, obj *proto.Order) (*OrderType, error)
 	RejectionReason(ctx context.Context, obj *proto.Order) (*OrderRejectionReason, error)
 	Version(ctx context.Context, obj *proto.Order) (string, error)
-	UpdatedAt(ctx context.Context, obj *proto.Order) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.Order) (*string, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *proto.Party, skip *int, first *int, last *int) ([]*proto.Order, error)
@@ -940,7 +942,7 @@ type PositionResolver interface {
 	UnrealisedPnl(ctx context.Context, obj *proto.Position) (string, error)
 	AverageEntryPrice(ctx context.Context, obj *proto.Position) (string, error)
 	Margins(ctx context.Context, obj *proto.Position) ([]*proto.MarginLevels, error)
-	UpdatedAt(ctx context.Context, obj *proto.Position) (string, error)
+	UpdatedAt(ctx context.Context, obj *proto.Position) (*string, error)
 }
 type PriceLevelResolver interface {
 	Price(ctx context.Context, obj *proto.PriceLevel) (string, error)
@@ -979,8 +981,8 @@ type QueryResolver interface {
 	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	NodeSignatures(ctx context.Context, resourceID string) ([]*proto.NodeSignature, error)
-	Asset(ctx context.Context, assetID string) (*Asset, error)
-	Assets(ctx context.Context) ([]*Asset, error)
+	Asset(ctx context.Context, assetID string) (*proto.Asset, error)
+	Assets(ctx context.Context) ([]*proto.Asset, error)
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) (*OrderEstimate, error)
 	Withdrawal(ctx context.Context, id string) (*proto.Withdrawal, error)
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
@@ -1055,7 +1057,7 @@ type UpdateNetworkParameterResolver interface {
 type WithdrawalResolver interface {
 	Party(ctx context.Context, obj *proto.Withdrawal) (*proto.Party, error)
 	Amount(ctx context.Context, obj *proto.Withdrawal) (string, error)
-	Asset(ctx context.Context, obj *proto.Withdrawal) (*Asset, error)
+	Asset(ctx context.Context, obj *proto.Withdrawal) (*proto.Asset, error)
 	Status(ctx context.Context, obj *proto.Withdrawal) (WithdrawalStatus, error)
 
 	Expiry(ctx context.Context, obj *proto.Withdrawal) (string, error)
@@ -1116,11 +1118,11 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.Asset.Decimals(childComplexity), true
 
 	case "Asset.id":
-		if e.complexity.Asset.ID == nil {
+		if e.complexity.Asset.Id == nil {
 			break
 		}
 
-		return e.complexity.Asset.ID(childComplexity), true
+		return e.complexity.Asset.Id(childComplexity), true
 
 	case "Asset.infrastructureFeeAccount":
 		if e.complexity.Asset.InfrastructureFeeAccount == nil {
@@ -2433,7 +2435,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyID"].(string), args["propopsalID"].(string)), true
+		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyID"].(string), args["proposalID"].(string)), true
 
 	case "Mutation.prepareWithdrawal":
 		if e.complexity.Mutation.PrepareWithdrawal == nil {
@@ -4282,14 +4284,13 @@ var sources = []*ast.Source{
 	&ast.Source{Name: "schema.graphql", Input: `## VEGA - GraphQL schema
 
 schema {
-    query: Query
-    subscription: Subscription
-    mutation: Mutation
+  query: Query
+  subscription: Subscription
+  mutation: Mutation
 }
 
 "Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data."
 type Mutation {
-
   """
   Send a submit order request to be prepared, and returns a blob of the transaction to submit.
   The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
@@ -4378,7 +4379,7 @@ type Mutation {
     "the party casting the vote"
     partyID: String!
     "the proposal voted on"
-    propopsalID: String!
+    proposalID: String!
   ): PreparedVote!
 
   """
@@ -4403,7 +4404,6 @@ type Mutation {
   """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
-
   """
   submitTransaction(
     "The signed transaction"
@@ -4412,7 +4412,7 @@ type Mutation {
     sig: SignatureInput!
     "The way to send the transaction"
     type: SubmitTransactionType
-): TransactionSubmitted!
+  ): TransactionSubmitted!
 
   "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
@@ -4425,7 +4425,7 @@ type Mutation {
     "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
     sells: [LiquidityOrderInput!]!
     "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
-    buys:  [LiquidityOrderInput!]!
+    buys: [LiquidityOrderInput!]!
   ): PreparedLiquidityProvision!
 }
 
@@ -4522,9 +4522,9 @@ type Subscription {
     "ID of the market from which we want accounts updates"
     marketId: String
     "ID of the party from which we want accounts updates"
-    partyId: String,
+    partyId: String
     "Asset code"
-    asset: String,
+    asset: String
     "Type of the account"
     type: AccountType
   ): Account!
@@ -4591,7 +4591,7 @@ type MarginLevels {
   """
   collateralReleaseLevel: String!
 
-  "time at which these margin level were relevant"
+  "RFC3339Nano time from at which this margin level was relevant"
   timestamp: String!
 }
 
@@ -4621,13 +4621,13 @@ type MarketData {
   midPrice: String!
   "the arithmetic average of the best static bid price and best static offer price"
   staticMidPrice: String!
-  "time at which this mark price was relevant"
+  "RFC3339Nano time at which this market price was releavant"
   timestamp: String!
   "the sum of the size of all positions greater than 0."
   openInterest: String!
-  "time at which the auction will stop (null if not in auction mode"
+  "RFC3339Nano time at which the auction will stop (null if not in auction mode)"
   auctionEnd: String
-  "time at which the next auction will start (null if none is scheduled)"
+  "RFC3339Nano time at which the next auction will start (null if none is scheduled)"
   auctionStart: String
   "indicative price if the auction ended now, 0 if not in auction mode"
   indicativePrice: String!
@@ -4657,16 +4657,16 @@ type LiquidityProviderFeeShare {
   party: Party!
   "The share own by this liquidity provider (float)"
   equityLikeShare: String!
- "the average entry valuation of the liqidity provider for the market"
+  "the average entry valuation of the liqidity provider for the market"
   averageEntryValuation: String!
- }
+}
 
 "The MM commitments for this market"
 type MarketDataCommitments {
   "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
   sells: [LiquidityOrderReference!]
   "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
-  buys:  [LiquidityOrderReference!]
+  buys: [LiquidityOrderReference!]
 }
 
 type PreparedWithdrawal {
@@ -4695,30 +4695,17 @@ type TransactionSubmitted {
 
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
-
   "One or more instruments that are trading on the VEGA network"
-  markets(
-    "ID of the market"
-    id: String
-  ): [Market!]
+  markets("ID of the market" id: String): [Market!]
 
   "An instrument that is trading on the VEGA network"
-  market(
-    "Optional ID of a market"
-    id: String!
-  ): Market
+  market("Optional ID of a market" id: String!): Market
 
   "One or more entities that are trading on the VEGA network"
-  parties(
-    "Optional ID of a party"
-    id: String
-  ): [Party!]
+  parties("Optional ID of a party" id: String): [Party!]
 
   "An entity that is trading on the VEGA network"
-  party(
-    "ID of a party"
-    id: String!
-  ): Party
+  party("ID of a party" id: String!): Party
 
   "a bunch of statistics about the node"
   statistics: Statistics!
@@ -4742,13 +4729,11 @@ type Query {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Order!]
+    last: Int
+  ): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReference(
-    "ReferenceID for an order"
-    referenceID: String!
-  ): Order!
+  orderByReference("ReferenceID for an order" referenceID: String!): Order!
 
   "All governance proposals in the VEGA network"
   proposals(
@@ -4791,15 +4776,10 @@ type Query {
   ): [Proposal!]
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(
-    resourceId: String!
-  ): [NodeSignature!]
+  nodeSignatures(resourceId: String!): [NodeSignature!]
 
   "An asset which is used in the vega network"
-  asset(
-   "Id of the asset"
-    assetId: String!
-  ): Asset
+  asset("Id of the asset" assetId: String!): Asset
 
   "The list of all assets in use in the vega network"
   assets: [Asset!]
@@ -4825,10 +4805,7 @@ type Query {
   ): OrderEstimate!
 
   "find a withdrawal using its id"
-  withdrawal(
-    "id of the withdrawal"
-    id: String!
-  ): Withdrawal
+  withdrawal("id of the withdrawal" id: String!): Withdrawal
 
   "find a erc20 withdrawal approval using it a withdrawal id"
   erc20WithdrawalApproval(
@@ -4837,10 +4814,7 @@ type Query {
   ): Erc20WithdrawalApproval
 
   "find a deposit using its id"
-  deposit(
-    "id of the Deposit"
-    id: String!
-  ): Deposit
+  deposit("id of the Deposit" id: String!): Deposit
 
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!]
@@ -4932,16 +4906,16 @@ type Statistics {
   "Total number of peers on the vega network"
   totalPeers: Int!
 
-  "Genesis time of the chain"
+  "RFC3339Nano genesis time of the chain"
   genesisTime: String!
 
-  "Current time (real)"
+  "RFC3339Nano current time (real)"
   currentTime: String!
 
-  "Uptime of the node"
+  "RFC3339Nano uptime of the node"
   upTime: String!
 
-  "Current time of the chain (decided through consensus)"
+  "RFC3339Nano current time of the chain (decided through consensus)"
   vegaTime: String!
 
   "Status of the vega application connection with the chain"
@@ -5045,7 +5019,6 @@ type SimpleRiskModelParams {
   factorShort: Float!
 }
 
-
 "A type of risk model for futures trading"
 type LogNormalRiskModel {
   "Lambda parameter of the risk model"
@@ -5066,14 +5039,12 @@ union RiskModel = LogNormalRiskModel | SimpleRiskModel
 
 "A set of metadata to associate to an instruments"
 type InstrumentMetadata {
-
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
   tags: [String!]
 }
 
 "An Ethereum oracle"
 type EthereumEvent {
-
   "The ID of the ethereum contract to use (string)"
   contractId: String!
 
@@ -5085,8 +5056,7 @@ union Oracle = EthereumEvent
 
 "A Future product"
 type Future {
-
-  "The maturity date of the product (ISO8601/RFC3339 timestamp)"
+  "RFC3339Nano maturity date of the product"
   maturity: String!
 
   "The name of the asset (string)"
@@ -5103,7 +5073,6 @@ union Product = Future
 
 "Describe something that can be traded on Vega"
 type Instrument {
-
   "Uniquely identify an instrument accrods all instruments available on Vega (string)"
   id: String!
 
@@ -5180,7 +5149,6 @@ type AuctionDuration {
   volume: Int!
 }
 
-
 """
 PriceMonitoringParameters holds a list of triggers
 """
@@ -5204,7 +5172,6 @@ type PriceMonitoringTrigger {
   """
   auctionExtensionSecs: Int!
 }
-
 
 "Configuration of a market price monitorings auctions triggers"
 type PriceMonitoringSettings {
@@ -5237,7 +5204,6 @@ type TargetStakeParameters {
 
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
-
   "Market ID"
   id: String!
 
@@ -5290,7 +5256,7 @@ type Market {
   state: MarketState!
 
   "Orders on a market"
-  orders (
+  orders(
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -5306,21 +5272,23 @@ type Market {
   ): [Account!]
 
   "Trades on a market"
-  trades (
+  trades(
     "Pagination skip"
     skip: Int
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Trade!]
+    last: Int
+  ): [Trade!]
 
   "Current depth on the orderbook for this market"
   depth(
     "Maximum market order book depth (returns whole order book if omitted)"
-    maxDepth: Int): MarketDepth!
+    maxDepth: Int
+  ): MarketDepth!
 
   "Candles on a market, for the 'last' n candles, at 'interval' seconds as specified by params"
-  candles (
+  candles(
     "RFC3339Nano encoded time from when to get candles"
     since: String!
     "Interval of the candles"
@@ -5335,8 +5303,6 @@ type Market {
     "An optional party id"
     party: String
   ): [LiquidityProvision!]
-
-
 }
 
 """
@@ -5344,21 +5310,20 @@ Market Depth is a measure of the number of open buy and sell orders for a securi
 The depth of market measure provides an indication of the liquidity and depth for the instrument.
 """
 type MarketDepth {
+  "Market id"
+  market: Market!
 
-    "Market id"
-    market: Market!
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
 
-    "Buy side price levels (if available)"
-    buy: [PriceLevel!]
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
 
-    "Sell side price levels (if available)"
-    sell: [PriceLevel!]
+  "Last trade for the given market (if available)"
+  lastTrade: Trade
 
-    "Last trade for the given market (if available)"
-    lastTrade: Trade
-
-    "Sequence number for the current snapshot of the market depth"
-    sequenceNumber: String!
+  "Sequence number for the current snapshot of the market depth"
+  sequenceNumber: String!
 }
 
 """
@@ -5366,59 +5331,56 @@ Market Depth Update is a delta to the current market depth which can be used to 
 market depth structure to keep it correct
 """
 type MarketDepthUpdate {
+  "Market id"
+  market: Market!
 
-    "Market id"
-    market: Market!
+  "Buy side price levels (if available)"
+  buy: [PriceLevel!]
 
-    "Buy side price levels (if available)"
-    buy: [PriceLevel!]
+  "Sell side price levels (if available)"
+  sell: [PriceLevel!]
 
-    "Sell side price levels (if available)"
-    sell: [PriceLevel!]
-
-    "Sequence number for the current snapshot of the market depth"
-    sequenceNumber: String!
+  "Sequence number for the current snapshot of the market depth"
+  sequenceNumber: String!
 }
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
+  "The price of all the orders at this level (uint64)"
+  price: String!
 
-    "The price of all the orders at this level (uint64)"
-    price: String!
+  "The total remaining size of all orders at this level (uint64)"
+  volume: String!
 
-    "The total remaining size of all orders at this level (uint64)"
-    volume: String!
-
-    "The number of orders at this price level (uint64)"
-    numberOfOrders: String!
+  "The number of orders at this price level (uint64)"
+  numberOfOrders: String!
 }
 
 "Candle stick representation of trading"
 type Candle {
+  "Unix epoch+nanoseconds for when the candle occurred"
+  timestamp: String!
 
-    "Unix epoch+nanoseconds for when the candle occurred"
-    timestamp: String!
+  "RFC3339Nano formatted date and time for the candle"
+  datetime: String!
 
-    "ISO-8601 RFC3339+Nano formatted data and time for the candle"
-    datetime: String!
+  "High price (uint64)"
+  high: String!
 
-    "High price (uint64)"
-    high: String!
+  "Low price (uint64)"
+  low: String!
 
-    "Low price (uint64)"
-    low: String!
+  "Open price (uint64)"
+  open: String!
 
-    "Open price (uint64)"
-    open: String!
+  "Close price (uint64)"
+  close: String!
 
-    "Close price (uint64)"
-    close: String!
+  "Volume price (uint64)"
+  volume: String!
 
-    "Volume price (uint64)"
-    volume: String!
-
-    "Interval price (string)"
-    interval: Interval!
+  "Interval price (string)"
+  interval: Interval!
 }
 
 "Represents a party on Vega, could be an ethereum wallet address in the future"
@@ -5433,7 +5395,8 @@ type Party {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Order!]
+    last: Int
+  ): [Order!]
 
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
@@ -5444,14 +5407,15 @@ type Party {
     "Pagination first element"
     first: Int
     "Pagination last element"
-    last: Int): [Trade!]
+    last: Int
+  ): [Trade!]
 
   "Collateral accounts relating to a party"
   accounts(
     "Market ID - specify what market accounts for the party to return"
     marketId: String
     "Asset (USD, EUR etc)"
-    asset: String,
+    asset: String
     "Filter accounts by type (General account, margin account, etc...)"
     type: AccountType
   ): [Account!]
@@ -5462,7 +5426,7 @@ type Party {
   "marginLevels"
   margins(
     "market id off the margin to get, nil if all markets"
-    marketId: String,
+    marketId: String
   ): [MarginLevels!]
 
   proposals(
@@ -5492,7 +5456,6 @@ single trade may end up "splitting" with some of its volume matched into closed 
 remaining as open volume. This is why we don't refer to positions being comprised of trades, rather of volume.
 """
 type Position {
-
   "Market relating to this position"
   market: Market!
 
@@ -5514,13 +5477,12 @@ type Position {
   "margins of the party for the given position"
   margins: [MarginLevels!]
 
-  "last time the position was updated (RFC3339Nano)"
-  updatedAt: String!
+  "RFC3339Nano time the position was updated"
+  updatedAt: String
 }
 
 "An order in Vega, if active it will be on the OrderBook for the market"
 type Order {
-
   "Hash of the order data"
   id: ID!
 
@@ -5545,7 +5507,7 @@ type Order {
   "The trader who place the order (probably stored internally as the trader's public key)"
   party: Party!
 
-  "ISO-8601 RFC3339+Nano formatted date and time for when the order was created (timestamp)"
+  "RFC3339Nano formatted date and time for when the order was created (timestamp)"
   createdAt: String!
 
   "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
@@ -5569,8 +5531,8 @@ type Order {
   "Version of this order, counts the number of amends"
   version: String!
 
-  "UpdatedAt is the last time the order was altered"
-  updatedAt: String!
+  "RFC3339Nano time the order was altered"
+  updatedAt: String
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
@@ -5590,7 +5552,6 @@ type OrderEstimate {
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
 type Trade {
-
   "The hash of the trade data"
   id: ID!
 
@@ -5618,7 +5579,7 @@ type Trade {
   "The number of contracts trades, will always be <= the remaining size of both orders immediately before the trade (uint64)"
   size: String!
 
-  "RFC3339Nano for when the trade occurred"
+  "RFC3339Nano time for when the trade occurred"
   createdAt: String!
 
   "The type of trade"
@@ -5649,10 +5610,8 @@ type TradeFee {
   liquidityFee: String!
 }
 
-
 "Valid trade types"
 enum TradeType {
-
   "Default trade type"
   Default
 
@@ -5681,7 +5640,7 @@ type Erc20WithdrawalApproval {
   assetSource: String!
   "The amount to be withdrawan"
   amount: String!
-  "The expiry of the approval (RFC3339Nano)"
+  "Timestamp in seconds for expiry of the approval"
   expiry: String!
   "The nonce to be used in the request"
   nonce: String!
@@ -5706,11 +5665,11 @@ type Withdrawal {
   status: WithdrawalStatus!
   "A reference the foreign chain can use to refere to when processing the withdrawal"
   ref: String!
-  "The time until when the withdrawal will be valid (RFC3339Nano)"
+  "RFC3339Nano time until the withdrawal will be invalid"
   expiry: String!
-  "Time at which the withdrawal was created (RFC3339Nano)"
+  "RFC3339Nano time at which the withdrawal was created"
   createdTimestamp: String!
-  "Time at which the withdrawal was finalized (RFC3339Nano)"
+  "RFC3339Nano time at which the withdrawal was finalized"
   withdrawnTimestamp: String
   "Hash of the transaction on the foreign chain"
   txHash: String
@@ -5748,9 +5707,9 @@ type Deposit {
   asset: Asset!
   "The current status of the deposit"
   status: DepositStatus!
-  "Time at which the deposit was created (RFC3339Nano)"
+  "RFC3339Nano time at which the deposit was created"
   createdTimestamp: String!
-  "Time at which the deposit was finalized (RFC3339Nano)"
+  "RFC3339Nano time at which the deposit was finalized"
   creditedTimestamp: String
   "Hash of the transaction on the foreign chain"
   txHash: String
@@ -5768,27 +5727,26 @@ enum DepositStatus {
 
 "Valid order types, these determine what happens when an order is added to the book"
 enum OrderTimeInForce {
+  "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
+  FOK
 
-    "The order either trades completely (remainingSize == 0 after adding) or not at all, does not remain on the book if it doesn't trade"
-    FOK
+  "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
+  IOC
 
-    "The order trades any amount and as much as possible but does not remain on the book (whether it trades or not)"
-    IOC
+  "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
+  GTC
 
-    "This order trades any amount and as much as possible and remains on the book until it either trades completely or is cancelled"
-    GTC
+  """
+  This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
+  NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
+  """
+  GTT
 
-    """
-    This order type trades any amount and as much as possible and remains on the book until they either trade completely, are cancelled, or expires at a set time
-    NOTE: this may in future be multiple types or have sub types for orders that provide different ways of specifying expiry
-    """
-    GTT
+  "This order is only accepted during an auction period"
+  GFA
 
-    "This order is only accepted during an auction period"
-    GFA
-
-    "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
-    GFN
+  "This order is only accepted during normal trading (that can be continuous trading or frequent batched auctions)"
+  GFN
 }
 
 "Valid references used for pegged orders."
@@ -5803,7 +5761,6 @@ enum PeggedReference {
 
 "Valid order statuses, these determine several states for an order that cannot be expressed with other fields in Order."
 enum OrderStatus {
-
   """
   The order is active and not cancelled or expired, it could be unfilled, partially filled or fully filled.
   Active does not necessarily mean it's still on the order book.
@@ -5888,7 +5845,6 @@ enum ProposalRejectionReason {
 
 "Reason for the order being rejected by the core node"
 enum OrderRejectionReason {
-
   "Market id is invalid"
   InvalidMarketId
 
@@ -6013,7 +5969,7 @@ enum OrderRejectionReason {
   PeggedOrderSellCannotReferenceBestBidPrice
 
   "Pegged order offset must be > zero"
-	PeggedOrderOffsetMustBeGreaterThanZero
+  PeggedOrderOffsetMustBeGreaterThanZero
 
   "Insufficient balance to submit the order (no deposit made)"
   InsufficientAssetBalance
@@ -6178,13 +6134,12 @@ input FutureProductInput {
 }
 
 type FutureProduct {
-  "Future product maturity (ISO8601/RFC3339 timestamp)"
+  "RFC3339Nano time when the future products matures"
   maturity: String!
   "Product asset ID"
   settlementAsset: Asset!
- "String representing the quote (e.g. BTCUSD -> USD is quote)"
+  "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-
 }
 
 input InstrumentConfigurationInput {
@@ -6328,17 +6283,21 @@ input NetworkParameterInput {
   value: String!
 }
 
-union ProposalChange = NewMarket | UpdateMarket | UpdateNetworkParameter | NewAsset
+union ProposalChange =
+    NewMarket
+  | UpdateMarket
+  | UpdateNetworkParameter
+  | NewAsset
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
   """
-  ISO-8601 time and date when voting closes for this proposal.
-  Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
+  RFC3339Nano time and date when voting closes for this proposal.
+  Constrained by "minClose" and "maxClose" network parameters.
   """
   closingDatetime: String!
   """
-  ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   """
   enactmentDatetime: String!
@@ -6351,16 +6310,15 @@ type ProposalTerms {
 "Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted."
 input ProposalTermsInput {
   """
-  ISO-8601 time and date when voting closes for this proposal.
+  RFC3339Nano/ISO-8601 time and date when voting closes for this proposal.
   Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
   """
   closingDatetime: String!
   """
-  ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  RFC3339Nano/ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
   """
   enactmentDatetime: String!
-
 
   """
   Field defining new market change - the proposal will create new market if passed and enacted.
@@ -6384,7 +6342,6 @@ input ProposalTermsInput {
 
   "a new Asset proposal, this will create a new asset to be used in the vega network"
   newAsset: NewAssetInput
-
 }
 
 "A new asset to be added into vega"
@@ -6453,7 +6410,7 @@ type Proposal {
   party: Party!
   "State of the proposal"
   state: ProposalState!
-  "ISO-8601 time and date when the proposal reached Vega network"
+  "RFC3339Nano time and date when the proposal reached Vega network"
   datetime: String!
   "Terms of the proposal"
   terms: ProposalTerms!
@@ -6488,7 +6445,7 @@ type Vote {
   "The party casting the vote"
   party: Party!
 
-  "ISO-8601 time and date when the vote reached Vega network"
+  "RFC3339Nano time and date when the vote reached Vega network"
   datetime: String!
 
   "The ID of the proposal this vote applies to"
@@ -6511,7 +6468,7 @@ type PreparedVote {
 }
 
 type TimeUpdate {
-  "timestamp - new block time"
+  "RFC3339Nano time of new block time"
   timestamp: String!
 }
 
@@ -6540,7 +6497,7 @@ type LedgerEntry {
   reference: String!
   "Type of ledger entry"
   type: String!
-  "The time at which the transfer was made"
+  "RFC3339Nano time at which the transfer was made"
   timestamp: String!
 }
 
@@ -6619,9 +6576,9 @@ type AuctionEvent {
   leave: Boolean!
   "event related to opening auction"
   openingAuction: Boolean!
-  "start time of auction"
+  "RFC3339Nano start time of auction"
   auctionStart: String!
-  "optional end time of auction"
+  "RFC3339Nano optional end time of auction"
   auctionEnd: String!
   "What triggered the auction"
   trigger: AuctionTrigger!
@@ -6694,7 +6651,30 @@ enum BusEventType {
 }
 
 "union type for wrapped events in stream PROPOSAL is mapped to governance data, something to keep in mind"
-union Event = TimeUpdate | MarketEvent | TransferResponses | PositionResolution | Order | Trade | Account | Party | MarginLevels | Proposal | Vote | MarketData | NodeSignature | LossSocialization | SettlePosition | Market | Asset | MarketTick | SettleDistressed | AuctionEvent | RiskFactor | Deposit | Withdrawal
+union Event =
+    TimeUpdate
+  | MarketEvent
+  | TransferResponses
+  | PositionResolution
+  | Order
+  | Trade
+  | Account
+  | Party
+  | MarginLevels
+  | Proposal
+  | Vote
+  | MarketData
+  | NodeSignature
+  | LossSocialization
+  | SettlePosition
+  | Market
+  | Asset
+  | MarketTick
+  | SettleDistressed
+  | AuctionEvent
+  | RiskFactor
+  | Deposit
+  | Withdrawal
 
 type BusEvent {
   "the id for this event"
@@ -6766,8 +6746,8 @@ type LiquidityProvision {
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
   createdAt: String!
-  "When the liquidity provision was updated (formatted RFC3339)"
-  updatedAt: String!
+  "RFC3339Nano time of when the liquidity provision was updated"
+  updatedAt: String
   "Market identifier for the order"
   market: Market!
   "Specified as a unitless number that represents the amount of settlement asset of the market."
@@ -6777,7 +6757,7 @@ type LiquidityProvision {
   "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
   sells: [LiquidityOrderReference!]!
   "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
-  buys:  [LiquidityOrderReference!]!
+  buys: [LiquidityOrderReference!]!
   "The version of this LiquidityProvision"
   version: String!
   "The current status of this liquidity provision"
@@ -7203,13 +7183,13 @@ func (ec *executionContext) field_Mutation_prepareVote_args(ctx context.Context,
 	}
 	args["partyID"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["propopsalID"]; ok {
+	if tmp, ok := rawArgs["proposalID"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["propopsalID"] = arg2
+	args["proposalID"] = arg2
 	return args, nil
 }
 
@@ -8168,9 +8148,9 @@ func (ec *executionContext) _Account_asset(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Account_type(ctx context.Context, field graphql.CollectedField, obj *proto.Account) (ret graphql.Marshaler) {
@@ -8238,7 +8218,7 @@ func (ec *executionContext) _Account_market(ctx context.Context, field graphql.C
 	return ec.marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarket(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8255,7 +8235,7 @@ func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.Collect
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Id, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8272,7 +8252,7 @@ func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.Collect
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8306,7 +8286,7 @@ func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8340,7 +8320,7 @@ func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8374,7 +8354,7 @@ func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8385,13 +8365,13 @@ func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.C
 		Object:   "Asset",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Decimals, nil
+		return ec.resolvers.Asset().Decimals(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8408,7 +8388,7 @@ func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.C
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8419,13 +8399,13 @@ func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.Col
 		Object:   "Asset",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Source, nil
+		return ec.resolvers.Asset().Source(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8442,7 +8422,7 @@ func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.Col
 	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context, field graphql.CollectedField, obj *Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9525,9 +9505,9 @@ func (ec *executionContext) _Deposit_asset(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Deposit_status(ctx context.Context, field graphql.CollectedField, obj *proto.Deposit) (ret graphql.Marshaler) {
@@ -10233,9 +10213,9 @@ func (ec *executionContext) _Future_settlementAsset(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Future_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
@@ -10369,9 +10349,9 @@ func (ec *executionContext) _FutureProduct_settlementAsset(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
@@ -11307,14 +11287,11 @@ func (ec *executionContext) _LiquidityProvision_updatedAt(ctx context.Context, f
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_market(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
@@ -11958,9 +11935,9 @@ func (ec *executionContext) _MarginLevels_asset(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginLevels_party(ctx context.Context, field graphql.CollectedField, obj *proto.MarginLevels) (ret graphql.Marshaler) {
@@ -14349,7 +14326,7 @@ func (ec *executionContext) _Mutation_prepareVote(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyID"].(string), args["propopsalID"].(string))
+		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyID"].(string), args["proposalID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15407,14 +15384,11 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Order_peggedOrder(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
@@ -16263,14 +16237,11 @@ func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PositionResolution_marketID(ctx context.Context, field graphql.CollectedField, obj *PositionResolution) (ret graphql.Marshaler) {
@@ -18223,9 +18194,9 @@ func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -18254,9 +18225,9 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Asset)
+	res := resTmp.([]*proto.Asset)
 	fc.Result = res
-	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetᚄ(ctx, field.Selections, res)
+	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAssetᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_estimateOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -22083,9 +22054,9 @@ func (ec *executionContext) _Withdrawal_asset(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Asset)
+	res := resTmp.(*proto.Asset)
 	fc.Result = res
-	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_status(ctx context.Context, field graphql.CollectedField, obj *proto.Withdrawal) (ret graphql.Marshaler) {
@@ -24145,9 +24116,9 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._Market(ctx, sel, obj)
-	case Asset:
+	case proto.Asset:
 		return ec._Asset(ctx, sel, &obj)
-	case *Asset:
+	case *proto.Asset:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -24411,7 +24382,7 @@ func (ec *executionContext) _Account(ctx context.Context, sel ast.SelectionSet, 
 
 var assetImplementors = []string{"Asset", "Event"}
 
-func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, obj *Asset) graphql.Marshaler {
+func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, obj *proto.Asset) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, assetImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -24441,15 +24412,33 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "decimals":
-			out.Values[i] = ec._Asset_decimals(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_decimals(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "source":
-			out.Values[i] = ec._Asset_source(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_source(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "infrastructureFeeAccount":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -25608,9 +25597,6 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 					}
 				}()
 				res = ec._LiquidityProvision_updatedAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "market":
@@ -27232,9 +27218,6 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Order_updatedAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "peggedOrder":
@@ -27589,9 +27572,6 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Position_updatedAt(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
@@ -30201,11 +30181,11 @@ func (ec *executionContext) marshalNAccountType2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v Asset) graphql.Marshaler {
+func (ec *executionContext) marshalNAsset2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v proto.Asset) graphql.Marshaler {
 	return ec._Asset(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v *Asset) graphql.Marshaler {
+func (ec *executionContext) marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v *proto.Asset) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -31753,11 +31733,11 @@ func (ec *executionContext) marshalOAccountType2ᚖcodeᚗvegaprotocolᚗioᚋve
 	return v
 }
 
-func (ec *executionContext) marshalOAsset2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v proto.Asset) graphql.Marshaler {
 	return ec._Asset(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAssetᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.Asset) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -31784,7 +31764,7 @@ func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx, sel, v[i])
+			ret[i] = ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -31797,7 +31777,7 @@ func (ec *executionContext) marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	return ret
 }
 
-func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAsset(ctx context.Context, sel ast.SelectionSet, v *Asset) graphql.Marshaler {
+func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐAsset(ctx context.Context, sel ast.SelectionSet, v *proto.Asset) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

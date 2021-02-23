@@ -1451,21 +1451,6 @@
         
           
           <li>
-            <a href="#github.com%2fgrpc-ecosystem%2fgrpc-gateway%2finternal%2fstream_chunk.proto">github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto</a>
-            <ul>
-              
-                <li>
-                  <a href="#grpc.gateway.runtime.StreamError"><span class="badge">M</span>StreamError</a>
-                </li>
-              
-              
-              
-              
-            </ul>
-          </li>
-        
-          
-          <li>
             <a href="#oracles%2fv1%2foracles.proto">oracles/v1/oracles.proto</a>
             <ul>
               
@@ -4423,7 +4408,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places </p>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch
-- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT` </p></td>
+- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`, valid only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT` </p></td>
                 </tr>
               
                 <tr>
@@ -4539,7 +4524,7 @@ to keep track of the auction batch this order falls under (required for fees cal
                   <td>time_in_force</td>
                   <td><a href="#vega.Order.TimeInForce">Order.TimeInForce</a></td>
                   <td></td>
-                  <td><p>Amend the time in force for the order, set to TIF_UNSPECIFIED to remain unchanged
+                  <td><p>Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
 - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp` </p></td>
                 </tr>
               
@@ -4797,7 +4782,7 @@ formatted price of `1.23456` assuming market configured to 5 decimal places,
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Timestamp for when the order will expire, in nanoseconds since the epoch,
-required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIF_GTT`
+required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
 - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp` </p></td>
                 </tr>
               
@@ -6784,7 +6769,7 @@ who provide the best priced liquidity that actually allows trading to take place
               <tr>
                 <td>ORDER_ERROR_INVALID_EXPIRATION_DATETIME</td>
                 <td>7</td>
-                <td><p>An order with `TimeInForce.TIF_GTT` was submitted or amended
+                <td><p>An order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended
 with an expiration that was badly formatted or otherwise invalid</p></td>
               </tr>
             
@@ -15447,72 +15432,6 @@ these data are being used to bundle the call to the smart contract on the ethere
         </table>
 
         
-    
-      
-      <div class="file-heading">
-        <h2 id="github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto">github.com/grpc-ecosystem/grpc-gateway/internal/stream_chunk.proto</h2><a href="#title">Top</a>
-      </div>
-      <p></p>
-
-      
-        <h3 id="grpc.gateway.runtime.StreamError">StreamError</h3>
-        <p>StreamError is a response type which is returned when</p><p>streaming rpc returns an error.</p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>grpc_code</td>
-                  <td><a href="#int32">int32</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>http_code</td>
-                  <td><a href="#int32">int32</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>message</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>http_status</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>details</td>
-                  <td><a href="#google.protobuf.Any">google.protobuf.Any</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-
-      
-
-      
-
-      
     
       
       <div class="file-heading">

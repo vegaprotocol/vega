@@ -123,6 +123,14 @@ func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
 	return ret
 }
 
+func (b *brokerStub) clearTransferEvents() {
+	t := events.TransferResponses
+	b.mu.Lock()
+	r := b.data[t]
+	b.data[t] = make([]events.Event, 0, cap(r))
+	b.mu.Unlock()
+}
+
 func (b *brokerStub) clearOrderEvents() {
 	t := events.OrderEvent
 	b.mu.Lock()

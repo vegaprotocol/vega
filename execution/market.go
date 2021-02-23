@@ -111,6 +111,8 @@ type PriceMonitor interface {
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64
+	UpdateScalingFactor(sFactor float64) error
+	UpdateTimeWindow(tWindow time.Duration)
 }
 
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
@@ -502,7 +504,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	if m.as.InAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if m.as.IsOpeningAuction() {
-			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) {
+			// if the opening auction period has expired and the book can be uncrossed safely
+			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) && m.matching.CanUncross() {
 				// mark opening auction as ending
 				// Prime price monitoring engine with the uncrossing price of the opening auction
 				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
@@ -821,6 +824,12 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// We are moving to continuous trading so we have to unpark any pegged orders
 	m.repriceAllPeggedOrders(ctx, PriceMoveAll)
+
+	// Store the lastest prices so we can see if anything moves
+	m.lastMidBuyPrice, _ = m.getStaticMidPrice(types.Side_SIDE_BUY)
+	m.lastMidSellPrice, _ = m.getStaticMidPrice(types.Side_SIDE_SELL)
+	m.lastBestBidPrice, _ = m.getBestStaticBidPrice()
+	m.lastBestAskPrice, _ = m.getBestStaticAskPrice()
 }
 
 func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) types.OrderError {
@@ -1695,6 +1704,12 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	}
 	// send transfer to buffer
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
+
+	// Any of the closed out traders could be liquidity providers,
+	// we should cancel their LP submission
+	for _, trader := range closedMPs {
+		m.liquidity.CancelLiquidityProvision(ctx, trader.Party())
+	}
 	return err
 }
 
@@ -2854,6 +2869,14 @@ func (m *Market) OnMarketLiquidityProvidersFeeDistribitionTimeStep(d time.Durati
 	m.lpFeeDistributionTimeStep = d
 }
 
+func (m *Market) OnMarketTargetStakeTimeWindowUpdate(d time.Duration) {
+	m.tsCalc.UpdateTimeWindow(d)
+}
+
+func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
+	return m.tsCalc.UpdateScalingFactor(v)
+}
+
 // repriceFuncW is an adapter for getNewPeggedPrice.
 func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 	return m.getNewPeggedPrice(
@@ -2911,6 +2934,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	ty := types.TransferType_TRANSFER_TYPE_BOND_LOW
 	if amount < 0 {
 		ty = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+		amount = -amount
 	}
 	transfer := &types.Transfer{
 		Owner: party,
@@ -2935,9 +2959,9 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		}
 		if transfer.Type == types.TransferType_TRANSFER_TYPE_BOND_HIGH {
 			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_LOW
+		} else {
+			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_HIGH
 		}
-		transfer.Amount.Amount = -transfer.Amount.Amount
-		transfer.MinAmount = -transfer.MinAmount
 
 		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
 		if newerr != nil {

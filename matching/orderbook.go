@@ -232,10 +232,105 @@ func (b OrderBook) InAuction() bool {
 	return b.auction
 }
 
+// CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
+// on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended
+func (b *OrderBook) CanUncross() bool {
+	bb, err := b.GetBestBidPrice() // sell
+	if err != nil {
+		return false
+	}
+	ba, err := b.GetBestAskPrice() // buy
+	if err != nil || bb < ba || bb == 0 || ba == 0 {
+		return false
+	}
+	// check all buy price levels below ba, find limit orders
+	buyMatch := false
+	for _, l := range b.buy.levels {
+		if buyMatch || l.price >= ba {
+			break
+		}
+		for _, o := range l.orders {
+			// limit order && not just GFA found
+			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				buyMatch = true
+				break
+			}
+		}
+	}
+	sellMatch := false
+	for _, l := range b.sell.levels {
+		if l.price <= bb {
+			break
+		}
+		for _, o := range l.orders {
+			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				sellMatch = true
+				break
+			}
+		}
+	}
+	// non-GFA orders outside the price range found on the book, we can uncross
+	if buyMatch && sellMatch {
+		return true
+	}
+	p, v, _ := b.GetIndicativePriceAndVolume()
+	// no buy orders remaining on the book after uncrossing, it buyMatches exactly
+	vol := uint64(0)
+	if !buyMatch {
+		for _, l := range b.buy.levels {
+			// buy orders are ordered descending
+			if l.price < p {
+				continue
+			}
+			for _, o := range l.orders {
+				vol += o.Remaining
+				// we've filled the uncrossing volume, and found an order that is not GFA
+				if vol > v && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+					buyMatch = true
+					break
+				}
+			}
+			if buyMatch {
+				break
+			}
+		}
+		vol = 0
+		if !buyMatch {
+			return false
+		}
+	}
+	// we've had to check buy side - sell side is fine
+	if sellMatch {
+		return true
+	}
+	vol = 0
+	for _, l := range b.sell.levels {
+		// sell side is ordered ascending
+		if sellMatch || l.price > p {
+			break
+		}
+		for _, o := range l.orders {
+			vol += o.Remaining
+			if vol > v && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				sellMatch = true
+				break
+			}
+		}
+	}
+
+	return sellMatch
+}
+
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
-	bestBid, _ := b.GetBestBidPrice()
-	bestAsk, _ := b.GetBestAskPrice()
+	bestBid, err := b.GetBestBidPrice()
+	if err != nil {
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
+	}
+	bestAsk, err := b.GetBestAskPrice()
+	if err != nil {
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
+	}
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -279,8 +374,14 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePrice() uint64 {
-	bestBid, _ := b.GetBestBidPrice()
-	bestAsk, _ := b.GetBestAskPrice()
+	bestBid, err := b.GetBestBidPrice()
+	if err != nil {
+		return 0
+	}
+	bestAsk, err := b.GetBestAskPrice()
+	if err != nil {
+		return 0
+	}
 
 	// Short circuit if the book is not crossed
 	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
@@ -719,7 +820,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		b.ordersByID[order.Id] = order
 		if orders, ok := b.ordersPerParty[order.PartyId]; !ok {
 			b.ordersPerParty[order.PartyId] = map[string]struct{}{
-				order.Id: struct{}{},
+				order.Id: {},
 			}
 		} else {
 			orders[order.Id] = struct{}{}

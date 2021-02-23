@@ -784,6 +784,8 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
+	addAccount(tm, "party2")
+	addAccount(tm, "party3")
 
 	// Move into auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 100})
@@ -792,6 +794,9 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	// Place 2 orders to create valid reference prices
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	// place 2 more orders that will result in a mark price being set
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 1, 95)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party3", 1, 95)
 
 	// Pegged order must be a LIMIT order
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
@@ -818,10 +823,15 @@ func testPeggedOrdersEnteringAuction(t *testing.T) {
 	ctx := context.Background()
 
 	addAccount(tm, "party1")
+	addAccount(tm, "party2")
+	addAccount(tm, "party3")
 
 	// Place 2 orders to create valid reference prices
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	// place 2 more orders that will result in a mark price being set
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 1, 95)
+	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party3", 1, 95)
 
 	// Pegged order must be a LIMIT order
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)

@@ -42,7 +42,7 @@ type Assets interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind) error
 	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
-	IsSigned(id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
 // Collateral engine
@@ -291,7 +291,7 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
-func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
+func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
 	asset, err := e.assets.Get(w.VegaAssetId)
 	if err != nil {
@@ -312,7 +312,7 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 		return ErrInvalidWithdrawalState
 	}
 	withd.TxHash = txHash
-	if _, ok := e.notary.IsSigned(withd.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
+	if _, ok := e.notary.IsSigned(ctx, withd.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
 		return ErrWithdrawalNotReady
 	}
 
@@ -324,6 +324,9 @@ func (e *Engine) WithdrawalERC20(w *types.ERC20Withdrawal, blockNumber, txIndex 
 		blockNumber: blockNumber,
 		txIndex:     txIndex,
 		hash:        txHash,
+		withdrawal: &withdrawal{
+			nonce: nonce,
+		},
 	}
 	e.assetActs[aa.id] = aa
 	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
@@ -501,6 +504,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	for _, v := range e.withdrawals {
 		if v.ref.Cmp(ref) == 0 {
+
 			return v.w, nil
 		}
 	}
@@ -559,6 +563,7 @@ func (e *Engine) newWithdrawal(
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
+	e.withdrawalCnt.Add(e.withdrawalCnt, big.NewInt(1))
 	w = &types.Withdrawal{
 		Id:               id,
 		Status:           types.Withdrawal_STATUS_OPEN,

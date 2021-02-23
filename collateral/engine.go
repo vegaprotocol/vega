@@ -1085,8 +1085,12 @@ func (e *Engine) getFeeTransferRequest(
 		treq.ToAccount = []*types.Account{liquiFee}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE:
+		margin, err := getMargin()
+		if err != nil {
+			return nil, err
+		}
 		treq.FromAccount = []*types.Account{liquiFee}
-		treq.ToAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{margin}
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY:
 		margin, err := getMargin()
@@ -1150,6 +1154,10 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 
 	switch t.Type {
 	case types.TransferType_TRANSFER_TYPE_BOND_LOW:
+		// do we have enough in the general account to make the transfer?
+		if t.Amount.Amount > 0 && general.Balance < uint64(t.Amount.Amount) {
+			return nil, errors.New("not enough collateral in general account")
+		}
 		treq.FromAccount = []*types.Account{general}
 		treq.ToAccount = []*types.Account{bond}
 		return treq, nil
