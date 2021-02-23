@@ -109,7 +109,7 @@ type PriceMonitor interface {
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, current, target float64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, current, target float64, bestStaticBidVolume, bestStaticAskVolume uint64)
 }
 
 // TargetStakeCalculator interface
@@ -1341,15 +1341,8 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		return nil, nil
 	}
 
-	// run LiquidityMonitor checks for market auction mode.
-	m.lMonitor.CheckLiquidity(
-		m.as, m.currentTime,
-		m.targetStakeTriggeringRatio,
-		float64(m.getSuppliedStake()),
-		m.getTheoreticalTargetStake(trades),
-	)
-
-	// start the liquidity monitoring auction if required?
+	// run LiquidityMonitor checks for market auction mode and start auction if requried
+	m.checkLiquidity(trades)
 	if m.as.AuctionStart() {
 		m.EnterAuction(ctx)
 		return nil, err
@@ -1889,12 +1882,11 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 
-	m.lMonitor.CheckLiquidity(
-		m.as, m.currentTime,
-		m.targetStakeTriggeringRatio,
-		float64(m.getSuppliedStake()),
-		m.getTargetStake())
-
+	m.checkLiquidity(nil)
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+	}
 	return nil
 }
 
@@ -2176,6 +2168,10 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
 			return nil, err
 		}
+	}
+	m.checkLiquidity(nil)
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
 	}
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
@@ -3446,7 +3442,34 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
+	m.updateLiquidityFee(ctx)
+	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
+
+	m.checkLiquidity(nil)
+	// end the liquidity monitoring auction if it's ongoing and there's now enough stake
+	if m.as.InAuction() && m.as.AuctionEnd() {
+		m.LeaveAuction(ctx, m.currentTime)
+	}
+
 	return nil
+}
+
+func (m *Market) checkLiquidity(trades []*types.Trade) {
+	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
+	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
+	var targetStake float64
+	if trades != nil {
+		targetStake = m.getTheoreticalTargetStake(trades)
+	} else {
+		targetStake = m.getTargetStake()
+	}
+
+	m.lMonitor.CheckLiquidity(
+		m.as, m.currentTime,
+		m.targetStakeTriggeringRatio,
+		float64(m.getSuppliedStake()),
+		targetStake,
+		vBid, vAsk)
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {

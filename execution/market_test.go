@@ -5134,6 +5134,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, conf)
 
+	//Submitting an order on buy side so that best_bid does exist should stop an auction
 	md = tm.market.GetMarketData()
 	require.Equal(t, zero, md.BestStaticBidVolume)
 	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)

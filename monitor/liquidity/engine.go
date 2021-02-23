@@ -11,6 +11,8 @@ type AuctionState interface {
 	IsLiquidityAuction() bool
 	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
 	EndAuction()
+	InAuction() bool
+	ExtendAuction(delta types.AuctionDuration)
 }
 
 type Engine struct{}
@@ -28,7 +30,12 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, c1, current, targe
 		}
 	} else {
 		if current < (target*c1) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
-			as.StartLiquidityAuction(t, nil)
+			if as.InAuction() {
+				as.ExtendAuction(types.AuctionDuration{})
+			} else {
+				as.StartLiquidityAuction(t, nil)
+			}
+
 		}
 	}
 }
