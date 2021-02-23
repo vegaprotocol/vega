@@ -3335,7 +3335,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			Params: &types.LogNormalModelParams{
 				Mu:    0,
 				R:     0.016,
-				Sigma: 1.5,
+				Sigma: 20,
 			},
 		},
 	}
