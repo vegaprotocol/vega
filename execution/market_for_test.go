@@ -68,3 +68,8 @@ func (m *Market) GetLPCommitment(partyID string) int {
 func (m *Market) GetLPProvision(partyID string) *types.LiquidityProvision {
 	return m.liquidity.LiquidityProvisionByPartyID(partyID)
 }
+
+// Are we currently in an auction
+func (m *Market) InAuction() bool {
+	return m.as.InAuction()
+}

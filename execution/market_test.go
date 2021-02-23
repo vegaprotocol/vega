@@ -3150,21 +3150,11 @@ func TestOrderBook_AmendingCommitmentShouldNotFail(t *testing.T) {
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 
-	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
-	o1conf, err := tm.market.SubmitOrder(ctx, o1)
-	require.NotNil(t, o1conf)
-	require.NoError(t, err)
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx)
+	tm.market.EnterAuction(ctx)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 1, 10)
-	o2conf, err := tm.market.SubmitOrder(ctx, o2)
-	require.NotNil(t, o2conf)
-	require.NoError(t, err)
-
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 12)
-	o3conf, err := tm.market.SubmitOrder(ctx, o3)
-	require.NotNil(t, o3conf)
-	require.NoError(t, err)
+	assert.Equal(t, true, tm.market.InAuction())
 
 	// Create a LP order for trader-A
 	lp := &types.LiquidityProvisionSubmission{
@@ -3182,10 +3172,28 @@ func TestOrderBook_AmendingCommitmentShouldNotFail(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "trader-A", "id-lp"))
 	assert.Equal(t, 500, tm.market.GetLPCommitment("trader-A"))
-	assert.Equal(t, types.LiquidityProvision_STATUS_ACTIVE, tm.market.GetLPProvision("trader-A").Status)
+	assert.Equal(t, types.LiquidityProvision_STATUS_ACTIVE.String(), tm.market.GetLPProvision("trader-A").Status.String())
+	assert.Equal(t, 4, tm.market.GetParkedOrderCount())
+
+	// Create some normal orders to set the reference prices
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 1, 10)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 12)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
 
 	// Leave the opening auction
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	assert.Equal(t, false, tm.market.InAuction())
 
 	// Try to amend the LP commitment
 	lp.CommitmentAmount = 1000
