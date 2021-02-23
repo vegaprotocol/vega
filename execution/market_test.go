@@ -3134,3 +3134,63 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 }
+
+// Ticket 2918 says that if we create a LP for a party during opening
+// auction, if we try to amend the commitment after the auction is
+// finished it will fail. This tests attempts to reproduce this
+func TestOrderBook_AmendingCommitmentShouldNotFail(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1000,
+	})
+	ctx := context.Background()
+
+	addAccountWithAmount(tm, "trader-A", 3000)
+	addAccountWithAmount(tm, "trader-B", 10000000)
+	addAccountWithAmount(tm, "trader-C", 10000000)
+
+	// Create some normal orders to set the reference prices
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 1, 10)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 12)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	// Create a LP order for trader-A
+	lp := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 500,
+		Fee:              "0.01",
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 25, Offset: 2},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 25, Offset: 3},
+		},
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 25, Offset: -2},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 25, Offset: -3},
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "trader-A", "id-lp"))
+	assert.Equal(t, 500, tm.market.GetLPCommitment("trader-A"))
+	assert.Equal(t, types.LiquidityProvision_STATUS_ACTIVE, tm.market.GetLPProvision("trader-A").Status)
+
+	// Leave the opening auction
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+
+	// Try to amend the LP commitment
+	lp.CommitmentAmount = 1000
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, "trader-A", "id-lp")
+	require.NoError(t, err)
+	assert.Equal(t, 1000, tm.market.GetLPCommitment("trader-A"))
+	assert.Equal(t, types.LiquidityProvision_STATUS_ACTIVE, tm.market.GetLPProvision("trader-A").Status)
+}

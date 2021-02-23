@@ -54,3 +54,17 @@ func (m *Market) State() types.Market_State {
 func (m *Market) GetLPSCount() int {
 	return len(m.equityShares.lps)
 }
+
+// Get the commitment of a LP provider given their partyID
+func (m *Market) GetLPCommitment(partyID string) int {
+	lps := m.equityShares.lps[partyID]
+	if lps != nil {
+		return int(lps.stake)
+	}
+	return 0
+}
+
+// Get the LP Provision object for the given partyID
+func (m *Market) GetLPProvision(partyID string) *types.LiquidityProvision {
+	return m.liquidity.LiquidityProvisionByPartyID(partyID)
+}
