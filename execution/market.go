@@ -2959,6 +2959,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
 	if err != nil {
+		m.log.Debug("bond update error", logging.Error(err))
 		return err
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
@@ -2988,10 +2989,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	existingOrders := m.matching.GetOrdersPerParty(party)
 	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, existingOrders, m.repriceFuncW)
 	if err != nil {
+		m.log.Debug("create initial order failure", logging.Error(err))
 		return err
 	}
 
 	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+		m.log.Debug("create and update failure", logging.Error(err))
 		return err
 	}
 
