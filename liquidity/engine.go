@@ -105,21 +105,42 @@ func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	e.stakeToObligationFactor = v
 }
 
-// CancelLiquidityProvision removes a parties commitment of liquidity
-func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
+func (e *Engine) stopLiquidityProvision(
+	ctx context.Context, party string, status types.LiquidityProvision_Status) ([]*types.Order, error) {
 	lp := e.provisions[party]
 	if lp == nil {
-		return errors.New("party have no liquidity provision orders")
+		return nil, errors.New("party have no liquidity provision orders")
 	}
 
-	lp.Status = types.LiquidityProvision_STATUS_REJECTED
+	lp.Status = status
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+
+	// get the liquidity order to be cancelled
+	orders := make([]*types.Order, 0, len(e.liquidityOrders))
+	for _, o := range e.liquidityOrders[party] {
+		orders = append(orders, o)
+	}
 
 	// now delete all stuff
 	delete(e.liquidityOrders, party)
 	delete(e.orders, party)
 	delete(e.provisions, party)
-	return nil
+	return orders, nil
+
+}
+
+// RejectLiquidityProvision removes a parties commitment of liquidity
+func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
+	_, err := e.stopLiquidityProvision(
+		ctx, party, types.LiquidityProvision_STATUS_REJECTED)
+	return err
+}
+
+// CancelLiquidityProvision removes a parties commitment of liquidity
+// Returns the liqudityOrders if any
+func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
+	return e.stopLiquidityProvision(
+		ctx, party, types.LiquidityProvision_STATUS_CANCELLED)
 }
 
 // ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.

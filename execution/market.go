@@ -2897,6 +2897,62 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 	)
 }
 
+func (m *Market) cancelLiquidityProvision(ctx context.Context, party string) error {
+	// cancel the liquidity provision
+	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
+	if err != nil {
+		m.log.Debug("unable to cancel liquidity provision",
+			logging.String("party-id", party),
+			logging.String("market-id", m.GetID()),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	// now we cancel all existing orders
+	for _, order := range cancelOrders {
+		if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
+			// nothing much we can do here, I suppose
+			// somethign wrong might have happen...
+			// does this need a panic? need to think about it...
+			m.log.Debug("unable cancel liquidity order",
+				logging.String("party", party),
+				logging.String("order-id", order.Id),
+				logging.Error(err))
+		}
+	}
+
+	// now we move back the funds from the bond account to the general acount
+	// of the party
+	asset, _ := m.mkt.GetAsset()
+	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(
+		ctx, party, m.GetID(), asset)
+	if err != nil {
+		return err
+	}
+
+	transfer := &types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: int64(bondAcc.Balance),
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_BOND_HIGH,
+		MinAmount: int64(bondAcc.Balance),
+	}
+
+	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
+	if err != nil {
+		m.log.Debug("bond update error", logging.Error(err))
+		return err
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+
+	m.updateLiquidityFee(ctx)
+	m.equityShares.SetPartyStake(party, float64(0))
+	return nil
+}
+
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
 	if !m.canSubmitCommitment() {
@@ -2921,12 +2977,24 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	if lp := m.liquidity.LiquidityProvisionByPartyID(party); lp != nil {
 		isAmend = true
 		if sub.CommitmentAmount < lp.CommitmentAmount {
-			// this is the amount of stake surplus
-			surplus := uint64(m.getTargetStake()) - m.getSuppliedStake()
-			diff := lp.CommitmentAmount - sub.CommitmentAmount
-			if diff > surplus {
+			// first - does the market have enought stake
+			if uint64(m.getTargetStake()) > m.getSuppliedStake() {
 				return ErrNotEnoughStake
 			}
+
+			// now if the stake surplus is > than the change we are OK
+			surplus := m.getSuppliedStake() - uint64(m.getTargetStake())
+			diff := lp.CommitmentAmount - sub.CommitmentAmount
+			if surplus < diff {
+				return ErrNotEnoughStake
+			}
+		}
+
+		// here, we now we have a amendment
+		// if this amendment is to reduce the stake to 0, then we'll want to
+		// cancel this lp submission
+		if sub.CommitmentAmount == 0 {
+			return m.cancelLiquidityProvision(ctx, party)
 		}
 	}
 
@@ -2938,7 +3006,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		if err == nil || !needsCancel {
 			return
 		}
-		if newerr := m.liquidity.CancelLiquidityProvision(ctx, party); newerr != nil {
+		if newerr := m.liquidity.RejectLiquidityProvision(ctx, party); newerr != nil {
 			m.log.Debug("unable to submit cancel liquidity provision submission",
 				logging.String("party", party),
 				logging.String("id", id),
