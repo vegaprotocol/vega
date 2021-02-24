@@ -825,7 +825,9 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 				ctx, m.as, trade.Price, trade.Size, now,
 			)
 			if err != nil {
-				panic(err)
+				m.log.Panic("unable to run check price with price monitor",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
 			}
 		}
 	}
