@@ -55,3 +55,17 @@ go test -v -count=1 -race ./integration/... -godog.format=pretty $(pwd)/integrat
 ```
 
 Race detection is a complex thing to do, so it will make running tests significantly slower. The pipeline runs the tests with race detection, so this shouldn't be required to do locally.
+
+## Reproducing/replicating system tests
+
+The system tests run on a higher level. They submit a new market proposal, get said market accepted through governance, and then start trading. They use a `LogNormal` risk model, and specific fee parameters. David kindly provided the long/short risk factors for a simple risk model that result in the same margin requirements and same fees being applied to trades. To create an integration test that replicates the system test results (transfers, balances, fees, etc...), simply start your feature file with the following:
+
+```
+Feature: A feature that reproduces some system test
+
+  Background:
+    Given the insurance pool initial balance for the markets is "0":
+    And the executon engine have these markets:
+      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long              | tau/short              | mu | r  | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading |
+      | ETH/DEC20 | ETH      | ETH       | ETH   | 100       | simple     | 0.08628781058136630000 | 0.09370922348428490000 | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 1           | continuous   |    0.004 |             0.001 |          0.3 |                 0  |                |             |                 | 0.1             |
+```
