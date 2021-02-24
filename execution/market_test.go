@@ -3470,7 +3470,7 @@ func TestLPOrdersRollback(t *testing.T) {
 
 	err := tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp")
 	// require.Error(t, err)
-	assert.EqualError(t, err, "no valid orders to cover the liquidity obligation with")
+	assert.EqualError(t, err, "margin check failed")
 	for _, evt := range tm.events {
 		fmt.Printf("%#v\n", evt)
 	}
@@ -3514,10 +3514,11 @@ func TestLPOrdersRollback(t *testing.T) {
 			}
 		}
 
+		// one event is sent, this is a rejected event from
+		// the first order we try to place, the party does
+		// not have enough funds
 		expectedStatus := []types.Order_Status{
-			types.Order_STATUS_ACTIVE,    // first gets created
-			types.Order_STATUS_REJECTED,  // second gets rejected
-			types.Order_STATUS_CANCELLED, // first gets cancelled
+			types.Order_STATUS_REJECTED, // second gets rejected
 		}
 
 		require.Len(t, found, len(expectedStatus))

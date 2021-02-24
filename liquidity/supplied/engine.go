@@ -159,6 +159,7 @@ func (e *Engine) getProbabilityOfTrading(currentPrice float64, orderPrice uint64
 		prob := e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
 		cache[orderPrice] = prob
 	}
+
 	return cache[orderPrice]
 }
 
