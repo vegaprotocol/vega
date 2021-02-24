@@ -1318,6 +1318,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	m.handleConfirmation(ctx, confirmation)
+	m.checkLiquidity(ctx, nil)
 
 	return confirmation, nil
 }
@@ -1342,10 +1343,9 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	}
 
 	// run LiquidityMonitor checks for market auction mode and start auction if requried
-	m.checkLiquidity(trades)
-	if m.as.AuctionStart() {
-		m.EnterAuction(ctx)
-		return nil, err
+	m.checkLiquidity(ctx, trades)
+	if m.as.InAuction() {
+		return nil, nil
 	}
 
 	return trades, nil
@@ -2133,10 +2133,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			return nil, err
 		}
 	}
-	m.checkLiquidity(nil)
-	if !m.as.InAuction() && m.as.AuctionStart() {
-		m.EnterAuction(ctx)
-	}
+	m.checkLiquidity(ctx, nil)
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
@@ -3133,11 +3130,8 @@ func (m *Market) cancelLiquidityProvision(
 		_ = m.equityShares.Shares()
 	}
 
-	m.checkLiquidity(nil)
-	// start the liquidity monitoring auction if required
-	if !m.as.InAuction() && m.as.AuctionStart() {
-		m.EnterAuction(ctx)
-	}
+	m.checkLiquidity(ctx, nil)
+
 	return nil
 }
 
@@ -3415,16 +3409,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	m.updateLiquidityFee(ctx)
 	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 
-	m.checkLiquidity(nil)
-	// end the liquidity monitoring auction if it's ongoing and there's now enough stake
-	if m.as.InAuction() && m.as.AuctionEnd() {
-		m.LeaveAuction(ctx, m.currentTime)
-	}
+	m.checkLiquidity(ctx, nil)
 
 	return nil
 }
 
-func (m *Market) checkLiquidity(trades []*types.Trade) {
+func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
 	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
 	var targetStake float64
@@ -3440,6 +3430,17 @@ func (m *Market) checkLiquidity(trades []*types.Trade) {
 		float64(m.getSuppliedStake()),
 		targetStake,
 		vBid, vAsk)
+
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+	}
+	// end the liquidity monitoring auction if possible
+	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
+		//TODO:Reconcile with price monitoring
+		m.LeaveAuction(ctx, m.currentTime)
+	}
+
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
