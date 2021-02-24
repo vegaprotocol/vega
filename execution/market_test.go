@@ -3913,6 +3913,9 @@ func Test3008CancelLiquidityProvision(t *testing.T) {
 		}
 	})
 
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+	fmt.Printf("\n\n%#v\n\n", tm.market.GetMarketData())
+
 	// now we do a cancellation
 	lpCancel := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
@@ -3970,4 +3973,20 @@ func Test3008CancelLiquidityProvision(t *testing.T) {
 		}
 	})
 
+	newOrder := tpl.New(types.Order{
+		MarketId:    tm.market.GetID(),
+		Size:        20,
+		Remaining:   20,
+		Price:       5250,
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     "trader-0",
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+	})
+
+	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
+	assert.NoError(t, err)
+	assert.True(t, len(cnf.Trades) > 0)
+
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+	fmt.Printf("\n\n%#v\n\n", tm.market.GetMarketData())
 }
