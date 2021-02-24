@@ -3197,6 +3197,12 @@ func (m *Market) cancelLiquidityProvision(
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares()
 	}
+
+	m.checkLiquidity(nil)
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+	}
 	return nil
 }
 
