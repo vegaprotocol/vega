@@ -448,6 +448,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 	needsCreateBuys, needsUpdateBuys := e.createOrdersFromShape(party, buysShape, types.Side_SIDE_BUY)
 	needsCreateSells, needsUpdateSells := e.createOrdersFromShape(party, sellsShape, types.Side_SIDE_SELL)
 	lp.Status = types.LiquidityProvision_STATUS_ACTIVE
+	e.broker.Send(events.NewLiquidityProvisionEvent(context.Background(), lp))
 
 	return append(needsCreateBuys, needsCreateSells...),
 		append(needsUpdateBuys, needsUpdateSells...),
