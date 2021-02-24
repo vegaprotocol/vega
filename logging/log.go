@@ -107,6 +107,11 @@ func (log *Logger) GetLevel() Level {
 	return (Level)(log.config.Level.Level())
 }
 
+// IsDebug returns true if logger level is less or equal to DebugLevel.
+func (log *Logger) IsDebug() bool {
+	return log.GetLevel() <= DebugLevel
+}
+
 // GetLevelString return a string representation of the current
 // log level
 func (log *Logger) GetLevelString() string {
