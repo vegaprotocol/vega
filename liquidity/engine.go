@@ -469,7 +469,14 @@ func buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyI
 }
 
 func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.OrderAmendment) {
-	lm := e.liquidityOrders[party]
+	lm, ok := e.liquidityOrders[party]
+	if !ok {
+		lm = map[string]*types.Order{}
+		e.liquidityOrders[party] = lm
+		if _, ok := e.orders[party]; !ok {
+			e.orders[party] = map[string]*types.Order{}
+		}
+	}
 	lp := e.LiquidityProvisionByPartyID(party)
 
 	var (
