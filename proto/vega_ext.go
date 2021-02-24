@@ -4,6 +4,7 @@ package proto
 
 import (
 	"strconv"
+	"time"
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -16,6 +17,20 @@ func (l *LiquidityProvision) Float64Fee() float64 {
 		return 0
 	}
 	return v
+}
+
+// Create sets the creation time (CreatedAt) to t and returns the
+// updated order.
+func (o *Order) Create(t time.Time) *Order {
+	o.CreatedAt = t.UnixNano()
+	return o
+}
+
+// Update sets the modification time (UpdatedAt) to t and returns the
+// updated order.
+func (o *Order) Update(t time.Time) *Order {
+	o.UpdatedAt = t.UnixNano()
+	return o
 }
 
 // IsPersistent returns true if the order is persistent.
