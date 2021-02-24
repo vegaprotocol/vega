@@ -1629,8 +1629,17 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
 	)
 
-	// 2000 - 475 should be enough
-	lp.CommitmentAmount = 2000 - 475
+	fmt.Printf("\n\n%#v\n\n", tm.market.GetMarketData())
+
+	// 2000 + 600 should be enough to get us on top of the
+	// target stake
+	lp.CommitmentAmount = 2000 + 600
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+	)
+
+	// 2600 - 125 should be enough to get just at the required stake
+	lp.CommitmentAmount = 2600 - 125
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
 	)
