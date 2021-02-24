@@ -5184,7 +5184,6 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	//TODO: Refactor m.checkLiquidity() so it handles auction
 	//TODO: In all cases compare target_stake and supplied_stake returned by market data API to make sure it's in line with engine's behaviour
 	//TODO: Liquidity monitoring engine should handle checking if commitment can be reduced
-	//TODO: Liquidity monitoring engine should handle checking best_bid & best_ask
 	//TODO: Market config should contain c1
 	//TODO: Make sure triggers specify Liquidity monitoring where necessary
 }
