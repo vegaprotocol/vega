@@ -83,6 +83,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 
 	mon := NewMonitor()
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
+	h.AuctionState.EXPECT().InAuction().Return(false).Times(len(tests))
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldStart {
