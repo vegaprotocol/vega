@@ -78,9 +78,9 @@ func TestMarket_RejectLPSubmissionIfSideMissing(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
-	// Submitting a zero or smaller fee should cause a reject
+	// Submitting a fee greater than 1.0 should cause a reject
 	lps = &types.LiquidityProvisionSubmission{
-		Fee:              "0.50",
+		Fee:              "10.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
 		Buys:             buys,
