@@ -789,7 +789,7 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 func (r *myPartyResolver) LiquidityProvisions(
 	ctx context.Context,
 	party *types.Party,
-	market *string,
+	market, ref *string,
 ) ([]*types.LiquidityProvision, error) {
 	var mid string
 	if market != nil {
@@ -806,7 +806,18 @@ func (r *myPartyResolver) LiquidityProvisions(
 		return nil, customErrorFromStatus(err)
 	}
 
-	return res.LiquidityProvisions, nil
+	var out []*types.LiquidityProvision
+	if ref != nil {
+		for _, v := range res.LiquidityProvisions {
+			if v.Reference == *ref {
+				out = append(out, v)
+			}
+		}
+	} else {
+		out = res.LiquidityProvisions
+	}
+
+	return out, nil
 }
 
 func (r *myPartyResolver) Margins(ctx context.Context,
@@ -1915,7 +1926,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error) {
+func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, maybeRef *string) (*PreparedLiquidityProvision, error) {
 	if commitmentAmount < 0 {
 		return nil, errors.New("commitmentAmount can't be negative")
 	}
@@ -1930,6 +1941,11 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 		return nil, err
 	}
 
+	var ref string
+	if maybeRef != nil {
+		ref = *maybeRef
+	}
+
 	req := &protoapi.PrepareLiquidityProvisionRequest{
 		Submission: &types.LiquidityProvisionSubmission{
 			MarketId:         marketID,
@@ -1937,6 +1953,7 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 			Fee:              fee,
 			Buys:             pBuys,
 			Sells:            pSells,
+			Reference:        ref,
 		},
 	}
 	resp, err := r.tradingClient.PrepareLiquidityProvision(ctx, req)

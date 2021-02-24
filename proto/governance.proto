@@ -68,6 +68,8 @@ message NewMarketCommitment {
   repeated LiquidityOrder sells = 3;
   // A set of liquidity buy orders to meet the liquidity provision obligation
   repeated LiquidityOrder buys  = 4;
+  // A reference to be associated to all orders created from this commitment
+  string reference = 5;
 
   // Note: We create a new type here as we do not require the marketID from the submission
   // the governance engine will create a LiquidityProvisionSubmission from
