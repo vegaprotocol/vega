@@ -155,7 +155,7 @@ func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisi
 	if lp.CommitmentAmount == 0 {
 		return nil
 	}
-	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee <= 0 || len(lp.Fee) <= 0 {
+	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee <= 0 || len(lp.Fee) <= 0 || fee > 1.0 {
 		return errors.New("invalid liquidity provision fee")
 	}
 	if err := validateShape(lp.Buys, types.Side_SIDE_BUY); err != nil {
