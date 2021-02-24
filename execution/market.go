@@ -1854,42 +1854,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	return err
 }
 
-func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Context, partyID string) error {
-	if _, err := m.liquidity.CancelLiquidityProvision(ctx, partyID); err != nil {
-		return err
-	}
-	asset, err := m.mkt.GetAsset()
-	if err != nil {
-		return err
-	}
-	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.Id, asset)
-	if err != nil {
-		return err
-	}
-	var amount int64 = int64(bacc.Balance)
-	transfer := &types.Transfer{
-		Owner: partyID,
-		Amount: &types.FinancialAmount{
-			Amount: amount,
-			Asset:  asset,
-		},
-		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
-		MinAmount: amount,
-	}
-	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, partyID, transfer)
-	if err != nil {
-		return err
-	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
-
-	m.checkLiquidity(nil)
-	// start the liquidity monitoring auction if required
-	if !m.as.InAuction() && m.as.AuctionStart() {
-		m.EnterAuction(ctx)
-	}
-	return nil
-}
-
 func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
@@ -3167,6 +3131,12 @@ func (m *Market) cancelLiquidityProvision(
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares()
+	}
+
+	m.checkLiquidity(nil)
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
 	}
 	return nil
 }
