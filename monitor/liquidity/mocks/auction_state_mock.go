@@ -46,6 +46,32 @@ func (mr *MockAuctionStateMockRecorder) EndAuction() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndAuction", reflect.TypeOf((*MockAuctionState)(nil).EndAuction))
 }
 
+// ExtendAuction mocks base method
+func (m *MockAuctionState) ExtendAuction(arg0 proto.AuctionDuration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExtendAuction", arg0)
+}
+
+// ExtendAuction indicates an expected call of ExtendAuction
+func (mr *MockAuctionStateMockRecorder) ExtendAuction(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuction", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuction), arg0)
+}
+
+// InAuction mocks base method
+func (m *MockAuctionState) InAuction() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InAuction")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// InAuction indicates an expected call of InAuction
+func (mr *MockAuctionStateMockRecorder) InAuction() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InAuction", reflect.TypeOf((*MockAuctionState)(nil).InAuction))
+}
+
 // IsLiquidityAuction mocks base method
 func (m *MockAuctionState) IsLiquidityAuction() bool {
 	m.ctrl.T.Helper()
