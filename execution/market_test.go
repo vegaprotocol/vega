@@ -1629,8 +1629,6 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
 	)
 
-	fmt.Printf("\n\n%#v\n\n", tm.market.GetMarketData())
-
 	// 2000 + 600 should be enough to get us on top of the
 	// target stake
 	lp.CommitmentAmount = 2000 + 600
@@ -3480,9 +3478,6 @@ func TestLPOrdersRollback(t *testing.T) {
 	err := tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp")
 	// require.Error(t, err)
 	assert.EqualError(t, err, "margin check failed")
-	for _, evt := range tm.events {
-		fmt.Printf("%#v\n", evt)
-	}
 
 	t.Run("GeneralAccountBalance", func(t *testing.T) {
 		newBalance := tm.PartyGeneralAccount(t, "trader-2").Balance +
