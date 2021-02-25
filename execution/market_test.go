@@ -3733,6 +3733,22 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	addAccountWithAmount(tm, "trader-A", 2000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
+	auxParty := "auxParty"
+	addAccount(tm, auxParty)
+
+	//Assure liquidity auction won't be triggered
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 100)
+	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
 
 	// Leave auction right away
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
@@ -3774,14 +3790,14 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "trader-A", "id-lp"))
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
-	assert.Equal(t, int64(7), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
 
 	// Now move the mark price
 	o10 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
 	o10conf, err := tm.market.SubmitOrder(ctx, o10)
 	require.NotNil(t, o10conf)
 	require.NoError(t, err)
-	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 }
 
 func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashIOC(t *testing.T) {
