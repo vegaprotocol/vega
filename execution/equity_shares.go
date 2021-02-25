@@ -39,6 +39,11 @@ func (es *EquityShares) SetPartyStake(id string, newStake float64) {
 	// first time we set the newStake and mvp as avg.
 	if !found {
 		if newStake > 0 {
+			// if marketValueProxy == 0
+			// we assume mvp will be our stake?
+			if es.mvp == 0 {
+				es.mvp = newStake
+			}
 			es.lps[id] = &lp{stake: newStake, avg: es.mvp}
 			return
 		}
@@ -112,7 +117,9 @@ func (es *EquityShares) Shares() map[string]float64 {
 	}
 
 	for id, eq := range shares {
-		shares[id] = eq / totalEquity
+		eqshare := eq / totalEquity
+		shares[id] = eqshare
+		es.lps[id].share = eqshare
 	}
 
 	return shares
