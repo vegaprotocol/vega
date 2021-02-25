@@ -3908,6 +3908,8 @@ func Test3008CancelLiquidityProvision(t *testing.T) {
 		}
 	})
 
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+
 	// now we do a cancellation
 	lpCancel := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
@@ -3965,4 +3967,206 @@ func Test3008CancelLiquidityProvision(t *testing.T) {
 		}
 	})
 
+	newOrder := tpl.New(types.Order{
+		MarketId:    tm.market.GetID(),
+		Size:        20,
+		Remaining:   20,
+		Price:       5250,
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     "trader-0",
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+	})
+
+	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
+	assert.NoError(t, err)
+	assert.True(t, len(cnf.Trades) > 0)
+
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+}
+
+func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount("trader-0", 1000000).
+		WithAccountAndAmount("trader-1", 1000000).
+		WithAccountAndAmount("trader-2", 10000000000).
+		// provide stake as well but will cancel
+		WithAccountAndAmount("trader-2-bis", 10000000000).
+		WithAccountAndAmount("trader-3", 1000000).
+		WithAccountAndAmount("trader-4", 1000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	orderParams := []struct {
+		id        string
+		size      uint64
+		side      types.Side
+		tif       types.Order_TimeInForce
+		pegRef    types.PeggedReference
+		pegOffset int64
+	}{
+		{"trader-4", 1, types.Side_SIDE_BUY, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_BID, -2000},
+		{"trader-3", 1, types.Side_SIDE_SELL, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, 1000},
+	}
+	traderA, traderB := orderParams[0], orderParams[1]
+
+	tpl := OrderTemplate{
+		Type: types.Order_TYPE_LIMIT,
+	}
+	var orders = []*types.Order{
+		// Limit Orders
+		tpl.New(types.Order{
+			Size:        20,
+			Remaining:   20,
+			Price:       uint64(5500 + traderA.pegOffset), // 3500
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-0",
+			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+		}),
+		tpl.New(types.Order{
+			Size:        20,
+			Remaining:   20,
+			Price:       uint64(5000 - traderB.pegOffset), // 4000
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     "trader-1",
+			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+		}),
+		tpl.New(types.Order{
+			Size:        10,
+			Remaining:   10,
+			Price:       5500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-2",
+			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+		}),
+		tpl.New(types.Order{
+			Size:        100,
+			Remaining:   100,
+			Price:       5000,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     "trader-2",
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		}),
+		tpl.New(types.Order{
+			Size:        100,
+			Remaining:   100,
+			Price:       3500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-0",
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		}),
+		tpl.New(types.Order{
+			Size:        20,
+			Remaining:   20,
+			Price:       8500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     "trader-0",
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		}),
+
+		// Pegged Orders
+		tpl.New(types.Order{
+			PartyId:     traderA.id,
+			Side:        traderA.side,
+			Size:        traderA.size,
+			Remaining:   traderA.size,
+			TimeInForce: traderA.tif,
+			PeggedOrder: &types.PeggedOrder{
+				Reference: traderA.pegRef,
+				Offset:    traderA.pegOffset,
+			},
+		}),
+		tpl.New(types.Order{
+			PartyId:     traderB.id,
+			Side:        traderB.side,
+			Size:        traderB.size,
+			Remaining:   traderB.size,
+			TimeInForce: traderB.tif,
+			PeggedOrder: &types.PeggedOrder{
+				Reference: traderB.pegRef,
+				Offset:    traderB.pegOffset,
+			},
+		}),
+	}
+
+	tm.WithSubmittedOrders(t, orders...)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lp := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 2000000,
+		Fee:              "0.01",
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 2},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 1},
+		},
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 10, Offset: -1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 13, Offset: -15},
+		},
+	}
+
+	// Leave the auction
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
+
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp"))
+	assert.Equal(t, 1, tm.market.GetLPSCount())
+
+	// this is our second stake provider
+	// small player
+	lp2 := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 1000,
+		Fee:              "0.01",
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 2},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 1},
+		},
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 10, Offset: -1},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 13, Offset: -15},
+		},
+	}
+
+	// cleanup the events, we want to make sure our orders are created
+	tm.events = nil
+
+	require.NoError(t, tm.market.SubmitLiquidityProvision(
+		ctx, lp2, "trader-2-bis", "id-lp-2"))
+	assert.Equal(t, 2, tm.market.GetLPSCount())
+
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+
+	mktData := tm.market.GetMarketData()
+	assert.Equal(t, mktData.MarketValueProxy, "2001000")
+	assert.Len(t, mktData.LiquidityProviderFeeShare, 2)
 }

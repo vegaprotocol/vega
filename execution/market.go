@@ -477,6 +477,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	m.liquidity.OnChainTimeUpdate(ctx, t)
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
+	m.feeSplitter.SetCurrentTime(t)
 
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
@@ -493,7 +494,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		m.lastEquityShareDistributed = t
 
 		if err := m.distributeLiquidityFees(ctx); err != nil {
-			m.log.Panic("Distributing Liquidity Fees", logging.Error(err))
+			m.log.Panic("liquidity fee distribution error", logging.Error(err))
 		}
 	}
 
@@ -537,13 +538,26 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	// TODO(): handle market start time
 
 	m.risk.CalculateFactors(ctx, t)
-
 	timer.EngineTimeCounterAdd()
+
+	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
+		ts := m.liquidity.ProvisionsPerParty().TotalStake()
+		m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
+		m.equityShares.WithMVP(m.lastMarketValueProxy)
+
+		m.feeSplitter.TimeWindowStart(t)
+	}
 
 	if !closed {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
-		return
+	} else {
+		m.closeMarket(ctx, t)
 	}
+
+	return
+}
+
+func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.markPrice)
@@ -584,15 +598,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		}
 	}
 
-	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
-		ts := m.liquidity.ProvisionsPerParty().TotalStake()
-		m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
-		m.equityShares.WithMVP(m.lastMarketValueProxy)
-
-		m.feeSplitter.TimeWindowStart(t)
-	}
-
-	return
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
@@ -1721,7 +1726,15 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// Any of the closed out traders could be liquidity providers,
 	// we should cancel their LP submission
 	for _, trader := range closedMPs {
-		m.liquidity.CancelLiquidityProvision(ctx, trader.Party())
+		party := trader.Party()
+		if m.liquidity.IsLiquidityProvider(party) {
+			if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
+				m.log.Debug("could not cancel liquidity provision",
+					logging.String("market-id", m.GetID()),
+					logging.String("party-id", party),
+					logging.Error(err))
+			}
+		}
 	}
 	return err
 }
@@ -2897,7 +2910,8 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 	)
 }
 
-func (m *Market) cancelLiquidityProvision(ctx context.Context, party string) error {
+func (m *Market) cancelLiquidityProvision(
+	ctx context.Context, party string, isDistressed bool) error {
 	// cancel the liquidity provision
 	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
 	if err != nil {
@@ -2909,16 +2923,21 @@ func (m *Market) cancelLiquidityProvision(ctx context.Context, party string) err
 		return err
 	}
 
-	// now we cancel all existing orders
-	for _, order := range cancelOrders {
-		if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
-			// nothing much we can do here, I suppose
-			// somethign wrong might have happen...
-			// does this need a panic? need to think about it...
-			m.log.Debug("unable cancel liquidity order",
-				logging.String("party", party),
-				logging.String("order-id", order.Id),
-				logging.Error(err))
+	// is our party distressed?
+	// if yes, the orders have been cancelled by the resolve
+	// distresed traders flow.
+	if !isDistressed {
+		// now we cancel all existing orders
+		for _, order := range cancelOrders {
+			if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
+				// nothing much we can do here, I suppose
+				// somethign wrong might have happen...
+				// does this need a panic? need to think about it...
+				m.log.Debug("unable cancel liquidity order",
+					logging.String("party", party),
+					logging.String("order-id", order.Id),
+					logging.Error(err))
+			}
 		}
 	}
 
@@ -2928,27 +2947,37 @@ func (m *Market) cancelLiquidityProvision(ctx context.Context, party string) err
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(
 		ctx, party, m.GetID(), asset)
 	if err != nil {
-		return err
+		m.log.Debug("could not get the party bond accound",
+			logging.String("party-id", party),
+			logging.Error(err))
 	}
 
-	transfer := &types.Transfer{
-		Owner: party,
-		Amount: &types.FinancialAmount{
-			Amount: int64(bondAcc.Balance),
-			Asset:  asset,
-		},
-		Type:      types.TransferType_TRANSFER_TYPE_BOND_HIGH,
-		MinAmount: int64(bondAcc.Balance),
+	// now if our bondAccount is nil
+	// it just mean that the trader my have gone the distressed path
+	// also if the balance is already 0, let's not bother created a
+	// transfer request
+	if err != nil && bondAcc.Balance > 0 {
+		transfer := &types.Transfer{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Amount: int64(bondAcc.Balance),
+				Asset:  asset,
+			},
+			Type:      types.TransferType_TRANSFER_TYPE_BOND_HIGH,
+			MinAmount: int64(bondAcc.Balance),
+		}
+
+		tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
+		if err != nil {
+			m.log.Debug("bond update error", logging.Error(err))
+			return err
+		}
+		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}
 
-	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
-	if err != nil {
-		m.log.Debug("bond update error", logging.Error(err))
-		return err
-	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
-
+	// now let's update the fee selection
 	m.updateLiquidityFee(ctx)
+	// and remove the party from the equitey share like calculation
 	m.equityShares.SetPartyStake(party, float64(0))
 	return nil
 }
@@ -2994,7 +3023,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// if this amendment is to reduce the stake to 0, then we'll want to
 		// cancel this lp submission
 		if sub.CommitmentAmount == 0 {
-			return m.cancelLiquidityProvision(ctx, party)
+			return m.cancelLiquidityProvision(ctx, party, false)
 		}
 	}
 

@@ -129,6 +129,12 @@ func (e *Engine) stopLiquidityProvision(
 
 }
 
+// IsLiquidityProvider returns true if the party hold any liquidity commitmement
+func (e *Engine) IsLiquidityProvider(party string) bool {
+	_, ok := e.provisions[party]
+	return ok
+}
+
 // RejectLiquidityProvision removes a parties commitment of liquidity
 func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
 	_, err := e.stopLiquidityProvision(
