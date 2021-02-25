@@ -1109,6 +1109,7 @@ An Liquidity provider commitment
 | buys | [LiquidityOrderReference](#vega.LiquidityOrderReference) | repeated | A set of liquidity buy orders to meet the liquidity provision obligation |
 | version | [string](#string) |  | Version of this liquidity provision order |
 | status | [LiquidityProvision.Status](#vega.LiquidityProvision.Status) |  | Status of this liquidity provision order |
+| reference | [string](#string) |  | A reference shared between this liquidity provision and all it&#39;s orders |
 
 
 
@@ -1128,6 +1129,7 @@ An Liquidity provider commitment
 | fee | [string](#string) |  | Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers |
 | sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | A set of liquidity sell orders to meet the liquidity provision obligation |
 | buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | A set of liquidity buy orders to meet the liquidity provision obligation |
+| reference | [string](#string) |  | A reference to be added to every order created out of this liquidityProvisionSubmission |
 
 
 
@@ -2483,6 +2485,7 @@ A commitment of liquidity to be made by the party which proposes a market
 | fee | [string](#string) |  | Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers |
 | sells | [LiquidityOrder](#vega.LiquidityOrder) | repeated | A set of liquidity sell orders to meet the liquidity provision obligation |
 | buys | [LiquidityOrder](#vega.LiquidityOrder) | repeated | A set of liquidity buy orders to meet the liquidity provision obligation |
+| reference | [string](#string) |  | A reference to be associated to all orders created from this commitment |
 
 
 

@@ -3748,6 +3748,10 @@
         "status": {
           "$ref": "#/definitions/vegaLiquidityProvisionStatus",
           "title": "Status of this liquidity provision order"
+        },
+        "reference": {
+          "type": "string",
+          "title": "A reference shared between this liquidity provision and all it's orders"
         }
       },
       "title": "An Liquidity provider commitment"
@@ -3795,6 +3799,10 @@
             "$ref": "#/definitions/vegaLiquidityOrder"
           },
           "title": "A set of liquidity buy orders to meet the liquidity provision obligation"
+        },
+        "reference": {
+          "type": "string",
+          "title": "A reference to be added to every order created out of this liquidityProvisionSubmission"
         }
       }
     },
@@ -4259,6 +4267,10 @@
             "$ref": "#/definitions/vegaLiquidityOrder"
           },
           "title": "A set of liquidity buy orders to meet the liquidity provision obligation"
+        },
+        "reference": {
+          "type": "string",
+          "title": "A reference to be associated to all orders created from this commitment"
         }
       },
       "title": "A commitment of liquidity to be made by the party which proposes a market"
