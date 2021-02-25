@@ -200,8 +200,8 @@ func (r *myMarketResolver) TradingModeConfig(ctx context.Context, obj *types.Mar
 
 func (r *myMarketResolver) TargetStakeParameters(ctx context.Context, obj *types.Market) (*TargetStakeParameters, error) {
 	return &TargetStakeParameters{
-		TimeWindow:    int(obj.TargetStakeParameters.TimeWindow),
-		ScalingFactor: obj.TargetStakeParameters.ScalingFactor,
+		TimeWindow:    int(obj.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow),
+		ScalingFactor: obj.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor,
 	}, nil
 
 }

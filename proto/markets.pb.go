@@ -81,7 +81,7 @@ func (x Market_State) String() string {
 }
 
 func (Market_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_a051e0d8e40205f1, []int{20, 0}
+	return fileDescriptor_a051e0d8e40205f1, []int{21, 0}
 }
 
 // The trading mode the market is currently running, also referred to as 'market state'
@@ -121,7 +121,7 @@ func (x Market_TradingMode) String() string {
 }
 
 func (Market_TradingMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_a051e0d8e40205f1, []int{20, 1}
+	return fileDescriptor_a051e0d8e40205f1, []int{21, 1}
 }
 
 // An auction duration is used to configure 3 auction periods:
@@ -1226,6 +1226,56 @@ func (m *PriceMonitoringSettings) GetUpdateFrequency() int64 {
 	return 0
 }
 
+// LiquidityMonitoringParameters contains settings used for liquidity monitoring
+type LiquidityMonitoringParameters struct {
+	// Specifies parameters related to target stake calculation
+	TargetStakeParameters *TargetStakeParameters `protobuf:"bytes,1,opt,name=target_stake_parameters,json=targetStakeParameters,proto3" json:"target_stake_parameters,omitempty"`
+	// Specifies the triggering ratio for entering liquidity auction
+	TriggeringRatio      float64  `protobuf:"fixed64,2,opt,name=triggering_ratio,json=triggeringRatio,proto3" json:"triggering_ratio,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *LiquidityMonitoringParameters) Reset()         { *m = LiquidityMonitoringParameters{} }
+func (m *LiquidityMonitoringParameters) String() string { return proto.CompactTextString(m) }
+func (*LiquidityMonitoringParameters) ProtoMessage()    {}
+func (*LiquidityMonitoringParameters) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a051e0d8e40205f1, []int{19}
+}
+
+func (m *LiquidityMonitoringParameters) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LiquidityMonitoringParameters.Unmarshal(m, b)
+}
+func (m *LiquidityMonitoringParameters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LiquidityMonitoringParameters.Marshal(b, m, deterministic)
+}
+func (m *LiquidityMonitoringParameters) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LiquidityMonitoringParameters.Merge(m, src)
+}
+func (m *LiquidityMonitoringParameters) XXX_Size() int {
+	return xxx_messageInfo_LiquidityMonitoringParameters.Size(m)
+}
+func (m *LiquidityMonitoringParameters) XXX_DiscardUnknown() {
+	xxx_messageInfo_LiquidityMonitoringParameters.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LiquidityMonitoringParameters proto.InternalMessageInfo
+
+func (m *LiquidityMonitoringParameters) GetTargetStakeParameters() *TargetStakeParameters {
+	if m != nil {
+		return m.TargetStakeParameters
+	}
+	return nil
+}
+
+func (m *LiquidityMonitoringParameters) GetTriggeringRatio() float64 {
+	if m != nil {
+		return m.TriggeringRatio
+	}
+	return 0
+}
+
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {
 	// Specifies length of time window expressed in seconds for target stake calculation
@@ -1241,7 +1291,7 @@ func (m *TargetStakeParameters) Reset()         { *m = TargetStakeParameters{} }
 func (m *TargetStakeParameters) String() string { return proto.CompactTextString(m) }
 func (*TargetStakeParameters) ProtoMessage()    {}
 func (*TargetStakeParameters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a051e0d8e40205f1, []int{19}
+	return fileDescriptor_a051e0d8e40205f1, []int{20}
 }
 
 func (m *TargetStakeParameters) XXX_Unmarshal(b []byte) error {
@@ -1299,8 +1349,8 @@ type Market struct {
 	TradingModeConfig isMarket_TradingModeConfig `protobuf_oneof:"trading_mode_config"`
 	// PriceMonitoringSettings for the market
 	PriceMonitoringSettings *PriceMonitoringSettings `protobuf:"bytes,6,opt,name=price_monitoring_settings,json=priceMonitoringSettings,proto3" json:"price_monitoring_settings,omitempty"`
-	// TargetStakeParameters for the market
-	TargetStakeParameters *TargetStakeParameters `protobuf:"bytes,7,opt,name=target_stake_parameters,json=targetStakeParameters,proto3" json:"target_stake_parameters,omitempty"`
+	// LiquidityMonitoringParameters for the market
+	LiquidityMonitoringParameters *LiquidityMonitoringParameters `protobuf:"bytes,7,opt,name=liquidity_monitoring_parameters,json=liquidityMonitoringParameters,proto3" json:"liquidity_monitoring_parameters,omitempty"`
 	// Current mode of execution of the market
 	TradingMode Market_TradingMode `protobuf:"varint,8,opt,name=trading_mode,json=tradingMode,proto3,enum=vega.Market_TradingMode" json:"trading_mode,omitempty"`
 	// Current state of the market
@@ -1316,7 +1366,7 @@ func (m *Market) Reset()         { *m = Market{} }
 func (m *Market) String() string { return proto.CompactTextString(m) }
 func (*Market) ProtoMessage()    {}
 func (*Market) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a051e0d8e40205f1, []int{20}
+	return fileDescriptor_a051e0d8e40205f1, []int{21}
 }
 
 func (m *Market) XXX_Unmarshal(b []byte) error {
@@ -1416,9 +1466,9 @@ func (m *Market) GetPriceMonitoringSettings() *PriceMonitoringSettings {
 	return nil
 }
 
-func (m *Market) GetTargetStakeParameters() *TargetStakeParameters {
+func (m *Market) GetLiquidityMonitoringParameters() *LiquidityMonitoringParameters {
 	if m != nil {
-		return m.TargetStakeParameters
+		return m.LiquidityMonitoringParameters
 	}
 	return nil
 }
@@ -1542,6 +1592,7 @@ func init() {
 	proto.RegisterType((*PriceMonitoringTrigger)(nil), "vega.PriceMonitoringTrigger")
 	proto.RegisterType((*PriceMonitoringParameters)(nil), "vega.PriceMonitoringParameters")
 	proto.RegisterType((*PriceMonitoringSettings)(nil), "vega.PriceMonitoringSettings")
+	proto.RegisterType((*LiquidityMonitoringParameters)(nil), "vega.LiquidityMonitoringParameters")
 	proto.RegisterType((*TargetStakeParameters)(nil), "vega.TargetStakeParameters")
 	proto.RegisterType((*Market)(nil), "vega.Market")
 	proto.RegisterType((*MarketTimestamps)(nil), "vega.MarketTimestamps")
