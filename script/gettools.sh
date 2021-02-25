@@ -30,7 +30,10 @@ github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.2.0
 github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v1.3.2
 golang.org/x/lint/golint
 golang.org/x/tools/cmd/goimports@v0.0.0-20190329200012-0ec5c269d481
-honnef.co/go/tools/cmd/staticcheck@2019.2.3"
+honnef.co/go/tools/cmd/staticcheck@2019.2.3
+github.com/bufbuild/buf/cmd/buf@v0.36.0
+github.com/bufbuild/buf/cmd/protoc-gen-buf-check-breaking@v0.36.0
+github.com/bufbuild/buf/cmd/protoc-gen-buf-check-lint@v0.36.0"
 	# Note: Make sure the above tools and versions match the ones in devops-infra/docker/cipipeline/Dockerfile
 	echo "$tools" | while read -r toolurl ; do
 		go get "$toolurl"
