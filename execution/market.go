@@ -297,7 +297,7 @@ func NewMarket(
 	}
 	lMonitor := lmon.NewMonitor()
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
+	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
 	// The market is initially create in a proposed state

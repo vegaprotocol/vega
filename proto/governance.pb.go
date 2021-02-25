@@ -413,6 +413,8 @@ type NewMarketConfiguration struct {
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	// Price monitoring parameters
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,4,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
+	// Liquidity monitoring parameters
+	LiquidityMonitoringParameters *LiquidityMonitoringParameters `protobuf:"bytes,5,opt,name=liquidity_monitoring_parameters,json=liquidityMonitoringParameters,proto3" json:"liquidity_monitoring_parameters,omitempty"`
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -479,6 +481,13 @@ func (m *NewMarketConfiguration) GetMetadata() []string {
 func (m *NewMarketConfiguration) GetPriceMonitoringParameters() *PriceMonitoringParameters {
 	if m != nil {
 		return m.PriceMonitoringParameters
+	}
+	return nil
+}
+
+func (m *NewMarketConfiguration) GetLiquidityMonitoringParameters() *LiquidityMonitoringParameters {
+	if m != nil {
+		return m.LiquidityMonitoringParameters
 	}
 	return nil
 }

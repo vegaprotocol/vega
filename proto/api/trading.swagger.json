@@ -3931,6 +3931,21 @@
       },
       "title": "Represents a ledger entry on Vega"
     },
+    "vegaLiquidityMonitoringParameters": {
+      "type": "object",
+      "properties": {
+        "target_stake_parameters": {
+          "$ref": "#/definitions/vegaTargetStakeParameters",
+          "title": "Specifies parameters related to target stake calculation"
+        },
+        "triggering_ratio": {
+          "type": "number",
+          "format": "double",
+          "title": "Specifies the triggering ratio for entering liquidity auction"
+        }
+      },
+      "title": "LiquidityMonitoringParameters contains settings used for liquidity monitoring"
+    },
     "vegaLiquidityOrder": {
       "type": "object",
       "properties": {
@@ -4245,9 +4260,9 @@
           "$ref": "#/definitions/vegaPriceMonitoringSettings",
           "title": "PriceMonitoringSettings for the market"
         },
-        "target_stake_parameters": {
-          "$ref": "#/definitions/vegaTargetStakeParameters",
-          "title": "TargetStakeParameters for the market"
+        "liquidity_monitoring_parameters": {
+          "$ref": "#/definitions/vegaLiquidityMonitoringParameters",
+          "title": "LiquidityMonitoringParameters for the market"
         },
         "trading_mode": {
           "$ref": "#/definitions/MarketTradingMode",
@@ -4617,6 +4632,10 @@
         "price_monitoring_parameters": {
           "$ref": "#/definitions/vegaPriceMonitoringParameters",
           "title": "Price monitoring parameters"
+        },
+        "liquidity_monitoring_parameters": {
+          "$ref": "#/definitions/vegaLiquidityMonitoringParameters",
+          "title": "Liquidity monitoring parameters"
         },
         "simple": {
           "$ref": "#/definitions/vegaSimpleModelParams",

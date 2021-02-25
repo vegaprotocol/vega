@@ -160,9 +160,21 @@ func createMarket(
 		definition.PriceMonitoringParameters = pmParams
 	}
 
-	// get target stake parameters
-	tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
-	tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
+	if definition.LiquidityMonitoringParameters == nil {
+		// get target stake parameters
+		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
+		tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
+		//get triggering ratio
+		triggeringRatio, _ := netp.GetFloat(netparams.MarketLiquidityTargetStakeTriggeringRatio)
+
+		definition.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
+			TargetStakeParameters: &types.TargetStakeParameters{
+				TimeWindow:    int64(tsTimeWindow.Seconds()),
+				ScalingFactor: tsScalingFactor,
+			},
+			TriggeringRatio: triggeringRatio,
+		}
+	}
 
 	market := &types.Market{
 		Id:            marketID,
@@ -191,10 +203,7 @@ func createMarket(
 			Parameters:      definition.PriceMonitoringParameters,
 			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
 		},
-		TargetStakeParameters: &types.TargetStakeParameters{
-			TimeWindow:    int64(tsTimeWindow.Seconds()),
-			ScalingFactor: tsScalingFactor,
-		},
+		LiquidityMonitoringParameters: definition.LiquidityMonitoringParameters,
 	}
 	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err

@@ -379,9 +379,12 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: pMonitorSettings,
-		TargetStakeParameters: &types.TargetStakeParameters{
-			TimeWindow:    3600,
-			ScalingFactor: 10,
+		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
+			TargetStakeParameters: &types.TargetStakeParameters{
+				TimeWindow:    3600, // seconds = 1h
+				ScalingFactor: 10,
+			},
+			TriggeringRatio: 0,
 		},
 	}
 
@@ -1704,7 +1707,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 
 	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
-	expectedTargetStake := float64(matchingPrice*oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.TargetStakeParameters.ScalingFactor
+	expectedTargetStake := float64(matchingPrice*oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -5337,7 +5340,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	//current = (target * c1) auction not triggered
 	currentStake := float64(lp1Commitment + lp2Commitment)
 	riskParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
-	maxOrderSizeFp := currentStake/(c1*float64(matchingPrice)*math.Max(riskParams.FactorShort, riskParams.FactorLong)*tm.mktCfg.TargetStakeParameters.ScalingFactor) - float64(sellConf2.Order.Size)
+	maxOrderSizeFp := currentStake/(c1*float64(matchingPrice)*math.Max(riskParams.FactorShort, riskParams.FactorLong)*tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor) - float64(sellConf2.Order.Size)
 	require.Greater(t, maxOrderSizeFp, 1.0)
 	maxOrderSize := uint64(math.Floor(maxOrderSizeFp))
 

@@ -47,6 +47,8 @@ message NewMarketConfiguration {
   repeated string metadata = 3;
   // Price monitoring parameters
   PriceMonitoringParameters price_monitoring_parameters = 4;
+  // Liquidity monitoring parameters
+  LiquidityMonitoringParameters liquidity_monitoring_parameters = 5;
   // New market risk model parameters
   oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected
