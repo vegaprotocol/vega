@@ -4169,4 +4169,5 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 	mktData := tm.market.GetMarketData()
 	assert.Equal(t, mktData.MarketValueProxy, "2001000")
 	assert.Len(t, mktData.LiquidityProviderFeeShare, 2)
+
 }

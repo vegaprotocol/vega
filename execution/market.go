@@ -381,31 +381,30 @@ func (m *Market) GetMarketData() types.MarketData {
 	}
 
 	return types.MarketData{
-		Market:                m.GetID(),
-		BestBidPrice:          bestBidPrice,
-		BestBidVolume:         bestBidVolume,
-		BestOfferPrice:        bestOfferPrice,
-		BestOfferVolume:       bestOfferVolume,
-		BestStaticBidPrice:    bestStaticBidPrice,
-		BestStaticBidVolume:   bestStaticBidVolume,
-		BestStaticOfferPrice:  bestStaticOfferPrice,
-		BestStaticOfferVolume: bestStaticOfferVolume,
-		MidPrice:              midPrice,
-		StaticMidPrice:        staticMidPrice,
-		MarkPrice:             m.markPrice,
-		Timestamp:             m.currentTime.UnixNano(),
-		OpenInterest:          m.position.GetOpenInterest(),
-		IndicativePrice:       indicativePrice,
-		IndicativeVolume:      indicativeVolume,
-		AuctionStart:          auctionStart,
-		AuctionEnd:            auctionEnd,
-		MarketTradingMode:     m.as.Mode(),
-		Trigger:               m.as.Trigger(),
-		TargetStake:           strconv.FormatFloat(m.getTargetStake(), 'f', -1, 64),
-		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
-		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
-		MarketValueProxy:      strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
-		// TODO(): set this with actual value when implemented.
+		Market:                    m.GetID(),
+		BestBidPrice:              bestBidPrice,
+		BestBidVolume:             bestBidVolume,
+		BestOfferPrice:            bestOfferPrice,
+		BestOfferVolume:           bestOfferVolume,
+		BestStaticBidPrice:        bestStaticBidPrice,
+		BestStaticBidVolume:       bestStaticBidVolume,
+		BestStaticOfferPrice:      bestStaticOfferPrice,
+		BestStaticOfferVolume:     bestStaticOfferVolume,
+		MidPrice:                  midPrice,
+		StaticMidPrice:            staticMidPrice,
+		MarkPrice:                 m.markPrice,
+		Timestamp:                 m.currentTime.UnixNano(),
+		OpenInterest:              m.position.GetOpenInterest(),
+		IndicativePrice:           indicativePrice,
+		IndicativeVolume:          indicativeVolume,
+		AuctionStart:              auctionStart,
+		AuctionEnd:                auctionEnd,
+		MarketTradingMode:         m.as.Mode(),
+		Trigger:                   m.as.Trigger(),
+		TargetStake:               strconv.FormatFloat(m.getTargetStake(), 'f', -1, 64),
+		SuppliedStake:             strconv.FormatUint(m.getSuppliedStake(), 10),
+		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
+		MarketValueProxy:          strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
 }
@@ -2979,6 +2978,8 @@ func (m *Market) cancelLiquidityProvision(
 	m.updateLiquidityFee(ctx)
 	// and remove the party from the equitey share like calculation
 	m.equityShares.SetPartyStake(party, float64(0))
+	// force update of shares so they are updated for all
+	_ = m.equityShares.Shares()
 	return nil
 }
 
@@ -3110,6 +3111,18 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}()
 
+	defer func() {
+		// so here we check if at least we were able to get hte
+		// liquidty provision in, even if orders are not deployed, we should
+		// be able to calculate the shars etc
+		if !needsCancel && !needsBondRollback {
+			m.updateLiquidityFee(ctx)
+			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
+			// force update of shares so they are updated for all
+			_ = m.equityShares.Shares()
+		}
+	}()
+
 	existingOrders := m.matching.GetOrdersPerParty(party)
 	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, existingOrders, m.repriceFuncW)
 	if err != nil {
@@ -3145,8 +3158,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	m.updateLiquidityFee(ctx)
-	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 	return nil
 }
 
