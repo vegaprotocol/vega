@@ -34,7 +34,7 @@
     },
     "/assets/{asset}/infrastructureFeeAccount": {
       "get": {
-        "summary": "Get a list of infrastructure fees accounts filter eventually by assets",
+        "summary": "Get a list accounts holding infrastructure fees.\nCan be filtered by asset, there will be 1 infrastructure fee account per\nasset in the network.",
         "operationId": "FeeInfrastructureAccounts",
         "responses": {
           "200": {

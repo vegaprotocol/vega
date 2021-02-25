@@ -7011,7 +7011,9 @@ type TradingDataServiceClient interface {
 	MarketAccounts(ctx context.Context, in *MarketAccountsRequest, opts ...grpc.CallOption) (*MarketAccountsResponse, error)
 	// Get a list of Accounts by Party
 	PartyAccounts(ctx context.Context, in *PartyAccountsRequest, opts ...grpc.CallOption) (*PartyAccountsResponse, error)
-	// Get a list of infrastructure fees accounts filter eventually by assets
+	// Get a list accounts holding infrastructure fees.
+	// Can be filtered by asset, there will be 1 infrastructure fee account per
+	// asset in the network.
 	FeeInfrastructureAccounts(ctx context.Context, in *FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*FeeInfrastructureAccountsResponse, error)
 	// Get a list of Candles by Market
 	Candles(ctx context.Context, in *CandlesRequest, opts ...grpc.CallOption) (*CandlesResponse, error)
@@ -8039,7 +8041,9 @@ type TradingDataServiceServer interface {
 	MarketAccounts(context.Context, *MarketAccountsRequest) (*MarketAccountsResponse, error)
 	// Get a list of Accounts by Party
 	PartyAccounts(context.Context, *PartyAccountsRequest) (*PartyAccountsResponse, error)
-	// Get a list of infrastructure fees accounts filter eventually by assets
+	// Get a list accounts holding infrastructure fees.
+	// Can be filtered by asset, there will be 1 infrastructure fee account per
+	// asset in the network.
 	FeeInfrastructureAccounts(context.Context, *FeeInfrastructureAccountsRequest) (*FeeInfrastructureAccountsResponse, error)
 	// Get a list of Candles by Market
 	Candles(context.Context, *CandlesRequest) (*CandlesResponse, error)
