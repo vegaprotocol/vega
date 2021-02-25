@@ -252,6 +252,7 @@ type ComplexityRoot struct {
 		Id               func(childComplexity int) int
 		Market           func(childComplexity int) int
 		Party            func(childComplexity int) int
+		Reference        func(childComplexity int) int
 		Sells            func(childComplexity int) int
 		Status           func(childComplexity int) int
 		UpdatedAt        func(childComplexity int) int
@@ -372,7 +373,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) int
+		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) int
 		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
 		PrepareOrderCancel        func(childComplexity int, id *string, partyID string, marketID *string) int
 		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
@@ -436,7 +437,7 @@ type ComplexityRoot struct {
 		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
 		Deposits            func(childComplexity int) int
 		Id                  func(childComplexity int) int
-		LiquidityProvisions func(childComplexity int, market *string) int
+		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
 		Margins             func(childComplexity int, marketID *string) int
 		Orders              func(childComplexity int, skip *int, first *int, last *int) int
 		Positions           func(childComplexity int) int
@@ -884,7 +885,7 @@ type MutationResolver interface {
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, proposalID string) (*PreparedVote, error)
 	PrepareWithdrawal(ctx context.Context, partyID string, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
 	SubmitTransaction(ctx context.Context, data string, sig SignatureInput, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
-	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error)
+	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) (*PreparedLiquidityProvision, error)
 }
 type NewAssetResolver interface {
 	Source(ctx context.Context, obj *proto.NewAsset) (AssetSource, error)
@@ -928,7 +929,7 @@ type PartyResolver interface {
 	Votes(ctx context.Context, obj *proto.Party) ([]*ProposalVote, error)
 	Withdrawals(ctx context.Context, obj *proto.Party) ([]*proto.Withdrawal, error)
 	Deposits(ctx context.Context, obj *proto.Party) ([]*proto.Deposit, error)
-	LiquidityProvisions(ctx context.Context, obj *proto.Party, market *string) ([]*proto.LiquidityProvision, error)
+	LiquidityProvisions(ctx context.Context, obj *proto.Party, market *string, reference *string) ([]*proto.LiquidityProvision, error)
 }
 type PeggedOrderResolver interface {
 	Reference(ctx context.Context, obj *proto.PeggedOrder) (PeggedReference, error)
@@ -1768,6 +1769,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquidityProvision.Party(childComplexity), true
 
+	case "LiquidityProvision.reference":
+		if e.complexity.LiquidityProvision.Reference == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProvision.Reference(childComplexity), true
+
 	case "LiquidityProvision.sells":
 		if e.complexity.LiquidityProvision.Sells == nil {
 			break
@@ -2375,7 +2383,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareLiquidityProvision(childComplexity, args["marketID"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput)), true
+		return e.complexity.Mutation.PrepareLiquidityProvision(childComplexity, args["marketID"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string)), true
 
 	case "Mutation.prepareOrderAmend":
 		if e.complexity.Mutation.PrepareOrderAmend == nil {
@@ -2721,7 +2729,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.LiquidityProvisions(childComplexity, args["market"].(*string)), true
+		return e.complexity.Party.LiquidityProvisions(childComplexity, args["market"].(*string), args["reference"].(*string)), true
 
 	case "Party.margins":
 		if e.complexity.Party.Margins == nil {
@@ -4426,6 +4434,8 @@ type Mutation {
     sells: [LiquidityOrderInput!]!
     "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
     buys: [LiquidityOrderInput!]!
+    "A reference for the order created from this liquidity provision"
+    reference: String
   ): PreparedLiquidityProvision!
 }
 
@@ -5446,6 +5456,8 @@ type Party {
   liquidityProvisions(
     "An optional market id"
     market: String
+    "An optional reference"
+    reference: String
   ): [LiquidityProvision!]
 }
 
@@ -6762,6 +6774,8 @@ type LiquidityProvision {
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
+  "A reference for the orders created out of this Liquidity provision"
+  reference: String
 }
 
 "A prepared LiquidityProvision command"
@@ -6944,6 +6958,14 @@ func (ec *executionContext) field_Mutation_prepareLiquidityProvision_args(ctx co
 		}
 	}
 	args["buys"] = arg4
+	var arg5 *string
+	if tmp, ok := rawArgs["reference"]; ok {
+		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reference"] = arg5
 	return args, nil
 }
 
@@ -7302,6 +7324,14 @@ func (ec *executionContext) field_Party_liquidityProvisions_args(ctx context.Con
 		}
 	}
 	args["market"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["reference"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reference"] = arg1
 	return args, nil
 }
 
@@ -11532,6 +11562,37 @@ func (ec *executionContext) _LiquidityProvision_status(ctx context.Context, fiel
 	return ec.marshalNLiquidityProvisionStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityProvisionStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _LiquidityProvision_reference(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityProvision",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reference, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _LogNormalModelParams_mu(ctx context.Context, field graphql.CollectedField, obj *LogNormalModelParams) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -14449,7 +14510,7 @@ func (ec *executionContext) _Mutation_prepareLiquidityProvision(ctx context.Cont
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareLiquidityProvision(rctx, args["marketID"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput))
+		return ec.resolvers.Mutation().PrepareLiquidityProvision(rctx, args["marketID"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15896,7 +15957,7 @@ func (ec *executionContext) _Party_liquidityProvisions(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().LiquidityProvisions(rctx, obj, args["market"].(*string))
+		return ec.resolvers.Party().LiquidityProvisions(rctx, obj, args["market"].(*string), args["reference"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25661,6 +25722,8 @@ func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.Sel
 				}
 				return res
 			})
+		case "reference":
+			out.Values[i] = ec._LiquidityProvision_reference(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

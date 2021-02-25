@@ -143,6 +143,8 @@ type Mutation {
     sells: [LiquidityOrderInput!]!
     "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
     buys: [LiquidityOrderInput!]!
+    "A reference for the order created from this liquidity provision"
+    reference: String
   ): PreparedLiquidityProvision!
 }
 
@@ -1163,6 +1165,8 @@ type Party {
   liquidityProvisions(
     "An optional market id"
     market: String
+    "An optional reference"
+    reference: String
   ): [LiquidityProvision!]
 }
 
@@ -2479,6 +2483,8 @@ type LiquidityProvision {
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
+  "A reference for the orders created out of this Liquidity provision"
+  reference: String
 }
 
 "A prepared LiquidityProvision command"
