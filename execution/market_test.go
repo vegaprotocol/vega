@@ -3700,7 +3700,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 
 }
 
-func Test3008CancelLiquidityProvision(t *testing.T) {
+func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
@@ -3967,6 +3967,9 @@ func Test3008CancelLiquidityProvision(t *testing.T) {
 		}
 	})
 
+	// testing #3007 fee transfer are not distributed to cancelled
+	// liquidity provisions parties
+
 	newOrder := tpl.New(types.Order{
 		MarketId:    tm.market.GetID(),
 		Size:        20,
@@ -3977,11 +3980,33 @@ func Test3008CancelLiquidityProvision(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	})
 
+	tm.events = nil
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
 	assert.True(t, len(cnf.Trades) > 0)
 
-	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
+	// clean the events
+	// then check for transfer of liquidity fees
+	// trader-2-bis should receive none
+	tm.events = nil
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
+
+	t.Run("Fee are distribute to trader-2 only", func(t *testing.T) {
+		var found []*types.TransferResponse
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.TransferResponse:
+				found = append(found, evt.TransferResponses()...)
+			}
+		}
+		// a single transfer response is required
+		require.Len(t, found, 1)
+		require.Len(t, found[0].Transfers, 1)
+		require.Equal(t, found[0].Transfers[0].Reference, types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE.String())
+		require.Len(t, found[0].Balances, 1)
+		require.Equal(t, found[0].Balances[0].Account.Owner, "trader-2")
+	})
+
 }
 
 func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T) {
