@@ -494,7 +494,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		m.lastEquityShareDistributed = t
 
 		if err := m.distributeLiquidityFees(ctx); err != nil {
-			m.log.Panic("Distributing Liquidity Fees", logging.Error(err))
+			m.log.Panic("liquidity fee distribution error", logging.Error(err))
 		}
 	}
 
