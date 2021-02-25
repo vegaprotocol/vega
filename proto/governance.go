@@ -8,5 +8,6 @@ func (l *NewMarketCommitment) IntoSubmission(
 		Fee:              l.Fee,
 		Sells:            l.Sells,
 		Buys:             l.Buys,
+		Reference:        l.Reference,
 	}
 }

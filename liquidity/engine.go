@@ -129,6 +129,12 @@ func (e *Engine) stopLiquidityProvision(
 
 }
 
+// IsLiquidityProvider returns true if the party hold any liquidity commitmement
+func (e *Engine) IsLiquidityProvider(party string) bool {
+	_, ok := e.provisions[party]
+	return ok
+}
+
 // RejectLiquidityProvision removes a parties commitment of liquidity
 func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
 	_, err := e.stopLiquidityProvision(
@@ -176,6 +182,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 		Status:           types.LiquidityProvision_STATUS_REJECTED,
 		CreatedAt:        e.currentTime.UnixNano(),
 		CommitmentAmount: lps.CommitmentAmount,
+		Reference:        lps.Reference,
 	}
 
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
@@ -227,6 +234,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 			CreatedAt: now,
 			Fee:       lps.Fee,
 			Status:    types.LiquidityProvision_STATUS_REJECTED,
+			Reference: lps.Reference,
 		}
 	}
 
@@ -476,7 +484,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		nil
 }
 
-func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64) *types.Order {
+func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64, ref string) *types.Order {
 	order := &types.Order{
 		MarketId:    marketID,
 		Side:        side,
@@ -487,6 +495,7 @@ func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price ui
 		Remaining:   size,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Reference:   ref,
 	}
 	return order.Create(e.currentTime)
 }
@@ -531,7 +540,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 				Reference: ref.LiquidityOrder.Reference,
 				Offset:    ref.LiquidityOrder.Offset,
 			}
-			order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume)
+			order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference)
 			e.idGen.SetID(order)
 			newOrders = append(newOrders, order)
 			lm[order.Id] = order
