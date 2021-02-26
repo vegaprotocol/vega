@@ -5338,6 +5338,12 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, strconv.FormatUint(lp1Commitment+lp2Commitment, 10), md.SuppliedStake)
 	require.Equal(t, matchingPrice, md.MarkPrice)
 
+	supplied, err := strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err := strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	require.True(t, supplied > c1*target)
+
 	//current = (target * c1) auction not triggered
 	currentStake := float64(lp1Commitment + lp2Commitment)
 	riskParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
@@ -5366,6 +5372,12 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
 
+	supplied, err = strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err = strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	require.True(t, supplied > c1*target)
+
 	//Add orders that will trade and trigger liquidity auction
 	buyOrder4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder4", types.Side_SIDE_BUY, trader1, 1, matchingPrice)
 	buyConf4, err := tm.market.SubmitOrder(ctx, buyOrder4)
@@ -5384,6 +5396,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+	require.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY, md.Trigger)
 
 	lp2sub.CommitmentAmount = lp2Commitment + 25750
 	require.NoError(t,
@@ -5392,6 +5405,12 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+
+	supplied, err = strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err = strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	require.True(t, supplied >= target)
 
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_FILLED, sellConf4.Order.Status)
@@ -5415,6 +5434,14 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.Equal(t, zero, md.BestStaticBidVolume)
 	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+	require.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY, md.Trigger)
+
+	supplied, err = strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err = strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	// This trigger shouldn't be violated, we're in auction because of the lack of best bid/ask.
+	require.True(t, supplied >= target)
 
 	buyOrder5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder5", types.Side_SIDE_BUY, trader1, 1, matchingPrice-10)
 	buyConf5, err := tm.market.SubmitOrder(ctx, buyOrder5)
@@ -5426,6 +5453,12 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, buyOrder5.Size, md.BestStaticBidVolume)
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
 
+	supplied, err = strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err = strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	require.True(t, supplied >= target)
+
 	//Trading with best_ask so it dissappears should start an auction
 	buyOrder6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder6", types.Side_SIDE_BUY, trader1, 1, sellOrder1.Price)
 	buyConf6, err := tm.market.SubmitOrder(ctx, buyOrder6)
@@ -5436,6 +5469,14 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.Equal(t, zero, md.BestStaticOfferVolume)
 	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+	require.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY, md.Trigger)
+
+	supplied, err = strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err = strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	require.True(t, supplied < target)
+	require.True(t, supplied > c1*target)
 
 	//Increasing total stake so that the new target stake is accomodated AND adding a sell so best_ask exists should stop the auction
 	lp1sub.CommitmentAmount = lp1Commitment + 10000
@@ -5445,6 +5486,13 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_MONITORING_AUCTION, md.MarketTradingMode)
+	require.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY, md.Trigger)
+
+	supplied, err = strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err = strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	require.True(t, supplied >= target)
 
 	sellOrder5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "sellOrder5", types.Side_SIDE_SELL, trader2, 1, matchingPrice-5)
 	sellConf5, err := tm.market.SubmitOrder(ctx, sellOrder5)
@@ -5457,8 +5505,9 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, sellOrder5.Size, md.BestStaticOfferVolume)
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
 
-	//TODO: In all cases compare target_stake and supplied_stake returned by market data API to make sure it's in line with engine's behaviour
-	//TODO: Liquidity monitoring engine should handle checking if commitment can be reduced
-	//TODO: Market config should contain c1 (and netparam should be used as a default)
-	//TODO: Make sure triggers specify Liquidity monitoring where necessary
+	supplied, err = strconv.ParseFloat(md.SuppliedStake, 64)
+	require.NoError(t, err)
+	target, err = strconv.ParseFloat(md.TargetStake, 64)
+	require.NoError(t, err)
+	require.True(t, supplied >= target)
 }
