@@ -3165,7 +3165,8 @@ func (m *Market) updateAndCreateOrders(
 			m.log.Panic("unable to amend a liquidity order",
 				logging.String("order-id", order.OrderId),
 				logging.String("party-id", order.PartyId),
-				logging.String("market-id", order.MarketId))
+				logging.String("market-id", order.MarketId),
+				logging.Error(err))
 		}
 	}
 
