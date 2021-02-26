@@ -2,7 +2,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -1307,9 +1306,6 @@ func testPeggedOrderParkCancelAll(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cancelConf)
 	assert.Equal(t, 3, len(cancelConf))
-	for _, v := range cancelConf {
-		fmt.Printf("%#v\n", v.Order)
-	}
 
 }
 
