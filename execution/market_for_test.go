@@ -54,3 +54,8 @@ func (m *Market) State() types.Market_State {
 func (m *Market) GetLPSCount() int {
 	return len(m.equityShares.lps)
 }
+
+// Returns all the pegged orders for a given party
+func (m *Market) GetPeggedOrders(partyID string) []*types.Order {
+	return m.matching.GetOrdersPerParty(partyID)
+}
