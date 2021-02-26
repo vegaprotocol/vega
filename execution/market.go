@@ -3444,7 +3444,8 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime); err != nil {
 			m.log.Error("Price monitoring error", logging.Error(err))
 		}
-		// TODO: Need to also get indicative trades and check how they'd impact target stake
+		// TODO: Need to also get indicative trades and check how they'd impact target stake,
+		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
 		if m.as.AuctionEnd() {
 			m.LeaveAuction(ctx, m.currentTime)
