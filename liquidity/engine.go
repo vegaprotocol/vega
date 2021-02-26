@@ -121,6 +121,7 @@ func (e *Engine) HandleFailedOrderSubmit(
 		}
 	}
 
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	return ErrLiquidityProvisionDoesNotExist
 }
 
