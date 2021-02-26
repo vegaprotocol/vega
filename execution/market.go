@@ -553,7 +553,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				m.log.Error("Price monitoring error", logging.Error(err))
 				// @TODO handle or panic? (panic is last resort)
 			}
-			// price monitoring engine indicated auction can end
+			m.checkLiquidity(ctx, nil)
+			// price monitoring engine and liquidity monitoring engine bothindicated auction can end
 			if m.as.AuctionEnd() {
 				m.LeaveAuction(ctx, t)
 			}
@@ -3437,8 +3438,14 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 	}
 	// end the liquidity monitoring auction if possible
 	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
-		//TODO:Reconcile with price monitoring
-		m.LeaveAuction(ctx, m.currentTime)
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime); err != nil {
+			m.log.Error("Price monitoring error", logging.Error(err))
+		}
+		// If price monitoring doesn't trigger auction than leave it
+		if m.as.AuctionEnd() {
+			m.LeaveAuction(ctx, m.currentTime)
+		}
 	}
 
 }
