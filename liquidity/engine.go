@@ -95,6 +95,35 @@ func NewEngine(
 	}
 }
 
+func (e *Engine) HandleFailedOrderSubmit(
+	ctx context.Context, order, party string,
+) error {
+	orders, ok := e.liquidityOrders[party]
+	if !ok {
+		return ErrLiquidityProvisionDoesNotExist
+	}
+	delete(orders, order)
+
+	lp, ok := e.provisions[party]
+	if !ok {
+		return ErrLiquidityProvisionDoesNotExist
+	}
+	for _, v := range lp.Buys {
+		if v.OrderId == order {
+			v.OrderId = ""
+			return nil
+		}
+	}
+	for _, v := range lp.Sells {
+		if v.OrderId == order {
+			v.OrderId = ""
+			return nil
+		}
+	}
+
+	return ErrLiquidityProvisionDoesNotExist
+}
+
 // OnChainTimeUpdate updates the internal engine current time
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
@@ -338,11 +367,17 @@ func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*t
 // It keeps track of all LP orders.
 func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
 	var (
-		newOrders  []*types.Order
-		amendments []*types.OrderAmendment
+		newOrders        []*types.Order
+		amendments       []*types.OrderAmendment
+		updatedLPParties []string
 	)
 
 	for party, orders := range Orders(orders).ByParty() {
+		if !e.IsLiquidityProvider(party) {
+			continue
+		}
+
+		updatedLPParties = append(updatedLPParties, party)
 		// update our internal orders
 		e.updatePartyOrders(party, orders)
 
@@ -353,7 +388,9 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 
 		newOrders = append(newOrders, creates...)
 		amendments = append(amendments, updates...)
+
 	}
+
 	if e.undeployedProvisions {
 		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
 		stillUndeployed := false
@@ -373,8 +410,9 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 
 	// send a batch of updates
 	evts := []events.Event{}
-	for _, lp := range e.provisions {
-		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, lp))
+	for _, party := range updatedLPParties {
+		evts = append(evts, events.NewLiquidityProvisionEvent(
+			ctx, e.provisions[party]))
 	}
 	e.broker.SendBatch(evts)
 
@@ -525,38 +563,45 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref = lp.Sells[i]
 		}
 
-		// If order.Remaining == 0 then that order would've already been removed from the book, hence we need to account for that in this engine.
-		if order != nil && order.Remaining == 0 {
-			delete(lm, ref.OrderId)
-			order = nil
-		}
+		if order != nil && (order.Remaining != order.Size || order.Size != o.LiquidityImpliedVolume) {
+			// we always remove the order from our store, and add it to the amendment
 
-		if order == nil {
-			if o.LiquidityImpliedVolume == 0 {
-				continue
+			// only amend if order remaining > 0
+			// if not the market already took care in cleaning
+			// up everything
+			if order.Remaining != 0 {
+				amendment := order.Update(e.currentTime).AmendSize(0)
+				// so it's cancelled via an amend
+				amendments = append(
+					amendments,
+					// we amend the order size, to be 0
+					amendment,
+				)
 			}
 
-			p := &types.PeggedOrder{
-				Reference: ref.LiquidityOrder.Reference,
-				Offset:    ref.LiquidityOrder.Offset,
-			}
-			order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference)
-			e.idGen.SetID(order)
-			newOrders = append(newOrders, order)
-			lm[order.Id] = order
-			ref.OrderId = order.Id
-			continue
-		}
-
-		if o.LiquidityImpliedVolume == 0 {
+			// then we can delete the order from our mapping
 			delete(lm, ref.OrderId)
 			ref.OrderId = ""
 		}
 
-		if o.LiquidityImpliedVolume != order.Remaining {
-			newSize := order.Size + (o.LiquidityImpliedVolume - order.Remaining)
-			amendments = append(amendments, order.Update(e.currentTime).AmendSize(int64(newSize)))
+		// We eithere don't need this order anymore or
+		// we have just nothing to do about it.
+		if o.LiquidityImpliedVolume == 0 || (order != nil && order.Size == order.Remaining) {
+			continue
 		}
+
+		// At this point the order will either already exists
+		// or not, and we'll want to re-create
+		// then we create the new order
+		p := &types.PeggedOrder{
+			Reference: ref.LiquidityOrder.Reference,
+			Offset:    ref.LiquidityOrder.Offset,
+		}
+		order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference)
+		e.idGen.SetID(order)
+		newOrders = append(newOrders, order)
+		lm[order.Id] = order
+		ref.OrderId = order.Id
 	}
 
 	return newOrders, amendments

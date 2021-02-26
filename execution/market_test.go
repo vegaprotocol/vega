@@ -2018,6 +2018,9 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	mktData = tm.market.GetMarketData()
 	lpOrderVolumeBidPrev = mktData.BestBidVolume - mktData.BestStaticBidVolume
 
+	now = now.Add(time.Second)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
 	orderBuy2SizeBeforeTrade := orderBuy2.Remaining
 	auxOrder3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux-order-3", types.Side_SIDE_SELL, auxParty, 5, matchingPrice+1)
 	confirmationAux, err = tm.market.SubmitOrder(ctx, auxOrder3)

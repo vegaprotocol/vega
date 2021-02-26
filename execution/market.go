@@ -3142,7 +3142,44 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 		return err
 	}
 
-	return m.createAndUpdateOrders(ctx, newOrders, amendments)
+	return m.updateAndCreateOrders(ctx, newOrders, amendments)
+}
+
+// this is a function to be called when orders already exists
+// submitted by the liquidity provider.
+// We will first update orders, which basically will trigger cancellation
+// then place the new orders.
+// this is done this way just so we maximiise the changes for the margin
+// calls to succeed.
+func (m *Market) updateAndCreateOrders(
+	ctx context.Context,
+	newOrders []*types.Order,
+	amendments []*types.OrderAmendment,
+) (err error) {
+	for _, order := range amendments {
+		if _, err := m.amendOrder(ctx, order); err != nil {
+			// here we panic, an order which should be in a the market
+			// appears not to be. there's either an issue in the liquidity
+			// engine and we are trying to remove a non-existing order
+			// or the market lost track of the order
+			m.log.Panic("unable to amend a liquidity order",
+				logging.String("order-id", order.OrderId),
+				logging.String("party-id", order.PartyId),
+				logging.String("market-id", order.MarketId))
+		}
+	}
+
+	for _, order := range newOrders {
+		if _, err := m.submitOrder(ctx, order, false); err != nil {
+			// an error happened, this might be becuase of a margin call
+			// not been OK.
+			// that' somethig we'll need to figure out how to handle
+			// in the future I suppose...
+			m.liquidity.HandleFailedOrderSubmit(ctx, order.Id, order.PartyId)
+		}
+	}
+
+	return
 }
 
 func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
