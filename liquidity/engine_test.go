@@ -2,7 +2,6 @@ package liquidity_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -451,7 +450,6 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 3)
 	for i, amend := range amendments {
-		fmt.Printf("created: %d update: %d\n", creates[i].Size, amend.SizeDelta)
 		assert.Zero(t, creates[i].Size+uint64(amend.SizeDelta),
 			"Size should be cancelled (== 0)  by the amendment",
 		)
