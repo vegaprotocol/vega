@@ -18,6 +18,13 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | tt_14  | BTC   | 10000000 |
       | tt_15  | BTC   | 100      |
       | tt_16  | BTC   | 10000000 |
+      | tt_aux | BTC   | 100000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader | id        | type | volume | price | resulting trades | type        | tif     | 
+      | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # place orders and generate trades
     Then traders place following orders with references:

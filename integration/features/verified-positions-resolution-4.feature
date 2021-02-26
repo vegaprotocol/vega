@@ -16,6 +16,13 @@ Feature: Position resolution case 4
       | sellSideProvider | BTC   | 1000000000000 |
       | buySideProvider  | BTC   | 1000000000000 |
       | designatedLooser | BTC   | 10000         |
+      | auxiliary        | BTC   | 1000000000000 |
+
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  Then traders place following orders:
+    | trader     | id        | type | volume | price   | resulting trades | type        | tif     | 
+    | auxiliary  | ETH/DEC19 | buy  | 1      | 1       | 0                | TYPE_LIMIT  | TIF_GTC | 
+    | auxiliary  | ETH/DEC19 | sell | 1      | 1000    | 0                | TYPE_LIMIT  | TIF_GTC | 
 
 # insurance pool generation - setup orderbook
     Then traders place following orders with references:
@@ -71,8 +78,8 @@ Feature: Position resolution case 4
 # we buy a first time 50 to consume the book
 # then try to buy 1 again -> result in no trades -> sell side empty.
 # Try to sell one for low price -> no trades -> buy side empty -> order book empty.
-    Then traders place following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
-      | buySideProvider  | ETH/DEC19 | buy  | 50     | 350   | 1                | TYPE_LIMIT | TIF_FOK |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_FOK |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_FOK |
+   Then traders place following orders:
+      | trader          | id        | type   | volume | price | resulting trades | type  | tif |
+      | buySideProvider | ETH/DEC19 | buy    |     50 |   350 |                1 | TYPE_LIMIT | TIF_FOK |
+      | buySideProvider | ETH/DEC19 | buy    |      1 |   350 |                0 | TYPE_LIMIT | TIF_FOK |
+      | sellSideProvider | ETH/DEC19 | sell  |      1 |   2   |                0 | TYPE_LIMIT | TIF_FOK |

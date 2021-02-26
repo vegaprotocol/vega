@@ -88,9 +88,12 @@ func newMarket(marketExpiry string, row marketRow) types.Market {
 			},
 			UpdateFrequency: row.priceMonitoringUpdateFrequency(),
 		},
-		TargetStakeParameters: &types.TargetStakeParameters{
-			TimeWindow:    3600,
-			ScalingFactor: 10,
+		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
+			TargetStakeParameters: &types.TargetStakeParameters{
+				TimeWindow:    3600,
+				ScalingFactor: 10,
+			},
+			TriggeringRatio: 0,
 		},
 	}
 
