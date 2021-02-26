@@ -10,6 +10,18 @@ Feature: Distressed traders should not have general balance left
       | prices.ETH.value | 42    |
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
+    Given the following traders:
+      | name      |      amount  |
+      | auxiliary | 100000000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader     | id        | type | volume | price    | resulting trades | type        | tif     | 
+      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+
   Scenario: Upper bound breached
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount         |
