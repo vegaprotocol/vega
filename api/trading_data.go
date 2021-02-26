@@ -748,9 +748,16 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 	}
 
 	// Call tendermint via rpc client
-	backlogLength, numPeers, gt, chainID, err := t.getTendermintStats(ctx)
+	var (
+		backlogLength, numPeers int
+		gt                      *time.Time
+		chainID                 string
+	)
+
+	backlogLength, numPeers, gt, chainID, err = t.getTendermintStats(ctx)
 	if err != nil {
-		return nil, err // getTendermintStats already returns an API error
+		// do not return an error, let just eventually log it
+		t.log.Debug("could not load tendermint stats", logging.Error(err))
 	}
 
 	// If the chain is replaying then genesis time can be nil
