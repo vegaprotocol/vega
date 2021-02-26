@@ -204,7 +204,6 @@ func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisi
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
-
 	lp := &types.LiquidityProvision{
 		Id:               id,
 		Fee:              lps.Fee,

@@ -554,7 +554,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				// @TODO handle or panic? (panic is last resort)
 			}
 			m.checkLiquidity(ctx, nil)
-			// price monitoring engine and liquidity monitoring engine bothindicated auction can end
+			// price monitoring engine and liquidity monitoring engine both indicated auction can end
 			if m.as.AuctionEnd() {
 				m.LeaveAuction(ctx, t)
 			}
@@ -1320,7 +1320,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	m.handleConfirmation(ctx, confirmation)
 	m.checkLiquidity(ctx, nil)
-
+	m.commandLiquidityAuction(ctx)
 	return confirmation, nil
 }
 
@@ -1336,16 +1336,11 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 			// @TODO handle or panic? (panic is last resort)
 		}
 	}
+	m.checkLiquidity(ctx, trades)
 
-	// start the price monitoring auction if required?
+	// start the  monitoring auction if required?
 	if m.as.AuctionStart() {
 		m.EnterAuction(ctx)
-		return nil, nil
-	}
-
-	// run LiquidityMonitor checks for market auction mode and start auction if requried
-	m.checkLiquidity(ctx, trades)
-	if m.as.InAuction() {
 		return nil, nil
 	}
 
@@ -2135,6 +2130,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		}
 	}
 	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
@@ -3132,6 +3128,7 @@ func (m *Market) cancelLiquidityProvision(
 	}
 
 	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	return nil
 }
@@ -3411,6 +3408,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 
 	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	return nil
 }
@@ -3432,6 +3430,10 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		targetStake,
 		vBid, vAsk)
 
+}
+
+// command liquidity auction checks if liquidity auction should be entered and if it can end
+func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	// start the liquidity monitoring auction if required
 	if !m.as.InAuction() && m.as.AuctionStart() {
 		m.EnterAuction(ctx)
@@ -3442,12 +3444,12 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime); err != nil {
 			m.log.Error("Price monitoring error", logging.Error(err))
 		}
+		// TODO: Need to also get indicative trades and check how they'd impact target stake
 		// If price monitoring doesn't trigger auction than leave it
 		if m.as.AuctionEnd() {
 			m.LeaveAuction(ctx, m.currentTime)
 		}
 	}
-
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
