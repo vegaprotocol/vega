@@ -2454,7 +2454,7 @@ enum LiquidityProvisionStatus {
 
 type LiquidityOrderReference {
   "The id of the pegged order generated to fullfill this commitment"
-  order: Order!
+  order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
 }

@@ -6745,7 +6745,7 @@ enum LiquidityProvisionStatus {
 
 type LiquidityOrderReference {
   "The id of the pegged order generated to fullfill this commitment"
-  order: Order!
+  order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
 }
@@ -11048,14 +11048,11 @@ func (ec *executionContext) _LiquidityOrderReference_order(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*proto.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityOrderReference_liquidityOrder(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityOrderReference) (ret graphql.Marshaler) {
@@ -25550,9 +25547,6 @@ func (ec *executionContext) _LiquidityOrderReference(ctx context.Context, sel as
 					}
 				}()
 				res = ec._LiquidityOrderReference_order(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "liquidityOrder":
@@ -32554,6 +32548,10 @@ func (ec *executionContext) marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗi
 	return v
 }
 
+func (ec *executionContext) marshalOOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx context.Context, sel ast.SelectionSet, v proto.Order) graphql.Marshaler {
+	return ec._Order(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.Order) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -32592,6 +32590,13 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx context.Context, sel ast.SelectionSet, v *proto.Order) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Order(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOOrderRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, v interface{}) (OrderRejectionReason, error) {
