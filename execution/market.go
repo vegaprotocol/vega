@@ -1454,7 +1454,24 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// are finished, in order to notify the liquidity engine of
 	// any changes in the book / orders owned by the lp providers
 	orderUpdates := []*types.Order{}
+	distressedParties := []string{}
 	defer func() {
+		// First we check for all distressd parties if they are liquidity
+		// providers, and if yea cancel their commitments
+		for _, party := range distressedParties {
+			if m.liquidity.IsLiquidityProvider(party) {
+				if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
+					m.log.Debug("could not cancel liquidity provision",
+						logging.String("market-id", m.GetID()),
+						logging.String("party-id", party),
+						logging.Error(err))
+				}
+			}
+		}
+
+		// then we send the orders updtes to the liquidity engine
+		// just to make sure that any changes on the lp orders
+		// are being reflected / and sizes are updated...
 		if len(orderUpdates) > 0 {
 			err := m.liquidityUpdate(ctx, orderUpdates)
 			if err != nil {
@@ -1473,6 +1490,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 				logging.String("market-id", m.GetID()))
 		}
 		distressedPos = append(distressedPos, v)
+		distressedParties = append(distressedParties, v.Party())
 	}
 	// cancel pending orders for traders
 	rmorders, err := m.matching.RemoveDistressedOrders(distressedPos)
@@ -1748,19 +1766,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// send transfer to buffer
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
 
-	// Any of the closed out traders could be liquidity providers,
-	// we should cancel their LP submission
-	for _, trader := range closedMPs {
-		party := trader.Party()
-		if m.liquidity.IsLiquidityProvider(party) {
-			if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
-				m.log.Debug("could not cancel liquidity provision",
-					logging.String("market-id", m.GetID()),
-					logging.String("party-id", party),
-					logging.Error(err))
-			}
-		}
-	}
 	return err
 }
 
