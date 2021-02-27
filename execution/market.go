@@ -1450,6 +1450,21 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "resolveClosedOutTraders")
 	defer timer.EngineTimeCounterAdd()
 
+	// this is going to be run after the the close out routines
+	// are finished, in order to notify the liquidity engine of
+	// any changes in the book / orders owned by the lp providers
+	orderUpdates := []*types.Order{}
+	defer func() {
+		if len(orderUpdates) > 0 {
+			err := m.liquidityUpdate(ctx, orderUpdates)
+			if err != nil {
+				m.log.Debug("unable to run liquidity update after resolving closed out traders",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+		}
+	}()
+
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
 	for _, v := range distressedMarginEvts {
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -1490,6 +1505,10 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		}
 	}
 
+	// add the orders remove from the book to the orders
+	// to be sent to the liquidity engine
+	orderUpdates = append(orderUpdates, rmorders...)
+
 	// now we also remove ALL parked order for the different parties
 	for _, v := range distressedPos {
 		orders := m.getAllParkedOrdersForParty(v.Party())
@@ -1499,6 +1518,9 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			o.Status = types.Order_STATUS_STOPPED // closing out = status STOPPED
 			evts = append(evts, events.NewOrderEvent(ctx, o))
 		}
+
+		// add all pegged orders too to the orderUpdates
+		orderUpdates = append(orderUpdates, orders...)
 	}
 
 	// send all orders which got stopped through the event bus
@@ -1628,6 +1650,10 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 				m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
 			}
 		}
+
+		// also add the passive orders from the book into the list
+		// of updated orders to send to liquidity engine
+		orderUpdates = append(orderUpdates, confirmation.PassiveOrdersAffected...)
 	}
 
 	asset, _ := m.mkt.GetAsset()
