@@ -308,7 +308,6 @@ steps:
         from_secret: GITHUB_API_TOKEN
       files:
         - cmd/vega/vega-*
-        - cmd/vegastream/vegastream-*
     when:
       event: tag
     depends_on:
