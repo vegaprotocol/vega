@@ -1937,14 +1937,25 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		return nil, nil
 	}
 
-	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
-
-	// now iterate over all orders and cancel one by one.
+	// now we extract all liquidity provision order out of the list.
+	// cancelling some order may trigger repricing, and repricing
+	// liquidity order, which also trigger cancelling...
+	// by filtering the list now, we are sure that we will
+	// never try to
+	// 1. remove a lp order
+	// 2. have invalid order referencing lp order which have been canceleld
+	okOrders := []*types.Order{}
 	for _, order := range orders {
 		if m.liquidity.IsLiquidityOrder(partyID, order.Id) {
 			continue
 		}
+		okOrders = append(okOrders, order)
+	}
 
+	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
+
+	// now iterate over all orders and cancel one by one.
+	for _, order := range okOrders {
 		cancellation, err := m.cancelOrder(ctx, partyID, order.Id)
 		if err != nil {
 			return nil, err
@@ -2909,6 +2920,7 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 
 func (m *Market) cancelLiquidityProvision(
 	ctx context.Context, party string, isDistressed bool) error {
+
 	// cancel the liquidity provision
 	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
 	if err != nil {
