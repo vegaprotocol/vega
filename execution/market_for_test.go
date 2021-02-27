@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"context"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -57,5 +58,21 @@ func (m *Market) GetLPSCount() int {
 
 // Returns all the pegged orders for a given party
 func (m *Market) GetPeggedOrders(partyID string) []*types.Order {
-	return m.matching.GetOrdersPerParty(partyID)
+	orders := m.matching.GetOrdersPerParty(partyID)
+
+	peggedOrders := []*types.Order{}
+	for _, order := range orders {
+		if order.PeggedOrder != nil {
+			peggedOrders = append(peggedOrders, order)
+		}
+	}
+	return peggedOrders
+}
+
+func (m *Market) GetBondAccountBalance(ctx context.Context, partyID, marketID, asset string) uint64 {
+	bondAccount, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, marketID, asset)
+	if err == nil {
+		return bondAccount.Balance
+	}
+	return 0
 }
