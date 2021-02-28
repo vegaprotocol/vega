@@ -51,8 +51,6 @@ var (
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
 	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
-	// ErrGovernanceAssetIDMatchNoAsset
-	ErrGovernanceAssetIDMatchNoAsset = errors.New("governance asset ID match no asset")
 )
 
 // Broker send events
@@ -82,9 +80,6 @@ type Engine struct {
 
 	// asset ID to asset
 	enabledAssets map[string]types.Asset
-
-	// keep track of what's the current governanceAsset
-	governanceAsset string
 }
 
 // New instantiates a new collateral engine
@@ -243,28 +238,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.Id),
 	)
-	return nil
-}
-
-func (e *Engine) UpdateGovernanceAsset(asset string) error {
-	if !e.AssetExists(asset) {
-		return ErrGovernanceAssetIDMatchNoAsset
-	}
-
-	var (
-		nextAsset = e.enabledAssets[asset]
-		prevAsset types.Asset
-	)
-	if len(e.governanceAsset) > 0 {
-		prevAsset = e.enabledAssets[e.governanceAsset]
-	}
-	e.log.Info("governance asset update successfully",
-		logging.String("new-asset-id", nextAsset.Id),
-		logging.String("new-asset", nextAsset.Symbol),
-		logging.String("prev-asset-id", prevAsset.Id),
-		logging.String("prev-asset", prevAsset.Symbol),
-	)
-	e.governanceAsset = asset
 	return nil
 }
 
@@ -2125,7 +2098,8 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	return &acccpy, nil
 }
 
-// GetTotalTokens - returns total amount of tokens in the network
+// GetAssetTotalSupply - return the total supply of the asset if it's known
+// from the collateral engine.
 func (e *Engine) GetAssetTotalSupply(asset string) (uint64, error) {
 	asst, ok := e.enabledAssets[asset]
 	if !ok {

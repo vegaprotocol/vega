@@ -2183,8 +2183,6 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 	}
 	err = eng.EnableAsset(context.Background(), tokAsset)
 	assert.NoError(t, err)
-	err = eng.UpdateGovernanceAsset("VOTE")
-	assert.NoError(t, err)
 
 	// enable the assert for the tests
 	asset := types.Asset{

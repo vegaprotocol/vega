@@ -585,7 +585,7 @@ func (l *NodeCommand) setupNetParameters() error {
 	return l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.GovernanceVoteAsset,
-			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets),
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,
