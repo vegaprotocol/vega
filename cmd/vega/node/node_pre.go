@@ -619,6 +619,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
 			Watcher: l.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
+			Watcher: l.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
+		},
 	)
 }
 

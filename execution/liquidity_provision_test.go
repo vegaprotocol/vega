@@ -214,6 +214,6 @@ func TestLiquidity_TooManyShapeLevels(t *testing.T) {
 		Sells:            sells}
 
 	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
-	require.NoError(t, err)
-	assert.Equal(t, 1, tm.market.GetLPSCount())
+	require.EqualError(t, err, "SIDE_BUY shape size exceed max (100)")
+	assert.Equal(t, 0, tm.market.GetLPSCount())
 }
