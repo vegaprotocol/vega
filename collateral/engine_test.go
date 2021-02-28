@@ -73,10 +73,6 @@ func TestMarginUpdateOnOrder(t *testing.T) {
 	t.Run("Faile update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
 }
 
-func TestTokenAccounts(t *testing.T) {
-	t.Run("Total tokens is zero at the start, even if we add some traders", testInitialTokens)
-}
-
 func TestEnableAssets(t *testing.T) {
 	t.Run("enable new asset - success", testEnableAssetSuccess)
 	t.Run("enable new asset - failure duplicate", testEnableAssetFailureDuplicate)
@@ -568,54 +564,6 @@ func testCreateNewAccountForBadAsset(t *testing.T) {
 	assert.EqualError(t, err, collateral.ErrInvalidAssetID.Error())
 	_, _, err = eng.Engine.CreateMarketAccounts(context.Background(), "somemarketid", "notanasset", 0)
 	assert.EqualError(t, err, collateral.ErrInvalidAssetID.Error())
-}
-
-func testInitialTokens(t *testing.T) {
-	eng := getTestEngine(t, "test-market", 0)
-	defer eng.Finish()
-	trader := "trader"
-	assert.Zero(t, eng.GetTotalTokens())
-	// trader doesn't exist yet:
-	acc, err := eng.GetPartyTokenAccount(trader)
-	assert.Error(t, err)
-	assert.Nil(t, acc)
-	assert.Equal(t, err, collateral.ErrPartyHasNoTokenAccount)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(7)
-	_, err = eng.CreatePartyGeneralAccount(context.Background(), trader, "ETH")
-	assert.NoError(t, err)
-	_, err = eng.CreatePartyGeneralAccount(context.Background(), trader, "VOTE")
-	assert.NoError(t, err)
-	acc, err = eng.GetPartyTokenAccount(trader)
-	assert.NoError(t, err)
-	assert.NotNil(t, acc)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-	_, err = eng.Deposit(context.Background(), trader, "VOTE", 10000)
-	assert.NoError(t, err)
-	acc, err = eng.GetPartyTokenAccount(trader)
-	assert.NoError(t, err)
-	assert.NotNil(t, acc)
-	assert.Equal(t, acc.Balance, eng.GetTotalTokens())
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-
-	// withdraw half the amount
-	_, err = eng.LockFundsForWithdraw(context.Background(), trader, "VOTE", acc.Balance/2) // half the amount
-	assert.NoError(t, err)
-	_, err = eng.Withdraw(context.Background(), trader, "VOTE", acc.Balance/2)
-	assert.NoError(t, err) // half the amount
-
-	acc.Balance /= 2
-	assert.Equal(t, acc.Balance, eng.GetTotalTokens())
-	// test subtracting something from the balance
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-
-	_, err = eng.LockFundsForWithdraw(context.Background(), trader, "VOTE", 100) // half the amount
-	assert.NoError(t, err)                                                       // half the amount
-	_, err = eng.Withdraw(context.Background(), trader, "VOTE", 100)
-	assert.NoError(t, err) // half the amount
-
-	assert.NoError(t, eng.DecrementBalance(context.Background(), acc.Id, 100))
-	acc.Balance -= 100
-	assert.Equal(t, acc.Balance, eng.GetTotalTokens())
 }
 
 func testNew(t *testing.T) {
