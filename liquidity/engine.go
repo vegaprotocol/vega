@@ -110,12 +110,12 @@ func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	e.stakeToObligationFactor = v
 }
 
-func (m *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
+func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	if v < 0 {
 		return errors.New("shapes max size cannot be < 0")
 
 	}
-	m.maxShapesSize = v
+	e.maxShapesSize = v
 	return nil
 }
 
