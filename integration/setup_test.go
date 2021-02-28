@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -53,11 +54,14 @@ type marketTestSetup struct {
 	traderAccs map[string]map[types.AccountType]*types.Account
 
 	// we need to call this engine directly
-	colE   *collateral.Engine
-	broker *brokerStub
+	colE         *collateral.Engine
+	oracleEngine *oracles.Engine
+	broker       *brokerStub
 }
 
 func getMarketTestSetup(market *types.Market) *marketTestSetup {
+	log := logging.NewTestLogger()
+
 	if mktsetup != nil {
 		mktsetup.ctrl.Finish()
 		mktsetup = nil // ready for GC
@@ -69,12 +73,15 @@ func getMarketTestSetup(market *types.Market) *marketTestSetup {
 	// this can happen any number of times, just set the mock up to accept all of them
 	// Over time, these mocks will be replaced with stubs that store all elements to a map
 	// again: allow all calls, replace with stub over time
+	currentTime := time.Now()
 	colE, _ := collateral.New(
-		logging.NewTestLogger(),
+		log,
 		collateral.NewDefaultConfig(),
 		broker,
-		time.Now(),
+		currentTime,
 	)
+
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), currentTime, broker)
 
 	tokAsset := types.Asset{
 		Id:          "VOTE",
@@ -93,15 +100,16 @@ func getMarketTestSetup(market *types.Market) *marketTestSetup {
 			},
 		},
 	}
-	colE.EnableAsset(context.Background(), tokAsset)
+	_ = colE.EnableAsset(context.Background(), tokAsset)
 
 	setup := &marketTestSetup{
-		market:     market,
-		ctrl:       ctrl,
-		accountIDs: map[string]struct{}{},
-		traderAccs: map[string]map[types.AccountType]*types.Account{},
-		colE:       colE,
-		broker:     broker,
+		market:       market,
+		ctrl:         ctrl,
+		accountIDs:   map[string]struct{}{},
+		traderAccs:   map[string]map[types.AccountType]*types.Account{},
+		colE:         colE,
+		oracleEngine: oracleEngine,
+		broker:       broker,
 	}
 
 	return setup
@@ -110,13 +118,14 @@ func getMarketTestSetup(market *types.Market) *marketTestSetup {
 type executionTestSetup struct {
 	engine *execution.Engine
 
-	cfg        execution.Config
-	log        *logging.Logger
-	ctrl       *gomock.Controller
-	timesvc    *timeStub
-	proposal   *ProposalStub
-	votes      *VoteStub
-	collateral *collateral.Engine
+	cfg          execution.Config
+	log          *logging.Logger
+	ctrl         *gomock.Controller
+	timesvc      *timeStub
+	proposal     *ProposalStub
+	votes        *VoteStub
+	collateral   *collateral.Engine
+	oracleEngine *oracles.Engine
 
 	positionPlugin *plugins.Positions
 
@@ -140,7 +149,6 @@ func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTe
 func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
-		// execsetup = nil
 	} else if execsetup == nil {
 		execsetup = &executionTestSetup{}
 	}
@@ -156,13 +164,15 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.proposal = NewProposalStub()
 	execsetup.votes = NewVoteStub()
 	execsetup.broker = NewBrokerStub()
+	currentTime := time.Now()
 	execsetup.collateral, _ = collateral.New(
-		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, time.Now(),
+		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
+	execsetup.oracleEngine = oracles.NewEngine(execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker)
 
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()
-		execsetup.collateral.EnableAsset(context.Background(), types.Asset{
+		_ = execsetup.collateral.EnableAsset(context.Background(), types.Asset{
 			Id:     asset,
 			Symbol: asset,
 		})
@@ -185,16 +195,23 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 			},
 		},
 	}
-	execsetup.collateral.EnableAsset(context.Background(), tokAsset)
+	_ = execsetup.collateral.EnableAsset(context.Background(), tokAsset)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.collateral, execsetup.broker)
+	execsetup.engine = execution.NewEngine(
+		execsetup.log,
+		execsetup.cfg,
+		execsetup.timesvc,
+		execsetup.collateral,
+		execsetup.oracleEngine,
+		execsetup.broker,
+	)
 
 	for _, mkt := range mkts {
 		mkt := mkt
-		execsetup.engine.SubmitMarket(context.Background(), &mkt)
+		_ = execsetup.engine.SubmitMarket(context.Background(), &mkt)
 	}
 
-	// instanciate position plugin
+	// instantiate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 

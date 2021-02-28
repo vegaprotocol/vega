@@ -1,6 +1,7 @@
 package markets
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -38,15 +39,12 @@ type TradableInstrument struct {
 
 // NewTradableInstrument will instantiate a new tradable instrument
 // using a market framework configuration for a tradable instrument
-func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (*TradableInstrument, error) {
-	instrument, err := NewInstrument(pti.Instrument)
+func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, oe products.OracleEngine) (*TradableInstrument, error) {
+	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe)
 	if err != nil {
 		return nil, err
 	}
 	asset := instrument.Product.GetAsset()
-	if err != nil {
-		return nil, err
-	}
 	riskModel, err := risk.NewModel(log, pti.RiskModel, asset)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate risk model")
@@ -60,8 +58,8 @@ func NewTradableInstrument(log *logging.Logger, pti *types.TradableInstrument) (
 
 // NewInstrument will instantiate a new instrument
 // using a market framework configuration for a instrument
-func NewInstrument(pi *types.Instrument) (*Instrument, error) {
-	product, err := products.New(pi.Product)
+func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine) (*Instrument, error) {
+	product, err := products.New(ctx, log, pi.Product, oe)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate product from instrument configuration")
 	}

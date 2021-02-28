@@ -75,7 +75,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders place following orders:$`, tradersPlaceFollowingOrders)
 	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
 	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
-	s.Step(`^the following transfers happened:$`, theFollowingTransfersHappend)
+	s.Step(`^the following transfers happened:$`, theFollowingTransfersHappened)
 	s.Step(`^the settlement account balance is "([^"]*)" for the market "([^"]*)" before MTM$`, theSettlementAccountBalanceIsForTheMarketBeforeMTM)
 	s.Step(`^the insurance pool initial balance for the markets is "([^"]*)":$`, theInsurancePoolInitialBalanceForTheMarketsIs)
 	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, theInsurancePoolBalanceIsForTheMarket)
@@ -112,4 +112,5 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the opening auction period for market "([^"]+)" ends$`, theOpeningAuctionPeriodEnds)
 	s.Step(`^traders withdraw balance:$`, tradersWithdrawBalance)
 	s.Step(`^dump trades$`, dumpTrades)
+	s.Step(`^oracles broadcast data signed with "([^"]*)":$`, oraclesBroadcastData)
 }

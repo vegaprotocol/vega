@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -81,14 +82,23 @@ func getTestMarket() *types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity: "2019-12-31",
-						Oracle: &types.Future_EthereumEvent{
-							EthereumEvent: &types.EthereumEvent{
-								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-								Event:      "price_changed",
+						Maturity:        "2019-12-31",
+						SettlementAsset: "Ethereum/Ether",
+						OracleSpec: &oraclesv1.OracleSpec{
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
 							},
 						},
-						SettlementAsset: "Ethereum/Ether",
+						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							SettlementPriceProperty: "prices.ETH.value",
+						},
 					},
 				},
 			},

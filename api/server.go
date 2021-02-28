@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -60,6 +61,7 @@ type GRPCServer struct {
 	withdrawalService       *plugins.Withdrawal
 	depositService          *plugins.Deposit
 	netParamsService        *netparams.Service
+	oracleService           *oracles.Service
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -95,6 +97,7 @@ func NewGRPCServer(
 	assetService *assets.Svc,
 	feeService *fee.Svc,
 	eventService *subscribers.Service,
+	oracleService *oracles.Service,
 	withdrawalService *plugins.Withdrawal,
 	depositService *plugins.Deposit,
 	marketDepthService *subscribers.MarketDepthBuilder,
@@ -132,6 +135,7 @@ func NewGRPCServer(
 		marketDepthService:      marketDepthService,
 		statusChecker:           statusChecker,
 		netParamsService:        netParamsService,
+		oracleService:           oracleService,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
 	}
@@ -256,6 +260,7 @@ func (g *GRPCServer) Start() {
 		MarketDepthService:      g.marketDepthService,
 		NetParamsService:        g.netParamsService,
 		LiquidityService:        g.liquidityService,
+		oracleService:           g.oracleService,
 		ctx:                     g.ctx,
 	}
 	go tradingDataSvc.updateNetInfo(g.ctx)
