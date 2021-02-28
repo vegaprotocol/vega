@@ -974,6 +974,9 @@ type Market {
   "Current state of the market"
   state: MarketState!
 
+  "The proposal which initiated this market"
+  proposal: Proposal
+
   "Orders on a market"
   orders(
     "Pagination skip"
