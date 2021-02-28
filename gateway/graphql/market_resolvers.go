@@ -223,3 +223,16 @@ func (r *myMarketResolver) TradingMode(ctx context.Context, obj *types.Market) (
 func (r *myMarketResolver) State(ctx context.Context, obj *types.Market) (MarketState, error) {
 	return convertMarketStateFromProto(obj.State)
 }
+
+func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*types.GovernanceData, error) {
+	resp, err := r.tradingDataClient.GetProposalByID(ctx, &protoapi.GetProposalByIDRequest{
+		ProposalId: obj.Id,
+	})
+	// it's possible to not find a proposal as of now.
+	// some market are loaded at startup, without
+	// going through the proposal phase
+	if err != nil {
+		return nil, nil
+	}
+	return resp.Data, nil
+}
