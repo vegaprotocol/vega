@@ -33,31 +33,32 @@ func (m *MockAccounts) EXPECT() *MockAccountsMockRecorder {
 	return m.recorder
 }
 
-// GetPartyTokenAccount mocks base method
-func (m *MockAccounts) GetPartyTokenAccount(arg0 string) (*proto.Account, error) {
+// GetAssetTotalSupply mocks base method
+func (m *MockAccounts) GetAssetTotalSupply(arg0 string) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPartyTokenAccount", arg0)
+	ret := m.ctrl.Call(m, "GetAssetTotalSupply", arg0)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssetTotalSupply indicates an expected call of GetAssetTotalSupply
+func (mr *MockAccountsMockRecorder) GetAssetTotalSupply(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetTotalSupply", reflect.TypeOf((*MockAccounts)(nil).GetAssetTotalSupply), arg0)
+}
+
+// GetPartyGeneralAccount mocks base method
+func (m *MockAccounts) GetPartyGeneralAccount(arg0, arg1 string) (*proto.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartyGeneralAccount", arg0, arg1)
 	ret0, _ := ret[0].(*proto.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPartyTokenAccount indicates an expected call of GetPartyTokenAccount
-func (mr *MockAccountsMockRecorder) GetPartyTokenAccount(arg0 interface{}) *gomock.Call {
+// GetPartyGeneralAccount indicates an expected call of GetPartyGeneralAccount
+func (mr *MockAccountsMockRecorder) GetPartyGeneralAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyTokenAccount", reflect.TypeOf((*MockAccounts)(nil).GetPartyTokenAccount), arg0)
-}
-
-// GetTotalTokens mocks base method
-func (m *MockAccounts) GetTotalTokens() uint64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTotalTokens")
-	ret0, _ := ret[0].(uint64)
-	return ret0
-}
-
-// GetTotalTokens indicates an expected call of GetTotalTokens
-func (mr *MockAccountsMockRecorder) GetTotalTokens() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTokens", reflect.TypeOf((*MockAccounts)(nil).GetTotalTokens))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockAccounts)(nil).GetPartyGeneralAccount), arg0, arg1)
 }
