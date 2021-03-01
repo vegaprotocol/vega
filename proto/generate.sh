@@ -28,5 +28,9 @@ function gen_code() {
 	chmod 0644 proto/*.go proto/api/*.go
 }
 
+function gen_swagger() {
+	buf generate --path=./proto/api --template=./proto/api/buf.gen.yaml # generate swagger
+}
 check
 gen_code
+gen_swagger
