@@ -292,8 +292,10 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	}
 
 	// submit our lp
-	tm.market.SubmitLiquidityProvision(
-		ctx, lpSubmission, lpparty, "liquidity-submission-1")
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
 
 	// clear auction
 	tm.EndOpeningAuction(t, auctionEnd)

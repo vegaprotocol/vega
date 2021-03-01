@@ -689,8 +689,27 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	for _, order := range m.peggedOrders {
 		if HasReferenceMoved(order, changes) {
 			if order.Status == types.Order_STATUS_CANCELLED {
+				// FIXME(JEREMY): here when trying to re-submit the order
+				// if this is a liquidity provision order, we will need to go
+				// through the path of distressed trader.
+				// this won't be done for now, but will need to be addressed
 				// try to submit the order
 				if _, err := m.submitValidatedOrder(ctx, order); err != nil {
+					m.log.Debug("could not re-submit a pegged order after repricing",
+						logging.MarketID(m.GetID()),
+						logging.PartyID(order.PartyId),
+						logging.OrderID(order.Id),
+						logging.Error(err))
+					if m.liquidity.IsLiquidityOrder(order.PartyId, order.Id) {
+						if err := m.liquidity.HandleFailedOrderSubmit(
+							ctx, order.Id, order.PartyId); err != nil {
+							m.log.Debug("could not remove lp order from engine",
+								logging.MarketID(m.GetID()),
+								logging.PartyID(order.PartyId),
+								logging.OrderID(order.Id),
+								logging.Error(err))
+						}
+					}
 					// order could not be submitted, it's then been rejected
 					// we just completely remove it.
 					toRemove = append(toRemove, order)
@@ -1056,7 +1075,9 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	}
 
 	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
-		return nil, err
+		m.log.Debug("error when calling liquidity update",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
 	}
 
 	return conf, nil
@@ -1166,7 +1187,9 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for trader",
-					logging.String("market-id", m.GetID()),
+					logging.OrderID(order.Id),
+					logging.PartyID(order.PartyId),
+					logging.MarketID(m.GetID()),
 					logging.Error(err))
 			}
 			return nil, ErrMarginCheckFailed
@@ -3198,6 +3221,7 @@ func (m *Market) updateAndCreateOrders(
 	newOrders []*types.Order,
 	amendments []*types.OrderAmendment,
 ) (err error) {
+
 	for _, order := range amendments {
 		if _, err := m.amendOrder(ctx, order); err != nil {
 			// here we panic, an order which should be in a the market
@@ -3214,11 +3238,22 @@ func (m *Market) updateAndCreateOrders(
 
 	for _, order := range newOrders {
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
+			m.log.Debug("could not submit liquidity provision order",
+				logging.OrderID(order.Id),
+				logging.PartyID(order.PartyId),
+				logging.MarketID(order.MarketId),
+				logging.Error(err))
 			// an error happened, this might be becuase of a margin call
 			// not been OK.
 			// that' somethig we'll need to figure out how to handle
 			// in the future I suppose...
-			m.liquidity.HandleFailedOrderSubmit(ctx, order.Id, order.PartyId)
+			if err := m.liquidity.HandleFailedOrderSubmit(ctx, order.Id, order.PartyId); err != nil {
+				m.log.Debug("error while handling failed order submittion in liquidity engine",
+					logging.OrderID(order.Id),
+					logging.PartyID(order.PartyId),
+					logging.MarketID(order.MarketId),
+					logging.Error(err))
+			}
 		}
 	}
 
@@ -3247,8 +3282,17 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 
 	for _, order := range newOrders {
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
+			m.log.Debug("unable to submit liquidity provision order",
+				logging.MarketID(m.GetID()),
+				logging.OrderID(order.Id),
+				logging.PartyID(order.PartyId),
+				logging.Error(err))
 			return err
 		}
+		m.log.Debug("new liquidity order submitted successfully",
+			logging.MarketID(m.GetID()),
+			logging.OrderID(order.Id),
+			logging.PartyID(order.PartyId))
 		submittedIDs = append(submittedIDs, order.Id)
 	}
 
