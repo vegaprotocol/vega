@@ -234,3 +234,151 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		}
 	})
 }
+
+func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 155000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 150000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -500},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -500},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 500},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 500},
+		},
+	}
+
+	// submit our lp
+	tm.market.SubmitLiquidityProvision(
+		ctx, lpSubmission, lpparty, "liquidity-submission-1")
+
+	// clear auction
+	tm.EndOpeningAuction(t, auctionEnd)
+}
+
+func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time) {
+	var (
+		party0 = "clearing-auction-party0"
+		party1 = "clearing-auction-party1"
+	)
+
+	// parties used for clearing opening auction
+	tm.WithAccountAndAmount(party0, 1000000).
+		WithAccountAndAmount(party1, 1000000)
+
+	var auctionOrders = []*types.Order{
+		// Limit Orders
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        5,
+			Remaining:   5,
+			Price:       1000,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     party0,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        5,
+			Remaining:   5,
+			Price:       1000,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     party1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       900,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     party0,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       2500,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     party1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.WithSubmittedOrders(t, auctionOrders...)
+
+	// update the time to get out of auction
+	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
+
+	// now set the markprice
+	mpOrders := []*types.Order{
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       900,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     party1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       2500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     party0,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.WithSubmittedOrders(t, mpOrders...)
+
+	assert.Equal(t, tm.market.GetMarketData().MarketTradingMode, types.Market_TRADING_MODE_CONTINUOUS)
+}
