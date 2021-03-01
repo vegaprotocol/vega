@@ -1462,8 +1462,8 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			if m.liquidity.IsLiquidityProvider(party) {
 				if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
 					m.log.Debug("could not cancel liquidity provision",
-						logging.String("market-id", m.GetID()),
-						logging.String("party-id", party),
+						logging.MarketID(m.GetID()),
+						logging.PartyID(party),
 						logging.Error(err))
 				}
 			}
@@ -1476,7 +1476,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			err := m.liquidityUpdate(ctx, orderUpdates)
 			if err != nil {
 				m.log.Debug("unable to run liquidity update after resolving closed out traders",
-					logging.String("market-id", m.GetID()),
+					logging.MarketID(m.GetID()),
 					logging.Error(err))
 			}
 		}
@@ -1486,8 +1486,8 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	for _, v := range distressedMarginEvts {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("closing out trader",
-				logging.String("party-id", v.Party()),
-				logging.String("market-id", m.GetID()))
+				logging.PartyID(v.Party()),
+				logging.MarketID(m.GetID()))
 		}
 		distressedPos = append(distressedPos, v)
 		distressedParties = append(distressedParties, v.Party())
@@ -1495,8 +1495,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// cancel pending orders for traders
 	rmorders, err := m.matching.RemoveDistressedOrders(distressedPos)
 	if err != nil {
-		m.log.Error(
-			"Failed to remove distressed traders from the orderbook",
+		m.log.Error("Failed to remove distressed traders from the orderbook",
 			logging.Error(err),
 		)
 		return err
@@ -1516,9 +1515,9 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		evts = append(evts, events.NewOrderEvent(ctx, o))
 		if _, err := m.position.UnregisterOrder(o); err != nil {
 			m.log.Error("unable to unregister order for a distressed party",
-				logging.String("party-id", o.PartyId),
-				logging.String("market-id", mktID),
-				logging.String("order-id", o.Id),
+				logging.PartyID(o.PartyId),
+				logging.MarketID(mktID),
+				logging.OrderID(o.Id),
 			)
 		}
 	}
@@ -3206,9 +3205,9 @@ func (m *Market) updateAndCreateOrders(
 			// engine and we are trying to remove a non-existing order
 			// or the market lost track of the order
 			m.log.Panic("unable to amend a liquidity order",
-				logging.String("order-id", order.OrderId),
-				logging.String("party-id", order.PartyId),
-				logging.String("market-id", order.MarketId),
+				logging.OrderID(order.OrderId),
+				logging.PartyID(order.PartyId),
+				logging.MarketID(order.MarketId),
 				logging.Error(err))
 		}
 	}

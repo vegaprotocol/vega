@@ -564,7 +564,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref = lp.Sells[i]
 		}
 
-		if order != nil && (order.Remaining != order.Size || order.Size != o.LiquidityImpliedVolume) {
+		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume) {
 			// we always remove the order from our store, and add it to the amendment
 
 			// only amend if order remaining > 0
@@ -587,7 +587,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 
 		// We eithere don't need this order anymore or
 		// we have just nothing to do about it.
-		if o.LiquidityImpliedVolume == 0 || (order != nil && order.Size == order.Remaining) {
+		if o.LiquidityImpliedVolume == 0 || (order != nil && !order.HasTraded()) {
 			continue
 		}
 
