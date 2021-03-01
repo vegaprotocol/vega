@@ -10,27 +10,6 @@ import (
 
 func TestModelConverters(t *testing.T) {
 
-	t.Run("DiscreteTrading.IntoProto", func(t *testing.T) {
-
-		dt := &gql.DiscreteTrading{
-			Duration: 123,
-			TickSize: "0.1",
-		}
-		pdt, err := dt.IntoProto()
-		assert.NotNil(t, pdt)
-		assert.Nil(t, err)
-		assert.Equal(t, int64(dt.Duration), pdt.Discrete.DurationNs)
-	})
-
-	t.Run("InstrumentMetadata.IntoProto", func(t *testing.T) {
-		im := gql.InstrumentMetadata{Tags: []string{"tag:1", "tag:2"}}
-		pim, err := im.IntoProto()
-		assert.Nil(t, err)
-		assert.NotNil(t, pim)
-		assert.NotNil(t, pim.Tags)
-		assert.Len(t, pim.Tags, 2)
-	})
-
 	t.Run("TradingModeFromProto unimplemented", func(t *testing.T) {
 		ptm := int(0)
 		tm, err := gql.TradingModeConfigFromProto(ptm)
@@ -72,25 +51,6 @@ func TestModelConverters(t *testing.T) {
 		assert.True(t, ok)
 	})
 
-	t.Run("InstrumentMetadataFromProto nil", func(t *testing.T) {
-		im, err := gql.InstrumentMetadataFromProto(nil)
-		assert.Nil(t, im)
-		assert.NotNil(t, err)
-		assert.Equal(t, gql.ErrNilInstrumentMetadata, err)
-	})
-
-	t.Run("InstrumentMetadataFromProto", func(t *testing.T) {
-		pim := &proto.InstrumentMetadata{
-			Tags: []string{"tag:1", "tag:2"},
-		}
-		im, err := gql.InstrumentMetadataFromProto(pim)
-		assert.NotNil(t, im)
-		assert.Nil(t, err)
-		assert.Len(t, im.Tags, 2)
-		assert.Equal(t, pim.Tags[0], (im.Tags[0]))
-		assert.Equal(t, pim.Tags[1], (im.Tags[1]))
-	})
-
 	t.Run("EthereumEventFromproto nil", func(t *testing.T) {
 		ee, err := gql.EthereumEventFromProto(nil)
 		assert.Nil(t, ee)
@@ -127,39 +87,6 @@ func TestModelConverters(t *testing.T) {
 		assert.NotNil(t, o)
 		assert.Nil(t, err)
 		_, ok := o.(*gql.EthereumEvent)
-		assert.True(t, ok)
-	})
-
-	t.Run("RiskModelFromProto nil", func(t *testing.T) {
-		rm, err := gql.RiskModelFromProto(nil)
-		assert.Nil(t, rm)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, gql.ErrNilRiskModel)
-	})
-
-	t.Run("RiskModelFromProto unimplemented", func(t *testing.T) {
-		rm, err := gql.RiskModelFromProto(struct{}{})
-		assert.Nil(t, rm)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, gql.ErrUnimplementedRiskModel)
-	})
-
-	t.Run("RiskModelFromProto", func(t *testing.T) {
-		prm := &proto.TradableInstrument_LogNormalRiskModel{
-			LogNormalRiskModel: &proto.LogNormalRiskModel{
-				RiskAversionParameter: 0.01,
-				Tau:                   1.0 / 365.25 / 24,
-				Params: &proto.LogNormalModelParams{
-					Mu:    0,
-					R:     0.016,
-					Sigma: 0.09,
-				},
-			},
-		}
-		rm, err := gql.RiskModelFromProto(prm)
-		assert.NotNil(t, rm)
-		assert.Nil(t, err)
-		_, ok := rm.(*gql.LogNormalRiskModel)
 		assert.True(t, ok)
 	})
 

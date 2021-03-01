@@ -46,8 +46,18 @@ models:
     model: code.vegaprotocol.io/vega/proto.Future
   TradableInstrument:
     model: code.vegaprotocol.io/vega/proto.TradableInstrument
+  SimpleRiskModel:
+    model: code.vegaprotocol.io/vega/proto.SimpleRiskModel
+  SimpleRiskModelParams:
+    model: code.vegaprotocol.io/vega/proto.SimpleModelParams
+  LogNormalRiskModel:
+    model: code.vegaprotocol.io/vega/proto.LogNormalRiskModel
+  LogNormalModelParams:
+    model: code.vegaprotocol.io/vega/proto.LogNormalModelParams
   Instrument:
     model: code.vegaprotocol.io/vega/proto.Instrument
+  InstrumentMetadata:
+    model: code.vegaprotocol.io/vega/proto.InstrumentMetadata
   Market:
     model: code.vegaprotocol.io/vega/proto.Market
     fields:
@@ -110,3 +120,15 @@ models:
         resolver: true
   PeggedOrder:
     model: code.vegaprotocol.io/vega/proto.PeggedOrder
+  AuctionEvent:
+    model: code.vegaprotocol.io/vega/proto.AuctionEvent
+  FeeFactors:
+    model: code.vegaprotocol.io/vega/proto.FeeFactors
+  Fees:
+    model: code.vegaprotocol.io/vega/proto.Fees
+  ScalingFactors:
+    model: code.vegaprotocol.io/vega/proto.ScalingFactors
+  MarginCalculator:
+    model: code.vegaprotocol.io/vega/proto.MarginCalculator
+  Vote:
+    model: code.vegaprotocol.io/vega/proto.Vote

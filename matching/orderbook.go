@@ -196,9 +196,24 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	for _, uo := range uncrossedOrders {
+		if uo.Order.Remaining == 0 {
+			uo.Order.Status = types.Order_STATUS_FILLED
+			// delete from lookup table
+			delete(b.ordersByID, uo.Order.Id)
+			delete(b.ordersPerParty[uo.Order.PartyId], uo.Order.Id)
+		}
+
 		uo.Order.UpdatedAt = ts
-		for _, po := range uo.PassiveOrdersAffected {
+		for idx, po := range uo.PassiveOrdersAffected {
 			po.UpdatedAt = ts
+			// also remove the orders from lookup tables
+			if uo.PassiveOrdersAffected[idx].Remaining == 0 {
+				uo.PassiveOrdersAffected[idx].Status = types.Order_STATUS_FILLED
+
+				// delete from lookup table
+				delete(b.ordersByID, po.Id)
+				delete(b.ordersPerParty[po.PartyId], po.Id)
+			}
 		}
 		for _, tr := range uo.Trades {
 			tr.Timestamp = ts
