@@ -62,7 +62,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 	initialMarkPrice uint64, auction bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	log.SetLevel(config.Level.Get())
+	// log.SetLevel(config.Level.Get())
+	log.SetLevel(logging.DebugLevel)
 
 	return &OrderBook{
 		log:             log,

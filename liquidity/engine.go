@@ -404,6 +404,7 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 				newOrders = append(newOrders, creates...)
 				amendments = append(amendments, updates...)
 				stillUndeployed = stillUndeployed || lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED
+
 			}
 		}
 		e.undeployedProvisions = stillUndeployed
@@ -459,8 +460,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		sellsShape = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 	)
 
-	oneOrMoreValidOrdersBuy := false
-	oneOrMoreValidOrdersSell := false
+	repriceFailure := false
 	for _, buy := range lp.Buys {
 		pegged := &types.PeggedOrder{
 			Reference: buy.LiquidityOrder.Reference,
@@ -472,9 +472,9 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		}
 		if price, err := repriceFn(pegged); err != nil {
 			e.log.Debug("Building Buy Shape", logging.Error(err))
+			repriceFailure = true
 		} else {
 			order.Price = price
-			oneOrMoreValidOrdersBuy = true
 		}
 		buysShape = append(buysShape, order)
 	}
@@ -490,31 +490,46 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		}
 		if price, err := repriceFn(pegged); err != nil {
 			e.log.Debug("Building Sell Shape", logging.Error(err))
+			repriceFailure = true
 		} else {
 			order.Price = price
-			oneOrMoreValidOrdersSell = true
 		}
 		sellsShape = append(sellsShape, order)
 	}
 
-	if !(oneOrMoreValidOrdersBuy && oneOrMoreValidOrdersSell) {
+	var (
+		needsCreateBuys, needsCreateSells []*types.Order
+		needsUpdateBuys, needsUpdateSells []*types.OrderAmendment
+	)
+
+	if repriceFailure {
+
+		needsUpdateBuys = e.undeployOrdersFromShape(
+			party, buysShape, types.Side_SIDE_BUY)
+		needsUpdateSells = e.undeployOrdersFromShape(
+			party, sellsShape, types.Side_SIDE_SELL)
+
 		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 		e.undeployedProvisions = true
-		return nil, nil, nil
+	} else {
+
+		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
+			float64(markPrice),
+			obligation,
+			orders,
+			buysShape, sellsShape,
+		); err != nil {
+			return nil, nil, err
+		}
+
+		needsCreateBuys, needsUpdateBuys = e.createOrdersFromShape(
+			party, buysShape, types.Side_SIDE_BUY)
+		needsCreateSells, needsUpdateSells = e.createOrdersFromShape(
+			party, sellsShape, types.Side_SIDE_SELL)
+
+		lp.Status = types.LiquidityProvision_STATUS_ACTIVE
 	}
 
-	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-		float64(markPrice),
-		obligation,
-		orders,
-		buysShape, sellsShape,
-	); err != nil {
-		return nil, nil, err
-	}
-
-	needsCreateBuys, needsUpdateBuys := e.createOrdersFromShape(party, buysShape, types.Side_SIDE_BUY)
-	needsCreateSells, needsUpdateSells := e.createOrdersFromShape(party, sellsShape, types.Side_SIDE_SELL)
-	lp.Status = types.LiquidityProvision_STATUS_ACTIVE
 	e.broker.Send(events.NewLiquidityProvisionEvent(context.Background(), lp))
 
 	return append(needsCreateBuys, needsCreateSells...),
@@ -536,6 +551,55 @@ func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price ui
 		Reference:   ref,
 	}
 	return order.Create(e.currentTime)
+}
+
+func (e *Engine) undeployOrdersFromShape(
+	party string, supplied []*supplied.LiquidityOrder, side types.Side,
+) []*types.OrderAmendment {
+	lm, ok := e.liquidityOrders[party]
+	if !ok {
+		lm = map[string]*types.Order{}
+		e.liquidityOrders[party] = lm
+		if _, ok := e.orders[party]; !ok {
+			e.orders[party] = map[string]*types.Order{}
+		}
+	}
+	lp := e.LiquidityProvisionByPartyID(party)
+
+	var (
+		amendments []*types.OrderAmendment
+	)
+
+	for i, o := range supplied {
+		order := lm[o.OrderID]
+		var ref *types.LiquidityOrderReference
+		if side == types.Side_SIDE_BUY {
+			ref = lp.Buys[i]
+		} else {
+			ref = lp.Sells[i]
+		}
+
+		if order != nil {
+			// only amend if order remaining > 0
+			// if not the market already took care in cleaning
+			// up everything
+			if order.Remaining != 0 {
+				amendment := order.Update(e.currentTime).AmendSize(0)
+				// so it's cancelled via an amend
+				amendments = append(
+					amendments,
+					// we amend the order size, to be 0
+					amendment,
+				)
+			}
+
+			// then we can delete the order from our mapping
+			delete(lm, ref.OrderId)
+			ref.OrderId = ""
+		}
+	}
+
+	return amendments
 }
 
 func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.OrderAmendment) {

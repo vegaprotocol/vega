@@ -842,6 +842,8 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.AuctionEnded(ctx, now)
 
+	updatedOrders := []*types.Order{}
+
 	for _, uncrossedOrder := range uncrossedOrders {
 		for _, trade := range uncrossedOrder.Trades {
 			err := m.pMonitor.CheckPrice(
@@ -853,10 +855,21 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 					logging.Error(err))
 			}
 		}
+
+		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
+		updatedOrders = append(
+			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
+
 	}
 
 	// Send an event bus update
 	m.broker.Send(endEvt)
+
+	// update the liquidity engine with the state of every orders
+	// which got updated during auction
+	if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
+		m.log.Debug("could not update liquidity", logging.Error(err))
+	}
 
 	// We are moving to continuous trading so we have to unpark any pegged orders
 	m.repriceAllPeggedOrders(ctx, PriceMoveAll)
