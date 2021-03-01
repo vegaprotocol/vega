@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
 # Note: Make sure the versions match the ones in devops-infra/docker/cipipeline/Dockerfile
+BUF_VER="0.36.0" # do not add "v" prefix
 PROTOC_VER="3.7.1" # do not add "v" prefix
 PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VER}/protoc-${PROTOC_VER}-linux-x86_64.zip"
 PROTOBUF_VER="1.3.1" # do not add "v" prefix
@@ -21,9 +22,9 @@ gettools_develop() {
 	# These are all the tools required to develop trading-core.
 
 	# tools = "golocation@version"
-	tools="github.com/bufbuild/buf/cmd/buf@v0.36.0
-github.com/bufbuild/buf/cmd/protoc-gen-buf-check-breaking@v0.36.0
-github.com/bufbuild/buf/cmd/protoc-gen-buf-check-lint@v0.36.0
+	tools="github.com/bufbuild/buf/cmd/buf@v$BUF_VER
+github.com/bufbuild/buf/cmd/protoc-gen-buf-check-breaking@v$BUF_VER
+github.com/bufbuild/buf/cmd/protoc-gen-buf-check-lint@v$BUF_VER
 github.com/golang/protobuf@v$PROTOBUF_VER
 github.com/golang/protobuf/protoc-gen-go@v$PROTOBUF_VER
 github.com/gordonklaus/ineffassign@v0.0.0-20190601041439-ed7b1b5ee0f8
