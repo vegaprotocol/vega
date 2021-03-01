@@ -1223,7 +1223,7 @@ func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.Status != status || o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
+			if o.PartyId != trader || o.Status != status || o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
 				// if o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
 				continue
 			}

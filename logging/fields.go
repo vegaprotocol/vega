@@ -124,6 +124,10 @@ func Uintptr(key string, val uintptr) zap.Field {
 	return zap.Uintptr(key, val)
 }
 
+func Duration(key string, value time.Duration) zap.Field {
+	return zap.String(key, value.String())
+}
+
 // Error constructs a field with the given error value.
 func Error(val error) zap.Field {
 	return zap.Error(val)
@@ -142,6 +146,10 @@ func CandleWithTag(c types.Candle, tag string) zap.Field {
 // Order constructs a field with the given VEGA order proto value.
 func Order(o types.Order) zap.Field {
 	return zap.String("order", o.String())
+}
+
+func OrderID(id string) zap.Field {
+	return zap.String("order-id", id)
 }
 
 // Time display a time
@@ -164,9 +172,29 @@ func Market(m types.Market) zap.Field {
 	return zap.String("market", m.String())
 }
 
+func MarketID(id string) zap.Field {
+	return zap.String("market-id", id)
+}
+
+func AssetID(id string) zap.Field {
+	return zap.String("asset-id", id)
+}
+
+func LiquidityID(id string) zap.Field {
+	return zap.String("liquidity-id", id)
+}
+
+func LiquidityProvisionSubmission(lp types.LiquidityProvisionSubmission) zap.Field {
+	return zap.String("liquidity-provision-submission", lp.String())
+}
+
 // Party constructs a field with the given VEGA party proto value.
 func Party(p types.Party) zap.Field {
 	return zap.String("party", p.String())
+}
+
+func PartyID(id string) zap.Field {
+	return zap.String("party", id)
 }
 
 // Account constructs a field with the given VEGA account proto value.
@@ -177,6 +205,10 @@ func Account(a types.Account) zap.Field {
 // OrderAmendment constructs a single string field to contain all the object information
 func OrderAmendment(oa *types.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
+}
+
+func OrderCancellation(oc *types.OrderCancellation) zap.Field {
+	return zap.String("order-cancellation", oc.String())
 }
 
 // Reflect constructs a field by running reflection over all the

@@ -381,31 +381,30 @@ func (m *Market) GetMarketData() types.MarketData {
 	}
 
 	return types.MarketData{
-		Market:                m.GetID(),
-		BestBidPrice:          bestBidPrice,
-		BestBidVolume:         bestBidVolume,
-		BestOfferPrice:        bestOfferPrice,
-		BestOfferVolume:       bestOfferVolume,
-		BestStaticBidPrice:    bestStaticBidPrice,
-		BestStaticBidVolume:   bestStaticBidVolume,
-		BestStaticOfferPrice:  bestStaticOfferPrice,
-		BestStaticOfferVolume: bestStaticOfferVolume,
-		MidPrice:              midPrice,
-		StaticMidPrice:        staticMidPrice,
-		MarkPrice:             m.markPrice,
-		Timestamp:             m.currentTime.UnixNano(),
-		OpenInterest:          m.position.GetOpenInterest(),
-		IndicativePrice:       indicativePrice,
-		IndicativeVolume:      indicativeVolume,
-		AuctionStart:          auctionStart,
-		AuctionEnd:            auctionEnd,
-		MarketTradingMode:     m.as.Mode(),
-		Trigger:               m.as.Trigger(),
-		TargetStake:           strconv.FormatFloat(m.getTargetStake(), 'f', -1, 64),
-		SuppliedStake:         strconv.FormatUint(m.getSuppliedStake(), 10),
-		PriceMonitoringBounds: m.pMonitor.GetCurrentBounds(),
-		MarketValueProxy:      strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
-		// TODO(): set this with actual value when implemented.
+		Market:                    m.GetID(),
+		BestBidPrice:              bestBidPrice,
+		BestBidVolume:             bestBidVolume,
+		BestOfferPrice:            bestOfferPrice,
+		BestOfferVolume:           bestOfferVolume,
+		BestStaticBidPrice:        bestStaticBidPrice,
+		BestStaticBidVolume:       bestStaticBidVolume,
+		BestStaticOfferPrice:      bestStaticOfferPrice,
+		BestStaticOfferVolume:     bestStaticOfferVolume,
+		MidPrice:                  midPrice,
+		StaticMidPrice:            staticMidPrice,
+		MarkPrice:                 m.markPrice,
+		Timestamp:                 m.currentTime.UnixNano(),
+		OpenInterest:              m.position.GetOpenInterest(),
+		IndicativePrice:           indicativePrice,
+		IndicativeVolume:          indicativeVolume,
+		AuctionStart:              auctionStart,
+		AuctionEnd:                auctionEnd,
+		MarketTradingMode:         m.as.Mode(),
+		Trigger:                   m.as.Trigger(),
+		TargetStake:               strconv.FormatFloat(m.getTargetStake(), 'f', -1, 64),
+		SuppliedStake:             strconv.FormatUint(m.getSuppliedStake(), 10),
+		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
+		MarketValueProxy:          strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
 }
@@ -1892,69 +1891,36 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 		return nil, ErrTradingNotAllowed
 	}
 
-	cancellations, err := m.matching.CancelAllOrders(partyID)
-	if cancellations == nil || err != nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Failure after cancelling all orders from matching engine",
-				logging.String("party-id", partyID),
-				logging.String("market", m.mkt.Id),
-				logging.Error(err))
-		}
-		return nil, err
-	}
+	// get all order for this party in the book
+	orders := m.matching.GetOrdersPerParty(partyID)
 
-	var (
-		// Create a slice ready to store the generated events in
-		evts = make([]events.Event, 0, len(cancellations))
-		// Check the parked order list of any orders from that same party
-		parkedCancels []*types.OrderCancellationConfirmation
-		// orders from park list to be removed
-		toRemove []*types.Order
-	)
-
+	// add all orders being eventually parked
 	for _, order := range m.peggedOrders {
 		if order.PartyId == partyID && order.Status == types.Order_STATUS_PARKED {
-			toRemove = append(toRemove, order)
+			orders = append(orders, order)
 		}
 	}
-	for _, order := range toRemove {
-		order.Status = types.Order_STATUS_CANCELLED
-		m.removePeggedOrder(order)
-		order.UpdatedAt = m.currentTime.UnixNano()
-		evts = append(evts, events.NewOrderEvent(ctx, order))
 
-		parkedCancel := &types.OrderCancellationConfirmation{
-			Order: order,
-		}
-		parkedCancels = append(parkedCancels, parkedCancel)
+	// just an early exit, there's just no orders...
+	if len(orders) <= 0 {
+		return nil, nil
 	}
 
-	for _, cancellation := range cancellations {
-		if cancellation.Order.IsExpireable() {
-			m.expiringOrders.RemoveOrder(cancellation.Order.ExpiresAt, cancellation.Order.Id)
-		}
-		// if the order was a pegged order, remove from pegged list
-		if cancellation.Order.PeggedOrder != nil {
-			m.removePeggedOrder(cancellation.Order)
+	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
+
+	// now iterate over all orders and cancel one by one.
+	for _, order := range orders {
+		if m.liquidity.IsLiquidityOrder(partyID, order.Id) {
+			continue
 		}
 
-		// Update the order in our stores (will be marked as cancelled)
-		cancellation.Order.UpdatedAt = m.currentTime.UnixNano()
-		evts = append(evts, events.NewOrderEvent(ctx, cancellation.Order))
-		_, err = m.position.UnregisterOrder(cancellation.Order)
+		cancellation, err := m.cancelOrder(ctx, partyID, order.Id)
 		if err != nil {
-			m.log.Error("Failure unregistering order in positions engine (cancel)",
-				logging.Order(*cancellation.Order),
-				logging.Error(err))
+			return nil, err
 		}
+		cancellations = append(cancellations, cancellation)
 	}
 
-	// Send off all the events in one big batch
-	m.broker.SendBatch(evts)
-
-	m.checkForReferenceMoves(ctx)
-
-	cancellations = append(cancellations, parkedCancels...)
 	return cancellations, nil
 }
 
@@ -2979,6 +2945,8 @@ func (m *Market) cancelLiquidityProvision(
 	m.updateLiquidityFee(ctx)
 	// and remove the party from the equitey share like calculation
 	m.equityShares.SetPartyStake(party, float64(0))
+	// force update of shares so they are updated for all
+	_ = m.equityShares.Shares()
 	return nil
 }
 
@@ -3044,12 +3012,20 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		}
 	}()
 
-	// WE WANT TO APPLY THECOMMITMENT IN BOND ACCOUNT
+	// we will need both bond accouint and the margin account, let's create
+	// them now
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, party, m.GetID(), asset)
 	if err != nil {
 		// error happen, we can't event have the bond account taken
 		// if this is not an amendment, we cancel the liquidity provision
+		if !isAmend {
+			needsCancel = true
+		}
+		return err
+	}
+	_, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.GetID(), asset)
+	if err != nil {
 		if !isAmend {
 			needsCancel = true
 		}
@@ -3110,6 +3086,18 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}()
 
+	defer func() {
+		// so here we check if at least we were able to get hte
+		// liquidty provision in, even if orders are not deployed, we should
+		// be able to calculate the shars etc
+		if !needsCancel && !needsBondRollback {
+			m.updateLiquidityFee(ctx)
+			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
+			// force update of shares so they are updated for all
+			_ = m.equityShares.Shares()
+		}
+	}()
+
 	existingOrders := m.matching.GetOrdersPerParty(party)
 	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, existingOrders, m.repriceFuncW)
 	if err != nil {
@@ -3145,8 +3133,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	m.updateLiquidityFee(ctx)
-	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 	return nil
 }
 

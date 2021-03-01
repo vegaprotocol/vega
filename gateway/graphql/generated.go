@@ -305,6 +305,7 @@ type ComplexityRoot struct {
 		OpeningAuction          func(childComplexity int) int
 		Orders                  func(childComplexity int, skip *int, first *int, last *int) int
 		PriceMonitoringSettings func(childComplexity int) int
+		Proposal                func(childComplexity int) int
 		State                   func(childComplexity int) int
 		TargetStakeParameters   func(childComplexity int) int
 		TradableInstrument      func(childComplexity int) int
@@ -831,6 +832,7 @@ type MarketResolver interface {
 	TargetStakeParameters(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error)
 	TradingMode(ctx context.Context, obj *proto.Market) (MarketTradingMode, error)
 	State(ctx context.Context, obj *proto.Market) (MarketState, error)
+	Proposal(ctx context.Context, obj *proto.Market) (*proto.GovernanceData, error)
 	Orders(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Order, error)
 	Accounts(ctx context.Context, obj *proto.Market, partyID *string) ([]*proto.Account, error)
 	Trades(ctx context.Context, obj *proto.Market, skip *int, first *int, last *int) ([]*proto.Trade, error)
@@ -2038,6 +2040,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.PriceMonitoringSettings(childComplexity), true
+
+	case "Market.proposal":
+		if e.complexity.Market.Proposal == nil {
+			break
+		}
+
+		return e.complexity.Market.Proposal(childComplexity), true
 
 	case "Market.state":
 		if e.complexity.Market.State == nil {
@@ -5265,6 +5274,9 @@ type Market {
   "Current state of the market"
   state: MarketState!
 
+  "The proposal which initiated this market"
+  proposal: Proposal
+
   "Orders on a market"
   orders(
     "Pagination skip"
@@ -6745,7 +6757,7 @@ enum LiquidityProvisionStatus {
 
 type LiquidityOrderReference {
   "The id of the pegged order generated to fullfill this commitment"
-  order: Order!
+  order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
 }
@@ -11048,14 +11060,11 @@ func (ec *executionContext) _LiquidityOrderReference_order(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*proto.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityOrderReference_liquidityOrder(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityOrderReference) (ret graphql.Marshaler) {
@@ -12577,6 +12586,37 @@ func (ec *executionContext) _Market_state(ctx context.Context, field graphql.Col
 	res := resTmp.(MarketState)
 	fc.Result = res
 	return ec.marshalNMarketState2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Market_proposal(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Market",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Market().Proposal(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*proto.GovernanceData)
+	fc.Result = res
+	return ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_orders(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
@@ -25550,9 +25590,6 @@ func (ec *executionContext) _LiquidityOrderReference(ctx context.Context, sel as
 					}
 				}()
 				res = ec._LiquidityOrderReference_order(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "liquidityOrder":
@@ -26152,6 +26189,17 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "proposal":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Market_proposal(ctx, field, obj)
 				return res
 			})
 		case "orders":
@@ -32554,6 +32602,10 @@ func (ec *executionContext) marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗi
 	return v
 }
 
+func (ec *executionContext) marshalOOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx context.Context, sel ast.SelectionSet, v proto.Order) graphql.Marshaler {
+	return ec._Order(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.Order) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -32592,6 +32644,13 @@ func (ec *executionContext) marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvega�
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOrder(ctx context.Context, sel ast.SelectionSet, v *proto.Order) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Order(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOOrderRejectionReason2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderRejectionReason(ctx context.Context, v interface{}) (OrderRejectionReason, error) {

@@ -331,6 +331,9 @@ func (r *myLiquidityOrderResolver) Reference(ctx context.Context, obj *types.Liq
 type myLiquidityOrderReferenceResolver VegaResolverRoot
 
 func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *types.LiquidityOrderReference) (*types.Order, error) {
+	if len(obj.OrderId) <= 0 {
+		return nil, nil
+	}
 	return r.r.getOrderByID(ctx, obj.OrderId, nil)
 }
 

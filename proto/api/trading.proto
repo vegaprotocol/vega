@@ -158,7 +158,9 @@ service TradingDataService {
   // Get a list of Accounts by Party
   rpc PartyAccounts(PartyAccountsRequest) returns (PartyAccountsResponse);
 
-  // Get a list of infrastructure fees accounts filter eventually by assets
+  // Get a list of accounts holding infrastructure fees.
+  // Can be filtered by asset, there will be 1 infrastructure fee account per
+  // asset in the network.
   rpc FeeInfrastructureAccounts(FeeInfrastructureAccountsRequest) returns (FeeInfrastructureAccountsResponse);
 
   // -- Candles --
