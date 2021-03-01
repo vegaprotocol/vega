@@ -58,23 +58,6 @@ type AuctionDuration struct {
 	Volume int `json:"volume"`
 }
 
-type AuctionEvent struct {
-	// the market ID
-	MarketID string `json:"marketID"`
-	// event fired because of auction end
-	Leave bool `json:"leave"`
-	// event related to opening auction
-	OpeningAuction bool `json:"openingAuction"`
-	// RFC3339Nano start time of auction
-	AuctionStart string `json:"auctionStart"`
-	// RFC3339Nano optional end time of auction
-	AuctionEnd string `json:"auctionEnd"`
-	// What triggered the auction
-	Trigger AuctionTrigger `json:"trigger"`
-}
-
-func (AuctionEvent) IsEvent() {}
-
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
 	// The id of the asset
@@ -203,22 +186,6 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
-// The factors applied to calculate the fees
-type FeeFactors struct {
-	// The factor applied to calculate MakerFees, a non-negative float
-	MakerFee string `json:"makerFee"`
-	// The factor applied to calculate InfrastructureFees, a non-negative float
-	InfrastructureFee string `json:"infrastructureFee"`
-	// The factor applied to calculate LiquidityFees, a non-negative float
-	LiquidityFee string `json:"liquidityFee"`
-}
-
-// The fees applicable to a market
-type Fees struct {
-	// The factors used to calculate the different fees
-	Factors *FeeFactors `json:"factors"`
-}
-
 // Future product configuration
 type FutureProductInput struct {
 	// Future product maturity (ISO8601/RFC3339 timestamp)
@@ -236,12 +203,6 @@ type InstrumentConfigurationInput struct {
 	Code string `json:"code"`
 	// Future product specification
 	FutureProduct *FutureProductInput `json:"futureProduct"`
-}
-
-// A set of metadata to associate to an instruments
-type InstrumentMetadata struct {
-	// An arbitrary list of tags to associated to associate to the Instrument (string list)
-	Tags []string `json:"tags"`
 }
 
 type LedgerEntry struct {
@@ -279,16 +240,6 @@ type LiquidityProviderFeeShare struct {
 	AverageEntryValuation string `json:"averageEntryValuation"`
 }
 
-// Parameters for the log normal risk model
-type LogNormalModelParams struct {
-	// mu parameter
-	Mu float64 `json:"mu"`
-	// r parameter
-	R float64 `json:"r"`
-	// sigma parameter
-	Sigma float64 `json:"sigma"`
-}
-
 type LogNormalModelParamsInput struct {
 	// mu parameter
 	Mu float64 `json:"mu"`
@@ -297,18 +248,6 @@ type LogNormalModelParamsInput struct {
 	// sigma parameter
 	Sigma float64 `json:"sigma"`
 }
-
-// A type of risk model for futures trading
-type LogNormalRiskModel struct {
-	// Lambda parameter of the risk model
-	RiskAversionParameter float64 `json:"riskAversionParameter"`
-	// Tau parameter of the risk model
-	Tau float64 `json:"tau"`
-	// Params for the log normal risk model
-	Params *LogNormalModelParams `json:"params"`
-}
-
-func (LogNormalRiskModel) IsRiskModel() {}
 
 type LogNormalRiskModelInput struct {
 	// Lambda parameter of the risk model
@@ -329,11 +268,6 @@ type LossSocialization struct {
 }
 
 func (LossSocialization) IsEvent() {}
-
-type MarginCalculator struct {
-	// The scaling factors that will be used for margin calculation
-	ScalingFactors *ScalingFactors `json:"scalingFactors"`
-}
 
 // The MM commitments for this market
 type MarketDataCommitments struct {
@@ -556,7 +490,7 @@ type ProposalTermsInput struct {
 
 type ProposalVote struct {
 	// Cast vote
-	Vote *Vote `json:"vote"`
+	Vote *proto.Vote `json:"vote"`
 	// Proposal casting the vote on
 	ProposalID string `json:"proposalId"`
 }
@@ -566,15 +500,6 @@ type RiskParametersInput struct {
 	Simple *SimpleRiskModelParamsInput `json:"simple"`
 	// Log normal risk model parameters. Set only if risk model is LogNormal
 	LogNormal *LogNormalRiskModelInput `json:"logNormal"`
-}
-
-type ScalingFactors struct {
-	// the scaling factor that determines the margin level at which we have to search for more money
-	SearchLevel float64 `json:"searchLevel"`
-	// the scaling factor that determines the optimal margin level
-	InitialMargin float64 `json:"initialMargin"`
-	// The scaling factor that determines the overflow margin level
-	CollateralRelease float64 `json:"collateralRelease"`
 }
 
 type SettleDistressed struct {
@@ -611,22 +536,6 @@ type SignatureInput struct {
 	Algo string `json:"algo"`
 	// The version of the signature
 	Version int `json:"version"`
-}
-
-// A type of simple/dummy risk model where we can specify the risk factor long and short in params
-type SimpleRiskModel struct {
-	// Params for the simple risk model
-	Params *SimpleRiskModelParams `json:"params"`
-}
-
-func (SimpleRiskModel) IsRiskModel() {}
-
-// Parameters for the simple risk model
-type SimpleRiskModelParams struct {
-	// Risk factor for long
-	FactorLong float64 `json:"factorLong"`
-	// Risk factor for short
-	FactorShort float64 `json:"factorShort"`
 }
 
 type SimpleRiskModelParamsInput struct {
@@ -701,19 +610,6 @@ type UpdateMarketInput struct {
 type UpdateNetworkParameterInput struct {
 	NetworkParameter *NetworkParameterInput `json:"networkParameter"`
 }
-
-type Vote struct {
-	// The vote value cast
-	Value VoteValue `json:"value"`
-	// The party casting the vote
-	Party *proto.Party `json:"party"`
-	// RFC3339Nano time and date when the vote reached Vega network
-	Datetime string `json:"datetime"`
-	// The ID of the proposal this vote applies to
-	ProposalID string `json:"proposalId"`
-}
-
-func (Vote) IsEvent() {}
 
 // The various account types we have (used by collateral)
 type AccountType string

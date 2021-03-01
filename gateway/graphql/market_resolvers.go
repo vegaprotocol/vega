@@ -179,16 +179,6 @@ func (r *myMarketResolver) DecimalPlaces(ctx context.Context, obj *types.Market)
 	return int(obj.DecimalPlaces), nil
 }
 
-func (r *myMarketResolver) Fees(ctx context.Context, obj *types.Market) (*Fees, error) {
-	return &Fees{
-		Factors: &FeeFactors{
-			MakerFee:          obj.Fees.Factors.MakerFee,
-			InfrastructureFee: obj.Fees.Factors.InfrastructureFee,
-			LiquidityFee:      obj.Fees.Factors.LiquidityFee,
-		},
-	}, nil
-}
-
 func (r *myMarketResolver) Name(ctx context.Context, obj *types.Market) (string, error) {
 	return obj.TradableInstrument.Instrument.Name, nil
 }
