@@ -779,11 +779,6 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
-	// If we were an opening auction, clear it
-	if m.as.IsOpeningAuction() {
-		m.mkt.OpeningAuction = nil
-	}
-
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.currentTime)
 	if err != nil {
