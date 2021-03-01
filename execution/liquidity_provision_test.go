@@ -433,3 +433,132 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	// Check the bond account has been reduced to cover the price move
 	assert.Less(t, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset), uint64(1000))
 }
+
+func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	// Create a new trader account with very little funding
+	addAccountWithAmount(tm, "trader-A", 7000)
+	addAccountWithAmount(tm, "trader-B", 10000000)
+	addAccountWithAmount(tm, "trader-C", 10000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx)
+	tm.market.EnterAuction(ctx)
+
+	// Create some normal orders to set the reference prices
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 10)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 20)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	o31 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order031", types.Side_SIDE_SELL, "trader-C", 1, 30)
+	o31conf, err := tm.market.SubmitOrder(ctx, o31)
+	require.NotNil(t, o31conf)
+	require.NoError(t, err)
+
+	buys := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -6, Proportion: 50}}
+	sells := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 6, Proportion: 50}}
+
+	// Submitting a correct entry
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              "0.01",
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 1000,
+		Buys:             buys,
+		Sells:            sells}
+
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.NoError(t, err)
+	require.Equal(t, types.LiquidityProvision_STATUS_ACTIVE.String(), tm.market.GetLPSState("trader-A").String())
+	assert.Equal(t, 4, tm.market.GetPeggedOrderCount())
+
+	// Check we have the right amount of bond balance
+	assert.Equal(t, uint64(1000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+
+	// Amend the commitment
+	lps.CommitmentAmount = 2000
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.NoError(t, err)
+
+	// Check we have the right amount of bond balance
+	assert.Equal(t, uint64(2000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+
+	// Amend the commitment
+	lps.CommitmentAmount = 500
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.NoError(t, err)
+
+	// Check we have the right amount of bond balance
+	assert.Equal(t, uint64(500), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+
+	// Change the shape of the lp submission
+	buys = []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50}}
+	sells = []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50}}
+	lps.Buys = buys
+	lps.Sells = sells
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.NoError(t, err)
+	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 2, tm.market.GetParkedOrderCount())
+}
+
+func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	// Create a new trader account with very little funding
+	addAccountWithAmount(tm, "trader-A", 7000)
+	addAccountWithAmount(tm, "trader-B", 10000000)
+	addAccountWithAmount(tm, "trader-C", 10000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx)
+	tm.market.EnterAuction(ctx)
+
+	buys := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -6, Proportion: 50}}
+	sells := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 6, Proportion: 50}}
+
+	// Submitting a correct entry
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              "0.01",
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 1000,
+		Buys:             buys,
+		Sells:            sells}
+
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.NoError(t, err)
+	// TODO	require.Equal(t, types.LiquidityProvision_STATUS_UNDEPLOYED.String(), tm.market.GetLPSState("trader-A").String())
+	// TODO assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, uint64(1000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+
+	// Now attempt to amend the LP submission with something invalid
+	lps.Buys = nil
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.Error(t, err)
+
+	// Check that the original LP submission is still working fine
+	// TODO	require.Equal(t, types.LiquidityProvision_STATUS_UNDEPLOYED.String(), tm.market.GetLPSState("trader-A").String())
+}

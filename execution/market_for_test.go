@@ -56,6 +56,16 @@ func (m *Market) GetLPSCount() int {
 	return len(m.equityShares.lps)
 }
 
+// Return the state of the LP submission for the given partyID
+func (m *Market) GetLPSState(partyID string) types.LiquidityProvision_Status {
+	lps := m.liquidity.LiquidityProvisionByPartyID(partyID)
+
+	if lps != nil {
+		return lps.Status
+	}
+	return types.LiquidityProvision_STATUS_UNSPECIFIED
+}
+
 // Returns all the pegged orders for a given party
 func (m *Market) GetPeggedOrders(partyID string) []*types.Order {
 	orders := m.matching.GetOrdersPerParty(partyID)
