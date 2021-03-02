@@ -88,6 +88,31 @@ func (m *Market) GetBondAccountBalance(ctx context.Context, partyID, marketID, a
 	return 0
 }
 
+// Returns the amount of assets in the general account
+func (m *Market) GetGeneralAccountBalance(partyID, asset string) uint64 {
+	generalAccount, err := m.collateral.GetPartyGeneralAccount(partyID, asset)
+	if err == nil {
+		return generalAccount.Balance
+	}
+	return 0
+}
+
+// Returns the amount of assets in the margin account
+func (m *Market) GetMarginAccountBalance(partyID, marketID, asset string) uint64 {
+	marginAccount, err := m.collateral.GetPartyMarginAccount(marketID, partyID, asset)
+	if err == nil {
+		return marginAccount.Balance
+	}
+	return 0
+}
+
+// Get the total assets for a party
+func (m *Market) GetTotalAccountBalance(ctx context.Context, partyID, marketID, asset string) uint64 {
+	return m.GetGeneralAccountBalance(partyID, asset) +
+		m.GetMarginAccountBalance(partyID, marketID, asset) +
+		m.GetBondAccountBalance(ctx, partyID, marketID, asset)
+}
+
 // Return the current liquidity fee value for a market
 func (m *Market) GetLiquidityFee() float64 {
 	return m.fee.GetLiquidityFee()
