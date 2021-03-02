@@ -3083,8 +3083,22 @@ func (m *Market) amendLiquidityProvision(
 	// so, we haven't been able to submit the new lp provision
 	// now we want to resubmit the previous one
 	rollbackSubmission := lp.IntoSubmission()
+	err = m.SubmitLiquidityProvision(ctx, rollbackSubmission, party, lp.Id)
+	if err != nil {
+		m.log.Debug("could not re-submit the previous commitment",
+			logging.MarketID(m.GetID()),
+			logging.PartyID(party),
+			logging.Error(err))
 
-	return m.SubmitLiquidityProvision(ctx, rollbackSubmission, party, lp.Id)
+		// now let's update the fee selection
+		m.updateLiquidityFee(ctx)
+		// and remove the party from the equitey share like calculation
+		m.equityShares.SetPartyStake(party, float64(0))
+		// force update of shares so they are updated for all
+		_ = m.equityShares.Shares()
+	}
+
+	return err
 }
 
 func (m *Market) cancelAndReplaceLiquidityProvision(
