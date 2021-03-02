@@ -2,7 +2,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -340,15 +339,4 @@ func TestAmendDeployedCommitmment(t *testing.T) {
 			ctx, lpCancelCommitment, lpparty, "liquidity-submission-6"),
 		"commitment submission rejected, not enouth stake",
 	)
-}
-
-func (tm *testMarket) dumpMarketData() {
-	fmt.Printf("\nMarketData:\n%#v\n", tm.market.GetMarketData())
-}
-
-func (tm *testMarket) dumpPeggedOrders() {
-	fmt.Printf("\nPeggedOrdersCount: %v\n", tm.market.GetPeggedOrderCount())
-	fmt.Printf("ParkedOrdersOrdersCount: %v\n", tm.market.GetParkedOrderCount())
-	fmt.Printf("LPSCount: %v\n", tm.market.GetLPSCount())
-	fmt.Printf("OrdersOnBookCount: %v\n", tm.market.GetOrdersOnBookCount())
 }
