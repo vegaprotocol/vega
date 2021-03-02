@@ -3007,12 +3007,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		}
 	}()
 
-	// we will need both bond accouint and the margin account, let's create
+	// we will need both bond account and the margin account, let's create
 	// them now
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, party, m.GetID(), asset)
 	if err != nil {
-		// error happen, we can't event have the bond account taken
+		// error happen, we can't even have the bond account taken
 		// if this is not an amendment, we cancel the liquidity provision
 		if !isAmend {
 			needsCancel = true

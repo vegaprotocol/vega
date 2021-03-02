@@ -69,7 +69,7 @@ func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []*types.O
 }
 
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
-// Current markt price, liquidity obligation, and orders must be specified.
+// Current market price, liquidity obligation, and orders must be specified.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
 func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation float64, orders []*types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
 	minPrice, maxPrice := e.pm.GetValidPriceRange()

@@ -79,10 +79,16 @@ func (m *Market) GetPeggedOrders(partyID string) []*types.Order {
 	return peggedOrders
 }
 
+// Returns the amount of assets in the bond account
 func (m *Market) GetBondAccountBalance(ctx context.Context, partyID, marketID, asset string) uint64 {
 	bondAccount, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, marketID, asset)
 	if err == nil {
 		return bondAccount.Balance
 	}
 	return 0
+}
+
+// Return the current liquidity fee value for a market
+func (m *Market) GetLiquidityFee() float64 {
+	return m.fee.GetLiquidityFee()
 }
