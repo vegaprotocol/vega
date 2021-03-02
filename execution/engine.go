@@ -173,7 +173,7 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
-			logging.LiquidityProvisionSubmission(*lp),
+			// logging.LiquidityProvisionSubmission(*lp),
 			logging.PartyID(party),
 			logging.LiquidityID(lpID),
 		)
