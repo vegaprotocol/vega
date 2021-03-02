@@ -115,6 +115,7 @@ type TargetStakeCalculator interface {
 	UpdateTimeWindow(tWindow time.Duration)
 }
 
+// AuctionState ...
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
 // keep the interface for documentation purposes
 type AuctionState interface {
@@ -690,8 +691,8 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 		if HasReferenceMoved(order, changes) {
 			if order.Status == types.Order_STATUS_CANCELLED {
 				// FIXME(JEREMY): here when trying to re-submit the order
-				// if this is a liquidity provision order, we will need to go
-				// through the path of distressed trader.
+				// if this is a liquidity provision order, and the submission failed
+				// we will need to go through the path of distressed trader.
 				// this won't be done for now, but will need to be addressed
 				// try to submit the order
 				if _, err := m.submitValidatedOrder(ctx, order); err != nil {
@@ -1491,7 +1492,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		// providers, and if yea cancel their commitments
 		for _, party := range distressedParties {
 			if m.liquidity.IsLiquidityProvider(party) {
-				if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
+				if err := m.cancelLiquidityProvision(ctx, party, true, false); err != nil {
 					m.log.Debug("could not cancel liquidity provision",
 						logging.MarketID(m.GetID()),
 						logging.PartyID(party),
@@ -2948,7 +2949,7 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 }
 
 func (m *Market) cancelLiquidityProvision(
-	ctx context.Context, party string, isDistressed bool) error {
+	ctx context.Context, party string, isDistressed, isReplace bool) error {
 
 	// cancel the liquidity provision
 	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
@@ -3013,13 +3014,105 @@ func (m *Market) cancelLiquidityProvision(
 		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}
 
-	// now let's update the fee selection
-	m.updateLiquidityFee(ctx)
-	// and remove the party from the equitey share like calculation
-	m.equityShares.SetPartyStake(party, float64(0))
-	// force update of shares so they are updated for all
-	_ = m.equityShares.Shares()
+	if !isReplace {
+		// now let's update the fee selection
+		m.updateLiquidityFee(ctx)
+		// and remove the party from the equitey share like calculation
+		m.equityShares.SetPartyStake(party, float64(0))
+		// force update of shares so they are updated for all
+		_ = m.equityShares.Shares()
+	}
 	return nil
+}
+
+func (m *Market) amendLiquidityProvision(
+	ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string,
+) error {
+
+	lp := m.liquidity.LiquidityProvisionByPartyID(party)
+	if lp == nil {
+		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	}
+
+	// Increasing the commitment should always be allowed, but decreasing is
+	// only valid if the resulting amount still allows the market as a whole
+	// to reach it's commitment level. Otherwise the commitment reduction is
+	// rejected.
+	if sub.CommitmentAmount < lp.CommitmentAmount {
+		// first - does the market have enought stake
+		if uint64(m.getTargetStake()) > m.getSuppliedStake() {
+			return ErrNotEnoughStake
+		}
+
+		// now if the stake surplus is > than the change we are OK
+		surplus := m.getSuppliedStake() - uint64(m.getTargetStake())
+		diff := lp.CommitmentAmount - sub.CommitmentAmount
+		if surplus < diff {
+			return ErrNotEnoughStake
+		}
+	}
+
+	// here, we now we have a amendment
+	// if this amendment is to reduce the stake to 0, then we'll want to
+	// cancel this lp submission
+	if sub.CommitmentAmount == 0 {
+		return m.cancelLiquidityProvision(ctx, party, false, false)
+	}
+
+	// first check if there's enough funds in the gen + bond
+	// account to cover the new commitment
+	asset, _ := m.mkt.GetAsset()
+	if !m.collateral.CanCoverBond(m.GetID(), lp.PartyId, asset, sub.CommitmentAmount) {
+		return ErrCommitmentSubmissionNotAllowed
+	}
+
+	// now we will first try to cancel + replace the submission
+	err := m.cancelAndReplaceLiquidityProvision(
+		ctx, sub, party, id)
+	if err == nil {
+		// no errors, all went well, nothing to do.
+		return nil
+	}
+
+	// so, we haven't been able to submit the new lp provision
+	// now we want to resubmit the previous one
+	rollbackSubmission := lp.IntoSubmission()
+	err = m.SubmitLiquidityProvision(ctx, rollbackSubmission, party, lp.Id)
+	if err != nil {
+		m.log.Debug("could not re-submit the previous commitment",
+			logging.MarketID(m.GetID()),
+			logging.PartyID(party),
+			logging.Error(err))
+
+		// now let's update the fee selection
+		m.updateLiquidityFee(ctx)
+		// and remove the party from the equitey share like calculation
+		m.equityShares.SetPartyStake(party, float64(0))
+		// force update of shares so they are updated for all
+		_ = m.equityShares.Shares()
+	}
+
+	return err
+}
+
+func (m *Market) cancelAndReplaceLiquidityProvision(
+	ctx context.Context,
+	submission *types.LiquidityProvisionSubmission,
+	party, lpid string,
+) error {
+	// now are going to cancel the existing liquidity provision
+	if err := m.cancelLiquidityProvision(ctx, party, false, true); err != nil {
+		m.log.Debug("could not cancel before re-submitting commitment",
+			logging.MarketID(m.GetID()),
+			logging.PartyID(party),
+			logging.Error(err))
+		return err
+	}
+
+	// now let's submit again
+	// nothing much to do with the error, all will be rollaback as
+	// part of the submit liquidity provision call
+	return m.SubmitLiquidityProvision(ctx, submission, party, lpid)
 }
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
@@ -3029,9 +3122,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	}
 
 	var (
-		// is this an amendment of an existing LP sub
-		// in which case we may not want to cancel on error
-		isAmend bool
 		// this is use to specified that the lp may need to be cancelled
 		needsCancel bool
 		// his specifies that the changes on the bond account have to be
@@ -3039,32 +3129,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		needsBondRollback bool
 	)
 
-	// Increasing the commitment should always be allowed, but decreasing is
-	// only valid if the resulting amount still allows the market as a whole
-	// to reach it's commitment level. Otherwise the commitment reduction is
-	// rejected.
-	if lp := m.liquidity.LiquidityProvisionByPartyID(party); lp != nil {
-		isAmend = true
-		if sub.CommitmentAmount < lp.CommitmentAmount {
-			// first - does the market have enought stake
-			if uint64(m.getTargetStake()) > m.getSuppliedStake() {
-				return ErrNotEnoughStake
-			}
-
-			// now if the stake surplus is > than the change we are OK
-			surplus := m.getSuppliedStake() - uint64(m.getTargetStake())
-			diff := lp.CommitmentAmount - sub.CommitmentAmount
-			if surplus < diff {
-				return ErrNotEnoughStake
-			}
-		}
-
-		// here, we now we have a amendment
-		// if this amendment is to reduce the stake to 0, then we'll want to
-		// cancel this lp submission
-		if sub.CommitmentAmount == 0 {
-			return m.cancelLiquidityProvision(ctx, party, false)
-		}
+	// if the party is amending an existing LP
+	// we go done the path of amending
+	if m.liquidity.IsLiquidityProvider(party) {
+		return m.amendLiquidityProvision(ctx, sub, party, id)
 	}
 
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
@@ -3091,16 +3159,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	if err != nil {
 		// error happen, we can't event have the bond account taken
 		// if this is not an amendment, we cancel the liquidity provision
-		if !isAmend {
-			needsCancel = true
-		}
+		needsCancel = true
 		return err
 	}
 	_, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.GetID(), asset)
 	if err != nil {
-		if !isAmend {
-			needsCancel = true
-		}
+		needsCancel = true
 		return err
 	}
 
@@ -3128,9 +3192,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// or even the party have not enough funds,
 		// if this was not an amend, we'll want to delete the liquidity
 		// submission
-		if !isAmend {
-			needsCancel = true
-		}
+		needsCancel = true
 		m.log.Debug("bond update error", logging.Error(err))
 		return err
 	}
@@ -3185,7 +3247,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// we do not want to rollback anything then
 		needsBondRollback = false
 		needsCancel = false
-		return err
+		return nil
 	}
 
 	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
@@ -3198,10 +3260,8 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// at this point we could not create or update some order for this LP
 		// in the case this was a new order, we will want to cancel all that happen
 		// in the case it was an amend, we'll want to do nothing
-		if !isAmend {
-			needsBondRollback = true
-			needsCancel = true
-		}
+		needsBondRollback = true
+		needsCancel = true
 		return err
 	}
 

@@ -34,6 +34,7 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
+// Broker ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(event events.Event)
@@ -172,10 +173,14 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
-			logging.LiquidityProvisionSubmission(*lp),
+			// FIXME(JEREMY): this would crash in some cases at the moment.
+			// as the lp can be nil as it's optional for now in order
+			// to ease the transitions for the tests to use LP commitment
+			// submission with every new market.
+			// uncomment when this is not needed anymore
+			// logging.LiquidityProvisionSubmission(*lp),
 			logging.PartyID(party),
 			logging.LiquidityID(lpID),
-
 		)
 	}
 
