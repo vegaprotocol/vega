@@ -115,6 +115,7 @@ type TargetStakeCalculator interface {
 	UpdateTimeWindow(tWindow time.Duration)
 }
 
+// AuctionState ...
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
 // keep the interface for documentation purposes
 type AuctionState interface {
@@ -2615,7 +2616,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		// Because other collections might be pointing at the original order
 		// use it's memory when inserting the new version
 		*existingOrder = *newOrder
-		conf, err = m.matching.SubmitOrder(existingOrder) //lint:ignore SA4006 this value might be overwriter, careful!
+		conf, err = m.matching.SubmitOrder(existingOrder)
 		if err != nil {
 			m.log.Panic("unable to submit order", logging.Error(err))
 		}
@@ -3034,7 +3035,7 @@ func (m *Market) amendLiquidityProvision(
 
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
 	if lp == nil {
-		m.log.Panic("trying to amend a liquidity provision from a party which is not a liquidity provider")
+		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
 	}
 
 	// Increasing the commitment should always be allowed, but decreasing is

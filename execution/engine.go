@@ -34,6 +34,7 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
+// Broker ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(event events.Event)
@@ -175,7 +176,6 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 			logging.LiquidityProvisionSubmission(*lp),
 			logging.PartyID(party),
 			logging.LiquidityID(lpID),
-
 		)
 	}
 
