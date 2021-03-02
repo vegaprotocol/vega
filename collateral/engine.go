@@ -1557,6 +1557,28 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	return resps, nil
 }
 
+func (e *Engine) CanCoverBond(market, party, asset string, amount uint64) bool {
+	bondID := e.accountID(
+		market, party, asset, types.AccountType_ACCOUNT_TYPE_BOND,
+	)
+	genID := e.accountID(
+		noMarket, party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL,
+	)
+
+	var availableBalance uint64
+
+	bondAcc, ok := e.accs[bondID]
+	if ok {
+		availableBalance += bondAcc.Balance
+	}
+	genAcc, ok := e.accs[genID]
+	if ok {
+		availableBalance += genAcc.Balance
+	}
+
+	return availableBalance >= amount
+}
+
 // GetOrCreatePartyBondAccount returns a bond account given a set of parameters.
 // crates it if not exists
 func (e *Engine) GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error) {
@@ -1655,6 +1677,13 @@ func (e *Engine) GetPartyMarginAccount(market, party, asset string) (*types.Acco
 func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 	return e.GetAccountByID(generalID)
+}
+
+// GetPartyBondAccount returns a general account given the partyID.
+func (e *Engine) GetPartyBondAccount(market, partyID, asset string) (*types.Account, error) {
+	id := e.accountID(
+		market, partyID, asset, types.AccountType_ACCOUNT_TYPE_BOND)
+	return e.GetAccountByID(id)
 }
 
 // CreatePartyGeneralAccount create the general account for a trader

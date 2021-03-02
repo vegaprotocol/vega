@@ -9,6 +9,27 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+func (l *LiquidityProvision) IntoSubmission() *LiquidityProvisionSubmission {
+	sells := make([]*LiquidityOrder, 0, len(l.Sells))
+	for _, v := range l.Sells {
+		sells = append(sells, v.LiquidityOrder)
+	}
+
+	buys := make([]*LiquidityOrder, 0, len(l.Buys))
+	for _, v := range l.Buys {
+		buys = append(buys, v.LiquidityOrder)
+	}
+
+	return &LiquidityProvisionSubmission{
+		MarketId:         l.MarketId,
+		CommitmentAmount: l.CommitmentAmount,
+		Fee:              l.Fee,
+		Sells:            sells,
+		Buys:             buys,
+		Reference:        l.Reference,
+	}
+}
+
 // Float64Fee tries to parse the Fee (string) into a float64.
 // If parsing fails 0 is returned.
 func (l *LiquidityProvision) Float64Fee() float64 {
@@ -89,4 +110,8 @@ func (o *Order) IsExpireable() bool {
 // trade anymore
 func (o *Order) IsFinished() bool {
 	return o.Status != Order_STATUS_ACTIVE && o.Status != Order_STATUS_PARKED
+}
+
+func (o *Order) HasTraded() bool {
+	return o.Size != o.Remaining
 }

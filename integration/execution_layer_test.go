@@ -36,7 +36,7 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	return nil
 }
 
-func theExecutonEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
+func theExecutionEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
 	mkts := []types.Market{}
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "name" {

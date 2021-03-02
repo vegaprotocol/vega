@@ -2,7 +2,7 @@ Feature: Price monitoring test using simple risk model
 
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
-    And the executon engine have these markets:
+    And the execution engine have these markets:
       | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu/max move up | r/min move down  | sigma  | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading |
       | ETH/DEC20 | BTC      | ETH       | ETH   |      1000 | simple     |      0.11 |       0.1 |             10 |              -11 |     -1 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 60                 |         60,120 |   0.95,0.99 |         240,360 | 0.1             |
 

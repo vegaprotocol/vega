@@ -71,7 +71,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I expect the trader to have a margin liability:$`, tradersLiability)
 	s.Step(`^"([^"]*)" has not been added to the market$`, hasNotBeenAddedToTheMarket)
 	s.Step(`^the mark price is "([^"]+)"$`, theMarkPriceIs)
-	s.Step(`^the executon engine have these markets:$`, theExecutonEngineHaveTheseMarkets)
+	s.Step(`^the execution engine have these markets:$`, theExecutionEngineHaveTheseMarkets)
 	s.Step(`^traders place following orders:$`, tradersPlaceFollowingOrders)
 	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
 	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
