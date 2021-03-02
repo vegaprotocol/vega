@@ -1497,7 +1497,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		// providers, and if yea cancel their commitments
 		for _, party := range distressedParties {
 			if m.liquidity.IsLiquidityProvider(party) {
-				if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
+				if err := m.cancelLiquidityProvision(ctx, party, true, false); err != nil {
 					m.log.Debug("could not cancel liquidity provision",
 						logging.MarketID(m.GetID()),
 						logging.PartyID(party),
@@ -2955,7 +2955,7 @@ func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 }
 
 func (m *Market) cancelLiquidityProvision(
-	ctx context.Context, party string, isDistressed bool) error {
+	ctx context.Context, party string, isDistressed, isReplace bool) error {
 
 	// cancel the liquidity provision
 	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
@@ -3020,12 +3020,14 @@ func (m *Market) cancelLiquidityProvision(
 		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}
 
-	// now let's update the fee selection
-	m.updateLiquidityFee(ctx)
-	// and remove the party from the equitey share like calculation
-	m.equityShares.SetPartyStake(party, float64(0))
-	// force update of shares so they are updated for all
-	_ = m.equityShares.Shares()
+	if !isReplace {
+		// now let's update the fee selection
+		m.updateLiquidityFee(ctx)
+		// and remove the party from the equitey share like calculation
+		m.equityShares.SetPartyStake(party, float64(0))
+		// force update of shares so they are updated for all
+		_ = m.equityShares.Shares()
+	}
 	return nil
 }
 
@@ -3060,7 +3062,7 @@ func (m *Market) amendLiquidityProvision(
 	// if this amendment is to reduce the stake to 0, then we'll want to
 	// cancel this lp submission
 	if sub.CommitmentAmount == 0 {
-		return m.cancelLiquidityProvision(ctx, party, false)
+		return m.cancelLiquidityProvision(ctx, party, false, false)
 	}
 
 	// first check if there's enough funds in the gen + bond
@@ -3091,7 +3093,7 @@ func (m *Market) cancelAndReplaceLiquidityProvision(
 	party, lpid string,
 ) error {
 	// now are going to cancel the existing liquidity provision
-	if err := m.cancelLiquidityProvision(ctx, party, false); err != nil {
+	if err := m.cancelLiquidityProvision(ctx, party, false, true); err != nil {
 		m.log.Debug("could not cancel before re-submitting commitment",
 			logging.MarketID(m.GetID()),
 			logging.PartyID(party),

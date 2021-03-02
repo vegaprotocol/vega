@@ -265,6 +265,100 @@ func TestAmendDeployedCommitmment(t *testing.T) {
 
 	})
 
+	// now we will reduce our commitmment
+	// we will still be higher than the required stake
+	lpDifferentShapeCommitment := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 80000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-3-bis",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -4},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -3},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -2},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	tm.events = nil
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpDifferentShapeCommitment, lpparty, "liquidity-submission-3-bis"),
+	)
+
+	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
+		acc, err := tm.collateraEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 80000, int(acc.Balance))
+	})
+
+	t.Run("expect commitment statuses", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				lp := evt.LiquidityProvision()
+				found[lp.Id] = lp
+			}
+		}
+
+		expectedStatus := map[string]types.LiquidityProvision_Status{
+			"liquidity-submission-3":     types.LiquidityProvision_STATUS_CANCELLED,
+			"liquidity-submission-3-bis": types.LiquidityProvision_STATUS_ACTIVE,
+		}
+
+		require.Len(t, found, len(expectedStatus))
+
+		for k, v := range expectedStatus {
+			assert.Equal(t, v.String(), found[k].Status.String())
+		}
+	})
+
+	t.Run("previous LP orders to be cancelled", func(t *testing.T) {
+		// First collect all the orders events
+		found := []*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				found = append(found, evt.Order())
+			}
+		}
+
+		require.Len(t, found, 10)
+
+		// reference -> status
+		expectedStatus := map[string]types.Order_Status{
+			"ref-lp-submission-3":     types.Order_STATUS_CANCELLED,
+			"ref-lp-submission-3-bis": types.Order_STATUS_ACTIVE,
+		}
+
+		totalCancelled := 0
+		totalActive := 0
+
+		for _, o := range found {
+			assert.Equal(t,
+				expectedStatus[o.Reference].String(),
+				o.Status.String(),
+			)
+			if o.Status == types.Order_STATUS_CANCELLED {
+				totalCancelled += 1
+			}
+			if o.Status == types.Order_STATUS_ACTIVE {
+				totalActive += 1
+			}
+		}
+
+		assert.Equal(t, totalCancelled, 4)
+		assert.Equal(t, totalActive, 6)
+
+	})
+
 	// now we will reduce the commitment too much so it gets under
 	// the expected stake.
 	// this should result into an error, and the commitment staying
@@ -339,4 +433,5 @@ func TestAmendDeployedCommitmment(t *testing.T) {
 			ctx, lpCancelCommitment, lpparty, "liquidity-submission-6"),
 		"commitment submission rejected, not enouth stake",
 	)
+
 }
