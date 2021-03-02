@@ -627,7 +627,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 70000)
+	addAccountWithAmount(tm, "trader-A", 700000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -674,9 +674,9 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 
 	// Now try to submit a LP submission
 	buys := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50},
-		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -6, Proportion: 50}}
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -2, Proportion: 50}}
 	sells := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
-		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 6, Proportion: 50}}
+		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 2, Proportion: 50}}
 
 	// Submitting a correct entry
 	lps := &types.LiquidityProvisionSubmission{
@@ -689,7 +689,8 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
 	require.Equal(t, types.LiquidityProvision_STATUS_ACTIVE.String(), tm.market.GetLPSState("trader-A").String())
-	assert.Equal(t, 4, tm.market.GetPeggedOrderCount())
+	// Only 3 pegged orders as one fails due to price monitoring
+	assert.Equal(t, 3, tm.market.GetPeggedOrderCount())
 }
 
 func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testing.T) {

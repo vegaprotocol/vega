@@ -988,7 +988,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	}
 
 	if mevt.bond != nil && uint64(transfer.Amount.Amount) > mevt.general.Balance {
-		// this is a liquiddity provider but it did not have enough funds to
+		// this is a liquidity provider but it did not have enough funds to
 		// pay from the general account, we'll have to penalize later on
 		mevt.marginShortFall = uint64(transfer.Amount.Amount) - mevt.general.Balance
 	}

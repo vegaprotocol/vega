@@ -27,8 +27,8 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-const MAXMOVEUP = 10
-const MINMOVEDOWN = -5
+const MAXMOVEUP = 1000
+const MINMOVEDOWN = -500
 
 var defaultCollateralAssets = []types.Asset{
 	{
