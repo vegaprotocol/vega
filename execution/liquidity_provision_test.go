@@ -559,7 +559,8 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	// Now attempt to amend the LP submission with something invalid
 	lps.Buys = nil
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
-	require.Error(t, err)
+	// We will not get an error because the previous submission will be re-used
+	require.NoError(t, err)
 
 	// Check that the original LP submission is still working fine
 	// TODO	require.Equal(t, types.LiquidityProvision_STATUS_UNDEPLOYED.String(), tm.market.GetLPSState("trader-A").String())
