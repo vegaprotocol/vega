@@ -2309,6 +2309,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000000,
 		Fee:              "0.01",
+		Reference:        "THIS-IS-LP",
 		Sells: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 2},
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 1},

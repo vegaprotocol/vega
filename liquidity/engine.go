@@ -95,6 +95,36 @@ func NewEngine(
 	}
 }
 
+func (e *Engine) HandleFailedOrderSubmit(
+	ctx context.Context, order, party string,
+) error {
+	orders, ok := e.liquidityOrders[party]
+	if !ok {
+		return ErrLiquidityProvisionDoesNotExist
+	}
+	delete(orders, order)
+
+	lp, ok := e.provisions[party]
+	if !ok {
+		return ErrLiquidityProvisionDoesNotExist
+	}
+	for _, v := range lp.Buys {
+		if v.OrderId == order {
+			v.OrderId = ""
+			return nil
+		}
+	}
+	for _, v := range lp.Sells {
+		if v.OrderId == order {
+			v.OrderId = ""
+			return nil
+		}
+	}
+
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+	return ErrLiquidityProvisionDoesNotExist
+}
+
 // OnChainTimeUpdate updates the internal engine current time
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
@@ -338,11 +368,17 @@ func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*t
 // It keeps track of all LP orders.
 func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
 	var (
-		newOrders  []*types.Order
-		amendments []*types.OrderAmendment
+		newOrders        []*types.Order
+		amendments       []*types.OrderAmendment
+		updatedLPParties []string
 	)
 
 	for party, orders := range Orders(orders).ByParty() {
+		if !e.IsLiquidityProvider(party) {
+			continue
+		}
+
+		updatedLPParties = append(updatedLPParties, party)
 		// update our internal orders
 		e.updatePartyOrders(party, orders)
 
@@ -353,7 +389,9 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 
 		newOrders = append(newOrders, creates...)
 		amendments = append(amendments, updates...)
+
 	}
+
 	if e.undeployedProvisions {
 		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
 		stillUndeployed := false
@@ -366,6 +404,7 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 				newOrders = append(newOrders, creates...)
 				amendments = append(amendments, updates...)
 				stillUndeployed = stillUndeployed || lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED
+
 			}
 		}
 		e.undeployedProvisions = stillUndeployed
@@ -373,8 +412,9 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 
 	// send a batch of updates
 	evts := []events.Event{}
-	for _, lp := range e.provisions {
-		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, lp))
+	for _, party := range updatedLPParties {
+		evts = append(evts, events.NewLiquidityProvisionEvent(
+			ctx, e.provisions[party]))
 	}
 	e.broker.SendBatch(evts)
 
@@ -420,8 +460,7 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		sellsShape = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 	)
 
-	oneOrMoreValidOrdersBuy := false
-	oneOrMoreValidOrdersSell := false
+	repriceFailure := false
 	for _, buy := range lp.Buys {
 		pegged := &types.PeggedOrder{
 			Reference: buy.LiquidityOrder.Reference,
@@ -433,10 +472,10 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		}
 		if price, err := repriceFn(pegged); err != nil {
 			e.log.Debug("Building Buy Shape", logging.Error(err))
+			repriceFailure = true
 		} else {
 			order.Price = price
 		}
-		oneOrMoreValidOrdersBuy = true
 		buysShape = append(buysShape, order)
 	}
 
@@ -451,32 +490,46 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		}
 		if price, err := repriceFn(pegged); err != nil {
 			e.log.Debug("Building Sell Shape", logging.Error(err))
+			repriceFailure = true
 		} else {
 			order.Price = price
 		}
-		oneOrMoreValidOrdersSell = true
-
 		sellsShape = append(sellsShape, order)
 	}
 
-	if !(oneOrMoreValidOrdersBuy && oneOrMoreValidOrdersSell) {
+	var (
+		needsCreateBuys, needsCreateSells []*types.Order
+		needsUpdateBuys, needsUpdateSells []*types.OrderAmendment
+	)
+
+	if repriceFailure {
+
+		needsUpdateBuys = e.undeployOrdersFromShape(
+			party, buysShape, types.Side_SIDE_BUY)
+		needsUpdateSells = e.undeployOrdersFromShape(
+			party, sellsShape, types.Side_SIDE_SELL)
+
 		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 		e.undeployedProvisions = true
-		return nil, nil, nil
+	} else {
+
+		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
+			float64(markPrice),
+			obligation,
+			orders,
+			buysShape, sellsShape,
+		); err != nil {
+			return nil, nil, err
+		}
+
+		needsCreateBuys, needsUpdateBuys = e.createOrdersFromShape(
+			party, buysShape, types.Side_SIDE_BUY)
+		needsCreateSells, needsUpdateSells = e.createOrdersFromShape(
+			party, sellsShape, types.Side_SIDE_SELL)
+
+		lp.Status = types.LiquidityProvision_STATUS_ACTIVE
 	}
 
-	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-		float64(markPrice),
-		obligation,
-		orders,
-		buysShape, sellsShape,
-	); err != nil {
-		return nil, nil, err
-	}
-
-	needsCreateBuys, needsUpdateBuys := e.createOrdersFromShape(party, buysShape, types.Side_SIDE_BUY)
-	needsCreateSells, needsUpdateSells := e.createOrdersFromShape(party, sellsShape, types.Side_SIDE_SELL)
-	lp.Status = types.LiquidityProvision_STATUS_ACTIVE
 	e.broker.Send(events.NewLiquidityProvisionEvent(context.Background(), lp))
 
 	return append(needsCreateBuys, needsCreateSells...),
@@ -498,6 +551,55 @@ func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price ui
 		Reference:   ref,
 	}
 	return order.Create(e.currentTime)
+}
+
+func (e *Engine) undeployOrdersFromShape(
+	party string, supplied []*supplied.LiquidityOrder, side types.Side,
+) []*types.OrderAmendment {
+	lm, ok := e.liquidityOrders[party]
+	if !ok {
+		lm = map[string]*types.Order{}
+		e.liquidityOrders[party] = lm
+		if _, ok := e.orders[party]; !ok {
+			e.orders[party] = map[string]*types.Order{}
+		}
+	}
+	lp := e.LiquidityProvisionByPartyID(party)
+
+	var (
+		amendments []*types.OrderAmendment
+	)
+
+	for i, o := range supplied {
+		order := lm[o.OrderID]
+		var ref *types.LiquidityOrderReference
+		if side == types.Side_SIDE_BUY {
+			ref = lp.Buys[i]
+		} else {
+			ref = lp.Sells[i]
+		}
+
+		if order != nil {
+			// only amend if order remaining > 0
+			// if not the market already took care in cleaning
+			// up everything
+			if order.Remaining != 0 {
+				amendment := order.Update(e.currentTime).AmendSize(0)
+				// so it's cancelled via an amend
+				amendments = append(
+					amendments,
+					// we amend the order size, to be 0
+					amendment,
+				)
+			}
+
+			// then we can delete the order from our mapping
+			delete(lm, ref.OrderId)
+			ref.OrderId = ""
+		}
+	}
+
+	return amendments
 }
 
 func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.OrderAmendment) {
@@ -525,38 +627,48 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref = lp.Sells[i]
 		}
 
-		// If order.Remaining == 0 then that order would've already been removed from the book, hence we need to account for that in this engine.
-		if order != nil && order.Remaining == 0 {
-			delete(lm, ref.OrderId)
-			order = nil
-		}
+		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume) {
+			// we always remove the order from our store, and add it to the amendment
 
-		if order == nil {
-			if o.LiquidityImpliedVolume == 0 {
-				continue
+			// only amend if order remaining > 0
+			// if not the market already took care in cleaning
+			// up everything
+			if order.Remaining != 0 {
+				amendment := order.Update(e.currentTime).AmendSize(0)
+				// so it's cancelled via an amend
+				amendments = append(
+					amendments,
+					// we amend the order size, to be 0
+					amendment,
+				)
 			}
 
-			p := &types.PeggedOrder{
-				Reference: ref.LiquidityOrder.Reference,
-				Offset:    ref.LiquidityOrder.Offset,
-			}
-			order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference)
-			e.idGen.SetID(order)
-			newOrders = append(newOrders, order)
-			lm[order.Id] = order
-			ref.OrderId = order.Id
-			continue
-		}
-
-		if o.LiquidityImpliedVolume == 0 {
+			// then we can delete the order from our mapping
 			delete(lm, ref.OrderId)
 			ref.OrderId = ""
 		}
 
-		if o.LiquidityImpliedVolume != order.Remaining {
-			newSize := order.Size + (o.LiquidityImpliedVolume - order.Remaining)
-			amendments = append(amendments, order.Update(e.currentTime).AmendSize(int64(newSize)))
+		// We eithere don't need this order anymore or
+		// we have just nothing to do about it.
+		// we check o.Price == 0 just to make sure we are able to price
+		// the order, in which case the size will have been calculated
+		// properly by the engine.
+		if o.LiquidityImpliedVolume == 0 || (order != nil && (!order.HasTraded()) || o.Price == 0) {
+			continue
 		}
+
+		// At this point the order will either already exists
+		// or not, and we'll want to re-create
+		// then we create the new order
+		p := &types.PeggedOrder{
+			Reference: ref.LiquidityOrder.Reference,
+			Offset:    ref.LiquidityOrder.Offset,
+		}
+		order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference)
+		e.idGen.SetID(order)
+		newOrders = append(newOrders, order)
+		lm[order.Id] = order
+		ref.OrderId = order.Id
 	}
 
 	return newOrders, amendments

@@ -90,3 +90,7 @@ func (o *Order) IsExpireable() bool {
 func (o *Order) IsFinished() bool {
 	return o.Status != Order_STATUS_ACTIVE && o.Status != Order_STATUS_PARKED
 }
+
+func (o *Order) HasTraded() bool {
+	return o.Size != o.Remaining
+}
