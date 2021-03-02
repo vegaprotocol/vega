@@ -298,7 +298,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	)
 
 	// clear auction
-	tm.EndOpeningAuction(t, auctionEnd)
+	tm.EndOpeningAuction(t, auctionEnd, true)
 }
 
 func TestCommitmentIsDeployed(t *testing.T) {
@@ -364,10 +364,10 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	)
 
 	// clear auction
-	tm.EndOpeningAuction(t, auctionEnd)
+	tm.EndOpeningAuction(t, auctionEnd, true)
 }
 
-func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time) {
+func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
 	var (
 		party0 = "clearing-auction-party0"
 		party1 = "clearing-auction-party1"
@@ -423,30 +423,35 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time) {
 	// update the time to get out of auction
 	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
 
-	// now set the markprice
-	mpOrders := []*types.Order{
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       900,
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     party1,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       2500,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     party0,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
+	assert.Equal(t,
+		tm.market.GetMarketData().MarketTradingMode,
+		types.Market_TRADING_MODE_CONTINUOUS,
+	)
+
+	if setMarkPrice {
+		// now set the markprice
+		mpOrders := []*types.Order{
+			{
+				Type:        types.Order_TYPE_LIMIT,
+				Size:        1,
+				Remaining:   1,
+				Price:       900,
+				Side:        types.Side_SIDE_SELL,
+				PartyId:     party1,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			},
+			{
+				Type:        types.Order_TYPE_LIMIT,
+				Size:        1,
+				Remaining:   1,
+				Price:       2500,
+				Side:        types.Side_SIDE_BUY,
+				PartyId:     party0,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			},
+		}
+		// submit the auctions orders
+		tm.WithSubmittedOrders(t, mpOrders...)
 	}
 
-	// submit the auctions orders
-	tm.WithSubmittedOrders(t, mpOrders...)
-
-	assert.Equal(t, tm.market.GetMarketData().MarketTradingMode, types.Market_TRADING_MODE_CONTINUOUS)
 }

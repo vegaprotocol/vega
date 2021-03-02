@@ -1679,6 +1679,13 @@ func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, 
 	return e.GetAccountByID(generalID)
 }
 
+// GetPartyBondAccount returns a general account given the partyID.
+func (e *Engine) GetPartyBondAccount(market, partyID, asset string) (*types.Account, error) {
+	id := e.accountID(
+		market, partyID, asset, types.AccountType_ACCOUNT_TYPE_BOND)
+	return e.GetAccountByID(id)
+}
+
 // CreatePartyGeneralAccount create the general account for a trader
 func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error) {
 	if !e.AssetExists(asset) {
