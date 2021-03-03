@@ -397,6 +397,7 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 	)
 
 	for party, orders := range Orders(orders).ByParty() {
+		fmt.Printf("LIQUIDITY UPDATE: %v\n", party)
 		if !e.IsLiquidityProvider(party) {
 			continue
 		}
@@ -412,8 +413,10 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 
 		newOrders = append(newOrders, creates...)
 		amendments = append(amendments, updates...)
-
 	}
+
+	fmt.Printf("NEW ORDERS: %v\n", len(newOrders))
+	fmt.Printf("AMENDMENTS: %v\n", len(amendments))
 
 	if e.undeployedProvisions {
 		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
@@ -524,6 +527,8 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		needsCreateBuys, needsCreateSells []*types.Order
 		needsUpdateBuys, needsUpdateSells []*types.OrderAmendment
 	)
+
+	fmt.Printf("REPRICE FAILURE? %v\n", repriceFailure)
 
 	if repriceFailure {
 

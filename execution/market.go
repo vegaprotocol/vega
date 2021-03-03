@@ -94,6 +94,8 @@ var (
 	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
 	// ErrCannotStateOpeningAuctionForMarketNotInProposedState
 	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
+	// ErrCannotRepriceDuringAuction
+	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
 
 	networkPartyID = "network"
 )
@@ -640,6 +642,12 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	var (
 		repriceCount uint64
 		toRemove     []*types.Order
+
+		// this will be used while iterating over all pegged orders
+		// in order to make a copy of them,
+		// this copy will then be return to be processed later
+		// on (e.g: in order to update the liquidity engine)
+		// peggedOrderCpy []*types.Order
 	)
 
 	// Go through all the pegged orders and remove from the order book
@@ -726,6 +734,10 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 }
 
 func (m *Market) getNewPeggedPrice(order *types.Order) (uint64, error) {
+	if m.as.InAuction() {
+		return 0, ErrCannotRepriceDuringAuction
+	}
+
 	var (
 		err   error
 		price uint64
@@ -779,16 +791,33 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	// Move into auction mode to prevent pegged order repricing
 	event := m.as.AuctionStarted(ctx)
 
+	// this is at least the size of the orders to be cancelled
+	updatedOrders := make([]*types.Order, 0, len(ordersToCancel))
+
 	// Park all pegged orders
 	for _, order := range m.peggedOrders {
 		if order.Status != types.Order_STATUS_PARKED {
 			m.parkOrder(ctx, order)
+			updatedOrders = append(updatedOrders, order)
 		}
 	}
 
 	// Cancel all the orders that were invalid
 	for _, order := range ordersToCancel {
-		m.cancelOrder(ctx, order.PartyId, order.Id)
+		_, err := m.cancelOrder(ctx, order.PartyId, order.Id)
+		if err != nil {
+			m.log.Debug("error cancelling order when entering auction",
+				logging.MarketID(m.GetID()),
+				logging.OrderID(order.Id),
+				logging.Error(err))
+		}
+		updatedOrders = append(updatedOrders, order)
+	}
+
+	if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
+		m.log.Debug("error update liquidity engine",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
 	}
 
 	// Send an event bus update
@@ -859,14 +888,14 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// Send an event bus update
 	m.broker.Send(endEvt)
 
+	// We are moving to continuous trading so we have to unpark any pegged orders
+	m.repriceAllPeggedOrders(ctx, PriceMoveAll)
+
 	// update the liquidity engine with the state of every orders
 	// which got updated during auction
 	if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
 		m.log.Debug("could not update liquidity", logging.Error(err))
 	}
-
-	// We are moving to continuous trading so we have to unpark any pegged orders
-	m.repriceAllPeggedOrders(ctx, PriceMoveAll)
 
 	// Store the lastest prices so we can see if anything moves
 	m.lastMidBuyPrice, _ = m.getStaticMidPrice(types.Side_SIDE_BUY)
