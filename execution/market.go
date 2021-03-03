@@ -2546,7 +2546,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		// Because other collections might be pointing at the original order
 		// use it's memory when inserting the new version
 		*existingOrder = *newOrder
-		conf, err = m.matching.SubmitOrder(existingOrder) //lint:ignore SA4006 this value might be overwriter, careful!
+		conf, err = m.matching.SubmitOrder(existingOrder)
 		if err != nil {
 			m.log.Panic("unable to submit order", logging.Error(err))
 		}
