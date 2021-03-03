@@ -18,6 +18,7 @@ const (
 	MarketValueWindowLength                         = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
+	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 
 	GovernanceVoteAsset = "governance.vote.asset"
 
@@ -115,4 +116,5 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateNetParamMinProposerBalance:    {},
 	GovernanceProposalUpdateNetParamMinVoterBalance:       {},
 	BlockchainsEthereumConfig:                             {},
+	MarketLiquidityProvisionShapesMaxSize:                 {},
 }

@@ -2941,6 +2941,10 @@ func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
 	return m.tsCalc.UpdateScalingFactor(v)
 }
 
+func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
+	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
+}
+
 // repriceFuncW is an adapter for getNewPeggedPrice.
 func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 	return m.getNewPeggedPrice(
