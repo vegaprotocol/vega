@@ -2945,6 +2945,22 @@ func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
 
+// OnMarketAuctionMaximumDurationUpdate make the market leave the auction mode
+// if the Duration d is smaller than the actual Auction duration.
+func (m *Market) OnMarketAuctionMaximumDurationUpdate(ctx context.Context, d time.Duration) {
+	if !m.as.AuctionStart() {
+		return
+	}
+
+	// calculate the duration as seconds
+	cur := time.Duration(m.as.Duration().Duration) * time.Second
+
+	// we should leave the auction now
+	if d < cur {
+		m.LeaveAuction(ctx, m.currentTime)
+	}
+}
+
 // repriceFuncW is an adapter for getNewPeggedPrice.
 func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 	return m.getNewPeggedPrice(

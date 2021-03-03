@@ -4555,3 +4555,23 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	})
 
 }
+
+func TestMarketLeavesAuctionOnMaximumDurationUpdate(t *testing.T) {
+	ctx := context.Background()
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+
+	dur := &types.AuctionDuration{
+		Duration: 100,
+	}
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, dur)
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+
+	require.True(t, tm.mas.AuctionStart())
+	tm.market.OnMarketAuctionMaximumDurationUpdate(ctx,
+		time.Duration(dur.Duration/2)*time.Second,
+	)
+	require.False(t, tm.mas.AuctionStart())
+
+}

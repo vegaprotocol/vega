@@ -623,6 +623,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
 			Watcher: l.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAuctionMaximumDuration,
+			Watcher: l.executionEngine.OnMarketAuctionMaximumDurationUpdate,
+		},
 	)
 }
 

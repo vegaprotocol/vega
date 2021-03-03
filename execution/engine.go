@@ -791,3 +791,15 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
 
 	return nil
 }
+
+// OnMarketAuctionMaximumDurationUpdate is invoked everytime the
+// market.auction.maximumDuration is updated.
+func (e *Engine) OnMarketAuctionMaximumDurationUpdate(
+	ctx context.Context, d time.Duration) error {
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketAuctionMaximumDurationUpdate(ctx, d)
+	}
+
+	return nil
+}
