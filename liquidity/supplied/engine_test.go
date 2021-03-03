@@ -107,8 +107,8 @@ func Test_InteralConsistency(t *testing.T) {
 
 	limitOrders := []*types.Order{}
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	buy := &supplied.LiquidityOrder{
 		Price:      minPriceInt,
@@ -161,8 +161,8 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	limitOrders := []*types.Order{}
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	invalidBuy := &supplied.LiquidityOrder{
 		Price:      minPriceInt - 1,
@@ -284,8 +284,8 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(12)
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	invalidBuy := &supplied.LiquidityOrder{
 		Price:      minPriceInt - 1,
@@ -514,8 +514,8 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 
 	limitOrders := []*types.Order{}
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	invalidBuy := &supplied.LiquidityOrder{
 		Price:      minPriceInt - 1,
@@ -555,8 +555,8 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	minPrice := 89.2
 	maxPrice := 111.1
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	order1 := &types.Order{
 		Price:     minPriceInt,

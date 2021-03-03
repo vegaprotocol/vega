@@ -25,8 +25,8 @@ var (
 	execsetup *executionTestSetup
 	reporter  tstReporter
 
-	marketStart  string = defaultMarketStart
-	marketExpiry string = defaultMarketExpiry
+	marketStart  = defaultMarketStart
+	marketExpiry = defaultMarketExpiry
 )
 
 type tstReporter struct {

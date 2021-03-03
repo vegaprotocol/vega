@@ -112,8 +112,8 @@ func (e *Engine) CalculateForContinuousMode(
 		totalLiquidityFeeAmount      uint64
 		// we allocate the len of the trades + 2
 		// len(trade) = number of makerFee + 1 infra fee + 1 liquidity fee
-		transfers     []*types.Transfer = make([]*types.Transfer, 0, (len(trades)*2)+2)
-		transfersRecv []*types.Transfer = make([]*types.Transfer, 0, len(trades)+2)
+		transfers     = make([]*types.Transfer, 0, (len(trades)*2)+2)
+		transfersRecv = make([]*types.Transfer, 0, len(trades)+2)
 	)
 
 	for _, v := range trades {

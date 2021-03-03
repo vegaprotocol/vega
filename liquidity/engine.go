@@ -267,8 +267,8 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	}
 
 	var (
-		lp  *types.LiquidityProvision = e.LiquidityProvisionByPartyID(party)
-		now                           = e.currentTime.UnixNano()
+		lp  = e.LiquidityProvisionByPartyID(party)
+		now = e.currentTime.UnixNano()
 	)
 
 	// regardless of the final operation (create,update or delete) we finish

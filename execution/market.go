@@ -2188,8 +2188,8 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// If we have a pegged order that is no longer expiring, we need to remove it
 	var (
-		needToRemoveExpiry bool  = false
-		needToAddExpiry    bool  = false
+		needToRemoveExpiry       = false
+		needToAddExpiry          = false
 		expiresAt          int64 = 0
 	)
 	defer func() {

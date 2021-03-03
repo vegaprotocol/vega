@@ -711,7 +711,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -826,8 +826,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var validPrice uint64 = initialPrice + (MAXMOVEUP+MINMOVEDOWN)/2
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var validPrice = initialPrice + (MAXMOVEUP+MINMOVEDOWN)/2
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -1028,7 +1028,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -1203,7 +1203,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPriceHigh uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPriceHigh = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -1355,7 +1355,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	}
 	auctionEndTime := now.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	expectedPmRange1 := types.PriceMonitoringBounds{
@@ -2297,7 +2297,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, openingAuctionDuration)
 

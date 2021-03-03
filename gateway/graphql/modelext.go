@@ -354,7 +354,7 @@ func (e *ERC20Input) IntoProto() (*types.ERC20, error) {
 func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 	var (
 		isSet       bool
-		assetSource *types.AssetSource = &types.AssetSource{}
+		assetSource = &types.AssetSource{}
 	)
 
 	if n.BuiltinAsset != nil {

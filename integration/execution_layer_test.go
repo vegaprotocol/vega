@@ -1125,7 +1125,7 @@ func executedTrades(trades *gherkin.DataTable) error {
 			price := u64val(row, 1)
 			size := u64val(row, 2)
 			counterparty := val(row, 3)
-			var found bool = false
+			var found = false
 			data := execsetup.broker.getTrades()
 			for _, v := range data {
 				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
