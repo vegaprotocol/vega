@@ -41,22 +41,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets         Assets
-	banking        Banking
-	broker         Broker
-	cmd            Commander
-	erc            ExtResChecker
-	evtfwd         EvtForwarder
-	exec           ExecutionEngine
-	ghandler       *genesis.Handler
-	gov            GovernanceEngine
-	notary         Notary
-	stats          Stats
-	time           TimeService
-	top            ValidatorTopology
-	vegaWallet     nodewallet.Wallet
-	netp           NetworkParameters
-	oracles        *Oracles
+	assets     Assets
+	banking    Banking
+	broker     Broker
+	cmd        Commander
+	erc        ExtResChecker
+	evtfwd     EvtForwarder
+	exec       ExecutionEngine
+	ghandler   *genesis.Handler
+	gov        GovernanceEngine
+	notary     Notary
+	stats      Stats
+	time       TimeService
+	top        ValidatorTopology
+	vegaWallet nodewallet.Wallet
+	netp       NetworkParameters
+	oracles    *Oracles
 }
 
 func NewApp(
@@ -213,6 +213,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 
 	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes, vators); err != nil {
+		app.cancel()
 		app.log.Panic("something happened when initializing vega with the genesis block", logging.Error(err))
 	}
 
