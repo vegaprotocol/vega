@@ -108,7 +108,7 @@ func getTestGRPCServer(
 	path := fmt.Sprintf("vegatest-%d-", port)
 	tempDir, tidyTempDir, err := storage.TempDir(path)
 	if err != nil {
-		err = fmt.Errorf("Failed to create tmp dir: %s", err.Error())
+		err = fmt.Errorf("failed to create tmp dir: %s", err.Error())
 		return
 	}
 
@@ -291,7 +291,7 @@ func getTestGRPCServer(
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
-		err = fmt.Errorf("Failed to create gRPC server")
+		err = fmt.Errorf("failed to create gRPC server")
 		return
 	}
 
