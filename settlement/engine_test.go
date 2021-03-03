@@ -372,12 +372,12 @@ func testMarkToMarketOrdered(t *testing.T) {
 	long = append(long, neutral)
 	// we have a long and short trade example
 	trades := map[string]*types.Trade{
-		"long": &types.Trade{
+		"long": {
 			Price: markPrice,
 			Size:  1,
 		},
 		// to go short, the trade has to be 2
-		"short": &types.Trade{
+		"short": {
 			Price: markPrice,
 			Size:  2,
 		},

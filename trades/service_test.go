@@ -6,12 +6,11 @@ import (
 	"sync"
 	"testing"
 
+	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/trades/mocks"
 
-	types "code.vegaprotocol.io/vega/proto"
-
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -93,11 +92,11 @@ func TestTradeService_GetByParty(t *testing.T) {
 	invalid := "chris"
 
 	expect := map[string][]*types.Trade{
-		partyA: []*types.Trade{
+		partyA: {
 			{Type: types.Trade_TYPE_DEFAULT, Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
 			{Type: types.Trade_TYPE_DEFAULT, Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
 		},
-		partyB: []*types.Trade{
+		partyB: {
 			{Type: types.Trade_TYPE_DEFAULT, Id: "C", Buyer: partyB, Seller: partyA, Price: 100},
 			{Type: types.Trade_TYPE_DEFAULT, Id: "D", Buyer: partyA, Seller: partyB, Price: 200},
 		},

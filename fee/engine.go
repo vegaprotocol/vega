@@ -453,7 +453,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 	liquiFee := int64(math.Ceil(share * float64(fees.LiquidityFee)))
 
 	return []*types.Transfer{
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -461,7 +461,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 				},
 				Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
 			},
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -469,7 +469,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 				},
 				Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 			},
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -526,7 +526,7 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string)
 	// we return both transfer for the party in a slice
 	// always the infrastructure fee first
 	return []*types.Transfer{
-		&types.Transfer{
+		{
 			Owner: p,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
@@ -534,7 +534,7 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string)
 			},
 			Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 		},
-		&types.Transfer{
+		{
 			Owner: p,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
