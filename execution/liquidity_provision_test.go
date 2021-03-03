@@ -34,25 +34,13 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 
 	// Submitting a zero or smaller fee should cause a reject
 	lps := &types.LiquidityProvisionSubmission{
-		Fee:              "0.00",
-		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
-		Buys:             buys,
-		Sells:            sells}
-
-	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
-	require.Error(t, err)
-	assert.Equal(t, 0, tm.market.GetLPSCount())
-
-	// Submitting a zero or smaller fee should cause a reject
-	lps = &types.LiquidityProvisionSubmission{
 		Fee:              "-0.50",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
 		Buys:             buys,
 		Sells:            sells}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
@@ -216,4 +204,86 @@ func TestLiquidity_TooManyShapeLevels(t *testing.T) {
 	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.EqualError(t, err, "SIDE_BUY shape size exceed max (100)")
 	assert.Equal(t, 0, tm.market.GetLPSCount())
+}
+
+func TestLiquidityProvisionFeeValidation(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	// auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 500000000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 70000,
+		Fee:              "-0.1",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	require.EqualError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+		"invalid liquidity provision fee",
+	)
+
+	lpSubmission.Fee = "10"
+
+	// submit our lp
+	require.EqualError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+		"invalid liquidity provision fee",
+	)
+
+	lpSubmission.Fee = "0"
+
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
 }
