@@ -20,7 +20,7 @@ func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
 }
 
 func (o Order) IsParty(id string) bool {
-	return (o.o.PartyId == id)
+	return o.o.PartyId == id
 }
 
 func (o Order) PartyID() string {

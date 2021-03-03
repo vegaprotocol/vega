@@ -255,11 +255,11 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	require.Equal(t, zero, invalidBuy.LiquidityImpliedVolume)
 	require.Equal(t, zero, invalidSell.LiquidityImpliedVolume)
 
-	expectedVolumeValidBuy1 := uint64(math.Ceil(liquidityObligation * float64(validBuy1.Proportion) / float64((validBuy1.Proportion + validBuy2.Proportion)) / validBuy1Prob / float64(validBuy1.Price)))
-	expectedVolumeValidBuy2 := uint64(math.Ceil(liquidityObligation * float64(validBuy2.Proportion) / float64((validBuy1.Proportion + validBuy2.Proportion)) / validBuy2Prob / float64(validBuy2.Price)))
+	expectedVolumeValidBuy1 := uint64(math.Ceil(liquidityObligation * float64(validBuy1.Proportion) / float64(validBuy1.Proportion + validBuy2.Proportion) / validBuy1Prob / float64(validBuy1.Price)))
+	expectedVolumeValidBuy2 := uint64(math.Ceil(liquidityObligation * float64(validBuy2.Proportion) / float64(validBuy1.Proportion + validBuy2.Proportion) / validBuy2Prob / float64(validBuy2.Price)))
 
-	expectedVolumeValidSell1 := uint64(math.Ceil(liquidityObligation * float64(validSell1.Proportion) / float64((validSell1.Proportion + validSell2.Proportion)) / validSell1Prob / float64(validSell1.Price)))
-	expectedVolumeValidSell2 := uint64(math.Ceil(liquidityObligation * float64(validSell2.Proportion) / float64((validSell1.Proportion + validSell2.Proportion)) / validSell2Prob / float64(validSell2.Price)))
+	expectedVolumeValidSell1 := uint64(math.Ceil(liquidityObligation * float64(validSell1.Proportion) / float64(validSell1.Proportion + validSell2.Proportion) / validSell1Prob / float64(validSell1.Price)))
+	expectedVolumeValidSell2 := uint64(math.Ceil(liquidityObligation * float64(validSell2.Proportion) / float64(validSell1.Proportion + validSell2.Proportion) / validSell2Prob / float64(validSell2.Price)))
 
 	require.Equal(t, expectedVolumeValidBuy1, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, expectedVolumeValidBuy2, validBuy2.LiquidityImpliedVolume)

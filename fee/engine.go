@@ -131,7 +131,7 @@ func (e *Engine) CalculateForContinuousMode(
 			maker = v.Buyer
 		}
 
-		totalFeeAmount += (fee.InfrastructureFee + fee.LiquidityFee + fee.MakerFee)
+		totalFeeAmount += fee.InfrastructureFee + fee.LiquidityFee + fee.MakerFee
 		totalInfrastructureFeeAmount += fee.InfrastructureFee
 		totalLiquidityFeeAmount += fee.LiquidityFee
 

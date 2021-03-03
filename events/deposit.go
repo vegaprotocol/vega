@@ -23,7 +23,7 @@ func (d *Deposit) Deposit() types.Deposit {
 }
 
 func (d Deposit) IsParty(id string) bool {
-	return (d.d.PartyId == id)
+	return d.d.PartyId == id
 }
 
 func (d Deposit) PartyID() string { return d.d.PartyId }

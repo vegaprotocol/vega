@@ -19,7 +19,7 @@ func NewAccountEvent(ctx context.Context, a types.Account) *Acc {
 }
 
 func (a Acc) IsParty(id string) bool {
-	return (a.a.Owner == id)
+	return a.a.Owner == id
 }
 
 func (a Acc) PartyID() string {

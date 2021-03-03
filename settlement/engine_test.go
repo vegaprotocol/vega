@@ -99,7 +99,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	} // }}}
 	oraclePrice := uint64(1100)
 	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
-		sp := int64((oraclePrice - price)) * size
+		sp := int64(oraclePrice - price) * size
 		return &types.FinancialAmount{
 			Amount: sp,
 		}, nil
