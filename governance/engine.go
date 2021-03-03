@@ -71,9 +71,9 @@ type NetParams interface {
 // Engine is the governance engine that handles proposal and vote lifecycle.
 type Engine struct {
 	Config
-	log         *logging.Logger
-	accs        Accounts
-	currentTime time.Time
+	log          *logging.Logger
+	accs         Accounts
+	currentTime  time.Time
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
@@ -191,6 +191,7 @@ func (e *Engine) removeProposal(id string) {
 // OnChainTimeUpdate triggers time bound state changes.
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	e.currentTime = t
+
 	var (
 		toBeEnacted []*ToEnact
 		voteClosed  []*VoteClosed
