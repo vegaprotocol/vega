@@ -20,7 +20,7 @@ var (
 const (
 	minValidationPeriod = 1         // 1 sec
 	maxValidationPeriod = 48 * 3600 // 2 days
-	nodeApproval        = 1         // float for percentage
+
 )
 
 const (
