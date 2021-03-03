@@ -60,7 +60,7 @@ func marshal(i proto.Message) string {
 		EmitDefaults: true,
 	}
 	buf, _ := m.MarshalToString(i)
-	return string(buf)
+	return buf
 }
 
 func readFile(r *reporter, path string) []byte {

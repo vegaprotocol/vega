@@ -233,7 +233,7 @@ func updateVWAP(vwap float64, volume int64, addVolume int64, addPrice uint64) fl
 	if volume+addVolume == 0 {
 		return 0
 	}
-	return float64(((vwap * float64(volume)) + (float64(addPrice) * float64(addVolume))) / (float64(volume) + float64(addVolume)))
+	return ((vwap * float64(volume)) + (float64(addPrice) * float64(addVolume))) / (float64(volume) + float64(addVolume))
 }
 
 func openV(p *Position, openedVolume int64, tradedPrice uint64) {

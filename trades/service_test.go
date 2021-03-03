@@ -67,7 +67,7 @@ func TestGetByMarket(t *testing.T) {
 		{Type: types.Trade_TYPE_DEFAULT, Id: "C", MarketId: market, Price: 300},
 	}
 
-	ui0, ui1, uiDefault := uint64(0), uint64(1), uint64(svc.Config.PageSizeDefault)
+	ui0, ui1, uiDefault := uint64(0), uint64(1), svc.Config.PageSizeDefault
 	svc.trade.EXPECT().GetByMarket(svc.ctx, market, ui0, uiDefault, false).Times(1).Return(expect, nil)
 	svc.trade.EXPECT().GetByMarket(svc.ctx, invalid, ui1, uiDefault, false).Times(1).Return(nil, expErr)
 
@@ -79,7 +79,7 @@ func TestGetByMarket(t *testing.T) {
 	assert.Nil(t, fail)
 	assert.Equal(t, expErr, err)
 
-	_, err = svc.GetByMarket(svc.ctx, market, 0, uint64(svc.Config.PageSizeMaximum+1), false)
+	_, err = svc.GetByMarket(svc.ctx, market, 0, svc.Config.PageSizeMaximum+1, false)
 	assert.True(t, strings.Contains(err.Error(), "invalid pagination limit"))
 }
 
@@ -103,7 +103,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 		},
 		invalid: nil,
 	}
-	ui0, uiDefault := uint64(0), uint64(svc.Config.PageSizeDefault)
+	ui0, uiDefault := uint64(0), svc.Config.PageSizeDefault
 	svc.trade.EXPECT().GetByParty(svc.ctx, gomock.Any(), ui0, uiDefault, false, nil).Times(len(expect)).DoAndReturn(func(_ context.Context, party string, _ uint64, _ uint64, _ bool, _ *string) ([]*types.Trade, error) {
 		trades, ok := expect[party]
 		assert.True(t, ok)
@@ -124,7 +124,7 @@ func TestTradeService_GetByParty(t *testing.T) {
 		}
 	}
 
-	_, err := svc.GetByParty(svc.ctx, partyA, 0, uint64(svc.Config.PageSizeMaximum+1), false, nil)
+	_, err := svc.GetByParty(svc.ctx, partyA, 0, svc.Config.PageSizeMaximum+1, false, nil)
 	assert.True(t, strings.Contains(err.Error(), "invalid pagination limit"))
 }
 

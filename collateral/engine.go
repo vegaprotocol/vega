@@ -1449,7 +1449,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 
 		req.FromAccount[0] = marginAcc
 		req.ToAccount[0] = generalAcc
-		req.Amount = uint64(marginAcc.Balance)
+		req.Amount = marginAcc.Balance
 
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("Clearing party margin account",
@@ -1506,7 +1506,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 
 		req.FromAccount[0] = bondAcc
 		req.ToAccount[0] = generalAcc
-		req.Amount = uint64(marginAcc.Balance)
+		req.Amount = marginAcc.Balance
 
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("Clearing party bond account",
@@ -2003,7 +2003,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 	}
 
 	// check we have more money than required to withdraw
-	if uint64(acc.Balance) < amount {
+	if acc.Balance < amount {
 		return nil, fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
 	}
 

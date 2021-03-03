@@ -115,7 +115,7 @@ func loadVegaPubKey(log *logging.Logger, rootPath, pass string) (string, error) 
 		return "", err
 	}
 
-	w, ok := nw.Get(nodewallet.Blockchain("vega"))
+	w, ok := nw.Get("vega")
 	if !ok {
 		return "", errors.New("no vega wallet stored in node wallet")
 	}

@@ -615,8 +615,8 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	bounds = pm.GetCurrentBounds()
 	require.Len(t, bounds, 1)
 	require.Equal(t, *bounds[0].Trigger, t2)
-	require.Equal(t, bounds[0].MinValidPrice, uint64(t2lb1))
-	require.Equal(t, bounds[0].MaxValidPrice, uint64(t2ub1))
+	require.Equal(t, bounds[0].MinValidPrice, t2lb1)
+	require.Equal(t, bounds[0].MaxValidPrice, t2ub1)
 	require.Equal(t, bounds[0].ReferencePrice, referencePrice)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
@@ -736,7 +736,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 }
 
 func horizonToYearFraction(horizon int64) float64 {
-	return float64(horizon) / float64(365.25*24*60*60)
+	return float64(horizon) / (365.25 * 24 * 60 * 60)
 }
 
 func TestGetValidPriceRange_NoTriggers(t *testing.T) {

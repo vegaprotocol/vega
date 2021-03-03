@@ -122,7 +122,7 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 		if err != nil {
 			return err
 		}
-		if uint64(acc.Balance) != balance {
+		if acc.Balance != balance {
 			return fmt.Errorf("invalid general account balance, expected %v got %v", arg2, acc.Balance)
 		}
 	}
@@ -184,7 +184,7 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 		return err
 	}
 
-	if uint64(acc.Balance) != balance {
+	if acc.Balance != balance {
 		return fmt.Errorf("invalid general asset=%v account balance=%v for trader=%v", asset, acc.Balance, trader)
 	}
 
@@ -523,7 +523,7 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	for _, v := range data {
 		// remove vote token
 		if v.Asset != "VOTE" {
-			cumul += uint64(v.Balance)
+			cumul += v.Balance
 		}
 	}
 

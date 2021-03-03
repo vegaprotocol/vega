@@ -193,7 +193,7 @@ func testSettleExpiredSuccessErrorInvalidSettlementMethod(t *testing.T) {
 	// settlement price at markPrice
 	var markPrice uint64 = 1100
 	// set the FinalSettlement to the MarkPrice method
-	engine.Engine.Config.FinalSettlement.FinalSettlement = settlement.FinalSettlement("not a settlement")
+	engine.Engine.Config.FinalSettlement.FinalSettlement = "not a settlement"
 	// now settle:
 	_, err := engine.Settle(time.Now(), markPrice)
 	assert.Error(t, err)
