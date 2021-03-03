@@ -2995,7 +2995,7 @@ func (m *Market) cancelLiquidityProvision(
 	// it just mean that the trader my have gone the distressed path
 	// also if the balance is already 0, let's not bother created a
 	// transfer request
-	if err != nil && bondAcc.Balance > 0 {
+	if err == nil && bondAcc.Balance > 0 {
 		transfer := &types.Transfer{
 			Owner: party,
 			Amount: &types.FinancialAmount{
