@@ -1948,7 +1948,7 @@ func (t *tradingDataService) ObserveGovernance(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send governance data into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
@@ -1988,7 +1988,7 @@ func (t *tradingDataService) ObservePartyProposals(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send party proposal into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
@@ -2070,7 +2070,7 @@ func (t *tradingDataService) ObserveProposalVotes(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send proposal vote into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
@@ -2213,7 +2213,7 @@ func (t *tradingDataService) observeEventsWithAck(
 			}
 			if err := stream.Send(resp); err != nil {
 				t.log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
