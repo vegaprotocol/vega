@@ -34,25 +34,13 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 
 	// Submitting a zero or smaller fee should cause a reject
 	lps := &types.LiquidityProvisionSubmission{
-		Fee:              "0.00",
-		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
-		Buys:             buys,
-		Sells:            sells}
-
-	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
-	require.Error(t, err)
-	assert.Equal(t, 0, tm.market.GetLPSCount())
-
-	// Submitting a zero or smaller fee should cause a reject
-	lps = &types.LiquidityProvisionSubmission{
 		Fee:              "-0.50",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
 		Buys:             buys,
 		Sells:            sells}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
