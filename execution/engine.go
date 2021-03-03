@@ -67,6 +67,7 @@ type netParamsValues struct {
 	infrastructureFee               float64
 	makerFee                        float64
 	scalingFactors                  *types.ScalingFactors
+	maxLiquidityFee                 float64
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -80,6 +81,7 @@ func defaultNetParamsValues() netParamsValues {
 		infrastructureFee:               -1,
 		makerFee:                        -1,
 		scalingFactors:                  nil,
+		maxLiquidityFee:                 -1,
 	}
 }
 
@@ -370,6 +372,9 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 
 	if e.npv.suppliedStakeToObligationFactor != -1 {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
+	}
+	if e.npv.maxLiquidityFee != -1 {
+		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
 
 	return nil
@@ -790,4 +795,22 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
 	e.npv.shapesMaxSize = v
 
 	return nil
+}
+
+func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
+	_ context.Context, f float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update liquidity provision max liquidity fee factor",
+			logging.Float64("max-liquidity-fee", f),
+		)
+	}
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(f)
+	}
+
+	e.npv.maxLiquidityFee = f
+
+	return nil
+
 }

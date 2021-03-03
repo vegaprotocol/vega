@@ -623,7 +623,11 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
 			Watcher: l.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
 		},
-	)
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
+			Watcher: l.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
+		},
+	}
 }
 
 func (l *NodeCommand) setupConfigWatchers() {

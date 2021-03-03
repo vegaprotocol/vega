@@ -75,6 +75,9 @@ type Engine struct {
 	// the maximum number of liquidity orders to be created on
 	// each shape
 	maxShapesSize int64
+
+	// this is the max fee that can be specified
+	maxFee float64
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -97,6 +100,7 @@ func NewEngine(
 		orders:                  map[string]map[string]*types.Order{},
 		liquidityOrders:         map[string]map[string]*types.Order{},
 		maxShapesSize:           100, // set it to the same default than the netparams
+		maxFee:                  1.0,
 	}
 }
 
@@ -138,6 +142,10 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 // OnSuppliedStakeToObligationFactorUpdate updates the stake factor
 func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	e.stakeToObligationFactor = v
+}
+
+func (e *Engine) OnMaximumLiquidityFeeFactorLevelUpdate(f float64) {
+	e.maxFee = f
 }
 
 func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
@@ -205,7 +213,7 @@ func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisi
 	if lp.CommitmentAmount == 0 {
 		return nil
 	}
-	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee <= 0 || len(lp.Fee) <= 0 || fee > 1.0 {
+	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee < 0 || len(lp.Fee) <= 0 || fee > e.maxFee {
 		return errors.New("invalid liquidity provision fee")
 	}
 
