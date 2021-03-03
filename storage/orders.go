@@ -17,7 +17,6 @@ import (
 )
 
 var (
-	ErrOrderNotFoundForMarketAndID   = errors.New("order not found for market and id")
 	ErrOrderDoesNotExistForReference = errors.New("order does not exist for reference")
 	ErrOrderDoesNotExistForID        = errors.New("order does not exist for ID")
 )

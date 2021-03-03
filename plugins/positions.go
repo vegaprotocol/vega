@@ -14,7 +14,6 @@ import (
 
 var (
 	ErrMarketNotFound = errors.New("could not find market")
-	ErrPartyNotFound  = errors.New("party not found")
 )
 
 // SE SettleEvent - common denominator between SPE & SDE

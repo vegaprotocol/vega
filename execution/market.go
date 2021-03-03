@@ -71,8 +71,6 @@ var (
 	ErrInvalidOrderType = errors.New("invalid order type")
 	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
-	// ErrInvalidMarketType is returned if the order is not valid for the current market type (auction/continuous)
-	ErrInvalidMarketType = errors.New("invalid market type")
 	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continuous trading state
 	ErrGFAOrderReceivedDuringContinuousTrading = errors.New("gfa order received during continuous trading")
 	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state

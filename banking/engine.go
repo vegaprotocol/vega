@@ -27,8 +27,6 @@ var (
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
 	ErrWithdrawalNotReady                         = errors.New("withdrawal not ready")
-	ErrMissingWithdrawIDFromContext               = errors.New("missing withdraw ID from context")
-	ErrMissingDepositIDFromContext                = errors.New("missing deposit ID from context")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets

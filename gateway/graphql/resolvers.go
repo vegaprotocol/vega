@@ -21,10 +21,6 @@ import (
 )
 
 var (
-	// ErrNilPendingOrder a pending order was nil when expected not to be
-	ErrNilPendingOrder = errors.New("nil pending order")
-	// ErrUnknownAccountType a account type specified does not exist
-	ErrUnknownAccountType = errors.New("unknown account type")
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified

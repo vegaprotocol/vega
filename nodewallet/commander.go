@@ -25,9 +25,7 @@ type Commander struct {
 }
 
 var (
-	ErrCommandMustBeSigned        = errors.New("command requires a signature")
-	ErrPayloadNotNodeRegistration = errors.New("expected node registration payload")
-	ErrVegaWalletRequired         = errors.New("vega wallet required to start commander")
+	ErrVegaWalletRequired = errors.New("vega wallet required to start commander")
 )
 
 // NewCommander - used to sign and send transaction from core
