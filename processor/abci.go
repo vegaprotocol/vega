@@ -438,7 +438,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 	}
 
 	app.log.Debug("submitting proposal",
-		logging.String("proposal-id", prop.Id),
+		logging.ProposalID(prop.Id),
 		logging.String("proposal-reference", prop.Reference),
 		logging.String("proposal-party", prop.PartyId),
 		logging.String("proposal-terms", prop.Terms.String()))
@@ -594,7 +594,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		default:
 			prop.State = types.Proposal_STATE_FAILED
-			app.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", prop.Id))
+			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.Id))
 		}
 		app.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
@@ -632,7 +632,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	if err := app.notary.StartAggregate(prop.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
 		prop.State = types.Proposal_STATE_FAILED
 		app.log.Error("unable to enact proposal",
-			logging.String("proposal-id", prop.Id),
+			logging.ProposalID(prop.Id),
 			logging.Error(err))
 		return
 	}
@@ -679,7 +679,7 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
 		prop.State = types.Proposal_STATE_FAILED
 		app.log.Error("failed to update network parameters",
-			logging.String("proposal-id", prop.Id),
+			logging.ProposalID(prop.Id),
 			logging.Error(err))
 		return
 	}

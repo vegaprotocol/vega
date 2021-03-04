@@ -40,7 +40,7 @@ var (
 	// ErrMissingOracleSpec is return when the oracle spec is absent.
 	ErrMissingOracleSpec = errors.New("missing oracle spec")
 	// ErrMissingFutureProduct is return when future product is absent from the instrument.
-	ErrMissingFutureProduct = errors.New("missing oracle spec")
+	ErrMissingFutureProduct = errors.New("missing future product")
 )
 
 func assignProduct(
