@@ -1345,7 +1345,7 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
 
 	// Move the time forward
-	orders, err := tm.market.RemoveExpiredOrders(afterexpire.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), afterexpire.UnixNano())
 	require.NotNil(t, orders)
 	assert.NoError(t, err)
 
@@ -1564,7 +1564,7 @@ func testPeggedOrderExpiring(t *testing.T) {
 	}
 	assert.Equal(t, len(expirations), tm.market.GetPeggedOrderCount())
 
-	orders, err := tm.market.RemoveExpiredOrders(now.Add(25 * time.Minute).UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(25*time.Minute).UnixNano())
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(orders))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount(), "1 order should still be in the market")
@@ -2032,7 +2032,7 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	require.NotNil(t, cncl)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 
-	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
 	require.NoError(t, err)
 	require.Len(t, orders, 0)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
@@ -2055,7 +2055,7 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 	require.NotNil(t, o1conf)
 
 	// then remove expired, set 1 sec after order exp time.
-	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
 	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
@@ -2087,7 +2087,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	require.NotNil(t, o2conf)
 
 	// then remove expired, set 1 sec after order exp time.
-	orders, err := tm.market.RemoveExpiredOrders(now.Add(10 * time.Second).UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
 	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
@@ -2163,7 +2163,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, o10conf)
 
-	expired, err := tm.market.RemoveExpiredOrders(someTimeLater.UnixNano())
+	expired, err := tm.market.RemoveExpiredOrders(context.Background(), someTimeLater.UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, expired, 5)
 }

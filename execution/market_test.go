@@ -2557,7 +2557,7 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 	// Move the clock forward to expire the first order
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
-	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.UnixNano())
 	require.NoError(t, err)
 
 	// we have one order
@@ -2754,7 +2754,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 	// Move the clock forward to expire any old orders
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
-	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.UnixNano())
 	require.Equal(t, 0, len(orders))
 	require.NoError(t, err)
 
@@ -2802,7 +2802,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 	// Move the clock forward to expire any old orders
 	now = now.Add(time.Second * 10)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
-	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.UnixNano())
 	require.NoError(t, err)
 
 	// 1 expired order
@@ -3182,10 +3182,12 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	// Remove an order to invalidate reference prices and force pegged orders to park
 	tm.market.CancelOrder(ctx, o1.PartyId, o1.Id)
 
-	// 3 live orders, 1 normal and 2 pegged with 2 parked pegged orders
-	require.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
-	require.Equal(t, 4, tm.market.GetPeggedOrderCount())
-	require.Equal(t, 2, tm.market.GetParkedOrderCount())
+	//
+	// 1 live orders, 1 normal
+	// all LP have been removed as cannot be repriced.
+	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
 // TODO(): this test is wrong.

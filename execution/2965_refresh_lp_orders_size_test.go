@@ -410,7 +410,7 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 			Type:        types.Order_TYPE_LIMIT,
 			Size:        1,
 			Remaining:   1,
-			Price:       2500,
+			Price:       1100,
 			Side:        types.Side_SIDE_SELL,
 			PartyId:     party1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
