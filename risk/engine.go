@@ -22,7 +22,13 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/risk Orderbook
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
+}
+
+// AuctionState represents the current auction state of the market, previously we got this information from the matching engine, but really... that's not its job
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/risk AuctionState
+type AuctionState interface {
 	InAuction() bool
+	AuctionEnd() bool
 }
 
 // Broker the event bus broker
@@ -56,6 +62,7 @@ type Engine struct {
 	factors          *types.RiskResult
 	waiting          bool
 	ob               Orderbook
+	as               AuctionState
 	broker           Broker
 
 	currTime int64
@@ -70,6 +77,7 @@ func NewEngine(
 	model Model,
 	initialFactors *types.RiskResult,
 	ob Orderbook,
+	as AuctionState,
 	broker Broker,
 	initialTime int64,
 	mktID string,
@@ -86,6 +94,7 @@ func NewEngine(
 		model:            model,
 		waiting:          false,
 		ob:               ob,
+		as:               as,
 		broker:           broker,
 		currTime:         initialTime,
 		mktID:            mktID,
@@ -222,7 +231,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	var margins *types.MarginLevels
-	if !e.ob.InAuction() {
+	if !e.as.InAuction() || e.as.AuctionEnd() {
 		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 	} else {
 		margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -292,7 +301,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
-		if !e.ob.InAuction() {
+		if !e.as.InAuction() || e.as.AuctionEnd() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -381,7 +390,7 @@ func (e *Engine) ExpectMargins(
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	for _, evt := range evts {
 		var margins *types.MarginLevels
-		if !e.ob.InAuction() {
+		if !e.as.InAuction() || e.as.AuctionEnd() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
