@@ -595,7 +595,7 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	expiringOrders := []types.Order{}
 	timeNow := t.UnixNano()
 	for _, mkt := range e.marketsCpy {
-		orders, err := mkt.RemoveExpiredOrders(timeNow)
+		orders, err := mkt.RemoveExpiredOrders(ctx, timeNow)
 		if err != nil {
 			e.log.Error("unable to get remove expired orders",
 				logging.MarketID(mkt.GetID()),

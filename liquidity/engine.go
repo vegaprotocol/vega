@@ -104,36 +104,6 @@ func NewEngine(
 	}
 }
 
-func (e *Engine) HandleFailedOrderSubmit(
-	ctx context.Context, order, party string,
-) error {
-	orders, ok := e.liquidityOrders[party]
-	if !ok {
-		return ErrLiquidityProvisionDoesNotExist
-	}
-	delete(orders, order)
-
-	lp, ok := e.provisions[party]
-	if !ok {
-		return ErrLiquidityProvisionDoesNotExist
-	}
-	for _, v := range lp.Buys {
-		if v.OrderId == order {
-			v.OrderId = ""
-			return nil
-		}
-	}
-	for _, v := range lp.Sells {
-		if v.OrderId == order {
-			v.OrderId = ""
-			return nil
-		}
-	}
-
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-	return ErrLiquidityProvisionDoesNotExist
-}
-
 // OnChainTimeUpdate updates the internal engine current time
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
@@ -412,7 +382,6 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 
 		newOrders = append(newOrders, creates...)
 		amendments = append(amendments, updates...)
-
 	}
 
 	if e.undeployedProvisions {
