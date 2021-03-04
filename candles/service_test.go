@@ -238,5 +238,5 @@ func (m itMatcher) Matches(x interface{}) bool {
 	default:
 		return false
 	}
-	return (v.Market == m.market && v.Interval == m.interval)
+	return v.Market == m.market && v.Interval == m.interval
 }

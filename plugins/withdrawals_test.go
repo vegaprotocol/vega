@@ -73,8 +73,8 @@ func testGetWithdrawalByID(t *testing.T) {
 
 	wit.Push(w1, w2, w3)
 	var (
-		hasError bool = true
-		retries       = 50
+		hasError = true
+		retries  = 50
 	)
 	for hasError && retries > 0 {
 		retries -= 1
@@ -130,8 +130,8 @@ func testGetWithdrawalByParty(t *testing.T) {
 
 	wit.Push(w1, w2, w3)
 	var (
-		hasError bool = true
-		retries       = 50
+		hasError = true
+		retries  = 50
 	)
 	for hasError && retries > 0 {
 		retries -= 1

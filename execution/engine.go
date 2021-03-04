@@ -53,6 +53,36 @@ type Engine struct {
 
 	broker Broker
 	time   TimeService
+
+	npv netParamsValues
+}
+
+type netParamsValues struct {
+	shapesMaxSize                   int64
+	feeDistributionTimeStep         time.Duration
+	timeWindowUpdate                time.Duration
+	targetStakeScalingFactor        float64
+	marketValueWindowLength         time.Duration
+	suppliedStakeToObligationFactor float64
+	infrastructureFee               float64
+	makerFee                        float64
+	scalingFactors                  *types.ScalingFactors
+	maxLiquidityFee                 float64
+}
+
+func defaultNetParamsValues() netParamsValues {
+	return netParamsValues{
+		shapesMaxSize:                   -1,
+		feeDistributionTimeStep:         -1,
+		timeWindowUpdate:                -1,
+		targetStakeScalingFactor:        -1,
+		marketValueWindowLength:         -1,
+		suppliedStakeToObligationFactor: -1,
+		infrastructureFee:               -1,
+		makerFee:                        -1,
+		scalingFactors:                  nil,
+		maxLiquidityFee:                 -1,
+	}
 }
 
 // NewEngine takes stores and engines and returns
@@ -75,6 +105,7 @@ func NewEngine(
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
+		npv:        defaultNetParamsValues(),
 	}
 
 	// Add time change event handler
@@ -288,6 +319,64 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	// we ignore the response, this cannot fail as the asset
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+
+	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) error {
+	if e.npv.shapesMaxSize != -1 {
+		if err := mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(e.npv.shapesMaxSize); err != nil {
+			return err
+		}
+	}
+
+	if e.npv.targetStakeScalingFactor != -1 {
+		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(e.npv.targetStakeScalingFactor); err != nil {
+			return err
+		}
+	}
+
+	if e.npv.infrastructureFee != -1 {
+		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee); err != nil {
+			return err
+		}
+	}
+
+	if e.npv.makerFee != -1 {
+		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, e.npv.makerFee); err != nil {
+			return err
+		}
+	}
+
+	if e.npv.scalingFactors != nil {
+		if err := mkt.OnMarginScalingFactorsUpdate(ctx, e.npv.scalingFactors); err != nil {
+			return err
+		}
+	}
+
+	if e.npv.feeDistributionTimeStep != -1 {
+		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(e.npv.feeDistributionTimeStep)
+	}
+
+	if e.npv.timeWindowUpdate != -1 {
+		mkt.OnMarketTargetStakeTimeWindowUpdate(e.npv.timeWindowUpdate)
+	}
+
+	if e.npv.marketValueWindowLength != -1 {
+		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
+	}
+
+	if e.npv.suppliedStakeToObligationFactor != -1 {
+		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
+	}
+	if e.npv.maxLiquidityFee != -1 {
+		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
+	}
+
 	return nil
 }
 
@@ -567,6 +656,9 @@ func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v inter
 			return err
 		}
 	}
+
+	e.npv.scalingFactors = scalingFactors
+
 	return nil
 }
 
@@ -582,6 +674,9 @@ func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, f float64
 			return err
 		}
 	}
+
+	e.npv.makerFee = f
+
 	return nil
 }
 
@@ -597,6 +692,9 @@ func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, 
 			return err
 		}
 	}
+
+	e.npv.infrastructureFee = f
+
 	return nil
 }
 
@@ -610,6 +708,9 @@ func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, v fl
 	for _, mkt := range e.marketsCpy {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(v)
 	}
+
+	e.npv.suppliedStakeToObligationFactor = v
+
 	return nil
 }
 
@@ -623,6 +724,9 @@ func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Durat
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketValueWindowLengthUpdate(d)
 	}
+
+	e.npv.marketValueWindowLength = d
+
 	return nil
 }
 
@@ -638,6 +742,9 @@ func (e *Engine) OnMarketTargetStakeScalingFactorUpdate(_ context.Context, v flo
 			return err
 		}
 	}
+
+	e.npv.targetStakeScalingFactor = v
+
 	return nil
 }
 
@@ -651,6 +758,9 @@ func (e *Engine) OnMarketTargetStakeTimeWindowUpdate(_ context.Context, d time.D
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketTargetStakeTimeWindowUpdate(d)
 	}
+
+	e.npv.timeWindowUpdate = d
+
 	return nil
 }
 
@@ -664,5 +774,43 @@ func (e *Engine) OnMarketLiquidityProvidersFeeDistributionTimeStep(_ context.Con
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(d)
 	}
+
+	e.npv.feeDistributionTimeStep = d
+
 	return nil
+}
+
+func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
+	_ context.Context, v int64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update liquidity provision max shape",
+			logging.Int64("max-shape", v),
+		)
+	}
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
+	}
+
+	e.npv.shapesMaxSize = v
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
+	_ context.Context, f float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update liquidity provision max liquidity fee factor",
+			logging.Float64("max-liquidity-fee", f),
+		)
+	}
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(f)
+	}
+
+	e.npv.maxLiquidityFee = f
+
+	return nil
+
 }

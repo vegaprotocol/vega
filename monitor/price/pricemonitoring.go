@@ -336,11 +336,11 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 }
 
 func (e *Engine) checkBounds(ctx context.Context, p uint64, v uint64) []*types.PriceMonitoringTrigger {
-	var ret []*types.PriceMonitoringTrigger = []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
+	var ret = []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
 	if v == 0 {
 		return ret //volume 0 so no bounds violated
 	}
-	var fp float64 = float64(p) // price as float
+	var fp = float64(p) // price as float
 	priceRanges := e.getCurrentPriceRanges()
 	for _, b := range e.bounds {
 		if !b.Active {

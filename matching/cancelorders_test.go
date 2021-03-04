@@ -40,8 +40,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
-	assert.Equal(t, book.getNumberOfBuyLevels(), int(1))
-	assert.Equal(t, book.getNumberOfSellLevels(), int(0))
+	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
+	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 }
 
 func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
@@ -76,8 +76,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
-	assert.Equal(t, book.getNumberOfBuyLevels(), int(1))
-	assert.Equal(t, book.getNumberOfSellLevels(), int(0))
+	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
+	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 }
 
 func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
@@ -112,8 +112,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
-	assert.Equal(t, book.getNumberOfBuyLevels(), int(1))
-	assert.Equal(t, book.getNumberOfSellLevels(), int(0))
+	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
+	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 }
 
 func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
@@ -148,8 +148,8 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
-	assert.Equal(t, book.getNumberOfBuyLevels(), int(1))
-	assert.Equal(t, book.getNumberOfSellLevels(), int(0))
+	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
+	assert.Equal(t, book.getNumberOfSellLevels(), 0)
 }
 
 func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {

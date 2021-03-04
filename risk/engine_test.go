@@ -171,7 +171,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
 		})
-	riskevt, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, uint64(markPrice))
+	riskevt, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())

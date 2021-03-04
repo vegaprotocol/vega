@@ -33,7 +33,7 @@ func (n marginUpdate) MarginBalance() uint64 {
 	if n.margin == nil {
 		return 0
 	}
-	return uint64(n.margin.Balance)
+	return n.margin.Balance
 }
 
 // GeneralBalance here we cumulate both the general

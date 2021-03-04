@@ -70,7 +70,7 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 }
 
 func (t TxErr) IsParty(id string) bool {
-	return (t.evt.PartyId == id)
+	return t.evt.PartyId == id
 }
 
 func (t TxErr) Proto() types.TxErrorEvent {

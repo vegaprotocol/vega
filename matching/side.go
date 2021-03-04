@@ -16,8 +16,6 @@ import (
 var (
 	// ErrPriceNotFound signals that a price was not found on the book side
 	ErrPriceNotFound = errors.New("price-volume pair not found")
-	// ErrNoOrder signals that there's no orders on the book side.
-	ErrNoOrder = errors.New("no orders in the book side")
 )
 
 // OrderBookSide represent a side of the book, either Sell or Buy

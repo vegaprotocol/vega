@@ -64,18 +64,18 @@ var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
 type testMarket struct {
 	t *testing.T
 
-	market          *execution.Market
-	log             *logging.Logger
-	ctrl            *gomock.Controller
-	collateraEngine *collateral.Engine
-	broker          *mocks.MockBroker
-	now             time.Time
-	asset           string
-	mas             *monitor.AuctionState
-	eventCount      uint64
-	orderEventCount uint64
-	events          []events.Event
-	mktCfg          *types.Market
+	market           *execution.Market
+	log              *logging.Logger
+	ctrl             *gomock.Controller
+	collateralEngine *collateral.Engine
+	broker           *mocks.MockBroker
+	now              time.Time
+	asset            string
+	mas              *monitor.AuctionState
+	eventCount       uint64
+	orderEventCount  uint64
+	events           []events.Event
+	mktCfg           *types.Market
 
 	// Options
 	Assets []types.Asset
@@ -148,7 +148,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	require.NoError(tm.t, err)
 
 	tm.market = mktEngine
-	tm.collateraEngine = collateralEngine
+	tm.collateralEngine = collateralEngine
 	tm.asset = asset
 	tm.mas = mas
 	tm.mktCfg = &mktCfg
@@ -171,14 +171,14 @@ func (tm *testMarket) WithAccountAndAmount(id string, amount uint64) *testMarket
 }
 
 func (tm *testMarket) PartyGeneralAccount(t *testing.T, party string) *types.Account {
-	acc, err := tm.collateraEngine.GetPartyGeneralAccount("trader-2", tm.asset)
+	acc, err := tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	require.NoError(t, err)
 	require.NotNil(t, acc)
 	return acc
 }
 
 func (tm *testMarket) PartyMarginAccount(t *testing.T, party string) *types.Account {
-	acc, err := tm.collateraEngine.GetPartyMarginAccount(tm.market.GetID(), party, tm.asset)
+	acc, err := tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), party, tm.asset)
 	require.NoError(t, err)
 	require.NotNil(t, acc)
 	return acc
@@ -282,7 +282,7 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 	assert.NoError(t, err)
 
 	tm.market = mktEngine
-	tm.collateraEngine = collateralEngine
+	tm.collateralEngine = collateralEngine
 	tm.asset = asset
 	tm.mas = mas
 	tm.mktCfg = mktCfg
@@ -364,13 +364,13 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 }
 
 func addAccount(market *testMarket, party string) {
-	market.collateraEngine.Deposit(context.Background(), party, market.asset, 1000000000)
+	market.collateralEngine.Deposit(context.Background(), party, market.asset, 1000000000)
 	// market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
 
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
 	// market.broker.EXPECT().Send(gomock.Any()).Times(3)
-	market.collateraEngine.Deposit(context.Background(), party, market.asset, amnt)
+	market.collateralEngine.Deposit(context.Background(), party, market.asset, amnt)
 }
 
 // WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors
@@ -485,7 +485,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	// update collateral time first, normally done by execution engin
 	futureTime := closingAt.Add(1 * time.Second)
-	tm.collateraEngine.OnChainTimeUpdate(context.Background(), futureTime)
+	tm.collateralEngine.OnChainTimeUpdate(context.Background(), futureTime)
 	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
 	assert.True(t, closed)
 }
@@ -711,7 +711,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -826,8 +826,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var validPrice uint64 = initialPrice + (MAXMOVEUP+MINMOVEDOWN)/2
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var validPrice = initialPrice + (MAXMOVEUP+MINMOVEDOWN)/2
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -1028,7 +1028,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -1203,7 +1203,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPriceHigh uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPriceHigh = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -1355,7 +1355,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	}
 	auctionEndTime := now.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	expectedPmRange1 := types.PriceMonitoringBounds{
@@ -2297,7 +2297,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	var initialPrice uint64 = 100
-	var auctionTriggeringPrice uint64 = initialPrice + MAXMOVEUP + 1
+	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, openingAuctionDuration)
 
@@ -3099,10 +3099,14 @@ func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T
 	tm.mas.AuctionStarted(ctx)
 	tm.market.EnterAuction(ctx)
 
-	buys := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 50},
-		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20, Proportion: 50}}
-	sells := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10, Proportion: 50},
-		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50}}
+	buys := []*types.LiquidityOrder{
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 50},
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20, Proportion: 50},
+	}
+	sells := []*types.LiquidityOrder{
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10, Proportion: 50},
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50},
+	}
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              "0.01",
@@ -3145,10 +3149,14 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 
 	require.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
-	buys := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 50},
-		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20, Proportion: 50}}
-	sells := []*types.LiquidityOrder{&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10, Proportion: 50},
-		&types.LiquidityOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50}}
+	buys := []*types.LiquidityOrder{
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 50},
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20, Proportion: 50},
+	}
+	sells := []*types.LiquidityOrder{
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10, Proportion: 50},
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50},
+	}
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              "0.01",
@@ -3603,7 +3611,7 @@ func TestLPOrdersRollback(t *testing.T) {
 	})
 
 	t.Run("BondAccountShouldBeZero", func(t *testing.T) {
-		bacc, err := tm.collateraEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
+		bacc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
 		require.NoError(t, err)
 		require.Zero(t, bacc.Balance)
 	})

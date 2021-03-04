@@ -62,8 +62,6 @@ var (
 	ErrOrderServiceGetByParty       = errors.New("failed to get orders for party")
 	ErrOrderServiceGetByReference   = errors.New("failed to get orders for reference")
 	ErrMissingOrderIDParameter      = errors.New("missing orderID parameter")
-	ErrMissingReferenceIDParameter  = errors.New("missing referenceID parameter")
-	ErrOrderAndReferenceMismatch    = errors.New("referenceID and orderID do not match up")
 	ErrOrderNotFound                = errors.New("order not found")
 	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")

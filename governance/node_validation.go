@@ -15,16 +15,12 @@ var (
 	ErrNoNodeValidationRequired            = errors.New("no node validation required")
 	ErrProposalReferenceDuplicate          = errors.New("proposal duplicate")
 	ErrProposalValidationTimestampInvalid  = errors.New("proposal validation timestamp invalid")
-	ErrInvalidProposalReferenceForNodeVote = errors.New("invalid reference proposal for node vote")
-	ErrDuplicateVoteFromNode               = errors.New("duplicate vote from node")
-	ErrNodeIsNotAValidator                 = errors.New("node is not a validator")
-	ErrVegaWalletRequired                  = errors.New("vega wallet required")
 )
 
 const (
 	minValidationPeriod = 1         // 1 sec
 	maxValidationPeriod = 48 * 3600 // 2 days
-	nodeApproval        = 1         // float for percentage
+
 )
 
 const (

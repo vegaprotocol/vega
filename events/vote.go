@@ -30,7 +30,7 @@ func (v *Vote) ProposalID() string {
 
 // IsParty - used in event stream API filter
 func (v Vote) IsParty(id string) bool {
-	return (v.v.PartyId == id)
+	return v.v.PartyId == id
 }
 
 // PartyID - return the PartyID for subscribers' convenience

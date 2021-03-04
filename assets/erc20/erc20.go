@@ -200,7 +200,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		return "", 0, err
 	}
 
-	var resp string = "ok"
+	var resp = "ok"
 	defer func() {
 		metrics.EthCallInc("validate_allowlist", b.asset.Id, resp)
 	}()
@@ -336,7 +336,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		return nil, "", 0, err
 	}
 
-	var resp string = "ok"
+	var resp = "ok"
 	defer func() {
 		metrics.EthCallInc("validate_withdrawal", b.asset.Id, resp)
 	}()
@@ -390,7 +390,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return "", "", "", 0, 0, err
 	}
 
-	var resp string = "ok"
+	var resp = "ok"
 	defer func() {
 		metrics.EthCallInc("validate_deposit", b.asset.Id, resp)
 	}()

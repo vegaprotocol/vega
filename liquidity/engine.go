@@ -18,7 +18,7 @@ var (
 	ErrEmptyShape                     = errors.New("liquidity provision contains an empty shape")
 )
 
-//go:generate mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
 
 // Broker - event bus
 type Broker interface {
@@ -71,6 +71,13 @@ type Engine struct {
 
 	// undeployedProvisions flags that there are provisions within the engine that are not deployed
 	undeployedProvisions bool
+
+	// the maximum number of liquidity orders to be created on
+	// each shape
+	maxShapesSize int64
+
+	// this is the max fee that can be specified
+	maxFee float64
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -92,6 +99,8 @@ func NewEngine(
 		provisions:              map[string]*types.LiquidityProvision{},
 		orders:                  map[string]map[string]*types.Order{},
 		liquidityOrders:         map[string]map[string]*types.Order{},
+		maxShapesSize:           100, // set it to the same default than the netparams
+		maxFee:                  1.0,
 	}
 }
 
@@ -133,6 +142,19 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 // OnSuppliedStakeToObligationFactorUpdate updates the stake factor
 func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	e.stakeToObligationFactor = v
+}
+
+func (e *Engine) OnMaximumLiquidityFeeFactorLevelUpdate(f float64) {
+	e.maxFee = f
+}
+
+func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
+	if v < 0 {
+		return errors.New("shapes max size cannot be < 0")
+
+	}
+	e.maxShapesSize = v
+	return nil
 }
 
 func (e *Engine) stopLiquidityProvision(
@@ -191,13 +213,14 @@ func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisi
 	if lp.CommitmentAmount == 0 {
 		return nil
 	}
-	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee <= 0 || len(lp.Fee) <= 0 || fee > 1.0 {
+	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee < 0 || len(lp.Fee) <= 0 || fee > e.maxFee {
 		return errors.New("invalid liquidity provision fee")
 	}
-	if err := validateShape(lp.Buys, types.Side_SIDE_BUY); err != nil {
+
+	if err := validateShape(lp.Buys, types.Side_SIDE_BUY, e.maxShapesSize); err != nil {
 		return err
 	}
-	return validateShape(lp.Sells, types.Side_SIDE_SELL)
+	return validateShape(lp.Sells, types.Side_SIDE_SELL, e.maxShapesSize)
 }
 
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
@@ -244,8 +267,8 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	}
 
 	var (
-		lp  *types.LiquidityProvision = e.LiquidityProvisionByPartyID(party)
-		now                           = e.currentTime.UnixNano()
+		lp  = e.LiquidityProvisionByPartyID(party)
+		now = e.currentTime.UnixNano()
 	)
 
 	// regardless of the final operation (create,update or delete) we finish
@@ -674,9 +697,12 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 	return newOrders, amendments
 }
 
-func validateShape(sh []*types.LiquidityOrder, side types.Side) error {
+func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) error {
 	if len(sh) <= 0 {
 		return fmt.Errorf("empty %v shape", side)
+	}
+	if len(sh) > int(maxSize) {
+		return fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
 	}
 	for _, lo := range sh {
 		if lo.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {

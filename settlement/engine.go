@@ -380,7 +380,7 @@ type lastMarkPriceSettlement struct {
 func (l *lastMarkPriceSettlement) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
 	return &types.FinancialAmount{
 		Asset:  l.asset,
-		Amount: int64((l.markPrice - entryPrice)) * netPosition,
+		Amount: int64(l.markPrice - entryPrice) * netPosition,
 	}, nil
 }
 

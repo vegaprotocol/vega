@@ -71,8 +71,6 @@ var (
 	ErrInvalidOrderType = errors.New("invalid order type")
 	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
-	// ErrInvalidMarketType is returned if the order is not valid for the current market type (auction/continuous)
-	ErrInvalidMarketType = errors.New("invalid market type")
 	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continuous trading state
 	ErrGFAOrderReceivedDuringContinuousTrading = errors.New("gfa order received during continuous trading")
 	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state
@@ -1143,7 +1141,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 }
 
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	isPegged := (order.PeggedOrder != nil)
+	isPegged := order.PeggedOrder != nil
 	if isPegged {
 		order.Status = types.Order_STATUS_PARKED
 		order.Reason = types.OrderError_ORDER_ERROR_UNSPECIFIED
@@ -1177,7 +1175,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			newVol = -newVol
 		}
 		// check margin if the new volume is greater, or the same (implying long to short, or short to long)
-		checkMargin = (oldVol <= newVol)
+		checkMargin = oldVol <= newVol
 	}
 
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
@@ -2190,8 +2188,8 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// If we have a pegged order that is no longer expiring, we need to remove it
 	var (
-		needToRemoveExpiry bool  = false
-		needToAddExpiry    bool  = false
+		needToRemoveExpiry       = false
+		needToAddExpiry          = false
 		expiresAt          int64 = 0
 	)
 	defer func() {
@@ -2341,7 +2339,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	if amendedOrder.Price != existingOrder.Price {
 		priceShift = true
-		priceIncrease = (existingOrder.Price < amendedOrder.Price)
+		priceIncrease = existingOrder.Price < amendedOrder.Price
 	}
 
 	if amendedOrder.Size > existingOrder.Size {
@@ -2941,6 +2939,13 @@ func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
 	return m.tsCalc.UpdateScalingFactor(v)
 }
 
+func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
+	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
+}
+func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64) {
+	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(v)
+}
+
 // repriceFuncW is an adapter for getNewPeggedPrice.
 func (m *Market) repriceFuncW(po *types.PeggedOrder) (uint64, error) {
 	return m.getNewPeggedPrice(
@@ -2995,7 +3000,7 @@ func (m *Market) cancelLiquidityProvision(
 	// it just mean that the trader my have gone the distressed path
 	// also if the balance is already 0, let's not bother created a
 	// transfer request
-	if err != nil && bondAcc.Balance > 0 {
+	if err == nil && bondAcc.Balance > 0 {
 		transfer := &types.Transfer{
 			Owner: party,
 			Amount: &types.FinancialAmount{

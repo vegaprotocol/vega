@@ -10,9 +10,6 @@ import (
 )
 
 var (
-	// ErrInvalidSecurity is returned if invalid risk model type is selected
-	ErrInvalidSecurity = errors.New("selected same base and quote security")
-
 	// ErrNoProduct is returned if selected product is nil
 	ErrNoProduct = errors.New("no product has been specified")
 	// ErrProductInvalid is returned if selected product is not supported

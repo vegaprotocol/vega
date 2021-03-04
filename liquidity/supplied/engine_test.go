@@ -107,8 +107,8 @@ func Test_InteralConsistency(t *testing.T) {
 
 	limitOrders := []*types.Order{}
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	buy := &supplied.LiquidityOrder{
 		Price:      minPriceInt,
@@ -161,8 +161,8 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 
 	limitOrders := []*types.Order{}
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	invalidBuy := &supplied.LiquidityOrder{
 		Price:      minPriceInt - 1,
@@ -255,11 +255,11 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	require.Equal(t, zero, invalidBuy.LiquidityImpliedVolume)
 	require.Equal(t, zero, invalidSell.LiquidityImpliedVolume)
 
-	expectedVolumeValidBuy1 := uint64(math.Ceil(liquidityObligation * float64(validBuy1.Proportion) / float64((validBuy1.Proportion + validBuy2.Proportion)) / validBuy1Prob / float64(validBuy1.Price)))
-	expectedVolumeValidBuy2 := uint64(math.Ceil(liquidityObligation * float64(validBuy2.Proportion) / float64((validBuy1.Proportion + validBuy2.Proportion)) / validBuy2Prob / float64(validBuy2.Price)))
+	expectedVolumeValidBuy1 := uint64(math.Ceil(liquidityObligation * float64(validBuy1.Proportion) / float64(validBuy1.Proportion + validBuy2.Proportion) / validBuy1Prob / float64(validBuy1.Price)))
+	expectedVolumeValidBuy2 := uint64(math.Ceil(liquidityObligation * float64(validBuy2.Proportion) / float64(validBuy1.Proportion + validBuy2.Proportion) / validBuy2Prob / float64(validBuy2.Price)))
 
-	expectedVolumeValidSell1 := uint64(math.Ceil(liquidityObligation * float64(validSell1.Proportion) / float64((validSell1.Proportion + validSell2.Proportion)) / validSell1Prob / float64(validSell1.Price)))
-	expectedVolumeValidSell2 := uint64(math.Ceil(liquidityObligation * float64(validSell2.Proportion) / float64((validSell1.Proportion + validSell2.Proportion)) / validSell2Prob / float64(validSell2.Price)))
+	expectedVolumeValidSell1 := uint64(math.Ceil(liquidityObligation * float64(validSell1.Proportion) / float64(validSell1.Proportion + validSell2.Proportion) / validSell1Prob / float64(validSell1.Price)))
+	expectedVolumeValidSell2 := uint64(math.Ceil(liquidityObligation * float64(validSell2.Proportion) / float64(validSell1.Proportion + validSell2.Proportion) / validSell2Prob / float64(validSell2.Price)))
 
 	require.Equal(t, expectedVolumeValidBuy1, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, expectedVolumeValidBuy2, validBuy2.LiquidityImpliedVolume)
@@ -284,8 +284,8 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	maxPrice := 111.1
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(12)
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	invalidBuy := &supplied.LiquidityOrder{
 		Price:      minPriceInt - 1,
@@ -514,8 +514,8 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 
 	limitOrders := []*types.Order{}
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	invalidBuy := &supplied.LiquidityOrder{
 		Price:      minPriceInt - 1,
@@ -555,8 +555,8 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	minPrice := 89.2
 	maxPrice := 111.1
 
-	var minPriceInt uint64 = uint64(math.Ceil(minPrice))
-	var maxPriceInt uint64 = uint64(math.Floor(maxPrice))
+	var minPriceInt = uint64(math.Ceil(minPrice))
+	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	order1 := &types.Order{
 		Price:     minPriceInt,

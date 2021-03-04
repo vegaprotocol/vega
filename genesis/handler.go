@@ -22,7 +22,7 @@ func New(log *logging.Logger, cfg Config) *Handler {
 		log:                       log,
 		cfg:                       cfg,
 		onGenesisTimeLoadedCB:     []func(context.Context, time.Time){},
-		onGenesisAppStateLoadedCB: [](func(context.Context, []byte) error){},
+		onGenesisAppStateLoadedCB: []func(context.Context, []byte) error{},
 	}
 }
 

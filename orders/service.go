@@ -15,8 +15,6 @@ import (
 )
 
 var (
-	// ErrInvalidExpirationDTFmt signals that the time format was invalid
-	ErrInvalidExpirationDTFmt = errors.New("invalid expiration datetime format")
 	// ErrInvalidExpirationDT signals that the time format was invalid
 	ErrInvalidExpirationDT = errors.New("invalid expiration datetime (cannot be in the past)")
 	// ErrInvalidTimeInForceForMarketOrder signals that the time in force used with a market order is not accepted
@@ -29,14 +27,8 @@ var (
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
 	// ErrGTTOrderWithNoExpiry signals that a GTT order was set without an expiracy
 	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
-	// ErrInvalidAmendmentSizeDelta ...
-	ErrInvalidAmendmentSizeDelta = errors.New("invalid amendment size delta")
-	// ErrInvalidAmendOrderTIF ...
-	ErrInvalidAmendOrderTIF = errors.New("invalid amend order tif (cannot be IOC and FOK)")
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
-	// ErrEmptySubmitTransactionRequest empty transaction
-	ErrEmptySubmitTransactionRequest = errors.New("empty transaction request")
 	// ErrNoParamsInAmendRequest no amended fields have been provided
 	ErrNoParamsInAmendRequest = errors.New("no amended fields have been provided")
 	// ErrNoTimeInForce no value has been set for the time in force

@@ -112,7 +112,7 @@ func Subsystem(s string) InstrumentOption {
 // Labels set labels for instrument (similar to vector, but with given values)
 func Labels(labels map[string]string) InstrumentOption {
 	return func(o *instrumentOpts) {
-		o.opts.ConstLabels = prometheus.Labels(labels)
+		o.opts.ConstLabels = labels
 	}
 }
 

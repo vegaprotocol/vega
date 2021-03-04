@@ -16,9 +16,7 @@ import (
 var (
 	ErrAssetInvalid      = errors.New("asset invalid")
 	ErrAssetDoesNotExist = errors.New("asset does not exist")
-	ErrAssetExistForID   = errors.New("an asset already exist for this ID")
 	ErrUnknowAssetSource = errors.New("unknown asset source")
-	ErrNoAssetForRef     = errors.New("no assets for proposal reference")
 )
 
 // TimeService ...

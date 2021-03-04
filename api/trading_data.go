@@ -748,9 +748,16 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 	}
 
 	// Call tendermint via rpc client
-	backlogLength, numPeers, gt, chainID, err := t.getTendermintStats(ctx)
+	var (
+		backlogLength, numPeers int
+		gt                      *time.Time
+		chainID                 string
+	)
+
+	backlogLength, numPeers, gt, chainID, err = t.getTendermintStats(ctx)
 	if err != nil {
-		return nil, err // getTendermintStats already returns an API error
+		// do not return an error, let just eventually log it
+		t.log.Debug("could not load tendermint stats", logging.Error(err))
 	}
 
 	// If the chain is replaying then genesis time can be nil
@@ -766,26 +773,26 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 	}
 
 	stats := &types.Statistics{
-		BlockHeight:              t.Stats.Blockchain.Height(),
-		BacklogLength:            uint64(backlogLength),
-		TotalPeers:               uint64(numPeers),
-		GenesisTime:              genesisTime,
-		CurrentTime:              vegatime.Format(vegatime.Now()),
-		VegaTime:                 vegatime.Format(epochTime),
-		Uptime:                   vegatime.Format(t.Stats.GetUptime()),
-		TxPerBlock:               uint64(t.Stats.Blockchain.TotalTxLastBatch()),
-		AverageTxBytes:           uint64(t.Stats.Blockchain.AverageTxSizeBytes()),
-		AverageOrdersPerBlock:    uint64(t.Stats.Blockchain.AverageOrdersPerBatch()),
-		TradesPerSecond:          t.Stats.Blockchain.TradesPerSecond(),
-		OrdersPerSecond:          t.Stats.Blockchain.OrdersPerSecond(),
-		Status:                   t.statusChecker.ChainStatus(),
-		TotalMarkets:             uint64(len(m)),
-		AppVersionHash:           t.Stats.GetVersionHash(),
-		AppVersion:               t.Stats.GetVersion(),
-		ChainVersion:             t.Stats.GetChainVersion(),
-		TotalAmendOrder:          t.Stats.Blockchain.TotalAmendOrder(),
-		TotalCancelOrder:         t.Stats.Blockchain.TotalCancelOrder(),
-		TotalCreateOrder:         t.Stats.Blockchain.TotalCreateOrder(),
+		BlockHeight:           t.Stats.Blockchain.Height(),
+		BacklogLength:         uint64(backlogLength),
+		TotalPeers:            uint64(numPeers),
+		GenesisTime:           genesisTime,
+		CurrentTime:           vegatime.Format(vegatime.Now()),
+		VegaTime:              vegatime.Format(epochTime),
+		Uptime:                vegatime.Format(t.Stats.GetUptime()),
+		TxPerBlock:            t.Stats.Blockchain.TotalTxLastBatch(),
+		AverageTxBytes:        t.Stats.Blockchain.AverageTxSizeBytes(),
+		AverageOrdersPerBlock: t.Stats.Blockchain.AverageOrdersPerBatch(),
+		TradesPerSecond:       t.Stats.Blockchain.TradesPerSecond(),
+		OrdersPerSecond:       t.Stats.Blockchain.OrdersPerSecond(),
+		Status:                t.statusChecker.ChainStatus(),
+		TotalMarkets:          uint64(len(m)),
+		AppVersionHash:        t.Stats.GetVersionHash(),
+		AppVersion:            t.Stats.GetVersion(),
+		ChainVersion:          t.Stats.GetChainVersion(),
+		TotalAmendOrder:       t.Stats.Blockchain.TotalAmendOrder(),
+		TotalCancelOrder:      t.Stats.Blockchain.TotalCancelOrder(),
+		TotalCreateOrder:      t.Stats.Blockchain.TotalCreateOrder(),
 		TotalOrders:              t.Stats.Blockchain.TotalOrders(),
 		TotalTrades:              t.Stats.Blockchain.TotalTrades(),
 		BlockDuration:            t.Stats.Blockchain.BlockDuration(),
@@ -1948,7 +1955,7 @@ func (t *tradingDataService) ObserveGovernance(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send governance data into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
@@ -1988,7 +1995,7 @@ func (t *tradingDataService) ObservePartyProposals(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send party proposal into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
@@ -2070,7 +2077,7 @@ func (t *tradingDataService) ObserveProposalVotes(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send proposal vote into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
@@ -2213,7 +2220,7 @@ func (t *tradingDataService) observeEventsWithAck(
 			}
 			if err := stream.Send(resp); err != nil {
 				t.log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())

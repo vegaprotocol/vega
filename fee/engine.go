@@ -112,8 +112,8 @@ func (e *Engine) CalculateForContinuousMode(
 		totalLiquidityFeeAmount      uint64
 		// we allocate the len of the trades + 2
 		// len(trade) = number of makerFee + 1 infra fee + 1 liquidity fee
-		transfers     []*types.Transfer = make([]*types.Transfer, 0, (len(trades)*2)+2)
-		transfersRecv []*types.Transfer = make([]*types.Transfer, 0, len(trades)+2)
+		transfers     = make([]*types.Transfer, 0, (len(trades)*2)+2)
+		transfersRecv = make([]*types.Transfer, 0, len(trades)+2)
 	)
 
 	for _, v := range trades {
@@ -131,7 +131,7 @@ func (e *Engine) CalculateForContinuousMode(
 			maker = v.Buyer
 		}
 
-		totalFeeAmount += (fee.InfrastructureFee + fee.LiquidityFee + fee.MakerFee)
+		totalFeeAmount += fee.InfrastructureFee + fee.LiquidityFee + fee.MakerFee
 		totalInfrastructureFeeAmount += fee.InfrastructureFee
 		totalLiquidityFeeAmount += fee.LiquidityFee
 
@@ -453,7 +453,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 	liquiFee := int64(math.Ceil(share * float64(fees.LiquidityFee)))
 
 	return []*types.Transfer{
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -461,7 +461,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 				},
 				Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
 			},
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -469,7 +469,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 				},
 				Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 			},
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -526,7 +526,7 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string)
 	// we return both transfer for the party in a slice
 	// always the infrastructure fee first
 	return []*types.Transfer{
-		&types.Transfer{
+		{
 			Owner: p,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
@@ -534,7 +534,7 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string)
 			},
 			Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 		},
-		&types.Transfer{
+		{
 			Owner: p,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,

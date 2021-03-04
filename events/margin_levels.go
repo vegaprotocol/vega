@@ -24,7 +24,7 @@ func (m MarginLevels) MarginLevels() types.MarginLevels {
 }
 
 func (m MarginLevels) IsParty(id string) bool {
-	return (m.l.PartyId == id)
+	return m.l.PartyId == id
 }
 
 func (m MarginLevels) PartyID() string {

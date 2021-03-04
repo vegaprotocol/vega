@@ -464,9 +464,9 @@ func testCalcPositionResolution(t *testing.T) {
 
 	// check the details of the parties
 	// 307 as expected
-	assert.Equal(t, int(90), int(partiesFee["bad-party1"].InfrastructureFee))
-	assert.Equal(t, int(37), int(partiesFee["bad-party1"].MakerFee))
-	assert.Equal(t, int(180), int(partiesFee["bad-party1"].LiquidityFee))
+	assert.Equal(t, 90, int(partiesFee["bad-party1"].InfrastructureFee))
+	assert.Equal(t, 37, int(partiesFee["bad-party1"].MakerFee))
+	assert.Equal(t, 180, int(partiesFee["bad-party1"].LiquidityFee))
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()

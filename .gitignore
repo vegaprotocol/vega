@@ -1,8 +1,5 @@
 # Vega specific entries
 cmd/*/*-dbg
-cmd/dummyriskmodel/dummyriskmodel*
-cmd/vegaccount/vegaccount*
-cmd/vegastream/vegastream*
 cmd/vega/vega*
 data/
 .DS_Store

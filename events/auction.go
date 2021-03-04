@@ -26,7 +26,7 @@ type Auction struct {
 
 // NewAuctionEvent creates a new auction event object
 func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, stop int64, trigger types.AuctionTrigger) *Auction {
-	opening := (trigger == types.AuctionTrigger_AUCTION_TRIGGER_OPENING)
+	opening := trigger == types.AuctionTrigger_AUCTION_TRIGGER_OPENING
 	return &Auction{
 		Base:           newBase(ctx, AuctionEvent),
 		marketID:       marketID,

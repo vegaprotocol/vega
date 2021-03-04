@@ -20,7 +20,7 @@ func NewLiquidityProvisionEvent(ctx context.Context, p *types.LiquidityProvision
 }
 
 func (p LiquidityProvision) IsParty(id string) bool {
-	return (p.p.PartyId == id)
+	return p.p.PartyId == id
 }
 
 func (p LiquidityProvision) PartyID() string {

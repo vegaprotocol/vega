@@ -25,7 +25,7 @@ func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialA
 	}
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
-		Amount: int64((settlementPrice - entryPrice)) * netPosition,
+		Amount: int64(settlementPrice - entryPrice) * netPosition,
 	}, nil
 }
 
