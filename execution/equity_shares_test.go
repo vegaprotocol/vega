@@ -154,7 +154,7 @@ func (esm *equityShareMarket) WithSubmittedLiquidityProvision(party, id string, 
 }
 
 func (esm *equityShareMarket) LiquidityFeeAccount() *types.Account {
-	acc, err := esm.tm.collateraEngine.GetMarketLiquidityFeeAccount(
+	acc, err := esm.tm.collateralEngine.GetMarketLiquidityFeeAccount(
 		esm.tm.market.GetID(), esm.tm.asset,
 	)
 	require.NoError(esm.t, err)
@@ -162,7 +162,7 @@ func (esm *equityShareMarket) LiquidityFeeAccount() *types.Account {
 }
 
 func (esm *equityShareMarket) PartyGeneralAccount(party string) *types.Account {
-	acc, err := esm.tm.collateraEngine.GetPartyGeneralAccount(
+	acc, err := esm.tm.collateralEngine.GetPartyGeneralAccount(
 		party, esm.tm.asset,
 	)
 	require.NoError(esm.t, err)
@@ -170,7 +170,7 @@ func (esm *equityShareMarket) PartyGeneralAccount(party string) *types.Account {
 }
 
 func (esm *equityShareMarket) PartyMarginAccount(party string) *types.Account {
-	acc, err := esm.tm.collateraEngine.GetPartyMarginAccount(
+	acc, err := esm.tm.collateralEngine.GetPartyMarginAccount(
 		esm.tm.market.GetID(), party, esm.tm.asset,
 	)
 	require.NoError(esm.t, err)

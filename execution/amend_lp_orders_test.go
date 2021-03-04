@@ -74,7 +74,7 @@ func TestAmendDeployedCommitmment(t *testing.T) {
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
-		acc, err := tm.collateraEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
+		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, 70000, int(acc.Balance))
 	})
@@ -106,7 +106,7 @@ func TestAmendDeployedCommitmment(t *testing.T) {
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
-		acc, err := tm.collateraEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
+		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, 60000, int(acc.Balance))
 	})
@@ -198,7 +198,7 @@ func TestAmendDeployedCommitmment(t *testing.T) {
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
-		acc, err := tm.collateraEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
+		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, 80000, int(acc.Balance))
 	})
@@ -292,7 +292,7 @@ func TestAmendDeployedCommitmment(t *testing.T) {
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
-		acc, err := tm.collateraEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
+		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, 80000, int(acc.Balance))
 	})
@@ -499,7 +499,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
-		acc, err := tm.collateraEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
+		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, 70000, int(acc.Balance))
 	})
@@ -523,7 +523,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
-		acc, err := tm.collateraEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
+		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, int(acc.Balance))
 	})
