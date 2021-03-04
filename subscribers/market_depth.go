@@ -190,11 +190,14 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 			pl := md.getPriceLevel(originalOrder.Side, originalOrder.Price)
 			pl.totalVolume += newOrder.Remaining - originalOrder.Remaining
 			originalOrder.Remaining = newOrder.Remaining
+			originalOrder.Size = newOrder.Size
 			md.changes = append(md.changes, pl)
 		}
 	} else {
 		md.removeOrder(originalOrder, originalOrder.Remaining)
-		md.addOrder(newOrder)
+		if newOrder.Remaining > 0 {
+			md.addOrder(newOrder)
+		}
 	}
 }
 
