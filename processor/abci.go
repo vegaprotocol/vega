@@ -446,7 +446,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
-			logging.String("proposal-id", id),
+			logging.ProposalID(id),
 			logging.Error(err))
 		return err
 	}
@@ -461,7 +461,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyId, lpid)
 		if err != nil {
 			app.log.Panic("unable to submit new market with liquidity submission",
-				logging.String("proposal-id", nm.Market().Id),
+				logging.ProposalID(nm.Market().Id),
 				logging.Error(err))
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
