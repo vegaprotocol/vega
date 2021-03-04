@@ -564,7 +564,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.25)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.20)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -598,21 +598,19 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		acc, err := tm.collateraEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, 145412, int(acc.Balance))
+		assert.Equal(t, 116330, int(acc.Balance))
 	})
 
 	tm.dumpMarketData()
+	tm.dumpPeggedOrders()
 
-	// tm.dumpMarketData()
-	// tm.dumpPeggedOrders()
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
+	tm.mas.StartPriceAuction(auctionEnd.Add(2*time.Second), &types.AuctionDuration{
+		Duration: 30,
+	})
+	tm.market.EnterAuction(ctx)
 
-	// tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
-	// tm.mas.StartPriceAuction(auctionEnd.Add(2*time.Second), &types.AuctionDuration{
-	// 	Duration: 30,
-	// })
-	// tm.market.EnterAuction(ctx)
-
-	// tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(40*time.Second))
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(40*time.Second))
 	// tm.mas.EndAuction()
 	// tm.market.LeaveAuction(ctx, auctionEnd.Add(40*time.Second))
 
