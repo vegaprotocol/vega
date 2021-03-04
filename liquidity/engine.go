@@ -367,7 +367,6 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 	)
 
 	for party, orders := range Orders(orders).ByParty() {
-		fmt.Printf("LIQUIDITY UPDATE: %v\n", party)
 		if !e.IsLiquidityProvider(party) {
 			continue
 		}
@@ -402,9 +401,6 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 		}
 		e.undeployedProvisions = stillUndeployed
 	}
-
-	fmt.Printf("NEW ORDERS: %v\n", len(newOrders))
-	fmt.Printf("AMENDMENTS: %v\n", len(amendments))
 
 	// send a batch of updates
 	evts := []events.Event{}
@@ -497,8 +493,6 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		needsCreateBuys, needsCreateSells []*types.Order
 		needsUpdateBuys, needsUpdateSells []*types.OrderAmendment
 	)
-
-	fmt.Printf("REPRICE FAILURE? %v\n", repriceFailure)
 
 	if repriceFailure {
 
