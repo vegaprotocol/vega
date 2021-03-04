@@ -249,6 +249,8 @@ enum ProposalError {
   PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT = 24;
   // Market proposal market could not be instantiate in execution
   PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET = 25;
+  // Market proposal market contained invalid product definition
+  PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT = 26;
 }
 
 // Governance vote

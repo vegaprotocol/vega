@@ -41,22 +41,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets         Assets
-	banking        Banking
-	broker         Broker
-	cmd            Commander
-	erc            ExtResChecker
-	evtfwd         EvtForwarder
-	exec           ExecutionEngine
-	ghandler       *genesis.Handler
-	gov            GovernanceEngine
-	notary         Notary
-	stats          Stats
-	time           TimeService
-	top            ValidatorTopology
-	vegaWallet     nodewallet.Wallet
-	netp           NetworkParameters
-	oracles        *Oracle
+	assets     Assets
+	banking    Banking
+	broker     Broker
+	cmd        Commander
+	erc        ExtResChecker
+	evtfwd     EvtForwarder
+	exec       ExecutionEngine
+	ghandler   *genesis.Handler
+	gov        GovernanceEngine
+	notary     Notary
+	stats      Stats
+	time       TimeService
+	top        ValidatorTopology
+	vegaWallet nodewallet.Wallet
+	netp       NetworkParameters
+	oracles    *Oracle
 }
 
 func NewApp(
@@ -437,7 +437,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		return err
 	}
 
-	app.log.Debug("Submitting proposal",
+	app.log.Debug("submitting proposal",
 		logging.String("proposal-id", prop.Id),
 		logging.String("proposal-reference", prop.Reference),
 		logging.String("proposal-party", prop.PartyId),
@@ -445,6 +445,9 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id)
 	if err != nil {
+		app.log.Debug("could not submit proposal",
+			logging.String("proposal-id", id),
+			logging.Error(err))
 		return err
 	}
 
@@ -457,6 +460,9 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		err := app.exec.SubmitMarketWithLiquidityProvision(
 			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyId, lpid)
 		if err != nil {
+			app.log.Panic("unable to submit new market with liquidity submission",
+				logging.String("proposal-id", nm.Market().Id),
+				logging.Error(err))
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
 			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET); err != nil {

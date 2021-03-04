@@ -35,18 +35,28 @@ var (
 	// ErrMissingRiskParameters ...
 	ErrMissingRiskParameters = errors.New("missing risk parameters")
 
+	// ErrMissingOracleSpecBinging is return when the oracle spec binding is absent.
+	ErrMissingOracleSpecBinding = errors.New("missing oracle spec binding")
 	// ErrMissingOracleSpec is return when the oracle spec is absent.
 	ErrMissingOracleSpec = errors.New("missing oracle spec")
+	// ErrMissingFutureProduct is return when future product is absent from the instrument.
+	ErrMissingFutureProduct = errors.New("missing oracle spec")
 )
 
 func assignProduct(
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
-) error {
+) (types.ProposalError, error) {
 	switch product := source.Product.(type) {
 	case *types.InstrumentConfiguration_Future:
+		if product.Future == nil {
+			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, ErrMissingFutureProduct
+		}
 		if product.Future.OracleSpec == nil {
-			return ErrMissingOracleSpec;
+			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, ErrMissingOracleSpec
+		}
+		if product.Future.OracleSpecBinding == nil {
+			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, ErrMissingOracleSpecBinding
 		}
 
 		target.Product = &types.Instrument_Future{
@@ -59,9 +69,9 @@ func assignProduct(
 			},
 		}
 	default:
-		return ErrProductTypeNotSupported
+		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductTypeNotSupported
 	}
-	return nil
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
@@ -84,7 +94,7 @@ func createInstrument(
 	netp NetParams,
 	input *types.InstrumentConfiguration,
 	tags []string,
-) (*types.Instrument, error) {
+) (*types.Instrument, types.ProposalError, error) {
 	initialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
 	result := &types.Instrument{
 		Name: input.Name,
@@ -95,10 +105,10 @@ func createInstrument(
 		InitialMarkPrice: uint64(initialMarkPrice),
 	}
 
-	if err := assignProduct(input, result); err != nil {
-		return nil, err
+	if perr, err := assignProduct(input, result); err != nil {
+		return nil, perr, err
 	}
-	return result, nil
+	return result, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 func assignRiskModel(definition *types.NewMarketConfiguration, target *types.TradableInstrument) error {
@@ -130,9 +140,9 @@ func createMarket(
 	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp, openingAuctionDuration); err != nil {
 		return nil, perr, err
 	}
-	instrument, err := createInstrument(netp, definition.Instrument, definition.Metadata)
+	instrument, perr, err := createInstrument(netp, definition.Instrument, definition.Metadata)
 	if err != nil {
-		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		return nil, perr, err
 	}
 
 	// get factors for the market
@@ -226,6 +236,14 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 	if deepCheck && maturity.UnixNano() < currentTime.UnixNano() {
 		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
+
+	if future.OracleSpec == nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, ErrMissingOracleSpec
+	}
+	if future.OracleSpecBinding == nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, ErrMissingOracleSpecBinding
+	}
+
 	return validateAsset(future.SettlementAsset, assets, deepCheck)
 }
 

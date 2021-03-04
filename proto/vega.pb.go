@@ -6,8 +6,8 @@ package proto
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	_ "github.com/mwitkow/go-proto-validators"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	math "math"
 )
 
@@ -3116,7 +3116,7 @@ type OrderAmendment struct {
 	// - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
 	TimeInForce Order_TimeInForce `protobuf:"varint,7,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
 	// Amend the pegged order offset for the order
-	PeggedOffset *wrappers.Int64Value `protobuf:"bytes,8,opt,name=pegged_offset,json=peggedOffset,proto3" json:"pegged_offset,omitempty"`
+	PeggedOffset *wrapperspb.Int64Value `protobuf:"bytes,8,opt,name=pegged_offset,json=peggedOffset,proto3" json:"pegged_offset,omitempty"`
 	// Amend the pegged order reference for the order
 	// - See [`PeggedReference`](#vega.PeggedReference)
 	PeggedReference      PeggedReference `protobuf:"varint,9,opt,name=pegged_reference,json=peggedReference,proto3,enum=vega.PeggedReference" json:"pegged_reference,omitempty"`
@@ -3199,7 +3199,7 @@ func (m *OrderAmendment) GetTimeInForce() Order_TimeInForce {
 	return Order_TIME_IN_FORCE_UNSPECIFIED
 }
 
-func (m *OrderAmendment) GetPeggedOffset() *wrappers.Int64Value {
+func (m *OrderAmendment) GetPeggedOffset() *wrapperspb.Int64Value {
 	if m != nil {
 		return m.PeggedOffset
 	}

@@ -6252,6 +6252,9 @@ enum ProposalRejectionReason {
   MarketMissingLiquidityCommitment
   "Market proposal market could not be instantiate in execution"
   CouldNotInstantiateMarket
+  "Market proposal market contained invalid product definition"
+  InvalidFuturProduct
+
 }
 
 "Reason for the order being rejected by the core node"

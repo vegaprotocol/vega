@@ -316,6 +316,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 			logging.MarketID(marketConfig.Id),
 			logging.Error(err),
 		)
+		return err
 	}
 
 	e.markets[marketConfig.Id] = mkt
