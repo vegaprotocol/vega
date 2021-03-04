@@ -27,7 +27,7 @@ func NewSettleDistressed(ctx context.Context, partyID, marketID string, price, m
 }
 
 func (s SettleDistressed) IsParty(id string) bool {
-	return (s.partyID == id)
+	return s.partyID == id
 }
 
 func (s SettleDistressed) PartyID() string {

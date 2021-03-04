@@ -220,5 +220,5 @@ func (r *Risk) Unsubscribe(id uint64) error {
 	r.log.Warn("Un-subscribe called in risk store, subscriber does not exist",
 		logging.Uint64("subscriber-id", id))
 
-	return fmt.Errorf("Risk store subscriber does not exist with id: %d", id)
+	return fmt.Errorf("risk store subscriber does not exist with id: %d", id)
 }

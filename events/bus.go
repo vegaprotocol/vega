@@ -336,7 +336,7 @@ func GetMarketIDFilter(mID string) func(Event) bool {
 		if !ok {
 			return false
 		}
-		return (me.MarketID() == mID)
+		return me.MarketID() == mID
 	}
 }
 
@@ -356,7 +356,7 @@ func GetPartyAndMarketFilter(mID, pID string) func(Event) bool {
 		if !ok {
 			return false
 		}
-		return (mpe.MarketID() == mID && mpe.PartyID() == pID)
+		return mpe.MarketID() == mID && mpe.PartyID() == pID
 	}
 }
 

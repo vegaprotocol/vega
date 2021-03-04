@@ -23,7 +23,7 @@ func (t Trade) MarketID() string {
 }
 
 func (t Trade) IsParty(id string) bool {
-	return (t.t.Buyer == id || t.t.Seller == id)
+	return t.t.Buyer == id || t.t.Seller == id
 }
 
 func (t *Trade) Trade() types.Trade {

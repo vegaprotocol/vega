@@ -10,16 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	amend = proto.OrderAmendment{
-		OrderId:   "order_id",
-		PartyId:   "party",
-		Price:     &proto.Price{Value: 10000},
-		SizeDelta: 1,
-		MarketId:  "market",
-	}
-)
-
 func TestPrepareAmendOrder(t *testing.T) {
 	t.Run("Prepare amend order price - success", testPrepareAmendOrderJustPriceSuccess)
 	t.Run("Prepare amend order reduce - success", testPrepareAmendOrderJustReduceSuccess)

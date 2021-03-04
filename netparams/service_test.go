@@ -38,8 +38,8 @@ func TestGetAllNetParams(t *testing.T) {
 	svc.Push(evts[0], evts[1], evts[2])
 
 	var (
-		hasError bool = true
-		retries       = 50
+		hasError = true
+		retries  = 50
 	)
 
 	for hasError && retries > 0 {

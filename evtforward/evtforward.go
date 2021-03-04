@@ -22,8 +22,6 @@ import (
 var (
 	// ErrEvtAlreadyExist we have already handled this event
 	ErrEvtAlreadyExist = errors.New("event already exist")
-	// ErrMissingVegaWallet we cannot find the vega wallet
-	ErrMissingVegaWallet = errors.New("missing vega wallet")
 	// ErrPubKeyNotAllowlisted this pubkey is not part of the allowlist
 	ErrPubKeyNotAllowlisted = errors.New("pubkey not allowlisted")
 )
@@ -132,7 +130,7 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 // Ack will return true if the event is newly acknowledge
 // if the event already exist and was already acknowledge this will return false
 func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
-	var res string = "ok"
+	var res = "ok"
 	defer func() {
 		metrics.EvtForwardInc("ack", res)
 	}()
@@ -150,7 +148,7 @@ func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 	if ok {
 		// exists but was not acknowleded
 		// we just remove it from the non-acked table
-		delete(e.evts, string(key))
+		delete(e.evts, key)
 	}
 
 	// now add it to the acknowledged evts
@@ -167,7 +165,7 @@ func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
 // Forward will forward an ChainEvent to the tendermint network
 // we expect the pubkey to be an ed25519 pubkey hex encoded
 func (e *EvtForwarder) Forward(ctx context.Context, evt *types.ChainEvent, pubkey string) error {
-	var res string = "ok"
+	var res = "ok"
 	defer func() {
 		metrics.EvtForwardInc("forward", res)
 	}()

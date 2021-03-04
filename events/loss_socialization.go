@@ -25,7 +25,7 @@ func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, am
 }
 
 func (l LossSoc) IsParty(id string) bool {
-	return (l.partyID == id)
+	return l.partyID == id
 }
 
 func (l LossSoc) PartyID() string {

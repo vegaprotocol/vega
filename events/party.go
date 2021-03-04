@@ -19,7 +19,7 @@ func NewPartyEvent(ctx context.Context, p types.Party) *Party {
 }
 
 func (p Party) IsParty(id string) bool {
-	return (p.p.Id == id)
+	return p.p.Id == id
 }
 
 func (p *Party) Party() types.Party {

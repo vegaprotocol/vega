@@ -594,7 +594,7 @@ func testInitialTokens(t *testing.T) {
 	acc, err = eng.GetPartyTokenAccount(trader)
 	assert.NoError(t, err)
 	assert.NotNil(t, acc)
-	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
+	assert.Equal(t, acc.Balance, eng.GetTotalTokens())
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	// withdraw half the amount
@@ -604,7 +604,7 @@ func testInitialTokens(t *testing.T) {
 	assert.NoError(t, err) // half the amount
 
 	acc.Balance /= 2
-	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
+	assert.Equal(t, acc.Balance, eng.GetTotalTokens())
 	// test subtracting something from the balance
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 
@@ -615,7 +615,7 @@ func testInitialTokens(t *testing.T) {
 
 	assert.NoError(t, eng.DecrementBalance(context.Background(), acc.Id, 100))
 	acc.Balance -= 100
-	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
+	assert.Equal(t, acc.Balance, eng.GetTotalTokens())
 }
 
 func testNew(t *testing.T) {

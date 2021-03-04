@@ -175,6 +175,26 @@ func (mr *MockTradingServiceClientMockRecorder) PrepareWithdraw(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareWithdraw", reflect.TypeOf((*MockTradingServiceClient)(nil).PrepareWithdraw), varargs...)
 }
 
+// PropagateChainEvent mocks base method
+func (m *MockTradingServiceClient) PropagateChainEvent(arg0 context.Context, arg1 *api.PropagateChainEventRequest, arg2 ...grpc.CallOption) (*api.PropagateChainEventResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PropagateChainEvent", varargs...)
+	ret0, _ := ret[0].(*api.PropagateChainEventResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PropagateChainEvent indicates an expected call of PropagateChainEvent
+func (mr *MockTradingServiceClientMockRecorder) PropagateChainEvent(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PropagateChainEvent", reflect.TypeOf((*MockTradingServiceClient)(nil).PropagateChainEvent), varargs...)
+}
+
 // SubmitTransaction mocks base method
 func (m *MockTradingServiceClient) SubmitTransaction(arg0 context.Context, arg1 *api.SubmitTransactionRequest, arg2 ...grpc.CallOption) (*api.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()

@@ -36,20 +36,20 @@ type ToEnact struct {
 type ToEnactMarket struct{}
 
 func (t ToEnact) IsNewMarket() bool {
-	return (t.m != nil)
+	return t.m != nil
 }
 
 func (t ToEnact) IsNewAsset() bool {
 	a := t.p.Terms.GetNewAsset()
-	return (a != nil)
+	return a != nil
 }
 
 func (t ToEnact) IsUpdateMarket() bool {
-	return (t.u != nil)
+	return t.u != nil
 }
 
 func (t ToEnact) IsUpdateNetworkParameter() bool {
-	return (t.n != nil)
+	return t.n != nil
 }
 
 func (t ToEnact) IsNewAssetSource() bool {
@@ -94,7 +94,7 @@ func (t *ToSubmit) Proposal() *types.Proposal {
 }
 
 func (t ToSubmit) IsNewMarket() bool {
-	return (t.m != nil)
+	return t.m != nil
 }
 
 func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
@@ -124,7 +124,7 @@ func (t *VoteClosed) Proposal() *types.Proposal {
 }
 
 func (t *VoteClosed) IsNewMarket() bool {
-	return (t.m != nil)
+	return t.m != nil
 }
 
 func (t *VoteClosed) NewMarket() *NewMarketVoteClosed {

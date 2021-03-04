@@ -144,7 +144,7 @@ func decodeNonProtoField(d *json.Decoder, v interface{}) error {
 			}
 			bk := result[0]
 			bv := reflect.New(rv.Type().Elem())
-			if err := unmarshalJSONPb([]byte(*v), bv.Interface()); err != nil {
+			if err := unmarshalJSONPb(*v, bv.Interface()); err != nil {
 				return err
 			}
 			rv.SetMapIndex(bk, bv.Elem())

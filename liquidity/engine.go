@@ -18,7 +18,7 @@ var (
 	ErrEmptyShape                     = errors.New("liquidity provision contains an empty shape")
 )
 
-//go:generate mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
 
 // Broker - event bus
 type Broker interface {
@@ -267,8 +267,8 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	}
 
 	var (
-		lp  *types.LiquidityProvision = e.LiquidityProvisionByPartyID(party)
-		now                           = e.currentTime.UnixNano()
+		lp  = e.LiquidityProvisionByPartyID(party)
+		now = e.currentTime.UnixNano()
 	)
 
 	// regardless of the final operation (create,update or delete) we finish

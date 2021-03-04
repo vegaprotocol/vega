@@ -695,6 +695,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) Markets(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Markets", reflect.TypeOf((*MockTradingDataServiceClient)(nil).Markets), varargs...)
 }
 
+// MarketsData mocks base method
+func (m *MockTradingDataServiceClient) MarketsData(arg0 context.Context, arg1 *api.MarketsDataRequest, arg2 ...grpc.CallOption) (*api.MarketsDataResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MarketsData", varargs...)
+	ret0, _ := ret[0].(*api.MarketsDataResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarketsData indicates an expected call of MarketsData
+func (mr *MockTradingDataServiceClientMockRecorder) MarketsData(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketsData", reflect.TypeOf((*MockTradingDataServiceClient)(nil).MarketsData), varargs...)
+}
+
 // MarketsDataSubscribe mocks base method
 func (m *MockTradingDataServiceClient) MarketsDataSubscribe(arg0 context.Context, arg1 *api.MarketsDataSubscribeRequest, arg2 ...grpc.CallOption) (api.TradingDataService_MarketsDataSubscribeClient, error) {
 	m.ctrl.T.Helper()
@@ -1173,6 +1193,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) TradesSubscribe(arg0, arg1 i
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TradesSubscribe", reflect.TypeOf((*MockTradingDataServiceClient)(nil).TradesSubscribe), varargs...)
+}
+
+// TransferResponsesSubscribe mocks base method
+func (m *MockTradingDataServiceClient) TransferResponsesSubscribe(arg0 context.Context, arg1 *api.TransferResponsesSubscribeRequest, arg2 ...grpc.CallOption) (api.TradingDataService_TransferResponsesSubscribeClient, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "TransferResponsesSubscribe", varargs...)
+	ret0, _ := ret[0].(api.TradingDataService_TransferResponsesSubscribeClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferResponsesSubscribe indicates an expected call of TransferResponsesSubscribe
+func (mr *MockTradingDataServiceClientMockRecorder) TransferResponsesSubscribe(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferResponsesSubscribe", reflect.TypeOf((*MockTradingDataServiceClient)(nil).TransferResponsesSubscribe), varargs...)
 }
 
 // Withdrawal mocks base method

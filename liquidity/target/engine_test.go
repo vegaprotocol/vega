@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var now time.Time = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
+var now = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
 
 func TestConstructor(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}

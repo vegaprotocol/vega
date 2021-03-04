@@ -135,28 +135,28 @@ func (a AuctionState) Trigger() types.AuctionTrigger {
 // InAuction returns bool if the market is in auction for any reason
 // Returns false if auction is triggered, but not yet started by market (execution)
 func (a AuctionState) InAuction() bool {
-	return (!a.start && a.trigger != types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED)
+	return !a.start && a.trigger != types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 }
 
 func (a AuctionState) IsOpeningAuction() bool {
-	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_OPENING)
+	return a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_OPENING
 }
 
 func (a AuctionState) IsLiquidityAuction() bool {
-	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY)
+	return a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 }
 
 func (a AuctionState) IsPriceAuction() bool {
-	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE)
+	return a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE
 }
 
 func (a AuctionState) IsFBA() bool {
-	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_BATCH)
+	return a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_BATCH
 }
 
 // IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine
 func (a AuctionState) IsMonitorAuction() bool {
-	return (a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE || a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY)
+	return a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE || a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 }
 
 // AuctionEnd bool indicating whether auction should be closed or not, if true, we can still extend the auction

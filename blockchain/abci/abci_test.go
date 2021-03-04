@@ -64,7 +64,6 @@ func (c *testCodec) Decode(in []byte) (abci.Tx, error) {
 const (
 	testCommandA = txn.Command(0x01)
 	testCommandB = txn.Command(0x02)
-	testCommandC = txn.Command(0x03)
 )
 
 type testCtxKey int

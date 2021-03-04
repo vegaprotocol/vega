@@ -18,9 +18,6 @@ import (
 const invalidProposalTerms = "invalid proposal terms"
 
 var (
-	// ErrInvalidProposalTerms is returned if basic validation has failed
-	ErrInvalidProposalTerms = errors.New(invalidProposalTerms)
-
 	ErrMissingVoteData = errors.New("required fields from vote missing")
 )
 

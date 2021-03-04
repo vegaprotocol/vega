@@ -11,7 +11,7 @@ import (
 func TestModelConverters(t *testing.T) {
 
 	t.Run("TradingModeFromProto unimplemented", func(t *testing.T) {
-		ptm := int(0)
+		ptm := 0
 		tm, err := gql.TradingModeConfigFromProto(ptm)
 		assert.Nil(t, tm)
 		assert.NotNil(t, err)
