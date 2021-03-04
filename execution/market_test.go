@@ -27,8 +27,8 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-const MAXMOVEUP = 10
-const MINMOVEDOWN = -5
+const MAXMOVEUP = 1000
+const MINMOVEDOWN = -500
 
 var defaultCollateralAssets = []types.Asset{
 	{
@@ -75,6 +75,7 @@ type testMarket struct {
 	eventCount       uint64
 	orderEventCount  uint64
 	events           []events.Event
+	orderEvents      []events.Event
 	mktCfg           *types.Market
 
 	// Options
@@ -97,6 +98,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 	eventFn := func(evt events.Event) {
 		if evt.Type() == events.OrderEvent {
 			tm.orderEventCount++
+			tm.orderEvents = append(tm.orderEvents, evt)
 		}
 		tm.eventCount++
 		tm.events = append(tm.events, evt)
@@ -209,6 +211,7 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 		te := evt.Type()
 		if te == events.OrderEvent {
 			tm.orderEventCount++
+			tm.orderEvents = append(tm.orderEvents, evt)
 		}
 		tm.eventCount++
 		tm.events = append(tm.events, evt)

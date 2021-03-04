@@ -488,7 +488,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 type feeShare struct {
 	// the absolute position of the party which had to be recovered
 	pos uint64
-	// the share out of the total volumt
+	// the share out of the total volume
 	share float64
 }
 
@@ -563,4 +563,8 @@ func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f floa
 	e.feeCfg.Factors.InfrastructureFee = fmt.Sprintf("%f", f)
 	e.f.infrastructureFee = f
 	return nil
+}
+
+func (e *Engine) GetLiquidityFee() float64 {
+	return e.f.liquidityFee
 }

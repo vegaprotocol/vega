@@ -1280,12 +1280,14 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 
 	// we replace the trades in the confirmation with the one we got initially
-	// the contains the fees informations
+	// the contains the fees information
 	confirmation.Trades = trades
 
-	m.handleConfirmation(ctx, confirmation)
-
+	// Send out the order update here as handling the confirmation message
+	// below might trigger an action that can change the order details.
 	m.broker.Send(events.NewOrderEvent(ctx, order))
+
+	m.handleConfirmation(ctx, confirmation)
 
 	return confirmation, nil
 }
@@ -3186,12 +3188,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		}
 	}()
 
-	// we will need both bond accouint and the margin account, let's create
+	// we will need both bond account and the margin account, let's create
 	// them now
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, party, m.GetID(), asset)
 	if err != nil {
-		// error happen, we can't event have the bond account taken
+		// error happen, we can't even have the bond account taken
 		// if this is not an amendment, we cancel the liquidity provision
 		needsCancel = true
 		return err
