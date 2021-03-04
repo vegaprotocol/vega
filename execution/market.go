@@ -266,6 +266,7 @@ func NewMarket(
 		tradableInstrument.RiskModel,
 		getInitialFactors(log, mkt, asset),
 		book,
+		as,
 		broker,
 		now.UnixNano(),
 		mkt.GetId(),

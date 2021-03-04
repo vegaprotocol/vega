@@ -100,10 +100,7 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 // GetCloseoutPrice returns the exit price which would be achieved for a given
 // volume and give side of the book
 func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
-	var (
-		price uint64
-		err   error
-	)
+	var price uint64
 	if b.auction {
 		p := b.GetIndicativePrice()
 		return p, nil
@@ -119,7 +116,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 			lvl := levels[i]
 			if lvl.volume >= vol {
 				price += lvl.price * vol
-				return price / volume, err
+				return price / volume, nil
 			}
 			price += lvl.price * lvl.volume
 			vol -= lvl.volume
@@ -127,38 +124,36 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
 		// still return the price for the volume we could close out, so the caller can make a decision on what to do
 		if vol != 0 {
-			err = ErrNotEnoughOrders
 			// TODO(jeremy): there's no orders in the book so return the markPrice
 			// this is a temporary fix for nicenet and this behaviour will need
 			// to be properaly specified and handled in the future.
 			if vol == volume {
-				return b.lastTradedPrice, err
+				return b.lastTradedPrice, ErrNotEnoughOrders
 			}
 		}
-		return price / (volume - vol), err
-	} else {
-		levels := b.buy.getLevels()
-		for i := len(levels) - 1; i >= 0; i-- {
-			lvl := levels[i]
-			if lvl.volume >= vol {
-				price += lvl.price * vol
-				return price / volume, err
-			}
-			price += lvl.price * lvl.volume
-			vol -= lvl.volume
-		}
-		// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
-		if vol != 0 {
-			err = ErrNotEnoughOrders
-			// TODO(jeremy): there's no orders in the book so return the markPrice
-			// this is a temporary fix for nice-net and this behaviour will need
-			// to be properly specified and handled in the future.
-			if vol == volume {
-				return b.lastTradedPrice, err
-			}
-		}
-		return price / (volume - vol), err
+		return price / (volume - vol), nil
 	}
+	// side == buy
+	levels := b.buy.getLevels()
+	for i := len(levels) - 1; i >= 0; i-- {
+		lvl := levels[i]
+		if lvl.volume >= vol {
+			price += lvl.price * vol
+			return price / volume, nil
+		}
+		price += lvl.price * lvl.volume
+		vol -= lvl.volume
+	}
+	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
+	if vol != 0 {
+		// TODO(jeremy): there's no orders in the book so return the markPrice
+		// this is a temporary fix for nice-net and this behaviour will need
+		// to be properly specified and handled in the future.
+		if vol == volume {
+			return b.lastTradedPrice, ErrNotEnoughOrders
+		}
+	}
+	return price / (volume - vol), nil
 }
 
 // EnterAuction Moves the order book into an auction state
