@@ -696,27 +696,12 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 	for _, order := range m.peggedOrders {
 		if HasReferenceMoved(order, changes) {
 			if order.Status == types.Order_STATUS_CANCELLED {
-				// FIXME(JEREMY): here when trying to re-submit the order
-				// if this is a liquidity provision order, and the submission failed
-				// we will need to go through the path of distressed trader.
-				// this won't be done for now, but will need to be addressed
-				// try to submit the order
 				if _, err := m.submitValidatedOrder(ctx, order); err != nil {
 					m.log.Debug("could not re-submit a pegged order after repricing",
 						logging.MarketID(m.GetID()),
 						logging.PartyID(order.PartyId),
 						logging.OrderID(order.Id),
 						logging.Error(err))
-					if m.liquidity.IsLiquidityOrder(order.PartyId, order.Id) {
-						if err := m.liquidity.HandleFailedOrderSubmit(
-							ctx, order.Id, order.PartyId); err != nil {
-							m.log.Debug("could not remove lp order from engine",
-								logging.MarketID(m.GetID()),
-								logging.PartyID(order.PartyId),
-								logging.OrderID(order.Id),
-								logging.Error(err))
-						}
-					}
 					// order could not be submitted, it's then been rejected
 					// we just completely remove it.
 					toRemove = append(toRemove, order)
@@ -3321,7 +3306,7 @@ func (m *Market) updateAndCreateOrders(
 	ctx context.Context,
 	newOrders []*types.Order,
 	amendments []*types.OrderAmendment,
-) (err error) {
+) error {
 
 	for _, order := range amendments {
 		if _, err := m.amendOrder(ctx, order); err != nil {
@@ -3337,28 +3322,39 @@ func (m *Market) updateAndCreateOrders(
 		}
 	}
 
+	// this is set of all liquidity provider which
+	// at after trying to cancel and replace their orders
+	// cannot fullfil their margins anymore.
+	faultyLPs := map[string]struct{}{}
+
 	for _, order := range newOrders {
+		if _, ok := faultyLPs[order.PartyId]; ok {
+			// we already tried to submit an lp order which failed
+			// for this party. we'll cancel them just in a bit
+			// be patient...
+			continue
+		}
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
-			m.log.Debug("could not submit liquidity provision order",
+			m.log.Debug("could not submit liquidity provision order, scheduling for cancellation",
 				logging.OrderID(order.Id),
 				logging.PartyID(order.PartyId),
 				logging.MarketID(order.MarketId),
 				logging.Error(err))
-			// an error happened, this might be becuase of a margin call
-			// not been OK.
-			// that' somethig we'll need to figure out how to handle
-			// in the future I suppose...
-			if err := m.liquidity.HandleFailedOrderSubmit(ctx, order.Id, order.PartyId); err != nil {
-				m.log.Debug("error while handling failed order submittion in liquidity engine",
-					logging.OrderID(order.Id),
-					logging.PartyID(order.PartyId),
-					logging.MarketID(order.MarketId),
-					logging.Error(err))
-			}
+			faultyLPs[order.PartyId] = struct{}{}
 		}
 	}
 
-	return
+	// FIXME(ELIAS): apply bon slashing here I suppose?
+	for party := range faultyLPs {
+		if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
+			m.log.Debug("error cancelling liquidity provision commitmment",
+				logging.PartyID(party),
+				logging.MarketID(m.GetID()),
+				logging.Error(err))
+		}
+	}
+
+	return nil
 }
 
 func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {

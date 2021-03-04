@@ -104,36 +104,6 @@ func NewEngine(
 	}
 }
 
-func (e *Engine) HandleFailedOrderSubmit(
-	ctx context.Context, order, party string,
-) error {
-	orders, ok := e.liquidityOrders[party]
-	if !ok {
-		return ErrLiquidityProvisionDoesNotExist
-	}
-	delete(orders, order)
-
-	lp, ok := e.provisions[party]
-	if !ok {
-		return ErrLiquidityProvisionDoesNotExist
-	}
-	for _, v := range lp.Buys {
-		if v.OrderId == order {
-			v.OrderId = ""
-			return nil
-		}
-	}
-	for _, v := range lp.Sells {
-		if v.OrderId == order {
-			v.OrderId = ""
-			return nil
-		}
-	}
-
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-	return ErrLiquidityProvisionDoesNotExist
-}
-
 // OnChainTimeUpdate updates the internal engine current time
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
@@ -415,9 +385,6 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 		amendments = append(amendments, updates...)
 	}
 
-	fmt.Printf("NEW ORDERS: %v\n", len(newOrders))
-	fmt.Printf("AMENDMENTS: %v\n", len(amendments))
-
 	if e.undeployedProvisions {
 		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
 		stillUndeployed := false
@@ -435,6 +402,9 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 		}
 		e.undeployedProvisions = stillUndeployed
 	}
+
+	fmt.Printf("NEW ORDERS: %v\n", len(newOrders))
+	fmt.Printf("AMENDMENTS: %v\n", len(amendments))
 
 	// send a batch of updates
 	evts := []events.Event{}
