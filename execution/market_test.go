@@ -124,7 +124,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 		assets = defaultCollateralAssets
 	}
 	for _, asset := range assets {
-		_ = collateralEngine.EnableAsset(ctx, asset)
+		collateralEngine.EnableAsset(ctx, asset)
 	}
 
 	var (
@@ -165,7 +165,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 }
 
 func (tm *testMarket) StartOpeningAuction() *testMarket {
-	_ = tm.market.StartOpeningAuction(context.Background())
+	tm.market.StartOpeningAuction(context.Background())
 	return tm
 }
 
@@ -238,7 +238,7 @@ func getTestMarket2(
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
-	_ = collateralEngine.EnableAsset(context.Background(), types.Asset{
+	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Symbol: "ETH",
 		Id:     "ETH",
 	})
@@ -264,7 +264,7 @@ func getTestMarket2(
 		},
 	}
 
-	_ = collateralEngine.EnableAsset(context.Background(), tokAsset)
+	collateralEngine.EnableAsset(context.Background(), tokAsset)
 
 	if pMonitorSettings == nil {
 		pMonitorSettings = &types.PriceMonitoringSettings{
@@ -285,7 +285,7 @@ func getTestMarket2(
 	assert.NoError(t, err)
 
 	if startOpeningAuction {
-		_ = mktEngine.StartOpeningAuction(context.Background())
+		mktEngine.StartOpeningAuction(context.Background())
 	}
 
 	asset, err := mkt.GetAsset()
@@ -382,16 +382,16 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 		},
 	}
 
-	_ = execution.SetMarketID(&mkt, 0)
+	execution.SetMarketID(&mkt, 0)
 	return mkt
 }
 
 func addAccount(market *testMarket, party string) {
-	_, _ = market.collateralEngine.Deposit(context.Background(), party, market.asset, 1000000000)
+	market.collateralEngine.Deposit(context.Background(), party, market.asset, 1000000000)
 }
 
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
-	_, _ = market.collateralEngine.Deposit(context.Background(), party, market.asset, amnt)
+	market.collateralEngine.Deposit(context.Background(), party, market.asset, amnt)
 }
 
 // WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors
@@ -584,6 +584,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, err)
@@ -621,6 +622,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 
 	// submit orders
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
 	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.Nil(t, err)
@@ -1649,7 +1651,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	)
 
 	// this will make current target stake returns 2475
-	_ = tm.market.TSCalc().RecordOpenInterest(10, now)
+	tm.market.TSCalc().RecordOpenInterest(10, now)
 
 	// by set a very low commitment we should fail
 	lp.CommitmentAmount = 1
@@ -3205,7 +3207,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	require.Equal(t, 0, tm.market.GetParkedOrderCount())
 
 	// Remove an order to invalidate reference prices and force pegged orders to park
-	_, _ = tm.market.CancelOrder(ctx, o1.PartyId, o1.Id)
+	tm.market.CancelOrder(ctx, o1.PartyId, o1.Id)
 
 	// 3 live orders, 1 normal and 2 pegged with 2 parked pegged orders
 	require.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
@@ -4573,6 +4575,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	// trader-2-bis should receive none
 	tm.events = nil
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
+
 	t.Run("Fee are distributed", func(t *testing.T) {
 		var found []*types.TransferResponse
 		for _, e := range tm.events {
