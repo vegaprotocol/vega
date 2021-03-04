@@ -3179,10 +3179,12 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	// Remove an order to invalidate reference prices and force pegged orders to park
 	tm.market.CancelOrder(ctx, o1.PartyId, o1.Id)
 
-	// 3 live orders, 1 normal and 2 pegged with 2 parked pegged orders
-	require.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
-	require.Equal(t, 4, tm.market.GetPeggedOrderCount())
-	require.Equal(t, 2, tm.market.GetParkedOrderCount())
+	//
+	// 1 live orders, 1 normal
+	// all LP have been removed as cannot be repriced.
+	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
 // TODO(): this test is wrong.

@@ -638,16 +638,10 @@ func HasReferenceMoved(order *types.Order, changes uint8) bool {
 
 // repriceAllPeggedOrders runs through the slice of pegged orders and reprices all those
 // which are using a reference that has moved. Returns the number of orders that were repriced.
-func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint64 {
+func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*types.Order, uint64) {
 	var (
 		repriceCount uint64
 		toRemove     []*types.Order
-
-		// this will be used while iterating over all pegged orders
-		// in order to make a copy of them,
-		// this copy will then be return to be processed later
-		// on (e.g: in order to update the liquidity engine)
-		// peggedOrderCpy []*types.Order
 	)
 
 	// Go through all the pegged orders and remove from the order book
@@ -692,6 +686,8 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 		}
 	}
 
+	updatedOrders := []*types.Order{}
+
 	// Reinsert all the orders
 	for _, order := range m.peggedOrders {
 		if HasReferenceMoved(order, changes) {
@@ -709,13 +705,14 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) uint
 				}
 			}
 		}
+		updatedOrders = append(updatedOrders, order)
 	}
 
 	for _, o := range toRemove {
 		m.removePeggedOrder(o)
 	}
 
-	return repriceCount
+	return updatedOrders, repriceCount
 }
 
 func (m *Market) getNewPeggedPrice(order *types.Order) (uint64, error) {
@@ -874,11 +871,11 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	m.broker.Send(endEvt)
 
 	// We are moving to continuous trading so we have to unpark any pegged orders
-	m.repriceAllPeggedOrders(ctx, PriceMoveAll)
+	repricedOrders, _ := m.repriceAllPeggedOrders(ctx, PriceMoveAll)
 
 	// update the liquidity engine with the state of every orders
 	// which got updated during auction
-	if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
+	if err := m.liquidityUpdate(ctx, append(updatedOrders, repricedOrders...)); err != nil {
 		m.log.Debug("could not update liquidity", logging.Error(err))
 	}
 
@@ -2789,7 +2786,13 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 
 		// If we have a reference price move, update any pegged orders that reference it
 		if changes != 0 {
-			repricedCount = m.repriceAllPeggedOrders(ctx, changes)
+			var updatedOrders []*types.Order
+			updatedOrders, repricedCount = m.repriceAllPeggedOrders(ctx, changes)
+			if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
+				m.log.Debug("error update liquidity engine",
+					logging.MarketID(m.GetID()),
+					logging.Error(err))
+			}
 		} else {
 			repricedCount = 0
 		}
