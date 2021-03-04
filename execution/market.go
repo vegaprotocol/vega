@@ -1268,12 +1268,14 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 
 	// we replace the trades in the confirmation with the one we got initially
-	// the contains the fees informations
+	// the contains the fees information
 	confirmation.Trades = trades
 
-	m.handleConfirmation(ctx, confirmation)
-
+	// Send out the order update here as handling the confirmation message
+	// below might trigger an action that can change the order details.
 	m.broker.Send(events.NewOrderEvent(ctx, order))
+
+	m.handleConfirmation(ctx, confirmation)
 
 	return confirmation, nil
 }
