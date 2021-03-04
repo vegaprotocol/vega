@@ -48,7 +48,7 @@ var (
 	ErrInsufficientFundsToPayFees = errors.New("insufficient funds to pay fees")
 	// ErrInvalidTransferTypeForFeeRequest an invalid transfer type was send to build a fee transfer request
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
-	// ErrNotEnoughFundsToWithdraa a party requested to withdraw more than on its general account
+	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
 	// ErrGovernanceAssetIDMatchNoAsset
 	ErrGovernanceAssetIDMatchNoAsset = errors.New("governance asset ID match no asset")
