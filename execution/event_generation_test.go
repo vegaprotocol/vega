@@ -337,7 +337,7 @@ func TestEvents_Amending(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(5), tm.orderEventCount)
+	assert.Equal(t, uint64(6), tm.orderEventCount)
 	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
 
 	mdb := processEvents(t, tm, ctx)
