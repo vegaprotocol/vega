@@ -456,7 +456,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 7000)
+	addAccountWithAmount(tm, "trader-A", 5000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -580,8 +580,8 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_ACTIVE.String(), tm.market.GetLPSState("trader-A").String())
-	assert.Equal(t, 4, tm.market.GetPeggedOrderCount())
+	require.Equal(t, types.LiquidityProvision_STATUS_UNDEPLOYED.String(), tm.market.GetLPSState("trader-A").String())
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 
 	// Check we have the right amount of bond balance
 	assert.Equal(t, uint64(1000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
@@ -609,8 +609,8 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	lps.Sells = sells
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
-	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 2, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
 // If we submit a valid LP submission but then try ot alter it to something non valid
@@ -783,9 +783,9 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_ACTIVE.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_UNDEPLOYED.String(), tm.market.GetLPSState("trader-A").String())
 	// Only 3 pegged orders as one fails due to price monitoring
-	assert.Equal(t, 3, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 }
 
 func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testing.T) {
@@ -842,9 +842,9 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_ACTIVE.String(), tm.market.GetLPSState("trader-A").String())
-	assert.Equal(t, 5, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 5, tm.market.GetParkedOrderCount())
+	require.Equal(t, types.LiquidityProvision_STATUS_UNDEPLOYED.String(), tm.market.GetLPSState("trader-A").String())
+	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
 	// Leave the auction so we can uncross the book
 	now = now.Add(time.Second * 20)
@@ -918,7 +918,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_ACTIVE.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_UNDEPLOYED.String(), tm.market.GetLPSState("trader-A").String())
 
 	// Leave the auction so we can uncross the book
 	now = now.Add(time.Second * 20)
