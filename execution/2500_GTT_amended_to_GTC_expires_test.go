@@ -40,7 +40,8 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 
 	// now expire, and nothing should be returned
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(10*time.Second))
-	orders, err := tm.market.RemoveExpiredOrders(now.UnixNano())
+	orders, err := tm.market.RemoveExpiredOrders(
+		context.Background(), now.UnixNano())
 	require.Equal(t, 0, len(orders))
 	require.NoError(t, err)
 }

@@ -2662,7 +2662,8 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) (*
 
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked
-func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
+func (m *Market) RemoveExpiredOrders(
+	ctx context.Context, timestamp int64) ([]types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2705,7 +2706,17 @@ func (m *Market) RemoveExpiredOrders(timestamp int64) ([]types.Order, error) {
 	}
 
 	// If we have removed an expired order, do we need to reprice any
+	// or maybe notify the liqudity engine
 	if len(expired) > 0 {
+		expiredPtrs := make([]*types.Order, len(expired))
+		for i := range expired {
+			expiredPtrs[i] = &expired[i]
+		}
+		if err := m.liquidityUpdate(ctx, expiredPtrs); err != nil {
+			m.log.Debug("error update liquidity engine",
+				logging.MarketID(m.GetID()),
+				logging.Error(err))
+		}
 		m.checkForReferenceMoves(context.Background())
 	}
 
