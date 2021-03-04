@@ -123,15 +123,14 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		}
 		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
 		// still return the price for the volume we could close out, so the caller can make a decision on what to do
-		if vol != 0 {
-			// TODO(jeremy): there's no orders in the book so return the markPrice
-			// this is a temporary fix for nicenet and this behaviour will need
-			// to be properaly specified and handled in the future.
-			if vol == volume {
-				return b.lastTradedPrice, ErrNotEnoughOrders
-			}
+		if vol == volume {
+			return b.lastTradedPrice, ErrNotEnoughOrders
 		}
-		return price / (volume - vol), nil
+		price = price / (volume - vol)
+		if vol != 0 {
+			return price, ErrNotEnoughOrders
+		}
+		return price, nil
 	}
 	// side == buy
 	levels := b.buy.getLevels()
@@ -145,15 +144,14 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		vol -= lvl.volume
 	}
 	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
-	if vol != 0 {
-		// TODO(jeremy): there's no orders in the book so return the markPrice
-		// this is a temporary fix for nice-net and this behaviour will need
-		// to be properly specified and handled in the future.
-		if vol == volume {
-			return b.lastTradedPrice, ErrNotEnoughOrders
-		}
+	if vol == volume {
+		return b.lastTradedPrice, ErrNotEnoughOrders
 	}
-	return price / (volume - vol), nil
+	price = price / (volume - vol)
+	if vol != 0 {
+		return price, ErrNotEnoughOrders
+	}
+	return price, nil
 }
 
 // EnterAuction Moves the order book into an auction state
