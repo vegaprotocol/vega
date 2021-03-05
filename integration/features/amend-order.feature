@@ -55,8 +55,6 @@ Feature: Amend orders
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
       | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
-
-# Then the following trades happend
       Then the following trades happened:
         | buyer | seller | price | volume |
         | myboi3 | myboi  |     1 |      3 |

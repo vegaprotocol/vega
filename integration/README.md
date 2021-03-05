@@ -33,7 +33,7 @@ The `-v` flag tells `go test` to run with verbose output (sending logging to std
 To run only certain tests (feature files), you can simply add the paths to a given feature file to the command:
 
 ```shell
-go test -v ./integration/... -godog.format=pretty $(pwd)/integration/features/simple.feature
+go test -v ./integration/... -godog.format=pretty $(pwd)/integration/features/my-feature.feature
 ```
 
 ## Race detection and cache
@@ -51,7 +51,7 @@ Should there be tests that are intermittently failing, this could indicate a dat
 go test -v -count=1 -race ./integration/... -godog.format=pretty
 
 # Same as above, but only run a specific feature file:
-go test -v -count=1 -race ./integration/... -godog.format=pretty $(pwd)/integration/feature/core.feature
+go test -v -count=1 -race ./integration/... -godog.format=pretty $(pwd)/integration/feature/my-feature.feature
 ```
 
 Race detection is a complex thing to do, so it will make running tests significantly slower. The pipeline runs the tests with race detection, so this shouldn't be required to do locally.

@@ -51,8 +51,6 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
     #    and only what's left (100+2-6=96) goes into the insurance pool.
     And the insurance pool balance is "96" for the market "ETH/DEC19"
 
-    #Then dump orders
-
     #check positions
     #   Note that the realisedPNL for tt_15 is -102 as additional 2 was made
     #   on top of initial deposit by earning maker fee on passive orders.

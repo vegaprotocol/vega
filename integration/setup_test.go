@@ -21,7 +21,6 @@ const (
 )
 
 var (
-	mktsetup  *marketTestSetup
 	execsetup *executionTestSetup
 	reporter  tstReporter
 
@@ -43,70 +42,6 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-type marketTestSetup struct {
-	market *types.Market
-	ctrl   *gomock.Controller
-	core   *execution.Market
-
-	// accounts   *cmocks.MockAccountBuffer
-	accountIDs map[string]struct{}
-	traderAccs map[string]map[types.AccountType]*types.Account
-
-	// we need to call this engine directly
-	colE   *collateral.Engine
-	broker *brokerStub
-}
-
-func getMarketTestSetup(market *types.Market) *marketTestSetup {
-	if mktsetup != nil {
-		mktsetup.ctrl.Finish()
-		mktsetup = nil // ready for GC
-	}
-	// the controller needs the reporter to report on errors or clunk out with fatal
-	ctrl := gomock.NewController(&reporter)
-	broker := NewBrokerStub()
-
-	// this can happen any number of times, just set the mock up to accept all of them
-	// Over time, these mocks will be replaced with stubs that store all elements to a map
-	// again: allow all calls, replace with stub over time
-	colE, _ := collateral.New(
-		logging.NewTestLogger(),
-		collateral.NewDefaultConfig(),
-		broker,
-		time.Now(),
-	)
-
-	tokAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
-			},
-		},
-	}
-	colE.EnableAsset(context.Background(), tokAsset)
-
-	setup := &marketTestSetup{
-		market:     market,
-		ctrl:       ctrl,
-		accountIDs: map[string]struct{}{},
-		traderAccs: map[string]map[types.AccountType]*types.Account{},
-		colE:       colE,
-		broker:     broker,
-	}
-
-	return setup
-}
-
 type executionTestSetup struct {
 	engine *execution.Engine
 
@@ -114,8 +49,6 @@ type executionTestSetup struct {
 	log        *logging.Logger
 	ctrl       *gomock.Controller
 	timesvc    *timeStub
-	proposal   *ProposalStub
-	votes      *VoteStub
 	collateral *collateral.Engine
 
 	positionPlugin *plugins.Positions
@@ -140,7 +73,6 @@ func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTe
 func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
-		// execsetup = nil
 	} else if execsetup == nil {
 		execsetup = &executionTestSetup{}
 	}
@@ -153,8 +85,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
 	execsetup.timesvc = &timeStub{now: startTime}
-	execsetup.proposal = NewProposalStub()
-	execsetup.votes = NewVoteStub()
 	execsetup.broker = NewBrokerStub()
 	execsetup.collateral, _ = collateral.New(
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, time.Now(),
@@ -194,7 +124,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 		execsetup.engine.SubmitMarket(context.Background(), &mkt)
 	}
 
-	// instanciate position plugin
+	// instantiate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 

@@ -33,7 +33,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | ETH/DEC19 | sell | 5      | 10001  | 0                | TYPE_LIMIT  | TIF_GFA | t2-s-2    |
       | trader1 | ETH/DEC19 | buy  | 4      | 3000   | 0                | TYPE_LIMIT  | TIF_GFA | t1-b-3    |
       | trader2 | ETH/DEC19 | sell | 3      | 3000   | 0                | TYPE_LIMIT  | TIF_GFA | t2-s-3    |
-#   And dump orders
+
     Then the margins levels for the traders are:
       | trader  | id        | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 |       25201 |  27721 |   30241 |   65521 |
@@ -53,7 +53,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | asset | id        | margin | general  |
       | trader1 | BTC   | ETH/DEC19 |  30241 | 0        |
       | trader2 | BTC   | ETH/DEC19 |  28679 | 0        |
-#   And dump transfers
+
     Then the opening auction period for market "ETH/DEC19" ends
     ## We're seeing these events twice for some reason
     And executed trades:
@@ -62,8 +62,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | 10000 | 2    | trader2 |
       | trader1 | 10000 | 3    | trader2 |
     And the mark price for the market "ETH/DEC19" is "10000"
-#   And dump trades
-#   And dump transfers
+
+
     ## Network for distressed trader1 -> cancelled, nothing on the book is remaining
     Then verify the status of the order reference:
       | trader  | reference | status           |
@@ -73,8 +73,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | t2-s-2    | STATUS_CANCELLED |
       | trader1 | t1-b-3    | STATUS_CANCELLED |
       | trader2 | t2-s-3    | STATUS_FILLED    |
-#   And dump trades
-#   And dump transfers
+
+
     And the following transfers happened:
       | from    | to      | from account type   | to account type      | market ID | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9479   | BTC   |

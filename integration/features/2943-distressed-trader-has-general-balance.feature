@@ -47,7 +47,7 @@ Feature: Distressed traders should not have general balance left
       | trader | asset | id        | margin | general       |
       | trader4| ETH   | ETH/DEC20 |    360 | 9999999999640 |
       | trader5| ETH   | ETH/DEC20 |    372 | 9999999999628 |
-      # And clear order events
+
     And clear order events
     Then the trader submits LP:
       | id  | party   | market    | commitment amount  | fee | order side | order reference | order proportion | order offset |
