@@ -106,7 +106,7 @@ func (md *MarketDepth) orderExists(orderID string) *types.Order {
 	return md.liveOrders[orderID]
 }
 
-func (md *MarketDepth) removeOrder(order *types.Order, reduceAmount uint64) error {
+func (md *MarketDepth) removeOrder(order *types.Order) error {
 	// Find the price level
 	pl := md.getPriceLevel(order.Side, order.Price)
 
@@ -115,7 +115,7 @@ func (md *MarketDepth) removeOrder(order *types.Order, reduceAmount uint64) erro
 	}
 	// Update the values
 	pl.totalOrders--
-	pl.totalVolume -= reduceAmount
+	pl.totalVolume -= order.Remaining
 
 	// See if we can remove this price level
 	if pl.totalOrders == 0 {
@@ -184,7 +184,7 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
 	if originalOrder.Price == newOrder.Price {
 		if newOrder.Remaining == 0 {
-			md.removeOrder(newOrder, originalOrder.Remaining)
+			md.removeOrder(newOrder)
 		} else {
 			// Update
 			pl := md.getPriceLevel(originalOrder.Side, originalOrder.Price)
@@ -193,8 +193,10 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 			md.changes = append(md.changes, pl)
 		}
 	} else {
-		md.removeOrder(originalOrder, originalOrder.Remaining)
-		md.addOrder(newOrder)
+		md.removeOrder(originalOrder)
+		if newOrder.Remaining > 0 {
+			md.addOrder(newOrder)
+		}
 	}
 }
 
@@ -277,8 +279,10 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		if order.Status == types.Order_STATUS_CANCELLED ||
 			order.Status == types.Order_STATUS_EXPIRED ||
 			order.Status == types.Order_STATUS_STOPPED ||
+			order.Status == types.Order_STATUS_FILLED ||
+			order.Status == types.Order_STATUS_PARTIALLY_FILLED ||
 			order.Status == types.Order_STATUS_PARKED {
-			md.removeOrder(originalOrder, order.Remaining)
+			md.removeOrder(originalOrder)
 		} else {
 			md.updateOrder(originalOrder, order)
 		}
