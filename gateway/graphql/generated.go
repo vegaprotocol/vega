@@ -6758,6 +6758,26 @@ input NewMarketInput {
   continuousTrading: ContinuousTradingInput
   "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
   discreteTrading: DiscreteTradingInput
+
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitmentInput
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+input NewMarketCommitmentInput {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per setting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrderInput!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrderInput!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 type NewMarket {
@@ -6781,7 +6801,7 @@ type NewMarketCommitment {
   commitmentAmount: String!
   """
   Nominated liquidity fee factor, which is an input to the calculation of
-  taker fees on the market, as per seeting fees and rewarding liquidity provider
+  taker fees on the market, as per setting fees and rewarding liquidity provider
   """
   fee: String!
   "A set of liquidity sell orders to meet the liquidity provision obligation"
@@ -25299,6 +25319,48 @@ func (ec *executionContext) unmarshalInputNewAssetInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewMarketCommitmentInput(ctx context.Context, obj interface{}) (NewMarketCommitmentInput, error) {
+	var it NewMarketCommitmentInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "commitmentAmount":
+			var err error
+			it.CommitmentAmount, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fee":
+			var err error
+			it.Fee, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sells":
+			var err error
+			it.Sells, err = ec.unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "buys":
+			var err error
+			it.Buys, err = ec.unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "reference":
+			var err error
+			it.Reference, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, obj interface{}) (NewMarketInput, error) {
 	var it NewMarketInput
 	var asMap = obj.(map[string]interface{})
@@ -25344,6 +25406,12 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 		case "discreteTrading":
 			var err error
 			it.DiscreteTrading, err = ec.unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "commitment":
+			var err error
+			it.Commitment, err = ec.unmarshalONewMarketCommitmentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -34570,6 +34638,26 @@ func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗi
 	return ret
 }
 
+func (ec *executionContext) unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx context.Context, v interface{}) ([]*LiquidityOrderInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*LiquidityOrderInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNLiquidityOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityOrderReference) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -34865,6 +34953,18 @@ func (ec *executionContext) marshalONewMarketCommitment2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._NewMarketCommitment(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONewMarketCommitmentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx context.Context, v interface{}) (NewMarketCommitmentInput, error) {
+	return ec.unmarshalInputNewMarketCommitmentInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewMarketCommitmentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx context.Context, v interface{}) (*NewMarketCommitmentInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewMarketCommitmentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalONewMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx context.Context, v interface{}) (NewMarketInput, error) {
