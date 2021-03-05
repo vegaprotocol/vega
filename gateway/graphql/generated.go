@@ -59,6 +59,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	NewAsset() NewAssetResolver
 	NewMarket() NewMarketResolver
+	NewMarketCommitment() NewMarketCommitmentResolver
 	NodeSignature() NodeSignatureResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
@@ -411,11 +412,20 @@ type ComplexityRoot struct {
 	}
 
 	NewMarket struct {
+		Commitment     func(childComplexity int) int
 		DecimalPlaces  func(childComplexity int) int
 		Instrument     func(childComplexity int) int
 		Metadata       func(childComplexity int) int
 		RiskParameters func(childComplexity int) int
 		TradingMode    func(childComplexity int) int
+	}
+
+	NewMarketCommitment struct {
+		Buys             func(childComplexity int) int
+		CommitmentAmount func(childComplexity int) int
+		Fee              func(childComplexity int) int
+		Reference        func(childComplexity int) int
+		Sells            func(childComplexity int) int
 	}
 
 	NodeSignature struct {
@@ -951,6 +961,10 @@ type NewMarketResolver interface {
 	RiskParameters(ctx context.Context, obj *proto.NewMarket) (RiskModel, error)
 	Metadata(ctx context.Context, obj *proto.NewMarket) ([]string, error)
 	TradingMode(ctx context.Context, obj *proto.NewMarket) (TradingMode, error)
+	Commitment(ctx context.Context, obj *proto.NewMarket) (*proto.NewMarketCommitment, error)
+}
+type NewMarketCommitmentResolver interface {
+	CommitmentAmount(ctx context.Context, obj *proto.NewMarketCommitment) (string, error)
 }
 type NodeSignatureResolver interface {
 	Signature(ctx context.Context, obj *proto.NodeSignature) (*string, error)
@@ -2604,6 +2618,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewAsset.Source(childComplexity), true
 
+	case "NewMarket.commitment":
+		if e.complexity.NewMarket.Commitment == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.Commitment(childComplexity), true
+
 	case "NewMarket.decimalPlaces":
 		if e.complexity.NewMarket.DecimalPlaces == nil {
 			break
@@ -2638,6 +2659,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.TradingMode(childComplexity), true
+
+	case "NewMarketCommitment.buys":
+		if e.complexity.NewMarketCommitment.Buys == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Buys(childComplexity), true
+
+	case "NewMarketCommitment.commitmentAmount":
+		if e.complexity.NewMarketCommitment.CommitmentAmount == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.CommitmentAmount(childComplexity), true
+
+	case "NewMarketCommitment.fee":
+		if e.complexity.NewMarketCommitment.Fee == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Fee(childComplexity), true
+
+	case "NewMarketCommitment.reference":
+		if e.complexity.NewMarketCommitment.Reference == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Reference(childComplexity), true
+
+	case "NewMarketCommitment.sells":
+		if e.complexity.NewMarketCommitment.Sells == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Sells(childComplexity), true
 
 	case "NodeSignature.id":
 		if e.complexity.NodeSignature.Id == nil {
@@ -6715,6 +6771,25 @@ type NewMarket {
   metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitment
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+type NewMarketCommitment {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per seeting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrder!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrder!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 """
@@ -15482,6 +15557,198 @@ func (ec *executionContext) _NewMarket_tradingMode(ctx context.Context, field gr
 	res := resTmp.(TradingMode)
 	fc.Result = res
 	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarket_commitment(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().Commitment(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*proto.NewMarketCommitment)
+	fc.Result = res
+	return ec.marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNewMarketCommitment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_commitmentAmount(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarketCommitment().CommitmentAmount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_fee(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_sells(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sells, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.LiquidityOrder)
+	fc.Result = res
+	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_buys(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Buys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.LiquidityOrder)
+	fc.Result = res
+	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_reference(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reference, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *proto.NodeSignature) (ret graphql.Marshaler) {
@@ -28473,6 +28740,64 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 				}
 				return res
 			})
+		case "commitment":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_commitment(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var newMarketCommitmentImplementors = []string{"NewMarketCommitment"}
+
+func (ec *executionContext) _NewMarketCommitment(ctx context.Context, sel ast.SelectionSet, obj *proto.NewMarketCommitment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, newMarketCommitmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NewMarketCommitment")
+		case "commitmentAmount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarketCommitment_commitmentAmount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "fee":
+			out.Values[i] = ec._NewMarketCommitment_fee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sells":
+			out.Values[i] = ec._NewMarketCommitment_sells(ctx, field, obj)
+		case "buys":
+			out.Values[i] = ec._NewMarketCommitment_buys(ctx, field, obj)
+		case "reference":
+			out.Values[i] = ec._NewMarketCommitment_reference(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -34205,6 +34530,46 @@ func (ec *executionContext) marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
+func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityOrder) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityOrderReference) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -34489,6 +34854,17 @@ func (ec *executionContext) unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗio�
 	}
 	res, err := ec.unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalONewMarketCommitment2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNewMarketCommitment(ctx context.Context, sel ast.SelectionSet, v proto.NewMarketCommitment) graphql.Marshaler {
+	return ec._NewMarketCommitment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNewMarketCommitment(ctx context.Context, sel ast.SelectionSet, v *proto.NewMarketCommitment) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NewMarketCommitment(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalONewMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx context.Context, v interface{}) (NewMarketInput, error) {

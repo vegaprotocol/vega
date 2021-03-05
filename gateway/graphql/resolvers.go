@@ -249,6 +249,10 @@ func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
 }
 
+func (r *VegaResolverRoot) NewMarketCommitment() NewMarketCommitmentResolver {
+	return (*newMarketCommitmentResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
