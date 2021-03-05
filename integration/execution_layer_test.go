@@ -423,25 +423,6 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 	return nil
 }
 
-func tradersCancelPeggedOrders(data *gherkin.DataTable) error {
-	for _, row := range data.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		cancel := types.OrderCancellation{
-			PartyId:  trader,
-			MarketId: val(row, 1),
-			OrderId:  val(row, 2),
-		}
-		_, err := execsetup.engine.CancelOrder(context.Background(), &cancel)
-		if err != nil {
-			return fmt.Errorf("unable to cancel order: %+v", err)
-		}
-	}
-	return nil
-}
-
 func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	cancellations := make([]types.OrderCancellation, 0, len(data.Rows))
 	for _, row := range data.Rows {

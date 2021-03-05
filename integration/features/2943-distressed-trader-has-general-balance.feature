@@ -49,16 +49,11 @@ Feature: Distressed traders should not have general balance left
       | trader  | asset | id        | margin | general       |
       | trader4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
       | trader5 | ETH   | ETH/DEC20 | 372    | 9999999999628 |
-      # And clear order events
     And clear order events
     Then the trader submits LP:
       | id  | party   | market    | commitment amount | fee | order side | order reference | order proportion | order offset |
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy        | BID             | 10               | -10          |
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell       | ASK             | 10               | 10           |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | ASK             | 10               | 50           |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | ASK             | 10               | 5            |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | ASK             | 10               | 75           |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | MID             | 10               | 75           |
     Then I see the LP events:
       | id  | party   | market    | commitment amount |
       | lp1 | trader3 | ETH/DEC20 | 10000             |
