@@ -565,8 +565,10 @@ func testEnableAssetSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 	asset := types.Asset{
-		Id:     "MYASSET",
-		Symbol: "MYASSET",
+		Id: "MYASSET",
+		Details: &types.AssetDetails{
+			Symbol: "MYASSET",
+		},
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
@@ -577,8 +579,10 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 	asset := types.Asset{
-		Id:     "MYASSET",
-		Symbol: "MYASSET",
+		Id: "MYASSET",
+		Details: &types.AssetDetails{
+			Symbol: "MYASSET",
+		},
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
@@ -2326,19 +2330,14 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 
 	// add the token asset
 	tokAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
+		Id: "VOTE",
+		Details: &types.AssetDetails{
+			Name:        "VOTE",
+			Symbol:      "VOTE",
+			Decimals:    5,
+			TotalSupply: "1000",
+			Source: &types.AssetDetails_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},
 	}
@@ -2347,15 +2346,19 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 
 	// enable the assert for the tests
 	asset := types.Asset{
-		Id:     testMarketAsset,
-		Symbol: testMarketAsset,
+		Id: testMarketAsset,
+		Details: &types.AssetDetails{
+			Symbol: testMarketAsset,
+		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 	// ETH is added hardcoded in some places
 	asset = types.Asset{
-		Id:     "ETH",
-		Symbol: "ETH",
+		Id: "ETH",
+		Details: &types.AssetDetails{
+			Symbol: "ETH",
+		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)

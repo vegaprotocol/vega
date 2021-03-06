@@ -464,6 +464,8 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonMajorityThresholdNotReached, nil
 	case types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED:
 		return ProposalRejectionReasonParticipationThresholdNotReached, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS:
+		return ProposalRejectionReasonInvalidAssetDetails, nil
 	default:
 		err := fmt.Errorf("failed to convert ProposalRejectionReason from Proto to GraphQL: %v", x)
 		return "", err

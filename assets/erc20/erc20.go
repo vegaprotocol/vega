@@ -34,6 +34,7 @@ var (
 	ErrUnableToFindWithdrawal         = errors.New("unable to find erc20 withdrawal event")
 	ErrUnableToFindERC20AssetList     = errors.New("unable to find erc20 asset list event")
 	ErrMissingConfirmations           = errors.New("missing confirmation from ethereum")
+	ErrNotAnErc20Asset                = errors.New("not an erc20 asset")
 )
 
 type ERC20 struct {
@@ -43,22 +44,23 @@ type ERC20 struct {
 	wallet  nodewallet.ETHWallet
 }
 
-func New(id string, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
+func New(id string, asset *types.AssetDetails, w nodewallet.Wallet) (*ERC20, error) {
 	wal, ok := w.(nodewallet.ETHWallet)
 	if !ok {
 		return nil, ErrMissingETHWalletFromNodeWallet
 	}
 
+	source := asset.GetErc20()
+	if source == nil {
+		return nil, ErrNotAnErc20Asset
+	}
+
 	return &ERC20{
 		asset: &types.Asset{
-			Id: id,
-			Source: &types.AssetSource{
-				Source: &types.AssetSource_Erc20{
-					Erc20: asset,
-				},
-			},
+			Id:      id,
+			Details: asset,
 		},
-		address: asset.ContractAddress,
+		address: source.ContractAddress,
 		wallet:  wal,
 	}, nil
 }
@@ -82,32 +84,24 @@ func (b *ERC20) Validate() error {
 	}
 
 	name, err := t.Name(&bind.CallOpts{})
-	if err != nil {
+	if err != nil || name != b.asset.Details.Name {
 		return err
 	}
 
 	symbol, err := t.Symbol(&bind.CallOpts{})
-	if err != nil {
+	if err != nil || symbol != b.asset.Details.Symbol {
 		return err
 	}
 
 	decimals, err := t.Decimals(&bind.CallOpts{})
-	if err != nil {
+	if err != nil || uint64(decimals) != b.asset.Details.Decimals {
 		return err
 	}
 
 	totalSupply, err := t.TotalSupply(&bind.CallOpts{})
-	if err != nil {
+	if err != nil || totalSupply.String() != b.asset.Details.TotalSupply {
 		return err
 	}
-
-	// non of the checks failed,
-	// with got all data needed, lets' update the struct
-	// and make this asset valid
-	b.asset.Name = name
-	b.asset.Symbol = symbol
-	b.asset.Decimals = uint64(decimals)
-	b.asset.TotalSupply = totalSupply.String()
 
 	b.ok = true
 	return nil
@@ -452,8 +446,8 @@ func (b *ERC20) checkConfirmations(txBlock uint64) error {
 
 func (b *ERC20) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.Id, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
-		b.asset.Decimals)
+		b.asset.Id, b.asset.Details.Name, b.asset.Details.Symbol, b.asset.Details.TotalSupply,
+		b.asset.Details.Decimals)
 }
 
 func getMaybeHTTPStatus(err error) string {

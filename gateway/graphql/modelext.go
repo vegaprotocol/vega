@@ -383,27 +383,10 @@ func (n *NewMarketInput) TradingModeIntoProto(target *types.NewMarketConfigurati
 }
 
 func (b *BuiltinAssetInput) IntoProto() (*types.BuiltinAsset, error) {
-	if len(b.Name) <= 0 {
-		return nil, errors.New("BuiltinAssetInput.Name: cannot be empty")
-	}
-	if len(b.Symbol) <= 0 {
-		return nil, errors.New("BuiltinAssetInput.Symbol: cannot be empty")
-	}
-	if len(b.TotalSupply) <= 0 {
-		return nil, errors.New("BuiltinAssetInput.TotalSupply: cannot be empty")
-	}
 	if len(b.MaxFaucetAmountMint) <= 0 {
 		return nil, errors.New("BuiltinAssetInput.MaxFaucetAmountMint: cannot be empty")
 	}
-	if b.Decimals <= 0 {
-		return nil, errors.New("BuiltinAssetInput.Decimals: cannot be <= 0")
-	}
-
 	return &types.BuiltinAsset{
-		Name:                b.Name,
-		Symbol:              b.Symbol,
-		TotalSupply:         b.TotalSupply,
-		Decimals:            uint64(b.Decimals),
 		MaxFaucetAmountMint: b.MaxFaucetAmountMint,
 	}, nil
 }
@@ -418,10 +401,33 @@ func (e *ERC20Input) IntoProto() (*types.ERC20, error) {
 	}, nil
 }
 
-func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
+func (n *NewAssetInput) IntoProto() (*types.AssetDetails, error) {
+
+	if len(n.Name) <= 0 {
+		return nil, errors.New("NewAssetInput.Name: cannot be empty")
+	}
+	if len(n.Symbol) <= 0 {
+		return nil, errors.New("NewAssetInput.Symbol: cannot be empty")
+	}
+	if len(n.TotalSupply) <= 0 {
+		return nil, errors.New("NewAssetInput.TotalSupply: cannot be empty")
+	}
+	if n.Decimals <= 0 {
+		return nil, errors.New("NewAssetInput.Decimals: cannot be <= 0")
+	}
+	if len(n.MinLpStake) <= 0 {
+		return nil, errors.New("NewAssetInput.Decimals: cannot be <= 0")
+	}
+
 	var (
-		isSet       bool
-		assetSource = &types.AssetSource{}
+		isSet        bool
+		assetDetails = &types.AssetDetails{
+			Name:        n.Name,
+			Symbol:      n.Symbol,
+			TotalSupply: n.TotalSupply,
+			Decimals:    uint64(n.Decimals),
+			MinLpStake:  n.MinLpStake,
+		}
 	)
 
 	if n.BuiltinAsset != nil {
@@ -430,7 +436,7 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 		if err != nil {
 			return nil, err
 		}
-		assetSource.Source = &types.AssetSource_BuiltinAsset{
+		assetDetails.Source = &types.AssetDetails_BuiltinAsset{
 			BuiltinAsset: source,
 		}
 	}
@@ -444,12 +450,12 @@ func (n *NewAssetInput) IntoProto() (*types.AssetSource, error) {
 		if err != nil {
 			return nil, err
 		}
-		assetSource.Source = &types.AssetSource_Erc20{
+		assetDetails.Source = &types.AssetDetails_Erc20{
 			Erc20: source,
 		}
 	}
 
-	return assetSource, nil
+	return assetDetails, nil
 }
 
 func (p *PriceMonitoringTriggerInput) IntoProto() *types.PriceMonitoringTrigger {

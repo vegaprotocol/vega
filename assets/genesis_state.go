@@ -1,101 +1,113 @@
 package assets
 
 import (
-	"encoding/hex"
 	"encoding/json"
+	"errors"
 
 	types "code.vegaprotocol.io/vega/proto"
-	"golang.org/x/crypto/sha3"
 )
 
-type GenesisState struct {
-	Builtins map[string]types.BuiltinAsset
-	ERC20    map[string]types.ERC20
+type AssetDetails struct {
+	Name        string  `json:"name"`
+	Symbol      string  `json:"symbol"`
+	TotalSupply string  `json:"total_supply"`
+	Decimals    uint64  `json:"decimals"`
+	MinLpStake  string  `json:"min_lp_stake"`
+	Source      *Source `json:"source"`
 }
 
+type Source struct {
+	BuiltinAsset *BuiltinAsset `json:"builtin_asset,omitempty"`
+	Erc20        *Erc20        `json:"erc20,omitempty"`
+}
+
+type BuiltinAsset struct {
+	MaxFaucetAmountMint string `json:"max_faucet_amount_mint"`
+}
+
+type Erc20 struct {
+	ContractAddress string `json:"contract_address"`
+}
+
+func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
+	if a.Source == nil || (a.Source.BuiltinAsset == nil && a.Source.Erc20 == nil) {
+		return nil, errors.New("missing asset source")
+	}
+
+	if a.Source.BuiltinAsset != nil && a.Source.Erc20 != nil {
+		return nil, errors.New("multiple asset sources specified")
+	}
+
+	details := types.AssetDetails{
+		Name:        a.Name,
+		Symbol:      a.Symbol,
+		TotalSupply: a.TotalSupply,
+		Decimals:    a.Decimals,
+		MinLpStake:  a.MinLpStake,
+	}
+
+	if a.Source.BuiltinAsset != nil {
+		details.Source = &types.AssetDetails_BuiltinAsset{
+			BuiltinAsset: &types.BuiltinAsset{
+				MaxFaucetAmountMint: a.Source.BuiltinAsset.MaxFaucetAmountMint,
+			},
+		}
+	}
+
+	if a.Source.Erc20 != nil {
+		details.Source = &types.AssetDetails_Erc20{
+			Erc20: &types.ERC20{
+				ContractAddress: a.Source.Erc20.ContractAddress,
+			},
+		}
+	}
+
+	return &details, nil
+}
+
+type GenesisState map[string]AssetDetails
+
 var (
-	governanceAsset = types.BuiltinAsset{
-		Name:                "VOTE",
-		Symbol:              "VOTE",
-		TotalSupply:         "0",
-		Decimals:            5,
-		MaxFaucetAmountMint: "100000",
-	}
-
-	defaultBuiltins = []types.BuiltinAsset{
-		{
-			Name:                "Ether",
-			Symbol:              "ETH",
-			TotalSupply:         "110436690",
-			Decimals:            5,
-			MaxFaucetAmountMint: "10000000", // 100ETH
-		},
-		{
-			Name:                "Bitcoin",
-			Symbol:              "BTC",
-			TotalSupply:         "21000000",
-			Decimals:            5,
-			MaxFaucetAmountMint: "1000000", // 10BTC
-		},
-		{
-			Name:                "VUSD",
-			Symbol:              "VUSD",
-			TotalSupply:         "21000000",
-			Decimals:            5,
-			MaxFaucetAmountMint: "500000000", // 5000VUSD
-		},
-	}
-
-	defaultERC20s = []types.ERC20{
-		{
-			ContractAddress: "0x308C71DE1FdA14db838555188211Fc87ef349272",
+	governanceAsset = AssetDetails{
+		Name:        "VOTE",
+		Symbol:      "VOTE",
+		TotalSupply: "0",
+		Decimals:    5,
+		MinLpStake:  "1",
+		Source: &Source{
+			BuiltinAsset: &BuiltinAsset{
+				MaxFaucetAmountMint: "10000",
+			},
 		},
 	}
 )
 
 func DefaultGenesisState() GenesisState {
-	builtins := make(map[string]types.BuiltinAsset, len(defaultBuiltins))
-	erc20s := make(map[string]types.ERC20, len(defaultERC20s))
-
-	h := func(key []byte) []byte {
-		hasher := sha3.New256()
-		hasher.Write(key)
-		return hasher.Sum(nil)
+	assets := map[string]AssetDetails{
+		"VOTE": governanceAsset,
 	}
 
-	builtins["VOTE"] = governanceAsset
-
-	for _, v := range defaultBuiltins {
-		assetSrc := types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &v,
-			},
-		}
-		builtins[hex.EncodeToString(h([]byte(assetSrc.String())))] = v
-	}
-
-	for _, v := range defaultERC20s {
-		assetSrc := types.AssetSource{
-			Source: &types.AssetSource_Erc20{
-				Erc20: &v,
-			},
-		}
-		erc20s[hex.EncodeToString(h([]byte(assetSrc.String())))] = v
-	}
-
-	return GenesisState{
-		Builtins: builtins,
-		ERC20:    erc20s,
-	}
+	return assets
 }
 
-func LoadGenesisState(bytes []byte) (*GenesisState, error) {
+func LoadGenesisState(bytes []byte) (map[string]*types.AssetDetails, error) {
 	state := struct {
-		Assets *GenesisState `json:"assets"`
+		Assets GenesisState `json:"assets"`
 	}{}
 	err := json.Unmarshal(bytes, &state)
 	if err != nil {
 		return nil, err
 	}
-	return state.Assets, nil
+
+	// now convert them all into proto
+	out := map[string]*types.AssetDetails{}
+	for k, v := range state.Assets {
+		details, err := v.IntoProto()
+		if err != nil {
+			return nil, err
+		}
+		out[k] = details
+	}
+
+	return out, nil
 }

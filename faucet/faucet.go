@@ -225,7 +225,7 @@ func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset stri
 		}
 		return err
 	}
-	source := resp.Asset.Source.GetBuiltinAsset()
+	source := resp.Asset.Details.GetBuiltinAsset()
 	if source == nil {
 		return ErrNotABuiltinAsset
 	}

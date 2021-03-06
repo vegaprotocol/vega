@@ -24,19 +24,11 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type Asset struct {
 	// Internal identifier of the asset
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Name of the asset (e.g: Great British Pound)
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Symbol of the asset (e.g: GBP)
-	Symbol string `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	// Total circulating supply for the asset
-	TotalSupply string `protobuf:"bytes,4,opt,name=total_supply,json=totalSupply,proto3" json:"total_supply,omitempty"`
-	// Number of decimals / precision handled by this asset
-	Decimals uint64 `protobuf:"varint,5,opt,name=decimals,proto3" json:"decimals,omitempty"`
 	// The definition of the external source for this asset
-	Source               *AssetSource `protobuf:"bytes,7,opt,name=source,proto3" json:"source,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
+	Details              *AssetDetails `protobuf:"bytes,2,opt,name=details,proto3" json:"details,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *Asset) Reset()         { *m = Asset{} }
@@ -71,126 +63,15 @@ func (m *Asset) GetId() string {
 	return ""
 }
 
-func (m *Asset) GetName() string {
+func (m *Asset) GetDetails() *AssetDetails {
 	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *Asset) GetSymbol() string {
-	if m != nil {
-		return m.Symbol
-	}
-	return ""
-}
-
-func (m *Asset) GetTotalSupply() string {
-	if m != nil {
-		return m.TotalSupply
-	}
-	return ""
-}
-
-func (m *Asset) GetDecimals() uint64 {
-	if m != nil {
-		return m.Decimals
-	}
-	return 0
-}
-
-func (m *Asset) GetSource() *AssetSource {
-	if m != nil {
-		return m.Source
+		return m.Details
 	}
 	return nil
 }
 
-// Asset source definition
-type AssetSource struct {
-	// The source
-	//
-	// Types that are valid to be assigned to Source:
-	//	*AssetSource_BuiltinAsset
-	//	*AssetSource_Erc20
-	Source               isAssetSource_Source `protobuf_oneof:"source"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
-}
-
-func (m *AssetSource) Reset()         { *m = AssetSource{} }
-func (m *AssetSource) String() string { return proto.CompactTextString(m) }
-func (*AssetSource) ProtoMessage()    {}
-func (*AssetSource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_610ca40ce07a87fe, []int{1}
-}
-
-func (m *AssetSource) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AssetSource.Unmarshal(m, b)
-}
-func (m *AssetSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AssetSource.Marshal(b, m, deterministic)
-}
-func (m *AssetSource) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AssetSource.Merge(m, src)
-}
-func (m *AssetSource) XXX_Size() int {
-	return xxx_messageInfo_AssetSource.Size(m)
-}
-func (m *AssetSource) XXX_DiscardUnknown() {
-	xxx_messageInfo_AssetSource.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AssetSource proto.InternalMessageInfo
-
-type isAssetSource_Source interface {
-	isAssetSource_Source()
-}
-
-type AssetSource_BuiltinAsset struct {
-	BuiltinAsset *BuiltinAsset `protobuf:"bytes,1,opt,name=builtin_asset,json=builtinAsset,proto3,oneof"`
-}
-
-type AssetSource_Erc20 struct {
-	Erc20 *ERC20 `protobuf:"bytes,2,opt,name=erc20,proto3,oneof"`
-}
-
-func (*AssetSource_BuiltinAsset) isAssetSource_Source() {}
-
-func (*AssetSource_Erc20) isAssetSource_Source() {}
-
-func (m *AssetSource) GetSource() isAssetSource_Source {
-	if m != nil {
-		return m.Source
-	}
-	return nil
-}
-
-func (m *AssetSource) GetBuiltinAsset() *BuiltinAsset {
-	if x, ok := m.GetSource().(*AssetSource_BuiltinAsset); ok {
-		return x.BuiltinAsset
-	}
-	return nil
-}
-
-func (m *AssetSource) GetErc20() *ERC20 {
-	if x, ok := m.GetSource().(*AssetSource_Erc20); ok {
-		return x.Erc20
-	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*AssetSource) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*AssetSource_BuiltinAsset)(nil),
-		(*AssetSource_Erc20)(nil),
-	}
-}
-
-// A Vega internal asset
-type BuiltinAsset struct {
+// The Vega representation of an external asset
+type AssetDetails struct {
 	// Name of the asset (e.g: Great British Pound)
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Symbol of the asset (e.g: GBP)
@@ -199,8 +80,128 @@ type BuiltinAsset struct {
 	TotalSupply string `protobuf:"bytes,3,opt,name=total_supply,json=totalSupply,proto3" json:"total_supply,omitempty"`
 	// Number of decimal / precision handled by this asset
 	Decimals uint64 `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
+	// Min stake required for this asset from liquidity providers
+	MinLpStake string `protobuf:"bytes,5,opt,name=min_lp_stake,json=minLpStake,proto3" json:"min_lp_stake,omitempty"`
+	// The source
+	//
+	// Types that are valid to be assigned to Source:
+	//	*AssetDetails_BuiltinAsset
+	//	*AssetDetails_Erc20
+	Source               isAssetDetails_Source `protobuf_oneof:"source"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *AssetDetails) Reset()         { *m = AssetDetails{} }
+func (m *AssetDetails) String() string { return proto.CompactTextString(m) }
+func (*AssetDetails) ProtoMessage()    {}
+func (*AssetDetails) Descriptor() ([]byte, []int) {
+	return fileDescriptor_610ca40ce07a87fe, []int{1}
+}
+
+func (m *AssetDetails) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AssetDetails.Unmarshal(m, b)
+}
+func (m *AssetDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AssetDetails.Marshal(b, m, deterministic)
+}
+func (m *AssetDetails) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AssetDetails.Merge(m, src)
+}
+func (m *AssetDetails) XXX_Size() int {
+	return xxx_messageInfo_AssetDetails.Size(m)
+}
+func (m *AssetDetails) XXX_DiscardUnknown() {
+	xxx_messageInfo_AssetDetails.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AssetDetails proto.InternalMessageInfo
+
+func (m *AssetDetails) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *AssetDetails) GetSymbol() string {
+	if m != nil {
+		return m.Symbol
+	}
+	return ""
+}
+
+func (m *AssetDetails) GetTotalSupply() string {
+	if m != nil {
+		return m.TotalSupply
+	}
+	return ""
+}
+
+func (m *AssetDetails) GetDecimals() uint64 {
+	if m != nil {
+		return m.Decimals
+	}
+	return 0
+}
+
+func (m *AssetDetails) GetMinLpStake() string {
+	if m != nil {
+		return m.MinLpStake
+	}
+	return ""
+}
+
+type isAssetDetails_Source interface {
+	isAssetDetails_Source()
+}
+
+type AssetDetails_BuiltinAsset struct {
+	BuiltinAsset *BuiltinAsset `protobuf:"bytes,101,opt,name=builtin_asset,json=builtinAsset,proto3,oneof"`
+}
+
+type AssetDetails_Erc20 struct {
+	Erc20 *ERC20 `protobuf:"bytes,102,opt,name=erc20,proto3,oneof"`
+}
+
+func (*AssetDetails_BuiltinAsset) isAssetDetails_Source() {}
+
+func (*AssetDetails_Erc20) isAssetDetails_Source() {}
+
+func (m *AssetDetails) GetSource() isAssetDetails_Source {
+	if m != nil {
+		return m.Source
+	}
+	return nil
+}
+
+func (m *AssetDetails) GetBuiltinAsset() *BuiltinAsset {
+	if x, ok := m.GetSource().(*AssetDetails_BuiltinAsset); ok {
+		return x.BuiltinAsset
+	}
+	return nil
+}
+
+func (m *AssetDetails) GetErc20() *ERC20 {
+	if x, ok := m.GetSource().(*AssetDetails_Erc20); ok {
+		return x.Erc20
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*AssetDetails) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*AssetDetails_BuiltinAsset)(nil),
+		(*AssetDetails_Erc20)(nil),
+	}
+}
+
+// A Vega internal asset
+type BuiltinAsset struct {
 	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
-	MaxFaucetAmountMint  string   `protobuf:"bytes,5,opt,name=max_faucet_amount_mint,json=maxFaucetAmountMint,proto3" json:"max_faucet_amount_mint,omitempty"`
+	MaxFaucetAmountMint  string   `protobuf:"bytes,1,opt,name=max_faucet_amount_mint,json=maxFaucetAmountMint,proto3" json:"max_faucet_amount_mint,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -230,34 +231,6 @@ func (m *BuiltinAsset) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_BuiltinAsset proto.InternalMessageInfo
-
-func (m *BuiltinAsset) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *BuiltinAsset) GetSymbol() string {
-	if m != nil {
-		return m.Symbol
-	}
-	return ""
-}
-
-func (m *BuiltinAsset) GetTotalSupply() string {
-	if m != nil {
-		return m.TotalSupply
-	}
-	return ""
-}
-
-func (m *BuiltinAsset) GetDecimals() uint64 {
-	if m != nil {
-		return m.Decimals
-	}
-	return 0
-}
 
 func (m *BuiltinAsset) GetMaxFaucetAmountMint() string {
 	if m != nil {
@@ -309,7 +282,7 @@ func (m *ERC20) GetContractAddress() string {
 
 func init() {
 	proto.RegisterType((*Asset)(nil), "vega.Asset")
-	proto.RegisterType((*AssetSource)(nil), "vega.AssetSource")
+	proto.RegisterType((*AssetDetails)(nil), "vega.AssetDetails")
 	proto.RegisterType((*BuiltinAsset)(nil), "vega.BuiltinAsset")
 	proto.RegisterType((*ERC20)(nil), "vega.ERC20")
 }
@@ -317,27 +290,28 @@ func init() {
 func init() { proto.RegisterFile("assets.proto", fileDescriptor_610ca40ce07a87fe) }
 
 var fileDescriptor_610ca40ce07a87fe = []byte{
-	// 349 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0xcf, 0x6e, 0xb2, 0x40,
-	0x14, 0xc5, 0x05, 0xc1, 0x4f, 0x2f, 0x7c, 0xfd, 0x33, 0x4d, 0x0c, 0xe9, 0xa6, 0x4a, 0x37, 0xba,
-	0x41, 0x83, 0xab, 0x2e, 0xb5, 0x69, 0xe3, 0xa6, 0x1b, 0xdc, 0x75, 0x43, 0x86, 0x61, 0xda, 0x4c,
-	0xc2, 0x30, 0x86, 0x19, 0x5a, 0x7d, 0xa8, 0xf6, 0x19, 0x1b, 0x2f, 0x6a, 0x4c, 0xd3, 0xb8, 0x82,
-	0xf3, 0x3b, 0xdc, 0x9b, 0x73, 0x4f, 0x00, 0x9f, 0x6a, 0xcd, 0x8d, 0x8e, 0xd6, 0x95, 0x32, 0x8a,
-	0x38, 0x1f, 0xfc, 0x9d, 0x86, 0x5f, 0x16, 0xb8, 0xf3, 0x1d, 0x26, 0x17, 0x60, 0x8b, 0x3c, 0xb0,
-	0x06, 0xd6, 0xa8, 0x97, 0xd8, 0x22, 0x27, 0x04, 0x9c, 0x92, 0x4a, 0x1e, 0xd8, 0x48, 0xf0, 0x9d,
-	0xf4, 0xa1, 0xa3, 0xb7, 0x32, 0x53, 0x45, 0xd0, 0x46, 0xba, 0x57, 0x64, 0x08, 0xbe, 0x51, 0x86,
-	0x16, 0xa9, 0xae, 0xd7, 0xeb, 0x62, 0x1b, 0x38, 0xe8, 0x7a, 0xc8, 0x56, 0x88, 0xc8, 0x2d, 0x74,
-	0x73, 0xce, 0x84, 0xa4, 0x85, 0x0e, 0xdc, 0x81, 0x35, 0x72, 0x92, 0xa3, 0x26, 0x63, 0xe8, 0x68,
-	0x55, 0x57, 0x8c, 0x07, 0xff, 0x06, 0xd6, 0xc8, 0x8b, 0xaf, 0xa3, 0x5d, 0xb6, 0x08, 0x73, 0xad,
-	0xd0, 0x48, 0xf6, 0x1f, 0x84, 0x9f, 0xe0, 0x9d, 0x60, 0xf2, 0x00, 0xff, 0xb3, 0x5a, 0x14, 0x46,
-	0x94, 0x29, 0x1e, 0x87, 0xf9, 0xbd, 0x98, 0x34, 0x0b, 0x16, 0x8d, 0x85, 0x03, 0xcb, 0x56, 0xe2,
-	0x67, 0x27, 0x9a, 0xdc, 0x83, 0xcb, 0x2b, 0x16, 0x4f, 0xf1, 0x40, 0x2f, 0xf6, 0x9a, 0x91, 0xa7,
-	0xe4, 0x31, 0x9e, 0x2e, 0x5b, 0x49, 0xe3, 0x2d, 0xba, 0x87, 0x64, 0xe1, 0xb7, 0x05, 0xfe, 0xe9,
-	0xbe, 0x63, 0x3f, 0xd6, 0x9f, 0xfd, 0xd8, 0x67, 0xfb, 0x69, 0x9f, 0xef, 0xc7, 0xf9, 0xd5, 0xcf,
-	0x0c, 0xfa, 0x92, 0x6e, 0xd2, 0x37, 0x5a, 0x33, 0x6e, 0x52, 0x2a, 0x55, 0x5d, 0x9a, 0x54, 0x8a,
-	0xd2, 0x60, 0x93, 0xbd, 0xe4, 0x46, 0xd2, 0xcd, 0x33, 0x9a, 0x73, 0xf4, 0x5e, 0x44, 0x69, 0xc2,
-	0x18, 0x5c, 0x3c, 0x86, 0x8c, 0xe1, 0x8a, 0xa9, 0xd2, 0x54, 0x94, 0x99, 0x94, 0xe6, 0x79, 0xc5,
-	0xb5, 0xde, 0x87, 0xbe, 0x3c, 0xf0, 0x79, 0x83, 0x17, 0xc3, 0xd7, 0x3b, 0xa6, 0x72, 0x8e, 0x55,
-	0xe0, 0x5f, 0xc2, 0x54, 0x11, 0x09, 0x35, 0xd9, 0xe9, 0x09, 0x82, 0xac, 0x83, 0x8f, 0xd9, 0x4f,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x92, 0xe1, 0x3c, 0x86, 0x4d, 0x02, 0x00, 0x00,
+	// 353 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x91, 0x4f, 0x8f, 0x9b, 0x30,
+	0x10, 0xc5, 0x17, 0x0a, 0xe9, 0xee, 0x84, 0xfe, 0x91, 0x2b, 0xad, 0x50, 0x2f, 0x65, 0xe9, 0x25,
+	0x95, 0x2a, 0x36, 0x22, 0xa7, 0x1e, 0x93, 0x34, 0x55, 0x0e, 0xed, 0x85, 0xdc, 0x7a, 0xb1, 0x8c,
+	0x71, 0x2a, 0xab, 0xfe, 0x83, 0xb0, 0xa9, 0x92, 0x0f, 0xd0, 0xef, 0x5d, 0x31, 0x90, 0x8a, 0x13,
+	0xbc, 0xf7, 0x9b, 0x37, 0x1e, 0x8f, 0x21, 0x61, 0xce, 0x09, 0xef, 0x8a, 0xb6, 0xb3, 0xde, 0x92,
+	0xe8, 0x8f, 0xf8, 0xc5, 0xf2, 0x03, 0xc4, 0xdb, 0xc1, 0x25, 0xaf, 0x21, 0x94, 0x4d, 0x1a, 0x64,
+	0xc1, 0xea, 0xa1, 0x0a, 0x65, 0x43, 0x3e, 0xc3, 0xcb, 0x46, 0x78, 0x26, 0x95, 0x4b, 0xc3, 0x2c,
+	0x58, 0x2d, 0x4b, 0x52, 0x0c, 0x81, 0x02, 0xab, 0xbf, 0x8e, 0xa4, 0xba, 0x95, 0xe4, 0x7f, 0x43,
+	0x48, 0xe6, 0x84, 0x10, 0x88, 0x0c, 0xd3, 0x62, 0x6a, 0x88, 0xff, 0xe4, 0x11, 0x16, 0xee, 0xaa,
+	0x6b, 0xab, 0xb0, 0xe3, 0x43, 0x35, 0x29, 0xf2, 0x04, 0x89, 0xb7, 0x9e, 0x29, 0xea, 0xfa, 0xb6,
+	0x55, 0xd7, 0xf4, 0x05, 0xd2, 0x25, 0x7a, 0x27, 0xb4, 0xc8, 0x7b, 0xb8, 0x6f, 0x04, 0x97, 0x9a,
+	0x29, 0x97, 0x46, 0x59, 0xb0, 0x8a, 0xaa, 0xff, 0x9a, 0x64, 0x90, 0x68, 0x69, 0xa8, 0x6a, 0xa9,
+	0xf3, 0xec, 0xb7, 0x48, 0x63, 0x8c, 0x83, 0x96, 0xe6, 0x7b, 0x7b, 0x1a, 0x1c, 0xf2, 0x05, 0x5e,
+	0xd5, 0xbd, 0x54, 0x5e, 0x1a, 0x8a, 0x2b, 0x48, 0xc5, 0xfc, 0x46, 0xbb, 0x11, 0xe1, 0xf8, 0xc7,
+	0xbb, 0x2a, 0xa9, 0x67, 0x9a, 0x7c, 0x84, 0x58, 0x74, 0xbc, 0x5c, 0xa7, 0x67, 0x8c, 0x2c, 0xc7,
+	0xc8, 0xa1, 0xda, 0x97, 0xeb, 0xe3, 0x5d, 0x35, 0xb2, 0xdd, 0x3d, 0x2c, 0x9c, 0xed, 0x3b, 0x2e,
+	0xf2, 0x3d, 0x24, 0xf3, 0x76, 0x64, 0x03, 0x8f, 0x9a, 0x5d, 0xe8, 0x99, 0xf5, 0x5c, 0x78, 0xca,
+	0xb4, 0xed, 0x8d, 0xa7, 0x5a, 0x1a, 0x3f, 0x2d, 0xe6, 0x9d, 0x66, 0x97, 0x6f, 0x08, 0xb7, 0xc8,
+	0x7e, 0x48, 0xe3, 0xf3, 0x12, 0x62, 0x3c, 0x80, 0x7c, 0x82, 0xb7, 0xdc, 0x1a, 0xdf, 0x31, 0xee,
+	0x29, 0x6b, 0x9a, 0x4e, 0x38, 0x37, 0xe5, 0xde, 0xdc, 0xfc, 0xed, 0x68, 0xef, 0x9e, 0x7e, 0x7e,
+	0xe0, 0xb6, 0x11, 0x38, 0x1e, 0xbe, 0x2f, 0xb7, 0xaa, 0x90, 0xf6, 0x79, 0xd0, 0xcf, 0x68, 0xd4,
+	0x0b, 0xfc, 0x6c, 0xfe, 0x05, 0x00, 0x00, 0xff, 0xff, 0x1c, 0x10, 0xff, 0x63, 0x07, 0x02, 0x00,
+	0x00,
 }
