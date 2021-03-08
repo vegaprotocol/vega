@@ -3792,16 +3792,19 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 25, Offset: -3},
 		},
 	}
+
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "trader-A", "id-lp"))
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
-	assert.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
+	require.Equal(t, 0, tm.market.GetParkedOrderCount())
+	require.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
+	require.Equal(t, 1, tm.market.GetLPSCount())
 
 	// Now move the mark price
-	o10 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
+	o10 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 1, 0)
 	o10conf, err := tm.market.SubmitOrder(ctx, o10)
 	require.NotNil(t, o10conf)
 	require.NoError(t, err)
-	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+	require.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+	require.Equal(t, 0, tm.market.GetLPSCount())
 }
 
 func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashIOC(t *testing.T) {
