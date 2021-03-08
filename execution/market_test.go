@@ -4663,9 +4663,7 @@ func TestAverageEntryValuation(t *testing.T) {
 
 	for _, v := range marketData.LiquidityProviderFeeShare {
 		expv, ok := expects[v.Party]
-		if !ok {
-			t.Errorf("unexpected lp provider in market data: %v", v.Party)
-		}
+		assert.True(t, ok, "unexpected lp provider in market data", v.Party)
 		assert.Equal(t, expv.value, v.EquityLikeShare)
 		expv.found = true
 		expects[v.Party] = expv
@@ -4673,8 +4671,6 @@ func TestAverageEntryValuation(t *testing.T) {
 
 	// now ensure all are found
 	for k, v := range expects {
-		if !v.found {
-			t.Errorf("%v was not in the list of lp providers", k)
-		}
+		assert.True(t, v.found, "was not in the list of lp providers", k)
 	}
 }
