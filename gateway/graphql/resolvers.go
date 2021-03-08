@@ -1140,6 +1140,16 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 	return out, nil
 }
 
+func (r *myMarketDataResolver) MarketTimestamps(ctx context.Context, m *types.MarketData) (*MarketTimestamps, error) {
+	out := &MarketTimestamps{
+		Prepare: strconv.FormatInt(m.MarketTimestamps.Prepare, 10),
+		Pending: strconv.FormatInt(m.MarketTimestamps.Pending, 10),
+		Open:    strconv.FormatInt(m.MarketTimestamps.Open, 10),
+		Close:   strconv.FormatInt(m.MarketTimestamps.Close, 10),
+	}
+	return out, nil
+}
+
 // END: MarketData resolver
 
 // BEGIN: Market Depth Resolver

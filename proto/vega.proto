@@ -1057,6 +1057,22 @@ message MarketData {
   string market_value_proxy = 24;
   // the equity like share of liquidity fee for each liquidity provider
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 25;
+  // useful timestamps for the market
+  MarketTimestamps market_timestamps = 26;
+}
+
+// Time stamps for important times about creating, enacting etc the market
+message MarketTimestamps {
+  // Time when the market is first prepared for voting
+  int64 prepare = 1;
+  // Time when the market has been voted in and waiting to be created
+  int64 pending = 2;
+  // Time when the market is open and ready to accept trades
+  int64 open = 3;
+  // Time when the market is closed
+  int64 close = 4;
+  // Time when the market is fully closed and all accounts settled
+  int64 settled = 5;
 }
 
 // The equity like share of liquidity fee for each liquidity provider

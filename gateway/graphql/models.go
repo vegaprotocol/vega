@@ -295,6 +295,20 @@ type MarketTick struct {
 
 func (MarketTick) IsEvent() {}
 
+// timestamps for when the market changes state
+type MarketTimestamps struct {
+	// Time when the market is first prepared for voting
+	Prepare string `json:"prepare"`
+	// Time when the market has been voted in and waiting to be created
+	Pending string `json:"pending"`
+	// Time when the market is open and ready to accept trades
+	Open string `json:"open"`
+	// Time when the market is closed
+	Close string `json:"close"`
+	// Time when the market is fully closed and all accounts settled
+	Settled string `json:"settled"`
+}
+
 // Representation of a network parameter
 type NetworkParameterInput struct {
 	// The name of the network parameter
