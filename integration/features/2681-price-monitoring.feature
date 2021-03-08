@@ -3,7 +3,7 @@ Feature: Price monitoring test for issue 2681
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset |   markprice  | risk model |         lamda  |              tau/short  | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq.   |    p. m. horizons | p. m. probs  | p. m. durations | Prob of trading |
+      | name      | base name | quote name | asset | mark price | risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading |
       | ETH/DEC20 | BTC      | ETH       | ETH   |      5000000  | forward   |       0.000001 |  0.00011407711613050422 |              0 | 0.016           |   0.8 |            1.4 |            1.2 |           1.1 |              42 |           0 | continuous   |        0 |                 0 |            0 | 1                    |             43200 |    0.9999999 |             300 |                 |
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"

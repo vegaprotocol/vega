@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -33,26 +32,6 @@ func theMarketsStartsOnAndExpiresOn(start, expires string) error {
 func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	execsetup = getExecutionSetupEmptyWithInsurancePoolBalance(amount)
-	return nil
-}
-
-func theExecutionEngineHaveTheseMarkets(arg1 *gherkin.DataTable) error {
-	mkts := []types.Market{}
-	for _, row := range arg1.Rows {
-		if val(row, 0) == "name" {
-			continue
-		}
-		mkt := baseMarket(row)
-		mkts = append(mkts, mkt)
-	}
-
-	t, _ := time.Parse("2006-01-02T15:04:05Z", marketStart)
-	execsetup = getExecutionTestSetup(t, mkts)
-
-	// reset market startime and expiry for next run
-	marketExpiry = defaultMarketExpiry
-	marketStart = defaultMarketStart
-
 	return nil
 }
 
@@ -185,7 +164,9 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 	}
 
 	if acc.Balance != balance {
-		return fmt.Errorf("invalid general asset=%v account balance=%v for trader=%v", asset, acc.Balance, trader)
+		return fmt.Errorf("invalid general account balance for asset(%s) for trader(%s), expected(%d) got(%d)",
+			asset, trader, balance, acc.Balance,
+		)
 	}
 
 	return nil
@@ -531,10 +512,12 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 			data = append(data, e.TransferResponses()...)
 		}
 
+		var foundButNotMatched uint64
 		for _, v := range data {
 			for _, _v := range v.GetTransfers() {
 				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
 					if _v.Amount != u64val(row, 5) {
+						foundButNotMatched = _v.Amount
 						continue
 					}
 					ledgerEntry = _v
@@ -547,7 +530,9 @@ func theFollowingTransfersHappend(arg1 *gherkin.DataTable) error {
 		}
 
 		if ledgerEntry == nil {
-			return fmt.Errorf("missing transfers between %v and %v for amount %v", fromAccountID, toAccountID, i64val(row, 5))
+			return fmt.Errorf("missing transfers between %v and %v for amount %v, found %v",
+				fromAccountID, toAccountID, i64val(row, 5), foundButNotMatched,
+			)
 		}
 		if ledgerEntry.Amount != u64val(row, 5) {
 			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
@@ -969,133 +954,6 @@ func accountID(marketID, partyID, asset string, _ty int32) string {
 	ln += len(asset)
 	idbuf[ln] = byte(ty + 48)
 	return string(idbuf[:ln+1])
-}
-
-func baseMarket(row *gherkin.TableRow) types.Market {
-	horizons, err := i64arr(row, 21, ",")
-	if err != nil {
-		log.Fatalf("Can't parse horizons (%v) to int64 array: %v", row.Cells[21].Value, err)
-	}
-	probs, err := f64arr(row, 22, ",")
-	if err != nil {
-		log.Fatalf("Can't parse probabilities (%v) to float64 array: %v", row.Cells[22].Value, err)
-	}
-	durations, err := i64arr(row, 23, ",")
-	if err != nil {
-		log.Fatalf("Can't parse durations (%v) to int64 array: %v", row.Cells[23].Value, err)
-	}
-	n := len(horizons)
-	if n != len(probs) || n != len(durations) {
-		log.Fatalf("horizons (%v), probabilities (%v) and durations (%v) need to have the same number of elements",
-			n,
-			len(probs),
-			len(durations))
-	}
-
-	triggs := make([]*types.PriceMonitoringTrigger, 0, n)
-	for i := 0; i < n; i++ {
-		p := &types.PriceMonitoringTrigger{Horizon: horizons[i], Probability: probs[i], AuctionExtension: durations[i]}
-		triggs = append(triggs, p)
-	}
-	pMonitorSettings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: triggs,
-		},
-		UpdateFrequency: i64val(row, 20),
-	}
-
-	openingAuction := &types.AuctionDuration{
-		Duration: i64val(row, 15),
-	}
-
-	if openingAuction.Duration <= 0 {
-		openingAuction = nil
-	}
-
-	mkt := types.Market{
-		TradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
-		State:         types.Market_STATE_ACTIVE,
-		Id:            val(row, 0),
-		DecimalPlaces: 2,
-		Fees: &types.Fees{
-			Factors: &types.FeeFactors{
-				LiquidityFee:      val(row, 19),
-				InfrastructureFee: val(row, 18),
-				MakerFee:          val(row, 17),
-			},
-		},
-		TradableInstrument: &types.TradableInstrument{
-			Instrument: &types.Instrument{
-				Id:   fmt.Sprintf("Crypto/%s/Futures", val(row, 0)),
-				Code: fmt.Sprintf("CRYPTO/%v", val(row, 0)),
-				Name: fmt.Sprintf("%s future", val(row, 0)),
-				Metadata: &types.InstrumentMetadata{
-					Tags: []string{
-						"asset_class:fx/crypto",
-						"product:futures",
-					},
-				},
-				InitialMarkPrice: u64val(row, 4),
-				Product: &types.Instrument_Future{
-					Future: &types.Future{
-						Maturity: marketExpiry,
-						Oracle: &types.Future_EthereumEvent{
-							EthereumEvent: &types.EthereumEvent{
-								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-								Event:      "price_changed",
-								Value:      u64val(row, 14),
-							},
-						},
-						SettlementAsset: val(row, 3),
-						QuoteName:       val(row, 2),
-					},
-				},
-			},
-			RiskModel: &types.TradableInstrument_SimpleRiskModel{
-				SimpleRiskModel: &types.SimpleRiskModel{
-					Params: &types.SimpleModelParams{
-						FactorLong:           f64val(row, 6),
-						FactorShort:          f64val(row, 7),
-						MaxMoveUp:            f64val(row, 8),
-						MinMoveDown:          f64val(row, 9),
-						ProbabilityOfTrading: f64val(row, 24),
-					},
-				},
-			},
-			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: &types.ScalingFactors{
-					SearchLevel:       f64val(row, 13),
-					InitialMargin:     f64val(row, 12),
-					CollateralRelease: f64val(row, 11),
-				},
-			},
-		},
-		OpeningAuction: openingAuction,
-		TradingModeConfig: &types.Market_Continuous{
-			Continuous: &types.ContinuousTrading{},
-		},
-		PriceMonitoringSettings: pMonitorSettings,
-		TargetStakeParameters: &types.TargetStakeParameters{
-			TimeWindow:    3600,
-			ScalingFactor: 10,
-		},
-	}
-	if val(row, 5) == "forward" {
-		mkt.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
-			LogNormalRiskModel: &types.LogNormalRiskModel{
-				RiskAversionParameter: f64val(row, 6), // 6
-				Tau:                   f64val(row, 7), // 7
-				Params: &types.LogNormalModelParams{
-					Mu:    f64val(row, 8),  // 8
-					R:     f64val(row, 9),  // 9
-					Sigma: f64val(row, 10), //10
-				},
-			},
-		}
-	}
-
-	return mkt
-
 }
 
 func executedTrades(trades *gherkin.DataTable) error {
