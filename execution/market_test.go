@@ -42,6 +42,7 @@ type testMarket struct {
 	eventCount      uint64
 	orderEventCount uint64
 	events          []events.Event
+	orderEvents     []events.Event
 	mktCfg          *types.Market
 }
 
@@ -73,6 +74,7 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 			te := evt.Type()
 			if te == events.OrderEvent {
 				tm.orderEventCount++
+				tm.orderEvents = append(tm.orderEvents, evt)
 			}
 			tm.eventCount++
 			tm.events = append(tm.events, evt)

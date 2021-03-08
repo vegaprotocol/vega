@@ -1224,9 +1224,9 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// the contains the fees informations
 	confirmation.Trades = trades
 
-	m.handleConfirmation(ctx, confirmation)
-
 	m.broker.Send(events.NewOrderEvent(ctx, order))
+
+	m.handleConfirmation(ctx, confirmation)
 
 	return confirmation, nil
 }
