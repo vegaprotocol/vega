@@ -4,8 +4,8 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | tau/short | lamd/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
-      | ETH/DEC19 | BTC      | ETH       | ETH   | 9400000   | simple     | 0.1       | 0.2       | 0  | 0 | 0     | 5              | 4              | 3.2           | 940000          | 0           | continous    | 0        | 0                 | 0            | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+      | name      | base name | quote name | asset | mark price | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | BTC       | ETH        | ETH   | 9400000    | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 940000           | 0                | continous    | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value   |
       | prices.ETH.value | 9400000 |
@@ -42,9 +42,9 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     And "trader1" have only one account per asset
     # placing test order
     Then traders place following orders:
-      | trader  | market id | type | volume | price   | trades | type  | tif |
+      | trader  | market id | type | volume | price   | trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 13     | 9000000 | 3      | TYPE_LIMIT | TIF_GTC |
-    And "trader1" general account for asset "ETH" balance is "671600040"
+    And "trader1" general account for asset "ETH" balance is "718400040"
     And executed trades:
       | buyer     | price    | size | seller  |
       | buySideMM | 10000000 | 1    | trader1 |
@@ -56,10 +56,10 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 331199960 | 671600040 |
+      | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 82799990    | 264959968 | 331199960 | 413999950 |
+      | trader1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | -13    | 2800000       | 0           |
@@ -78,10 +78,10 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | sellSideMM | ETH/DEC19 | sell | 2      | 8000000  | 0      | TYPE_LIMIT | TIF_GTC |
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 331199960 | 671600040 |
+      | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 82799990    | 264959968 | 331199960 | 413999950 |
+      | trader1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | -13    | 2800000       | 0           |
@@ -97,14 +97,14 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     And the following transfers happened:
       | from    | to      | fromType             | toType                  | id        | amount    | asset |
       | trader1 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 273000000 | ETH   |
-      | trader1 | trader1 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 253800040 | ETH   |
+      | trader1 | trader1 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 312000000 | 417800000 |
+      | trader1 | ETH   | ETH/DEC19 | 156000000 | 573800000 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 78000000    | 249600000 | 312000000 | 390000000 |
+      | trader1 | ETH/DEC19 | 39000000    | 124800000 | 156000000 | 195000000 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | -13    | -270200000    | 0           |
@@ -116,7 +116,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | buySideMM  | ETH/DEC19 | buy  | 50     | 50000000 | 2      | TYPE_LIMIT | TIF_GTC |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 130000000   | 416000000 | 520000000 | 650000000 |
+      | trader1 | ETH/DEC19 | 65000000    | 208000000 | 260000000 | 325000000 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | -13    | -530200000    | 0           |

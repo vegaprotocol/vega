@@ -33,6 +33,10 @@ func (r RowWrapper) Str(name string) string {
 	return r.values[name]
 }
 
+func (r RowWrapper) StrSlice(name, sep string) []string {
+	return strings.Split(r.values[name], sep)
+}
+
 func (r RowWrapper) U64(name string) (uint64, error) {
 	rawValue := r.values[name]
 	return strconv.ParseUint(rawValue, 10, 0)

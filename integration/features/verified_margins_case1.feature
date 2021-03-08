@@ -4,11 +4,11 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | tau/short | lamd/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
-      | ETH/DEC19 | BTC      | ETH       | ETH   | 9400000   | simple     | 0.1       | 0.2       | 0  | 0 | 0     | 5              | 4              | 3.2           | 9400000         | 0           | continuous   | 0        | 0                 | 0            | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+      | name      | base name | quote name | asset | mark price | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | BTC       | ETH        | ETH   | 9400000    | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 9400000          | 0                | continuous   | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 9400000   |
+      | name             | value   |
+      | prices.ETH.value | 9400000 |
     And the following traders:
       | name       | amount     |
       | trader1    | 1000000000 |
@@ -42,9 +42,9 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     And "trader1" have only one account per asset
     # placing test order
     Then traders place following orders:
-      | trader  | market id | type | volume | price    | trades | type  | tif |
+      | trader  | market id | type | volume | price    | trades | type       | tif     |
       | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2      | TYPE_LIMIT | TIF_GTC |
-    And "trader1" general account for asset "ETH" balance is "683999968"
+    And "trader1" general account for asset "ETH" balance is "611199968"
     And executed trades:
       | buyer   | price    | size | seller     |
       | trader1 | 11200000 | 2    | sellSideMM |
@@ -56,10 +56,10 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 321600032 | 683999968 |
+      | trader1 | ETH   | ETH/DEC19 | 394400032 | 611199968 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 80400008    | 257280025 | 321600032 | 402000040 |
+      | trader1 | ETH/DEC19 | 98600008    | 315520025 | 394400032 | 493000040 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 13     | 5600000       | 0           |
@@ -78,10 +78,10 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 321600032 | 683999968 |
+      | trader1 | ETH   | ETH/DEC19 | 394400032 | 611199968 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 80400008    | 257280025 | 321600032 | 402000040 |
+      | trader1 | ETH/DEC19 | 98600008    | 315520025 | 394400032 | 493000040 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 13     | 5600000       | 0           |
@@ -99,10 +99,10 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 240000020 | 843599980 |
+      | trader1 | ETH   | ETH/DEC19 | 344000020 | 739599980 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 60000005    | 192000016 | 240000020 | 300000025 |
+      | trader1 | ETH/DEC19 | 86000005    | 275200016 | 344000020 | 430000025 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 13     | 83600000      | 0           |
