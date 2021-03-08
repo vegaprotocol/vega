@@ -35,7 +35,7 @@ var (
 	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
-	ErrAccountDoesNotExist                     = errors.New("account do not exists")
+	ErrAccountDoesNotExist                     = errors.New("account does not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrNoGeneralAccountWhenCreateBondAccount   = errors.New("party general account missing when trying to create a bond account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
