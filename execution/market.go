@@ -3344,12 +3344,12 @@ func (m *Market) updateAndCreateOrders(
 ) error {
 
 	for _, order := range amendments {
-		if _, err := m.amendOrder(ctx, order); err != nil {
+		if _, err := m.cancelOrder(ctx, order.PartyId, order.OrderId); err != nil {
 			// here we panic, an order which should be in a the market
 			// appears not to be. there's either an issue in the liquidity
 			// engine and we are trying to remove a non-existing order
 			// or the market lost track of the order
-			m.log.Panic("unable to amend a liquidity order",
+			m.log.Debug("unable to amend a liquidity order",
 				logging.OrderID(order.OrderId),
 				logging.PartyID(order.PartyId),
 				logging.MarketID(order.MarketId),
