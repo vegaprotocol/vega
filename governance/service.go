@@ -97,7 +97,7 @@ func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types
 		ret := retries
 		for {
 			// wait for actual changes
-			data := sub.GetGovernanceData()
+			data := s.getCompleteGovernanceData(sub.GetGovernanceData())
 			select {
 			case <-ctx.Done():
 				return
@@ -114,6 +114,24 @@ func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []types
 	return out
 }
 
+func (s *Svc) getCompleteGovernanceData(data []types.GovernanceData) []types.GovernanceData {
+	gds := make([]types.GovernanceData, 0, len(data))
+	for _, gd := range data {
+		var id string
+		if gd.Proposal != nil && len(gd.Proposal.Id) > 0 {
+			id = gd.Proposal.Id
+		} else if len(gd.Yes) > 0 {
+			id = gd.Yes[0].ProposalId
+		} else if len(gd.No) > 0 {
+			id = gd.No[0].ProposalId
+		}
+		p, _ := s.GetProposalByID(id)
+		gds = append(gds, *p)
+	}
+
+	return gds
+}
+
 // ObservePartyProposals streams proposals submitted by the specific party
 func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []types.GovernanceData {
 	ctx, cfunc := context.WithCancel(ctx)
@@ -128,7 +146,7 @@ func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID st
 		}()
 		ret := retries
 		for {
-			data := sub.GetGovernanceData()
+			data := s.getCompleteGovernanceData(sub.GetGovernanceData())
 			select {
 			case <-ctx.Done():
 				return
