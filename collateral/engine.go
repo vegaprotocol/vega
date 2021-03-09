@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -50,8 +51,6 @@ var (
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
 	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
-	// ErrGovernanceAssetIDMatchNoAsset
-	ErrGovernanceAssetIDMatchNoAsset = errors.New("governance asset ID match no asset")
 )
 
 // Broker send events
@@ -81,11 +80,6 @@ type Engine struct {
 
 	// asset ID to asset
 	enabledAssets map[string]types.Asset
-
-	// assetid -> total amount for the asset
-	totalAmounts map[string]uint64
-	// keep track of what's the current governanceAsset
-	governanceAsset string
 }
 
 // New instantiates a new collateral engine
@@ -103,7 +97,6 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
-		totalAmounts:  map[string]uint64{},
 	}, nil
 }
 
@@ -245,28 +238,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.Id),
 	)
-	return nil
-}
-
-func (e *Engine) UpdateGovernanceAsset(asset string) error {
-	if !e.AssetExists(asset) {
-		return ErrGovernanceAssetIDMatchNoAsset
-	}
-
-	var (
-		nextAsset = e.enabledAssets[asset]
-		prevAsset types.Asset
-	)
-	if len(e.governanceAsset) > 0 {
-		prevAsset = e.enabledAssets[e.governanceAsset]
-	}
-	e.log.Info("governance asset update successfully",
-		logging.String("new-asset-id", nextAsset.Id),
-		logging.String("new-asset", nextAsset.Symbol),
-		logging.String("prev-asset-id", prevAsset.Id),
-		logging.String("prev-asset", prevAsset.Symbol),
-	)
-	e.governanceAsset = asset
 	return nil
 }
 
@@ -2082,22 +2053,8 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 	if !ok {
 		return ErrAccountDoesNotExist
 	}
-	send := true
-	if acc.Type == types.AccountType_ACCOUNT_TYPE_EXTERNAL {
-		send = false
-		asset := acc.Asset
-		b := e.totalAmounts[asset]
-		if acc.Balance > balance {
-			// the external balance has been reduced -> money has moved into the system
-			b += acc.Balance - balance
-		} else {
-			// money has left tthe system
-			b -= balance - acc.Balance
-		}
-		e.totalAmounts[asset] = b
-	}
 	acc.Balance = balance
-	if send {
+	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2111,13 +2068,9 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance += inc
-	// moves from internal to external, so total amount reduces
-	if acc.Type == types.AccountType_ACCOUNT_TYPE_EXTERNAL {
-		b := e.totalAmounts[acc.Asset]
-		e.totalAmounts[acc.Asset] = b - inc
-		return nil
+	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
-	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
 }
 
@@ -2129,13 +2082,9 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance -= dec
-	// decrementing external means external to internal, increment total amount
-	if acc.Type == types.AccountType_ACCOUNT_TYPE_EXTERNAL {
-		b := e.totalAmounts[acc.Asset]
-		e.totalAmounts[acc.Asset] = b + dec
-		return nil
+	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
-	e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	return nil
 }
 
@@ -2149,20 +2098,20 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	return &acccpy, nil
 }
 
-// GetPartyTokenAccount - get the token account for a given user
-func (e *Engine) GetPartyTokenAccount(id string) (*types.Account, error) {
-	tID := e.accountID(noMarket, id, e.governanceAsset, types.AccountType_ACCOUNT_TYPE_GENERAL)
-	acc, ok := e.accs[tID]
+// GetAssetTotalSupply - return the total supply of the asset if it's known
+// from the collateral engine.
+func (e *Engine) GetAssetTotalSupply(asset string) (uint64, error) {
+	asst, ok := e.enabledAssets[asset]
 	if !ok {
-		return nil, ErrPartyHasNoTokenAccount
+		return 0, ErrInvalidAssetID
 	}
-	cpy := *acc
-	return &cpy, nil
-}
 
-// GetTotalTokens - returns total amount of tokens in the network
-func (e *Engine) GetTotalTokens() uint64 {
-	return e.totalAmounts[e.governanceAsset]
+	// not checking for error, if we
+	// have this asset enabled already, total sypply field
+	// have been checked already
+	ttsuply, _ := strconv.ParseUint(asst.TotalSupply, 10, 64)
+
+	return ttsuply, nil
 }
 
 func (e *Engine) removeAccount(id string) error {
