@@ -12,9 +12,16 @@ Feature: Price monitoring test using simple risk model
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount        |
+      | trader1 | ETH   | 10000         |
+      | trader2 | ETH   | 10000         |
+      | aux     | ETH   | 100000000000  |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -46,9 +53,16 @@ Feature: Price monitoring test using simple risk model
 
   Scenario: GFN orders results in auction (issue #2657)
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -69,9 +83,16 @@ Feature: Price monitoring test using simple risk model
 
   Scenario: Non-persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates.
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -104,9 +125,16 @@ Feature: Price monitoring test using simple risk model
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
 
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -145,9 +173,16 @@ Feature: Price monitoring test using simple risk model
   Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction, auction gets extended due to 2nd trigger and eventually terminates with a trade from order that originally triggered the auction.
 
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -223,9 +258,16 @@ Feature: Price monitoring test using simple risk model
   Scenario: Non-persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates
 
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -287,9 +329,16 @@ Feature: Price monitoring test using simple risk model
   Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
 
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -370,9 +419,16 @@ Feature: Price monitoring test using simple risk model
   Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes.
 
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 10000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+  
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
