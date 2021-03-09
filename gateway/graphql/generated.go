@@ -5073,13 +5073,13 @@ type Query {
     reference: String
   ): Proposal!
 
-  "Governance proposals that aim creating new markets"
+  "Governance proposals that aim to create new markets"
   newMarketProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim updating existing markets"
+  "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
     marketId: String
@@ -5087,13 +5087,13 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim updating Vega network parameters"
+  "Governance proposals that aim to update Vega network parameters"
   networkParametersProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim creating new assets in Vega"
+  "Governance proposals that aim to create new assets in Vega"
   newAssetProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
@@ -5108,7 +5108,7 @@ type Query {
   "The list of all assets in use in the vega network"
   assets: [Asset!]
 
-  "return an estiamation of the potential cost for a new order"
+  "return an estimation of the potential cost for a new order"
   estimateOrder(
     "ID of the market to place the order"
     marketId: String!
@@ -5122,7 +5122,7 @@ type Query {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "exiration of the the order"
+    "expiration of the the order"
     expiration: String
     "type of the order"
     type: OrderType!
@@ -5131,7 +5131,7 @@ type Query {
   "find a withdrawal using its id"
   withdrawal("id of the withdrawal" id: String!): Withdrawal
 
-  "find a erc20 withdrawal approval using it a withdrawal id"
+  "find an erc20 withdrawal approval using its withdrawal id"
   erc20WithdrawalApproval(
     "id of the withdrawal"
     withdrawalId: String!
@@ -5309,7 +5309,7 @@ type Statistics {
   positionsSubscriptions: Int!
 }
 
-"A mode where Vega try to execute order as soon as they are received"
+"A mode where Vega tries to execute orders as soon as they are received"
 type ContinuousTrading {
   "Size of an increment in price in terms of the quote currency"
   tickSize: String!
@@ -5361,7 +5361,7 @@ type SimpleRiskModel {
 
 union RiskModel = LogNormalRiskModel | SimpleRiskModel
 
-"A set of metadata to associate to an instruments"
+"A set of metadata to associate to an instrument"
 type InstrumentMetadata {
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
   tags: [String!]
@@ -5557,7 +5557,7 @@ type MarginCalculator {
 }
 
 type ScalingFactors {
-  "the scaling factor that determines the margin level at which we have to search for more money"
+  "the scaling factor that determines the margin level at which Vega has to search for more money"
   searchLevel: Float!
 
   "the scaling factor that determines the optimal margin level"
@@ -6188,7 +6188,7 @@ enum DepositStatus {
   Open
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Cancelled
-  "The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  "The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
