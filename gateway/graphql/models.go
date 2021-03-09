@@ -333,6 +333,21 @@ type NewAssetInput struct {
 	Erc20 *ERC20Input `json:"erc20"`
 }
 
+// A commitment of liquidity to be made by the party which proposes a market
+type NewMarketCommitmentInput struct {
+	// Specified as a unitless number that represents the amount of settlement asset of the market
+	CommitmentAmount string `json:"commitmentAmount"`
+	// Nominated liquidity fee factor, which is an input to the calculation of
+	// taker fees on the market, as per setting fees and rewarding liquidity provider
+	Fee string `json:"fee"`
+	// A set of liquidity sell orders to meet the liquidity provision obligation
+	Sells []*LiquidityOrderInput `json:"sells"`
+	// A set of liquidity buy orders to meet the liquidity provision obligation
+	Buys []*LiquidityOrderInput `json:"buys"`
+	// A reference to be associated to all orders created from this commitment
+	Reference *string `json:"reference"`
+}
+
 // Allows creating new markets on the network
 type NewMarketInput struct {
 	// New market instrument configuration
@@ -349,6 +364,8 @@ type NewMarketInput struct {
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
 	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
+	// The liquidity commitment submitted with the new market
+	Commitment *NewMarketCommitmentInput `json:"commitment"`
 }
 
 // An oracle spec describe the oracle data that a product (or a risk model)

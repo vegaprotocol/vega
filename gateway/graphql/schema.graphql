@@ -2168,6 +2168,26 @@ input NewMarketInput {
   continuousTrading: ContinuousTradingInput
   "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
   discreteTrading: DiscreteTradingInput
+
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitmentInput
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+input NewMarketCommitmentInput {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per setting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrderInput!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrderInput!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 type NewMarket {
@@ -2181,6 +2201,25 @@ type NewMarket {
   metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitment
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+type NewMarketCommitment {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per setting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrder!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrder!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 """

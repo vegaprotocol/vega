@@ -35,3 +35,7 @@ func (r *newMarketResolver) Metadata(ctx context.Context, obj *types.NewMarket) 
 func (r *newMarketResolver) TradingMode(ctx context.Context, obj *types.NewMarket) (TradingMode, error) {
 	return NewMarketTradingModeFromProto(obj.Changes.TradingMode)
 }
+
+func (r *newMarketResolver) Commitment(ctx context.Context, obj *types.NewMarket) (*types.NewMarketCommitment, error) {
+	return obj.LiquidityCommitment, nil
+}
